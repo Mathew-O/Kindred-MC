@@ -27,11 +27,21 @@ public final class ChoreGameTests implements FabricGameTest {
         context.setBlockState(2, 2, 1, Blocks.CHEST);
         ChestBlockEntity chest = (ChestBlockEntity) context.getWorld().getBlockEntity(context.getAbsolutePos(new BlockPos(2, 2, 1)));
         context.assertTrue(chest != null, "chest");
-        int moved = ItemMoves.extract(body.inventory(), Items.OAK_LOG, 5);
-        int inserted = ItemMoves.insert(chest, new ItemStack(Items.OAK_LOG, moved), moved);
-        context.assertEquals(5, inserted, "Five logs move");
+        var result = ItemMoves.transfer(UUID.randomUUID(), body.inventory(), chest, Items.OAK_LOG, 5);
+        context.assertTrue(result.fullySucceeded(), "Transfer reconciles: " + result);
         context.assertEquals(3, ItemMoves.count(body.inventory(), Items.OAK_LOG), "The rest stays in the companion");
         context.assertEquals(5, ItemMoves.count(chest, Items.OAK_LOG), "The chest gained the same five");
+        // Real stacks move, so wear and other components travel with the item instead of being reset.
+        ItemStack worn = new ItemStack(Items.IRON_PICKAXE);
+        worn.setDamage(37);
+        body.inventory().setStack(1, worn);
+        var tool = ItemMoves.transfer(UUID.randomUUID(), body.inventory(), chest, Items.IRON_PICKAXE, 1);
+        context.assertTrue(tool.fullySucceeded(), "Tool transfer reconciles");
+        boolean wornInChest = false;
+        for (int i = 0; i < chest.size(); i++) {
+            if (chest.getStack(i).isOf(Items.IRON_PICKAXE) && chest.getStack(i).getDamage() == 37) wornInChest = true;
+        }
+        context.assertTrue(wornInChest, "The moved pickaxe keeps its damage");
         context.complete();
     }
 

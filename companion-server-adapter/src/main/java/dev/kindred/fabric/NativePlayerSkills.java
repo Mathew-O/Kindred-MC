@@ -69,8 +69,8 @@ final class NativePlayerSkills {
                     Set.of("plant"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_harvest" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("slot", "replant"),
-                    Set.of("harvest"), Set.of(),
-                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+                    Set.of("harvest", "pickup"), Set.of(dev.kindred.core.EditPolicy.Kind.BREAK),
+                    Duration.ofSeconds(10), Duration.ofSeconds(6), 0);
             case "native_sleep" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(),
                     Set.of("sleep"), Set.of(),
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);

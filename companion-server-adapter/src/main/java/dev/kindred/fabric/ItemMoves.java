@@ -79,22 +79,6 @@ final class ItemMoves {
         return moved;
     }
 
-    /** Removes up to {@code count} of {@code item} and returns how many left the inventory. */
-    static int extract(Inventory inventory, Item item, int count) {
-        int left = count;
-        int moved = 0;
-        for (int slot = 0; slot < inventory.size() && left > 0; slot++) {
-            ItemStack stack = inventory.getStack(slot);
-            if (!stack.isOf(item)) continue;
-            int take = Math.min(left, stack.getCount());
-            stack.decrement(take);
-            if (stack.isEmpty()) inventory.setStack(slot, ItemStack.EMPTY);
-            left -= take;
-            moved += take;
-        }
-        return moved;
-    }
-
     /**
      * Verified transfer between two inventories with exact item conservation.
      * If destination cannot fit all extracted items (e.g. partial capacity or external player insertions),
@@ -118,14 +102,19 @@ final class ItemMoves {
             return new TransferResult(actionId, itemId, count, 0, sourceBefore, sourceBefore, destBefore, destBefore, true);
         }
 
-        int extracted = extract(source, item, take);
-        ItemStack stack = new ItemStack(item, extracted);
-        int inserted = insert(destination, stack, extracted);
-
-        if (inserted < extracted) {
-            // Roll back any uninserted remainder into source immediately
-            int rollback = extracted - inserted;
-            insert(source, new ItemStack(item, rollback), rollback);
+        // Move the real stacks slot by slot so damage, enchantments and other components travel with them.
+        int inserted = 0;
+        int left = take;
+        for (int slot = 0; slot < source.size() && left > 0; slot++) {
+            ItemStack stack = source.getStack(slot);
+            if (!stack.isOf(item)) continue;
+            int portion = Math.min(left, stack.getCount());
+            int placed = insert(destination, stack, portion);
+            stack.decrement(placed);
+            if (stack.isEmpty()) source.setStack(slot, ItemStack.EMPTY);
+            inserted += placed;
+            left -= placed;
+            if (placed < portion) break; // Destination is full; nothing left the source beyond what was placed.
         }
 
         int sourceAfter = count(source, item);

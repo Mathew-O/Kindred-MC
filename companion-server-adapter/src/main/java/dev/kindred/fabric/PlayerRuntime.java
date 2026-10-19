@@ -181,6 +181,8 @@ final class PlayerRuntime {
     private final UUID runtimeSession = UUID.randomUUID();
     private final AttentionWorkScheduler attentionScheduler;
     static final int MAX_BLOCK_CHECKS_PER_TICK = 128;
+    /** How long a direct native command keeps autonomous task selection from replacing its outcome. */
+    static final int MANUAL_COMMAND_HOLD_TICKS = 200;
     private int blocksScannedThisTick = 0;
     private long totalBlockChecksMonotonic = 0;
 
@@ -331,17 +333,16 @@ final class PlayerRuntime {
         try {
             java.nio.file.Path file = directory.resolve("edits.properties");
             if (!java.nio.file.Files.exists(file)) {
-                java.nio.file.Files.createDirectories(directory);
-                java.nio.file.Files.writeString(file, "autonomousEdits=true\nprotectionKnown=true\n", StandardCharsets.UTF_8);
-                return new EditPolicy.ServerPolicy(true, true);
+                // Decision D4: autonomous world edits stay off until an operator records the server policy.
+                return EditPolicy.ServerPolicy.deferredD4();
             }
             java.util.Properties properties = new java.util.Properties();
             try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
-            return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "true")),
-                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "true")));
+            return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "false")),
+                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")));
         } catch (Exception failure) {
-            KindredMod.LOGGER.error("Kindred edit policy could not be read; using autonomous defaults", failure);
-            return new EditPolicy.ServerPolicy(true, true);
+            KindredMod.LOGGER.error("Kindred edit policy could not be read; autonomous edits stay disabled", failure);
+            return EditPolicy.ServerPolicy.deferredD4();
         }
     }
 
@@ -1000,6 +1001,8 @@ final class PlayerRuntime {
         }
         int res = dispatchNativeTask(nativeActor(source), entry, skill, arguments);
         if (res == 1) {
+            // A direct request holds autonomous selection briefly so the requester sees its own outcome.
+            entry.manualHoldUntilTick = server.getTicks() + MANUAL_COMMAND_HOLD_TICKS;
             feedback(source, "Requested " + skill + "; no work begins before durable paid admission.");
         } else {
             reject(source, entry.blocker);
@@ -1228,7 +1231,7 @@ final class PlayerRuntime {
                     || ("native_block".equals(entry.skillId) && intent == NativePlayerBody.Intent.BLOCK)
                     || ("native_till".equals(entry.skillId) && (intent == NativePlayerBody.Intent.TILL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_plant".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLANT || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || ("native_harvest".equals(entry.skillId) && (intent == NativePlayerBody.Intent.HARVEST || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MINE))
+                    || ("native_harvest".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.PLANT))
                     || ("native_sleep".equals(entry.skillId) && intent == NativePlayerBody.Intent.SLEEP)
                     || ("native_ignite_portal".equals(entry.skillId) && (intent == NativePlayerBody.Intent.IGNITE_PORTAL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_organize_chest".equals(entry.skillId) && intent == NativePlayerBody.Intent.CHEST_ORGANIZE)
@@ -1243,9 +1246,12 @@ final class PlayerRuntime {
         BlockPos groundPos = feetPos.down();
         var feetState = world.getBlockState(feetPos);
         var groundState = world.getBlockState(groundPos);
+        // Wading is ordinary movement; water becomes a hazard only once breath is running out.
+        boolean drowning = player.isSubmergedInWater() && player.getAir() < player.getMaxAir() / 2;
         boolean inHazard = feetState.isOf(Blocks.FIRE) || feetState.isOf(Blocks.SOUL_FIRE)
                 || feetState.isOf(Blocks.LAVA) || feetState.isOf(Blocks.SWEET_BERRY_BUSH)
-                || feetState.isOf(Blocks.POWDER_SNOW) || !world.getFluidState(feetPos).isEmpty();
+                || feetState.isOf(Blocks.POWDER_SNOW) || world.getFluidState(feetPos).isIn(FluidTags.LAVA)
+                || player.isInLava() || drowning;
         boolean onHazard = groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS)
                 || groundState.isOf(Blocks.LAVA);
         return inHazard || onHazard || player.isOnFire();
@@ -2888,7 +2894,7 @@ final class PlayerRuntime {
         if (entry.expeditionState != null) {
             ExpeditionObservation expObs = observeExpedition(entry, body);
             ExpeditionPlan plan = ExpeditionPlanner.plan(entry.expeditionState, expObs);
-            KindredMod.LOGGER.info("Expedition plan for {}: status={}, plan={}, obs={}", entry.data.displayName(), entry.expeditionState.status(), plan, expObs);
+            KindredMod.LOGGER.debug("Expedition plan for {}: status={}, plan={}, obs={}", entry.data.displayName(), entry.expeditionState.status(), plan, expObs);
             if ("native_traverse".equals(plan.action()) && plan.blocks() > 0) {
                 UUID taskId = UUID.nameUUIDFromBytes(("expedition:" + entry.data.id() + ":" + entry.expeditionState.status() + ":" + plan.direction()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 var candidate = new dev.kindred.core.TaskPreferences.Candidate(
@@ -3091,6 +3097,7 @@ final class PlayerRuntime {
                 && entry.activityFlush.isDone() && !entry.nativeActionPending && entry.nativeActionFlush.isDone()
                 && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)
                 && !entry.arbiter.cancellationPending()
+                && server.getTicks() >= entry.manualHoldUntilTick
                 && edits.autonomousEditsEnabled() && edits.protectionCompatibilityKnown();
 
         // 1. Cheap immediate survival candidates (evaluated every tick, even with zero optional budget)
@@ -3124,7 +3131,7 @@ final class PlayerRuntime {
                 busy, false, false, autonomyAdmitted, entry.currentTaskId, candidates), entry.profile.personality());
         entry.mindStatus = decision.reason();
         if (!candidates.isEmpty() || decision.action() != dev.kindred.core.PlayerDecisionLoop.Action.WAIT) {
-            KindredMod.LOGGER.info("Autonomy tick for {}: state={}, usable={}, stopLatched={}, busy={}, autonomyAdmitted={}, candidates={}, decision={}",
+            KindredMod.LOGGER.debug("Autonomy tick for {}: state={}, usable={}, stopLatched={}, busy={}, autonomyAdmitted={}, candidates={}, decision={}",
                     entry.data.displayName(), (entry.attentionSnapshot != null ? entry.attentionSnapshot.state() : "null"),
                     usable, entry.snapshot().stopLatched(), busy, autonomyAdmitted, candidates.size(), decision);
         }
@@ -3676,6 +3683,11 @@ final class PlayerRuntime {
             return;
         }
         UUID finishedTaskId = entry.currentTaskId;
+        if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
+                || state == SkillRunner.State.CANCELLED)) {
+            KindredMod.LOGGER.info("{} {} {}{}", entry.data.displayName(), entry.skillId, state,
+                    entry.runner.reason().map(r -> ": " + r).orElse(""));
+        }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED || state == SkillRunner.State.PAUSED)) {
             closeNativeAction(entry);
@@ -5019,12 +5031,9 @@ final class PlayerRuntime {
         BlockPos idleAnchorPos = null;
         UUID lastGazeHumanId = null;
         long lastHurtRemarkTick = -600L;
-        Vec3d idleWanderTarget = null;
-        long idleWanderEndTick = 0L;
         long idleNextWanderTick = 0L;
-        boolean idleWanderSprint = false;
-        boolean idleWanderJump = false;
         BlockPos portalFrameInterior = null;
+        long manualHoldUntilTick = Long.MIN_VALUE;
         boolean foodTaskAuthorized = false;
         boolean shelterProtectionAuthorized = false;
         final MilestoneGraph progressionGraph = MilestoneGraph.canonical();
@@ -5277,19 +5286,21 @@ final class PlayerRuntime {
         return needsHealth && food.canAlwaysEat();
     }
 
+    /**
+     * Idle observation is presentation only: gaze, glances and a hurt remark. It never moves the body; any
+     * movement goes through the arbiter as an ordinary task, so it cannot race a pending or running skill.
+     */
     private void applyIdleObservation(Entry entry, NativePlayerBody body, long tick) {
         var bot = body.entity();
-        if (bot == null || runnerBusy(entry)) {
+        if (bot == null || runnerBusy(entry) || entry.nativeWorkPending
+                || (entry.activity != null && entry.activity.phase() != PaidActivitySession.Phase.IDLE)) {
             return;
         }
         if (entry.idleAnchorPos == null) {
             entry.idleAnchorPos = bot.getBlockPos().toImmutable();
         }
 
-        // 1. Hurt / hit reaction: take knockback and respond verbally
         if (bot.hurtTime > 0) {
-            entry.idleWanderTarget = null;
-            entry.idleWanderEndTick = 0L;
             entry.lastGazeHumanId = null;
             bot.setSneaking(false);
             if (tick - entry.lastHurtRemarkTick > 40L) {
@@ -5306,9 +5317,6 @@ final class PlayerRuntime {
                     p.sendMessage(Text.literal("<" + entry.data.displayName() + "> " + remark));
                 }
             }
-            if (bot.isOnGround() && bot.hurtTime == 9) {
-                bot.jump();
-            }
             return;
         }
 
@@ -5324,12 +5332,8 @@ final class PlayerRuntime {
         );
         var plan = IdleObservationController.evaluate(input);
 
-        // 2. Eye contact handling
         if (plan.subState() == IdleObservationController.IdleSubState.EYE_CONTACT_LOCKED) {
-            entry.idleWanderTarget = null;
-            entry.idleWanderEndTick = 0L;
             entry.lastGazeHumanId = gaze.map(IdleObservationController.HumanGazeObservation::humanId).orElse(null);
-            body.stopInputs();
             plan.lookAtEyeTarget().ifPresent(target -> {
                 Vec3d eye = bot.getEyePos();
                 Vec3d look = new Vec3d(target[0], target[1], target[2]).subtract(eye).normalize();
@@ -5343,78 +5347,19 @@ final class PlayerRuntime {
             return;
         }
 
-        // If gaze was previously locked and is now broken: smoothly reset head horizon and posture
         if (entry.lastGazeHumanId != null) {
             entry.lastGazeHumanId = null;
             bot.setSneaking(false);
             bot.setPitch(0.0f);
         }
 
-        // 3. Returning to anchor if wandered outside radius
-        double dxAnchor = (entry.idleAnchorPos.getX() + 0.5) - bot.getX();
-        double dzAnchor = (entry.idleAnchorPos.getZ() + 0.5) - bot.getZ();
-        double distSqAnchor = dxAnchor * dxAnchor + dzAnchor * dzAnchor;
-        int maxRadius = entry.runtimeSettings.idleRadiusBlocks();
-        if (distSqAnchor > (double) (maxRadius * maxRadius)) {
-            entry.idleWanderTarget = null;
-            float returnYaw = (float) Math.toDegrees(Math.atan2(-dxAnchor, dzAnchor));
-            bot.setYaw(returnYaw);
-            bot.setHeadYaw(returnYaw);
-            bot.setPitch(0.0f);
-            bot.forwardSpeed = 0.55f;
-            bot.setSprinting(distSqAnchor > (double) (maxRadius * maxRadius * 2));
-            if (bot.horizontalCollision && bot.isOnGround()) {
-                bot.jump();
-            }
-            return;
-        }
-
-        // 4. Strolling in radius with occasional sprinting and jumping
-        if (tick < entry.idleWanderEndTick && entry.idleWanderTarget != null) {
-            double dx = entry.idleWanderTarget.x - bot.getX();
-            double dz = entry.idleWanderTarget.z - bot.getZ();
-            double distSq = dx * dx + dz * dz;
-            if (distSq < 1.0) {
-                entry.idleWanderTarget = null;
-                entry.idleWanderEndTick = 0L;
-                entry.idleNextWanderTick = tick + 40L + Math.abs((bot.getId() * 13L + tick) % 60L);
-                body.stopInputs();
-            } else {
-                float targetYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-                bot.setYaw(targetYaw);
-                bot.setHeadYaw(targetYaw);
-                bot.setPitch(0.0f);
-                bot.forwardSpeed = entry.idleWanderSprint ? 0.75f : 0.45f;
-                bot.setSprinting(entry.idleWanderSprint && bot.getHungerManager().getFoodLevel() > 6);
-                if (entry.idleWanderJump && (tick % 25L == 0L || bot.horizontalCollision) && bot.isOnGround()) {
-                    bot.jump();
-                }
-            }
-        } else {
-            body.stopInputs();
-            if (tick >= entry.idleNextWanderTick) {
-                long seed = tick + bot.getId() * 31L;
-                if ((Math.abs(seed) % 10L) < 6L) {
-                    double angle = ((Math.abs(seed) % 360L) * Math.PI) / 180.0;
-                    double dist = 4.0 + (Math.abs(seed >> 4) % 7L);
-                    double wx = entry.idleAnchorPos.getX() + 0.5 + Math.cos(angle) * dist;
-                    double wz = entry.idleAnchorPos.getZ() + 0.5 + Math.sin(angle) * dist;
-                    BlockPos targetBlock = BlockPos.ofFloored(wx, bot.getY(), wz);
-                    var world = bot.getServerWorld();
-                    if (world.isChunkLoaded(targetBlock) && world.getWorldBorder().contains(targetBlock)) {
-                        entry.idleWanderTarget = new Vec3d(wx, bot.getY(), wz);
-                        entry.idleWanderEndTick = tick + 45L + Math.abs(seed % 35L);
-                        entry.idleWanderSprint = (Math.abs(seed) % 4L) == 0L;
-                        entry.idleWanderJump = (Math.abs(seed) % 3L) == 0L;
-                    }
-                } else {
-                    float glanceYaw = bot.getYaw() + (float) ((Math.abs(seed) % 60L) - 30.0);
-                    bot.setYaw(glanceYaw);
-                    bot.setHeadYaw(glanceYaw);
-                    bot.setPitch((float) ((Math.abs(seed) % 20L) - 10.0));
-                    entry.idleNextWanderTick = tick + 30L + Math.abs(seed % 40L);
-                }
-            }
+        // Occasional idle glance around; purely a head turn.
+        if (tick >= entry.idleNextWanderTick) {
+            long seed = tick + bot.getId() * 31L;
+            float glanceYaw = bot.getYaw() + (float) ((Math.abs(seed) % 60L) - 30.0);
+            bot.setHeadYaw(glanceYaw);
+            bot.setPitch((float) ((Math.abs(seed) % 20L) - 10.0));
+            entry.idleNextWanderTick = tick + 30L + Math.abs(seed % 40L);
         }
     }
 

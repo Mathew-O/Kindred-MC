@@ -1186,19 +1186,8 @@ final class NativePlayerBody implements BodyAdapter {
             player.getInventory().selectedSlot = hotbarSlot;
             var hitVec = new Vec3d(target.getX() + 0.5, target.getY() + 1.0, target.getZ() + 0.5);
             var hitResult = new BlockHitResult(hitVec, Direction.UP, target, false);
-            try {
-                player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hitResult);
-            } catch (Exception ignored) { }
-            if (!world.getBlockState(target).isOf(Blocks.FARMLAND)) {
-                world.setBlockState(target, Blocks.FARMLAND.getDefaultState(), Block.NOTIFY_ALL);
-                var held = player.getInventory().getStack(hotbarSlot);
-                if (!held.isEmpty()) {
-                    held.setDamage(held.getDamage() + 1);
-                    if (held.getDamage() >= held.getMaxDamage()) {
-                        player.getInventory().setStack(hotbarSlot, ItemStack.EMPTY);
-                    }
-                }
-            }
+            // Vanilla hoe use converts the block and wears the tool; a refused use changes nothing.
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hitResult);
         });
     }
 
@@ -1228,65 +1217,27 @@ final class NativePlayerBody implements BodyAdapter {
             player.getInventory().selectedSlot = hotbarSlot;
             var hitVec = new Vec3d(target.getX() + 0.5, target.getY() + 1.0, target.getZ() + 0.5);
             var hitResult = new BlockHitResult(hitVec, Direction.UP, target, false);
-            try {
-                player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hitResult);
-            } catch (Exception ignored) { }
-            if (!(world.getBlockState(cropPos).getBlock() instanceof CropBlock)) {
-                Block cropBlock = item == Items.CARROT ? Blocks.CARROTS :
-                        item == Items.POTATO ? Blocks.POTATOES :
-                        item == Items.BEETROOT_SEEDS ? Blocks.BEETROOTS :
-                        Blocks.WHEAT;
-                world.setBlockState(cropPos, cropBlock.getDefaultState(), Block.NOTIFY_ALL);
-                var held = player.getInventory().getStack(hotbarSlot);
-                if (!held.isEmpty()) {
-                    held.decrement(1);
-                }
-            }
+            // Vanilla seed placement consumes exactly the seed it plants; a refused use changes nothing.
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hitResult);
         });
     }
 
-    boolean harvestCrop(ActionLease lease, int hotbarSlot, BlockPos target, boolean replant) {
+    /**
+     * Breaks one mature crop through the ordinary survival break path, so the block's own loot table decides
+     * the drops (as item entities on the ground). Collection and any replanting are separate, observed steps.
+     */
+    boolean harvestCrop(ActionLease lease, int hotbarSlot, BlockPos target) {
         requireThread();
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) return false;
         var state = world.getBlockState(target);
-        if (!(state.getBlock() instanceof CropBlock crop)) return false;
-        if (!crop.isMature(state)) return false;
+        if (!(state.getBlock() instanceof CropBlock crop) || !crop.isMature(state)) return false;
         if (player.getEyePos().squaredDistanceTo(target.getX() + 0.5, target.getY() + 0.5, target.getZ() + 0.5) > 25.0) {
             return false;
         }
-
-        return execute(lease, Intent.HARVEST, target, () -> {
-            if (hotbarSlot >= 0 && hotbarSlot <= 8) {
-                player.getInventory().selectedSlot = hotbarSlot;
-            }
-            var block = state.getBlock();
-            ItemStack produce;
-            ItemStack seed;
-            if (block == Blocks.CARROTS) {
-                produce = new ItemStack(Items.CARROT, 2);
-                seed = new ItemStack(Items.CARROT, 1);
-            } else if (block == Blocks.POTATOES) {
-                produce = new ItemStack(Items.POTATO, 2);
-                seed = new ItemStack(Items.POTATO, 1);
-            } else if (block == Blocks.BEETROOTS) {
-                produce = new ItemStack(Items.BEETROOT, 1);
-                seed = new ItemStack(Items.BEETROOT_SEEDS, 1);
-            } else {
-                produce = new ItemStack(Items.WHEAT, 1);
-                seed = new ItemStack(Items.WHEAT_SEEDS, 1);
-            }
-
-            world.breakBlock(target, false, player);
-
-            if (replant && world.getBlockState(target.down()).isOf(Blocks.FARMLAND)) {
-                world.setBlockState(target, crop.getDefaultState(), Block.NOTIFY_ALL);
-                player.getInventory().insertStack(produce);
-            } else {
-                player.getInventory().insertStack(produce);
-                player.getInventory().insertStack(seed);
-            }
-        });
+        if (hotbarSlot >= 0 && hotbarSlot <= 8 && !selectHotbar(lease, hotbarSlot)) return false;
+        faceBlock(target);
+        return mine(lease, target);
     }
 
     boolean sleepInBed(ActionLease lease, BlockPos target) {
@@ -1335,34 +1286,15 @@ final class NativePlayerBody implements BodyAdapter {
         }
 
         final BlockPos portalPos = interiorPos;
+        final BlockPos frameBase = interiorPos.down();
+        if (!world.getBlockState(frameBase).isSideSolidFullSquare(world, frameBase, Direction.UP)) return false;
         return execute(lease, Intent.IGNITE_PORTAL, portalPos, () -> {
             player.getInventory().selectedSlot = hotbarSlot;
-            var portalX = net.minecraft.world.dimension.NetherPortal.getNewPortal(world, portalPos, Direction.Axis.X);
-            var portalZ = portalX.isPresent() ? portalX : net.minecraft.world.dimension.NetherPortal.getNewPortal(world, portalPos, Direction.Axis.Z);
-            if (portalZ.isPresent()) {
-                portalZ.get().createPortal();
-                var held = player.getInventory().getStack(hotbarSlot);
-                if (isFlintAndSteel) {
-                    held.setDamage(held.getDamage() + 1);
-                    if (held.getDamage() >= held.getMaxDamage()) {
-                        player.getInventory().setStack(hotbarSlot, ItemStack.EMPTY);
-                    }
-                } else if (isFireCharge) {
-                    held.decrement(1);
-                    if (held.isEmpty()) {
-                        player.getInventory().setStack(hotbarSlot, ItemStack.EMPTY);
-                    }
-                }
-            }
+            // Use the owned igniter on the frame's top face exactly as a player would. Vanilla places fire,
+            // which lights a valid portal, and applies flint-and-steel wear or fire-charge consumption.
+            var hit = new BlockHitResult(Vec3d.ofCenter(frameBase).add(0, 0.5, 0), Direction.UP, frameBase, false);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hit);
         });
-    }
-
-    boolean teleportDimension(ServerWorld targetWorld, Vec3d targetPos) {
-        requireThread();
-        if (!portalTravelAuthorized) return false;
-        Objects.requireNonNull(targetWorld, "targetWorld");
-        Objects.requireNonNull(targetPos, "targetPos");
-        return player.teleport(targetWorld, targetPos.x, targetPos.y, targetPos.z, java.util.Set.of(), player.getYaw(), player.getPitch());
     }
 
     boolean mine(ActionLease lease, BlockPos target) {
