@@ -24,6 +24,31 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
         } catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
+    int itemTotal() {
+        int total = 0;
+        for (ItemStack stack : stacks) total += stack.getCount();
+        return total;
+    }
+
+    /** Same items, counts and components regardless of slot, so an owned tool moved within the inventory still matches. */
+    boolean sameContents(NativePlayerBody body) {
+        var expected = new java.util.HashMap<String, Integer>();
+        for (ItemStack stack : stacks) if (!stack.isEmpty()) expected.merge(key(stack), stack.getCount(), Integer::sum);
+        var inventory = body.entity().getInventory();
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            if (stack.isEmpty()) continue;
+            Integer left = expected.get(key(stack));
+            if (left == null || left < stack.getCount()) return false;
+            if (left == stack.getCount()) expected.remove(key(stack)); else expected.put(key(stack), left - stack.getCount());
+        }
+        return expected.isEmpty();
+    }
+
+    private static String key(ItemStack stack) {
+        return Registries.ITEM.getId(stack.getItem()) + "|" + stack.getComponents();
+    }
+
     boolean matches(NativePlayerBody body) {
         var inventory = body.entity().getInventory();
         if (inventory.size() != stacks.length) return false;

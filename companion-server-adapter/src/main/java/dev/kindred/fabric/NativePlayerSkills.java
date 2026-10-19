@@ -82,6 +82,10 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
+            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect"), Set.of("break", "pickup"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");
         };
     }
@@ -92,6 +96,12 @@ final class NativePlayerSkills {
 
     static SkillBody body(String id, Map<String, String> arguments, NativePlayerBody body, Supplier<ActionLease> lease,
                           NativeMovementHabits habits) {
+        if (id.equals("native_goto")) {
+            BlockPos target = new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
+            return new NativeGoToSkill(body, lease, target, Double.parseDouble(arguments.getOrDefault("range", "1.5")),
+                    Boolean.parseBoolean(arguments.getOrDefault("partial", "false")),
+                    Integer.parseInt(arguments.getOrDefault("nodes", String.valueOf(NativeNavigator.DEFAULT_MAX_NODES))));
+        }
         if (id.equals("native_walk")) return new Walk(body, lease, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
         if (id.equals("native_traverse")) {
             return new Traverse(body, lease, habits, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
@@ -130,6 +140,7 @@ final class NativePlayerSkills {
         return (task instanceof Eat food && food.permits(intent))
                 || (task instanceof Walk walk && intent == NativePlayerBody.Intent.MOVE && walk.safe())
                 || (task instanceof Traverse trav && intent == NativePlayerBody.Intent.MOVE && trav.safe())
+                || (task instanceof NativeGoToSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)
@@ -406,6 +417,7 @@ final class NativePlayerSkills {
             double dz = goal.z - current.z;
             double horizontalDist = Math.sqrt(dx * dx + dz * dz);
             double verticalDelta = goal.y - current.y;
+
             boolean descending = goal.y < start.y - 0.25;
             double horizontalTolerance = descending ? 0.45 : 0.20;
             double verticalTolerance = descending ? 0.55 : 0.35;
@@ -458,6 +470,8 @@ final class NativePlayerSkills {
                 sprint = AuthorizedMovementCadence.sprint(gait, striding);
                 jump = AuthorizedMovementCadence.requestJump(stride, gait, striding, player.isOnGround(), player.age + hopPhase, needJump);
             }
+            // Habit hops overshoot a nearby destination and can bounce around it forever; arrive on foot.
+            if (horizontalDist < 1.2) jump = needJump;
             if (!body.move(lease.get(), speed, 0, jump, sprint, yaw)) {
                 return Step.blocked("Movement authority denied", true);
             }

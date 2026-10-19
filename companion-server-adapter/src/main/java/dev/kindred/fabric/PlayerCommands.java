@@ -447,6 +447,36 @@ public final class PlayerCommands {
                                     return runtime.nativeMine(context.getSource(),
                                             id, BlockPosArgumentType.getBlockPos(context, "targetPos"), IntegerArgumentType.getInteger(context, "slot"));
                                 })))));
+        nativePlayers.then(CommandManager.literal("goto").then(CommandManager.argument("targetPos", BlockPosArgumentType.blockPos())
+                .executes(context -> {
+                    var runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.nativeGoto(context.getSource(),
+                            null, BlockPosArgumentType.getBlockPos(context, "targetPos"), 1.5);
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            var runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            if (id == null) return 0;
+                            return runtime.nativeGoto(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "targetPos"), 1.5);
+                        }))));
+        nativePlayers.then(CommandManager.literal("break").then(CommandManager.argument("targetPos", BlockPosArgumentType.blockPos())
+                .executes(context -> {
+                    var runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.nativeBreak(context.getSource(),
+                            null, BlockPosArgumentType.getBlockPos(context, "targetPos"));
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            var runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            if (id == null) return 0;
+                            return runtime.nativeBreak(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "targetPos"));
+                        }))));
         nativePlayers.then(CommandManager.literal("gather").then(CommandManager.argument("count", IntegerArgumentType.integer(1, 32))
                 .then(CommandManager.argument("slot", IntegerArgumentType.integer(0, 8))
                         .executes(context -> {

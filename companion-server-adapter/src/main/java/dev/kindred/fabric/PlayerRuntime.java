@@ -863,6 +863,16 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_traverse", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
     }
 
+    int nativeGoto(ServerCommandSource source, UUID id, BlockPos target, double range) {
+        return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", String.valueOf(range)));
+    }
+
+    int nativeBreak(ServerCommandSource source, UUID id, BlockPos target) {
+        return nativeTask(source, id, "native_break", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ())));
+    }
+
     int nativeRetreat(ServerCommandSource source, UUID id, String direction, int blocks) {
         return nativeTask(source, id, "native_retreat", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
     }
@@ -1104,6 +1114,11 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         maxMoves);
+            } else if (skill.equals("native_break")) {
+                task = new NativeBreakAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
+                        nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Boolean.parseBoolean(arguments.getOrDefault("collect", "true")));
             } else if (skill.equals("native_toss")) {
                 task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")),
@@ -1219,7 +1234,10 @@ final class PlayerRuntime {
                 && entry.nativeState.phase() == StoredNativePlayer.Phase.ESTABLISHED && !entry.snapshot().stopLatched()
                 && java.util.Objects.equals(entry.lease, lease) && entry.arbiter.isCurrent(lease)
                 && (("native_eat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.EAT || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                    || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
+                        || "native_goto".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                    || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
+                        || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_equip".equals(entry.skillId) && intent == NativePlayerBody.Intent.EQUIP)
                     || ("native_mine".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gather".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
@@ -4829,6 +4847,12 @@ final class PlayerRuntime {
                                   StartupLedgerSnapshot ledgerSnapshot,
                                   Map<UUID, OperatingMode> modes) { }
     private record SpawnLocation(double x, double y, double z, float yaw) { }
+
+    /** Test seam: keep autonomous selection from replacing the state a fixture is inspecting. */
+    void holdAutonomyForTest(UUID id, int ticks) {
+        Entry entry = entries.get(id);
+        if (entry != null) entry.manualHoldUntilTick = server.getTicks() + ticks;
+    }
 
     void setEditsForTest(EditPolicy.ServerPolicy policy) {
         this.edits = policy;

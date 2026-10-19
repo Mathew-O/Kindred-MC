@@ -141,6 +141,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertFalse(f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Work area acknowledged"))
                 .createAndAdd(() -> {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    // This fixture drives each proposed placement itself; autonomy must not move the body meanwhile.
+                    f.runtime.holdAutonomyForTest(f.id, 8000);
                     var candidate = f.runtime.nativeCandidates(Actor.console(), f.id).stream()
                             .filter(c -> c.skill().equals("native_place") && "2".equals(c.arguments().get("slot")))
                             .findFirst();

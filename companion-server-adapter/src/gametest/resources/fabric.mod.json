@@ -5,7 +5,9 @@
   "name": "Kindred native contract tests",
   "environment": "server",
   "entrypoints": {
-    "main": ["dev.kindred.fabric.GameTestPacing"],
+    "main": [
+      "dev.kindred.fabric.GameTestPacing"
+    ],
     "fabric-gametest": [
       "dev.kindred.fabric.CompanionGameTests",
       "dev.kindred.fabric.PlayerArchitectureGameTests",
@@ -42,7 +44,8 @@
       "dev.kindred.fabric.NativeTeamGameTests",
       "dev.kindred.fabric.NativeFarmGameTests",
       "dev.kindred.fabric.NativeExpeditionGameTests",
-      "dev.kindred.fabric.NativeNetherGameTests"
+      "dev.kindred.fabric.NativeNetherGameTests",
+      "dev.kindred.fabric.NativeNavigationGameTests"
     ]
   },
   "depends": {

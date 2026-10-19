@@ -1316,6 +1316,9 @@ final class NativePlayerBody implements BodyAdapter {
 
     boolean miningEligible(BlockPos target) { requireThread(); return player.isAlive() && canMine(target); }
 
+    /** Whether survival mining of {@code target} is still in progress (not aborted or finished). */
+    boolean miningActive(BlockPos target) { requireThread(); return target.equals(miningTarget); }
+
     boolean applyChestMove(ActionLease lease, BlockPos chestPos, ChestOrganizationPolicy.ChestSlotMove move) {
         requireThread();
         if (move == null || chestPos == null) return false;
@@ -1472,6 +1475,11 @@ final class NativePlayerBody implements BodyAdapter {
             super.tick();
             // Human physics/item/hunger ticks normally come from the network handler. There is no client.
             super.playerTick();
+            // Movement packets keep a human's chunk tickets and tracking centred on them; follow the body here,
+            // or the loaded area stays where it joined and the body freezes once it walks out of it.
+            if (!isRemoved() && connected && server.getPlayerManager().getPlayer(getUuid()) == this) {
+                getServerWorld().getChunkManager().updatePosition(this);
+            }
             afterTick();
         }
 

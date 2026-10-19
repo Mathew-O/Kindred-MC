@@ -38,12 +38,8 @@ public final class NativeSurvivalGameTests implements FabricGameTest {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
                 .createAndAdd(() -> {
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    if (!activity.phase().equals("IDLE")) return;
-                })
-                .createAndAdd(() -> {
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_eat"),
+                    // Autonomy moves on to its next task at once, so check the eating's physical outcome, not a status line.
+                    context.assertTrue(countItem(f, Items.APPLE) == 1 && f.player().getHungerManager().getFoodLevel() >= 18,
                             "Autonomous eat completes under paid activity session");
                     int totalApples = countItem(f, Items.APPLE);
                     context.assertTrue(totalApples == 1, "Exactly one apple consumed from inventory (1 remaining)");
