@@ -583,6 +583,14 @@ final class PlayerRuntime {
             Actor actor = nativeActor(source);
             return continueSkillEntry(source, entry, actor != null ? actor : Actor.console());
         } else if (verb.equals("resume")) {
+            if (entry.nativeBody == null || !entry.nativeBody.connected()) {
+                if (!entry.reconciliationBlocked && !entry.metadataFault && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR) {
+                    feedback(source, "Connecting " + entry.data.displayName() + " before resuming...");
+                    connectNative(source, entry, false);
+                    return 1;
+                }
+                return reject(source, "Connect a reconciled native body before resuming.");
+            }
             if (entry.nativePending || entry.nativeSetupPending || entry.setupWrite.isCompletedExceptionally()
                     || entry.reconciliationBlocked || entry.metadataFault || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR || entry.arbiter == null) {
                 return reject(source, "Connect a reconciled native body before resuming.");
@@ -601,7 +609,7 @@ final class PlayerRuntime {
             }
             entry.arbiter.resume(Actor.console());
             entry.data = entry.arbiter.snapshot();
-            entry.blocker = "Resumed; bounded native wait/eat may be requested. Automatic progression remains disabled.";
+            entry.blocker = "Resumed; autonomous progression active (" + entry.runtimeSettings.playstyleProfile() + ").";
             persist(entry);
         } else return reject(source, "Native bodies currently support status, stop, pause, continue, resume, connect and disconnect only.");
         feedback(source, entry.explanation());
@@ -3320,11 +3328,9 @@ final class PlayerRuntime {
         }
         Entry entry = requestedId != null ? entries.get(requestedId) : byOwner(playerId);
         if (entry == null && requestedId == null) {
-            var active = entries.values().stream()
-                    .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
-                    .toList();
-            if (active.size() == 1) {
-                entry = active.get(0);
+            UUID defId = defaultBotId();
+            if (defId != null) {
+                entry = entries.get(defId);
             }
         }
         if (entry == null) return reject(source, "No companion found. Use /aiplayer create <name>, or supply its name/UUID.");
@@ -5625,7 +5631,14 @@ final class PlayerRuntime {
         if (name == null || name.isBlank()) return null;
         String clean = name.trim();
         for (Entry entry : entries.values()) {
-            if (entry.data.displayName().equalsIgnoreCase(clean)) {
+            if (entry.data.displayName().equalsIgnoreCase(clean)
+                    && entry.nativeBody != null && entry.nativeBody.connected()) {
+                return entry.data.id();
+            }
+        }
+        for (Entry entry : entries.values()) {
+            if (entry.data.displayName().equalsIgnoreCase(clean)
+                    && entry.snapshot().lifecycle() != LifecycleState.REMOVED) {
                 return entry.data.id();
             }
         }
@@ -5655,6 +5668,12 @@ final class PlayerRuntime {
 
     UUID defaultBotId() {
         requireThread();
+        var connected = entries.values().stream()
+                .filter(e -> e.nativeBody != null && e.nativeBody.connected())
+                .toList();
+        if (connected.size() == 1) {
+            return connected.get(0).data.id();
+        }
         var active = entries.values().stream()
                 .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
                 .toList();
@@ -5675,20 +5694,40 @@ final class PlayerRuntime {
             if (preset == null) {
                 return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Vesp.");
             }
+            var existing = entries.values().stream()
+                    .filter(e -> e.data.displayName().equalsIgnoreCase(preset.name())
+                            && e.snapshot().lifecycle() != LifecycleState.REMOVED)
+                    .findFirst()
+                    .orElse(null);
+            if (existing != null) {
+                if (existing.nativeBody != null && existing.nativeBody.connected()) {
+                    feedback(source, preset.name() + " is already active in the world.");
+                    return 1;
+                }
+                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                connectNative(source, existing, false);
+                return 1;
+            }
             return createNative(source, preset.name());
         }
         int spawned = 0;
         for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
-            boolean alreadyExists = entries.values().stream()
-                    .anyMatch(e -> e.data.displayName().equalsIgnoreCase(preset.name())
-                            && e.snapshot().lifecycle() != LifecycleState.REMOVED);
-            if (!alreadyExists) {
+            var existing = entries.values().stream()
+                    .filter(e -> e.data.displayName().equalsIgnoreCase(preset.name())
+                            && e.snapshot().lifecycle() != LifecycleState.REMOVED)
+                    .findFirst()
+                    .orElse(null);
+            if (existing == null) {
                 createNative(source, preset.name());
+                spawned++;
+            } else if (existing.nativeBody == null || !existing.nativeBody.connected()) {
+                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                connectNative(source, existing, false);
                 spawned++;
             }
         }
         if (spawned == 0) {
-            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already created.");
+            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already active in the world.");
         }
         return 1;
     }
