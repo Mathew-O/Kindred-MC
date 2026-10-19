@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "kindred_gametest",
+  "version": "1.0.0",
+  "name": "Kindred native contract tests",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["dev.kindred.fabric.GameTestPacing"],
+    "fabric-gametest": [
+      "dev.kindred.fabric.CompanionGameTests",
+      "dev.kindred.fabric.PlayerArchitectureGameTests",
+      "dev.kindred.fabric.NativePlayerBodyGameTests",
+      "dev.kindred.fabric.NativePlayerLifecycleGameTests",
+      "dev.kindred.fabric.NativePlayerRuntimeGameTests",
+      "dev.kindred.fabric.NativePaidSkillsGameTests",
+      "dev.kindred.fabric.NativeMovementGameTests",
+      "dev.kindred.fabric.NativeEquipmentGameTests",
+      "dev.kindred.fabric.NativeActionGameTests",
+      "dev.kindred.fabric.NativeWorkScopeGameTests",
+      "dev.kindred.fabric.NativeMiningGameTests",
+      "dev.kindred.fabric.NativeAutonomyGameTests",
+      "dev.kindred.fabric.NativeGatherGameTests",
+      "dev.kindred.fabric.NativeCraftGameTests",
+      "dev.kindred.fabric.NativeSmeltGameTests",
+      "dev.kindred.fabric.NativeSurvivalGameTests",
+      "dev.kindred.fabric.NativeDefensivePrerequisitesGameTests",
+      "dev.kindred.fabric.NativeStartupBarrierGameTests",
+      "dev.kindred.fabric.NativeStageAGameTests",
+      "dev.kindred.fabric.SocialGameTests",
+      "dev.kindred.fabric.MannerismGameTests",
+      "dev.kindred.fabric.WorkGameTests",
+      "dev.kindred.fabric.PerceptionGameTests",
+      "dev.kindred.fabric.ChoreGameTests",
+      "dev.kindred.fabric.DuelGameTests",
+      "dev.kindred.fabric.LifecycleGameTests",
+      "dev.kindred.fabric.IntentionsGameTests",
+      "dev.kindred.fabric.SurvivalGameTests",
+      "dev.kindred.fabric.InventoryGameTests",
+      "dev.kindred.fabric.NativeTacticalGameTests",
+      "dev.kindred.fabric.NativeCombatGameTests",
+      "dev.kindred.fabric.NativeProgressionGameTests",
+      "dev.kindred.fabric.NativeTeamGameTests",
+      "dev.kindred.fabric.NativeFarmGameTests",
+      "dev.kindred.fabric.NativeExpeditionGameTests",
+      "dev.kindred.fabric.NativeNetherGameTests"
+    ]
+  },
+  "depends": {
+    "kindred": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}

@@ -1,0 +1,45 @@
+# Kindred MC AI-player product contract
+Version 2.0 · 15 October 2026
+
+Three persistent autonomous AI players must earn a cooperative survival playthrough from empty inventory through the Ender Dragon. Humans can join, request help or administer the server. This replaces the companion product. Completion lives exclusively in [the tracker](docs/feature-spec.md).
+
+## Product
+PLY-01 AI identity, personality, observations, personal goals and team commitments are independent of administrative creator/controller access. Follow/help/wait are tasks; no Companion/Independent product selector.
+PLY-02 Autonomy is normal under server policy and qualified capabilities. Human logout does not inherently cancel goals. Stop, suspension, activity limits and unavailable skills still block execution. Preserve legacy restrictions until migration.
+PLY-03 First integrated milestone: one AI earns tools, food, shelter and iron, survives a night and resumes after restart without instructions for every step. Next: three sharing work/resources. Production acceptance is the multi-seed team playthrough.
+PLY-04 Authenticity requires ordinary mining/tool timing, durability, hunger/saturation, recipes/fuel, damage, inventory/equipment, death/drop/recovery and dimension travel. No free gear, copied usable items, teleport progress or undiscovered-resource/structure queries.
+
+## Platform and authority
+SYS-01 Retain manifest-pinned Java 21/Fabric/Minecraft, server authority and ordinary-client support. Client enhancements and inference are optional. Reuse native mechanics; do not build a new client engine.
+SYS-02 Minecraft world access stays in the adapter/server thread. Workers receive immutable bounded observations. SQLite/network waits never block ticks. Loaded data is not automatically observed knowledge.
+SYS-03 F-25b qualifies a native server-player backend: lifecycle, tracking, navigation/input, inventory, tools, survival, combat, crafting, death, respawn and portals. Current mob presentation is a compatibility fixture, not player-mechanics parity.
+AUTH-01 Identity, administrative access, team membership and body mapping are separate. Models, names and friendship cannot create authority. Administrators retain stop/suspend/remove; human requests pass access policy.
+AUTH-02 Migration preserves logical/native UUIDs, items, access restrictions, stop, spent activity and provenance. Missing/conflicting bodies require reconciliation, never copied replacement inventories.
+CTL-01 One arbiter and skill runner own all voluntary actions. Survival interrupts through cancellation/checkpoints. Stop revokes synchronously; replacement waits for settlement. Recheck epoch/revisions, policy, activity and claims before mutation and after async work.
+DATA-01 Metadata uses the existing ordered SQLite writer; native saves own inventory. Record/verify physical side effects; uncertain outcomes block rather than replay.
+DATA-02 Keep verified facts, hypotheses, plans and summaries distinct, with provenance/correction/expiry. Journal queries do not start work. Never persist API credentials as memory.
+
+## Planning and cooperation
+PLAN-01 Observe, update needs/knowledge, choose feasible work, execute, verify and revise. Urgent survival precedes commitments and leisure. Continue valid local work during inference outage. No executable task means waiting with goals retained.
+PLAN-02 Use supported registry recipes, resource/fuel/workstation requirements and observed routes. Bounded local retries precede replanning. Lost gear invalidates readiness without erasing truthful achievement history.
+TEAM-01 Shared projects carry dependencies, assignee, stock reservations, destinations, expiry/revisions and completion evidence. One current assignment owner; no double-spent material. Share deliberately communicated facts, not private or omniscient knowledge.
+TEAM-02 Death/stop/revocation/restart settles or reconciles assignments before reassignment. Each participant retains authority and limits. Preferences bias temporary roles rather than fixed professions.
+PROG-01 Production covers shelter, food, industry, gear, exploration, Nether/return, stronghold/End and Dragon completion. Physical postconditions determine milestones.
+PROG-03 There is no permanent product-wide boss ban. Dragon expeditions require qualified skills/readiness and server policy. Existing restrictions and unqualified Wither/Warden/modded encounters stay blocked; personality/chat cannot authorize combat.
+
+## Optional inference
+AI-01 Local gameplay requires no API key. Optional Claude/OpenAI APIs use operator keys; default provider is absent. Prefer free/open-source components. No Jev or mandatory hosted orchestration/memory.
+AI-02 Models suggest bounded plans or phrase grounded speech; never executable code, permissions, inventory mutation or completion evidence. World/chat/model text is data.
+AI-03 Strictly validate returned schemas, arguments, skills, identity, epoch/revisions and expiry. Plans have one to six steps; clarification/unsupported decisions have none. Revalidate each step at dispatch.
+AI-04 Calls occur only on meaningful changes, new goals, exhausted recovery or permitted conversation. Coalesce duplicates and send compact relevant context. No per-tick requests or unbounded agent chatter. Local skills continue while inference is pending.
+AI-05 Separate chat/planning lanes; default one request per lane/player, two globally; six/minute/player and twelve globally. Deadlines eight/fifteen seconds. Reserve conservative input plus maximum output against 50,000/100,000 daily player/global token budgets. At most one repair within original budget/deadline. Requests that may still bill remain charged; missing usage retains reservation.
+
+## Personality and social life
+SOC-01 Nine independent traits retain bounded task biases. They change choices/voice/habits, not skills, access or resources. Reuse existing social pacing.
+SOC-02 Ground speech in observations/preferences/accepted commitments. Public speech is opt-in; actual recipients determine expression/privacy limits. Invalidate stale queued replies. Correctable peer-specific relationships never authorize revenge or override stop.
+SOC-03 Gifts, hobbies, architectural taste, names and pets enrich capable players. Their physical items/entities and losses remain real; the detailed social contracts are refinements, not an alternative product roadmap.
+
+## Qualification
+QUAL-01 Separate pure policies, native fixtures, ordinary-client sessions and earned playthroughs. Fixture grants/repositioning are not survival/traversal evidence.
+QUAL-02 Test access denial, stop latency, cancellation, item conservation, death/restart, zero-human operation, provider outage and resource performance. Historical AT labels describe only their recorded scenarios.
+QUAL-03 E-40 requires three recorded previously untested seeds, normal survival, empty inventories and contributions from all three AIs through the Dragon. No human gameplay repairs, item grants or teleports. Include restart/API outage in the matrix. Report failures, deaths, recovery, interventions, time, tick cost and tokens. No production gate is passed yet.

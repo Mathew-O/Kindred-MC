@@ -1,0 +1,31 @@
+plugins {
+    id 'base'
+    id 'fabric-loom' version '1.10.5' apply false
+}
+
+allprojects {
+    group = 'dev.kindred'
+    version = rootProject.mod_version
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    repositories { mavenCentral() }
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(21)
+        withSourcesJar()
+    }
+    tasks.withType(JavaCompile).configureEach {
+        options.release = 21
+        options.encoding = 'UTF-8'
+    }
+    dependencies {
+        testImplementation platform('org.junit:junit-bom:5.11.4')
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+    tasks.withType(Test).configureEach { useJUnitPlatform() }
+}
+
+tasks.named('check') { dependsOn subprojects.collect { it.tasks.named('check') } }
+tasks.named('assemble') { dependsOn subprojects.collect { it.tasks.named('assemble') } }

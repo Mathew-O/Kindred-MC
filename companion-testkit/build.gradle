@@ -1,0 +1,16 @@
+plugins { id 'application' }
+
+dependencies {
+    implementation project(':companion-core')
+    implementation project(':companion-scheduler')
+    implementation project(':companion-persistence')
+    runtimeOnly 'org.slf4j:slf4j-nop:2.0.17'
+}
+
+application { mainClass = 'dev.kindred.testkit.FoundationDemo' }
+
+tasks.register('runPersonalityDemo', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.kindred.testkit.PersonalityDemo'
+}

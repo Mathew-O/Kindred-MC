@@ -1,0 +1,58 @@
+plugins { id 'fabric-loom' }
+
+base { archivesName = 'kindred-mc' }
+
+repositories {
+    maven { url = 'https://maven.nucleoid.xyz' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings "net.fabricmc:yarn:${rootProject.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_version}"
+    modImplementation include("eu.pb4:polymer-core:${rootProject.polymer_version}")
+    implementation project(':companion-core')
+    implementation project(':companion-scheduler')
+    implementation project(':companion-persistence')
+    include project(':companion-core')
+    include project(':companion-scheduler')
+    include project(':companion-persistence')
+    include 'org.xerial:sqlite-jdbc:3.50.3.0'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+// Runs real Minecraft entity/registry checks without shipping test code in the mod.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+
+loom {
+    mods {
+        kindred { sourceSet sourceSets.main }
+        kindred_gametest { sourceSet sourceSets.gametest }
+    }
+    runs {
+        gametest {
+            server()
+            name 'Kindred native contract tests'
+            source sourceSets.gametest
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('gametest-results.xml').get().asFile}"
+            runDir 'build/gametest'
+        }
+    }
+}
+
+tasks.named('runGametest').configure {
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    })
+}

@@ -1,0 +1,4 @@
+// Optional inference boundary. Local gameplay modules do not depend on this module.
+dependencies {
+    api project(':companion-core')
+}

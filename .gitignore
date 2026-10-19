@@ -1,0 +1,40 @@
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Editor and operating-system files
+.idea/
+.vs/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local logs
+*.log
+
+# Build outputs and local development tooling
+**/target/
+.tools/
+.run/
+*.db
+*.db-shm
+*.db-wal
+.gradle/
+**/build/
+**/run/
+server/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite.lock
+
+# Scratch files and temporary test logs
+.gradle-isolated*/
+kindred-mc/
+*.err
+gt*.txt
+

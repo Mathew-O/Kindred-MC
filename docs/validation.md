@@ -1,0 +1,380 @@
+# AI-player development validation
+
+## Current regression — 19 October 2026
+
+The earlier serialized JDK 21 gate passed 179/179 twice on its source version. On the current E-15 source, two consecutive serialized JDK 21 runs passed 182/182 after E-14 outward-expedition and night-return assertions were changed to wait for activity to settle. The runs include portal/restart, actual-arrival hazard observation, observed-Blaze durable native attack, owned-frame assembly and assigned wart harvest fixtures. See [E-15 stabilization](evidence/E-15-stabilization.md).
+
+The current-source `build`, contract demo and personality demo also passed under OpenJDK 21.0.2 (39 Gradle tasks: 9 executed, 30 up-to-date). The contract demo reported 5/5 checks; the personality demo reported all four preference scenarios.
+
+The fixture harness now gives otherwise unpaced `TestServer` ticks a minimum
+5 ms duration to allow asynchronous SQLite work to run. This test-only pacing
+does not ship in the mod. Empty startup padding was replaced with a real tick
+delay; the crop fixture no longer stands inside its crop or cancels its own
+harvest. Bounded traversal corrects overshoot, waits for landing, and clears a
+descending ledge before braking. The explicit outward-leg fixture prevents a
+subsequent autonomous task from replacing its completion status.
+
+Full build and both demos passed (39 tasks: 7 executed, 32 up-to-date). Current
+JUnit report aggregate: 329 tests, zero failures/errors; up-to-date test results
+were reused. The contract demo passed 5/5 checks and personality demo passed 4/4.
+The final JAR excludes GameTest classes and the pacing initializer; its SHA-256 is
+`c8c83d0295746a6c69ce8e4f5eba298d883d5f0ea857bc468314527c6bb0a1c6`.
+
+E-15 portal entry/return, exact all-slot/component conservation and cross-dimension runtime restart recovery, policy-authorized owned-frame assembly, assigned Nether-wart harvesting, and an observed-Blaze candidate followed by verified durable native attack now pass native fixtures. E-15 remains open for earned hazard-aware resource trips and physical Blaze Rod acquisition, F-25b production qualification, ordinary-client testing and an earned playthrough. No production release gate is claimed.
+Current native increment: [E-14](evidence/E-14.md). Full offline build, 304 JUnit results and all 175 native GameTests pass. Report 2026-10-18. Bounded expeditions, exploration and return planning qualified: waypoint and landmark observation tracking (`WaypointKind`, `Waypoint`); expedition readiness pre-flight checks (>= 14.0 HP, >= 2 food rations, daytime, clear weather, < 32 slots occupied); maximum distance bounding (`DEFAULT_MAX_EXPEDITION_RADIUS` = 64 blocks or custom radius) from home base/shelter anchor; multi-factor return triggers (nightfall and dusk `tod >= 11500`, thunderstorms, critical health <= 8.0 HP, low rations and hunger, full inventory loot capacity >= 32 slots, max radius reached); return route planning and breadcrumb backtracking routing along trail waypoints back toward home anchor via `native_traverse` with priority elevation (`URGENT` for night/storm/health; `PROJECT` for full inventory/dusk/radius); arrival at base detection resetting state to `IDLE_AT_BASE` upon arrival within <= 2.0 blocks; and thread-safe shared team landmark registry (`TeamCoordinator.shareWaypoint`). Four new native GameTests (175 total) and 6 new pure unit tests (304 total). Nether travel (E-15), equipment progression (E-16), and End expedition / Dragon skills (E-39) remain open.
+
+Current native increment: [E-13](evidence/E-13.md). Full offline build, 298 JUnit results and all 171 native GameTests pass. Report 2026-10-18. Establish and maintain home shelter and farm qualified: hoe crafting (wood, stone, iron) and authentic durability wear; native soil preparation (`NativeTillAction`) under `EditPolicy.Kind.PLACE` converting dirt/grass to farmland when within water hydration range (<= 4 blocks); native crop planting (`NativePlantAction`) under `EditPolicy.Kind.PLACE` consuming single seed items with clearance checks; native mature crop harvest (`NativeHarvestAction`) under `EditPolicy.Kind.BREAK` with strict replanting conservation (immediate seed replanting resetting crop to age 0, routing surplus yield to 36-slot inventory); bed placement in designated shelter area; native night and thunderstorm bed sleeping (`NativeSleepAction`) with spawn point anchoring (`player.setSpawnPoint`); and shared multi-step team farm/shelter projects (`FarmHomeProjects`) with task dependencies, stock reservations, single-assignee ownership, and stop revocation. Four new native GameTests (171 total). Bounded expeditions (E-14), Nether travel (E-15), equipment progression (E-16), and End expedition / Dragon skills (E-39) remain open.
+
+Current native increment: [E-11](evidence/E-11.md). Full offline build, 326 JUnit results and all 167 native GameTests pass. Report 2026-10-18. Shared projects and AI-player task assignments qualified: thread-safe multi-agent team coordination (`TeamCoordinator`) with strict task dependency ordering; atomic single-assignee ownership and contention rejection; material reservations against shared stock ledger preventing double-spending; fail-safe revocation and reservation release on player stop or death; periodic lease expiration; durable SQLite Schema 8 persistence (`V8__shared_projects.sql`) with startup crash recovery reconciling unfulfilled tasks and active reservations; PlayerRuntime integration prioritizing team project tasks at PROJECT priority, atomic claim/start dispatch, and completion/revocation runner observation. Four new native GameTests (167 total) and 11 new pure unit tests (326 total). Home/farm establishment and Dragon encounter remain open.
+
+Current native increment: [E-12](evidence/E-12.md). Full offline build, 315 JUnit results and all 163 native GameTests pass. Report 2026-10-18. Personal milestone graph and standing progression policy qualified: pure directed acyclic progression graph (`MilestoneGraph`) with 15 progressive survival milestones (`GATHER_WOOD`, `CRAFT_WOOD_TOOLS`, `MINE_COBBLESTONE`, `CRAFT_STONE_TOOLS`, `CRAFT_FURNACE`, `SMELT_RESOURCES`, `CRAFT_IRON_TOOLS`, `EQUIP_IRON_ARMOR`, `CRAFT_SHIELD`, `SURVIVE_FIRST_NIGHT`, `ESTABLISH_SHELTER`, `SECURE_FOOD_SOURCE`, `MINE_DEEP_ORES`, `CRAFT_DIAMOND_GEAR`, `LOCATE_STRONGHOLD`); dual physical postcondition and historical achievement evaluation distinguishing `PHYSICALLY_MET`, `HISTORICALLY_ACHIEVED`, and `LOST_RECOVERY_REQUIRED` without erasing achievement history; active frontier and recovery frontier discovery; standing progression policy (`ProgressionPolicy`) generating prioritized routine/project recommendations (`native_craft`, `native_smelt`, `native_place`, `native_equip`, `native_mine`, `native_traverse`); PlayerRuntime integration prioritizing progression tool crafting and workstation placement over raw patch mining, and guarding pickaxe requirements; and direct spatial workstation lookups via `body.findNearbyBlock` preventing depletion of the per-tick block scan quota. Three new native GameTests (163 total) and 12 new pure unit tests (315 total). Team assignments, home/farm, and Dragon encounter remain open.
+
+Current native increment: [E-07c](evidence/E-07c.md). Full offline build, 303 JUnit results and all 160 native GameTests pass. Report 2026-10-18. Defensive combat execution, entity retreat, and night shelter qualified: authentic native player attack cooldown ($>= 0.9f$), target reach check ($<= 4.0$ blocks), sightline raycast check, yaw/pitch orientation, and target damage; strict item conservation with at most 2 durability damage to the weapon, and bit-for-bit conservation of all other 35 inventory slots, armor slots, and off-hand slot under single-use `ActionAdmission`; shield blocking with active item mechanics, damage reduction, and synchronous clearing of active item on completion; emergency retreat from ignited creeper fuse ($<= 25$ ticks remaining) at URGENT need 98.0 with single-step verified escape direction away from the threat; emergency night barricade placement under `EditPolicy` at URGENT need 95.0 placing cobblestone block between player and hostile mob within designated work area; and player privacy preservation in combat and single `ActionArbiter` lease compliance. Four new native GameTests (160 total). Parent E-07 remains open for broader survival, night shelter, and team combat integration.
+
+Current native increment: [E-07b](evidence/E-07b.md). Full offline build, 303 JUnit results and all 156 native GameTests pass. Report 2026-10-18. Pure tactical priority hierarchy, read-only threat/weapon evaluation, and bounded combat prediction foundation qualified: pure survival-first priority filter (`SURVIVABLE > EMERGENCY_ONLY > UNKNOWN > INELIGIBLE`) and lexicographic objective ordering (`RESOLVE_IMMEDIATE_SERIOUS_HARM > PREVENT_IMMINENT_IRREVERSIBLE_MATERIAL_LOSS > END_ENCOUNTER_SAFELY > FULFIL_SURVIVAL_OR_TEAM_TASKS > WAIT_FOR_MEANINGFUL_CHANGE`) in `TacticalPriorityPolicy`; dead companion rejection (`health <= 0.0f` -> INELIGIBLE); critical strike candidate gating on physical eligibility; pure combat prediction (`StandardCombatPredictor`) modeling 1.21.1 attack cooldown charge scaling ($0.2 + 0.8c^2$), critical 1.5x on base damage portion only, target-sensitive enchantments (Sharpness, Smite, Bane of Arthropods), target armor mitigation formula, item switch charge resets, 10-tick i-frame non-additivity (`Math.max(0, current - prev)`), unknown enchantment refusal yielding `SurvivalClass.UNKNOWN`, creeper fuse with forced ignition, and multi-enemy accumulated self-damage; read-only native tactical observation in `NativeTacticalObserver` faithfully capturing visible mob health/armor/toughness and 36-slot weapon inventory while strictly preserving player privacy; and shadow tactical evaluation in `PlayerRuntime.beforeNativeTick` executing read-only diagnostics with zero body inputs, zero inventory slot switches, and zero mutations. Four new native GameTests (156 total) and 52 new pure unit tests (303 total). Production defensive combat, active shield blocking, and tactical retreat from entities remain open.
+
+Current native increment: [F-12a](evidence/F-12a.md). Full offline build, 251 JUnit results and all 152 native GameTests pass. Report 2026-10-17. Attention-state policy, fair multi-player round-robin scheduler, and budgeted native candidate planning qualified: pure attention state machine (`AttentionStateMachine`) with states {ROUTINE, ALERT, COMBAT, RECOVERY}, quiet hysteresis, threat freshness knowledge, attack deduplication, and body generation fencing; pure multi-player round-robin scheduler (`AttentionWorkScheduler`) with single-use `WorkToken` pattern, dirty event storm coalescing, soft 2ms time budget, and diagnostic counters; PlayerRuntime integration splitting essential path (unconditional every-tick execution of stop/authority checks, prepaid activity settlement, active runner ticks, immediate hazard retreat, and emergency eating) and scheduled routine planning path; cached routine candidates with conservative cache invalidation on 36-slot inventory fingerprint changes, setup changes, or body generation increments; and shared tick block scan budget (`MAX_BLOCK_CHECKS_PER_TICK = 128`) bounding workstation discovery, resource scanning, nearby mining, and 3D approach traversal. Four new native GameTests (152 total) and 21 new pure unit tests (251 total). Hostile mob combat, defense, shelter, and earned playthrough remain open.
+
+Current native increment: [F-05d](evidence/F-05d.md). Full offline build, 237 JUnit results and all 141 native GameTests pass. Report 2026-10-17. Startup ledger admission barrier, connection callback fencing, and authority preemption qualified (Guides 01 and 02): fail-closed startup ledger scan reading unfinalized action rows (`SqliteCompanionStore.readStartupLedger`), blocking connect and native mutation for companions with unresolved ledger rows; connection token fencing (`ConnectionToken`) preventing stale async connection callbacks from attaching or transitioning after stop/halt/detach; self-swap refused as no-effect with single-take ActionAdmission and `FAILED` ledger state without physical inventory mutation (`NativeSwapAction`); and furnace block entity incarnation validation (`NativeSmeltAction`) refusing mutation when the block entity is replaced. Six new native GameTests (141 total) and 1 new persistence unit test (237 total). Hostile mob combat, defense, shelter, and earned playthrough remain open.
+
+Current native increment: [F-04b](evidence/F-04b.md) and [F-05c](evidence/F-05c.md). Full offline build, 236 JUnit results and all 139 native GameTests pass. Report 2026-10-17. Prerequisites for defensive combat qualified: read-only candidate generation in `PlayerRuntime.evaluateNativeCandidates` proposing `native_swap` operations rather than mutating inventory; durable `native_swap` skill with ActionAdmission and exact 36-slot item component/count conservation; bounded danger observation during active skill execution in `beforeNativeTick` interrupting through `SkillRunner`/`ActionArbiter` cancellation and settlement barrier, preserving goals/checkpoints; delayed callback fencing; and mutation-time furnace authority/claim/revision recheck in `NativeSmeltAction`. Five new native GameTests (139 total) and 1 new core unit test (236 total). Hostile mob combat, defense, shelter, and earned playthrough remain open.
+
+Current native increment: [E-07a](evidence/E-07a.md). Full offline build, 235 JUnit results and all 134 native GameTests pass. Report 2026-10-17. Autonomous health recovery, inventory food management, and environmental hazard retreat qualified: dynamic eating urgency scaling up to 95.0 (`Priority.URGENT`) at critical health (<= 6.0 HP), full 36-slot inventory scanning with automatic hotbar swapping, environmental hazard detection (fire, soul fire, lava, magma, cactus, sweet berries, powder snow) with immediate evasion (need 99.0), registered native retreat skill (`native_retreat`), synchronous stop cancellation, and 100% item conservation under durable accounting. Four new native GameTests (134 total). Hostile mob combat, defense, shelter, and earned playthrough remain open.
+
+Current native increment: [E-04](evidence/E-04.md). Full offline build, 233 JUnit results and all 130 native GameTests pass. Report 2026-10-17. Registry-based crafting and assigned-furnace smelting fully qualified: 2x2 inventory crafting (E-04a), crafting table placement & 3x3 workstation tool crafting (E-04b), stone-tier progression & furnace crafting (E-04c), assigned-furnace smelting & fuel accounting (E-04d), and integrated iron-tier tools (iron pickaxe, iron sword) and shield with tool tier prioritization (netherite > diamond > iron > stone > gold > wood, with hotbar swapping) and end-to-end autonomous smelting-to-iron-pickaxe progression. Strict 100% item conservation and single-take ActionAdmission tracking verified across all operations. Two new native GameTests (130 total). Survival defense, hazards, and earned playthrough remain open.
+
+Current native increment: [E-04d](evidence/E-04d.md). Full offline build, 233 JUnit results and all 128 native GameTests pass. Report 2026-10-17. Assigned-furnace smelting and fuel accounting: authentic furnace workstation interaction (Blocks.FURNACE, AbstractFurnaceBlockEntity), fuel loading and combustion accounting, smeltable ingredient insertion (raw iron/copper/gold, cobblestone, food, logs), output extraction with vanilla XP drops, strict 100% item conservation, durable ActionAdmission (native_smelt) ledger tracking, and autonomous smelting progression (extract_smelt and load_smelt candidates). Five new native GameTests. Iron-tier progression and earned playthrough remain open.
+
+Current native increment: [E-04c](evidence/E-04c.md). Full offline build, 233 JUnit results and all 123 native GameTests pass. Report 2026-10-17. Stone-tier progression and furnace crafting: native mining on stone/cobblestone/pickaxe-mineables with authentic pickaxe wear and durable receipts, 3x3 stone tool crafting (stone pickaxe) at workstation with 100% item conservation, 3x3 furnace crafting from 8 cobblestone, authentic furnace placement into the world under EditPolicy, and autonomous stone progression prioritizing tool upgrades and workstation deployment over raw mining. Four new native GameTests. Furnace smelting, iron progression, and earned playthrough remain open.
+
+Current native increment: [F-25c3](evidence/F-25c3.md). Full offline build, 233 JUnit results and all 119 native GameTests pass. Report 2026-10-17. Autonomous local survival progression linking physical eating, scoped log mining, 3D terrain approach traversal, and multi-step tool crafting progression (planks -> crafting table -> table placement -> sticks -> wooden pickaxe at 3x3 workstation) without human intervention under EditPolicy. Durability wear, exact item conservation, ActionAdmission verification, and stop latching/safety checks verified. Two new native autonomy GameTests. General navigation, furnace smelting, and earned playthrough remain open.
+
+Current native increment: [F-10b](evidence/F-10b.md). Full offline build, 233 JUnit results and all 117 native GameTests pass. Report 2026-10-17. Bounded paid native 3D terrain traversal supporting 1-block step-up jump using native LivingEntity jump physics and safe 1–3 block step-down drop. Profile pass verifies clearance, full support surfaces, headroom and environmental hazards; mid-route dynamic obstruction immediately cancels motion ahead of collision and settles into idle without block alteration; zero teleportation. Four new native traverse GameTests. General navigation, multi-block climbing, furnace smelting, and earned playthrough remain open.
+
+Current native increment: [E-04b](evidence/E-04b.md). Full offline build, 233 JUnit results and all 113 native GameTests pass. Report 2026-10-17. Native player block placement under EditPolicy, proximity workstation discovery, 3x3 workstation tool crafting (wooden pickaxe), unreachable workstation refusal with item preservation, exact ingredient and product conservation, durable ActionAdmission verification, and world/player save/reload persistence. Four new native craft/place GameTests. General navigation, 3D terrain traversal, furnace smelting, and earned playthrough remain open.
+
+Current native increment: [E-04a](evidence/E-04a.md). Full offline build, 233 JUnit results and all 109 native GameTests pass. Report 2026-10-16. Native player 2x2 inventory crafting (oak planks, sticks, crafting table creation), exact ingredient and product conservation, durable ActionAdmission verification, insufficient ingredient refusal, and save/reload persistence. Five new native craft GameTests. General navigation, 3x3 table tool crafting, furnace smelting, and earned playthrough remain open.
+
+Current native increment: [F-08](evidence/F-08.md). Full offline build, 233 JUnit results and all 104 native GameTests pass. Report 2026-10-16. Native player log gathering with survival mining timing, owned tool wear, patch containment, attributable drop collection into inventory, checkpoint resumption after pause/continue without duplicate harvesting, and save NBT persistence. Five new native gather GameTests. General navigation, multi-step crafting, client/crash/zero-human and earned playthrough remain open.
+
+Current native increment: [F-25c2](evidence/F-25c2.md). Full offline build, 233 JUnit results and all 99 native GameTests pass. Report 2026-10-16T01:35:00Z. Bounded native autonomous candidate selection and skill dispatch pass under server edit policy: eating on hunger, equipping armor, scoped log mining in assigned patches, default server policy refusal, and stop latching/cancellation. Drop collection, general navigation, crafting, and earned playthrough remain open.
+
+Current native increment: [F-08b](evidence/F-08b.md). Full offline build, 233 JUnit results and all 94 native GameTests pass. Report 2026-10-16T01:18:14Z. Scoped native log mining with owned tool wear, default server policy denial, stop cancellation, shared claim contention, and verification recovery pass. Scoped mining only; drop collection not claimed; no earned playthrough qualified.
+
+Current native increment: [F-03a](evidence/F-03a.md). Full offline build, 233 JUnit results and all 88 native GameTests pass. Report 2026-10-16T00:25:05.098720800Z. Overflow-safe scope bounds, native access/loaded-world validation, immediate work revocation, acknowledged scope saves and stop-preserving metadata reopen pass. Scope grants no new mining capability; no earned playthrough qualified.
+
+Current native increment: [F-08a](evidence/F-08a.md). Full offline build, 230 JUnit results and all 87 native GameTests pass. Report 2026-10-16T00:20:50.447167700Z. Actual native break events now produce lease/identity/target-bound receipts; external changes and cancellation do not. Includes registered world-tick mining and a native action owner-ack settlement guard. Runtime mining remains disabled; no earned resources or playthrough qualified.
+
+Current native increment: [F-05b](evidence/F-05b.md). Full offline build, 230 JUnit results and all 85 native GameTests pass. Report 2026-10-16T00:17:39.157646900Z. Native equipment now requires durable intent before transfer and verified outcome before completion; held acknowledgements, post-effect write failure, uncertainty/native-save conservation and pending-action shutdown are tested. No full world crash, client or playthrough gate passed.
+
+Current pure/SQLite increment: [F-05a](evidence/F-05a.md). Full offline build and 230 JUnit results pass: core 147, model 12, scheduler 35, persistence 35, testkit 1. Single-use durable action admission remains unconnected to native work. The separate last 82 native results belong to F-07a below; no native run or world-outcome qualification is claimed for this increment.
+
+Current native increment: [F-07a](evidence/F-07a.md). Full offline build, 216 JUnit results and all 82 native GameTests pass. Report 2026-10-16T00:08:22.690829900Z. Four real armor slots and shield conserve exact named/damaged stacks across native file reconnect; failure, pending source change, curse/occupied slot and stop tests pass. Fixture equipment is supplied, not earned.
+
+Current native increment: [F-10a](evidence/F-10a.md). Full offline build, 216 JUnit results and all 80 native GameTests pass. Native report 2026-10-16T00:04:22.454691800Z. Added real paid flat traversal, actual arrival, stop and unsafe/dynamic corridor checks. No ordinary-client, full navigation or earned survival qualification.
+
+Current native increment: [F-04a](evidence/F-04a.md). Full offline build, both demos, 216 JUnit results and all 78 native GameTests pass. Final native report 2026-10-16T00:01:18.731583Z. Real runtime/SQLite tests cover exact timed food, synchronous stop, paid waiting, failed food, pending shutdown and retained spent allowance after metadata reopen. This is fixture evidence within one Minecraft process, not an earned playthrough or full world restart.
+
+Current pure increment: [F-11b](evidence/F-11b.md), asynchronous prepaid sessions. Full build passes; scheduler 35 and total 216 JUnit results pass. No native use yet; the last 76 native results remain the separate F-25b3 run below.
+
+Current pure increment: [F-11a](evidence/F-11a.md). Full offline build passes; scheduler 25 and total 206 JUnit results pass. The unused ActivityPermit adds no native behavior, so native tests were not rerun; the last 76/76 native results remain the separately recorded F-25b3 run below.
+
+Current result: [F-25b3 native runtime lifecycle](evidence/F-25b3.md), 15 October 2026. Full build and both demos pass; 199 JUnit results and all 76 native GameTests pass. Final native report: 2026-10-15T23:42:09.993393700Z. Tests create three bodies, verify file receipts, preserve seven fixture apples and stop across metadata close/reopen, deny unauthorized sources and fence delayed/missing save loads. Runtime reopen uses one Minecraft process; it is not world crash/restart or earned playthrough evidence.
+
+Explicit development native lifecycle and bounded paid wait/eat/flat walking are enabled. Autonomy, portals and implicit death revival remain disabled. Schema stays 7; dependencies unchanged; no client/zero-human/live release gate passed.
+
+## Earlier lifecycle/identity-foundation result
+Current result: F-25b2/F-25c1, 15 October 2026. [Native lifecycle evidence](evidence/F-25b2.md) and [identity/migration evidence](evidence/F-25c1.md).
+
+Full offline build and both demos pass. All 74 native GameTests pass, including registration of three native players, one world tick path, real .dat reconnect and bad-save rejection. JUnit results: core 137, model 12, scheduler 18, persistence 31, testkit 1 = 199, zero failures. Native suite timestamp 2026-10-15T23:23:19.428684100Z. Schema is 7; no dependency/version change or live release gate. Ordinary clients, production activation, full crash/recovery and earned progression remain unqualified.
+
+## Earlier mechanics-foundation result
+Current result: native mechanics foundation, 15 October 2026. [F-25b1 evidence](evidence/F-25b1.md) records the new backend and all limits; [the tracker](feature-spec.md) controls completion.
+
+Full offline build and both demos passed. All **70 native GameTests** passed, including ten new native server-player mechanics tests. Existing JUnit results remain **193**, zero failures/errors/skips; unchanged tasks reused valid reports. Native fixtures prove bounded timed eating, real slots/tool wear, mining/cancellation, movement, fall/damage, policy revocation, duplicate rejection and thread enforcement. They manually advance unregistered native entities and do not prove connected-player lifecycle or earned survival.
+
+NativePlayerBody ships as a dormant backend; current production commands still create the legacy mob. F-25b player-manager connection/tracking, native-save/runtime migration and remaining mechanics are unqualified. Schema stays 6, dependencies and enabled gameplay stay unchanged, and no live release gate passed. Startup catch-up warnings are not performance qualification.
+
+## Earlier architecture-transition result
+Current result: 15 October 2026. [F-25a evidence](evidence/F-25a.md) is the current architecture-transition record; [the tracker](feature-spec.md) alone controls completion.
+
+Full offline build, both demos and 60 native GameTests passed on Windows with OpenJDK 21.0.2 and the unchanged pinned stack. JUnit reports: core 136, optional model 12, scheduler 18, SQLite 26, demo 1; total **193**, zero failures/errors/skips. Up-to-date Gradle tasks reused valid prior results.
+
+The production JAR contains PlayerRuntime/PlayerCommands and core PlayerIdentity/PlayerDecisionLoop. Retired SurvivalBehavior/DuelBehavior exist only in GameTest sources; neither they nor optional model code ship in the server JAR. F-07 and F-08 are reopened for equipment conservation and native mining/traversal qualification. Schema metadata now correctly reports the pre-existing version 6; no migration was added.
+
+No live client, native server-player body, automatic progression, zero-human session or earned three-player playthrough was qualified. Fixtures that grant resources/reposition entities, including seven retired survival/duel tests, cannot establish those outcomes. Both initial and final cancellation recheck passed all 60 GameTests; startup reported 2570 ms and 2123 ms catch-up warnings respectively. This is not performance acceptance.
+
+## Historical validation — not current requirements
+Everything below is a dated record from the retired companion prototype. Completion labels, pending-work lists, module/class names, AT labels and instructions describe those historical builds only. They must not guide new implementation; use [the AI-player contract](../minecraft_player_spec.md) and current tracker.
+
+# Development validation — 13 October 2026
+
+Validated locally on Windows 11 x64 with Eclipse Temurin 21.0.12.1+1, Gradle 8.14.3, and the platform versions in `release-manifest.json`. These results are development evidence, not complete M0 or first-playable release acceptance.
+
+## Projects, activity modes and capability-aware task proposals increment (night of 13 October)
+
+Same machine and toolchain, after adding F-16 (discrete Companion / Independent modes, home / approved scope restriction, goal persistence across follow interrupts, intention authority invalidation via monotonic intentRevision, personality display with mode/scope, and honest explanation of personal progression availability):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core | 90 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (58 GameTests across entity, follow, social, mannerisms, work, perception, chores, duel, lifecycle, intentions, survival, and inventory) | 58 GameTests passed |
+| Remapped distributable JAR | Built successfully |
+
+Totals: **135 JUnit tests and 58 native GameTests**. The new native tests verify that switching between Companion and Independent modes advances intentRevision monotonically to invalidate old authority while strictly preserving inventory, traits, and stopped state; goals/intentions survive across follow interruptions without being deleted; mode and scope grammar accept optional target UUIDs; and personality status truthfully displays mode and scope alongside traits without adding a tenth slider. See `docs/evidence/F-16.md`.
+
+## Assigned deposit and gather-to-deposit chain increment (late night of 13 October)
+
+Same machine and toolchain, after adding F-09 (deposit chore with checkpoint resumption, verified partial transfer, stack merging, full/broken container honest blockers, and gather-to-deposit chain tested across 10 controlled layouts):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core | 90 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 36 plus 6 deposit tests: exact deposit item conservation, stack merge conservation, full chest honest blocker, partial capacity checkpointing without double counting, replaced/broken chest refusal, and gather-to-deposit chain across 10 layouts) | 42 GameTests passed |
+| Remapped distributable JAR | Built successfully |
+
+Totals: **135 JUnit tests and 42 native GameTests**. The new native tests verify that items transfer into assigned containers with strict conservation, unaccepted excess rolls back into companion inventory, partial transfers checkpoint verified counts to prevent duplicate deposits on resumption, full and broken containers block honestly before mutation, and the gather-to-deposit chore chain functions reliably across 10 distinct physical world layouts. See `docs/evidence/F-09.md`.
+
+## Resource claims and fencing increment (late night of 13 October)
+
+Same machine and toolchain, after adding F-06 (expiring resource claims with fencing, runtime mutation gate integration, key release on commit/rollback, task release on observeRunner lifecycle transitions, and native competing-companion fixture):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core (previous 89 plus ClaimRegistry releaseKey 1) | 90 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 35 plus 1 competing-companion claims test) | 36 GameTests passed |
+| Remapped distributable JAR | Built successfully |
+
+Totals: **135 JUnit tests and 36 native GameTests**. The new native tests verify that competing companions are denied simultaneous claims on the same target, commits release keys to waiting companions, and task halt/stop releases claims immediately regardless of expiry. See `docs/evidence/F-06.md`.
+
+## Attributable log gathering and checkpointed progress increment (late night of 13 October)
+
+Same machine and toolchain, after adding F-08 (gather_logs chore with initial/target checkpointing, verified contribution, patch containment, and attributable pickup):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core | 89 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 32 plus 3 gather tests: partial gathering pause/resume preventing duplicate collection, patch containment refusal, pickup necessity) | 35 GameTests passed |
+| Remapped distributable JAR | Built successfully |
+
+Totals: **134 JUnit tests and 35 native GameTests**. The new native tests verify that gathering breaks only designated logs inside the patch, pickups attribute to inventory, pause/resume from checkpoints gathers only remaining need without re-gathering the initial count, and breaking without pickup does not produce false completion. See `docs/evidence/F-08.md`.
+
+## Authoritative physical inventory and verified item transfer increment (late night of 13 October)
+
+Same machine and toolchain, after adding F-07 (authoritative native slots, equipment helpers, inventory summaries with monotonic revisions, verified transfer primitives with strict conservation and excess rollback, and attributed pickup):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core (previous 86 plus inventory summary 3) | 89 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 26 plus 6 inventory tests: transfer reconciliation, excess rollback on partial capacity, attributed pickup, visual equipment reflection, summary revisions, NBT persistence) | 32 GameTests passed |
+| Remapped distributable JAR | Built successfully |
+
+Totals: **134 JUnit tests and 32 native GameTests**. The new native tests verify that item slots persist across entity NBT saves, visual equipment reflects actual owned inventory, transfer deltas between source and destination match exactly with unaccepted excess returned to the source, and pickups attribute only the requested item. See `docs/evidence/F-07.md`.
+
+## Bounded block perception increment (night of 13 October)
+
+Same machine and toolchain, after adding F-24 (chunk-section scan with palette prefilter, exposure filter, and per-tick budget):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core (previous 80 plus block perception 6) | 86 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 21 plus 5 perception tests: look command grammar, palette prefilter, buried block hiding, unloaded chunk refusal, 9-chunk area budget) | 26 GameTests passed |
+| Remapped distributable JAR | Built successfully |
+
+Totals: **131 JUnit tests and 26 native GameTests**. The new native tests prove that palette prefiltering skips uninteresting sections without visiting blocks, buried blocks are never located, unloaded chunks are never loaded, the scan stays within 16 sections and 2 detailed walks per tick (<50 ms/tick), and the `look` diagnostic reports truthful section stats and nearest exposed blocks. See `docs/evidence/F-24.md`.
+
+## Work authority, skill runner, ledger, claims and movement skills (evening of 13 October)
+
+Same machine and toolchain, after adding the F-03/F-04/F-05/F-06/F-10 slices (schema 5):
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core (previous 65 plus work setup/edit policy 3, claims 3, action record 3, skill runner 6) | 80 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite (previous 22 plus setup round-trip and schema 4 → 5 fixture, ledger replay/transitions, crash-to-UNCERTAIN recovery, checkpoints) | 26 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 17 plus setup/movement command grammar, storage identity by block+version, move_to blockers and fresh-position arrival, wait counting with pause/continue) | 21 GameTests passed |
+| Remapped distributable JAR | Built; SHA-256 `64c158061898fb3ee153615b2feddfa9248c5bb65283057f12d220c12f4a2e71` |
+
+Totals: **125 JUnit tests and 21 native GameTests**. The native tests check validation and identity boundaries in a real world; none shows a body traversing terrain to a marker, a live client, or two owners on one server. See `docs/evidence/F-03.md`, `F-04.md`, `F-05.md`, `F-06.md`, `F-10.md` and the F-01 run guide in `docs/live-qualification.md`.
+
+## Mannerisms, tone drift, naming and pets increment (later on 13 October)
+
+A second run on the same machine and toolchain after adding the E-32..E-37 core slices, schema 4 and the `quirk` commands:
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Core (previous 37 plus mannerisms 7, attention 5, quirk feedback 4, tone drift 4, name forge 4, pet policy 3, notice remark 1) | 65 JUnit tests passed |
+| Scheduler | 18 JUnit tests passed |
+| Real SQLite including schema-4 mannerism persistence, stale/forged rejection and schema 1/2/3 → 4 migration fixtures | 22 JUnit tests passed |
+| Console contract demonstration | 1 JUnit test passed |
+| Native GameTests (previous 13 plus quirk command grammar, low-ceiling/no-lease sprint-jump refusal, stop clearing sprint/jump, habit feedback routing) | 17 GameTests passed |
+| Remapped distributable JAR | Built; SHA-256 `fe287edda99830d96a628fa7363dab97f6258669a447bd08ccb5bb67bab79e59` |
+
+Totals: **106 JUnit tests and 17 native GameTests**. The personality demo output was unchanged (delivery at helpfulness 100, crops at farming 100, stone at mining 100, urgent delivery still wins at farming 100).
+
+The new native tests prove the command tree, the world-probed hard bounds for a sprint-jump, that `haltControls` revokes sprinting and a queued jump, and that a habit remark is answered through the ordinary direct-chat path without starting movement or editing the saved setting. They do **not** show a live body sprint-jumping across terrain, a visible attention pause, or two-player feedback behavior; those remain E-32/E-33/E-34 qualification work. Tone drift, the name forge and pet eligibility are pure policies with no native behavior in this build. See the evidence records under `docs/evidence/`.
+
+## Automated results (foundation run)
+
+| Check | Result |
+| --- | --- |
+| Core ownership, control fencing, cancellation, traits, identity, follow spacing, social policy and task preferences | 37 JUnit tests passed |
+| Schedule windows, DST, rollback and reservation math | 18 JUnit tests passed |
+| Real SQLite identity, quotas, optimistic writes, accounting, profiles, schema migration and restart | 20 JUnit tests passed |
+| End-to-end console contract demonstration, including another reopen | 1 JUnit test passed |
+| Native Minecraft/Fabric entity, startup, follow, social and personality command contracts | 13 GameTests passed |
+| Remapped distributable JAR and sources JAR | Built successfully |
+
+The final automated command was:
+
+```powershell
+.\gradlew.bat build :companion-testkit:runPersonalityDemo :companion-server-adapter:runGametest
+```
+
+The console demo recorded a durable five-second reservation, simulated reopening before settlement, and reported **5,000 ms charged**, **0 ms observed active**, and **115,000 ms remaining** from a two-minute allowance. The companion identity and explicit stop remained intact. This is a metadata/authority simulation, not actual gathering evidence.
+
+The native tests start a real Minecraft GameTest server and check:
+
+- Kindred's type is registered with Polymer as a server-only entity and maps to `minecraft:villager`.
+- Its tracked-data entries use IDs and serializers understood by that vanilla representation.
+- Native NBT serialization preserves entity UUID, companion UUID, owner UUID and the stop latch.
+- Native navigation and queued movement are cancelled.
+- Kindred's real SQLite writer initializes successfully inside Fabric before commands are admitted.
+- Follow landing checks reject low ceilings, flooded destinations, damaging ground and missing support.
+- Yield targets do not point through the owner, and revoked follow callbacks cannot restart native navigation or gaze.
+- Social perception rejects threats behind opaque walls and beyond eight blocks.
+- Public conversation requires opt-in, direct replies remain private, and chat while stopped does not start navigation.
+- Companion exchanges terminate after two lines and consume both participants' allowances; inactive/private companions are excluded.
+- Ambient recipients must be nearby and authorized, with shared listener cooldowns across companions.
+- All nine traits and their aliases parse in the native command tree; out-of-range values are rejected.
+
+The earlier native startup test caught a driver-discovery failure caused by the worker context class loader. Explicitly loading the JDBC driver through the persistence module's defining class loader fixed it. The current run logged `Kindred M0 ready` and passed all thirteen native tests, alongside 76 JUnit tests.
+
+Migration fixtures upgrade schema 1 and schema 2 records to schema 3 and verify preserved identity, stop, charged allowance and saved social choices. New preferences default to neutral 50; all four survive reopen. Social profiles and personality revisions survive reopen; stale or removed-companion writes are rejected. The social tests cover observed-fact freshness, privacy changes, cooldowns, deterministic trait effects and dialogue/control separation.
+
+Eight task-preference tests cover close choices, neutral/default values, blended and weak relevance, the five-point cap, hard eligibility filters, urgency, stable ties and checkpoint switching. The synthetic demonstration selected delivery at helpfulness 100, crops at farming 100, and stone at mining 100; an urgent delivery still won with farming 100. These are core decision comparisons, not live world work.
+
+Machine-readable reports are generated in each module's `build/test-results/test` directory and `companion-server-adapter/build/gametest-results.xml`. Test-only classes and the GameTest mod descriptor are excluded from the distributable JAR.
+
+The earlier foundation JAR was also loaded by a separate Fabric server launcher using only Kindred and Fabric API in its mods directory. Fabric discovered all nested Kindred, SQLite, Polymer and packet-tweaker dependencies and reached the normal first-install EULA gate. That packaging smoke check was not repeated for this behavior change; it did not start a playable server or accept the EULA. The current native GameTest run above provides the separate world/SQLite-startup checks.
+
+Artifact: `companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar`.
+
+SHA-256 for the validated artifact: `9c5a317502db1bdf5b5993040b6472c32eb7627e9fcaa14f3bb357a72013d0c8`.
+
+## Stage A shared-action correctness: placement fencing, gather action IDs and collision pickup (17 October 2026)
+
+Run on Windows 11 x64, OpenJDK 21/24, Fabric/Minecraft 1.21.1:
+
+```powershell
+.\gradlew.bat build
+.\gradlew.bat :companion-testkit:run
+.\gradlew.bat :companion-testkit:runPersonalityDemo
+.\gradlew.bat :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Full build (37 tasks) | BUILD SUCCESSFUL |
+| Testkit contract demo | Passed (5/5 assertions) |
+| Personality demo | Passed (4/4 decision checks) |
+| Native GameTests (152 total) | All 152 GameTests passed cleanly |
+| Remapped distributable JAR | Built (`companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar`) |
+
+New acceptance test coverage under `NativeStageAGameTests` and `NativeGatherGameTests` covers:
+- `NativePlaceAction`: Destination replaceability and support block drift fencing, setup revision gating, claim revocation recheck, and component-aware inventory conservation.
+- `NativeGatherAction`: Multi-break distinct action IDs and sequential substep indexing under a single task and lease; causal drop tracking distinguishing pre-existing drops; authentic native player collision pickup (`Intent.MOVE` permitted under `native_gather`) without remote insertion; and vanilla pickup delay and cannotPickup preservation.
+- Full evidence record: `docs/evidence/F-05e.md`.
+
+## Qualification still pending
+
+Actual logins and rendering using vanilla 1.21.1, Fabric without Kindred, and optional Kindred clients have not been exercised. Native tests validate the required registration/presentation mechanisms, not the complete login protocol or visual experience.
+
+Player-driven creation/follow commands, multiplayer ownership denial, real world restart/duplicate-body reconciliation, and the specified 100 movement-stop samples remain pending. Gathering/deposit, resource claims, autonomous admission, daily activity enforcement in the world and zero-player work are not enabled. No first-playable acceptance gate or performance target is claimed.
+
+The presence expansion adds preferred formation targets, spacing hysteresis, owner-proximity yielding and waiting glances. These still require visual evaluation and continuous native movement tests over varied layouts. The new native tests exercise landing/cancellation contracts; they do not establish smooth path traversal, general doorway negotiation or player-like appearance.
+
+The social increment supplies finite event-based dialogue rather than free-form model conversation. Native tests exercise real entity visibility and the observation/output routing boundary with captured recipients; they do not test live signed-chat transport or a sustained multiplayer social session. Name-addressed chat, commands, pacing and public/private behavior still require that live session. No durable relationship memories or completed-work claims are generated by conversation.
+
+The activity preferences are saved and editable, with their core ranking policy tested independently. The native task director does not yet use that policy because physical work skills and autonomous admission are not installed. No live farming, mining or combat behavior is claimed.
+
+## Shared Projects and AI-Player Task Assignments (E-11) — 18 October 2026
+
+Run on Windows 11 x64, OpenJDK 21/24, Fabric/Minecraft 1.21.1, SQLite schema 8:
+
+```powershell
+.\gradlew.bat build
+.\gradlew.bat :companion-testkit:run
+.\gradlew.bat :companion-testkit:runPersonalityDemo
+.\gradlew.bat :companion-server-adapter:runGametest
+```
+
+| Check | Result |
+| --- | --- |
+| Full build (37 tasks) | BUILD SUCCESSFUL |
+| Testkit contract demo | Passed (5/5 assertions) |
+| Personality demo | Passed (4/4 decision checks) |
+| Pure JUnit test suites (326 total) | All 326 tests passed (0 failures, 0 errors) |
+| Native Fabric GameTests (167 total) | All 167 GameTests passed cleanly |
+| Remapped distributable JAR | Built (`companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar`) |
+
+New acceptance test coverage under `NativeTeamGameTests` covers:
+- Cooperative task dependency ordering enforced across peers (`cooperativeTeamTaskOrderEnforcedAcrossPeers`).
+- Single-assignee ownership and atomic contention rejection (`contendingClaimsRejectedWithSingleAssigneeOwnership`).
+- Shared stock reservations preventing double-spending of limited materials across peers (`sharedStockReservationPreventsDoubleSpendingAcrossPeers`).
+- Clean revocation and reservation release on player stop or death (`playerStopOrDeathRevokesTaskAndReleasesStockForPeers`).
+- Durable persistence (Schema 8) with startup crash recovery reconciling unfulfilled tasks and active reservations (`SharedProjectStoreTest`).
+- Full evidence record: `docs/evidence/E-11.md`.
+
+

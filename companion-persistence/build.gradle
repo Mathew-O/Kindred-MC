@@ -1,0 +1,6 @@
+dependencies {
+    api project(':companion-core')
+    api project(':companion-scheduler')
+    implementation 'org.xerial:sqlite-jdbc:3.50.3.0'
+    testRuntimeOnly 'org.slf4j:slf4j-nop:2.0.17'
+}

@@ -1,0 +1,5707 @@
+package dev.kindred.fabric;
+
+import dev.kindred.core.ActionRecord;
+import dev.kindred.core.AdmissionBoard;
+import dev.kindred.core.ClaimRegistry;
+import dev.kindred.core.EditPolicy;
+import dev.kindred.core.JournalSummary;
+import dev.kindred.core.OperatingMode;
+import dev.kindred.core.PeerProgressDialogue;
+import dev.kindred.core.GoalRecord;
+import dev.kindred.core.MemoryNote;
+import dev.kindred.core.ActivityLimit;
+import dev.kindred.core.ProposalGate;
+import dev.kindred.core.ActionArbiter;
+import dev.kindred.core.ActionLease;
+import dev.kindred.core.Actor;
+import dev.kindred.core.AttentionPolicy;
+import dev.kindred.core.Authorization;
+import dev.kindred.core.BlockObservation;
+import dev.kindred.core.BlockObservations;
+import dev.kindred.core.BlockPerception;
+import dev.kindred.core.BodyAdapter;
+import dev.kindred.core.Checkpoint;
+import dev.kindred.core.Companion;
+import dev.kindred.core.LifecycleState;
+import dev.kindred.core.SkillRunner;
+import dev.kindred.core.SprintStride;
+import dev.kindred.core.MannerismState;
+import dev.kindred.core.Mannerisms;
+import dev.kindred.core.Personality;
+import dev.kindred.core.QuirkFeedback;
+import dev.kindred.core.SectionKey;
+import dev.kindred.core.SectionPlanner;
+import dev.kindred.core.SocialDialogue;
+import dev.kindred.core.SocialProfile;
+import dev.kindred.core.WorkSetup;
+import dev.kindred.core.RemovalToken;
+import dev.kindred.core.attention.AttentionSchedulePolicy;
+import dev.kindred.core.attention.AttentionSnapshot;
+import dev.kindred.core.attention.AttentionState;
+import dev.kindred.core.attention.AttentionStateMachine;
+import dev.kindred.core.attention.AttentionWorkScheduler;
+import dev.kindred.core.attention.SchedulerDiagnostics;
+import dev.kindred.core.attention.SignalFrame;
+import dev.kindred.core.attention.ThreatKnowledge;
+import dev.kindred.core.attention.WorkKind;
+import dev.kindred.core.attention.WorkToken;
+import dev.kindred.persistence.ActionRef;
+import dev.kindred.persistence.CreationRequest;
+import dev.kindred.persistence.LedgerScan;
+import dev.kindred.persistence.SqliteCompanionStore;
+import dev.kindred.persistence.StartupLedgerSnapshot;
+import dev.kindred.persistence.StoredCompanion;
+import dev.kindred.persistence.StoredNativePlayer;
+import dev.kindred.persistence.PlayerCreationRequest;
+import dev.kindred.core.CanonicalRoster;
+import dev.kindred.core.InventorySummary;
+import dev.kindred.core.idle.IdleObservationController;
+import dev.kindred.core.progression.PlaystyleProfile;
+import dev.kindred.core.logistics.ChestOrganizationPolicy;
+import dev.kindred.core.team.CollaborationMode;
+import dev.kindred.core.progression.MilestoneGraph;
+import dev.kindred.core.progression.MilestoneId;
+import dev.kindred.core.progression.MilestoneSnapshot;
+import dev.kindred.core.progression.MilestoneStatus;
+import dev.kindred.core.progression.ProgressionObservation;
+import dev.kindred.core.progression.ProgressionPolicy;
+import dev.kindred.core.progression.ProgressionRecommendation;
+import dev.kindred.core.progression.ProgressionState;
+import dev.kindred.core.team.ProjectId;
+import dev.kindred.core.team.SharedProject;
+import dev.kindred.core.team.SharedTask;
+import dev.kindred.core.team.StockLedger;
+import dev.kindred.core.team.StockReservation;
+import dev.kindred.core.team.TaskId;
+import dev.kindred.core.team.TeamCoordinator;
+import dev.kindred.core.expedition.ExpeditionObservation;
+import dev.kindred.core.expedition.ExpeditionPlan;
+import dev.kindred.core.expedition.ExpeditionPlanner;
+import dev.kindred.core.expedition.ExpeditionState;
+import dev.kindred.core.expedition.ExpeditionStatus;
+import dev.kindred.core.expedition.ReturnReason;
+import dev.kindred.core.expedition.Waypoint;
+import dev.kindred.core.expedition.WaypointKind;
+import dev.kindred.scheduler.PaidActivitySession;
+import dev.kindred.scheduler.AccountingPeriod;
+import dev.kindred.scheduler.BudgetState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.item.Item;
+import net.minecraft.registry.Registries;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.CropBlock;
+import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.registry.tag.FluidTags;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/** AI-player lifecycle host. The saved mob body is a compatibility backend, not qualified player mechanics. */
+final class PlayerRuntime {
+    enum LedgerCheckState {
+        PENDING,
+        KNOWN_LEDGER_CLEAR,
+        BLOCKED
+    }
+
+    record ConnectionToken(long startupGeneration, UUID logicalId, long entryGeneration, UUID requestId, long expectedNativeRevision) { }
+
+    @FunctionalInterface
+    interface StartupLedgerReader {
+        CompletableFuture<StartupLedgerSnapshot> read(SqliteCompanionStore store, Set<UUID> expectedLogicalPlayerIds);
+    }
+
+    private final MinecraftServer server;
+    private final Path metadataDirectory;
+    private final NativePlayerSaves.Reader nativeSaveReader;
+    private final java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator;
+    private final StartupLedgerReader startupLedgerReader;
+    private long startupGeneration = 0;
+    private int nativeCreationsPending;
+    private final Map<UUID, Entry> entries = new HashMap<>();
+    private final Set<CompanionEntity> awaitingRegistry = new HashSet<>();
+    private final Set<UUID> creating = new HashSet<>();
+    private SqliteCompanionStore store;
+    private UUID worldId;
+    private volatile boolean running = true;
+    private boolean ready;
+    private CompletableFuture<LoadedRegistry> startup;
+    private CompletableFuture<Void> shutdown = CompletableFuture.completedFuture(null);
+    private final CompanionSocials socials;
+    private EditPolicy.ServerPolicy edits = EditPolicy.ServerPolicy.deferredD4();
+    private final AdmissionBoard admission = AdmissionBoard.serverTarget(10);
+    private final ClaimRegistry claims = new ClaimRegistry();
+    ClaimRegistry claims() { return claims; }
+    private final ProposalGate proposals = new ProposalGate(java.util.Set.of("move_to", "return_home", "wait", "gather_logs", "deposit", "follow"));
+    /** One bounded accommodation per speaker per companion per window; keyed "speaker:companion". */
+    private final Map<String, Long> accommodationWindows = new LinkedHashMap<>();
+    /** One-use removal tokens keyed by token UUID (F-14). */
+    private final Map<UUID, RemovalToken> removalTokens = new HashMap<>();
+
+    private final UUID runtimeSession = UUID.randomUUID();
+    private final AttentionWorkScheduler attentionScheduler;
+    static final int MAX_BLOCK_CHECKS_PER_TICK = 128;
+    private int blocksScannedThisTick = 0;
+    private long totalBlockChecksMonotonic = 0;
+
+    AttentionWorkScheduler attentionScheduler() { return attentionScheduler; }
+    long totalBlockChecks() { return totalBlockChecksMonotonic; }
+    int blocksScannedThisTick() { return blocksScannedThisTick; }
+
+    private final TeamCoordinator teamCoordinator = new TeamCoordinator();
+    public TeamCoordinator teamCoordinator() { return teamCoordinator; }
+
+    public ExpeditionState getExpeditionState(UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null ? entry.expeditionState : null;
+    }
+
+    public void setExpeditionState(UUID id, ExpeditionState state) {
+        Entry entry = entries.get(id);
+        if (entry != null) {
+            entry.expeditionState = state;
+        }
+    }
+
+    /** GameTest / portal handoff: apply dimension and expedition waypoint updates immediately after a qualified teleport. */
+    void syncNativeDimensionAfterTransit(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) {
+            return;
+        }
+        applyDimensionTransit(entry, entry.nativeBody);
+    }
+
+    private void applyDimensionTransit(Entry entry, NativePlayerBody body) {
+        if (body.entity() == null) {
+            return;
+        }
+        String currentDim = body.entity().getServerWorld().getRegistryKey().getValue().toString();
+        if (currentDim.equals(entry.data.dimension())) {
+            return;
+        }
+        entry.data = entry.data.withDimension(currentDim);
+        if (entry.setup != null && !currentDim.equals(entry.setup.dimension())) {
+            entry.setup = new dev.kindred.core.WorkSetup(entry.setup.companionId(), currentDim, entry.setup.home(),
+                    entry.setup.area(), entry.setup.storage(), entry.setup.patch(), entry.setup.revision());
+        }
+        if (entry.expeditionState != null) {
+            BlockPos pPos = body.entity().getBlockPos();
+            Waypoint portalWp = Waypoint.of("nether_portal_arrival", pPos.getX(), pPos.getY(), pPos.getZ(),
+                    currentDim, WaypointKind.NETHER_PORTAL, server.getTicks());
+            entry.expeditionState.addDiscoveredWaypoint(portalWp);
+        }
+        // Dimension changes are physical native state: persist the metadata and a matching
+        // vanilla player save receipt so reconnect cannot restore the body in the old world.
+        persist(entry);
+        persistNativeSaveReceipt(entry);
+    }
+
+    private void reconcileExpeditionArrival(Entry entry) {
+        if (entry.expeditionState == null || entry.nativeBody == null || !entry.nativeBody.connected()) {
+            return;
+        }
+        if (entry.expeditionState.status() != ExpeditionStatus.RETURNING) {
+            return;
+        }
+        var player = entry.nativeBody.entity();
+        if (player == null) {
+            return;
+        }
+        Waypoint anchor = entry.expeditionState.homeAnchor();
+        double dx = player.getX() - (anchor.x() + 0.5);
+        double dz = player.getZ() - (anchor.z() + 0.5);
+        if (Math.hypot(dx, dz) <= 2.0) {
+            entry.expeditionState.arriveAtBase();
+        }
+    }
+
+    /** Keeps SQLite save receipts aligned with {@link NativePlayerBody#saveNow()} for same-tick reconnect. */
+    private void persistNativeSaveReceipt(Entry entry) {
+        if (entry.nativeBody == null || !entry.nativeBody.connected() || entry.nativeState == null
+                || entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED) {
+            return;
+        }
+        UUID receipt;
+        try {
+            receipt = entry.nativeBody.saveNow();
+        } catch (RuntimeException failure) {
+            nativeFailure(server.getCommandSource(), entry, "Native save could not be written", failure);
+            return;
+        }
+        long expectedRevision = entry.nativeState.revision();
+        entry.nativeState = new StoredNativePlayer(entry.nativeState.metadata(), entry.nativeState.controllerId(),
+                entry.nativeState.phase(), receipt, entry.nativeState.blocker(), expectedRevision + 1);
+        store.establishNativePlayer(entry.data.id(), receipt, expectedRevision).whenComplete((established, failure) -> server.execute(() -> {
+            if (!running || entries.get(entry.data.id()) != entry) return;
+            if (failure != null) {
+                nativeFailure(server.getCommandSource(), entry, "Native save receipt could not be recorded", failure);
+                return;
+            }
+            entry.nativeState = established;
+        }));
+    }
+
+    PlayerRuntime(MinecraftServer server) {
+        this(server, server.getSavePath(WorldSavePath.ROOT).resolve("kindred"));
+    }
+
+    PlayerRuntime(MinecraftServer server, Path metadataDirectory) {
+        this(server, metadataDirectory, NativePlayerSaves::read);
+    }
+
+    PlayerRuntime(MinecraftServer server, Path metadataDirectory, NativePlayerSaves.Reader nativeSaveReader) {
+        this(server, metadataDirectory, nativeSaveReader, writer -> writer);
+    }
+
+    PlayerRuntime(MinecraftServer server, Path metadataDirectory, NativePlayerSaves.Reader nativeSaveReader,
+                  java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator) {
+        this(server, metadataDirectory, nativeSaveReader, actionWriterDecorator, SqliteCompanionStore::readStartupLedger);
+    }
+
+    PlayerRuntime(MinecraftServer server, Path metadataDirectory, NativePlayerSaves.Reader nativeSaveReader,
+                  java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator,
+                  StartupLedgerReader startupLedgerReader) {
+        this.server = server;
+        this.metadataDirectory = metadataDirectory;
+        this.nativeSaveReader = nativeSaveReader;
+        this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
+        this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
+        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now,
+                (player, message) -> player.sendMessage(message, false), new HabitHooks());
+        socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {
+            @Override
+            public void onConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
+                handlePeerConference(speaker, peer, exchange);
+            }
+
+            @Override
+            public PeerProgressDialogue.PeerState state(UUID id) {
+                return peerState(id);
+            }
+        });
+        this.attentionScheduler = new AttentionWorkScheduler(this.runtimeSession, AttentionSchedulePolicy.defaultPolicy());
+    }
+
+    private static long now() { return System.nanoTime() / 1_000_000; }
+    private static long nanos() { return System.nanoTime(); }
+
+    private static EditPolicy.ServerPolicy readEdits(Path directory) {
+        try {
+            java.nio.file.Path file = directory.resolve("edits.properties");
+            if (!java.nio.file.Files.exists(file)) {
+                java.nio.file.Files.createDirectories(directory);
+                java.nio.file.Files.writeString(file, "autonomousEdits=true\nprotectionKnown=true\n", StandardCharsets.UTF_8);
+                return new EditPolicy.ServerPolicy(true, true);
+            }
+            java.util.Properties properties = new java.util.Properties();
+            try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "true")),
+                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "true")));
+        } catch (Exception failure) {
+            KindredMod.LOGGER.error("Kindred edit policy could not be read; using autonomous defaults", failure);
+            return new EditPolicy.ServerPolicy(true, true);
+        }
+    }
+
+    boolean isReady() {
+        requireThread();
+        return ready && running;
+    }
+
+    void start() {
+        Path directory = metadataDirectory;
+        long currentStartupGen = ++startupGeneration;
+        // Only paths and immutable values cross into filesystem/database workers.
+        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory)))
+                .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
+                        .thenCompose(database -> database.list().thenCompose(records -> {
+                            Set<UUID> logicalIds = records.stream().map(r -> r.companion().id()).collect(java.util.stream.Collectors.toSet());
+                            return database.profiles().thenCompose(profiles ->
+                                    database.mannerisms().thenCompose(mannerisms ->
+                                            database.workSetups().thenCompose(setups ->
+                                                    database.nativePlayers().thenCompose(nativePlayers ->
+                                                            startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
+                                                                    database.modes(logicalIds).thenApply(modes ->
+                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), database, records,
+                                                                                    profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes)
+                                                                    )
+                                                            )
+                                                    )
+                                            )
+                                    )
+                            );
+                        }).handle((registry, failure) -> {
+                            if (failure == null) return CompletableFuture.completedFuture(registry);
+                            return database.closeAsync().<LoadedRegistry>handle((ignored, closeFailure) -> {
+                                if (closeFailure != null) failure.addSuppressed(closeFailure);
+                                throw new CompletionException(failure);
+                            });
+                        }).thenCompose(future -> future)));
+        startup.whenComplete((loaded, failure) -> {
+            if (!running) {
+                if (loaded != null) loaded.store().closeAsync();
+                return; // Shutdown chains resource cleanup directly to startup, independent of ticks.
+            }
+            server.execute(() -> {
+                if (!running || startupGeneration != currentStartupGen) {
+                    if (loaded != null) loaded.store().closeAsync();
+                    return;
+                }
+                if (failure != null) {
+                    KindredMod.LOGGER.error("Kindred metadata could not open; all bodies remain dormant", failure);
+                    return;
+                }
+                try {
+                    if (loaded.ledgerSnapshot() == null || loaded.ledgerSnapshot().byLogicalPlayer() == null) {
+                        throw new IllegalStateException("Startup ledger snapshot is missing or null");
+                    }
+                    Map<UUID, Entry> pendingEntries = new HashMap<>();
+                    for (StoredCompanion record : loaded.records()) {
+                        UUID compId = record.companion().id();
+                        LedgerScan scan = loaded.ledgerSnapshot().byLogicalPlayer().get(compId);
+                        if (scan == null) {
+                            throw new IllegalStateException("Missing ledger scan for companion " + compId);
+                        }
+                        Entry entry = new Entry(record);
+                        entry.nativeState = loaded.nativePlayers().stream().filter(nativePlayer ->
+                                nativePlayer.metadata().companion().id().equals(compId)).findFirst().orElse(null);
+
+                        if (scan.unresolvedCount() > 0) {
+                            entry.ledgerState = LedgerCheckState.BLOCKED;
+                            entry.reconciliationBlocked = true;
+                            entry.blocker = "Unresolved action ledger rows detected (" + scan.unresolvedCount() + "); operator reconciliation required.";
+                        } else {
+                            entry.ledgerState = LedgerCheckState.KNOWN_LEDGER_CLEAR;
+                        }
+
+                        if (entry.nativeState != null) {
+                            if (entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED) {
+                                entry.reconciliationBlocked = true;
+                                entry.blocker = "Incomplete native body; reconcile before connecting.";
+                            } else if (entry.ledgerState == LedgerCheckState.BLOCKED) {
+                                // Blocked by unresolved action rows
+                            } else {
+                                entry.blocker = "Native body is offline; explicit connect is required.";
+                            }
+                        }
+                        entry.profile = loaded.profiles().stream().filter(p -> p.companionId().equals(compId))
+                                .findFirst().orElseThrow(() -> new IllegalStateException("Missing saved social profile for " + compId));
+                        entry.mannerisms = new MannerismState(loaded.mannerisms().stream()
+                                .filter(m -> m.companionId().equals(compId)).findFirst()
+                                .orElseThrow(() -> new IllegalStateException("Missing saved mannerisms for " + compId)));
+                        entry.setup = loaded.setups().stream().filter(s -> s.companionId().equals(compId)).findFirst()
+                                .orElseThrow(() -> new IllegalStateException("Missing saved work setup for " + compId));
+                        OperatingMode mode = loaded.modes() != null ? loaded.modes().get(compId) : null;
+                        if (mode != null) entry.mode = mode;
+                        pendingEntries.put(compId, entry);
+                    }
+
+                    worldId = loaded.worldId();
+                    claims.invalidateOtherEpochs(worldId);
+                    store = loaded.store();
+                    entries.putAll(pendingEntries);
+                    ready = true;
+                    edits = loaded.edits();
+                    for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
+                    awaitingRegistry.clear();
+                    store.listProjects().whenComplete((loadedProjects, err) -> {
+                        if (err == null && loadedProjects != null) {
+                            server.execute(() -> {
+                                for (SharedProject proj : loadedProjects) {
+                                    teamCoordinator.registerProject(proj);
+                                }
+                            });
+                        }
+                    });
+                    KindredMod.LOGGER.info("Kindred AI-player foundation ready: {} durable records; autonomous progression pending qualification", entries.size());
+                } catch (Exception validationError) {
+                    KindredMod.LOGGER.error("Kindred startup validation failed; closing store and remaining offline", validationError);
+                    loaded.store().closeAsync();
+                }
+            });
+        });
+    }
+
+    record NativeStatus(UUID id, UUID nativeId, String name, StoredNativePlayer.Phase phase,
+                        boolean connected, boolean stopped, String explanation) { }
+
+    List<NativeStatus> nativeStatuses(Actor actor) {
+        requireThread();
+        if (actor == null) return List.of();
+        return entries.values().stream().filter(entry -> entry.nativeState != null && entry.nativeState.access().mayControl(actor))
+                .map(entry -> new NativeStatus(entry.data.id(), entry.data.entityId(), entry.data.displayName(),
+                        entry.nativeState.phase(), entry.nativeBody != null && entry.nativeBody.connected(),
+                        entry.snapshot().stopLatched(), entry.explanation())).toList();
+    }
+
+    List<NativeTaskCandidate> nativeCandidates(Actor actor, UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeBody == null || entry.nativeState == null || !entry.nativeState.access().mayControl(actor)) {
+            return List.of();
+        }
+        return evaluateNativeCandidates(entry, entry.nativeBody);
+    }
+
+    java.util.Optional<NativePlayerBody> nativeBody(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry != null ? java.util.Optional.ofNullable(entry.nativeBody) : java.util.Optional.empty();
+    }
+
+    boolean shutdownComplete() { requireThread(); return !running && shutdown.isDone() && !shutdown.isCompletedExceptionally(); }
+
+    int createNative(ServerCommandSource source, String name) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        Actor actor = nativeActor(source);
+        if (actor == null || !actor.operator()) return reject(source, "Only an operator may create a development native player.");
+        long count = entries.values().stream().filter(entry -> entry.nativeState != null
+                && entry.snapshot().lifecycle() != LifecycleState.REMOVED).count();
+        if (count + nativeCreationsPending >= 3) return reject(source, "The development envelope supports three native players; incomplete records still occupy a slot.");
+        if (nativeSpawn(source) == null) return reject(source, "Make room on solid ground in an already loaded area.");
+        PlayerCreationRequest request;
+        try {
+            request = new PlayerCreationRequest(UUID.randomUUID(), actor.playerId() == null ? new UUID(0, 0) : actor.playerId(),
+                    name, worldId, source.getWorld().getRegistryKey().getValue().toString());
+        } catch (IllegalArgumentException invalid) { return reject(source, invalid.getMessage()); }
+        ++nativeCreationsPending;
+        feedback(source, "Allocating a native AI identity; autonomous work remains disabled.");
+        store.createNativePlayer(request).whenComplete((record, failure) -> server.execute(() -> {
+            --nativeCreationsPending;
+            if (!running || !ready) return;
+            if (failure != null) { reject(source, "Native identity could not be saved; no body was created."); return; }
+            Entry entry = new Entry(record.metadata());
+            entry.nativeState = record;
+            entry.ledgerState = LedgerCheckState.KNOWN_LEDGER_CLEAR;
+            entries.put(entry.data.id(), entry);
+            feedback(source, "Allocated " + name + " (" + entry.data.id() + "). Preparing its native body.");
+            if (nativeActor(source) == null || !nativeActor(source).operator()) {
+                entry.reconciliationBlocked = true;
+                entry.blocker = "Creation lost administrative authority before spawn; reconcile allocation.";
+                return;
+            }
+            connectNative(source, entry, true);
+        }));
+        return 1;
+    }
+
+    int listNative(ServerCommandSource source) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        var statuses = nativeStatuses(nativeActor(source));
+        if (statuses.isEmpty()) feedback(source, "No native AI players are available to your controls.");
+        for (var status : statuses) feedback(source, status.name() + " (" + status.id() + "): " + status.phase()
+                + ", " + (status.connected() ? "connected" : "offline") + (status.stopped() ? "; stopped" : "") + ". " + status.explanation());
+        return 1;
+    }
+
+    int nativeLifecycle(ServerCommandSource source, String verb, UUID id) {
+        requireThread();
+        if (id == null) {
+            id = defaultBotId();
+        }
+        if (id == null) return reject(source, "Specify an AI player name or UUID. Available: " + availableBotNames());
+        Entry entry = entries.get(id);
+        if (entry != null && entry.nativeState == null) {
+            return reject(source, entry.data.displayName() + " is a legacy companion entity. Use '/aiplayer stop "
+                    + entry.data.displayName() + "' or '/aiplayer remove " + entry.data.displayName() + "' instead.");
+        }
+        if (entry == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (verb.equals("status")) {
+            var activity = nativeActivityStatus(nativeActor(source), id);
+            feedback(source, entry.data.displayName() + " (" + id + "): " + entry.nativeState.phase() + "; "
+                    + (entry.nativeBody != null && entry.nativeBody.connected() ? "connected" : "offline") + ". " + entry.explanation()
+                    + (activity.chargedMillis() < 0 ? " Activity totals load with the next request; saved usage is retained."
+                    : " Activity " + activity.phase() + "; charged " + activity.chargedMillis() + " ms, observed " + activity.observedMillis() + " ms.")
+                    + (entry.setup.patch() == null ? " Work patch: none." : " Work patch: " + entry.setup.patch().resourceId() + " at "
+                    + point(entry.setup.patch().min()) + " to " + point(entry.setup.patch().max()) + (entry.nativeSetupPending ? " (saving)." : ".")));
+            return 1;
+        }
+        if (entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This native player was removed.");
+        // The source grant is checked above; the compatibility arbiter receives trusted administration.
+        if (verb.equals("stop") || verb.equals("stay")) {
+            halt(entry, Actor.console(), "Stopped by an authorized controller.");
+        } else if (verb.equals("disconnect")) {
+            detachNative(entry, "Native body disconnected; its physical state remains in native saves.");
+        } else if (verb.equals("connect")) {
+            if (entry.nativePending) return reject(source, "Native save/load is still pending.");
+            if (entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED || entry.reconciliationBlocked || entry.metadataFault
+                    || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR) {
+                return reject(source, entry.explanation() + " Reconcile incomplete native state first.");
+            }
+            if (entry.nativeBody == null || !entry.nativeBody.connected()) connectNative(source, entry, false);
+        } else if (verb.equals("pause")) {
+            if (entry.runner == null || !entry.runner.pause()) return reject(source, "No running skill to pause.");
+            entry.blocker = "Pausing native skill at the next checkpoint.";
+            persist(entry);
+        } else if (verb.equals("continue")) {
+            Actor actor = nativeActor(source);
+            return continueSkillEntry(source, entry, actor != null ? actor : Actor.console());
+        } else if (verb.equals("resume")) {
+            if (entry.nativePending || entry.nativeSetupPending || entry.setupWrite.isCompletedExceptionally()
+                    || entry.reconciliationBlocked || entry.metadataFault || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR || entry.arbiter == null) {
+                return reject(source, "Connect a reconciled native body before resuming.");
+            }
+            if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+                entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+            }
+            entry.cachedRoutineCandidates = List.of();
+            attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            attentionScheduler.invalidate(entry.data.id(), WorkKind.EQUIPMENT_READINESS);
+            entry.routineRefreshPending = true;
+            if (entry.nativeBody != null && entry.nativeBody.connected()) {
+                bindBodyBlockScanBudget(entry.nativeBody);
+                entry.cachedRoutineCandidates = evaluateScheduledRoutineCandidates(entry, entry.nativeBody);
+                entry.routineRefreshPending = false;
+            }
+            entry.arbiter.resume(Actor.console());
+            entry.data = entry.arbiter.snapshot();
+            entry.blocker = "Resumed; bounded native wait/eat may be requested. Automatic progression remains disabled.";
+            persist(entry);
+        } else return reject(source, "Native bodies currently support status, stop, pause, continue, resume, connect and disconnect only.");
+        feedback(source, entry.explanation());
+        return 1;
+    }
+
+    private Actor nativeActor(ServerCommandSource source) {
+        if (source.getEntity() instanceof ServerPlayerEntity player) {
+            if (server.getPlayerManager().getPlayer(player.getUuid()) != player) return null;
+            return new Actor(player.getUuid(), player.getCommandSource().hasPermissionLevel(2));
+        }
+        return source.hasPermissionLevel(2) ? Actor.console() : null;
+    }
+
+    private boolean nativeMayControl(ServerCommandSource source, Entry entry) {
+        Actor actor = nativeActor(source);
+        return actor != null && entry.nativeState.access().mayControl(actor);
+    }
+
+    private void connectNative(ServerCommandSource source, Entry entry, boolean fresh) {
+        if (!fresh && entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection denied: ledger check state is " + entry.ledgerState + ". Reconciliation required.";
+            reject(source, entry.blocker);
+            return;
+        }
+        if (entry.metadataFault || entry.reconciliationBlocked) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection denied: companion has metadata/reconciliation fault.";
+            reject(source, entry.blocker);
+            return;
+        }
+        entry.nativePending = true;
+        long generation = entry.generation;
+        UUID nativeId = entry.data.entityId();
+        UUID requestId = UUID.randomUUID();
+        long expectedRevision = entry.nativeState != null ? entry.nativeState.revision() : 0L;
+        ConnectionToken token = new ConnectionToken(startupGeneration, entry.data.id(), generation, requestId, expectedRevision);
+        entry.pendingConnection = token;
+
+        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), nativeId).whenComplete((saved, readFailure) -> server.execute(() -> {
+            if (!running || !ready || startupGeneration != token.startupGeneration() || entries.get(entry.data.id()) != entry) return;
+            if (entry.pendingConnection == null || !token.equals(entry.pendingConnection)) {
+                // Obsolete request or retired by stop/detach/halt/superseding request.
+                return;
+            }
+            entry.pendingConnection = null;
+            if (entry.generation != token.entryGeneration() || (fresh && entry.snapshot().stopLatched())) {
+                entry.nativePending = false;
+                entry.blocker = "Native connection cancelled before dispatch; no late callback may restart it.";
+                return;
+            }
+            if (!fresh && entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR) {
+                entry.nativePending = false;
+                entry.blocker = "Native connection denied: ledger check state is " + entry.ledgerState + ". Reconciliation required.";
+                return;
+            }
+            if (entry.metadataFault || entry.reconciliationBlocked) {
+                entry.nativePending = false;
+                entry.blocker = "Native connection denied: companion has metadata/reconciliation fault.";
+                return;
+            }
+            if (entry.nativeState == null || entry.nativeState.revision() != token.expectedNativeRevision()) {
+                entry.nativePending = false;
+                entry.blocker = "Native connection denied: native revision changed before dispatch.";
+                return;
+            }
+            if (!nativeMayControl(source, entry) || (fresh && (nativeActor(source) == null || !nativeActor(source).operator()))) {
+                entry.nativePending = false;
+                entry.blocker = "Native connection lost administrative authority before dispatch.";
+                return;
+            }
+            try {
+                if (readFailure != null) throw new IllegalStateException("Native save could not be read", readFailure);
+                var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
+                        Identifier.of(entry.data.dimension())));
+                if (world == null) throw new IllegalStateException("Native dimension is unavailable");
+                java.util.Optional<net.minecraft.nbt.NbtCompound> state = saved.map(bytes -> bytes.decode(server));
+                net.minecraft.util.math.Vec3d position;
+                if (fresh) {
+                    if (state.isPresent()) throw new IllegalStateException("Fresh creation conflicts with native data");
+                    SpawnLocation spawn = nativeSpawn(source);
+                    if (spawn == null || source.getWorld() != world) throw new IllegalStateException("Creation area is no longer available");
+                    position = new net.minecraft.util.math.Vec3d(spawn.x(), spawn.y(), spawn.z());
+                } else {
+                    var tag = state.orElseThrow(() -> new IllegalStateException("Native save is missing"));
+                    var pos = tag.getList("Pos", net.minecraft.nbt.NbtElement.DOUBLE_TYPE);
+                    if (pos.size() != 3) throw new IllegalStateException("Native save position is invalid");
+                    position = new net.minecraft.util.math.Vec3d(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
+                }
+                NativePlayerBody body = new NativePlayerBody(world, entry.snapshot(), position,
+                        (lease, intent, target) -> nativeMutationAllowed(entry, lease, intent, target));
+                entry.arbiter = new ActionArbiter(entry.snapshot(), body);
+                body.bind(entry.arbiter);
+                if (!fresh) body.verifySave(state.orElseThrow(), entry.nativeState.saveReceipt());
+                entry.nativeBody = body;
+                entry.runner = new SkillRunner(entry.arbiter, PlayerRuntime::nanos);
+                body.onTick(() -> beforeNativeTick(entry, body));
+                body.connect(state, !fresh);
+                entry.data = entry.arbiter.snapshot();
+                if (fresh) establishNative(source, entry, body, body.saveNow());
+                else {
+                    entry.nativePending = false;
+                    entry.blocker = entry.snapshot().stopLatched() ? "Native body connected; stopped. Resume explicitly."
+                            : "Native body connected; automatic progression remains disabled.";
+                    persist(entry);
+                    feedback(source, entry.explanation());
+                }
+            } catch (RuntimeException failure) { nativeFailure(source, entry, "Native connection requires reconciliation", failure); }
+        }));
+    }
+
+    private void establishNative(ServerCommandSource source, Entry entry, NativePlayerBody body, UUID receipt) {
+        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), entry.data.entityId()).whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || entries.get(entry.data.id()) != entry) return;
+            try {
+                if (failure != null) throw new IllegalStateException("Native save verification failed", failure);
+                body.verifySave(saved.orElseThrow(() -> new IllegalStateException("Native save was not written")).decode(server), receipt);
+                // This settles save bookkeeping even after stop; it cannot resume work or spawn a body.
+                store.establishNativePlayer(entry.data.id(), receipt, entry.nativeState.revision()).whenComplete((established, storeFailure) -> server.execute(() -> {
+                    if (!running || entries.get(entry.data.id()) != entry) return;
+                    if (storeFailure != null) { nativeFailure(source, entry, "Native establishment could not be saved", storeFailure); return; }
+                    entry.nativeState = established;
+                    entry.nativePending = false;
+                    entry.blocker = "Native body established with a verified save; autonomous progression remains disabled.";
+                    persist(entry);
+                    feedback(source, entry.data.displayName() + " (" + entry.data.id() + "): " + entry.explanation());
+                }));
+            } catch (RuntimeException invalid) { nativeFailure(source, entry, "Native save requires reconciliation", invalid); }
+        }));
+    }
+
+    private void nativeFailure(ServerCommandSource source, Entry entry, String reason, Throwable failure) {
+        entry.pendingConnection = null;
+        entry.reconciliationBlocked = true;
+        detachNative(entry, reason);
+        entry.nativePending = false;
+        store.blockNativePlayer(entry.data.id(), reason, entry.nativeState.revision()).whenComplete((blocked, error) -> server.execute(() -> {
+            if (!running || entries.get(entry.data.id()) != entry) return;
+            if (error == null) entry.nativeState = blocked;
+            else entry.metadataFault = true;
+        }));
+        KindredMod.LOGGER.error("Native player {} blocked: {}", entry.data.id(), reason, failure);
+        reject(source, reason + "; no replacement inventory will be created.");
+    }
+
+    private void detachNative(Entry entry, String reason) {
+        entry.pendingConnection = null;
+        entry.nativePending = false;
+        halt(entry, Actor.console(), reason);
+        if (entry.nativeBody != null) entry.nativeBody.disconnect();
+        entry.data = entry.snapshot();
+        entry.nativeBody = null;
+        entry.arbiter = null;
+        entry.runner = null;
+        entry.cachedRoutineCandidates = List.of();
+        entry.cachedMiningTarget = null;
+        entry.cachedApproachTarget = null;
+        entry.cachedCraftingTablePos = null;
+        entry.cachedFurnacePos = null;
+        attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+        attentionScheduler.invalidate(entry.data.id(), WorkKind.RESOURCE_DISCOVERY);
+        attentionScheduler.invalidate(entry.data.id(), WorkKind.EQUIPMENT_READINESS);
+        closeNativeActivity(entry);
+    }
+
+    record NativeActivityStatus(String phase, long chargedMillis, long observedMillis, String work) { }
+
+    record NativeSetupStatus(WorkSetup setup, boolean pending) { }
+    NativeSetupStatus nativeSetupStatus(Actor actor, UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.nativeState == null || actor == null || !entry.nativeState.access().mayControl(actor)
+                ? null : new NativeSetupStatus(entry.setup, entry.nativeSetupPending);
+    }
+
+    int nativePatch(ServerCommandSource source, UUID id, BlockPos a, BlockPos b, String resource) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (entry.metadataFault || entry.reconciliationBlocked || entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED
+                || entry.nativeSetupPending || !entry.setupWrite.isDone() || entry.setupWrite.isCompletedExceptionally()) {
+            return reject(source, "Reconcile native state and finish pending setup writes first.");
+        }
+        var world = source.getWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(entry.data.dimension())) return reject(source, "Work patch must be assigned in the native player's dimension.");
+        WorkSetup previous = entry.setup;
+        WorkSetup changed;
+        try {
+            var block = Identifier.tryParse(resource);
+            if (block == null || !Registries.BLOCK.containsId(block)) throw new IllegalArgumentException("Unknown resource block");
+            var min = new WorkSetup.BlockPoint(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+            var max = new WorkSetup.BlockPoint(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+            var area = new WorkSetup.WorkRegion(min.x(), min.z(), max.x(), max.z());
+            var patch = new WorkSetup.ResourcePatch(min, max, block.toString());
+            var low = new BlockPos(min.x(), min.y(), min.z());
+            var high = new BlockPos(max.x(), max.y(), max.z());
+            if (!world.isInBuildLimit(low) || !world.isInBuildLimit(high) || !world.getWorldBorder().contains(low) || !world.getWorldBorder().contains(high)) {
+                throw new IllegalArgumentException("Work patch must stay inside loaded world/build bounds");
+            }
+            for (int cx = min.x() >> 4; cx <= max.x() >> 4; cx++) for (int cz = min.z() >> 4; cz <= max.z() >> 4; cz++) {
+                if (!world.isChunkLoaded(new BlockPos(cx << 4, min.y(), cz << 4))) throw new IllegalArgumentException("Load every work-patch chunk before assigning it");
+            }
+            changed = new WorkSetup(id, previous.dimension(), previous.home(), area, previous.storage(), patch, Math.incrementExact(previous.revision()));
+        } catch (IllegalArgumentException invalid) { return reject(source, invalid.getMessage()); }
+        halt(entry, Actor.console(), "Resource-work patch changed; stopped until explicit resume.");
+        entry.nativeSetupPending = true;
+        entry.setup = changed; // Apply changed authority immediately; stop stays latched throughout IO.
+        entry.setupWrite = store.saveWorkSetup(changed, previous.revision()).thenApply(saved -> {
+            if (!changed.equals(saved)) throw new IllegalStateException("Mismatched durable native setup acknowledgement");
+            return saved;
+        });
+        entry.setupWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || entries.get(id) != entry) return;
+            entry.nativeSetupPending = false;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Native work scope could not be saved; reconcile metadata.");
+                reject(source, entry.blocker);
+            } else feedback(source, "Saved resource-work patch " + saved.patch().resourceId() + " at " + point(saved.patch().min()) + " to " + point(saved.patch().max())
+                    + ". Player remains stopped. This configures no new mining capability or server-edit permission.");
+        }));
+        feedback(source, "Saving bounded resource-work scope; native work revoked immediately.");
+        return 1;
+    }
+
+    record NativeActionStatus(String phase, ActionRecord record) { }
+    NativeActionStatus nativeActionStatus(Actor actor, UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeState == null || actor == null || !entry.nativeState.access().mayControl(actor)) return null;
+        return entry.nativeTask instanceof NativeRecordedAction recorded
+                ? new NativeActionStatus(recorded.phase(), recorded.snapshot())
+                : new NativeActionStatus(entry.lastNativeAction == null ? "NONE" : entry.lastNativeAction.state().name(), entry.lastNativeAction);
+    }
+
+    NativeActivityStatus nativeActivityStatus(Actor actor, UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeState == null || actor == null || !entry.nativeState.access().mayControl(actor)) return null;
+        var session = entry.activity;
+        return session == null ? new NativeActivityStatus("UNLOADED", -1, -1, entry.blocker)
+                : new NativeActivityStatus(session.phase().name(), session.snapshot().chargedMillis(),
+                    session.snapshot().observedActiveMillis(), entry.blocker);
+    }
+
+    int nativeSkill(ServerCommandSource source, UUID id, String skill, int value) {
+        return nativeTask(source, id, skill, Map.of(skill.equals("native_wait") ? "seconds" : "slot", String.valueOf(value)));
+    }
+
+    int nativeWalk(ServerCommandSource source, UUID id, String direction, int blocks) {
+        return nativeTask(source, id, "native_walk", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
+    }
+
+    int nativeTraverse(ServerCommandSource source, UUID id, String direction, int blocks) {
+        return nativeTask(source, id, "native_traverse", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
+    }
+
+    int nativeRetreat(ServerCommandSource source, UUID id, String direction, int blocks) {
+        return nativeTask(source, id, "native_retreat", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
+    }
+
+    int nativeSwap(ServerCommandSource source, UUID id, int fromSlot, int toSlot) {
+        return nativeTask(source, id, "native_swap", Map.of("source", String.valueOf(fromSlot), "target", String.valueOf(toSlot)));
+    }
+
+    int nativeMine(ServerCommandSource source, UUID id, BlockPos target, int hotbarSlot) {
+        return nativeTask(source, id, "native_mine", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "slot", String.valueOf(hotbarSlot)));
+    }
+
+    int nativeGather(ServerCommandSource source, UUID id, int count, int hotbarSlot) {
+        return nativeTask(source, id, "native_gather", Map.of("count", String.valueOf(count), "slot", String.valueOf(hotbarSlot)));
+    }
+
+    int nativeCraft(ServerCommandSource source, UUID id, String recipe) {
+        return nativeTask(source, id, "native_craft", Map.of("recipe", recipe));
+    }
+
+    int nativePlace(ServerCommandSource source, UUID id, BlockPos target, String side, int hotbarSlot) {
+        return nativeTask(source, id, "native_place", Map.of(
+                "x", String.valueOf(target.getX()),
+                "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()),
+                "side", side == null ? "up" : side,
+                "slot", String.valueOf(hotbarSlot)));
+    }
+
+    int nativeSmelt(ServerCommandSource source, UUID id, BlockPos target, String action) {
+        Map<String, String> args = new java.util.HashMap<>();
+        if (target != null) {
+            args.put("x", String.valueOf(target.getX()));
+            args.put("y", String.valueOf(target.getY()));
+            args.put("z", String.valueOf(target.getZ()));
+        }
+        if (action != null) {
+            args.put("action", action);
+        }
+        return nativeTask(source, id, "native_smelt", args);
+    }
+
+    int nativeAttack(ServerCommandSource source, UUID id, UUID targetId, Integer slot) {
+        Map<String, String> args = new java.util.HashMap<>();
+        args.put("target", targetId.toString());
+        if (slot != null) {
+            args.put("slot", String.valueOf(slot));
+        }
+        return nativeTask(source, id, "native_attack", args);
+    }
+
+    int nativeBlock(ServerCommandSource source, UUID id, int ticks) {
+        return nativeTask(source, id, "native_block", Map.of("ticks", String.valueOf(ticks)));
+    }
+
+    int nativeTill(ServerCommandSource source, UUID id, BlockPos target, int hotbarSlot) {
+        return nativeTask(source, id, "native_till", Map.of(
+                "x", String.valueOf(target.getX()),
+                "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()),
+                "slot", String.valueOf(hotbarSlot)));
+    }
+
+    int nativePlant(ServerCommandSource source, UUID id, BlockPos target, int hotbarSlot) {
+        return nativeTask(source, id, "native_plant", Map.of(
+                "x", String.valueOf(target.getX()),
+                "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()),
+                "slot", String.valueOf(hotbarSlot)));
+    }
+
+    int nativeHarvest(ServerCommandSource source, UUID id, BlockPos target, int hotbarSlot, boolean replant) {
+        return nativeTask(source, id, "native_harvest", Map.of(
+                "x", String.valueOf(target.getX()),
+                "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()),
+                "slot", String.valueOf(hotbarSlot),
+                "replant", String.valueOf(replant)));
+    }
+
+    int nativeSleep(ServerCommandSource source, UUID id, BlockPos target) {
+        return nativeTask(source, id, "native_sleep", Map.of(
+                "x", String.valueOf(target.getX()),
+                "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ())));
+    }
+
+    int nativeIgnitePortal(ServerCommandSource source, UUID id, BlockPos target, int hotbarSlot) {
+        return nativeTask(source, id, "native_ignite_portal", Map.of(
+                "x", String.valueOf(target.getX()),
+                "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()),
+                "slot", String.valueOf(hotbarSlot)));
+    }
+
+    int nativeProgression(ServerCommandSource source, UUID requestedId) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (requestedId == null) {
+            requestedId = defaultBotId();
+        }
+        Entry entry = requestedId != null ? entries.get(requestedId) : null;
+        if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        var state = nativeProgressionState(requestedId);
+        if (state == null) {
+            feedback(source, entry.data.displayName() + " has no progression state available.");
+            return 1;
+        }
+        long achievedCount = state.snapshots().values().stream().filter(MilestoneSnapshot::historicallyAchieved).count();
+        long physicalCount = state.snapshots().values().stream().filter(MilestoneSnapshot::physicalPostconditionSatisfied).count();
+        feedback(source, entry.data.displayName() + " progression: " + physicalCount + " physical, " + achievedCount + " achieved ("
+                + state.snapshots().size() + " total). Active frontier: " + state.activeFrontier()
+                + ". Recovery frontier: " + (state.recoveryFrontier().isEmpty() ? "none" : state.recoveryFrontier()) + ".");
+        return 1;
+    }
+
+    private dev.kindred.core.ActionAdmission.Writer nativeActionWriter() {
+        SqliteCompanionStore database = store;
+        return actionWriterDecorator.apply(new dev.kindred.core.ActionAdmission.Writer() {
+            public CompletableFuture<ActionRecord> prepare(ActionRecord record) { return database.prepareAction(record); }
+            public CompletableFuture<ActionRecord> transition(ActionRecord next, long revision) { return database.transitionAction(next, revision); }
+        });
+    }
+
+    private int nativeTask(ServerCommandSource source, UUID id, String skill, Map<String, String> arguments) {
+        requireThread();
+        if (id == null) {
+            id = defaultBotId();
+        }
+        Entry entry = id != null ? entries.get(id) : null;
+        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        int res = dispatchNativeTask(nativeActor(source), entry, skill, arguments);
+        if (res == 1) {
+            feedback(source, "Requested " + skill + "; no work begins before durable paid admission.");
+        } else {
+            reject(source, entry.blocker);
+        }
+        return res;
+    }
+
+    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments) {
+        requireThread();
+        UUID id = entry.data.id();
+        if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
+            return 0;
+        }
+        if (entry.metadataFault || entry.reconciliationBlocked || entry.nativePending || entry.nativeWorkPending || entry.nativeSetupPending
+                || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR
+                || entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED || entry.nativeBody == null
+                || !entry.nativeBody.connected() || !entry.nativeBody.entity().isAlive() || entry.snapshot().stopLatched()
+                || runnerBusy(entry) || !entry.activityFlush.isDone() || entry.nativeActionPending || !entry.nativeActionFlush.isDone()
+                || entry.nativeActionFlush.isCompletedExceptionally()
+                || (entry.activity != null && entry.activity.phase() != PaidActivitySession.Phase.IDLE)) {
+            entry.blocker = "Connect and resume a reconciled, idle native player; activity settlement must finish first.";
+            return 0;
+        }
+        final dev.kindred.core.SkillDescriptor descriptor;
+        final dev.kindred.core.SkillBody task;
+        try {
+            descriptor = NativePlayerSkills.descriptor(skill);
+            descriptor.validate(arguments);
+            if (skill.equals("native_mine")) {
+                BlockPos mineTarget = new BlockPos(Integer.parseInt(arguments.get("x")),
+                        Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
+                entry.nativeBody.faceBlock(mineTarget);
+                task = new NativeMiningAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute, mineTarget, Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_gather")) {
+                task = new NativeGatherAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute, Integer.parseInt(arguments.get("count")), Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_craft")) {
+                task = new NativeCraftAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        arguments.get("recipe"), entry.cachedCraftingTablePos);
+            } else if (skill.equals("native_place")) {
+                task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Direction.byName(arguments.getOrDefault("side", "up")), Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_smelt")) {
+                BlockPos targetPos = null;
+                if (arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z")) {
+                    targetPos = new BlockPos(
+                            Integer.parseInt(arguments.get("x")),
+                            Integer.parseInt(arguments.get("y")),
+                            Integer.parseInt(arguments.get("z")));
+                }
+                String actionArg = arguments.get("action");
+                Integer fuelSlotArg = arguments.containsKey("fuel_slot") ? Integer.parseInt(arguments.get("fuel_slot")) : null;
+                Integer inputSlotArg = arguments.containsKey("input_slot") ? Integer.parseInt(arguments.get("input_slot")) : null;
+                Integer countArg = arguments.containsKey("count") ? Integer.parseInt(arguments.get("count")) : null;
+                task = new NativeSmeltAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute, targetPos, actionArg, fuelSlotArg, inputSlotArg, countArg);
+            } else if (skill.equals("native_swap")) {
+                int source = Integer.parseInt(arguments.get("source"));
+                int target = Integer.parseInt(arguments.get("target"));
+                var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
+                task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, source, target);
+            } else if (skill.equals("native_attack")) {
+                UUID targetId = UUID.fromString(arguments.get("target"));
+                Integer slot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : null;
+                var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
+                task = new NativeAttackAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, targetId, slot);
+            } else if (skill.equals("native_till")) {
+                task = new NativeTillAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_plant")) {
+                task = new NativePlantAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_harvest")) {
+                int harvestSlot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : -1;
+                boolean replant = Boolean.parseBoolean(arguments.getOrDefault("replant", "true"));
+                task = new NativeHarvestAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        harvestSlot, replant);
+            } else if (skill.equals("native_sleep")) {
+                task = new NativeSleepAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
+            } else if (skill.equals("native_ignite_portal")) {
+                task = new NativeIgnitePortalAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_organize_chest")) {
+                int maxMoves = arguments.containsKey("max_moves") ? Integer.parseInt(arguments.get("max_moves")) : 4;
+                task = new NativeChestOrganizeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        maxMoves);
+            } else if (skill.equals("native_toss")) {
+                task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")),
+                        Integer.parseInt(arguments.get("count")),
+                        UUID.fromString(arguments.get("target")));
+            } else {
+                var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
+                task = skill.equals("native_equip") ? new NativeEquipmentAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute) : operation;
+            }
+        } catch (IllegalArgumentException invalid) {
+            entry.blocker = invalid.getMessage();
+            return 0;
+        }
+        if (admission.request(id, id, 1) != AdmissionBoard.Decision.ADMIT) {
+            entry.blocker = "No activity seat is available.";
+            return 0;
+        }
+        entry.nativeWorkPending = true;
+        long generation = entry.generation;
+        var preparation = store.limit(id).thenCompose(limit -> {
+            var period = AccountingPeriod.containing(java.time.Instant.now(), java.time.ZoneId.of(limit.timezone()));
+            return store.openBudget(id, period).thenApply(budget -> new NativeBudget(limit, budget));
+        });
+        // Track preparation as well as settlement so shutdown never closes the store underneath it.
+        entry.activityFlush = preparation.handle((ignored, failure) -> null);
+        preparation.whenComplete((prepared, failure) -> server.execute(() -> {
+            if (!running || entry.generation != generation || (actor != null && !entry.nativeState.access().mayControl(actor))
+                    || entry.metadataFault || entry.reconciliationBlocked
+                    || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR
+                    || entry.snapshot().stopLatched()
+                    || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
+                entry.nativeWorkPending = false;
+                admission.release(id);
+                return;
+            }
+            if (failure != null) { nativeActivityFailure(entry, "Activity budget could not be loaded"); return; }
+            try {
+                entry.activity = new PaidActivitySession(prepared.budget(), Duration.ofMillis(prepared.limit().capMillis()),
+                        store::saveBudget, server::execute, java.time.Clock.systemUTC(), System::nanoTime);
+                entry.activity.request(prepared.budget().period().endExclusive()).whenComplete((paid, error) -> {
+                    entry.nativeWorkPending = false; // Session completion runs on the server thread.
+                    if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
+                    if (!running || generation != entry.generation || (actor != null && !entry.nativeState.access().mayControl(actor))
+                            || entry.metadataFault || entry.reconciliationBlocked
+                            || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR
+                            || entry.snapshot().stopLatched()
+                            || entry.arbiter.cancellationPending() || entry.hazardInterrupted
+                            || entry.nativeBody == null || !entry.nativeBody.connected() || !Boolean.TRUE.equals(paid)
+                            || !entry.activity.paid()) {
+                        entry.activity.stop(); admission.release(id);
+                        if (running && generation == entry.generation) entry.blocker = entry.activity.blocker().isBlank()
+                                ? "Native request cancelled before paid dispatch." : entry.activity.blocker();
+                        return;
+                    }
+                    try {
+                        entry.skillId = skill;
+                        entry.nativeTask = task;
+                        UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
+                        entry.lease = entry.runner.start(descriptor, arguments,
+                                task, actor == null ? Actor.console() : actor, taskId, java.util.Optional.empty());
+                        entry.lastRunnerState = SkillRunner.State.RUNNING;
+                        entry.blocker = "Running " + skill + " under one acknowledged activity slice.";
+                        persist(entry);
+                    } catch (RuntimeException denied) {
+                        entry.activity.stop(); admission.release(id);
+                        entry.blocker = "Native skill denied: " + denied.getMessage();
+                    }
+                });
+            } catch (RuntimeException invalid) { nativeActivityFailure(entry, "Activity state requires reconciliation"); }
+        }));
+        return 1;
+    }
+
+    private record NativeBudget(ActivityLimit limit, BudgetState budget) { }
+
+    private void nativeActivityFailure(Entry entry, String reason) {
+        entry.metadataFault = true;
+        entry.nativeWorkPending = false;
+        halt(entry, Actor.console(), reason + "; stopped pending reconciliation.");
+    }
+
+    private void closeNativeActivity(Entry entry) {
+        if (entry.activity != null) {
+            entry.activityFlush = CompletableFuture.allOf(entry.activityFlush, entry.activity.close());
+            entry.activity = null;
+        }
+    }
+
+    private void closeNativeAction(Entry entry) {
+        if (!(entry.nativeTask instanceof NativeRecordedAction recorded)) return;
+        entry.nativeTask = null; // A flush callback may stop the entry; never register the same close twice.
+        entry.nativeActionPending = true;
+        var flush = recorded.close();
+        entry.nativeActionFlush = CompletableFuture.allOf(entry.nativeActionFlush, flush);
+        flush.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || entries.get(entry.data.id()) != entry) return;
+            entry.nativeActionPending = false;
+            if (saved != null) entry.lastNativeAction = saved;
+            if (!entry.reconciliationBlocked && (failure != null || (saved != null && saved.state() == ActionRecord.State.UNCERTAIN))) {
+                nativeFailure(server.getCommandSource(), entry, "Durable native action requires reconciliation",
+                        failure == null ? new IllegalStateException(saved.detail()) : failure);
+            }
+        }));
+    }
+
+    private static NativePlayerSkills.NativeMovementHabits nativeMovementHabits(Entry entry) {
+        return new NativePlayerSkills.NativeMovementHabits(entry.mannerisms, entry.profile.personality(), PlayerRuntime::now);
+    }
+
+    private boolean nativeMutationAllowed(Entry entry, ActionLease lease, NativePlayerBody.Intent intent, BlockPos target) {
+        return running && ready && !entry.metadataFault && !entry.reconciliationBlocked && !entry.nativePending && !entry.nativeSetupPending
+                && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR
+                && entry.nativeState.phase() == StoredNativePlayer.Phase.ESTABLISHED && !entry.snapshot().stopLatched()
+                && java.util.Objects.equals(entry.lease, lease) && entry.arbiter.isCurrent(lease)
+                && (("native_eat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.EAT || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                    || ("native_equip".equals(entry.skillId) && intent == NativePlayerBody.Intent.EQUIP)
+                    || ("native_mine".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_gather".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
+                    || ("native_craft".equals(entry.skillId) && intent == NativePlayerBody.Intent.CRAFT)
+                    || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
+                    || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
+                    || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_block".equals(entry.skillId) && intent == NativePlayerBody.Intent.BLOCK)
+                    || ("native_till".equals(entry.skillId) && (intent == NativePlayerBody.Intent.TILL || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_plant".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLANT || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_harvest".equals(entry.skillId) && (intent == NativePlayerBody.Intent.HARVEST || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MINE))
+                    || ("native_sleep".equals(entry.skillId) && intent == NativePlayerBody.Intent.SLEEP)
+                    || ("native_ignite_portal".equals(entry.skillId) && (intent == NativePlayerBody.Intent.IGNITE_PORTAL || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_organize_chest".equals(entry.skillId) && intent == NativePlayerBody.Intent.CHEST_ORGANIZE)
+                    || ("native_toss".equals(entry.skillId) && intent == NativePlayerBody.Intent.TOSS))
+                && NativePlayerSkills.permits(entry.nativeTask, intent, target)
+                && entry.activity != null && entry.activity.paid();
+    }
+
+    static boolean isHazardousSituation(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feetPos = player.getBlockPos();
+        BlockPos groundPos = feetPos.down();
+        var feetState = world.getBlockState(feetPos);
+        var groundState = world.getBlockState(groundPos);
+        boolean inHazard = feetState.isOf(Blocks.FIRE) || feetState.isOf(Blocks.SOUL_FIRE)
+                || feetState.isOf(Blocks.LAVA) || feetState.isOf(Blocks.SWEET_BERRY_BUSH)
+                || feetState.isOf(Blocks.POWDER_SNOW) || !world.getFluidState(feetPos).isEmpty();
+        boolean onHazard = groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS)
+                || groundState.isOf(Blocks.LAVA);
+        return inHazard || onHazard || player.isOnFire();
+    }
+
+    static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos) {
+        var world = player.getServerWorld();
+        BlockPos feetPos = player.getBlockPos();
+        String[] dirs = new String[]{"north", "south", "east", "west"};
+        BlockPos[] adj = new BlockPos[]{feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
+        String bestDir = null;
+        double maxDistSq = -1.0;
+
+        for (int d = 0; d < 4; d++) {
+            BlockPos targetFeet = adj[d];
+            BlockPos targetGround = targetFeet.down();
+            if (!world.isChunkLoaded(targetFeet) || !world.isInBuildLimit(targetFeet.up()) || !world.getWorldBorder().contains(targetFeet)) continue;
+            var targetSupport = world.getBlockState(targetGround);
+            if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)
+                    || targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)
+                    || !world.getFluidState(targetFeet).isEmpty()) continue;
+            var targetFeetState = world.getBlockState(targetFeet);
+            if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
+                    || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
+                    || targetFeetState.isOf(Blocks.LAVA)) continue;
+            var box = player.getBoundingBox().offset(Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
+            if (!world.isSpaceEmpty(player, box)) continue;
+
+            double distSq = threatPos == null ? 1.0 : Vec3d.ofBottomCenter(targetFeet).squaredDistanceTo(threatPos);
+            if (distSq > maxDistSq) {
+                maxDistSq = distSq;
+                bestDir = dirs[d];
+            }
+        }
+        return bestDir;
+    }
+
+    private boolean isWaterNearby(ServerWorld world, BlockPos pos) {
+        for (BlockPos p : BlockPos.iterate(pos.add(-4, 0, -4), pos.add(4, 1, 4))) {
+            if (!canScanBlock()) {
+                return false;
+            }
+            recordBlockScan();
+            if (world.getFluidState(p).isIn(FluidTags.WATER)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void bindBodyBlockScanBudget(NativePlayerBody body) {
+        body.bindBlockScanBudget(() -> {
+            if (!canScanBlock()) {
+                return false;
+            }
+            recordBlockScan();
+            return true;
+        });
+    }
+
+    /** Workstation discovery for crafting policy; bounded and not charged against the shared scan budget. */
+    private void primeWorkstationCaches(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos center = BlockPos.ofFloored(player.getEyePos());
+        if (entry.cachedCraftingTablePos == null) {
+            entry.cachedCraftingTablePos = locateWorkstationBlock(world, center, Blocks.CRAFTING_TABLE, 4.5);
+        }
+        if (entry.cachedFurnacePos == null) {
+            entry.cachedFurnacePos = locateWorkstationBlock(world, center, Blocks.FURNACE, 4.5);
+        }
+    }
+
+    private static BlockPos locateWorkstationBlock(ServerWorld world, BlockPos center, net.minecraft.block.Block block, double reach) {
+        int radius = (int) Math.ceil(reach);
+        int vertical = Math.min(radius, 3);
+        BlockPos best = null;
+        double bestDistSq = reach * reach;
+        for (int dy = -vertical; dy <= vertical; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = center.add(dx, dy, dz);
+                    double distSq = center.getSquaredDistance(pos);
+                    if (distSq > bestDistSq) continue;
+                    if (!world.isChunkLoaded(pos)) continue;
+                    if (world.getBlockState(pos).isOf(block)) {
+                        bestDistSq = distSq;
+                        best = pos.toImmutable();
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) { }
+
+    private boolean canScanBlock() {
+        return blocksScannedThisTick < MAX_BLOCK_CHECKS_PER_TICK;
+    }
+
+    private void recordBlockScan() {
+        blocksScannedThisTick++;
+        totalBlockChecksMonotonic++;
+    }
+
+    private static long computeInventoryFingerprint(ServerPlayerEntity player) {
+        long hash = 1;
+        var inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            var st = inv.getStack(i);
+            if (!st.isEmpty()) {
+                hash = 31 * hash + i;
+                hash = 31 * hash + Registries.ITEM.getRawId(st.getItem());
+                hash = 31 * hash + st.getCount();
+                hash = 31 * hash + st.getDamage();
+                hash = 31 * hash + st.getComponents().hashCode();
+            }
+        }
+        for (int i = 0; i < 4; i++) {
+            var st = inv.getArmorStack(i);
+            if (!st.isEmpty()) {
+                hash = 31 * hash + (36 + i);
+                hash = 31 * hash + Registries.ITEM.getRawId(st.getItem());
+                hash = 31 * hash + st.getCount();
+                hash = 31 * hash + st.getDamage();
+                hash = 31 * hash + st.getComponents().hashCode();
+            }
+        }
+        var off = player.getOffHandStack();
+        if (!off.isEmpty()) {
+            hash = 31 * hash + 40;
+            hash = 31 * hash + Registries.ITEM.getRawId(off.getItem());
+            hash = 31 * hash + off.getCount();
+            hash = 31 * hash + off.getDamage();
+            hash = 31 * hash + off.getComponents().hashCode();
+        }
+        return hash;
+    }
+
+    private void refreshTacticalObservation(Entry entry, long tick) {
+        if (entry.nativeBody == null || !entry.nativeBody.connected() || entry.nativeBody.entity() == null) {
+            return;
+        }
+        var player = entry.nativeBody.entity();
+        long fp = computeInventoryFingerprint(player);
+        int held = player.getInventory().selectedSlot;
+        if (fp != entry.cachedWeaponFingerprint || held != entry.cachedWeaponHeldSlot) {
+            entry.cachedWeapons = NativeTacticalObserver.scanWeaponProfiles(player);
+            entry.cachedWeaponFingerprint = fp;
+            entry.cachedWeaponHeldSlot = held;
+        }
+        if (entry.lastTacticalObservation != null
+                && entry.lastTacticalObservation.tick() == tick
+                && entry.lastTacticalObservation.bodyGeneration() == entry.generation) {
+            return;
+        }
+        try {
+            var obs = NativeTacticalObserver.observe(player, entry.data.id(), entry.generation,
+                    entry.foodTaskAuthorized, entry.shelterProtectionAuthorized, tick, entry.cachedWeapons);
+            var candidates = dev.kindred.core.tactics.TacticalPriorityPolicy.generateCandidateOptions(obs, entry.tacticalPredictor);
+            entry.lastTacticalObservation = obs;
+            entry.lastTacticalDecision = dev.kindred.core.tactics.TacticalPriorityPolicy.evaluate(obs, candidates);
+            entry.lastTacticalRefreshTick = tick;
+        } catch (Exception ignored) {
+        }
+    }
+
+    private SignalFrame createSignalFrame(Entry entry, long tick) {
+        if (entry.nativeBody == null || !entry.nativeBody.connected()) {
+            return new SignalFrame(tick, entry.generation, false, false, ThreatKnowledge.UNKNOWN, tick, null, false);
+        }
+        var player = entry.nativeBody.entity();
+        boolean operational = running && ready && !entry.metadataFault && !entry.reconciliationBlocked
+                && !entry.nativePending && entry.nativeState != null && entry.nativeState.phase() == StoredNativePlayer.Phase.ESTABLISHED
+                && !entry.snapshot().stopLatched();
+        boolean danger = isHazardousSituation(player);
+        boolean recovery = player.getHealth() < 18.0f || player.getHungerManager().getFoodLevel() < 14;
+        ThreatKnowledge threat = ThreatKnowledge.CLEAR;
+        long threatTick = tick;
+        if (entry.lastTacticalObservation != null
+                && !entry.lastTacticalObservation.isStale(tick, entry.generation)) {
+            boolean hasHostileThreat = entry.lastTacticalObservation.observedMobs().stream()
+                    .anyMatch(m -> !m.isCow() && (m.isCreeper() || m.isZombie() || m.isSkeleton() || m.isUndead() || m.isArthropod()));
+            threat = hasHostileThreat
+                    ? ThreatKnowledge.PRESENT
+                    : ThreatKnowledge.CLEAR;
+            threatTick = entry.lastTacticalObservation.tick();
+        }
+        return new SignalFrame(tick, entry.generation, operational, danger, threat, threatTick,
+                entry.lastAttributedAttackSequence, recovery);
+    }
+
+    void onServerTick(MinecraftServer server) {
+        if (!running || !ready) return;
+        long tick = server.getTicks();
+        if (attentionScheduler.currentTick() == tick) return;
+        if (tick % 20 == 0) {
+            teamCoordinator.handleTickExpiry(tick);
+        }
+        attentionScheduler.beginTick(tick, System.nanoTime());
+        blocksScannedThisTick = 0;
+
+        var batch = new ArrayList<dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot>();
+        for (Entry entry : entries.values()) {
+            if (entry.nativeBody != null && entry.nativeBody.connected()) {
+                refreshTacticalObservation(entry, tick);
+                SignalFrame frame = createSignalFrame(entry, tick);
+                entry.attentionSnapshot = entry.attention.observe(frame);
+                batch.add(new dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot(
+                        entry.data.id(),
+                        tick,
+                        entry.generation,
+                        entry.attentionSnapshot.revision(),
+                        entry.attentionSnapshot.state(),
+                        entry.attentionSnapshot.optionalWorkActive()
+                ));
+            }
+        }
+        attentionScheduler.synchronizeEntries(batch);
+
+        java.util.Optional<WorkToken> nextToken;
+        while ((nextToken = attentionScheduler.selectNext()).isPresent()) {
+            WorkToken token = nextToken.get();
+            if (!attentionScheduler.tryStart(token, System.nanoTime())) continue;
+            Entry targetEntry = entries.get(token.playerId());
+            if (targetEntry == null || targetEntry.nativeBody == null || !targetEntry.nativeBody.connected()) {
+                attentionScheduler.abandon(token);
+                continue;
+            }
+
+            try {
+                executeOptionalSlice(targetEntry, token);
+                attentionScheduler.complete(token);
+            } catch (Exception failure) {
+                attentionScheduler.abandon(token);
+            }
+        }
+    }
+
+    private void executeOptionalSlice(Entry entry, WorkToken token) {
+        bindBodyBlockScanBudget(entry.nativeBody);
+        switch (token.kind()) {
+            case ROUTINE_GOALS -> {
+                entry.cachedRoutineCandidates = evaluateScheduledRoutineCandidates(entry, entry.nativeBody);
+            }
+            case RESOURCE_DISCOVERY -> {
+                budgetedResourceScan(entry, entry.nativeBody);
+            }
+            case EQUIPMENT_READINESS -> {
+                entry.cachedRoutineCandidates = evaluateScheduledRoutineCandidates(entry, entry.nativeBody);
+            }
+            case BROAD_THREAT, SOCIAL_DELIBERATION, LEARNING_REVIEW -> {
+            }
+        }
+    }
+
+    private void budgetedResourceScan(Entry entry, NativePlayerBody body) {
+        bindBodyBlockScanBudget(body);
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var center = player.getBlockPos();
+
+        // 1. Workstation verification
+        if (entry.cachedCraftingTablePos != null) {
+            if (!world.isChunkLoaded(entry.cachedCraftingTablePos)
+                    || !world.getBlockState(entry.cachedCraftingTablePos).isOf(Blocks.CRAFTING_TABLE)
+                    || player.getEyePos().squaredDistanceTo(entry.cachedCraftingTablePos.getX() + 0.5, entry.cachedCraftingTablePos.getY() + 0.5, entry.cachedCraftingTablePos.getZ() + 0.5) > 20.25) {
+                entry.cachedCraftingTablePos = null;
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            }
+        }
+        if (entry.cachedCraftingTablePos == null) {
+            var found = body.findNearbyBlock(Blocks.CRAFTING_TABLE, 4.5);
+            if (found.isPresent()) {
+                entry.cachedCraftingTablePos = found.get();
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            }
+        }
+
+        if (entry.cachedFurnacePos != null) {
+            if (!world.isChunkLoaded(entry.cachedFurnacePos)
+                    || !world.getBlockState(entry.cachedFurnacePos).isOf(Blocks.FURNACE)
+                    || player.getEyePos().squaredDistanceTo(entry.cachedFurnacePos.getX() + 0.5, entry.cachedFurnacePos.getY() + 0.5, entry.cachedFurnacePos.getZ() + 0.5) > 20.25) {
+                entry.cachedFurnacePos = null;
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            }
+        }
+        if (entry.cachedFurnacePos == null) {
+            var found = body.findNearbyBlock(Blocks.FURNACE, 4.5);
+            if (found.isPresent()) {
+                entry.cachedFurnacePos = found.get();
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            }
+        }
+
+        // 2. Patch resource scan
+        if (entry.setup != null && entry.setup.patch() != null && entry.setup.patch().resourceId() != null
+                && entry.setup.dimension().equals(world.getRegistryKey().getValue().toString())) {
+            var patch = entry.setup.patch();
+            boolean patchRequiresPickaxe = patch.resourceId().equals("minecraft:stone")
+                    || patch.resourceId().equals("minecraft:cobblestone")
+                    || patch.resourceId().contains("ore");
+            boolean playerHasPickaxe = false;
+            for (int s = 0; s < 36; s++) {
+                if (player.getInventory().getStack(s).isIn(ItemTags.PICKAXES)) {
+                    playerHasPickaxe = true;
+                    break;
+                }
+            }
+            if (!patchRequiresPickaxe || playerHasPickaxe) {
+            int reach = 4;
+            int checks = 0;
+            boolean foundNearby = false;
+
+            if (entry.cachedMiningTarget != null) {
+                if (canScanBlock()) {
+                    recordBlockScan();
+                    var pos = entry.cachedMiningTarget;
+                    if (world.isChunkLoaded(pos) && Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString().equals(patch.resourceId())
+                            && body.miningEligible(pos) && player.getEyePos().squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 16.0) {
+                        foundNearby = true;
+                    } else {
+                        entry.cachedMiningTarget = null;
+                        attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+                    }
+                }
+            }
+
+            if (!foundNearby) {
+                for (int y = -1; y <= 2 && checks < 32; y++) {
+                    for (int x = -reach; x <= reach && checks < 32; x++) {
+                        for (int z = -reach; z <= reach && checks < 32; z++) {
+                            BlockPos pos = center.add(x, y, z);
+                            if (!patch.contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                            if (entry.setup.area() != null && !entry.setup.area().contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                            if (!world.isChunkLoaded(pos)) continue;
+                            if (!canScanBlock()) break;
+                            checks++;
+                            recordBlockScan();
+                            var state = world.getBlockState(pos);
+                            boolean isLog = state.isIn(BlockTags.LOGS);
+                            boolean isStone = state.isIn(BlockTags.PICKAXE_MINEABLE) || state.isOf(Blocks.STONE) || state.isOf(Blocks.COBBLESTONE);
+                            if ((!isLog && !isStone) || state.hasBlockEntity()) continue;
+                            if (!Registries.BLOCK.getId(state.getBlock()).toString().equals(patch.resourceId())) continue;
+                            if (!body.miningEligible(pos)) continue;
+                            entry.cachedMiningTarget = pos;
+                            entry.cachedMiningIsStone = isStone;
+                            foundNearby = true;
+                            attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+                            break;
+                        }
+                        if (foundNearby) break;
+                    }
+                    if (foundNearby) break;
+                }
+            }
+
+            if (!foundNearby && canScanBlock()) {
+                int searchRadius = 12;
+                int distantChecks = 0;
+                for (int y = -3; y <= 3 && distantChecks < 32 && canScanBlock(); y++) {
+                    for (int x = -searchRadius; x <= searchRadius && distantChecks < 32 && canScanBlock(); x++) {
+                        for (int z = -searchRadius; z <= searchRadius && distantChecks < 32 && canScanBlock(); z++) {
+                            distantChecks++;
+                            recordBlockScan();
+                            BlockPos pos = center.add(x, y, z);
+                            if (!patch.contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                            if (entry.setup.area() != null && !entry.setup.area().contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                            if (!world.isChunkLoaded(pos)) continue;
+                            var state = world.getBlockState(pos);
+                            if (!Registries.BLOCK.getId(state.getBlock()).toString().equals(patch.resourceId())) continue;
+                            entry.cachedApproachTarget = pos;
+                            attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+                            break;
+                        }
+                        if (entry.cachedApproachTarget != null) break;
+                    }
+                    if (entry.cachedApproachTarget != null) break;
+                }
+            }
+            }
+        }
+        refreshProgressionSeedHint(entry, body);
+    }
+
+    /** Bounded patch-only scan that does not consume the per-tick block budget (small gametest patches). */
+    private void primePatchResourceCaches(Entry entry, NativePlayerBody body) {
+        if (entry.setup == null || entry.setup.patch() == null || entry.cachedMiningTarget != null || entry.cachedApproachTarget != null) {
+            return;
+        }
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!entry.setup.dimension().equals(world.getRegistryKey().getValue().toString())) {
+            return;
+        }
+        var patch = entry.setup.patch();
+        boolean playerHasPickaxe = false;
+        for (int s = 0; s < 36; s++) {
+            if (player.getInventory().getStack(s).isIn(ItemTags.PICKAXES)) {
+                playerHasPickaxe = true;
+                break;
+            }
+        }
+        boolean patchRequiresPickaxe = patch.resourceId().equals("minecraft:stone")
+                || patch.resourceId().equals("minecraft:cobblestone")
+                || patch.resourceId().contains("ore");
+        if (patchRequiresPickaxe && !playerHasPickaxe) {
+            return;
+        }
+        BlockPos approachFallback = null;
+        for (int y = patch.min().y(); y <= patch.max().y(); y++) {
+            for (int x = patch.min().x(); x <= patch.max().x(); x++) {
+                for (int z = patch.min().z(); z <= patch.max().z(); z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (!world.isChunkLoaded(pos)) continue;
+                    var state = world.getBlockState(pos);
+                    if (!Registries.BLOCK.getId(state.getBlock()).toString().equals(patch.resourceId())) continue;
+                    if (body.miningEligible(pos)
+                            && player.getEyePos().squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 16.0) {
+                        entry.cachedMiningTarget = pos;
+                        entry.cachedMiningIsStone = state.isIn(BlockTags.PICKAXE_MINEABLE) || state.isOf(Blocks.STONE) || state.isOf(Blocks.COBBLESTONE);
+                        return;
+                    }
+                    if (approachFallback == null) {
+                        approachFallback = pos;
+                    }
+                }
+            }
+        }
+        if (approachFallback != null) {
+            entry.cachedApproachTarget = approachFallback;
+        }
+    }
+
+    private void refreshProgressionSeedHint(Entry entry, NativePlayerBody body) {
+        if (!SeedStructureLocator.locatorAllowed(entry.runtimeSettings)) {
+            entry.progressionSeedTarget = null;
+            return;
+        }
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var obs = entry.lastProgressionObservation;
+        if (obs == null || entry.lastProgressionState == null) {
+            return;
+        }
+        SeedStructureLocator.StructureKind kind = null;
+        if (obs.isInNether() && (milestoneSeeking(entry, MilestoneId.GATHER_BLAZE_RODS)
+                || milestoneSeeking(entry, MilestoneId.GATHER_NETHER_WART))) {
+            kind = SeedStructureLocator.StructureKind.NETHER_FORTRESS;
+        } else if (obs.isInOverworld() && milestoneSeeking(entry, MilestoneId.CRAFT_BED)) {
+            kind = SeedStructureLocator.StructureKind.VILLAGE;
+        }
+        if (kind == null) {
+            return;
+        }
+        SeedStructureLocator.locateNearest(
+                world,
+                entry.runtimeSettings,
+                entry.data.id(),
+                server.getTicks(),
+                entry.lastSeedLocateTick,
+                kind,
+                player.getBlockPos(),
+                48
+        ).ifPresent(result -> {
+            entry.progressionSeedTarget = result.pos();
+            entry.lastSeedLocateTick = server.getTicks();
+        });
+    }
+
+    private static boolean milestoneSeeking(Entry entry, MilestoneId id) {
+        if (entry.lastProgressionState == null) return false;
+        MilestoneSnapshot snap = entry.lastProgressionState.snapshots().get(id);
+        return snap != null && snap.status() != MilestoneStatus.ACHIEVED && !snap.historicallyAchieved();
+    }
+
+
+    private boolean validateCandidateStillExecutable(Entry entry, NativePlayerBody body, NativeTaskCandidate tc) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        return switch (tc.skill()) {
+            case "native_eat", "native_swap" -> {
+                String sourceStr = tc.arguments().get("slot");
+                if (sourceStr == null) sourceStr = tc.arguments().get("source");
+                if (sourceStr != null) {
+                    try {
+                        int slot = Integer.parseInt(sourceStr);
+                        yield slot >= 0 && slot < 36 && !player.getInventory().getStack(slot).isEmpty();
+                    } catch (NumberFormatException ignored) {
+                        yield false;
+                    }
+                }
+                yield true;
+            }
+            case "native_mine" -> {
+                try {
+                    int x = Integer.parseInt(tc.arguments().get("x"));
+                    int y = Integer.parseInt(tc.arguments().get("y"));
+                    int z = Integer.parseInt(tc.arguments().get("z"));
+                    BlockPos pos = new BlockPos(x, y, z);
+                    body.faceBlock(pos);
+                    yield world.isChunkLoaded(pos) && !world.getBlockState(pos).isAir() && body.miningEligible(pos);
+                } catch (Exception ignored) {
+                    yield false;
+                }
+            }
+            case "native_craft" -> {
+                String recipe = tc.arguments().get("recipe");
+                if (recipe == null) yield false;
+                primeWorkstationCaches(entry, body);
+                if (body.planCraft(recipe, entry.cachedCraftingTablePos).isPresent()) yield true;
+                yield body.planCraft2x2(recipe).isPresent();
+            }
+            case "native_place" -> {
+                try {
+                    int slot = Integer.parseInt(tc.arguments().get("slot"));
+                    yield slot >= 0 && slot < 36 && !player.getInventory().getStack(slot).isEmpty();
+                } catch (Exception ignored) {
+                    yield false;
+                }
+            }
+            case "native_attack" -> {
+                String targetStr = tc.arguments().get("target");
+                if (targetStr != null) {
+                    try {
+                        UUID targetId = UUID.fromString(targetStr);
+                        var target = world.getEntity(targetId);
+                        yield target instanceof net.minecraft.entity.LivingEntity living && living.isAlive()
+                                && player.squaredDistanceTo(living) <= 16.0 && player.canSee(living);
+                    } catch (Exception ignored) {
+                        yield false;
+                    }
+                }
+                yield false;
+            }
+            case "native_block" -> {
+                yield player.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD)
+                        || player.getMainHandStack().isOf(net.minecraft.item.Items.SHIELD);
+            }
+            default -> true;
+        };
+    }
+
+    private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body) {
+        var candidates = new java.util.ArrayList<NativeTaskCandidate>();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        // 0. Environmental hazard detection and evasive retreat (URGENT)
+        BlockPos feetPos = player.getBlockPos();
+        if (isHazardousSituation(player)) {
+            String[] dirs = new String[]{"north", "south", "east", "west"};
+            BlockPos[] adj = new BlockPos[]{feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
+            for (int d = 0; d < 4; d++) {
+                BlockPos targetFeet = adj[d];
+                BlockPos targetGround = targetFeet.down();
+                if (!world.isChunkLoaded(targetFeet) || !world.isInBuildLimit(targetFeet.up()) || !world.getWorldBorder().contains(targetFeet)) continue;
+                var targetSupport = world.getBlockState(targetGround);
+                if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)
+                        || targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)
+                        || !world.getFluidState(targetFeet).isEmpty()) continue;
+                var targetFeetState = world.getBlockState(targetFeet);
+                if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
+                        || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
+                        || targetFeetState.isOf(Blocks.LAVA)) continue;
+                var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
+                if (!world.isSpaceEmpty(player, box)) continue;
+
+                // Found a safe retreat direction
+                UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + dirs[d]).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                        dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", dirs[d], "blocks", "1")));
+                break;
+            }
+        }
+
+        // 0b. Creeper explosion emergency retreat (URGENT 98.0)
+        if (entry.lastTacticalObservation != null) {
+            for (var mob : entry.lastTacticalObservation.observedMobs()) {
+                if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
+                    var creeperEntity = world.getEntity(mob.entityId());
+                    Vec3d threatPos = creeperEntity != null ? creeperEntity.getPos() : null;
+                    String escapeDir = findBestEscapeDirection(player, threatPos);
+                    if (escapeDir != null) {
+                        UUID taskId = UUID.nameUUIDFromBytes(("creeper_retreat:" + entry.data.id() + ":" + mob.entityId() + ":" + escapeDir).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", escapeDir, "blocks", "1")));
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 1. Hunger and health recovery eating (URGENT)
+        float currentHealth = player.getHealth();
+        float maxHealth = player.getMaxHealth();
+        int foodLevel = player.getHungerManager().getFoodLevel();
+        boolean needsHealth = currentHealth < maxHealth;
+        boolean canEatVanilla = player.canConsume(false);
+        if (canEatVanilla || needsHealth) {
+            int foodSlot = -1;
+            double bestFoodScore = Double.NEGATIVE_INFINITY;
+            for (int slot = 0; slot < 9; slot++) {
+                var stack = player.getInventory().getStack(slot);
+                if (isEligibleFood(stack, canEatVanilla, needsHealth)) {
+                    double score = foodQualityScore(stack, needsHealth);
+                    if (score > bestFoodScore) {
+                        bestFoodScore = score;
+                        foodSlot = slot;
+                    }
+                }
+            }
+            if (foodSlot == -1) {
+                int invFoodSlot = -1;
+                double bestInvScore = Double.NEGATIVE_INFINITY;
+                for (int slot = 9; slot < 36; slot++) {
+                    var stack = player.getInventory().getStack(slot);
+                    if (isEligibleFood(stack, canEatVanilla, needsHealth)) {
+                        double score = foodQualityScore(stack, needsHealth);
+                        if (score > bestInvScore) {
+                            bestInvScore = score;
+                            invFoodSlot = slot;
+                        }
+                    }
+                }
+                if (invFoodSlot != -1) {
+                    int slot = invFoodSlot;
+                    var stack = player.getInventory().getStack(slot);
+                    if (isEligibleFood(stack, canEatVanilla, needsHealth)) {
+                        int targetH = -1;
+                        for (int h = 0; h < 9; h++) {
+                            if (player.getInventory().getStack(h).isEmpty()) {
+                                targetH = h;
+                                break;
+                            }
+                        }
+                        if (targetH == -1) {
+                            for (int h = 8; h >= 0; h--) {
+                                Item item = player.getInventory().getStack(h).getItem();
+                                if (!(item instanceof net.minecraft.item.MiningToolItem)
+                                        && !(item instanceof net.minecraft.item.SwordItem)
+                                        && !(item instanceof net.minecraft.item.AxeItem)
+                                        && !(item instanceof net.minecraft.item.BowItem)
+                                        && !(item instanceof net.minecraft.item.CrossbowItem)
+                                        && !(item instanceof net.minecraft.item.TridentItem)) {
+                                    targetH = h;
+                                    break;
+                                }
+                            }
+                        }
+                        if (targetH == -1) {
+                            targetH = 8;
+                        }
+                        double need = dev.kindred.core.SurvivalPolicy.eatingNeed(currentHealth, maxHealth, foodLevel);
+                        UUID taskId = UUID.nameUUIDFromBytes(("swap_food:" + entry.data.id() + ":" + slot + ":" + targetH).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, need,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                                "source", String.valueOf(slot),
+                                "target", String.valueOf(targetH))));
+                    }
+                }
+            } else {
+                double need = dev.kindred.core.SurvivalPolicy.eatingNeed(currentHealth, maxHealth, foodLevel);
+                UUID taskId = UUID.nameUUIDFromBytes(("eat:" + entry.data.id()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, need,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                candidates.add(new NativeTaskCandidate(candidate, "native_eat", Map.of("slot", String.valueOf(foodSlot))));
+            }
+        }
+
+        // 2. A visible Blaze is a bounded, local opportunity for the Nether resource
+        // milestone.  It still goes through the ordinary observed-mob, paid
+        // native_attack path: this creates no item and does not assume a fortress or
+        // a drop exists.  Vanilla loot and normal collision pickup remain the only
+        // way a Blaze Rod can enter the inventory.
+        if (entry.lastProgressionObservation != null && entry.lastProgressionObservation.isInNether()
+                && milestoneSeeking(entry, MilestoneId.GATHER_BLAZE_RODS)
+                && entry.lastTacticalObservation != null) {
+            int weaponSlot = -1;
+            for (int slot = 0; slot < 9; slot++) {
+                if (player.getInventory().getStack(slot).isIn(ItemTags.SWORDS)
+                        || player.getInventory().getStack(slot).isIn(ItemTags.AXES)) {
+                    weaponSlot = slot;
+                    break;
+                }
+            }
+            if (weaponSlot >= 0) {
+                for (var mob : entry.lastTacticalObservation.observedMobs()) {
+                    if (!"minecraft:blaze".equals(mob.entityType()) || mob.distance() > 4.0) continue;
+                    var entity = world.getEntity(mob.entityId());
+                    if (!(entity instanceof net.minecraft.entity.LivingEntity living) || !living.isAlive()
+                            || player.squaredDistanceTo(living) > 16.0 || !player.canSee(living)) continue;
+                    UUID taskId = UUID.nameUUIDFromBytes(("blaze_rod_attack:" + entry.data.id() + ":" + mob.entityId()
+                            + ":" + weaponSlot).getBytes(StandardCharsets.UTF_8));
+                    var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                            dev.kindred.core.TaskPreferences.Priority.URGENT, 91.0,
+                            dev.kindred.core.TaskPreferences.Affinities.none(),
+                            new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                    candidates.add(new NativeTaskCandidate(candidate, "native_attack", Map.of(
+                            "target", mob.entityId().toString(), "slot", String.valueOf(weaponSlot))));
+                    break;
+                }
+            }
+        }
+
+        // 3. Tactical combat choices from TacticalPriorityPolicy
+        if (entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()
+                && entry.lastTacticalDecision != null && entry.lastTacticalDecision.hasViableOption()) {
+            var bestOpt = entry.lastTacticalDecision.bestOption();
+            if (bestOpt.isPresent()) {
+                var option = bestOpt.get();
+                var seq = option.sequence();
+                UUID targetId = seq.targetEntityId();
+                var weapon = seq.weapon();
+
+                if (seq.containsStep(dev.kindred.core.tactics.ActionStep.PREPARE_WEAPON) && weapon != null && weapon.slot() >= 9) {
+                    int targetHotbar = 0;
+                    for (int h = 0; h < 9; h++) {
+                        if (player.getInventory().getStack(h).isEmpty()) {
+                            targetHotbar = h;
+                            break;
+                        }
+                    }
+                    UUID taskId = UUID.nameUUIDFromBytes(("swap_weapon:" + entry.data.id() + ":" + weapon.slot() + ":" + targetHotbar).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 95.0,
+                            dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                    candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                            "source", String.valueOf(weapon.slot()),
+                            "target", String.valueOf(targetHotbar))));
+                } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.NORMAL_STRIKE)
+                        || seq.containsStep(dev.kindred.core.tactics.ActionStep.CRITICAL_STRIKE)) {
+                    if (targetId != null) {
+                        double need = option.outcome().primaryObjective() == dev.kindred.core.tactics.TacticalObjective.RESOLVE_IMMEDIATE_SERIOUS_HARM
+                                ? 96.0 : 90.0;
+                        int weaponSlot = weapon != null && weapon.slot() >= 0 && weapon.slot() < 9 ? weapon.slot() : player.getInventory().selectedSlot;
+                        UUID taskId = UUID.nameUUIDFromBytes(("tactical_attack:" + entry.data.id() + ":" + targetId + ":" + weaponSlot).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, need,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_attack", Map.of(
+                                "target", targetId.toString(),
+                                "slot", String.valueOf(weaponSlot))));
+                    }
+                } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.RETREAT_TO_SAFE_CORRIDOR)) {
+                    String escapeDir = findBestEscapeDirection(player, null);
+                    if (escapeDir != null) {
+                        UUID taskId = UUID.nameUUIDFromBytes(("tactical_retreat:" + entry.data.id() + ":" + escapeDir).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 94.0,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", escapeDir, "blocks", "1")));
+                    }
+                } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.STAY_AND_GUARD)) {
+                    boolean hasShield = player.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD)
+                            || player.getMainHandStack().isOf(net.minecraft.item.Items.SHIELD);
+                    if (hasShield && entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()) {
+                        UUID taskId = UUID.nameUUIDFromBytes(("tactical_block:" + entry.data.id() + ":" + server.getTicks()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 92.0,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_block", Map.of("ticks", "20")));
+                    }
+                }
+            }
+        }
+
+        // 4. Emergency night shelter / barricade placement (URGENT 95.0)
+        if (world.isNight() && entry.setup != null && entry.setup.area() != null
+                && entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()) {
+            int blockSlot = -1;
+            for (int s = 0; s < 9; s++) {
+                var stack = player.getInventory().getStack(s);
+                if (!stack.isEmpty() && stack.getItem() instanceof net.minecraft.item.BlockItem bi
+                        && bi.getBlock().getDefaultState().isSolidBlock(world, feetPos)) {
+                    blockSlot = s;
+                    break;
+                }
+            }
+            if (blockSlot >= 0) {
+                var mob = entry.lastTacticalObservation.observedMobs().getFirst();
+                var mobEntity = world.getEntity(mob.entityId());
+                if (mobEntity != null) {
+                    Vec3d toMob = mobEntity.getPos().subtract(player.getPos());
+                    Direction primaryDir = Direction.getFacing(toMob.x, 0, toMob.z);
+                    BlockPos barricadePos = feetPos.offset(primaryDir);
+                    BlockPos barricadeGround = barricadePos.down();
+                    var blockPoint = new WorkSetup.BlockPoint(barricadePos.getX(), barricadePos.getY(), barricadePos.getZ());
+                    if (entry.setup.area().contains(blockPoint)
+                            && world.isChunkLoaded(barricadePos) && world.isInBuildLimit(barricadePos)
+                            && (world.getBlockState(barricadePos).isAir() || world.getBlockState(barricadePos).isReplaceable())
+                            && world.getBlockState(barricadeGround).isSideSolidFullSquare(world, barricadeGround, Direction.UP)) {
+                        String blockId = net.minecraft.registry.Registries.BLOCK.getId(((net.minecraft.item.BlockItem) player.getInventory().getStack(blockSlot).getItem()).getBlock()).toString();
+                        var editDecision = EditPolicy.evaluate(entry.setup, EditPolicy.Kind.PLACE,
+                                world.getRegistryKey().getValue().toString(), blockPoint, blockId, edits);
+                        if (editDecision.allowed()) {
+                            UUID taskId = UUID.nameUUIDFromBytes(("night_barricade:" + entry.data.id() + ":" + barricadePos.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 95.0,
+                                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_place", Map.of(
+                                    "x", String.valueOf(barricadePos.getX()),
+                                    "y", String.valueOf(barricadePos.getY()),
+                                    "z", String.valueOf(barricadePos.getZ()),
+                                    "side", "up",
+                                    "slot", String.valueOf(blockSlot))));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Urgent nightfall, thunderstorm, or low-health expedition return to shelter (URGENT 92.0)
+        ensureExpeditionState(entry, body);
+        if (entry.expeditionState != null) {
+            ExpeditionObservation expObs = observeExpedition(entry, body);
+            if (entry.expeditionState.status() == ExpeditionStatus.EXPLORING_OUTWARD) {
+                ReturnReason trigger = ExpeditionPlanner.evaluateReturnTriggers(entry.expeditionState, expObs);
+                if (trigger == ReturnReason.NIGHT || trigger == ReturnReason.THUNDERSTORM || trigger == ReturnReason.LOW_HEALTH) {
+                    entry.expeditionState.triggerReturn(trigger);
+                }
+            }
+            if (entry.expeditionState.status() == ExpeditionStatus.RETURNING) {
+                ReturnReason reason = entry.expeditionState.returnReason();
+                if (reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM || reason == ReturnReason.LOW_HEALTH) {
+                    ExpeditionPlan plan = ExpeditionPlanner.plan(entry.expeditionState, expObs);
+                    if ("native_traverse".equals(plan.action()) && plan.blocks() > 0) {
+                        UUID taskId = UUID.nameUUIDFromBytes(("urgent_expedition_return:" + entry.data.id() + ":" + plan.direction() + ":" + reason).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 92.0,
+                                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_traverse", Map.of(
+                                "direction", plan.direction(),
+                                "blocks", String.valueOf(plan.blocks())
+                        )));
+                    }
+                }
+            }
+        }
+
+        return candidates;
+    }
+
+    private InventorySummary observeInventory(ServerPlayerEntity player) {
+        int totalItems = 0;
+        int occupied = 0;
+        Map<String, Integer> counts = new HashMap<>();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = player.getInventory().getStack(i);
+            if (!stack.isEmpty()) {
+                occupied++;
+                totalItems += stack.getCount();
+                String id = Registries.ITEM.getId(stack.getItem()).toString();
+                counts.merge(id, stack.getCount(), Integer::sum);
+            }
+        }
+        ItemStack offhand = player.getOffHandStack();
+        if (!offhand.isEmpty()) {
+            String id = Registries.ITEM.getId(offhand.getItem()).toString();
+            counts.merge(id, offhand.getCount(), Integer::sum);
+        }
+        for (ItemStack armor : player.getArmorItems()) {
+            if (!armor.isEmpty()) {
+                String id = Registries.ITEM.getId(armor.getItem()).toString();
+                counts.merge(id, armor.getCount(), Integer::sum);
+            }
+        }
+        return new InventorySummary(0, 36, occupied, totalItems, counts);
+    }
+
+    private ProgressionObservation observeProgression(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+
+        primeWorkstationCaches(entry, body);
+
+        BlockPos tablePos = entry.cachedCraftingTablePos;
+        boolean hasPlacedTable = false;
+        if (tablePos != null) {
+            if (world.isChunkLoaded(tablePos) && world.getBlockState(tablePos).isOf(Blocks.CRAFTING_TABLE)
+                    && player.getEyePos().squaredDistanceTo(tablePos.getX() + 0.5, tablePos.getY() + 0.5, tablePos.getZ() + 0.5) <= 20.25) {
+                hasPlacedTable = true;
+            } else {
+                entry.cachedCraftingTablePos = null;
+                tablePos = null;
+            }
+        }
+
+        BlockPos furnacePos = entry.cachedFurnacePos;
+        boolean hasPlacedFurnace = false;
+        if (furnacePos != null) {
+            if (world.isChunkLoaded(furnacePos) && world.getBlockState(furnacePos).isOf(Blocks.FURNACE)
+                    && player.getEyePos().squaredDistanceTo(furnacePos.getX() + 0.5, furnacePos.getY() + 0.5, furnacePos.getZ() + 0.5) <= 20.25) {
+                hasPlacedFurnace = true;
+            } else {
+                entry.cachedFurnacePos = null;
+                furnacePos = null;
+            }
+        }
+
+        boolean hasSmeltOutputWaiting = false;
+        boolean canSmelt = false;
+        if (hasPlacedFurnace && furnacePos != null) {
+            var fEntity = world.getBlockEntity(furnacePos);
+            if (fEntity instanceof AbstractFurnaceBlockEntity furnace) {
+                if (!furnace.getStack(2).isEmpty() && body.canReceiveStack(furnace.getStack(2))) {
+                    hasSmeltOutputWaiting = true;
+                } else {
+                    var smeltPlan = body.planSmelt(furnacePos, "load", null, null, null);
+                    if (smeltPlan.isPresent()) {
+                        canSmelt = true;
+                    }
+                }
+            }
+        }
+
+        boolean hasShelter = !world.isSkyVisible(player.getBlockPos()) || entry.shelterProtectionAuthorized;
+        boolean hasAssignedStonePatch = entry.setup != null && entry.setup.patch() != null
+                && entry.setup.patch().resourceId() != null
+                && (entry.setup.patch().resourceId().contains("stone") || entry.setup.patch().resourceId().contains("cobblestone"));
+        boolean hasAssignedLogPatch = entry.setup != null && entry.setup.patch() != null
+                && entry.setup.patch().resourceId() != null
+                && entry.setup.patch().resourceId().contains("log");
+        boolean hasAssignedNetherWartPatch = entry.setup != null && entry.setup.patch() != null
+                && "minecraft:nether_wart".equals(entry.setup.patch().resourceId())
+                && world.getRegistryKey().getValue().toString().equals("minecraft:the_nether");
+        var farmPosOpt = body.findNearbyFarmland(4.5);
+        boolean hasNearbyFarmland = farmPosOpt.isPresent();
+        boolean hasNearbyBed = body.findNearbyBed(4.5).isPresent();
+        boolean hasCultivatedFarm = false;
+        if (farmPosOpt.isPresent()) {
+            BlockPos farmPos = farmPosOpt.get();
+            if (canScanBlock()) {
+                recordBlockScan();
+                hasCultivatedFarm = world.getBlockState(farmPos.up()).getBlock() instanceof CropBlock;
+            }
+        }
+
+        InventorySummary invSummary = observeInventory(player);
+
+        return new ProgressionObservation(
+                entry.data.id(),
+                server.getTicks(),
+                invSummary,
+                hasPlacedTable,
+                hasPlacedFurnace,
+                hasSmeltOutputWaiting,
+                canSmelt,
+                world.isNight(),
+                hasShelter,
+                hasAssignedStonePatch,
+                hasAssignedLogPatch,
+                hasNearbyFarmland,
+                hasNearbyBed,
+                hasCultivatedFarm,
+                world.getRegistryKey().getValue().toString(),
+                hasAssignedNetherWartPatch
+        );
+    }
+
+    private void ensureExpeditionState(Entry entry, NativePlayerBody body) {
+        if (entry.expeditionState != null) return;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (entry.setup.home() != null) {
+            var hp = entry.setup.home().position();
+            Waypoint anchor = Waypoint.of("home_shelter", hp.x(), hp.y(), hp.z(), entry.setup.dimension(), WaypointKind.SHELTER, world.getTime());
+            entry.expeditionState = new ExpeditionState(anchor, ExpeditionPlanner.DEFAULT_MAX_EXPEDITION_RADIUS);
+        } else if (player.getSpawnPointPosition() != null) {
+            BlockPos sp = player.getSpawnPointPosition();
+            Waypoint anchor = Waypoint.of("spawn_bed", sp.getX(), sp.getY(), sp.getZ(), player.getSpawnPointDimension().getValue().toString(), WaypointKind.HOME_BED, world.getTime());
+            entry.expeditionState = new ExpeditionState(anchor, ExpeditionPlanner.DEFAULT_MAX_EXPEDITION_RADIUS);
+        } else if (entry.setup.area() != null) {
+            int cx = (entry.setup.area().minX() + entry.setup.area().maxX()) / 2;
+            int cz = (entry.setup.area().minZ() + entry.setup.area().maxZ()) / 2;
+            Waypoint anchor = Waypoint.of("work_area", cx, player.getBlockY(), cz, entry.setup.dimension(), WaypointKind.SHELTER, world.getTime());
+            entry.expeditionState = new ExpeditionState(anchor, ExpeditionPlanner.DEFAULT_MAX_EXPEDITION_RADIUS);
+        }
+    }
+
+    private ExpeditionObservation observeExpedition(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        int x = player.getBlockX();
+        int y = player.getBlockY();
+        int z = player.getBlockZ();
+        String dim = world.getRegistryKey().getValue().toString();
+        long timeOfDay = world.getTimeOfDay();
+        boolean thundering = world.isThundering();
+        boolean raining = world.isRaining();
+        float health = player.getHealth();
+        float maxHealth = player.getMaxHealth();
+        int foodLevel = player.getHungerManager().getFoodLevel();
+
+        int foodCount = 0;
+        int occupied = 0;
+        boolean hasWeapon = false;
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = player.getInventory().getStack(i);
+            if (!stack.isEmpty()) {
+                occupied++;
+                if (stack.contains(DataComponentTypes.FOOD)) {
+                    foodCount += stack.getCount();
+                }
+                if (stack.getItem() instanceof net.minecraft.item.SwordItem || stack.getItem() instanceof net.minecraft.item.AxeItem) {
+                    hasWeapon = true;
+                }
+            }
+        }
+        return new ExpeditionObservation(x, y, z, dim, timeOfDay, thundering, raining, health, maxHealth, foodCount, foodLevel, occupied, 36, hasWeapon);
+    }
+
+    private List<NativeTaskCandidate> evaluateScheduledRoutineCandidates(Entry entry, NativePlayerBody body) {
+        var candidates = new java.util.ArrayList<NativeTaskCandidate>();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        primeWorkstationCaches(entry, body);
+
+        // 0. Team project task candidates (TEAM-01, TEAM-02)
+        java.util.Optional<SharedTask> currentSharedTask = teamCoordinator.getPlayerCurrentTask(entry.data.id());
+        if (currentSharedTask.isPresent()) {
+            SharedTask task = currentSharedTask.get();
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(
+                    task.id().id(),
+                    dev.kindred.core.TaskPreferences.Priority.PROJECT,
+                    68.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(),
+                    new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true)
+            );
+            candidates.add(new NativeTaskCandidate(candidate, task.skill(), task.arguments()));
+        } else {
+            List<SharedTask> eligible = teamCoordinator.findEligibleTasks(entry.data.id());
+            for (SharedTask task : eligible) {
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(
+                        task.id().id(),
+                        dev.kindred.core.TaskPreferences.Priority.PROJECT,
+                        68.0,
+                        dev.kindred.core.TaskPreferences.Affinities.none(),
+                        new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true)
+                );
+                candidates.add(new NativeTaskCandidate(candidate, task.skill(), task.arguments()));
+            }
+        }
+
+        if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            return candidates;
+        }
+
+        boolean playerHasPickaxe = false;
+        for (int s = 0; s < 36; s++) {
+            if (player.getInventory().getStack(s).isIn(ItemTags.PICKAXES)) {
+                playerHasPickaxe = true;
+                break;
+            }
+        }
+
+        // 1. Milestone-driven progression & crafting (ROUTINE / PROJECT)
+        var progObs = observeProgression(entry, body);
+        entry.lastProgressionObservation = progObs;
+        entry.lastProgressionState = entry.progressionGraph.evaluate(progObs, entry.progressionHistory);
+        for (var snapEntry : entry.lastProgressionState.snapshots().entrySet()) {
+            if (snapEntry.getValue().historicallyAchieved() && !entry.progressionHistory.containsKey(snapEntry.getKey())) {
+                entry.progressionHistory.put(snapEntry.getKey(), (long) server.getTicks());
+            }
+        }
+
+        var recommendations = ProgressionPolicy.recommend(entry.lastProgressionState, progObs);
+        if (!entry.lastProgressionState.recoveryFrontier().isEmpty()) {
+            var recoveryOnly = java.util.Set.copyOf(entry.lastProgressionState.recoveryFrontier());
+            recommendations = recommendations.stream()
+                    .filter(rec -> recoveryOnly.contains(rec.milestoneId()))
+                    .toList();
+        }
+        for (var rec : recommendations) {
+            switch (rec.skill()) {
+                case "native_craft" -> {
+                    String recipe = rec.arguments().get("recipe");
+                    String actualRecipe = recipe;
+                    if (actualRecipe != null) {
+                        BlockPos craftTable = entry.cachedCraftingTablePos;
+                        if (actualRecipe.equals("oak_planks") && body.planCraft("oak_planks", craftTable).isEmpty()) {
+                            for (String logType : List.of("birch", "spruce", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo")) {
+                                if (body.planCraft(logType + "_planks", craftTable).isPresent()) {
+                                    actualRecipe = logType + "_planks";
+                                    break;
+                                }
+                            }
+                        }
+                        if (body.planCraft(actualRecipe, craftTable).isPresent()) {
+                            UUID taskId = UUID.nameUUIDFromBytes(("craft_" + actualRecipe + ":" + entry.data.id()).getBytes(StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_craft", Map.of("recipe", actualRecipe)));
+                        }
+                    }
+                }
+                case "native_place" -> {
+                    String block = rec.arguments().get("block");
+                    if ("minecraft:crafting_table".equals(block)) {
+                        int tableHotbarSlot = -1;
+                        int tableMainSlot = -1;
+                        for (int s = 0; s < 9; s++) {
+                            if (player.getInventory().getStack(s).isOf(Items.CRAFTING_TABLE)) {
+                                tableHotbarSlot = s;
+                                break;
+                            }
+                        }
+                        if (tableHotbarSlot == -1) {
+                            for (int s = 9; s < 36; s++) {
+                                if (player.getInventory().getStack(s).isOf(Items.CRAFTING_TABLE)) {
+                                    tableMainSlot = s;
+                                    break;
+                                }
+                            }
+                        }
+                        if (tableHotbarSlot != -1) {
+                            BlockPos placeSpot = findPlacementSpot(player, entry.setup, edits, "minecraft:crafting_table");
+                            if (placeSpot != null) {
+                                UUID taskId = UUID.nameUUIDFromBytes(("place_table:" + entry.data.id()).getBytes(StandardCharsets.UTF_8));
+                                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                        rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                candidates.add(new NativeTaskCandidate(candidate, "native_place", Map.of(
+                                        "slot", String.valueOf(tableHotbarSlot),
+                                        "x", String.valueOf(placeSpot.getX()),
+                                        "y", String.valueOf(placeSpot.getY()),
+                                        "z", String.valueOf(placeSpot.getZ()),
+                                        "side", "up")));
+                            }
+                        } else if (tableMainSlot != -1) {
+                            int targetH = 0;
+                            for (int h = 0; h < 9; h++) {
+                                if (player.getInventory().getStack(h).isEmpty()) {
+                                    targetH = h;
+                                    break;
+                                }
+                            }
+                            UUID taskId = UUID.nameUUIDFromBytes(("swap_table:" + entry.data.id() + ":" + tableMainSlot + ":" + targetH).getBytes(StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need() + 0.1,
+                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                                    "source", String.valueOf(tableMainSlot),
+                                    "target", String.valueOf(targetH))));
+                        }
+                    } else if ("minecraft:furnace".equals(block)) {
+                        int furnaceHotbarSlot = -1;
+                        int furnaceMainSlot = -1;
+                        for (int s = 0; s < 9; s++) {
+                            if (player.getInventory().getStack(s).isOf(Items.FURNACE)) {
+                                furnaceHotbarSlot = s;
+                                break;
+                            }
+                        }
+                        if (furnaceHotbarSlot == -1) {
+                            for (int s = 9; s < 36; s++) {
+                                if (player.getInventory().getStack(s).isOf(Items.FURNACE)) {
+                                    furnaceMainSlot = s;
+                                    break;
+                                }
+                            }
+                        }
+                        if (furnaceHotbarSlot != -1) {
+                            BlockPos placeSpot = findPlacementSpot(player, entry.setup, edits, "minecraft:furnace");
+                            if (placeSpot != null) {
+                                UUID taskId = UUID.nameUUIDFromBytes(("place_furnace:" + entry.data.id()).getBytes(StandardCharsets.UTF_8));
+                                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                        rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                candidates.add(new NativeTaskCandidate(candidate, "native_place", Map.of(
+                                        "slot", String.valueOf(furnaceHotbarSlot),
+                                        "x", String.valueOf(placeSpot.getX()),
+                                        "y", String.valueOf(placeSpot.getY()),
+                                        "z", String.valueOf(placeSpot.getZ()),
+                                        "side", "up")));
+                            }
+                        } else if (furnaceMainSlot != -1) {
+                            int targetH = 0;
+                            for (int h = 0; h < 9; h++) {
+                                if (player.getInventory().getStack(h).isEmpty()) {
+                                    targetH = h;
+                                    break;
+                                }
+                            }
+                            UUID taskId = UUID.nameUUIDFromBytes(("swap_furnace:" + entry.data.id() + ":" + furnaceMainSlot + ":" + targetH).getBytes(StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need() + 0.1,
+                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                                    "source", String.valueOf(furnaceMainSlot),
+                                    "target", String.valueOf(targetH))));
+                        }
+                    } else if (block != null && block.endsWith("_bed")) {
+                        int bedHotbarSlot = -1;
+                        int bedMainSlot = -1;
+                        for (int s = 0; s < 9; s++) {
+                            if (player.getInventory().getStack(s).getItem() instanceof net.minecraft.item.BedItem) {
+                                bedHotbarSlot = s;
+                                break;
+                            }
+                        }
+                        if (bedHotbarSlot == -1) {
+                            for (int s = 9; s < 36; s++) {
+                                if (player.getInventory().getStack(s).getItem() instanceof net.minecraft.item.BedItem) {
+                                    bedMainSlot = s;
+                                    break;
+                                }
+                            }
+                        }
+                        if (bedHotbarSlot != -1) {
+                            BlockPos placeSpot = findPlacementSpot(player, entry.setup, edits, block);
+                            if (placeSpot != null) {
+                                UUID taskId = UUID.nameUUIDFromBytes(("place_bed:" + entry.data.id()).getBytes(StandardCharsets.UTF_8));
+                                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                        rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                candidates.add(new NativeTaskCandidate(candidate, "native_place", Map.of(
+                                        "slot", String.valueOf(bedHotbarSlot),
+                                        "x", String.valueOf(placeSpot.getX()),
+                                        "y", String.valueOf(placeSpot.getY()),
+                                        "z", String.valueOf(placeSpot.getZ()),
+                                        "side", "up")));
+                            }
+                        } else if (bedMainSlot != -1) {
+                            int targetH = 0;
+                            for (int h = 0; h < 9; h++) {
+                                if (player.getInventory().getStack(h).isEmpty()) {
+                                    targetH = h;
+                                    break;
+                                }
+                            }
+                            UUID taskId = UUID.nameUUIDFromBytes(("swap_bed:" + entry.data.id() + ":" + bedMainSlot + ":" + targetH).getBytes(StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need() + 0.1,
+                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                                    "source", String.valueOf(bedMainSlot),
+                                    "target", String.valueOf(targetH))));
+                        }
+                    }
+                }
+                case "native_plant" -> {
+                    var farmlandPos = body.findNearbyFarmland(4.5);
+                    if (farmlandPos.isPresent()) {
+                        BlockPos fPos = farmlandPos.get();
+                        if (world.getBlockState(fPos.up()).isAir() || world.getBlockState(fPos.up()).isReplaceable()) {
+                            int seedSlot = -1;
+                            for (int s = 0; s < 9; s++) {
+                                var it = player.getInventory().getStack(s).getItem();
+                                if (it == Items.WHEAT_SEEDS || it == Items.CARROT || it == Items.POTATO || it == Items.BEETROOT_SEEDS) {
+                                    seedSlot = s;
+                                    break;
+                                }
+                            }
+                            if (seedSlot != -1) {
+                                UUID taskId = UUID.nameUUIDFromBytes(("plant:" + entry.data.id() + ":" + fPos.asLong()).getBytes(StandardCharsets.UTF_8));
+                                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                        rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                candidates.add(new NativeTaskCandidate(candidate, "native_plant", Map.of(
+                                        "slot", String.valueOf(seedSlot),
+                                        "x", String.valueOf(fPos.getX()),
+                                        "y", String.valueOf(fPos.getY()),
+                                        "z", String.valueOf(fPos.getZ()))));
+                            }
+                        }
+                    }
+                }
+                case "native_till" -> {
+                    int hoeSlot = -1;
+                    for (int s = 0; s < 9; s++) {
+                        if (player.getInventory().getStack(s).getItem() instanceof net.minecraft.item.HoeItem) {
+                            hoeSlot = s;
+                            break;
+                        }
+                    }
+                    if (hoeSlot != -1) {
+                        BlockPos center = player.getBlockPos();
+                        outerTill:
+                        for (int y = -1; y <= 1; y++) {
+                            for (int x = -3; x <= 3; x++) {
+                                for (int z = -3; z <= 3; z++) {
+                                    if (!canScanBlock()) {
+                                        break outerTill;
+                                    }
+                                    BlockPos pos = center.add(x, y, z);
+                                    if (!world.isChunkLoaded(pos)) continue;
+                                    recordBlockScan();
+                                    var state = world.getBlockState(pos);
+                                    if (state.isOf(Blocks.DIRT) || state.isOf(Blocks.GRASS_BLOCK)) {
+                                        if (!canScanBlock()) {
+                                            break outerTill;
+                                        }
+                                        recordBlockScan();
+                                        if (world.getBlockState(pos.up()).isAir() && isWaterNearby(world, pos)) {
+                                            UUID taskId = UUID.nameUUIDFromBytes(("till:" + entry.data.id() + ":" + pos.asLong()).getBytes(StandardCharsets.UTF_8));
+                                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                            candidates.add(new NativeTaskCandidate(candidate, "native_till", Map.of(
+                                                    "slot", String.valueOf(hoeSlot),
+                                                    "x", String.valueOf(pos.getX()),
+                                                    "y", String.valueOf(pos.getY()),
+                                                    "z", String.valueOf(pos.getZ()))));
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                case "native_gather" -> {
+                    if ("minecraft:nether_wart".equals(rec.arguments().get("resource"))
+                            && entry.setup != null && entry.setup.patch() != null
+                            && "minecraft:nether_wart".equals(entry.setup.patch().resourceId())
+                            && progObs.isInNether()) {
+                        var wartPos = body.findNearbyBlock(Blocks.NETHER_WART, 5.0);
+                        if (wartPos.isPresent() && entry.setup.patch().contains(new WorkSetup.BlockPoint(
+                                wartPos.get().getX(), wartPos.get().getY(), wartPos.get().getZ()))) {
+                            UUID taskId = UUID.nameUUIDFromBytes(("gather_nether_wart:" + entry.data.id() + ":" + wartPos.get().asLong()).getBytes(StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_gather", Map.of(
+                                    "count", rec.arguments().getOrDefault("count", "1"),
+                                    "slot", rec.arguments().getOrDefault("slot", "0"))));
+                        }
+                    }
+                }
+                case "native_ignite_portal" -> {
+                    int flintSlot = -1;
+                    for (int s = 0; s < 9; s++) {
+                        var st = player.getInventory().getStack(s);
+                        if (!st.isEmpty() && (st.getItem() == Items.FLINT_AND_STEEL || st.getItem() == Items.FIRE_CHARGE)) {
+                            flintSlot = s;
+                            break;
+                        }
+                    }
+                    boolean foundPortal = false;
+                    if (flintSlot != -1) {
+                        BlockPos center = player.getBlockPos();
+                        for (int y = -2; y <= 2; y++) {
+                            for (int x = -4; x <= 4; x++) {
+                                for (int z = -4; z <= 4; z++) {
+                                    BlockPos pos = center.add(x, y, z);
+                                    if (!world.isChunkLoaded(pos)) continue;
+                                    var state = world.getBlockState(pos);
+                                    if (state.isOf(Blocks.OBSIDIAN) && world.getBlockState(pos.up()).isAir()) {
+                                        var pX = net.minecraft.world.dimension.NetherPortal.getNewPortal(world, pos.up(), Direction.Axis.X);
+                                        var pZ = pX.isPresent() ? pX : net.minecraft.world.dimension.NetherPortal.getNewPortal(world, pos.up(), Direction.Axis.Z);
+                                        if (pZ.isPresent()) {
+                                            foundPortal = true;
+                                            UUID taskId = UUID.nameUUIDFromBytes(("ignite_portal:" + entry.data.id() + ":" + pos.asLong()).getBytes(StandardCharsets.UTF_8));
+                                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                                    rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                            candidates.add(new NativeTaskCandidate(candidate, "native_ignite_portal", Map.of(
+                                                    "slot", String.valueOf(flintSlot),
+                                                    "x", String.valueOf(pos.getX()),
+                                                    "y", String.valueOf(pos.getY()),
+                                                    "z", String.valueOf(pos.getZ()))));
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (flintSlot != -1 && !foundPortal && entry.setup != null && entry.setup.area() != null) {
+                        int obsidianHotbar = -1;
+                        int obsidianMain = -1;
+                        for (int s = 0; s < 9; s++) {
+                            if (player.getInventory().getStack(s).isOf(Items.OBSIDIAN)) { obsidianHotbar = s; break; }
+                        }
+                        if (obsidianHotbar == -1) {
+                            for (int s = 9; s < 36; s++) {
+                                if (player.getInventory().getStack(s).isOf(Items.OBSIDIAN)) { obsidianMain = s; break; }
+                            }
+                        }
+                        if (obsidianMain >= 0) {
+                            int target = -1;
+                            for (int h = 0; h < 9; h++) {
+                                if (player.getInventory().getStack(h).isEmpty()) { target = h; break; }
+                            }
+                            if (target >= 0) {
+                                UUID taskId = UUID.nameUUIDFromBytes(("portal_obsidian_swap:" + entry.data.id() + ":" + obsidianMain).getBytes(StandardCharsets.UTF_8));
+                                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need() + 0.2,
+                                        rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                                        "source", String.valueOf(obsidianMain), "target", String.valueOf(target))));
+                            }
+                        } else if (obsidianHotbar >= 0) {
+                            findPortalFrameAssemblyStep(entry, body, obsidianHotbar).ifPresent(step -> {
+                                UUID taskId = UUID.nameUUIDFromBytes(("portal_frame:" + entry.data.id() + ":" + step.get("x") + ":" + step.get("y") + ":" + step.get("z")).getBytes(StandardCharsets.UTF_8));
+                                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need() + 0.1,
+                                        rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                                candidates.add(new NativeTaskCandidate(candidate, "native_place", step));
+                            });
+                        }
+                    }
+                }
+                case "native_traverse" -> {
+                    if (entry.progressionSeedTarget != null && SeedStructureLocator.locatorAllowed(entry.runtimeSettings)) {
+                        String dir = ExpeditionPlanner.calculateDirection(
+                                player.getBlockX(), player.getBlockZ(),
+                                entry.progressionSeedTarget.getX(), entry.progressionSeedTarget.getZ());
+                        UUID taskId = UUID.nameUUIDFromBytes(("seed_traverse:" + entry.data.id() + ":"
+                                + entry.progressionSeedTarget.asLong()).getBytes(StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_traverse", Map.of(
+                                "direction", dir,
+                                "blocks", "3")));
+                    }
+                }
+                case "native_smelt" -> {
+                    BlockPos furnacePos = entry.cachedFurnacePos;
+                    if (furnacePos != null) {
+                        String action = rec.arguments().get("action");
+                        UUID taskId = UUID.nameUUIDFromBytes((action + "_smelt:" + entry.data.id() + ":" + furnacePos.asLong()).getBytes(StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
+                                rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_smelt", Map.of(
+                                "x", String.valueOf(furnacePos.getX()),
+                                "y", String.valueOf(furnacePos.getY()),
+                                "z", String.valueOf(furnacePos.getZ()),
+                                "action", action)));
+                    }
+                }
+            }
+        }
+
+        appendPlayerQolCandidates(entry, body, candidates);
+        appendHotbarOrganizationCandidates(entry, player, candidates);
+        appendChestOrganizeCandidate(entry, body, candidates);
+
+        // Autonomous crop harvesting: if farmland is nearby within reach, harvest mature crops!
+        if (entry.lastProgressionObservation != null && entry.lastProgressionObservation.hasNearbyFarmland()) {
+            BlockPos centerPos = player.getBlockPos();
+            outerHarvest:
+            for (int y = -1; y <= 1; y++) {
+                for (int x = -3; x <= 3; x++) {
+                    for (int z = -3; z <= 3; z++) {
+                        if (!canScanBlock()) {
+                            break outerHarvest;
+                        }
+                        BlockPos cPos = centerPos.add(x, y, z);
+                        if (!world.isChunkLoaded(cPos)) continue;
+                        recordBlockScan();
+                        var cState = world.getBlockState(cPos);
+                        if (cState.getBlock() instanceof CropBlock cb && cb.isMature(cState)) {
+                            UUID taskId = UUID.nameUUIDFromBytes(("harvest:" + entry.data.id() + ":" + cPos.asLong()).getBytes(StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                                    dev.kindred.core.TaskPreferences.Priority.ROUTINE, 62.5,
+                                    new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.8),
+                                    new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_harvest", Map.of(
+                                    "x", String.valueOf(cPos.getX()),
+                                    "y", String.valueOf(cPos.getY()),
+                                    "z", String.valueOf(cPos.getZ()),
+                                    "replant", "true")));
+                            break outerHarvest;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Autonomous sleep: if night or thunderstorm and bed is nearby, sleep to anchor spawn point and skip danger
+        boolean nightOrStorm = world.isNight() || world.isThundering()
+                || (world.getTimeOfDay() % 24000L >= 12542L && world.getTimeOfDay() % 24000L <= 23460L);
+        if (nightOrStorm) {
+            var nearbyBed = body.findNearbyBed(4.5);
+            if (nearbyBed.isPresent()) {
+                BlockPos bedPos = nearbyBed.get();
+                var bedState = world.getBlockState(bedPos);
+                if (bedState.isIn(BlockTags.BEDS) && !bedState.get(net.minecraft.block.BedBlock.OCCUPIED)) {
+                    UUID taskId = UUID.nameUUIDFromBytes(("sleep:" + entry.data.id() + ":" + bedPos.asLong()).getBytes(StandardCharsets.UTF_8));
+                    var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                            dev.kindred.core.TaskPreferences.Priority.PROJECT, 78.0,
+                            dev.kindred.core.TaskPreferences.Affinities.none(),
+                            new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                    candidates.add(new NativeTaskCandidate(candidate, "native_sleep", Map.of(
+                            "x", String.valueOf(bedPos.getX()),
+                            "y", String.valueOf(bedPos.getY()),
+                            "z", String.valueOf(bedPos.getZ()))));
+                }
+            }
+        }
+
+        // 2. Scoped resource mining in assigned patch (PROJECT)
+        boolean deferPatchMiningForCraft = candidates.stream().anyMatch(c ->
+                "native_craft".equals(c.skill()) && c.candidate().needScore() >= 61.0
+                        && c.candidate().eligibility().affordable());
+        boolean recoveryBlocksPatchMining = entry.lastProgressionState != null
+                && !entry.lastProgressionState.recoveryFrontier().isEmpty();
+        if (!deferPatchMiningForCraft && !recoveryBlocksPatchMining && entry.setup != null && entry.setup.patch() != null && entry.setup.patch().resourceId() != null
+                && entry.setup.dimension().equals(world.getRegistryKey().getValue().toString())) {
+            primePatchResourceCaches(entry, body);
+            var patch = entry.setup.patch();
+            boolean patchRequiresPickaxe = patch.resourceId().equals("minecraft:stone")
+                    || patch.resourceId().equals("minecraft:cobblestone")
+                    || patch.resourceId().contains("ore");
+            if (!patchRequiresPickaxe || playerHasPickaxe) {
+                BlockPos center = player.getBlockPos();
+                int reach = 4;
+                BlockPos bestPos = null;
+                double bestDistSq = Double.MAX_VALUE;
+                boolean bestIsStone = false;
+
+                if (entry.cachedMiningTarget != null) {
+                    var pos = entry.cachedMiningTarget;
+                    if (world.isChunkLoaded(pos) && Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString().equals(patch.resourceId())
+                            && body.miningEligible(pos) && player.getEyePos().squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 16.0) {
+                        bestPos = pos;
+                        bestIsStone = entry.cachedMiningIsStone;
+                    } else {
+                        entry.cachedMiningTarget = null;
+                    }
+                }
+
+                if (bestPos == null) {
+                    int minX = Math.max(center.getX() - reach, patch.min().x());
+                    int maxX = Math.min(center.getX() + reach, patch.max().x());
+                    int minY = Math.max(center.getY() - 1, patch.min().y());
+                    int maxY = Math.min(center.getY() + 2, patch.max().y());
+                    int minZ = Math.max(center.getZ() - reach, patch.min().z());
+                    int maxZ = Math.min(center.getZ() + reach, patch.max().z());
+                    outerMine:
+                    for (int y = minY; y <= maxY; y++) {
+                        for (int x = minX; x <= maxX; x++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                BlockPos pos = new BlockPos(x, y, z);
+                                if (!patch.contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                                if (entry.setup.area() != null && !entry.setup.area().contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                                if (!world.isChunkLoaded(pos)) continue;
+                                if (!canScanBlock()) break outerMine;
+                                recordBlockScan();
+                                var state = world.getBlockState(pos);
+                                boolean isLog = state.isIn(BlockTags.LOGS);
+                                boolean isStone = state.isIn(BlockTags.PICKAXE_MINEABLE) || state.isOf(Blocks.STONE) || state.isOf(Blocks.COBBLESTONE);
+                                if ((!isLog && !isStone) || state.hasBlockEntity()) continue;
+                                if (isStone && !playerHasPickaxe) continue;
+                                if (!Registries.BLOCK.getId(state.getBlock()).toString().equals(patch.resourceId())) continue;
+                                if (!body.miningEligible(pos)) continue;
+                                double distSq = player.getEyePos().squaredDistanceTo(net.minecraft.util.math.Vec3d.ofCenter(pos));
+                                if (distSq < bestDistSq) {
+                                    bestDistSq = distSq;
+                                    bestPos = pos;
+                                    bestIsStone = isStone;
+                                }
+                            }
+                        }
+                    }
+                    if (bestPos != null) {
+                        entry.cachedMiningTarget = bestPos;
+                        entry.cachedMiningIsStone = bestIsStone;
+                    }
+                }
+
+                if (bestPos != null) {
+                    int toolSlot = -1;
+                    int bestTier = -1;
+                    var preferredTag = bestIsStone ? ItemTags.PICKAXES : ItemTags.AXES;
+                    for (int s = 0; s < 9; s++) {
+                        var st = player.getInventory().getStack(s);
+                        if (st.isIn(preferredTag)) {
+                            int tier = toolTier(st.getItem());
+                            if (tier > bestTier) {
+                                bestTier = tier;
+                                toolSlot = s;
+                            }
+                        }
+                    }
+                    int mainToolSlot = -1;
+                    int mainBestTier = bestTier;
+                    for (int s = 9; s < 36; s++) {
+                        var st = player.getInventory().getStack(s);
+                        if (st.isIn(preferredTag)) {
+                            int tier = toolTier(st.getItem());
+                            if (tier > mainBestTier) {
+                                mainBestTier = tier;
+                                mainToolSlot = s;
+                            }
+                        }
+                    }
+                    if (mainToolSlot != -1) {
+                        int targetH = 0;
+                        for (int h = 0; h < 9; h++) {
+                            if (player.getInventory().getStack(h).isEmpty()) {
+                                targetH = h;
+                                break;
+                            }
+                        }
+                        UUID taskId = UUID.nameUUIDFromBytes(("swap_tool:" + entry.data.id() + ":" + mainToolSlot + ":" + targetH).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 60.1,
+                                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 1.0), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                                "source", String.valueOf(mainToolSlot),
+                                "target", String.valueOf(targetH))));
+                    } else {
+                        if (toolSlot == -1) toolSlot = 0;
+                        UUID taskId = UUID.nameUUIDFromBytes(("mine:" + entry.data.id() + ":" + bestPos.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 60.0,
+                                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 1.0), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_mine", Map.of(
+                                "x", String.valueOf(bestPos.getX()),
+                                "y", String.valueOf(bestPos.getY()),
+                                "z", String.valueOf(bestPos.getZ()),
+                                "slot", String.valueOf(toolSlot))));
+                    }
+                } else {
+                    // Search wider radius for unreached resource in patch to approach via traverse
+                    int searchRadius = 12;
+                    BlockPos distantTarget = entry.cachedApproachTarget;
+                    if (distantTarget != null) {
+                        if (!world.isChunkLoaded(distantTarget) || !Registries.BLOCK.getId(world.getBlockState(distantTarget).getBlock()).toString().equals(patch.resourceId())) {
+                            distantTarget = null;
+                            entry.cachedApproachTarget = null;
+                        }
+                    }
+                    if (distantTarget == null) {
+                        double closestDistantSq = Double.MAX_VALUE;
+                        int minX = Math.max(center.getX() - searchRadius, patch.min().x());
+                        int maxX = Math.min(center.getX() + searchRadius, patch.max().x());
+                        int minY = Math.max(center.getY() - 3, patch.min().y());
+                        int maxY = Math.min(center.getY() + 3, patch.max().y());
+                        int minZ = Math.max(center.getZ() - searchRadius, patch.min().z());
+                        int maxZ = Math.min(center.getZ() + searchRadius, patch.max().z());
+                        outerDistant:
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int x = minX; x <= maxX; x++) {
+                                for (int z = minZ; z <= maxZ; z++) {
+                                    BlockPos pos = new BlockPos(x, y, z);
+                                    if (!patch.contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                                    if (entry.setup.area() != null && !entry.setup.area().contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) continue;
+                                    if (!world.isChunkLoaded(pos)) continue;
+                                    if (!canScanBlock()) break outerDistant;
+                                    recordBlockScan();
+                                    var state = world.getBlockState(pos);
+                                    boolean isLog = state.isIn(BlockTags.LOGS);
+                                    boolean isStone = state.isIn(BlockTags.PICKAXE_MINEABLE) || state.isOf(Blocks.STONE) || state.isOf(Blocks.COBBLESTONE);
+                                    if ((!isLog && !isStone) || state.hasBlockEntity()) continue;
+                                    if (isStone && !playerHasPickaxe) continue;
+                                    if (!Registries.BLOCK.getId(state.getBlock()).toString().equals(patch.resourceId())) continue;
+                                    double dSq = player.squaredDistanceTo(net.minecraft.util.math.Vec3d.ofCenter(pos));
+                                    if (dSq < closestDistantSq) {
+                                        closestDistantSq = dSq;
+                                        distantTarget = pos;
+                                    }
+                                }
+                            }
+                        }
+                        if (distantTarget != null) entry.cachedApproachTarget = distantTarget;
+                    }
+                    if (distantTarget != null) {
+                        int dx = distantTarget.getX() - center.getX();
+                        int dz = distantTarget.getZ() - center.getZ();
+                        String dir = null;
+                        int dist = 0;
+                        if (Math.abs(dx) >= Math.abs(dz) && dx != 0) {
+                            dir = dx > 0 ? "east" : "west";
+                            dist = Math.min(3, Math.abs(dx));
+                        } else if (dz != 0) {
+                            dir = dz > 0 ? "south" : "north";
+                            dist = Math.min(3, Math.abs(dz));
+                        }
+                        if (dir != null && dist > 0) {
+                            UUID taskId = UUID.nameUUIDFromBytes(("traverse_approach:" + entry.data.id() + ":" + distantTarget.asLong() + ":" + dir).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 59.0,
+                                    new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.9), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                            candidates.add(new NativeTaskCandidate(candidate, "native_traverse", Map.of(
+                                    "direction", dir,
+                                    "blocks", String.valueOf(dist))));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Unequipped armor / shield (ROUTINE)
+        for (int slot = 0; slot < 36; slot++) {
+            if (body.equipmentDestination(slot).isPresent()) {
+                UUID taskId = UUID.nameUUIDFromBytes(("equip:" + entry.data.id() + ":" + slot).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.ROUTINE, 55.0,
+                        new dev.kindred.core.TaskPreferences.Affinities(0.5, 0.0, 0.0, 0.0), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                candidates.add(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(slot))));
+                break;
+            }
+        }
+
+        // 4. Bounded wait when injured and hunger full (ROUTINE)
+        if (player.getHealth() < player.getMaxHealth() && !player.canConsume(false)) {
+            UUID taskId = UUID.nameUUIDFromBytes(("wait:" + entry.data.id()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            double need = Math.min(100.0, (player.getMaxHealth() - player.getHealth()) * 10.0 + 30.0);
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.ROUTINE, need,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            candidates.add(new NativeTaskCandidate(candidate, "native_wait", Map.of("seconds", "2")));
+        }
+
+        // 5. Bounded expedition and exploration planning (E-14)
+        ensureExpeditionState(entry, body);
+        if (entry.expeditionState != null) {
+            ExpeditionObservation expObs = observeExpedition(entry, body);
+            ExpeditionPlan plan = ExpeditionPlanner.plan(entry.expeditionState, expObs);
+            KindredMod.LOGGER.info("Expedition plan for {}: status={}, plan={}, obs={}", entry.data.displayName(), entry.expeditionState.status(), plan, expObs);
+            if ("native_traverse".equals(plan.action()) && plan.blocks() > 0) {
+                UUID taskId = UUID.nameUUIDFromBytes(("expedition:" + entry.data.id() + ":" + entry.expeditionState.status() + ":" + plan.direction()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(
+                        taskId,
+                        plan.priority(),
+                        plan.need(),
+                        new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.8),
+                        new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true)
+                );
+                candidates.add(new NativeTaskCandidate(candidate, "native_traverse", Map.of(
+                        "direction", plan.direction(),
+                        "blocks", String.valueOf(plan.blocks())
+                )));
+            }
+        }
+
+        return candidates;
+    }
+
+    private List<NativeTaskCandidate> evaluateNativeCandidates(Entry entry, NativePlayerBody body) {
+        bindBodyBlockScanBudget(body);
+        var list = new java.util.ArrayList<NativeTaskCandidate>();
+        list.addAll(evaluateEssentialSurvivalCandidates(entry, body));
+        list.addAll(evaluateScheduledRoutineCandidates(entry, body));
+        return list;
+    }
+
+    private BlockPos findPlacementSpot(ServerPlayerEntity player, WorkSetup setup, EditPolicy.ServerPolicy policy, String blockId) {
+        var world = player.getServerWorld();
+        BlockPos playerPos = player.getBlockPos();
+        for (Direction dir : new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
+            if (!canScanBlock()) break;
+            recordBlockScan();
+            BlockPos pos = playerPos.offset(dir);
+            if (!world.isChunkLoaded(pos) || !world.isChunkLoaded(pos.down()) || !world.isInBuildLimit(pos)) continue;
+            if (!world.getBlockState(pos).isReplaceable()) continue;
+            if (!world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
+            if (player.getEyePos().squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 16.0) continue;
+            var point = new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ());
+            var decision = EditPolicy.evaluate(setup, EditPolicy.Kind.PLACE,
+                    world.getRegistryKey().getValue().toString(), point, blockId, policy);
+            if (decision.allowed()) {
+                return pos;
+            }
+        }
+        return null;
+    }
+
+    /** Returns exactly one durable placement step for a complete owned-obsidian portal frame. */
+    private Optional<Map<String, String>> findPortalFrameAssemblyStep(Entry entry, NativePlayerBody body, int slot) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (entry.setup == null || entry.setup.area() == null || slot < 0 || slot > 8) return Optional.empty();
+
+        // Keep the frame site stable while the repeated one-block native_place tasks assemble it.
+        if (entry.portalFrameInterior == null) {
+            BlockPos p = player.getBlockPos();
+            entry.portalFrameInterior = new BlockPos(p.getX() - 1, p.getY() + 1, p.getZ() + 1).toImmutable();
+        }
+        BlockPos interior = entry.portalFrameInterior;
+        int x = interior.getX();
+        int y = interior.getY();
+        int z = interior.getZ();
+        int baseY = y - 1;
+        BlockPos leftBase = new BlockPos(x - 1, baseY, z);
+        BlockPos rightBase = new BlockPos(x + 2, baseY, z);
+        record Piece(BlockPos destination, BlockPos clickTarget, Direction side) { }
+        List<Piece> pieces = new ArrayList<>();
+        // Bottom row and corner footings.
+        pieces.add(new Piece(new BlockPos(x, baseY, z), new BlockPos(x, baseY, z), Direction.UP));
+        pieces.add(new Piece(new BlockPos(x + 1, baseY, z), new BlockPos(x + 1, baseY, z), Direction.UP));
+        pieces.add(new Piece(leftBase, leftBase, Direction.UP));
+        pieces.add(new Piece(rightBase, rightBase, Direction.UP));
+        // Vertical sides, including top corner supports needed to place the top row without scaffolding.
+        for (int dy = 1; dy <= 4; dy++) {
+            BlockPos left = new BlockPos(x - 1, baseY + dy, z);
+            BlockPos right = new BlockPos(x + 2, baseY + dy, z);
+            pieces.add(new Piece(left, left, Direction.UP));
+            pieces.add(new Piece(right, right, Direction.UP));
+        }
+        // Place top interior blocks by clicking the adjacent top corner supports.
+        pieces.add(new Piece(new BlockPos(x, baseY + 4, z), new BlockPos(x - 1, baseY + 4, z), Direction.EAST));
+        pieces.add(new Piece(new BlockPos(x + 1, baseY + 4, z), new BlockPos(x + 2, baseY + 4, z), Direction.WEST));
+
+        int missing = 0;
+        for (Piece piece : pieces) {
+            if (!canScanBlock()) return Optional.empty();
+            recordBlockScan();
+            BlockPos pos = piece.destination();
+            if (!entry.setup.area().contains(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))
+                    || !world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getWorldBorder().contains(pos)) {
+                entry.portalFrameInterior = null;
+                return Optional.empty();
+            }
+            var state = world.getBlockState(pos);
+            if (state.isOf(Blocks.OBSIDIAN)) continue;
+            if (!state.isReplaceable()) {
+                entry.portalFrameInterior = null;
+                return Optional.empty();
+            }
+            missing++;
+            var point = new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ());
+            if (!EditPolicy.evaluate(entry.setup, EditPolicy.Kind.PLACE,
+                    world.getRegistryKey().getValue().toString(), point, "minecraft:obsidian", edits).allowed()) {
+                entry.portalFrameInterior = null;
+                return Optional.empty();
+            }
+        }
+        if (player.getInventory().getStack(slot).getCount() < missing) return Optional.empty();
+
+        for (Piece piece : pieces) {
+            if (world.getBlockState(piece.destination()).isOf(Blocks.OBSIDIAN)) continue;
+            BlockPos destination = piece.destination();
+            BlockPos click = piece.clickTarget();
+            if (!world.isChunkLoaded(click) || player.getEyePos().squaredDistanceTo(
+                    destination.getX() + 0.5, destination.getY() + 0.5, destination.getZ() + 0.5) > 25.0) continue;
+            if (click.equals(destination)) {
+                BlockPos support = destination.down();
+                if (!world.isChunkLoaded(support) || !world.getBlockState(support).isSideSolidFullSquare(world, support, Direction.UP)) continue;
+            } else if (!world.getBlockState(click).isOf(Blocks.OBSIDIAN)) {
+                continue;
+            }
+            return Optional.of(Map.of(
+                    "slot", String.valueOf(slot),
+                    "x", String.valueOf(click.getX()), "y", String.valueOf(click.getY()), "z", String.valueOf(click.getZ()),
+                    "side", piece.side().getName()));
+        }
+        return Optional.empty();
+    }
+
+    private void beforeNativeTick(Entry entry, NativePlayerBody body) {
+        if (entry.nativeBody != body) { body.stopInputs(); return; }
+        if (!body.connected()) { detachNative(entry, "Native connection closed; explicit reconnect is required."); return; }
+        if (body.entity() != null && !body.entity().isAlive()) {
+            teamCoordinator.handlePlayerDeath(entry.data.id());
+            halt(entry, Actor.console(), "Native player died; explicit respawn/recovery required.");
+            return;
+        }
+
+        if (body.entity() != null) {
+            applyDimensionTransit(entry, body);
+            reconcileExpeditionArrival(entry);
+        }
+
+        if (attentionScheduler.currentTick() != server.getTicks()) {
+            onServerTick(server);
+        }
+
+        boolean usable = running && ready && !entry.metadataFault && !entry.reconciliationBlocked
+                && !entry.nativePending && entry.nativeState.phase() == StoredNativePlayer.Phase.ESTABLISHED;
+        boolean busy = entry.runner != null && runnerBusy(entry);
+        if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
+        if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
+            nativeActivityFailure(entry, "Activity settlement is uncertain");
+            usable = false;
+        }
+
+        if (usable && body.entity() != null) {
+            refreshTacticalObservation(entry, server.getTicks());
+        }
+
+        if (usable && entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            applyIdleObservation(entry, body, server.getTicks());
+        }
+
+        boolean creeperThreat = false;
+        if (entry.lastTacticalObservation != null) {
+            for (var mob : entry.lastTacticalObservation.observedMobs()) {
+                if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
+                    creeperThreat = true;
+                    break;
+                }
+            }
+        }
+
+        // Bounded danger observation while busy: interrupt through SkillRunner/ActionArbiter cancellation barrier
+        if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat) && !"native_retreat".equals(entry.skillId)) {
+            entry.hazardInterrupted = true;
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort("Hazard/threat detected: urgent retreat required");
+            body.stopInputs();
+            observeRunner(entry);
+            busy = runnerBusy(entry);
+        }
+
+        // Check inventory fingerprint for invalidation
+        long currentFp = computeInventoryFingerprint(body.entity());
+        if (currentFp != entry.lastInventoryFingerprint) {
+            entry.lastInventoryFingerprint = currentFp;
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+            attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            attentionScheduler.invalidate(entry.data.id(), WorkKind.EQUIPMENT_READINESS);
+        }
+
+        boolean autonomyAdmitted = usable && !entry.snapshot().stopLatched() && !busy
+                && !entry.runtimeSettings.playstyleProfile().isIdleObserving()
+                && (entry.runner == null || entry.runner.state() != SkillRunner.State.PAUSED)
+                && !entry.nativeWorkPending && !entry.nativeSetupPending
+                && entry.activityFlush.isDone() && !entry.nativeActionPending && entry.nativeActionFlush.isDone()
+                && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)
+                && !entry.arbiter.cancellationPending()
+                && edits.autonomousEditsEnabled() && edits.protectionCompatibilityKnown();
+
+        // 1. Cheap immediate survival candidates (evaluated every tick, even with zero optional budget)
+        List<NativeTaskCandidate> essentialCandidates = autonomyAdmitted ? evaluateEssentialSurvivalCandidates(entry, body) : List.of();
+
+        if (autonomyAdmitted && (entry.routineRefreshPending || entry.cachedRoutineCandidates.isEmpty())) {
+            bindBodyBlockScanBudget(body);
+            entry.cachedRoutineCandidates = evaluateScheduledRoutineCandidates(entry, body);
+            entry.routineRefreshPending = false;
+        }
+
+        // 2. Scheduled routine candidates (cached from scheduler slices)
+        List<NativeTaskCandidate> routineCandidates = autonomyAdmitted ? entry.cachedRoutineCandidates : List.of();
+
+        List<NativeTaskCandidate> taskCandidates;
+        if (!autonomyAdmitted) {
+            taskCandidates = List.of();
+        } else if (routineCandidates.isEmpty()) {
+            taskCandidates = essentialCandidates;
+        } else if (essentialCandidates.isEmpty()) {
+            taskCandidates = routineCandidates;
+        } else {
+            taskCandidates = new ArrayList<>(essentialCandidates.size() + routineCandidates.size());
+            taskCandidates.addAll(essentialCandidates);
+            taskCandidates.addAll(routineCandidates);
+        }
+
+        List<dev.kindred.core.TaskPreferences.Candidate> candidates = taskCandidates.stream().map(NativeTaskCandidate::candidate).toList();
+
+        var decision = entry.mind.decide(new dev.kindred.core.PlayerDecisionLoop.Frame(usable, entry.snapshot().stopLatched(),
+                busy, false, false, autonomyAdmitted, entry.currentTaskId, candidates), entry.profile.personality());
+        entry.mindStatus = decision.reason();
+        if (!candidates.isEmpty() || decision.action() != dev.kindred.core.PlayerDecisionLoop.Action.WAIT) {
+            KindredMod.LOGGER.info("Autonomy tick for {}: state={}, usable={}, stopLatched={}, busy={}, autonomyAdmitted={}, candidates={}, decision={}",
+                    entry.data.displayName(), (entry.attentionSnapshot != null ? entry.attentionSnapshot.state() : "null"),
+                    usable, entry.snapshot().stopLatched(), busy, autonomyAdmitted, candidates.size(), decision);
+        }
+
+        if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            entry.runner.tick();
+            observeRunner(entry);
+        } else if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.PROPOSE_TASK) {
+            var selection = decision.proposal().orElseThrow();
+            var chosen = selection.candidate();
+            entry.currentTaskId = chosen.id();
+            var match = taskCandidates.stream().filter(tc -> tc.candidate().id().equals(chosen.id())).findFirst();
+            if (match.isPresent()) {
+                NativeTaskCandidate candidateToDispatch = match.get();
+                bindBodyBlockScanBudget(body);
+                if (!validateCandidateStillExecutable(entry, body, candidateToDispatch)) {
+                    entry.cachedRoutineCandidates = List.of();
+                    entry.routineRefreshPending = true;
+                    attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+                    entry.currentTaskId = null;
+                } else {
+                    TaskId tId = TaskId.of(candidateToDispatch.candidate().id());
+                    var optShared = teamCoordinator.findTask(tId);
+                    if (optShared.isPresent()) {
+                        var task = optShared.get();
+                        if (task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED) {
+                            var claimed = teamCoordinator.claimTask(tId, entry.data.id(), server.getTicks(), 1200L);
+                            if (claimed.isEmpty()) {
+                                entry.currentTaskId = null;
+                                return;
+                            }
+                            teamCoordinator.startTask(tId, entry.data.id());
+                        }
+                    }
+                    int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments());
+                    if (res != 1) {
+                        entry.currentTaskId = null;
+                        if (optShared.isPresent()) {
+                            teamCoordinator.revokeTask(tId, "Dispatch failed");
+                        }
+                    }
+                }
+            } else {
+                entry.currentTaskId = null;
+            }
+        } else {
+            if (!entry.nativeWorkPending && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)) {
+                if (!taskCandidates.isEmpty()) {
+                    entry.currentTaskId = null;
+                }
+            }
+            body.stopInputs();
+            if (busy) {
+                entry.runner.lease().ifPresent(entry.arbiter::cancel);
+                entry.runner.abort(decision.reason());
+                observeRunner(entry);
+            }
+        }
+    }
+
+    private SpawnLocation nativeSpawn(ServerCommandSource source) {
+        var world = source.getWorld();
+        var base = source.getPosition();
+        for (int[] offset : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}}) {
+            double x = Math.floor(base.x) + offset[0] + 0.5;
+            double z = Math.floor(base.z) + offset[1] + 0.5;
+            BlockPos pos = BlockPos.ofFloored(x, base.y, z);
+            var bounds = new net.minecraft.util.math.Box(x - .3, base.y, z - .3, x + .3, base.y + 1.8, z + .3);
+            if (world.isChunkLoaded(pos) && world.isInBuildLimit(pos) && world.getWorldBorder().contains(bounds)
+                    && world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty()
+                    && world.getFluidState(pos).isEmpty() && world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) {
+                return new SpawnLocation(x, base.y, z, 0);
+            }
+        }
+        return null;
+    }
+
+    int create(ServerCommandSource source, String name) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
+            return reject(source, "Create a companion as a player in a loaded world.");
+        }
+        if (name.isBlank() || name.length() > 32 || name.codePoints().anyMatch(Character::isISOControl)) {
+            return reject(source, "Choose a name of 1 to 32 printable characters.");
+        }
+        Entry existing = byOwner(player.getUuid());
+        if (existing != null) {
+            if (existing.snapshot().entityId() == null && !existing.metadataFault && !creating.contains(player.getUuid())) {
+                if (!existing.snapshot().dimension().equals(player.getWorld().getRegistryKey().getValue().toString())) {
+                    return reject(source, "Return to your companion's original dimension before retrying its creation.");
+                }
+                SpawnLocation location = findSpawn(player);
+                if (location == null) return reject(source, "Make room on solid ground beside you before creating a companion.");
+                creating.add(player.getUuid());
+                mapAndSpawn(existing, player.getUuid(), location);
+                feedback(source, "Retrying your saved companion's first body creation.");
+                return 1;
+            }
+            if (source.hasPermissionLevel(2) || source.getServer().isSingleplayer()) {
+                feedback(source, "You already have companion " + existing.snapshot().displayName()
+                        + ". Creating native AI player " + name + " instead.");
+                return createNative(source, name);
+            }
+            feedback(source, "Your companion is " + existing.snapshot().displayName() + " ("
+                    + existing.snapshot().id() + "). " + existing.explanation()
+                    + " To create additional native AI players, run /aiplayer native create <name> or /aiplayer roster spawn.");
+            return 1;
+        }
+        UUID owner = player.getUuid();
+        SpawnLocation location = findSpawn(player);
+        if (location == null) return reject(source, "Make room on solid ground beside you before creating a companion.");
+        if (!creating.add(owner)) return reject(source, "Your companion creation is already being saved.");
+        CreationRequest request = new CreationRequest(UUID.randomUUID(), owner, name, worldId,
+                player.getWorld().getRegistryKey().getValue().toString());
+        feedback(source, "Saving your companion. It will begin sleeping.");
+        store.create(request).whenComplete((record, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                creating.remove(owner);
+                reply(owner, "Creation could not be saved. No body was spawned; try again after checking server logs.");
+                KindredMod.LOGGER.error("Companion creation failed for owner {}", owner, failure);
+                return;
+            }
+            Entry entry = entries.computeIfAbsent(record.companion().id(), ignored -> new Entry(record));
+            if (record.companion().entityId() != null) {
+                creating.remove(owner);
+                reply(owner, "Your existing companion is " + record.companion().id() + ". " + entry.explanation());
+                return;
+            }
+            mapAndSpawn(entry, owner, location);
+        }));
+        return 1;
+    }
+
+    int command(ServerCommandSource source, String verb, UUID requestedId) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID playerId = source.getEntity() instanceof ServerPlayerEntity player ? player.getUuid() : null;
+        if (playerId == null && !source.hasPermissionLevel(2)) {
+            return reject(source, "Only a player or an operator may issue companion controls.");
+        }
+        Entry entry = requestedId != null ? entries.get(requestedId) : byOwner(playerId);
+        if (entry == null && requestedId == null) {
+            var active = entries.values().stream()
+                    .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
+                    .toList();
+            if (active.size() == 1) {
+                entry = active.get(0);
+            }
+        }
+        if (entry == null) return reject(source, "No companion found. Use /aiplayer create <name>, or supply its name/UUID.");
+        if (entry.nativeState != null) return nativeLifecycle(source, verb, entry.data.id());
+        Actor actor = new Actor(playerId, source.hasPermissionLevel(2));
+        if (!Authorization.mayControl(actor, entry.snapshot())) {
+            return reject(source, "Only this companion's owner or an operator can control or inspect it.");
+        }
+        if (verb.equals("status")) {
+            Companion snapshot = entry.snapshot();
+            feedback(source, snapshot.displayName() + " (" + snapshot.id() + "): "
+                    + (entry.following ? "following" : entry.runner != null && runnerBusy(entry) ? "running " + entry.skillId
+                    : entry.runner != null && entry.runner.state() == SkillRunner.State.PAUSED ? "paused " + entry.skillId
+                    : snapshot.lifecycle().name().toLowerCase())
+                    + (snapshot.stopLatched() ? "; owner-stopped" : "") + ". " + entry.explanation()
+                    + " Legacy restriction: " + (entry.mode != null ? entry.mode.mode().name().toLowerCase(java.util.Locale.ROOT) : "companion")
+                    + ", scope " + (entry.mode != null ? entry.mode.scope().name().toLowerCase(java.util.Locale.ROOT) : "approved") + "."
+                    + " Social: ambient " + entry.profile.ambientEnabled() + ", public " + entry.profile.publicConversation()
+                    + ", sociability " + entry.profile.personality().sociability() + ". " + entry.setup.explanation()
+                    + " Autonomous progression and unattended operation await qualification.");
+            return 1;
+        }
+        if (verb.equals("stop") || verb.equals("stay")) {
+            // Works on unloaded records too; every pending creation/action continuation is fenced.
+            halt(entry, actor, verb.equals("stay") ? "Staying here; use resume, then follow." : "Stopped by owner.");
+            feedback(source, entry.explanation());
+            return 1;
+        }
+        if (entry.metadataFault || entry.reconciliationBlocked) return reject(source, entry.explanation());
+        if (entry.body == null || entry.arbiter == null || !entry.body.isAlive()) {
+            return reject(source, entry.explanation() + " Load its saved area; an absent body is never automatically recreated.");
+        }
+        try {
+            if (verb.equals("resume")) {
+                entry.arbiter.resume(actor);
+                entry.body.ownerStopped(false);
+                entry.blocker = "Ready for a direct follow command; autonomous work remains disabled.";
+                persist(entry);
+            } else if (verb.equals("follow")) {
+                if (entry.following) {
+                    feedback(source, "Already following the owner.");
+                    return 1;
+                }
+                ServerPlayerEntity owner = server.getPlayerManager().getPlayer(entry.snapshot().ownerId());
+                if (!eligibleFollow(entry.body, owner)) {
+                    return reject(source, "The owner must be online in this dimension, within 48 blocks.");
+                }
+                if (entry.snapshot().stopLatched()) return reject(source, "Use /companion resume before following again.");
+                entry.lease = entry.arbiter.acquire(actor, UUID.randomUUID(), UUID.randomUUID(), Duration.ofMinutes(5));
+                entry.following = true;
+                entry.follow = new FollowBehavior(entry.body, owner);
+                entry.blocker = "Following with room beside the owner, within loaded nearby terrain (five-minute M0 command timeout).";
+                persist(entry);
+            }
+            feedback(source, entry.explanation());
+            return 1;
+        } catch (IllegalStateException failure) {
+            return reject(source, failure.getMessage());
+        }
+    }
+
+    void loaded(CompanionEntity body) {
+        requireThread();
+        body.haltControls();
+        if (!running) return;
+        if (!ready) { awaitingRegistry.add(body); return; }
+        Entry entry = entries.get(body.companionId());
+        if (entry == null || entry.nativeState != null || !body.getUuid().equals(entry.snapshot().entityId())
+                || !entry.snapshot().ownerId().equals(body.ownerId())
+                || !worldId.equals(entry.snapshot().worldId())
+                || !body.getWorld().getRegistryKey().getValue().toString().equals(entry.snapshot().dimension())) {
+            KindredMod.LOGGER.error("Unreconciled Kindred body {}; preserved dormant for operator review", body.getUuid());
+            return;
+        }
+        if (entry.body != null && entry.body != body) {
+            halt(entry, Actor.console(), "Duplicate native body detected; operator review required.");
+            entry.reconciliationBlocked = true;
+            KindredMod.LOGGER.error("Duplicate body for companion {}; neither inventory was deleted", body.companionId());
+            return;
+        }
+        entry.body = body;
+        Companion restored = entry.data.withStopLatched(entry.data.stopLatched() || body.ownerStopped());
+        entry.arbiter = new ActionArbiter(restored, new NativeBody(body));
+        entry.runner = new SkillRunner(entry.arbiter, PlayerRuntime::nanos);
+        entry.lastRunnerState = SkillRunner.State.IDLE;
+        entry.data = entry.arbiter.snapshot();
+        entry.following = false;
+        entry.lease = null;
+        body.ownerStopped(entry.data.stopLatched());
+        body.setCustomName(Text.literal(entry.data.displayName()));
+        body.setCustomNameVisible(true);
+        if (!entry.metadataFault && !entry.reconciliationBlocked) {
+            entry.blocker = entry.data.lifecycle() == LifecycleState.FAULTED ? "Faulted; operator recovery required."
+                    : entry.data.stopLatched() ? "Owner-stopped; use resume before follow." : "Sleeping; ready for direct follow.";
+        }
+    }
+
+    void unloaded(CompanionEntity body) {
+        requireThread();
+        awaitingRegistry.remove(body);
+        Entry entry = entries.get(body.companionId());
+        if (entry == null || entry.body != body) return;
+        halt(entry, Actor.console(), body.isAlive()
+                ? "Body is unloaded; load its saved area before controlling it."
+                : "Body died or was removed; recovery requires operator inspection of actual items.");
+        entry.body = null;
+        entry.arbiter = null;
+        entry.runner = null;
+        socials.discard(entry.data.id());
+        entry.perception = null; // Facts belong to a loaded body in one world; they are rebuilt, never carried over.
+        entry.perceptionSource = null;
+        if (entry.lookPending) finishLook(entry, entry.data.displayName() + " could not finish looking: its body unloaded first.");
+    }
+
+    void beforeEntityTick(CompanionEntity body) {
+        requireThread();
+        Entry entry = entries.get(body.companionId());
+        if (!running || !ready || entry == null || entry.body != body || entry.arbiter == null) {
+            body.haltControls();
+            return;
+        }
+        entry.arbiter.tick();
+        boolean busy = entry.runner != null && runnerBusy(entry);
+        Companion state = entry.snapshot();
+        boolean usable = body.isAlive() && !entry.metadataFault && !entry.reconciliationBlocked
+                && state.lifecycle() != LifecycleState.FAULTED && state.lifecycle() != LifecycleState.REMOVED;
+        // F-25c supplies qualified candidates and durable admission; legacy mode never enables autonomy.
+        var decision = entry.mind.decide(new dev.kindred.core.PlayerDecisionLoop.Frame(usable,
+                state.stopLatched(), busy, entry.following,
+                entry.lease != null && entry.arbiter.isCurrent(entry.lease), false, null, List.of()),
+                entry.profile.personality());
+        entry.mindStatus = decision.reason();
+        if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.HALT) {
+            body.haltControls();
+            if (busy) {
+                // abort settles runner state; authority must be revoked first, including fault paths.
+                entry.runner.lease().ifPresent(entry.arbiter::cancel);
+                entry.runner.abort(decision.reason());
+                observeRunner(entry);
+            }
+            if (entry.following) {
+                if (entry.lease != null) entry.arbiter.cancel(entry.lease);
+                entry.following = false;
+                entry.lease = null;
+            }
+            return;
+        }
+        tickPerception(entry, body);
+        socials.deliverDue(entry.data.id(), now());
+        switch (decision.action()) {
+            case RUN_SKILL -> tickSkill(entry, body);
+            case RUN_FOLLOW -> tickFollow(entry, body);
+            case WAIT -> body.haltControls();
+            // A proposal is not authority. Dispatch requires F-25c's admission/checkpoint integration.
+            case PROPOSE_TASK -> body.haltControls();
+            default -> throw new IllegalStateException("Unexpected player decision");
+        }
+        CompanionSocials.Participant participant = socialParticipant(entry.data.id());
+        if (participant != null) socials.tick(participant);
+    }
+
+    private void tickSkill(Entry entry, CompanionEntity body) {
+        entry.runner.tick();
+        if (runnerBusy(entry) && entry.runner.lease().isPresent() && !"wait".equals(entry.skillId)) {
+            MannerismState.Gait gait = entry.mannerisms.gait(entry.profile.personality(), now(),
+                    FollowBehavior.movementContext(body, entry.arbiter.isCurrent(entry.runner.lease().orElseThrow())));
+            FollowBehavior.applyGait(body, gait, entry.stride, !body.getNavigation().isIdle()
+                    && body.getVelocity().horizontalLengthSquared() > 0.003);
+        }
+        observeRunner(entry);
+    }
+
+    private void tickFollow(Entry entry, CompanionEntity body) {
+        ServerPlayerEntity target = server.getPlayerManager().getPlayer(entry.snapshot().ownerId());
+        if (!eligibleFollow(body, target)) {
+            halt(entry, Actor.console(), "Follow task paused: target offline, out of range or in another dimension.");
+            return;
+        }
+        long now = now();
+        MannerismState.Gait gait = entry.mannerisms.gait(entry.profile.personality(), now,
+                FollowBehavior.movementContext(body, true));
+        Entity glance = null;
+        if (entry.glanceTarget != null) {
+            if (body.age >= entry.glanceUntilAge) entry.glanceTarget = null;
+            else glance = ((ServerWorld) body.getWorld()).getEntity(entry.glanceTarget);
+        }
+        Entity glanceTarget = glance;
+        entry.arbiter.executeIfCurrent(entry.lease, () -> entry.follow.tick(body, target, gait, glanceTarget,
+                entry.profile.personality(), entry.mannerisms.active(entry.profile.personality(), now)));
+        if (entry.follow.blocked()) halt(entry, Actor.console(), "Follow blocked: no safe space or movement progress.");
+    }
+
+    int socialSetting(ServerCommandSource source, UUID requestedId, String setting, boolean enabled,
+                      Personality.Trait trait, int value) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        if (player == null && !source.hasPermissionLevel(2)) return reject(source, "Owner or operator controls only.");
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No companion found.");
+        Actor actor = new Actor(player, source.hasPermissionLevel(2));
+        if (!Authorization.mayControl(actor, entry.snapshot())) return reject(source, "Only the owner or an operator may change this profile.");
+        if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This companion's profile is unavailable.");
+        if (!entry.profileWrite.isDone()) return reject(source, "The previous profile change is still being saved.");
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = trait != null ? previous.withTrait(trait, value)
+                : setting.equals("public") ? previous.withPublic(enabled) : previous.withAmbient(enabled);
+        entry.profile = changed; // Privacy restrictions and mute take effect synchronously.
+        socials.reset(entry.data.id());
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Profile save failed; companion stopped for storage inspection.");
+                KindredMod.LOGGER.error("Social profile write failed for {}", entry.data.id(), failure);
+                source.sendError(Text.literal("The profile could not be saved. The companion has stopped."));
+            } else feedback(source, "Saved " + entry.data.displayName() + "'s "
+                    + (trait != null ? trait.name().toLowerCase(java.util.Locale.ROOT) + " = " + value : setting + " = " + enabled) + "."
+                    + (trait != null && trait.isTaskPreference() ? " This preference will guide work when matching skills are available." : ""));
+        }));
+        feedback(source, "Saving the companion's profile.");
+        return 1;
+    }
+
+    int personality(ServerCommandSource source, UUID requestedId) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        if (player == null && !source.hasPermissionLevel(2)) return reject(source, "Owner or operator controls only.");
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No companion found.");
+        if (!Authorization.mayControl(new Actor(player, source.hasPermissionLevel(2)), entry.snapshot())) {
+            return reject(source, "Only the owner or an operator may inspect this profile.");
+        }
+        String values = java.util.Arrays.stream(Personality.Trait.values())
+                .map(trait -> trait.name().toLowerCase(java.util.Locale.ROOT) + " " + entry.profile.personality().value(trait))
+                .collect(java.util.stream.Collectors.joining(", "));
+        String modeText = " Legacy restriction: " + (entry.mode != null ? entry.mode.mode().name().toLowerCase(java.util.Locale.ROOT) : "companion")
+                + ", scope " + (entry.mode != null ? entry.mode.scope().name().toLowerCase(java.util.Locale.ROOT) : "approved") + ".";
+        feedback(source, entry.data.displayName() + "'s personality: " + values + "." + modeText);
+        return 1;
+    }
+
+    // ----- Movement skills through the runner (F-04 / F-10) -----
+
+    private static boolean runnerBusy(Entry entry) {
+        SkillRunner.State state = entry.runner.state();
+        return state == SkillRunner.State.RUNNING || state == SkillRunner.State.PAUSING || state == SkillRunner.State.COMPLETING;
+    }
+
+    int skill(ServerCommandSource source, UUID requestedId, String skillId, Map<String, String> arguments) {
+        Entry entry = authorizedEntry(source, requestedId, "control this companion");
+        if (entry == null) return 0;
+        if (entry.metadataFault || entry.reconciliationBlocked) return reject(source, entry.explanation());
+        if (entry.body == null || entry.arbiter == null || entry.runner == null || !entry.body.isAlive()) {
+            return reject(source, entry.explanation() + " Load its saved area; an absent body is never automatically recreated.");
+        }
+        if (entry.snapshot().stopLatched()) return reject(source, "Use /companion resume first.");
+        if (entry.following) return reject(source, "Use /companion stay to end following before giving another movement command.");
+        if (runnerBusy(entry)) return reject(source, "A skill is already running (" + entry.skillId + "); pause or stop it first.");
+        var descriptor = MovementSkills.descriptor(skillId);
+        var body = MovementSkills.body(skillId, arguments, entry.body, entry.setup, () -> edits, entry);
+        if (descriptor.isEmpty() || body.isEmpty()) return reject(source, "Unknown skill " + skillId + ".");
+        UUID playerId = source.getEntity() instanceof ServerPlayerEntity player ? player.getUuid() : null;
+        int chunks = entry.setup.area() == null ? 1 : entry.setup.area().chunkCount();
+        AdmissionBoard.Decision seat = admission.request(entry.data.id(), entry.data.ownerId(), Math.min(chunks, AdmissionBoard.MAX_CHUNKS_EACH));
+        if (seat == AdmissionBoard.Decision.WAITING) return reject(source, "The active slots are full, so this companion is waiting.");
+        if (seat == AdmissionBoard.Decision.REJECTED) return reject(source, "That work area is larger than one companion may keep ticking.");
+        try {
+            entry.lease = entry.runner.start(descriptor.orElseThrow(), arguments, body.orElseThrow(),
+                    new Actor(playerId, source.hasPermissionLevel(2)), UUID.randomUUID(), java.util.Optional.empty());
+        } catch (IllegalStateException | IllegalArgumentException rejected) {
+            admission.release(entry.data.id());
+            return reject(source, rejected.getMessage());
+        }
+        entry.skillId = skillId;
+        entry.lastRunnerState = SkillRunner.State.RUNNING;
+        entry.blocker = "Running " + skillId + " " + arguments + " (two-minute deadline).";
+        persist(entry);
+        feedback(source, "Acknowledged: " + skillId + " " + arguments + ". Arrival or a blocker will be reported; this is not a completion.");
+        return 1;
+    }
+
+    int pauseSkill(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "control this companion");
+        if (entry == null) return 0;
+        if (entry.runner == null || !entry.runner.pause()) return reject(source, "No running skill to pause. Follow ends with stay.");
+        feedback(source, "Pausing at the next checkpoint (within 500 ms); progress is kept for /companion continue.");
+        return 1;
+    }
+
+    int continueSkill(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "control this companion");
+        if (entry == null) return 0;
+        UUID playerId = source.getEntity() instanceof ServerPlayerEntity player ? player.getUuid() : null;
+        Actor actor = new Actor(playerId, source.hasPermissionLevel(2));
+        return continueSkillEntry(source, entry, actor);
+    }
+
+    private int continueSkillEntry(ServerCommandSource source, Entry entry, Actor actor) {
+        if ((entry.body == null && entry.nativeBody == null) || entry.arbiter == null || entry.runner == null) return reject(source, entry.explanation());
+        if (entry.snapshot().stopLatched()) return reject(source, "Use resume first; a stop never silently resumes a chore.");
+        if (entry.runner.state() == SkillRunner.State.PAUSED) {
+            if (entry.nativeState != null) {
+                if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.IDLE) {
+                    if (admission.request(entry.data.id(), entry.data.id(), 1) != AdmissionBoard.Decision.ADMIT) {
+                        return reject(source, "No activity seat is available.");
+                    }
+                    entry.nativeWorkPending = true;
+                    long generation = entry.generation;
+                    entry.activity.request(entry.activity.snapshot().period().endExclusive()).whenComplete((paid, error) -> server.execute(() -> {
+                        entry.nativeWorkPending = false;
+                        if (!running || generation != entry.generation || entry.runner == null || entry.runner.state() != SkillRunner.State.PAUSED) {
+                            admission.release(entry.data.id());
+                            return;
+                        }
+                        if (error != null || !Boolean.TRUE.equals(paid) || !entry.activity.paid()) {
+                            admission.release(entry.data.id());
+                            nativeActivityFailure(entry, "Activity acknowledgement is uncertain on resume");
+                            return;
+                        }
+                        try {
+                            entry.lease = entry.runner.resume(actor);
+                            entry.nativeTask = entry.runner.body();
+                            entry.lastRunnerState = SkillRunner.State.RUNNING;
+                            entry.blocker = "Resumed " + entry.skillId + " from its checkpoint with fresh observations.";
+                            persist(entry);
+                        } catch (IllegalStateException rejected) {
+                            admission.release(entry.data.id());
+                            entry.blocker = "Resume rejected: " + rejected.getMessage();
+                        }
+                    }));
+                    entry.blocker = "Resuming native skill at the next paid activity slice.";
+                    persist(entry);
+                    feedback(source, entry.blocker);
+                    return 1;
+                }
+            }
+            try {
+                entry.lease = entry.runner.resume(actor);
+            } catch (IllegalStateException rejected) {
+                return reject(source, rejected.getMessage());
+            }
+            if (entry.nativeState != null) {
+                entry.nativeTask = entry.runner.body();
+            }
+            entry.lastRunnerState = SkillRunner.State.RUNNING;
+            entry.blocker = "Resumed " + entry.skillId + " from its checkpoint with fresh observations.";
+            persist(entry);
+            feedback(source, entry.blocker);
+            return 1;
+        }
+        if (runnerBusy(entry)) return reject(source, "The skill is already running.");
+        // After a restart the checkpoint lives only in metadata; rebuild the body and start from it explicitly.
+        feedback(source, "Looking for a saved checkpoint.");
+        long generation = entry.generation;
+        store.checkpoint(entry.data.id()).whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || generation != entry.generation) return;
+            if (failure != null || saved.isEmpty()) { reply(entry.data.ownerId(), "No saved checkpoint to continue."); return; }
+            Checkpoint checkpoint = saved.orElseThrow();
+            dev.kindred.core.SkillDescriptor descriptor = null;
+            dev.kindred.core.SkillBody body = null;
+            if (entry.nativeBody != null && checkpoint.skillId().equals("native_gather")) {
+                descriptor = NativePlayerSkills.descriptor("native_gather");
+                body = new NativeGatherAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute, Integer.parseInt(checkpoint.arguments().get("count")), Integer.parseInt(checkpoint.arguments().get("slot")));
+            } else if (entry.body != null) {
+                descriptor = MovementSkills.descriptor(checkpoint.skillId()).orElse(null);
+                body = MovementSkills.body(checkpoint.skillId(), checkpoint.arguments(), entry.body, entry.setup, () -> edits, entry).orElse(null);
+            }
+            if (descriptor == null || body == null || runnerBusy(entry)) { reply(entry.data.ownerId(), "The saved checkpoint cannot be continued now."); return; }
+            try {
+                entry.lease = entry.runner.start(descriptor, checkpoint.arguments(), body, actor, checkpoint.taskId(), saved);
+            } catch (IllegalStateException | IllegalArgumentException rejected) {
+                reply(entry.data.ownerId(), rejected.getMessage());
+                return;
+            }
+            entry.skillId = checkpoint.skillId();
+            if (entry.nativeState != null) {
+                entry.nativeTask = body;
+            }
+            entry.lastRunnerState = SkillRunner.State.RUNNING;
+            entry.blocker = "Continued " + entry.skillId + " from the saved checkpoint.";
+            persist(entry);
+            reply(entry.data.ownerId(), entry.blocker);
+        }));
+        return 1;
+    }
+
+    /** Report state changes once, persist checkpoints on pause, and release the lease on every terminal state. */
+    private void observeRunner(Entry entry) {
+        if (entry.runner == null) return;
+        SkillRunner.State state = entry.runner.state();
+        if (state == entry.lastRunnerState) return;
+        entry.lastRunnerState = state;
+        if (entry.nativeState != null && state == SkillRunner.State.BLOCKED && NativePlayerSkills.uncertain(entry.nativeTask)) {
+            nativeFailure(server.getCommandSource(), entry, "Native action outcome requires reconciliation",
+                    new IllegalStateException(entry.runner.reason().orElse("Unverified inventory change")));
+            return;
+        }
+        UUID finishedTaskId = entry.currentTaskId;
+        if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
+                || state == SkillRunner.State.CANCELLED || state == SkillRunner.State.PAUSED)) {
+            closeNativeAction(entry);
+            if (entry.activity != null) entry.activity.stop();
+            admission.release(entry.data.id());
+            if (!entry.hazardInterrupted) {
+                entry.currentTaskId = null;
+            }
+        }
+        if (entry.runner == null) return;
+        UUID companionId = entry.data.id();
+        switch (state) {
+            case COMPLETED -> {
+                if (entry.lease != null) claims.releaseTask(entry.lease.taskId());
+                entry.lease = null;
+                entry.blocker = "Completed " + entry.skillId + ": " + entry.runner.checkpoint().map(Checkpoint::progress).orElse(Map.of()) + ".";
+                if (finishedTaskId != null) {
+                    teamCoordinator.completeTask(TaskId.of(finishedTaskId), entry.data.id(), entry.blocker);
+                }
+                if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                    entry.cachedCraftingTablePos = null;
+                    entry.cachedFurnacePos = null;
+                    primeWorkstationCaches(entry, entry.nativeBody);
+                    entry.routineRefreshPending = true;
+                    server.execute(() -> persistNativeSaveReceipt(entry));
+                }
+                store.appendEvent(companionId, java.time.Instant.now(), "WORK_VERIFIED", entry.blocker);
+                checkpointWrite(entry, store.clearCheckpoint(companionId).thenApply(ignored -> null));
+                persist(entry);
+                reply(entry.data.ownerId(), entry.data.displayName() + ": " + entry.blocker);
+                socials.workCompleted(companionId, entry.skillId, entry.blocker);
+                reconcileExpeditionArrival(entry);
+            }
+            case BLOCKED, CANCELLED -> {
+                if (entry.lease != null) claims.releaseTask(entry.lease.taskId());
+                entry.lease = null;
+                entry.blocker = (state == SkillRunner.State.BLOCKED ? "Blocked: " : "Cancelled: ") + entry.runner.reason().orElse("no reason recorded") + ".";
+                if (finishedTaskId != null) {
+                    teamCoordinator.revokeTask(TaskId.of(finishedTaskId), entry.blocker);
+                }
+                store.appendEvent(companionId, java.time.Instant.now(), "WORK_BLOCKED", entry.blocker);
+                if (entry.hazardInterrupted && entry.runner.checkpoint().isPresent()) {
+                    checkpointWrite(entry, store.saveCheckpoint(companionId, entry.runner.checkpoint().get()).thenApply(ignored -> null));
+                } else {
+                    checkpointWrite(entry, store.clearCheckpoint(companionId).thenApply(ignored -> null));
+                }
+                persist(entry);
+                reply(entry.data.ownerId(), entry.data.displayName() + ": " + entry.blocker);
+                if (state == SkillRunner.State.BLOCKED) socials.workBlocked(companionId, entry.skillId, entry.blocker);
+                entry.hazardInterrupted = false;
+            }
+            case PAUSED -> {
+                if (entry.lease != null) claims.releaseTask(entry.lease.taskId());
+                entry.lease = null;
+                entry.blocker = "Paused " + entry.skillId + " (" + entry.runner.reason().orElse("") + "); use /companion continue.";
+                if (finishedTaskId != null) {
+                    teamCoordinator.revokeTask(TaskId.of(finishedTaskId), entry.blocker);
+                }
+                entry.runner.checkpoint().ifPresent(checkpoint -> checkpointWrite(entry, store.saveCheckpoint(companionId, checkpoint).thenApply(ignored -> null)));
+                persist(entry);
+                reply(entry.data.ownerId(), entry.data.displayName() + ": " + entry.blocker);
+            }
+            default -> { }
+        }
+    }
+
+    private void checkpointWrite(Entry entry, CompletableFuture<Void> write) {
+        write.whenComplete((ignored, failure) -> {
+            if (failure != null) server.execute(() -> {
+                if (!running) return;
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Checkpoint write failed; companion stopped pending storage inspection.");
+                KindredMod.LOGGER.error("Checkpoint write failed for {}", entry.data.id(), failure);
+            });
+        });
+    }
+
+    // ----- Work setup (F-03) -----
+
+    int setup(ServerCommandSource source, UUID requestedId) {
+        if (requestedId == null) {
+            requestedId = defaultBotId();
+        }
+        Entry entry = requestedId != null ? entries.get(requestedId) : null;
+        if (entry != null && entry.nativeState != null) {
+            WorkSetup setup = entry.setup;
+            String homeStr = setup != null && setup.home() != null ? point(setup.home().position())
+                    : (entry.idleAnchorPos != null ? (entry.idleAnchorPos.getX() + "," + entry.idleAnchorPos.getY() + "," + entry.idleAnchorPos.getZ()) : "unset");
+            String patchStr = setup != null && setup.patch() != null
+                    ? setup.patch().resourceId() + " " + point(setup.patch().min()) + " to " + point(setup.patch().max())
+                    : "none";
+            feedback(source, entry.data.displayName() + " (native AI player): home " + homeStr
+                    + "; idle radius " + entry.runtimeSettings.idleRadiusBlocks() + "m"
+                    + "; playstyle " + entry.runtimeSettings.playstyleProfile()
+                    + "; work patch: " + patchStr + ". "
+                    + (entry.runtimeSettings.playstyleProfile().isIdleObserving()
+                    ? "Currently idling. Run '/aiplayer resume' to begin autonomous survival."
+                    : "Autonomous survival active."));
+            return 1;
+        }
+        entry = authorizedEntry(source, requestedId, "inspect this setup");
+        if (entry == null) return 0;
+        WorkSetup setup = entry.setup;
+        StringBuilder text = new StringBuilder(entry.data.displayName() + " setup (" + setup.dimension() + "): ");
+        text.append(setup.home() == null ? "home unset" : "home " + point(setup.home().position()));
+        text.append("; ").append(setup.area() == null ? "area unset" : "area " + setup.area().minX() + "," + setup.area().minZ()
+                + " to " + setup.area().maxX() + "," + setup.area().maxZ() + " (" + setup.area().chunkCount() + " chunks)");
+        text.append("; ").append(setup.storage() == null ? "storage unset" : "storage " + setup.storage().blockId() + " at " + point(setup.storage().position())
+                + " [" + storageStatus(entry) + "]");
+        text.append("; ").append(setup.patch() == null ? "patch unset" : "patch " + setup.patch().resourceId() + " " + point(setup.patch().min()) + " to " + point(setup.patch().max()));
+        text.append(". ").append(setup.explanation());
+        text.append(" Autonomous block and container edits stay disabled (decision D4 deferred).");
+        feedback(source, text.toString());
+        return 1;
+    }
+
+    int homeSet(ServerCommandSource source, UUID requestedId) {
+        if (!(source.getEntity() instanceof ServerPlayerEntity player)) return reject(source, "Stand where the companion should live.");
+        Entry entry = authorizedEntry(source, requestedId, "change this setup");
+        if (entry == null) return 0;
+        if (!player.getWorld().getRegistryKey().getValue().toString().equals(entry.setup.dimension())) {
+            return reject(source, "The home must be in the companion's own dimension (" + entry.setup.dimension() + ").");
+        }
+        BlockPos pos = player.getBlockPos();
+        return editSetup(source, entry, setup -> {
+            WorkSetup next = setup.withHome(new WorkSetup.HomeMarker(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ())));
+            return next.area() == null ? next.withArea(WorkSetup.WorkRegion.around(next.home().position())) : next;
+        }, "home at " + pos.toShortString() + (entry.setup.area() == null ? " with a default nine-chunk area" : ""));
+    }
+
+    int areaSet(ServerCommandSource source, UUID requestedId, int x1, int z1, int x2, int z2) {
+        Entry entry = authorizedEntry(source, requestedId, "change this setup");
+        if (entry == null) return 0;
+        return editSetup(source, entry, setup -> setup.withArea(new WorkSetup.WorkRegion(Math.min(x1, x2), Math.min(z1, z2), Math.max(x1, x2), Math.max(z1, z2))),
+                "work area " + Math.min(x1, x2) + "," + Math.min(z1, z2) + " to " + Math.max(x1, x2) + "," + Math.max(z1, z2));
+    }
+
+    int areaDefault(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "change this setup");
+        if (entry == null) return 0;
+        if (entry.setup.home() == null) return reject(source, "Set a home first; the default area is the nine chunks around it.");
+        return editSetup(source, entry, setup -> setup.withArea(WorkSetup.WorkRegion.around(setup.home().position())), "default nine-chunk area around home");
+    }
+
+    int storageSet(ServerCommandSource source, UUID requestedId) {
+        if (!(source.getEntity() instanceof ServerPlayerEntity player)) return reject(source, "Look at the container as a player.");
+        Entry entry = authorizedEntry(source, requestedId, "change this setup");
+        if (entry == null) return 0;
+        if (!player.getWorld().getRegistryKey().getValue().toString().equals(entry.setup.dimension())) {
+            return reject(source, "Storage must be in the companion's own dimension (" + entry.setup.dimension() + ").");
+        }
+        if (!(player.raycast(6, 0, false) instanceof BlockHitResult hit)) return reject(source, "Look at a chest or barrel within six blocks.");
+        BlockPos pos = hit.getBlockPos();
+        StorageTargets.Observation observed = StorageTargets.observe(player.getWorld(), pos);
+        if (observed == null || !observed.container()) return reject(source, "That block is not a container.");
+        return editSetup(source, entry, setup -> setup.withStorage(new WorkSetup.StorageTarget(
+                new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()), observed.blockId(), observed.version())),
+                "storage " + observed.blockId() + " at " + pos.toShortString());
+    }
+
+    int patchSet(ServerCommandSource source, UUID requestedId, BlockPos a, BlockPos b, String blockId) {
+        Entry entry = authorizedEntry(source, requestedId, "assign a resource patch");
+        if (entry == null) return 0;
+        Identifier id = Identifier.tryParse(blockId);
+        if (id == null || !Registries.BLOCK.containsId(id)) return reject(source, "Unknown block " + blockId + ".");
+        var min = new WorkSetup.BlockPoint(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+        var max = new WorkSetup.BlockPoint(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+        return editSetup(source, entry, setup -> setup.withPatch(new WorkSetup.ResourcePatch(min, max, id.toString())),
+                "resource patch " + id + " " + point(min) + " to " + point(max));
+    }
+
+    private Entry authorizedEntry(ServerCommandSource source, UUID requestedId, String verb) {
+        requireThread();
+        if (!ready || !running) { reject(source, "Kindred is loading its saved records."); return null; }
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        if (player == null && !source.hasPermissionLevel(2)) { reject(source, "Owner or operator controls only."); return null; }
+        Entry entry = requestedId != null ? entries.get(requestedId) : byOwner(player);
+        if (entry == null && requestedId == null) {
+            var active = entries.values().stream()
+                    .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED && e.nativeState == null)
+                    .toList();
+            if (active.size() == 1) {
+                entry = active.get(0);
+            }
+        }
+        if (entry == null) { reject(source, "No companion found. Specify an AI player name or UUID."); return null; }
+        if (entry.nativeState != null) { reject(source, "Use native lifecycle controls; legacy skill/setup integration is unavailable for this body."); return null; }
+        if (!Authorization.mayControl(new Actor(player, source.hasPermissionLevel(2)), entry.snapshot())) {
+            reject(source, "Only the owner or an operator may " + verb + ".");
+            return null;
+        }
+        return entry;
+    }
+
+    private int editSetup(ServerCommandSource source, Entry entry, java.util.function.UnaryOperator<WorkSetup> change, String description) {
+        if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This companion's setup is unavailable.");
+        if (!entry.setupWrite.isDone()) return reject(source, "The previous setup change is still being saved.");
+        WorkSetup previous = entry.setup;
+        WorkSetup changed;
+        try {
+            changed = change.apply(previous);
+        } catch (IllegalArgumentException invalid) {
+            return reject(source, invalid.getMessage());
+        }
+        entry.setup = changed; // Narrower or changed authority applies immediately; nothing autonomous uses it yet.
+        entry.setupWrite = store.saveWorkSetup(changed, previous.revision());
+        entry.setupWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Setup save failed; companion stopped for storage inspection.");
+                KindredMod.LOGGER.error("Work setup write failed for {}", entry.data.id(), failure);
+                source.sendError(Text.literal("The setup could not be saved. The companion has stopped."));
+            } else feedback(source, "Saved " + entry.data.displayName() + "'s " + description + ". " + changed.explanation());
+        }));
+        feedback(source, "Saving the companion's setup.");
+        return 1;
+    }
+
+    private String storageStatus(Entry entry) {
+        if (entry.body == null) return "body not loaded; not verified";
+        return StorageTargets.explain(StorageTargets.validate(entry.body.getWorld(), entry.setup.storage()));
+    }
+
+    private static String point(WorkSetup.BlockPoint p) { return p.x() + "," + p.y() + "," + p.z(); }
+
+    // ----- Block perception (F-24) -----
+
+    /** Nine chunks at most around the body, five sections tall; the work area clips it further. */
+    static final SectionPlanner.Range PERCEPTION_RANGE = SectionPlanner.DEFAULT;
+
+    /** Blocks the companion is allowed to look for: its designated resource, its assigned container and an explicit look. */
+    private static Set<String> interest(Entry entry) {
+        Set<String> ids = new LinkedHashSet<>();
+        if (entry.setup.patch() != null) ids.add(entry.setup.patch().resourceId());
+        if (entry.setup.storage() != null) ids.add(entry.setup.storage().blockId());
+        if (entry.lookBlock != null) ids.add(entry.lookBlock);
+        return Set.copyOf(ids);
+    }
+
+    /**
+     * Runs only while the body is under a current lease (follow or a skill) or an owner asked it to look. It
+     * examines a bounded number of chunk sections per tick, skips unloaded and uninteresting sections without
+     * touching their blocks, and keeps observed facts with timestamps. Nothing here grants permission.
+     */
+    private void tickPerception(Entry entry, CompanionEntity body) {
+        if (entry.metadataFault || entry.reconciliationBlocked || entry.setup.area() == null) return;
+        boolean working = entry.lease != null && entry.arbiter.isCurrent(entry.lease);
+        if (!working && !entry.lookPending) return;
+        ServerWorld world = (ServerWorld) body.getWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(entry.setup.dimension())) {
+            if (entry.lookPending) finishLook(entry, entry.data.displayName() + " is not in its own dimension; nothing was observed.");
+            return;
+        }
+        Set<String> interest = interest(entry);
+        if (interest.isEmpty()) {
+            if (entry.lookPending) finishLook(entry, "Nothing to look for: name a block, or assign a patch or storage first.");
+            return;
+        }
+        if (entry.perception == null || entry.perceptionSource == null || entry.perceptionSource.world() != world) {
+            entry.perception = new BlockPerception(entry.setup.dimension(), BlockPerception.DEFAULT, PlayerRuntime::now, PlayerRuntime::nanos);
+            entry.perceptionSource = new ChunkSectionSource(world);
+            entry.perceptionCenter = null;
+        }
+        BlockPos pos = body.getBlockPos();
+        var here = new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ());
+        SectionKey center = SectionKey.of(here);
+        if (!center.equals(entry.perceptionCenter) || entry.perceptionSetupRevision != entry.setup.revision()
+                || !interest.equals(entry.perception.interest())) {
+            List<SectionKey> plan = SectionPlanner.plan(entry.setup.area(), here, PERCEPTION_RANGE,
+                    world.getBottomSectionCoord(), world.getTopSectionCoord());
+            entry.perception.retarget(plan, interest);
+            entry.perceptionCenter = center;
+            entry.perceptionSetupRevision = entry.setup.revision();
+        }
+        BlockPerception.Stats stats = entry.perception.tick(entry.perceptionSource);
+        if (entry.lookPending && stats.passes() > entry.lookPassesBefore) finishLook(entry, describePerception(entry, here, stats));
+    }
+
+    private String describePerception(Entry entry, WorkSetup.BlockPoint from, BlockPerception.Stats stats) {
+        BlockObservations seen = entry.perception.snapshot();
+        BlockPerception.PassStats pass = stats.lastPass();
+        StringBuilder text = new StringBuilder(entry.data.displayName()).append(" sees (pass ").append(seen.version())
+                .append(" over ").append(entry.perception.plan().size()).append(" sections in ").append(pass.ticks()).append(" ticks: ")
+                .append(pass.scanned()).append(" walked, ").append(pass.skippedByPalette()).append(" skipped by palette, ")
+                .append(pass.empty()).append(" empty, ").append(pass.unloaded()).append(" unloaded; max ")
+                .append(String.format(java.util.Locale.ROOT, "%.2f", stats.maxTickNanos() / 1_000_000.0)).append(" ms in one tick): ");
+        for (String id : seen.interest()) {
+            text.append(id).append(' ').append(seen.exposedCount(id)).append(" exposed of ").append(seen.matchCount(id)).append(" seen");
+            List<BlockObservation> nearest = seen.nearest(id, from, 1);
+            if (!nearest.isEmpty()) {
+                BlockObservation closest = nearest.get(0);
+                text.append(", nearest ").append(point(closest.position())).append(" (")
+                        .append((int) Math.ceil(Math.sqrt(closest.squaredDistanceTo(from)))).append(" blocks)");
+            }
+            text.append("; ");
+        }
+        return text.append("observed facts only, inside the work area and loaded chunks; buried blocks are counted but never located, and none of this is permission to break or open anything.").toString();
+    }
+
+    private void finishLook(Entry entry, String message) {
+        entry.lookPending = false;
+        UUID requester = entry.lookRequester;
+        entry.lookRequester = null;
+        entry.lookBlock = null;
+        if (requester != null) reply(requester, message);
+        else KindredMod.LOGGER.info(message);
+    }
+
+    int look(ServerCommandSource source, UUID requestedId, String blockId) {
+        Entry entry = authorizedEntry(source, requestedId, "ask what this companion sees");
+        if (entry == null) return 0;
+        if (entry.metadataFault || entry.reconciliationBlocked) return reject(source, entry.explanation());
+        if (entry.body == null || !entry.body.isAlive()) return reject(source, entry.explanation() + " Perception needs a loaded body.");
+        if (entry.setup.area() == null) return reject(source, "No work area to look in: " + WorkSetup.explain(WorkSetup.Field.AREA) + ".");
+        if (!entry.body.getWorld().getRegistryKey().getValue().toString().equals(entry.setup.dimension())) {
+            return reject(source, "The body is not in its own dimension (" + entry.setup.dimension() + ").");
+        }
+        if (blockId != null) {
+            Identifier id = Identifier.tryParse(blockId);
+            if (id == null || !Registries.BLOCK.containsId(id)) return reject(source, "Unknown block " + blockId + ".");
+        }
+        if (entry.lookPending) return reject(source, "Already looking; the result arrives when the current pass completes.");
+        entry.lookBlock = blockId;
+        Set<String> interest = interest(entry);
+        if (interest.isEmpty()) {
+            entry.lookBlock = null;
+            return reject(source, "Nothing to look for: name a block, or assign a patch or storage first.");
+        }
+        entry.lookPending = true;
+        entry.lookRequester = source.getEntity() instanceof ServerPlayerEntity player ? player.getUuid() : null;
+        entry.lookPassesBefore = entry.perception == null ? 0 : entry.perception.stats().passes();
+        feedback(source, "Looking for " + String.join(", ", interest) + " in the loaded work-area chunks around the body (at most nine chunks, "
+                + (16 * (2 * PERCEPTION_RANGE.verticalSections() + 1)) + " blocks of height). The result follows when the pass completes; it is an observation, not permission.");
+        return 1;
+    }
+
+    int mode(ServerCommandSource source, UUID requestedId, boolean companionMode) {
+        Entry entry = authorizedEntry(source, requestedId, "change this mode");
+        if (entry == null) return 0;
+        feedback(source, "Saving the mode. Traits, inventory and allowance stay as they are.");
+        store.mode(entry.data.id()).whenComplete((current, failure) -> server.execute(() -> {
+            if (!running || failure != null || current == null) {
+                source.sendError(Text.literal("The mode could not be read."));
+                return;
+            }
+            OperatingMode next = current.withMode(companionMode ? OperatingMode.Mode.COMPANION : OperatingMode.Mode.INDEPENDENT);
+            store.saveMode(next, current.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) source.sendError(Text.literal("The mode could not be saved."));
+                else {
+                    entry.mode = next;
+                    entry.data = entry.data.withRevisions(Math.incrementExact(entry.data.intentRevision()), entry.data.taskRevision());
+                    if (entry.runner != null && runnerBusy(entry)) {
+                        entry.runner.pause();
+                    }
+                    persist(entry);
+                    String personalMsg = next.mode() == OperatingMode.Mode.INDEPENDENT
+                            ? " Personal progression is unavailable until milestone progression is installed."
+                            : "";
+                    feedback(source, entry.data.displayName() + " is now " + next.mode().name().toLowerCase(java.util.Locale.ROOT)
+                            + ". Scope is " + next.scope().name().toLowerCase(java.util.Locale.ROOT) + "."
+                            + personalMsg + " Major boss fights stay excluded.");
+                }
+            }));
+        }));
+        return 1;
+    }
+
+    int scope(ServerCommandSource source, UUID requestedId, boolean homeScope) {
+        Entry entry = authorizedEntry(source, requestedId, "change this scope");
+        if (entry == null) return 0;
+        feedback(source, "Saving the scope restriction.");
+        store.mode(entry.data.id()).whenComplete((current, failure) -> server.execute(() -> {
+            if (!running || failure != null || current == null) {
+                source.sendError(Text.literal("The mode and scope could not be read."));
+                return;
+            }
+            OperatingMode next = current.withScope(homeScope ? OperatingMode.Scope.HOME : OperatingMode.Scope.APPROVED);
+            store.saveMode(next, current.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) source.sendError(Text.literal("The scope could not be saved."));
+                else {
+                    entry.mode = next;
+                    feedback(source, entry.data.displayName() + " scope is now " + next.scope().name().toLowerCase(java.util.Locale.ROOT)
+                            + ". Mode is " + next.mode().name().toLowerCase(java.util.Locale.ROOT) + ".");
+                }
+            }));
+        }));
+        return 1;
+    }
+
+    int addGoal(ServerCommandSource source, UUID requestedId, String description, String outcome, int priority) {
+        Entry entry = authorizedEntry(source, requestedId, "add a project goal");
+        if (entry == null) return 0;
+        GoalRecord record = new GoalRecord(UUID.randomUUID(), entry.data.id(), GoalRecord.Origin.OWNER,
+                description, outcome, priority, GoalRecord.Status.OPEN, 0);
+        feedback(source, "Adding project goal for " + entry.data.displayName() + "...");
+        store.addGoal(record).whenComplete((saved, failure) -> server.execute(() -> {
+            if (failure != null || saved == null) source.sendError(Text.literal("Goal could not be saved."));
+            else feedback(source, "Added goal " + saved.id() + ": " + saved.description() + " (priority " + saved.priority() + ").");
+        }));
+        return 1;
+    }
+
+    int listGoals(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "list project goals");
+        if (entry == null) return 0;
+        store.goals(entry.data.id()).whenComplete((goals, failure) -> server.execute(() -> {
+            if (failure != null || goals == null) {
+                source.sendError(Text.literal("Goals could not be retrieved."));
+                return;
+            }
+            if (goals.isEmpty()) {
+                feedback(source, entry.data.displayName() + " has no saved goals.");
+                return;
+            }
+            StringBuilder sb = new StringBuilder(entry.data.displayName() + " goals (" + goals.size() + "): ");
+            for (GoalRecord g : goals) {
+                sb.append("[").append(g.status().name().toLowerCase(java.util.Locale.ROOT))
+                  .append("] ").append(g.description()).append(" -> ").append(g.outcome())
+                  .append(" (pri: ").append(g.priority()).append("); ");
+            }
+            feedback(source, sb.toString());
+        }));
+        return 1;
+    }
+
+    int listMemories(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "list memories");
+        if (entry == null) return 0;
+        store.memories(entry.data.id()).whenComplete((memories, failure) -> server.execute(() -> {
+            if (failure != null || memories == null) {
+                source.sendError(Text.literal("Memories could not be retrieved."));
+                return;
+            }
+            if (memories.isEmpty()) {
+                feedback(source, entry.data.displayName() + " has no recorded memories.");
+                return;
+            }
+            StringBuilder sb = new StringBuilder(entry.data.displayName() + " memories (" + memories.size() + "): ");
+            for (MemoryNote m : memories) {
+                sb.append("[").append(m.kind().name().toLowerCase(java.util.Locale.ROOT))
+                  .append("] (").append(m.id()).append(") ").append(m.text())
+                  .append(" (from ").append(m.provenance()).append("); ");
+            }
+            feedback(source, sb.toString());
+        }));
+        return 1;
+    }
+
+    int addMemory(ServerCommandSource source, UUID requestedId, String kindName, String text) {
+        Entry entry = authorizedEntry(source, requestedId, "record a memory");
+        if (entry == null) return 0;
+        MemoryNote.Kind kind;
+        try {
+            kind = MemoryNote.Kind.valueOf(kindName.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return reject(source, "Kind must be PREFERENCE, FACT, or EPISODE.");
+        }
+        UUID actorId = source.getEntity() != null ? source.getEntity().getUuid() : new UUID(0, 0);
+        MemoryNote note = new MemoryNote(UUID.randomUUID(), entry.data.id(), kind, text, "owner:" + actorId, 0);
+        store.addMemory(note).whenComplete((saved, failure) -> server.execute(() -> {
+            if (failure != null || saved == null) source.sendError(Text.literal("Memory could not be saved."));
+            else feedback(source, "Recorded memory (" + saved.id() + "): " + saved.text() + ".");
+        }));
+        return 1;
+    }
+
+    int forgetMemory(ServerCommandSource source, UUID requestedId, UUID memoryId) {
+        Entry entry = authorizedEntry(source, requestedId, "forget a memory");
+        if (entry == null) return 0;
+        if (memoryId == null) return reject(source, "Supply the memory UUID to forget.");
+        store.forgetMemory(entry.data.id(), memoryId).whenComplete((success, failure) -> server.execute(() -> {
+            if (failure != null || Boolean.FALSE.equals(success)) {
+                source.sendError(Text.literal("Memory could not be deleted (not found or database error)."));
+            } else {
+                feedback(source, "Forgot memory " + memoryId + " for " + entry.data.displayName() + ".");
+            }
+        }));
+        return 1;
+    }
+
+    int limitStatus(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "view schedule limits");
+        if (entry == null) return 0;
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+            if (failure != null || limit == null) {
+                source.sendError(Text.literal("Activity limits could not be retrieved."));
+                return;
+            }
+            long hours = limit.capMillis() / (3600 * 1000);
+            long minutes = (limit.capMillis() % (3600 * 1000)) / (60 * 1000);
+            feedback(source, entry.data.displayName() + " schedule limits: daily cap "
+                    + hours + "h " + minutes + "m, offline work " + (limit.offlineWork() ? "enabled" : "disabled")
+                    + ", timezone " + limit.timezone() + ".");
+        }));
+        return 1;
+    }
+
+    int setLimitCap(ServerCommandSource source, UUID requestedId, int hours) {
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may modify daily activity caps.");
+        Entry entry = authorizedEntry(source, requestedId, "change daily cap");
+        if (entry == null) return 0;
+        long capMs = (long) hours * 3600 * 1000;
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+            if (failure != null || limit == null) {
+                source.sendError(Text.literal("Could not read current limit."));
+                return;
+            }
+            ActivityLimit next = new ActivityLimit(limit.companionId(), capMs, limit.offlineWork(), limit.timezone(), limit.revision() + 1);
+            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) source.sendError(Text.literal("Failed to save daily cap."));
+                else feedback(source, entry.data.displayName() + " daily activity cap set to " + hours + " hours.");
+            }));
+        }));
+        return 1;
+    }
+
+    int setLimitTimezone(ServerCommandSource source, UUID requestedId, String zone) {
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change accounting timezones.");
+        Entry entry = authorizedEntry(source, requestedId, "change accounting timezone");
+        if (entry == null) return 0;
+        try { java.time.ZoneId.of(zone); }
+        catch (java.time.DateTimeException invalid) { return reject(source, "Unknown timezone: " + zone); }
+        // Do not reset spent time by editing a zone before the period-transition protocol exists.
+        return reject(source, "Timezone changes are unavailable until accounting-period transitions are implemented (F-11).");
+    }
+
+    int setLimitOffline(ServerCommandSource source, UUID requestedId, boolean offline) {
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may toggle offline work permissions.");
+        Entry entry = authorizedEntry(source, requestedId, "change offline work permission");
+        if (entry == null) return 0;
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+            if (failure != null || limit == null) {
+                source.sendError(Text.literal("Could not read current limit."));
+                return;
+            }
+            ActivityLimit next = new ActivityLimit(limit.companionId(), limit.capMillis(), offline, limit.timezone(), limit.revision() + 1);
+            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) source.sendError(Text.literal("Failed to save offline work permission."));
+                else feedback(source, entry.data.displayName() + " offline work is now " + (offline ? "enabled" : "disabled") + ".");
+            }));
+        }));
+        return 1;
+    }
+
+    int journal(ServerCommandSource source, UUID requestedId) {
+        Entry entry = authorizedEntry(source, requestedId, "read this journal");
+        if (entry == null) return 0;
+        feedback(source, "Reading the journal.");
+        store.eventsSince(entry.data.id(), 0, 40).thenCombine(store.unresolvedActions(entry.data.id()), (events, unresolved) -> {
+            int verified = (int) events.stream().filter(event -> event.type().equals("WORK_VERIFIED")).count();
+            int failed = (int) events.stream().filter(event -> event.type().equals("WORK_BLOCKED")).count();
+            int uncertain = unresolved.size();
+            java.util.List<String> lines = events.stream()
+                    .filter(event -> event.type().equals("WORK_VERIFIED") || event.type().equals("WORK_BLOCKED"))
+                    .map(event -> event.detail()).limit(5).toList();
+            return JournalSummary.render(entry.data.displayName(), verified, failed, uncertain, lines);
+        }).whenComplete((text, failure) -> server.execute(() -> {
+            if (failure != null || text == null) source.sendError(Text.literal("The journal could not be read."));
+            else feedback(source, text + " Reading it does not start anything.");
+        }));
+        return 1;
+    }
+
+    void entityDied(CompanionEntity body) {
+        requireThread();
+        Entry entry = entries.get(body.companionId());
+        if (entry == null || entry.body != body) return;
+        halt(entry, Actor.console(), "Companion died; requires operator or owner recovery.");
+        teamCoordinator.handlePlayerDeath(entry.data.id());
+        entry.data = entry.data.withLifecycle(LifecycleState.FAULTED);
+        entry.blocker = "Companion body was destroyed. Inventory dropped at death location. Run /companion recover to restore.";
+        entry.body = null;
+        persist(entry);
+    }
+
+    // ----- F-14 Suspend and Remove Lifecycle Controls -----
+
+    int suspend(ServerCommandSource source, UUID requestedId) {
+        requireThread();
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may suspend a companion.");
+        Entry entry = authorizedEntry(source, requestedId, "suspend this companion");
+        if (entry == null) return 0;
+        if (entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "A removed companion cannot be suspended.");
+        halt(entry, Actor.console(), "Suspended by operator; requires /companion recover to resume.");
+        entry.data = entry.data.withLifecycle(LifecycleState.FAULTED);
+        persist(entry);
+        feedback(source, entry.data.displayName() + " has been suspended by operator. All controls are locked until /companion recover.");
+        return 1;
+    }
+
+    int recover(ServerCommandSource source, UUID requestedId) {
+        requireThread();
+        Entry entry = authorizedEntry(source, requestedId, "recover this companion");
+        if (entry == null) return 0;
+        if (entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "A removed companion cannot be recovered.");
+        entry.metadataFault = false;
+        entry.reconciliationBlocked = false;
+        entry.data = entry.data.withLifecycle(LifecycleState.SLEEPING).withStopLatched(false);
+        if (entry.body != null && entry.body.isAlive()) {
+            entry.body.ownerStopped(false);
+        } else {
+            entry.body = null;
+            entry.data = entry.data.withEntityId(null);
+        }
+        entry.blocker = "Recovered; sleeping and ready for controls.";
+        persist(entry);
+        feedback(source, entry.data.displayName() + " recovered. Lifecycle reset to sleeping.");
+        return 1;
+    }
+
+    int requestRemoval(ServerCommandSource source, UUID requestedId) {
+        requireThread();
+        Entry entry = authorizedEntry(source, requestedId, "remove this companion");
+        if (entry == null) return 0;
+        if (entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This companion has already been removed.");
+        UUID actorId = source.getEntity() != null ? source.getEntity().getUuid() : new UUID(0, 0);
+        UUID token = UUID.randomUUID();
+        removalTokens.put(token, new RemovalToken(token, entry.data.id(), actorId, now() + 60_000));
+        MutableText msg = Text.literal("To permanently remove " + entry.data.displayName() + " (")
+                .append(formatMessageWithClickableUuids(entry.data.id().toString()))
+                .append("), ")
+                .append(Text.literal("[CLICK TO CONFIRM REMOVAL]")
+                        .styled(style -> style
+                                .withColor(Formatting.RED)
+                                .withBold(true)
+                                .withUnderline(true)
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/aiplayer confirm-remove " + token))
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to permanently remove " + entry.data.displayName())))))
+                .append(" or run ")
+                .append(Text.literal("/aiplayer confirm-remove " + token)
+                        .styled(style -> style
+                                .withColor(Formatting.YELLOW)
+                                .withUnderline(true)
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/aiplayer confirm-remove " + token))
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to paste command into chat")))))
+                .append(" within 60 seconds. Active tasks and claims will be released; inventory dropped.");
+        feedback(source, msg);
+        return 1;
+    }
+
+    int confirmRemoval(ServerCommandSource source, UUID token) {
+        requireThread();
+        if (token == null) return reject(source, "Provide the confirmation token: /companion confirm-remove <token>");
+        RemovalToken found = removalTokens.remove(token);
+        long now = now();
+        UUID actorId = source.getEntity() != null ? source.getEntity().getUuid() : new UUID(0, 0);
+        if (found == null || !found.matches(token, found.companionId(), actorId, now)) {
+            return reject(source, "Invalid or expired confirmation token. Request removal again via /companion remove.");
+        }
+        Entry entry = entries.get(found.companionId());
+        if (entry == null) return reject(source, "Companion not found.");
+        Actor actor = new Actor(actorId, source.hasPermissionLevel(2));
+        halt(entry, actor, "Permanently removed.");
+        if (entry.lease != null) claims.releaseTask(entry.lease.taskId());
+        admission.release(entry.data.id());
+        entry.data = entry.data.withLifecycle(LifecycleState.REMOVED);
+        if (entry.body != null && entry.body.isAlive()) {
+            for (int slot = 0; slot < entry.body.inventory().size(); slot++) {
+                net.minecraft.item.ItemStack stack = entry.body.inventory().getStack(slot);
+                if (!stack.isEmpty()) {
+                    entry.body.dropStack(stack);
+                    entry.body.inventory().setStack(slot, net.minecraft.item.ItemStack.EMPTY);
+                }
+            }
+            entry.body.discard();
+        }
+        store.clearCheckpoint(entry.data.id());
+        persist(entry);
+        feedback(source, entry.data.displayName() + " (" + entry.data.id() + ") permanently removed. Claims and tickets released.");
+        return 1;
+    }
+
+    int quirks(ServerCommandSource source, UUID requestedId) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        if (player == null && !source.hasPermissionLevel(2)) return reject(source, "Owner or operator controls only.");
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No companion found.");
+        if (!Authorization.mayControl(new Actor(player, source.hasPermissionLevel(2)), entry.snapshot())) {
+            return reject(source, "Only the owner or an operator may inspect this profile.");
+        }
+        long now = now();
+        Set<Mannerisms.Quirk> active = entry.mannerisms.active(entry.profile.personality(), now);
+        StringBuilder text = new StringBuilder(entry.data.displayName() + "'s habits:");
+        for (Mannerisms.Quirk quirk : Mannerisms.Quirk.values()) {
+            text.append(' ').append(quirk.commandName()).append(' ')
+                    .append(entry.mannerisms.profile().setting(quirk).name().toLowerCase(java.util.Locale.ROOT))
+                    .append(active.contains(quirk) ? " (doing it)" : " (not doing it)");
+            entry.mannerisms.accommodationRemaining(quirk, now).ifPresent(remaining ->
+                    text.append(" [paused for ").append(Math.max(1, remaining / 60_000)).append(" more min]"));
+            text.append(';');
+        }
+        text.append(" sprint-jumping, fidgets and glances only happen inside an authorized movement command.");
+        feedback(source, text.toString());
+        return 1;
+    }
+
+    int quirk(ServerCommandSource source, UUID requestedId, Mannerisms.Quirk quirk, Mannerisms.Setting setting) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        if (player == null && !source.hasPermissionLevel(2)) return reject(source, "Owner or operator controls only.");
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No companion found.");
+        Actor actor = new Actor(player, source.hasPermissionLevel(2));
+        if (!Authorization.mayControl(actor, entry.snapshot())) return reject(source, "Only the owner or an operator may change these habits.");
+        if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This companion's profile is unavailable.");
+        if (!entry.mannerismWrite.isDone()) return reject(source, "The previous habit change is still being saved.");
+        long expected = entry.mannerisms.profile().revision();
+        Mannerisms changed = entry.mannerisms.edit(quirk, setting); // Takes effect at the next movement tick; clears any chat promise.
+        entry.mannerismWrite = store.saveMannerisms(changed, expected);
+        entry.mannerismWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Habit save failed; companion stopped for storage inspection.");
+                KindredMod.LOGGER.error("Mannerism write failed for {}", entry.data.id(), failure);
+                source.sendError(Text.literal("The habit setting could not be saved. The companion has stopped."));
+            } else {
+                boolean doing = entry.mannerisms.active(entry.profile.personality(), now()).contains(quirk);
+                feedback(source, "Saved " + entry.data.displayName() + "'s " + quirk.commandName() + " = "
+                        + setting.name().toLowerCase(java.util.Locale.ROOT) + "; currently " + (doing ? "doing it" : "not doing it")
+                        + ". Habits never change permissions, tasks, speed limits or allowance.");
+            }
+        }));
+        feedback(source, "Saving the companion's habit setting.");
+        return 1;
+    }
+
+    /** Bridges social chat and attention to the runtime's habit state; every effect is bounded by the core policies. */
+    private final class HabitHooks implements CompanionSocials.Habits {
+        @Override
+        public java.util.Optional<String> feedback(ServerPlayerEntity speaker, CompanionSocials.Participant companion, String message, long now) {
+            Entry entry = entries.get(companion.id());
+            var quirk = QuirkFeedback.detect(message);
+            if (entry == null || quirk.isEmpty()) return java.util.Optional.empty();
+            Mannerisms.Quirk subject = quirk.orElseThrow();
+            boolean owner = speaker.getUuid().equals(entry.data.ownerId());
+            boolean active = entry.mannerisms.active(entry.profile.personality(), now).contains(subject);
+            var response = QuirkFeedback.respond(subject, entry.profile.personality(),
+                    owner ? QuirkFeedback.Speaker.OWNER : QuirkFeedback.Speaker.PLAYER, active);
+            if (response.decision() != QuirkFeedback.Decision.ACCOMMODATE) return java.util.Optional.of(response.reply());
+            String key = speaker.getUuid() + ":" + companion.id();
+            Long last = accommodationWindows.get(key);
+            if (last != null && now - last < QuirkFeedback.SPEAKER_WINDOW_MILLIS) {
+                return java.util.Optional.of("I already gave that a rest for you not long ago. I'm going to be myself for a bit.");
+            }
+            if (!entry.mannerisms.accommodate(subject, now, response.accommodationMillis())) return java.util.Optional.of(response.reply());
+            accommodationWindows.remove(key);
+            accommodationWindows.put(key, now);
+            while (accommodationWindows.size() > 512) accommodationWindows.remove(accommodationWindows.keySet().iterator().next());
+            return java.util.Optional.of(response.reply());
+        }
+
+        @Override
+        public AttentionPolicy.Phase phase(UUID companionId) {
+            Entry entry = entries.get(companionId);
+            if (entry == null || entry.lease == null || entry.arbiter == null || !entry.arbiter.isCurrent(entry.lease)) return null;
+            if (entry.runner != null && runnerBusy(entry)) {
+                return "wait".equals(entry.skillId) ? AttentionPolicy.Phase.WAITING : AttentionPolicy.Phase.WALKING_UNCOMMITTED;
+            }
+            if (!entry.following || entry.follow == null) return null;
+            return entry.follow.waiting() ? AttentionPolicy.Phase.WAITING : AttentionPolicy.Phase.WALKING_UNCOMMITTED;
+        }
+
+        @Override
+        public boolean gazeOwned(UUID companionId) {
+            Entry entry = entries.get(companionId);
+            if (entry == null) return true;
+            // Navigation owns the gaze while moving; a settled follower or a waiting companion may look around.
+            if (entry.runner != null && runnerBusy(entry)) return !"wait".equals(entry.skillId);
+            return entry.follow == null || !entry.follow.waiting();
+        }
+
+        @Override
+        public Set<Mannerisms.Quirk> activeQuirks(UUID companionId, long now) {
+            Entry entry = entries.get(companionId);
+            return entry == null ? Set.of() : entry.mannerisms.active(entry.profile.personality(), now);
+        }
+
+        @Override
+        public void glance(UUID companionId, UUID subject, long durationMillis, long now) {
+            Entry entry = entries.get(companionId);
+            if (entry == null || entry.body == null) return;
+            entry.glanceTarget = subject;
+            entry.glanceUntilAge = entry.body.age + (int) Math.max(1, durationMillis / 50);
+        }
+    }
+
+    int talk(ServerCommandSource source, UUID requestedId, String message) {
+        requireThread();
+        if (!(source.getEntity() instanceof ServerPlayerEntity player)) return reject(source, "Talk as a nearby player.");
+        Entry entry = requestedId == null ? byOwner(player.getUuid()) : entries.get(requestedId);
+        CompanionSocials.Participant participant = entry == null ? null : socialParticipant(entry.data.id());
+        if (!socials.canTalk(player, participant)) return reject(source, "Conversation needs a visible companion within eight blocks and its owner's permission for public chat.");
+        if (!socials.reply(player, participant, message)) return reject(source, "Give the conversation a few seconds before another message.");
+        return 1;
+    }
+
+    /** Legacy command refuses until native combat skills are qualified. */
+    int duel(ServerCommandSource source, UUID requestedId) {
+        return reject(source, "Combat is unavailable until native player mechanics and arbiter-controlled combat skills qualify.");
+    }
+
+    /** Damage remains native; the old unleased retaliation controller is never dispatched. */
+    void playerAttackedCompanion(ServerPlayerEntity attacker, CompanionEntity body) { requireThread(); }
+
+    void chat(UUID senderId, String message) {
+        requireThread();
+        if (!ready || !running || message.length() > 256) return;
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(senderId);
+        if (player == null) return;
+        CompanionSocials.Participant matched = null;
+        String addressed = null;
+        for (Entry entry : entries.values()) {
+            var candidate = socialParticipant(entry.data.id());
+            if (candidate == null || !socials.canTalk(player, candidate)) continue;
+            var text = SocialDialogue.addressedMessage(candidate.name(), message);
+            if (text.isEmpty()) continue;
+            if (matched != null) return; // Ambiguous names need /companion talkto <UUID>; never trigger a chorus.
+            matched = candidate;
+            addressed = text.orElseThrow();
+        }
+        if (matched != null) socials.reply(player, matched, addressed);
+    }
+
+    private CompanionSocials.Participant socialParticipant(UUID id) {
+        Entry entry = entries.get(id);
+        if (!running || !ready || entry == null || entry.body == null || !entry.body.isAlive()
+                || entry.metadataFault || entry.reconciliationBlocked
+                || entry.snapshot().lifecycle() == LifecycleState.FAULTED || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return null;
+        boolean working = entry.following || (entry.runner != null && runnerBusy(entry));
+        return new CompanionSocials.Participant(entry.data.id(), entry.data.ownerId(), entry.data.displayName(),
+                entry.body, entry.profile, working && !entry.snapshot().stopLatched()
+                && entry.lease != null && entry.arbiter.isCurrent(entry.lease));
+    }
+
+    private void handlePeerConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
+        if (store != null) {
+            store.addMemory(new MemoryNote(UUID.randomUUID(), speaker.id(), MemoryNote.Kind.FACT,
+                    exchange.memoryFactInitiator(), "peer_dialogue:" + peer.id(), 0));
+            store.addMemory(new MemoryNote(UUID.randomUUID(), peer.id(), MemoryNote.Kind.FACT,
+                    exchange.memoryFactPeer(), "peer_dialogue:" + speaker.id(), 0));
+            store.appendEvent(speaker.id(), java.time.Instant.now(), "PEER_CONFERENCE",
+                    "Conferred with " + peer.name() + " on " + exchange.topic());
+            store.appendEvent(peer.id(), java.time.Instant.now(), "PEER_CONFERENCE",
+                    "Conferred with " + speaker.name() + " on " + exchange.topic());
+        }
+
+        if (speaker.body() != null && speaker.body().getWorld() instanceof ServerWorld serverWorld) {
+            String quote = exchange.openingRemark();
+            if (quote.length() > 60) quote = quote.substring(0, 57) + "...";
+            Text whisper = Text.literal("§7[Nearby] " + speaker.name() + " confers with " + peer.name() + ": \"" + quote + "\"");
+            for (ServerPlayerEntity player : serverWorld.getPlayers()) {
+                if (player.squaredDistanceTo(speaker.body()) <= 36.0 || (peer.body() != null && player.squaredDistanceTo(peer.body()) <= 36.0)) {
+                    player.sendMessage(whisper, false);
+                }
+            }
+        }
+    }
+
+    private PeerProgressDialogue.PeerState peerState(UUID id) {
+        Entry entry = entries.get(id);
+        if (entry == null || entry.body == null || !entry.body.isAlive()) return null;
+        int logs = countLogs(entry.body);
+        boolean hasStorage = entry.setup != null && entry.setup.storage() != null;
+        boolean hasPatch = entry.setup != null && entry.setup.patch() != null;
+        OperatingMode.Mode mode = entry.mode != null ? entry.mode.mode() : OperatingMode.Mode.COMPANION;
+        return new PeerProgressDialogue.PeerState(
+                entry.data.id(),
+                entry.data.displayName(),
+                mode,
+                entry.profile.personality(),
+                entry.skillId,
+                logs,
+                hasStorage,
+                hasPatch
+        );
+    }
+
+    private int countLogs(CompanionEntity body) {
+        if (body == null) return 0;
+        int count = 0;
+        for (int i = 0; i < body.inventory().size(); i++) {
+            net.minecraft.item.ItemStack stack = body.inventory().getStack(i);
+            if (!stack.isEmpty() && Registries.ITEM.getId(stack.getItem()).getPath().contains("log")) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private void mapAndSpawn(Entry entry, UUID owner, SpawnLocation location) {
+        // A null durable mapping proves no initial body has been dispatched; mapped absence is ambiguous.
+        entry.data = entry.data.withEntityId(entry.data.id());
+        long generation = ++entry.generation;
+        persist(entry).whenComplete((mappedRecord, failure) -> server.execute(() -> {
+            creating.remove(owner);
+            if (!running || generation != entry.generation) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                entry.blocker = "Body mapping could not be saved; operator inspection required.";
+                reply(owner, entry.explanation());
+                return;
+            }
+            spawnInitial(entry, owner, location);
+        }));
+    }
+
+    private void spawnInitial(Entry entry, UUID ownerId, SpawnLocation location) {
+        ServerPlayerEntity owner = server.getPlayerManager().getPlayer(ownerId);
+        if (owner == null || !owner.getWorld().getRegistryKey().getValue().toString().equals(entry.data.dimension())) {
+            entry.blocker = "Initial spawn deferred after owner departure; mapped body needs operator reconciliation.";
+            reply(ownerId, entry.blocker);
+            return;
+        }
+        ServerWorld world = owner.getServerWorld();
+        for (ServerWorld candidate : server.getWorlds()) {
+            Entity existing = candidate.getEntity(entry.data.id());
+            if (existing != null) {
+                entry.blocker = "An entity already has this UUID; operator reconciliation required.";
+                return;
+            }
+        }
+        CompanionEntity body = KindredMod.COMPANION.create(world);
+        if (body == null) { entry.blocker = "Native entity creation failed."; return; }
+        body.setUuid(entry.data.id());
+        body.bind(entry.data.id(), ownerId);
+        body.refreshPositionAndAngles(location.x(), location.y(), location.z(), location.yaw(), 0);
+        body.setCustomName(Text.literal(entry.data.displayName()));
+        body.setCustomNameVisible(true);
+        if (!eligibleSpawn(world, body) || body.squaredDistanceTo(owner) > 48 * 48) {
+            entry.blocker = "Initial spawn position is obstructed; operator reconciliation required.";
+            reply(ownerId, entry.blocker);
+            return;
+        }
+        if (!world.spawnEntity(body)) {
+            entry.blocker = "Native spawn was rejected; mapped identity retained for reconciliation.";
+            reply(ownerId, entry.blocker);
+            return;
+        }
+        if (entry.body == null) loaded(body);
+        reply(ownerId, entry.data.displayName() + " is here, sleeping. ID: " + entry.data.id()
+                + ". Try /companion follow, /companion stay, or /companion stop.");
+    }
+
+    private void halt(Entry entry, Actor actor, String reason) {
+        ++entry.generation;
+        entry.pendingConnection = null;
+        entry.nativePending = false;
+        if (entry.arbiter != null) {
+            entry.arbiter.stop(actor);
+            // Synchronous: the runner marks itself cancelled now, so no late tick or callback can drive the body.
+            if (entry.runner != null) entry.runner.abort(reason);
+            entry.data = entry.arbiter.snapshot();
+        } else {
+            Authorization.requireControl(actor, entry.data);
+            entry.data = entry.data.withRevisions(Math.incrementExact(entry.data.intentRevision()),
+                    entry.data.taskRevision()).withStopLatched(true).withLifecycle(LifecycleState.PAUSED);
+        }
+        if (entry.body != null) {
+            entry.body.haltControls();
+            entry.body.ownerStopped(true);
+        }
+        if (entry.nativeBody != null) entry.nativeBody.stopInputs();
+        if (entry.activity != null) entry.activity.stop();
+        closeNativeAction(entry);
+        entry.following = false;
+        entry.preparations.clear();
+        if (entry.lease != null) claims.releaseTask(entry.lease.taskId());
+        admission.release(entry.data.id());
+        teamCoordinator.handlePlayerStop(entry.data.id());
+        entry.currentTaskId = null;
+        entry.glanceTarget = null; // Nothing is in progress to pause; a stop callback must not restart gaze.
+        socials.reset(entry.data.id());
+        entry.lease = null;
+        entry.blocker = reason;
+        if (store != null) persist(entry);
+    }
+
+    private CompletableFuture<StoredCompanion> persist(Entry entry) {
+        Companion snapshot = entry.snapshot();
+        entry.data = snapshot;
+        SqliteCompanionStore database = store;
+        // Serialize this companion's optimistic writes; a failed chain never silently overwrites a newer record.
+        entry.writes = entry.writes.thenCompose(previous -> database.save(snapshot, previous.revision()));
+        entry.writes.whenComplete((saved, failure) -> {
+            if (failure != null) server.execute(() -> {
+                if (!running) return;
+                entry.metadataFault = true;
+                entry.blocker = "Metadata write failed; companion stopped pending operator inspection.";
+                if (entry.arbiter != null && !entry.snapshot().stopLatched()) entry.arbiter.stop(Actor.console());
+                entry.following = false;
+                if (entry.body != null) { entry.body.haltControls(); entry.body.ownerStopped(true); }
+                KindredMod.LOGGER.error("Companion {} metadata write failed", snapshot.id(), failure);
+            });
+        });
+        return entry.writes;
+    }
+
+    void stop() {
+        requireThread();
+        ready = false;
+        for (Entry entry : entries.values()) {
+            entry.pendingConnection = null;
+            entry.nativePending = false;
+            if (entry.arbiter != null) halt(entry, Actor.console(), "Server stopped; manual resume required.");
+            if (entry.nativeBody != null) entry.nativeBody.disconnect();
+            closeNativeActivity(entry);
+            closeNativeAction(entry);
+            ++entry.generation;
+        }
+        running = false;
+        CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
+                .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
+                .toArray(CompletableFuture[]::new)).handle((ignored, failure) -> null);
+        shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
+                loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
+                .thenCompose(future -> future));
+    }
+
+    void finishShutdown() {
+        // There are no game ticks after SERVER_STOPPED; bound the final IO flush.
+        try { shutdown.get(10, TimeUnit.SECONDS); }
+        catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
+    }
+
+    LedgerCheckState ledgerStateForTest(UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null ? entry.ledgerState : null;
+    }
+
+    ConnectionToken pendingConnectionForTest(UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null ? entry.pendingConnection : null;
+    }
+
+    private boolean eligibleFollow(CompanionEntity body, ServerPlayerEntity owner) {
+        return owner != null && owner.isAlive() && !owner.isSpectator() && body.isAlive()
+                && body.getWorld() == owner.getWorld() && body.squaredDistanceTo(owner) <= 48 * 48
+                && body.getWorld().isChunkLoaded(body.getBlockPos())
+                && owner.getWorld().isChunkLoaded(owner.getBlockPos());
+    }
+
+    private SpawnLocation findSpawn(ServerPlayerEntity owner) {
+        ServerWorld world = owner.getServerWorld();
+        CompanionEntity probe = KindredMod.COMPANION.create(world);
+        if (probe == null) return null;
+        for (int[] offset : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}}) {
+            double x = owner.getBlockX() + offset[0] + 0.5;
+            double z = owner.getBlockZ() + offset[1] + 0.5;
+            probe.refreshPositionAndAngles(x, owner.getY(), z, owner.getYaw(), 0);
+            if (eligibleSpawn(world, probe)) return new SpawnLocation(x, owner.getY(), z, owner.getYaw());
+        }
+        return null;
+    }
+
+    private boolean eligibleSpawn(ServerWorld world, CompanionEntity body) {
+        BlockPos position = body.getBlockPos();
+        return world.isChunkLoaded(position) && world.isSpaceEmpty(body)
+                && world.getWorldBorder().contains(body.getBoundingBox())
+                && world.getFluidState(position).isEmpty()
+                && world.getBlockState(position.down()).isSolidBlock(world, position.down());
+    }
+
+    private Entry byOwner(UUID owner) {
+        if (owner == null) return null;
+        return entries.values().stream().filter(entry -> entry.data.ownerId().equals(owner)).findFirst().orElse(null);
+    }
+
+    private void reply(UUID owner, String message) {
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(owner);
+        if (player != null) player.sendMessage(Text.literal(message), false);
+    }
+
+    private static int reject(ServerCommandSource source, String message) {
+        source.sendError(Text.literal(message));
+        return 0;
+    }
+
+    private static final Pattern UUID_PATTERN = Pattern.compile("\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b");
+
+    public static Text formatMessageWithClickableUuids(String message) {
+        if (message == null) return Text.empty();
+        Matcher matcher = UUID_PATTERN.matcher(message);
+        if (!matcher.find()) {
+            return Text.literal(message);
+        }
+        MutableText root = Text.empty();
+        int lastIndex = 0;
+        matcher.reset();
+        while (matcher.find()) {
+            if (matcher.start() > lastIndex) {
+                root.append(Text.literal(message.substring(lastIndex, matcher.start())));
+            }
+            String uuidStr = matcher.group();
+            root.append(Text.literal(uuidStr).styled(style -> style
+                    .withColor(Formatting.AQUA)
+                    .withUnderline(true)
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, uuidStr))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to copy UUID (" + uuidStr + ") to clipboard")))));
+            lastIndex = matcher.end();
+        }
+        if (lastIndex < message.length()) {
+            root.append(Text.literal(message.substring(lastIndex)));
+        }
+        return root;
+    }
+
+    private static void feedback(ServerCommandSource source, String message) {
+        source.sendFeedback(() -> formatMessageWithClickableUuids(message), false);
+    }
+
+    private static void feedback(ServerCommandSource source, Text message) {
+        source.sendFeedback(() -> message, false);
+    }
+
+    private void requireThread() {
+        if (!server.isOnThread()) throw new IllegalStateException("Kindred world access requires the server thread");
+    }
+
+    private static UUID loadWorldId(Path directory) {
+        try {
+            Files.createDirectories(directory);
+            Path identity = directory.resolve("world.uuid");
+            if (Files.exists(identity)) return UUID.fromString(Files.readString(identity).trim());
+            UUID id = UUID.randomUUID();
+            Files.writeString(identity, id.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            return id;
+        } catch (IOException failure) { throw new CompletionException(failure); }
+    }
+
+    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits) { }
+    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
+                                  java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
+                                  java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
+                                  StartupLedgerSnapshot ledgerSnapshot,
+                                  Map<UUID, OperatingMode> modes) { }
+    private record SpawnLocation(double x, double y, double z, float yaw) { }
+
+    void setEditsForTest(EditPolicy.ServerPolicy policy) {
+        this.edits = policy;
+    }
+
+    ActionLease leaseForTest(UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null ? entry.lease : null;
+    }
+
+    boolean isLeaseCurrentForTest(UUID id, ActionLease lease) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.arbiter != null && entry.arbiter.isCurrent(lease);
+    }
+
+    AttentionSnapshot nativeAttentionStatus(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.attentionSnapshot;
+    }
+
+    SchedulerDiagnostics schedulerDiagnostics() {
+        return attentionScheduler.diagnostics();
+    }
+
+    public dev.kindred.core.tactics.TacticalDecision nativeTacticalDiagnostics(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.lastTacticalDecision;
+    }
+
+    public dev.kindred.core.tactics.TacticalObservation nativeTacticalObservation(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.lastTacticalObservation;
+    }
+
+    public ProgressionState nativeProgressionState(UUID id) {
+        Entry entry = entries.get(id);
+        if (entry == null) return null;
+        if (entry.nativeBody != null && entry.nativeBody.connected()) {
+            var progObs = observeProgression(entry, entry.nativeBody);
+            entry.lastProgressionObservation = progObs;
+            entry.lastProgressionState = entry.progressionGraph.evaluate(progObs, entry.progressionHistory);
+            for (var snapEntry : entry.lastProgressionState.snapshots().entrySet()) {
+                if (snapEntry.getValue().historicallyAchieved() && !entry.progressionHistory.containsKey(snapEntry.getKey())) {
+                    entry.progressionHistory.put(snapEntry.getKey(), (long) server.getTicks());
+                }
+            }
+        }
+        return entry.lastProgressionState;
+    }
+
+    public Map<MilestoneId, Long> nativeProgressionHistory(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? Map.of() : java.util.Collections.unmodifiableMap(entry.progressionHistory);
+    }
+
+    public void setFoodTaskAuthorizedForTest(UUID id, boolean authorized) {
+        Entry entry = entries.get(id);
+        if (entry != null) entry.foodTaskAuthorized = authorized;
+    }
+
+    public void setShelterProtectionAuthorizedForTest(UUID id, boolean authorized) {
+        Entry entry = entries.get(id);
+        if (entry != null) entry.shelterProtectionAuthorized = authorized;
+    }
+
+    int evaluateCandidatesCountForTest(UUID id) {
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeBody == null) return 0;
+        return evaluateNativeCandidates(entry, entry.nativeBody).size();
+    }
+
+    int cachedRoutineCandidatesCountForTest(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.cachedRoutineCandidates.size();
+    }
+
+    long inventoryFingerprintForTest(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0L : entry.lastInventoryFingerprint;
+    }
+
+    int blocksScannedThisTickForTest() {
+        return blocksScannedThisTick;
+    }
+
+    private final class Entry implements ChoreSkills.Gate {
+        private Companion data;
+        private final dev.kindred.core.PlayerDecisionLoop mind;
+        private String mindStatus = "Awaiting local decision";
+        private CompanionEntity body;
+        private NativePlayerBody nativeBody;
+        private StoredNativePlayer nativeState;
+        private UUID currentTaskId;
+        private boolean nativePending;
+        private ConnectionToken pendingConnection;
+        private LedgerCheckState ledgerState = LedgerCheckState.PENDING;
+        private boolean nativeSetupPending;
+        private boolean nativeWorkPending;
+        private PaidActivitySession activity;
+        private dev.kindred.core.SkillBody nativeTask;
+        private ActionRecord lastNativeAction;
+        private boolean nativeActionPending;
+        private CompletableFuture<?> nativeActionFlush = CompletableFuture.completedFuture(null);
+        private CompletableFuture<?> activityFlush = CompletableFuture.completedFuture(null);
+        private ActionArbiter arbiter;
+        private ActionLease lease;
+        private boolean following;
+        private boolean metadataFault;
+        private boolean reconciliationBlocked;
+        private boolean hazardInterrupted;
+        private FollowBehavior follow;
+        private SocialProfile profile;
+        private CompletableFuture<SocialProfile> profileWrite;
+        private MannerismState mannerisms;
+        private CompletableFuture<Mannerisms> mannerismWrite;
+        private WorkSetup setup;
+        private CompletableFuture<WorkSetup> setupWrite;
+        private SkillRunner runner;
+        private final SprintStride stride = new SprintStride();
+        private final java.util.Map<String, CompletableFuture<ActionRecord>> preparations = new java.util.HashMap<>();
+
+        @Override
+        public boolean prepared(String key, String kind, String preconditions) {
+            CompletableFuture<ActionRecord> future = preparations.get(key);
+            if (future == null) {
+                if (lease == null) return false;
+                var grant = claims.acquire(lease.taskId(), lease.sessionEpoch(), java.util.List.of(key), System.currentTimeMillis(), 60_000);
+                if (grant.isEmpty()) return false;
+                preparations.put(key, store.prepareAction(ActionRecord.prepare(UUID.randomUUID(), lease, kind, preconditions)));
+                return false;
+            }
+            return future.isDone() && !future.isCompletedExceptionally();
+        }
+
+        @Override
+        public void committed(String key, String outcome) {
+            CompletableFuture<ActionRecord> future = preparations.remove(key);
+            if (future != null && future.isDone() && !future.isCompletedExceptionally()) {
+                ActionRecord prep = future.join();
+                store.transitionAction(prep.dispatched("dispatched"), prep.revision())
+                        .thenCompose(disp -> store.transitionAction(disp.verified("verified", outcome), disp.revision()))
+                        .whenComplete((saved, err) -> {
+                            if (err != null) KindredMod.LOGGER.error("Failed to commit action record for {}", key, err);
+                        });
+            }
+            if (lease != null) claims.releaseKey(lease.taskId(), key);
+        }
+
+        @Override
+        public void rolledBack(String key, String reason) {
+            CompletableFuture<ActionRecord> future = preparations.remove(key);
+            if (future != null && future.isDone() && !future.isCompletedExceptionally()) {
+                ActionRecord prep = future.join();
+                store.transitionAction(prep.failed(null, reason), prep.revision())
+                        .whenComplete((saved, err) -> {
+                            if (err != null) KindredMod.LOGGER.error("Failed to fail action record for {}", key, err);
+                        });
+            }
+            if (lease != null) claims.releaseKey(lease.taskId(), key);
+        }
+        private SkillRunner.State lastRunnerState = SkillRunner.State.IDLE;
+        private String skillId;
+        private UUID glanceTarget;
+        private int glanceUntilAge;
+        private BlockPerception perception;
+        private ChunkSectionSource perceptionSource;
+        private SectionKey perceptionCenter;
+        private long perceptionSetupRevision = -1;
+        private String lookBlock;
+        private UUID lookRequester;
+        private boolean lookPending;
+        private long lookPassesBefore;
+        private long generation;
+        private String blocker = "Body is not loaded; load its saved area. Missing bodies require reconciliation.";
+        private CompletableFuture<StoredCompanion> writes;
+        private OperatingMode mode;
+        private final AttentionStateMachine attention;
+        private AttentionSnapshot attentionSnapshot;
+        private List<NativeTaskCandidate> cachedRoutineCandidates = List.of();
+        private boolean routineRefreshPending;
+        private long lastInventoryFingerprint = -1;
+        private WorkSetup lastSetupSnapshot = null;
+        private BlockPos cachedCraftingTablePos = null;
+        private BlockPos cachedFurnacePos = null;
+        private int patchScanCursor = 0;
+        private int patchApproachCursor = 0;
+        private BlockPos cachedMiningTarget = null;
+        private boolean cachedMiningIsStone = false;
+        private BlockPos cachedApproachTarget = null;
+        private BlockPos lastPlayerPosForScan = null;
+        private Long lastAttributedAttackSequence = null;
+        final dev.kindred.core.tactics.StandardCombatPredictor tacticalPredictor = new dev.kindred.core.tactics.StandardCombatPredictor();
+        dev.kindred.core.tactics.TacticalObservation lastTacticalObservation = null;
+        dev.kindred.core.tactics.TacticalDecision lastTacticalDecision = null;
+        long lastTacticalRefreshTick = -1L;
+        long cachedWeaponFingerprint = Long.MIN_VALUE;
+        int cachedWeaponHeldSlot = -1;
+        List<dev.kindred.core.tactics.WeaponProfile> cachedWeapons = List.of();
+        CanonicalRoster.RuntimeSettings runtimeSettings = CanonicalRoster.RuntimeSettings.defaultsForNewPlayer();
+        BlockPos idleAnchorPos = null;
+        UUID lastGazeHumanId = null;
+        long lastHurtRemarkTick = -600L;
+        Vec3d idleWanderTarget = null;
+        long idleWanderEndTick = 0L;
+        long idleNextWanderTick = 0L;
+        boolean idleWanderSprint = false;
+        boolean idleWanderJump = false;
+        long lastSeedLocateTick = -600L;
+        BlockPos progressionSeedTarget = null;
+        BlockPos portalFrameInterior = null;
+        boolean foodTaskAuthorized = false;
+        boolean shelterProtectionAuthorized = false;
+        final MilestoneGraph progressionGraph = MilestoneGraph.canonical();
+        final Map<MilestoneId, Long> progressionHistory = new HashMap<>();
+        ProgressionObservation lastProgressionObservation = null;
+        ProgressionState lastProgressionState = null;
+        private ExpeditionState expeditionState = null;
+
+        private Entry(StoredCompanion record) {
+            data = record.companion();
+            mind = new dev.kindred.core.PlayerDecisionLoop(data.playerIdentity());
+            attention = new AttentionStateMachine(runtimeSession, data.id());
+            attentionSnapshot = attention.snapshot(0);
+            mode = OperatingMode.defaults(data.id());
+            profile = SocialProfile.defaults(data.id());
+            profileWrite = CompletableFuture.completedFuture(profile);
+            mannerisms = new MannerismState(Mannerisms.defaults(data.id()));
+            mannerismWrite = CompletableFuture.completedFuture(mannerisms.profile());
+            setup = WorkSetup.empty(data.id(), data.dimension());
+            setupWrite = CompletableFuture.completedFuture(setup);
+            if (data.lifecycle() != LifecycleState.FAULTED && data.lifecycle() != LifecycleState.REMOVED) {
+                data = data.withLifecycle(data.stopLatched() ? LifecycleState.PAUSED : LifecycleState.SLEEPING);
+            }
+            writes = CompletableFuture.completedFuture(record);
+        }
+
+        private Companion snapshot() { return arbiter == null ? data : arbiter.snapshot(); }
+
+        private String explanation() {
+            if (metadataFault) return "Metadata write failed. Controls remain blocked until the storage problem is fixed and the server restarts.";
+            if (reconciliationBlocked) return nativeState != null ? blocker + " Native state requires reconciliation; no replacement items are created."
+                    : "Conflicting native bodies were detected. Controls remain blocked for operator reconciliation; no items were deleted.";
+            if (snapshot().lifecycle() == LifecycleState.FAULTED) return "Faulted; operator recovery is required before controls can resume.";
+            return blocker + " Player decision: " + mindStatus + ".";
+        }
+    }
+
+    private void appendPlayerQolCandidates(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
+        if (entry.runtimeSettings.collaborationMode() != CollaborationMode.COOP_TEAM) {
+            return;
+        }
+        var bot = body.entity();
+        var world = bot.getServerWorld();
+        int botCookedFood = 0;
+        String primaryFoodId = null;
+        double bestFood = Double.NEGATIVE_INFINITY;
+        int botTorches = 0;
+        for (int s = 0; s < 36; s++) {
+            var stack = bot.getInventory().getStack(s);
+            if (stack.isEmpty()) continue;
+            if (stack.isOf(Items.TORCH)) {
+                botTorches += stack.getCount();
+            }
+            if (isEligibleFood(stack, true, true) && !stack.getItem().toString().contains("raw")) {
+                botCookedFood += stack.getCount();
+                double score = foodQualityScore(stack, true);
+                if (score > bestFood) {
+                    bestFood = score;
+                    primaryFoodId = Registries.ITEM.getId(stack.getItem()).toString();
+                }
+            }
+        }
+        BlockPos storagePos = entry.setup != null && entry.setup.storage() != null
+                ? new BlockPos(entry.setup.storage().position().x(), entry.setup.storage().position().y(), entry.setup.storage().position().z())
+                : null;
+        for (ServerPlayerEntity human : world.getPlayers()) {
+            if (human.getUuid().equals(bot.getUuid())) continue;
+            if (human.squaredDistanceTo(bot) > 256.0) continue;
+            boolean humanAtChest = storagePos != null
+                    && human.currentScreenHandler != human.playerScreenHandler
+                    && human.getBlockPos().getSquaredDistance(storagePos) <= 9;
+            int blockLight = world.getLightLevel(net.minecraft.world.LightType.BLOCK, human.getBlockPos());
+            var assists = ChestOrganizationPolicy.evaluatePlayerQolAssistance(
+                    human.getUuid(),
+                    human.getName().getString(),
+                    human.getHungerManager().getFoodLevel(),
+                    human.getHealth(),
+                    blockLight,
+                    humanAtChest,
+                    botCookedFood,
+                    primaryFoodId,
+                    botTorches
+            );
+            for (var assist : assists) {
+                if (assist.kind() == ChestOrganizationPolicy.PlayerQolAssistance.AssistKind.YIELD_CHEST_ACCESS) {
+                    human.sendMessage(Text.literal(assist.chatCallout()), false);
+                    continue;
+                }
+                if (assist.kind() == ChestOrganizationPolicy.PlayerQolAssistance.AssistKind.TOSS_EMERGENCY_FOOD
+                        || assist.kind() == ChestOrganizationPolicy.PlayerQolAssistance.AssistKind.TOSS_TORCHES_IN_DARK) {
+                    int slot = findInventorySlotWithItem(bot, assist.itemId(), assist.count());
+                    if (slot >= 0) {
+                        UUID taskId = UUID.nameUUIDFromBytes(("qol_toss:" + entry.data.id() + ":" + human.getUuid() + ":" + assist.itemId()).getBytes(StandardCharsets.UTF_8));
+                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                                dev.kindred.core.TaskPreferences.Priority.ROUTINE, 58.0,
+                                dev.kindred.core.TaskPreferences.Affinities.none(),
+                                new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                        candidates.add(new NativeTaskCandidate(candidate, "native_toss", Map.of(
+                                "slot", String.valueOf(slot),
+                                "count", String.valueOf(assist.count()),
+                                "target", human.getUuid().toString())));
+                        human.sendMessage(Text.literal(assist.chatCallout()), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private static int findInventorySlotWithItem(ServerPlayerEntity player, String itemId, int minCount) {
+        Identifier id = Identifier.tryParse(itemId);
+        if (id == null) return -1;
+        Item item = Registries.ITEM.get(id);
+        for (int s = 0; s < 36; s++) {
+            var stack = player.getInventory().getStack(s);
+            if (!stack.isEmpty() && stack.isOf(item) && stack.getCount() >= minCount) {
+                return s;
+            }
+        }
+        return -1;
+    }
+
+    private void appendHotbarOrganizationCandidates(Entry entry, ServerPlayerEntity player, List<NativeTaskCandidate> candidates) {
+        if (entry.attentionSnapshot == null) return;
+        AttentionState state = entry.attentionSnapshot.state();
+        if (state != AttentionState.ROUTINE && state != AttentionState.RECOVERY) {
+            return;
+        }
+        proposeHotbarSwap(entry, player, candidates, 0, stack -> stack.getItem() instanceof net.minecraft.item.SwordItem, 62.0, "hotbar_weapon_0");
+        proposeHotbarSwap(entry, player, candidates, 1, stack -> stack.getItem() instanceof net.minecraft.item.PickaxeItem, 61.5, "hotbar_pick_1");
+        proposeHotbarSwap(entry, player, candidates, 2, stack -> stack.getItem() instanceof net.minecraft.item.AxeItem
+                || stack.getItem() instanceof net.minecraft.item.HoeItem, 61.0, "hotbar_axe_2");
+        proposeHotbarSwap(entry, player, candidates, 7, stack -> stack.getItem() instanceof net.minecraft.item.BlockItem, 60.5, "hotbar_blocks_7");
+        var hotbarFood = player.getInventory().getStack(8);
+        if (!isEligibleFood(hotbarFood, true, true)) {
+            int invFood = -1;
+            double best = Double.NEGATIVE_INFINITY;
+            for (int s = 9; s < 36; s++) {
+                var stack = player.getInventory().getStack(s);
+                if (isEligibleFood(stack, true, true)) {
+                    double score = foodQualityScore(stack, player.getHealth() < player.getMaxHealth());
+                    if (score > best) {
+                        best = score;
+                        invFood = s;
+                    }
+                }
+            }
+            if (invFood >= 0) {
+                UUID taskId = UUID.nameUUIDFromBytes(("hotbar_food_8:" + entry.data.id() + ":" + invFood).getBytes(StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                        dev.kindred.core.TaskPreferences.Priority.ROUTINE, 60.0,
+                        dev.kindred.core.TaskPreferences.Affinities.none(),
+                        new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                        "source", String.valueOf(invFood),
+                        "target", "8")));
+            }
+        }
+    }
+
+    private void proposeHotbarSwap(Entry entry, ServerPlayerEntity player, List<NativeTaskCandidate> candidates,
+                                   int hotbarSlot, java.util.function.Predicate<ItemStack> desiredHotbar,
+                                   double need, String label) {
+        if (desiredHotbar.test(player.getInventory().getStack(hotbarSlot))) {
+            return;
+        }
+        int source = -1;
+        int bestTier = -1;
+        for (int s = 9; s < 36; s++) {
+            var stack = player.getInventory().getStack(s);
+            if (desiredHotbar.test(stack)) {
+                int tier = toolTier(stack.getItem());
+                if (tier >= bestTier) {
+                    bestTier = tier;
+                    source = s;
+                }
+            }
+        }
+        if (source < 0) return;
+        UUID taskId = UUID.nameUUIDFromBytes((label + ":" + entry.data.id() + ":" + source).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                dev.kindred.core.TaskPreferences.Priority.ROUTINE, need,
+                dev.kindred.core.TaskPreferences.Affinities.none(),
+                new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
+                "source", String.valueOf(source),
+                "target", String.valueOf(hotbarSlot))));
+    }
+
+    private void appendChestOrganizeCandidate(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
+        if (entry.setup == null || entry.setup.storage() == null) return;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos chestPos = new BlockPos(
+                entry.setup.storage().position().x(),
+                entry.setup.storage().position().y(),
+                entry.setup.storage().position().z());
+        if (!world.isChunkLoaded(chestPos)) return;
+        if (player.getEyePos().squaredDistanceTo(chestPos.getX() + 0.5, chestPos.getY() + 0.5, chestPos.getZ() + 0.5) > 20.25) {
+            return;
+        }
+        for (ServerPlayerEntity human : world.getPlayers()) {
+            if (human.getUuid().equals(player.getUuid())) continue;
+            if (human.currentScreenHandler != human.playerScreenHandler
+                    && human.getBlockPos().getSquaredDistance(chestPos) <= 9) {
+                return;
+            }
+        }
+        UUID taskId = UUID.nameUUIDFromBytes(("organize_chest:" + entry.data.id() + ":" + chestPos.asLong()).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
+                dev.kindred.core.TaskPreferences.Priority.ROUTINE, 57.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6),
+                new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        candidates.add(new NativeTaskCandidate(candidate, "native_organize_chest", Map.of(
+                "x", String.valueOf(chestPos.getX()),
+                "y", String.valueOf(chestPos.getY()),
+                "z", String.valueOf(chestPos.getZ()),
+                "max_moves", "4")));
+    }
+
+    private static int toolTier(net.minecraft.item.Item item) {
+        if (item == Items.NETHERITE_PICKAXE || item == Items.NETHERITE_AXE) return 6;
+        if (item == Items.DIAMOND_PICKAXE || item == Items.DIAMOND_AXE) return 5;
+        if (item == Items.IRON_PICKAXE || item == Items.IRON_AXE) return 4;
+        if (item == Items.STONE_PICKAXE || item == Items.STONE_AXE) return 3;
+        if (item == Items.GOLDEN_PICKAXE || item == Items.GOLDEN_AXE) return 2;
+        if (item == Items.WOODEN_PICKAXE || item == Items.WOODEN_AXE) return 1;
+        return 0;
+    }
+
+    private static double foodQualityScore(ItemStack stack, boolean injured) {
+        var food = stack.get(DataComponentTypes.FOOD);
+        if (food == null) return 0.0;
+        return food.saturation() * (injured ? 3.0f : 1.5f) + food.nutrition();
+    }
+
+    private static boolean isEligibleFood(ItemStack stack, boolean canEatVanilla, boolean needsHealth) {
+        if (stack.isEmpty() || !stack.contains(DataComponentTypes.FOOD)) return false;
+        if (stack.isOf(Items.CHORUS_FRUIT)
+                || stack.isOf(Items.ROTTEN_FLESH)
+                || stack.isOf(Items.SPIDER_EYE)
+                || stack.isOf(Items.POISONOUS_POTATO)
+                || stack.isOf(Items.PUFFERFISH)
+                || stack.isOf(Items.CHICKEN)
+                || stack.isOf(Items.SUSPICIOUS_STEW)) {
+            return false;
+        }
+        var food = stack.get(DataComponentTypes.FOOD);
+        if (food == null) return false;
+        if (canEatVanilla) return true;
+        return needsHealth && food.canAlwaysEat();
+    }
+
+    private void applyIdleObservation(Entry entry, NativePlayerBody body, long tick) {
+        var bot = body.entity();
+        if (bot == null || runnerBusy(entry)) {
+            return;
+        }
+        if (entry.idleAnchorPos == null) {
+            entry.idleAnchorPos = bot.getBlockPos().toImmutable();
+        }
+
+        // 1. Hurt / hit reaction: take knockback and respond verbally
+        if (bot.hurtTime > 0) {
+            entry.idleWanderTarget = null;
+            entry.idleWanderEndTick = 0L;
+            entry.lastGazeHumanId = null;
+            bot.setSneaking(false);
+            if (tick - entry.lastHurtRemarkTick > 40L) {
+                entry.lastHurtRemarkTick = tick;
+                String[] remarks = new String[]{
+                        "Ouch! Hey, watch it!",
+                        "Hey! Why are you hitting me?!",
+                        "Ow! That hurt!",
+                        "Careful there, we're on the same team!"
+                };
+                String remark = remarks[(int) Math.abs(tick % remarks.length)];
+                var players = bot.getServerWorld().getPlayers(p -> p.squaredDistanceTo(bot) < 256.0);
+                for (var p : players) {
+                    p.sendMessage(Text.literal("<" + entry.data.displayName() + "> " + remark));
+                }
+            }
+            if (bot.isOnGround() && bot.hurtTime == 9) {
+                bot.jump();
+            }
+            return;
+        }
+
+        var gaze = detectGazingHuman(entry, bot);
+        var input = new IdleObservationController.IdleObservationInput(
+                bot.getX(), bot.getY(), bot.getZ(),
+                entry.idleAnchorPos.getX() + 0.5, entry.idleAnchorPos.getY(), entry.idleAnchorPos.getZ() + 0.5,
+                entry.runtimeSettings.idleRadiusBlocks(),
+                gaze,
+                Optional.empty(),
+                Optional.empty(),
+                tick
+        );
+        var plan = IdleObservationController.evaluate(input);
+
+        // 2. Eye contact handling
+        if (plan.subState() == IdleObservationController.IdleSubState.EYE_CONTACT_LOCKED) {
+            entry.idleWanderTarget = null;
+            entry.idleWanderEndTick = 0L;
+            entry.lastGazeHumanId = gaze.map(IdleObservationController.HumanGazeObservation::humanId).orElse(null);
+            body.stopInputs();
+            plan.lookAtEyeTarget().ifPresent(target -> {
+                Vec3d eye = bot.getEyePos();
+                Vec3d look = new Vec3d(target[0], target[1], target[2]).subtract(eye).normalize();
+                float yaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
+                float pitch = (float) Math.toDegrees(-Math.asin(Math.clamp(look.y, -1.0, 1.0)));
+                bot.setYaw(yaw);
+                bot.setPitch(pitch);
+                bot.setHeadYaw(yaw);
+            });
+            bot.setSneaking(plan.shouldSneakPulse());
+            return;
+        }
+
+        // If gaze was previously locked and is now broken: smoothly reset head horizon and posture
+        if (entry.lastGazeHumanId != null) {
+            entry.lastGazeHumanId = null;
+            bot.setSneaking(false);
+            bot.setPitch(0.0f);
+        }
+
+        // 3. Returning to anchor if wandered outside radius
+        double dxAnchor = (entry.idleAnchorPos.getX() + 0.5) - bot.getX();
+        double dzAnchor = (entry.idleAnchorPos.getZ() + 0.5) - bot.getZ();
+        double distSqAnchor = dxAnchor * dxAnchor + dzAnchor * dzAnchor;
+        int maxRadius = entry.runtimeSettings.idleRadiusBlocks();
+        if (distSqAnchor > (double) (maxRadius * maxRadius)) {
+            entry.idleWanderTarget = null;
+            float returnYaw = (float) Math.toDegrees(Math.atan2(-dxAnchor, dzAnchor));
+            bot.setYaw(returnYaw);
+            bot.setHeadYaw(returnYaw);
+            bot.setPitch(0.0f);
+            bot.forwardSpeed = 0.55f;
+            bot.setSprinting(distSqAnchor > (double) (maxRadius * maxRadius * 2));
+            if (bot.horizontalCollision && bot.isOnGround()) {
+                bot.jump();
+            }
+            return;
+        }
+
+        // 4. Strolling in radius with occasional sprinting and jumping
+        if (tick < entry.idleWanderEndTick && entry.idleWanderTarget != null) {
+            double dx = entry.idleWanderTarget.x - bot.getX();
+            double dz = entry.idleWanderTarget.z - bot.getZ();
+            double distSq = dx * dx + dz * dz;
+            if (distSq < 1.0) {
+                entry.idleWanderTarget = null;
+                entry.idleWanderEndTick = 0L;
+                entry.idleNextWanderTick = tick + 40L + Math.abs((bot.getId() * 13L + tick) % 60L);
+                body.stopInputs();
+            } else {
+                float targetYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                bot.setYaw(targetYaw);
+                bot.setHeadYaw(targetYaw);
+                bot.setPitch(0.0f);
+                bot.forwardSpeed = entry.idleWanderSprint ? 0.75f : 0.45f;
+                bot.setSprinting(entry.idleWanderSprint && bot.getHungerManager().getFoodLevel() > 6);
+                if (entry.idleWanderJump && (tick % 25L == 0L || bot.horizontalCollision) && bot.isOnGround()) {
+                    bot.jump();
+                }
+            }
+        } else {
+            body.stopInputs();
+            if (tick >= entry.idleNextWanderTick) {
+                long seed = tick + bot.getId() * 31L;
+                if ((Math.abs(seed) % 10L) < 6L) {
+                    double angle = ((Math.abs(seed) % 360L) * Math.PI) / 180.0;
+                    double dist = 4.0 + (Math.abs(seed >> 4) % 7L);
+                    double wx = entry.idleAnchorPos.getX() + 0.5 + Math.cos(angle) * dist;
+                    double wz = entry.idleAnchorPos.getZ() + 0.5 + Math.sin(angle) * dist;
+                    BlockPos targetBlock = BlockPos.ofFloored(wx, bot.getY(), wz);
+                    var world = bot.getServerWorld();
+                    if (world.isChunkLoaded(targetBlock) && world.getWorldBorder().contains(targetBlock)) {
+                        entry.idleWanderTarget = new Vec3d(wx, bot.getY(), wz);
+                        entry.idleWanderEndTick = tick + 45L + Math.abs(seed % 35L);
+                        entry.idleWanderSprint = (Math.abs(seed) % 4L) == 0L;
+                        entry.idleWanderJump = (Math.abs(seed) % 3L) == 0L;
+                    }
+                } else {
+                    float glanceYaw = bot.getYaw() + (float) ((Math.abs(seed) % 60L) - 30.0);
+                    bot.setYaw(glanceYaw);
+                    bot.setHeadYaw(glanceYaw);
+                    bot.setPitch((float) ((Math.abs(seed) % 20L) - 10.0));
+                    entry.idleNextWanderTick = tick + 30L + Math.abs(seed % 40L);
+                }
+            }
+        }
+    }
+
+    private Optional<IdleObservationController.HumanGazeObservation> detectGazingHuman(Entry entry, ServerPlayerEntity bot) {
+        var world = bot.getServerWorld();
+        Vec3d botEyes = bot.getEyePos();
+        for (ServerPlayerEntity human : world.getPlayers()) {
+            if (human == bot || entries.containsKey(human.getUuid()) || human.isSpectator() || !human.isAlive()) {
+                continue;
+            }
+            double distSq = human.squaredDistanceTo(bot);
+            if (distSq > IdleObservationController.EYE_CONTACT_MAX_DISTANCE_SQ || distSq < 0.01) {
+                continue;
+            }
+            if (!human.canSee(bot)) {
+                continue;
+            }
+            Vec3d humanEyes = human.getEyePos();
+            Vec3d toBot = botEyes.subtract(humanEyes).normalize();
+            Vec3d humanLook = human.getRotationVec(1.0F).normalize();
+            double dot = humanLook.dotProduct(toBot);
+            if (dot >= IdleObservationController.EYE_CONTACT_DOT_THRESHOLD) {
+                return Optional.of(new IdleObservationController.HumanGazeObservation(
+                        human.getUuid(),
+                        human.getName().getString(),
+                        humanEyes.x, humanEyes.y, humanEyes.z,
+                        dot,
+                        distSq,
+                        human.isSneaking()
+                ));
+            }
+        }
+        return Optional.empty();
+    }
+
+    CanonicalRoster.RuntimeSettings runtimeSettings(UUID botId) {
+        Entry entry = entries.get(botId);
+        return entry != null ? entry.runtimeSettings : CanonicalRoster.RuntimeSettings.defaultsForNewPlayer();
+    }
+
+    Optional<UUID> firstConnectedBotId() {
+        for (Entry entry : entries.values()) {
+            if (entry.nativeBody != null && entry.nativeBody.connected()) {
+                return Optional.of(entry.data.id());
+            }
+        }
+        return Optional.empty();
+    }
+
+    Optional<UUID> canonicalBotIdForControlSlot(int slot) {
+        String name = switch (slot) {
+            case 2 -> CanonicalRoster.KINDRED_NAME;
+            case 4 -> CanonicalRoster.SOL_NAME;
+            case 6 -> CanonicalRoster.VESP_NAME;
+            default -> null;
+        };
+        if (name == null) return Optional.empty();
+        for (Entry entry : entries.values()) {
+            if (name.equalsIgnoreCase(entry.data.displayName()) && entry.nativeBody != null && entry.nativeBody.connected()) {
+                return Optional.of(entry.data.id());
+            }
+        }
+        return Optional.empty();
+    }
+
+    int openControlGui(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("Control deck requires a player executor."));
+            return 0;
+        }
+        player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
+                (syncId, inv, p) -> new KindredControlScreenHandler(syncId, inv, this, player),
+                Text.literal("Kindred Control Deck")));
+        return 1;
+    }
+
+    int togglePlaystyleForBot(ServerCommandSource source, UUID botId) {
+        Entry entry = entries.get(botId);
+        if (entry == null) return 0;
+        PlaystyleProfile current = entry.runtimeSettings.playstyleProfile();
+        PlaystyleProfile next = current == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
+                ? PlaystyleProfile.OPTIMAL_SURVIVAL
+                : PlaystyleProfile.SPEEDRUN_ANY_PERCENT;
+        if (current.isIdleObserving()) {
+            next = PlaystyleProfile.OPTIMAL_SURVIVAL;
+        }
+        entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(next);
+        source.sendFeedback(() -> Text.literal("Playstyle for " + entry.data.displayName() + ": "
+                + entry.runtimeSettings.playstyleProfile()), false);
+        return 1;
+    }
+
+    int toggleCollaborationForBot(ServerCommandSource source, UUID botId) {
+        Entry entry = entries.get(botId);
+        if (entry == null) return 0;
+        entry.runtimeSettings = entry.runtimeSettings.toggleCollaboration();
+        if (entry.runtimeSettings.collaborationMode() == CollaborationMode.SOLO_INDEPENDENT) {
+            teamCoordinator.handlePlayerStop(botId);
+        }
+        source.sendFeedback(() -> Text.literal("Collaboration for " + entry.data.displayName() + ": "
+                + entry.runtimeSettings.collaborationMode()), false);
+        return 1;
+    }
+
+    int toggleSeedLocatorForBot(ServerCommandSource source, UUID botId) {
+        Entry entry = entries.get(botId);
+        if (entry == null) return 0;
+        entry.runtimeSettings = entry.runtimeSettings.toggleSeedLocator();
+        source.sendFeedback(() -> Text.literal("Seed locator for " + entry.data.displayName() + ": "
+                + (entry.runtimeSettings.seedLocatorEnabled() ? "ON" : "OFF")), false);
+        return 1;
+    }
+
+    int setSeedLocatorEnabled(ServerCommandSource source, UUID botId, boolean enabled) {
+        Entry entry = botId != null ? entries.get(botId) : firstConnectedBotId().map(entries::get).orElse(null);
+        if (entry == null) {
+            source.sendError(Text.literal("No AI player found for seed locator setting."));
+            return 0;
+        }
+        if (entry.runtimeSettings.seedLocatorEnabled() != enabled) {
+            entry.runtimeSettings = entry.runtimeSettings.toggleSeedLocator();
+        }
+        source.sendFeedback(() -> Text.literal("Seed locator for " + entry.data.displayName() + ": "
+                + (entry.runtimeSettings.seedLocatorEnabled() ? "ON" : "OFF")), false);
+        return 1;
+    }
+
+    int adjustIdleRadiusForBot(ServerCommandSource source, UUID botId, int delta) {
+        Entry entry = entries.get(botId);
+        if (entry == null) return 0;
+        entry.runtimeSettings = entry.runtimeSettings.withIdleRadiusBlocks(entry.runtimeSettings.idleRadiusBlocks() + delta);
+        source.sendFeedback(() -> Text.literal("Idle radius for " + entry.data.displayName() + ": "
+                + entry.runtimeSettings.idleRadiusBlocks() + " blocks"), false);
+        return 1;
+    }
+
+    int setPlaystyleMode(ServerCommandSource source, UUID botId, PlaystyleProfile profile) {
+        Entry entry = botId != null ? entries.get(botId) : null;
+        if (entry == null && botId == null) {
+            entry = firstConnectedBotId().map(entries::get).orElse(null);
+        }
+        if (entry == null) {
+            source.sendError(Text.literal("No AI player found for mode change."));
+            return 0;
+        }
+        entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(profile);
+        String name = entry.data.displayName();
+        source.sendFeedback(() -> Text.literal(name + " playstyle: " + profile), false);
+        return 1;
+    }
+
+    UUID findBotIdByName(String name) {
+        requireThread();
+        if (name == null || name.isBlank()) return null;
+        String clean = name.trim();
+        for (Entry entry : entries.values()) {
+            if (entry.data.displayName().equalsIgnoreCase(clean)) {
+                return entry.data.id();
+            }
+        }
+        return null;
+    }
+
+    List<String> availableBotNames() {
+        requireThread();
+        return entries.values().stream()
+                .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
+                .map(e -> e.data.displayName())
+                .distinct()
+                .toList();
+    }
+
+    UUID resolveBotId(String target) {
+        requireThread();
+        if (target == null || target.isBlank()) return null;
+        UUID byName = findBotIdByName(target);
+        if (byName != null) return byName;
+        try {
+            return UUID.fromString(target.trim());
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    UUID defaultBotId() {
+        requireThread();
+        var active = entries.values().stream()
+                .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
+                .toList();
+        if (active.size() == 1) {
+            return active.get(0).data.id();
+        }
+        return null;
+    }
+
+    int spawnCanonicalRoster(ServerCommandSource source, String specificName) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (specificName != null && !specificName.isBlank()) {
+            var preset = dev.kindred.core.CanonicalRoster.TRIO.stream()
+                    .filter(p -> p.name().equalsIgnoreCase(specificName.trim()))
+                    .findFirst()
+                    .orElse(null);
+            if (preset == null) {
+                return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Vesp.");
+            }
+            return createNative(source, preset.name());
+        }
+        int spawned = 0;
+        for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
+            boolean alreadyExists = entries.values().stream()
+                    .anyMatch(e -> e.data.displayName().equalsIgnoreCase(preset.name())
+                            && e.snapshot().lifecycle() != LifecycleState.REMOVED);
+            if (!alreadyExists) {
+                createNative(source, preset.name());
+                spawned++;
+            }
+        }
+        if (spawned == 0) {
+            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already created.");
+        }
+        return 1;
+    }
+
+    private static final class NativeBody implements BodyAdapter {
+        private final CompanionEntity entity;
+        private NativeBody(CompanionEntity entity) { this.entity = entity; }
+        @Override public void start(ActionLease lease) { entity.haltControls(); }
+        @Override public void cancel(ActionLease lease) {
+            entity.haltControls();
+        }
+        @Override public boolean isSettled(ActionLease lease) {
+            return entity.getNavigation().isIdle() && !entity.getMoveControl().isMoving() && !entity.isUsingItem();
+        }
+    }
+}
