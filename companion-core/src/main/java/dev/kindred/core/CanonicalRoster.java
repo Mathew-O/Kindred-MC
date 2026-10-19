@@ -61,7 +61,6 @@ public final class CanonicalRoster {
             boolean foreverWorldKaizenEnabled,
             boolean combatHotSwapEnabled,
             boolean lecternAtlasSyncEnabled,
-            boolean seedLocatorEnabled,
             boolean speedrunCommunityTechEnabled,
             int idleRadiusBlocks,
             String architecturalPresetOverride
@@ -82,7 +81,6 @@ public final class CanonicalRoster {
                     true,
                     true,
                     true,
-                    false,
                     true,
                     IdleObservationController.DEFAULT_IDLE_RADIUS_BLOCKS,
                     "AUTO_PERSONALITY"
@@ -97,7 +95,6 @@ public final class CanonicalRoster {
                     foreverWorldKaizenEnabled,
                     combatHotSwapEnabled,
                     lecternAtlasSyncEnabled,
-                    seedLocatorEnabled,
                     speedrunCommunityTechEnabled,
                     idleRadiusBlocks,
                     architecturalPresetOverride
@@ -112,7 +109,6 @@ public final class CanonicalRoster {
                     foreverWorldKaizenEnabled,
                     combatHotSwapEnabled,
                     lecternAtlasSyncEnabled,
-                    seedLocatorEnabled,
                     speedrunCommunityTechEnabled,
                     idleRadiusBlocks,
                     architecturalPresetOverride
@@ -127,7 +123,6 @@ public final class CanonicalRoster {
                     !foreverWorldKaizenEnabled,
                     combatHotSwapEnabled,
                     lecternAtlasSyncEnabled,
-                    seedLocatorEnabled,
                     speedrunCommunityTechEnabled,
                     idleRadiusBlocks,
                     architecturalPresetOverride
@@ -151,7 +146,6 @@ public final class CanonicalRoster {
                     foreverWorldKaizenEnabled,
                     combatHotSwapEnabled,
                     lecternAtlasSyncEnabled,
-                    seedLocatorEnabled,
                     speedrunCommunityTechEnabled,
                     idleRadiusBlocks,
                     architecturalPresetOverride
@@ -166,27 +160,12 @@ public final class CanonicalRoster {
                     foreverWorldKaizenEnabled,
                     !combatHotSwapEnabled,
                     lecternAtlasSyncEnabled,
-                    seedLocatorEnabled,
                     speedrunCommunityTechEnabled,
                     idleRadiusBlocks,
                     architecturalPresetOverride
             );
         }
 
-        public RuntimeSettings toggleSeedLocator() {
-            return new RuntimeSettings(
-                    playstyleProfile,
-                    collaborationMode,
-                    bossProgressionEnabled,
-                    foreverWorldKaizenEnabled,
-                    combatHotSwapEnabled,
-                    lecternAtlasSyncEnabled,
-                    !seedLocatorEnabled,
-                    speedrunCommunityTechEnabled,
-                    idleRadiusBlocks,
-                    architecturalPresetOverride
-            );
-        }
 
         public RuntimeSettings withIdleRadiusBlocks(int blocks) {
             return new RuntimeSettings(
@@ -196,7 +175,6 @@ public final class CanonicalRoster {
                     foreverWorldKaizenEnabled,
                     combatHotSwapEnabled,
                     lecternAtlasSyncEnabled,
-                    seedLocatorEnabled,
                     speedrunCommunityTechEnabled,
                     blocks,
                     architecturalPresetOverride

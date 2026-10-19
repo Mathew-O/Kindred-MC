@@ -14,7 +14,6 @@ class PlaystyleProfileTest {
         var settings = CanonicalRoster.RuntimeSettings.defaultsForNewPlayer();
         assertEquals(PlaystyleProfile.IDLE_OBSERVING, settings.playstyleProfile());
         assertTrue(settings.playstyleProfile().isIdleObserving());
-        assertFalse(settings.seedLocatorEnabled());
         assertEquals(40, settings.idleRadiusBlocks());
     }
 

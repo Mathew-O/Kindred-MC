@@ -43,22 +43,6 @@ public final class PlayerCommands {
             if (runtime == null) return unavailable(context.getSource());
             return runtime.openControlGui(context.getSource());
         }));
-        root.then(CommandManager.literal("settings").then(CommandManager.literal("seedlocator")
-                .then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(context -> {
-                    PlayerRuntime runtime = KindredMod.runtime();
-                    if (runtime == null) return unavailable(context.getSource());
-                    return runtime.setSeedLocatorEnabled(context.getSource(), null,
-                            BoolArgumentType.getBool(context, "enabled"));
-                }).then(CommandManager.argument("target", StringArgumentType.string())
-                        .suggests((context, builder) -> suggestBots(builder))
-                        .executes(context -> {
-                            PlayerRuntime runtime = KindredMod.runtime();
-                            if (runtime == null) return unavailable(context.getSource());
-                            UUID id = resolveBotTarget(context, "target", runtime);
-                            if (id == null) return 0;
-                            return runtime.setSeedLocatorEnabled(context.getSource(), id,
-                                    BoolArgumentType.getBool(context, "enabled"));
-                        })))));
         root.then(CommandManager.literal("mode").then(CommandManager.argument("profile", StringArgumentType.word())
                 .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();

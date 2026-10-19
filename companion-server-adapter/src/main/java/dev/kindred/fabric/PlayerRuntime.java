@@ -1629,7 +1629,6 @@ final class PlayerRuntime {
             }
             }
         }
-        refreshProgressionSeedHint(entry, body);
     }
 
     /** Bounded patch-only scan that does not consume the per-tick block budget (small gametest patches). */
@@ -1679,42 +1678,6 @@ final class PlayerRuntime {
         if (approachFallback != null) {
             entry.cachedApproachTarget = approachFallback;
         }
-    }
-
-    private void refreshProgressionSeedHint(Entry entry, NativePlayerBody body) {
-        if (!SeedStructureLocator.locatorAllowed(entry.runtimeSettings)) {
-            entry.progressionSeedTarget = null;
-            return;
-        }
-        var player = body.entity();
-        var world = player.getServerWorld();
-        var obs = entry.lastProgressionObservation;
-        if (obs == null || entry.lastProgressionState == null) {
-            return;
-        }
-        SeedStructureLocator.StructureKind kind = null;
-        if (obs.isInNether() && (milestoneSeeking(entry, MilestoneId.GATHER_BLAZE_RODS)
-                || milestoneSeeking(entry, MilestoneId.GATHER_NETHER_WART))) {
-            kind = SeedStructureLocator.StructureKind.NETHER_FORTRESS;
-        } else if (obs.isInOverworld() && milestoneSeeking(entry, MilestoneId.CRAFT_BED)) {
-            kind = SeedStructureLocator.StructureKind.VILLAGE;
-        }
-        if (kind == null) {
-            return;
-        }
-        SeedStructureLocator.locateNearest(
-                world,
-                entry.runtimeSettings,
-                entry.data.id(),
-                server.getTicks(),
-                entry.lastSeedLocateTick,
-                kind,
-                player.getBlockPos(),
-                48
-        ).ifPresent(result -> {
-            entry.progressionSeedTarget = result.pos();
-            entry.lastSeedLocateTick = server.getTicks();
-        });
     }
 
     private static boolean milestoneSeeking(Entry entry, MilestoneId id) {
@@ -2633,20 +2596,6 @@ final class PlayerRuntime {
                                 candidates.add(new NativeTaskCandidate(candidate, "native_place", step));
                             });
                         }
-                    }
-                }
-                case "native_traverse" -> {
-                    if (entry.progressionSeedTarget != null && SeedStructureLocator.locatorAllowed(entry.runtimeSettings)) {
-                        String dir = ExpeditionPlanner.calculateDirection(
-                                player.getBlockX(), player.getBlockZ(),
-                                entry.progressionSeedTarget.getX(), entry.progressionSeedTarget.getZ());
-                        UUID taskId = UUID.nameUUIDFromBytes(("seed_traverse:" + entry.data.id() + ":"
-                                + entry.progressionSeedTarget.asLong()).getBytes(StandardCharsets.UTF_8));
-                        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, rec.priority(), rec.need(),
-                                rec.affinities(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-                        candidates.add(new NativeTaskCandidate(candidate, "native_traverse", Map.of(
-                                "direction", dir,
-                                "blocks", "3")));
                     }
                 }
                 case "native_smelt" -> {
@@ -5075,8 +5024,6 @@ final class PlayerRuntime {
         long idleNextWanderTick = 0L;
         boolean idleWanderSprint = false;
         boolean idleWanderJump = false;
-        long lastSeedLocateTick = -600L;
-        BlockPos progressionSeedTarget = null;
         BlockPos portalFrameInterior = null;
         boolean foodTaskAuthorized = false;
         boolean shelterProtectionAuthorized = false;
@@ -5570,29 +5517,6 @@ final class PlayerRuntime {
         }
         source.sendFeedback(() -> Text.literal("Collaboration for " + entry.data.displayName() + ": "
                 + entry.runtimeSettings.collaborationMode()), false);
-        return 1;
-    }
-
-    int toggleSeedLocatorForBot(ServerCommandSource source, UUID botId) {
-        Entry entry = entries.get(botId);
-        if (entry == null) return 0;
-        entry.runtimeSettings = entry.runtimeSettings.toggleSeedLocator();
-        source.sendFeedback(() -> Text.literal("Seed locator for " + entry.data.displayName() + ": "
-                + (entry.runtimeSettings.seedLocatorEnabled() ? "ON" : "OFF")), false);
-        return 1;
-    }
-
-    int setSeedLocatorEnabled(ServerCommandSource source, UUID botId, boolean enabled) {
-        Entry entry = botId != null ? entries.get(botId) : firstConnectedBotId().map(entries::get).orElse(null);
-        if (entry == null) {
-            source.sendError(Text.literal("No AI player found for seed locator setting."));
-            return 0;
-        }
-        if (entry.runtimeSettings.seedLocatorEnabled() != enabled) {
-            entry.runtimeSettings = entry.runtimeSettings.toggleSeedLocator();
-        }
-        source.sendFeedback(() -> Text.literal("Seed locator for " + entry.data.displayName() + ": "
-                + (entry.runtimeSettings.seedLocatorEnabled() ? "ON" : "OFF")), false);
         return 1;
     }
 
