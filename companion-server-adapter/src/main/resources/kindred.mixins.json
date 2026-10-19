@@ -3,5 +3,6 @@
   "package": "dev.kindred.fabric.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": ["PlayerManagerMixin", "PlayerManagerSaveInvoker"],
+  "client": ["client.PlayerListEntrySkinMixin"],
   "injectors": { "defaultRequire": 1 }
 }

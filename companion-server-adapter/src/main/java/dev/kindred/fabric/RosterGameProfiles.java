@@ -3,36 +3,48 @@ package dev.kindred.fabric;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import dev.kindred.core.CanonicalRosterSkins;
+import net.fabricmc.loader.api.FabricLoader;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
 import java.util.UUID;
 
-/** Applies canonical roster skins to native {@link GameProfile} instances at body creation. */
+/**
+ * Builds native body profiles. Canonical roster bodies carry a {@link CanonicalRosterSkins#PROFILE_PROPERTY}
+ * marker so the optional Kindred client renders the bundled skin. Vanilla clients can only show a custom skin
+ * from Mojang-signed textures, which an operator may supply in {@code config/kindred_skins.properties} as
+ * {@code <key>.value} and {@code <key>.signature}; without them those clients see a default skin.
+ */
 final class RosterGameProfiles {
 
     private static final String TEXTURES = "textures";
+    private static final Path SIGNED_TEXTURES = FabricLoader.getInstance().getConfigDir().resolve("kindred_skins.properties");
 
     private RosterGameProfiles() { }
 
     static GameProfile forNativeBody(UUID entityId, String internalProfileName, String displayName) {
         GameProfile profile = new GameProfile(entityId, internalProfileName);
-        CanonicalRosterSkins.forDisplayName(displayName).ifPresent(skin -> applySkin(profile, skin));
+        CanonicalRosterSkins.forDisplayName(displayName).ifPresent(skin -> {
+            profile.getProperties().put(CanonicalRosterSkins.PROFILE_PROPERTY,
+                    new Property(CanonicalRosterSkins.PROFILE_PROPERTY, skin.key()));
+            signedTextures(skin.key()).ifPresent(textures -> profile.getProperties().put(TEXTURES, textures));
+        });
         return profile;
     }
 
-    private static void applySkin(GameProfile profile, CanonicalRosterSkins.SkinBinding skin) {
-        if (skin.textureValue() != null && skin.textureSignature() != null) {
-            profile.getProperties().put(TEXTURES, new Property(TEXTURES, skin.textureValue(), skin.textureSignature()));
-        } else {
-            String payload = encodeTexturesPayload(skin.mojangTextureUrl(), skin.slim());
-            profile.getProperties().put(TEXTURES, new Property(TEXTURES, payload));
+    private static java.util.Optional<Property> signedTextures(String key) {
+        if (!Files.isRegularFile(SIGNED_TEXTURES)) return java.util.Optional.empty();
+        Properties properties = new Properties();
+        try (var in = Files.newInputStream(SIGNED_TEXTURES)) {
+            properties.load(in);
+        } catch (Exception failure) {
+            KindredMod.LOGGER.warn("Kindred signed skin textures could not be read; vanilla clients will see default skins", failure);
+            return java.util.Optional.empty();
         }
-    }
-
-    private static String encodeTexturesPayload(String skinUrl, boolean slim) {
-        String metadata = slim ? ",\"metadata\":{\"model\":\"slim\"}" : "";
-        String json = "{\"textures\":{\"SKIN\":{\"url\":\"" + skinUrl + "\"" + metadata + "}}}";
-        return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+        String value = properties.getProperty(key + ".value", "").trim();
+        String signature = properties.getProperty(key + ".signature", "").trim();
+        if (value.isEmpty() || signature.isEmpty()) return java.util.Optional.empty();
+        return java.util.Optional.of(new Property(TEXTURES, value, signature));
     }
 }

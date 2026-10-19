@@ -5034,6 +5034,8 @@ final class PlayerRuntime {
         long idleNextWanderTick = 0L;
         BlockPos portalFrameInterior = null;
         long manualHoldUntilTick = Long.MIN_VALUE;
+        dev.kindred.core.survival.SurvivalGoal goal = dev.kindred.core.survival.SurvivalGoal.NONE;
+        String goalProgress = "";
         boolean foodTaskAuthorized = false;
         boolean shelterProtectionAuthorized = false;
         final MilestoneGraph progressionGraph = MilestoneGraph.canonical();
@@ -5425,6 +5427,129 @@ final class PlayerRuntime {
         return Optional.empty();
     }
 
+    private boolean mayAdjust(ServerCommandSource source, Entry entry) {
+        if (entry.nativeState != null) return nativeMayControl(source, entry);
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        return Authorization.mayControl(new Actor(player, source.hasPermissionLevel(2)), entry.snapshot());
+    }
+
+    // ----- Player panel (keybind GUI) -----
+
+    record PanelBot(UUID id, String name, boolean connected, String phase, boolean stopped, boolean busy,
+                    String playstyle, String collaboration, dev.kindred.core.survival.SurvivalGoal goal, String status,
+                    String goalProgress, float health, int food, BlockPos position, String dimension, String task) { }
+
+    /** Native players this actor may control, as plain values for the panel. */
+    List<PanelBot> panelBots(Actor actor) {
+        requireThread();
+        if (actor == null || !ready || !running) return List.of();
+        var bots = new ArrayList<PanelBot>();
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null || entry.snapshot().lifecycle() == LifecycleState.REMOVED
+                    || !entry.nativeState.access().mayControl(actor)) continue;
+            boolean connected = entry.nativeBody != null && entry.nativeBody.connected();
+            var player = connected ? entry.nativeBody.entity() : null;
+            boolean busy = entry.runner != null && runnerBusy(entry);
+            bots.add(new PanelBot(entry.data.id(), entry.data.displayName(), connected, entry.nativeState.phase().name(),
+                    entry.snapshot().stopLatched(), busy, entry.runtimeSettings.playstyleProfile().name(),
+                    entry.runtimeSettings.collaborationMode().name(), entry.goal, entry.explanation(), entry.goalProgress,
+                    player != null ? player.getHealth() : 0f, player != null ? player.getHungerManager().getFoodLevel() : 0,
+                    player != null ? player.getBlockPos().toImmutable() : null,
+                    player != null ? player.getServerWorld().getRegistryKey().getValue().getPath() : entry.data.dimension(),
+                    busy ? entry.skillId : ""));
+        }
+        bots.sort(java.util.Comparator.comparing(PanelBot::name, String.CASE_INSENSITIVE_ORDER));
+        return bots;
+    }
+
+    boolean worldEditsEnabled() {
+        return edits.autonomousEditsEnabled() && edits.protectionCompatibilityKnown();
+    }
+
+    /** Records the server's standing edit policy (decision D4) in edits.properties; operators only. */
+    int setWorldEdits(ServerCommandSource source, boolean enabled) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's AI edit policy.");
+        EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
+        edits = next; // Revocation applies to the next mutation check immediately.
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = "# Kindred server edit policy (decision D4). autonomousEdits lets AI players break and place blocks.\n"
+                + "autonomousEdits=" + enabled + "\nprotectionKnown=true\n";
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> server.execute(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred edit policy could not be saved", failure);
+                reject(source, "The edit policy applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        feedback(source, enabled ? "AI world edits enabled: AI players may mine and place blocks under their tasks' checks."
+                : "AI world edits disabled: AI players will not break or place blocks.");
+        return 1;
+    }
+
+    /** Sets a standing goal and starts autonomous work toward it. */
+    int startGoal(ServerCommandSource source, UUID id, dev.kindred.core.survival.SurvivalGoal goal) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (goal != dev.kindred.core.survival.SurvivalGoal.NONE && !worldEditsEnabled()) {
+            return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
+        }
+        entry.goal = goal;
+        entry.goalProgress = goal == dev.kindred.core.survival.SurvivalGoal.NONE ? "" : "Starting: " + goal.label();
+        if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+        }
+        entry.manualHoldUntilTick = Long.MIN_VALUE;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        if (entry.snapshot().stopLatched()) return nativeLifecycle(source, "resume", id);
+        feedback(source, entry.data.displayName() + ": " + goal.label() + ".");
+        return 1;
+    }
+
+    /** Daily activity cap for a native player; operators only. */
+    int nativeSetCap(ServerCommandSource source, UUID id, int hours) {
+        requireThread();
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may modify daily activity caps.");
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (hours < 1 || hours > 24) return reject(source, "The daily cap is 1 to 24 hours.");
+        long capMs = (long) hours * 3600 * 1000;
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+            if (failure != null || limit == null) { reject(source, "Could not read the current activity limit."); return; }
+            ActivityLimit next = new ActivityLimit(limit.companionId(), capMs, limit.offlineWork(), limit.timezone(), limit.revision() + 1);
+            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) reject(source, "Failed to save the daily cap.");
+                else feedback(source, entry.data.displayName() + " daily activity cap set to " + hours + " hours.");
+            }));
+        }));
+        return 1;
+    }
+
+    /** Current daily caps in milliseconds, read off-thread; missing entries mean the read failed. */
+    CompletableFuture<Map<UUID, Long>> nativeCaps(java.util.Collection<UUID> ids) {
+        requireThread();
+        SqliteCompanionStore database = store;
+        if (database == null) return CompletableFuture.completedFuture(Map.of());
+        Map<UUID, Long> caps = new java.util.concurrent.ConcurrentHashMap<>();
+        CompletableFuture<?>[] reads = ids.stream().map(id -> database.limit(id)
+                .thenAccept(limit -> caps.put(id, limit.capMillis()))
+                .exceptionally(ignored -> null)).toArray(CompletableFuture[]::new);
+        return CompletableFuture.allOf(reads).thenApply(ignored -> Map.copyOf(caps));
+    }
+
     int openControlGui(ServerCommandSource source) {
         ServerPlayerEntity player = source.getPlayer();
         if (player == null) {
@@ -5440,6 +5565,7 @@ final class PlayerRuntime {
     int togglePlaystyleForBot(ServerCommandSource source, UUID botId) {
         Entry entry = entries.get(botId);
         if (entry == null) return 0;
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change its settings.");
         PlaystyleProfile current = entry.runtimeSettings.playstyleProfile();
         PlaystyleProfile next = current == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? PlaystyleProfile.OPTIMAL_SURVIVAL
@@ -5456,6 +5582,7 @@ final class PlayerRuntime {
     int toggleCollaborationForBot(ServerCommandSource source, UUID botId) {
         Entry entry = entries.get(botId);
         if (entry == null) return 0;
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change its settings.");
         entry.runtimeSettings = entry.runtimeSettings.toggleCollaboration();
         if (entry.runtimeSettings.collaborationMode() == CollaborationMode.SOLO_INDEPENDENT) {
             teamCoordinator.handlePlayerStop(botId);
@@ -5468,6 +5595,7 @@ final class PlayerRuntime {
     int adjustIdleRadiusForBot(ServerCommandSource source, UUID botId, int delta) {
         Entry entry = entries.get(botId);
         if (entry == null) return 0;
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change its settings.");
         entry.runtimeSettings = entry.runtimeSettings.withIdleRadiusBlocks(entry.runtimeSettings.idleRadiusBlocks() + delta);
         source.sendFeedback(() -> Text.literal("Idle radius for " + entry.data.displayName() + ": "
                 + entry.runtimeSettings.idleRadiusBlocks() + " blocks"), false);
@@ -5483,6 +5611,7 @@ final class PlayerRuntime {
             source.sendError(Text.literal("No AI player found for mode change."));
             return 0;
         }
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change its settings.");
         entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(profile);
         String name = entry.data.displayName();
         source.sendFeedback(() -> Text.literal(name + " playstyle: " + profile), false);

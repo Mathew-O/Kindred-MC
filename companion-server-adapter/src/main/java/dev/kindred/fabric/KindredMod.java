@@ -38,6 +38,8 @@ public final class KindredMod implements ModInitializer {
                 .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.25)
                 .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 1.0)
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 48));
+        KindredPanelPayloads.register();
+        KindredPanelService.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
                 PlayerCommands.register(dispatcher));
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, position, state, blockEntity) ->

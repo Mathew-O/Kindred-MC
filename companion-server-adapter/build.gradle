@@ -40,6 +40,12 @@ loom {
         kindred_gametest { sourceSet sourceSets.gametest }
     }
     runs {
+        client {
+            runDir 'run/client'
+        }
+        server {
+            runDir 'run/server'
+        }
         gametest {
             server()
             name 'Kindred native contract tests'
