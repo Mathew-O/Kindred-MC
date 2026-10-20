@@ -115,7 +115,7 @@ final class NativeFightAction extends NativeRecordedAction {
             // Hit and run: out of its reach while the swing recovers, so it never gets close enough to light.
             moved = flee(navigator, target);
         } else if (distance > STRIKE_RANGE || !visible) {
-            if (safeStep(navigator, yaw)) {
+            if (navigator.safeHeading(player, yaw)) {
                 unsafe = 0;
                 boolean climb = player.isOnGround() && (player.horizontalCollision || target.getY() > player.getY() + 0.6 && Math.hypot(dx, dz) < 1.5);
                 moved = body.move(issuedLease, 1.0f, 0, climb || player.isTouchingWater(), false, yaw);
@@ -144,40 +144,10 @@ final class NativeFightAction extends NativeRecordedAction {
         float away = (float) Math.toDegrees(Math.atan2(-(player.getX() - threat.getX()), player.getZ() - threat.getZ()));
         for (float turn : new float[]{0, 35, -35, 70, -70, 105, -105}) {
             float yaw = away + turn;
-            if (!safeStep(navigator, yaw)) continue;
+            if (!navigator.safeHeading(player, yaw)) continue;
             return body.move(issuedLease, 1.0f, 0, player.isOnGround() && player.horizontalCollision || player.isTouchingWater(), true, yaw);
         }
         return body.move(issuedLease, 0, 0, false, false, away);
-    }
-
-    /**
-     * The block the body is about to enter along {@code yaw} is one it may walk into: standable or swimmable,
-     * a one-block step up, or a drop no deeper than the navigator allows, and never lava or fire.
-     */
-    private boolean safeStep(NativeNavigator navigator, float yaw) {
-        var player = body.entity();
-        double radians = Math.toRadians(yaw);
-        double sx = -Math.sin(radians), sz = Math.cos(radians);
-        BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
-        for (double reach : new double[]{0.6, 1.1}) {
-            BlockPos ahead = BlockPos.ofFloored(player.getX() + sx * reach, player.getY() + 0.2, player.getZ() + sz * reach);
-            if (ahead.getX() == feet.getX() && ahead.getZ() == feet.getZ()) continue;
-            if (!safeCell(navigator, ahead)) return false;
-        }
-        return true;
-    }
-
-    private static boolean safeCell(NativeNavigator navigator, BlockPos ahead) {
-        if (navigator.hazard(ahead) || navigator.hazard(ahead.down())) return false;
-        if (navigator.standable(ahead) || navigator.swimmable(ahead)) return true;
-        if (!navigator.clear(ahead)) return !navigator.hazard(ahead.up()); // A wall or a step up: collision, not a fall.
-        for (int k = 1; k <= NativeNavigator.MAX_SAFE_DROP; k++) {
-            BlockPos landing = ahead.down(k);
-            if (navigator.swimmable(landing)) return true;
-            if (!navigator.passable(landing)) return false; // Lava below is not passable either.
-            if (navigator.standable(landing)) return true;
-        }
-        return false;
     }
 
     /** Lost nothing but weapon or armor wear (a worn-out weapon may break); anything gained was picked up. */

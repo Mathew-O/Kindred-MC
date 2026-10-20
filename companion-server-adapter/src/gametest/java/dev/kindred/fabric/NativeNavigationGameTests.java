@@ -93,4 +93,49 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A block over a five-deep shaft: its drop falls to the bottom, and the pickup does not walk over the edge
+     * after it. The break still completes and is recorded; the drop stays where it fell.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void breakPickupDoesNotFollowADropDownAShaft(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        BlockPos[] target = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Edgewise"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute positions around wherever the player stood up, so the test's rotation does not matter.
+                    var world = context.getWorld();
+                    feet[0] = f.player().getBlockPos().toImmutable();
+                    target[0] = feet[0].east();
+                    world.setBlockState(target[0], Blocks.DIRT.getDefaultState());
+                    for (int k = 1; k <= 5; k++) world.setBlockState(target[0].down(k), Blocks.AIR.getDefaultState());
+                    world.setBlockState(target[0].down(6), Blocks.STONE.getDefaultState());
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeBreak(f.source, f.id, target[0]) == 1, "Break requested");
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_break"),
+                            "Break completes: " + activity);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(context.getWorld().getBlockState(target[0]).isAir(), "The dirt was broken");
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 20 && player.getBlockY() == feet[0].getY(),
+                            "Still on the edge and unhurt: " + player.getBlockPos() + " health " + player.getHealth());
+                    context.assertTrue(ItemMoves.count(player.getInventory(), Items.DIRT) == 0, "The drop was left at the bottom");
+                    var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(action != null && action.kind().equals("native_break") && action.state() == ActionRecord.State.VERIFIED,
+                            "Durable ledger records a verified break: " + action);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

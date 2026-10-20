@@ -171,6 +171,36 @@ final class NativeNavigator {
         return java.util.Optional.empty();
     }
 
+    /**
+     * The block a body moving along {@code yaw} is about to enter is one it may walk into: standable or swimmable,
+     * a wall or one-block step up, or a drop no deeper than {@link #MAX_SAFE_DROP}, and never lava or fire.
+     * Direct steering (a fight chase, walking onto a drop) checks this where it does not follow a planned route.
+     */
+    boolean safeHeading(net.minecraft.entity.Entity body, float yaw) {
+        double radians = Math.toRadians(yaw);
+        double sx = -Math.sin(radians), sz = Math.cos(radians);
+        BlockPos feet = BlockPos.ofFloored(body.getX(), body.getY() + 0.2, body.getZ());
+        for (double reach : new double[]{0.6, 1.1}) {
+            BlockPos ahead = BlockPos.ofFloored(body.getX() + sx * reach, body.getY() + 0.2, body.getZ() + sz * reach);
+            if (ahead.getX() == feet.getX() && ahead.getZ() == feet.getZ()) continue;
+            if (!safeToEnter(ahead)) return false;
+        }
+        return true;
+    }
+
+    private boolean safeToEnter(BlockPos ahead) {
+        if (hazard(ahead) || hazard(ahead.down())) return false;
+        if (standable(ahead) || swimmable(ahead)) return true;
+        if (!clear(ahead)) return !hazard(ahead.up()); // A wall or a step up: collision, not a fall.
+        for (int k = 1; k <= MAX_SAFE_DROP; k++) {
+            BlockPos landing = ahead.down(k);
+            if (swimmable(landing)) return true;
+            if (!passable(landing)) return false; // Lava below is not passable either.
+            if (standable(landing)) return true;
+        }
+        return false;
+    }
+
     /** Feet and head positions are both free of collision and hazards. */
     boolean clear(BlockPos feet) {
         return passable(feet) && passable(feet.up());

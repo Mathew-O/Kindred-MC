@@ -257,8 +257,16 @@ final class NativeBreakAction extends NativeRecordedAction {
                 double dx = next.getX() - player.getX();
                 double dz = next.getZ() - player.getZ();
                 if (dx * dx + dz * dz > 0.25 || Math.abs(next.getY() - player.getY()) > 1.2) {
+                    float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                    // A drop that fell down a shaft or into a cave is not followed over the edge.
+                    if (!new NativeNavigator(world).safeHeading(player, yaw)) {
+                        body.stopInputs();
+                        phase = Phase.DONE;
+                        settle("Native break observed; the drop fell where it is unsafe to follow", true);
+                        return waiting();
+                    }
                     boolean jump = player.isOnGround() && (player.horizontalCollision || next.getY() > player.getY() + 0.6);
-                    body.move(issuedLease, dx * dx + dz * dz < 1.0 ? 0.4f : 0.9f, 0, jump, false, (float) Math.toDegrees(Math.atan2(-dx, dz)));
+                    body.move(issuedLease, dx * dx + dz * dz < 1.0 ? 0.4f : 0.9f, 0, jump, false, yaw);
                 } else {
                     body.stopInputs();
                 }
