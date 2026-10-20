@@ -197,10 +197,14 @@ public final class NativeCombatGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_place"),
-                            "Autonomous night barricade placement completed");
-                    context.assertTrue(f.player().getInventory().getStack(0).getCount() == 3,
+                    // Other tests in the batch set the shared clock; keep this one's night until the barricade is up.
+                    context.getWorld().setTimeOfDay(14000);
+                    boolean placed = false;
+                    for (int x = 0; x <= 7 && !placed; x++) for (int z = 0; z <= 7 && !placed; z++) {
+                        placed = context.getBlockState(new BlockPos(x, 2, z)).isOf(Blocks.COBBLESTONE);
+                    }
+                    context.assertTrue(placed, "Autonomous night barricade placement completed");
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.COBBLESTONE) == 3,
                             "Exactly one cobblestone consumed for barricade");
 
                     context.getWorld().setTimeOfDay(1000L);

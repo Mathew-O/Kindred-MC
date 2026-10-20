@@ -30,6 +30,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         if (x != 0 && x != 7 && z != 0 && z != 7) continue;
                         for (int y = 2; y <= 3; y++) context.setBlockState(x, y, z, Blocks.STONE);
                     }
+                    roof(context);
                     f.runtime.createNative(f.source, "Duelist");
                 })
                 .createAndAdd(() -> f.established(context))
@@ -63,7 +64,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Gatewright"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Gatewright");
+                })
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
@@ -120,6 +124,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     }
                     context.setBlockState(5, 0, 3, Blocks.STONE);
                     context.setBlockState(5, 1, 3, Blocks.LAVA);
+                    roof(context);
                     f.runtime.createNative(f.source, "Smith");
                 })
                 .createAndAdd(() -> f.established(context))
@@ -156,5 +161,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
+    private static void roof(TestContext context) {
+        for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
     }
 }

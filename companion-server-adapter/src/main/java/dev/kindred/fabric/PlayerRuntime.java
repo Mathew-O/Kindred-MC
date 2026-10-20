@@ -2018,11 +2018,15 @@ final class PlayerRuntime {
                     }
                 } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.RETREAT_TO_SAFE_CORRIDOR)) {
                     String escapeDir = findBestEscapeDirection(player, null);
-                    if (escapeDir != null) {
+                    // One step back, then reassess: retreating again at once from a mob that is not pressing in
+                    // walks the player away forever. Only fresh damage justifies another step straight away.
+                    boolean rested = server.getTicks() - entry.lastTacticalRetreatTick >= 100 || player.hurtTime > 0;
+                    if (escapeDir != null && rested) {
                         UUID taskId = UUID.nameUUIDFromBytes(("tactical_retreat:" + entry.data.id() + ":" + escapeDir).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 94.0,
                                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
                         candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", escapeDir, "blocks", "1")));
+                        entry.tacticalRetreatTaskId = taskId;
                     }
                 } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.STAY_AND_GUARD)) {
                     boolean hasShield = player.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD)
@@ -2038,7 +2042,9 @@ final class PlayerRuntime {
         }
 
         // 4. Emergency night shelter / barricade placement (URGENT 95.0)
-        if (world.isNight() && entry.setup != null && entry.setup.area() != null
+        // One barricade per threat: walling in again after every step back would spend the whole stock.
+        boolean barricadeRested = server.getTicks() - entry.lastBarricadeTick >= 200 || player.hurtTime > 0;
+        if (world.isNight() && barricadeRested && entry.setup != null && entry.setup.area() != null
                 && entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()) {
             int blockSlot = -1;
             for (int s = 0; s < 9; s++) {
@@ -2067,6 +2073,7 @@ final class PlayerRuntime {
                                 world.getRegistryKey().getValue().toString(), blockPoint, blockId, edits);
                         if (editDecision.allowed()) {
                             UUID taskId = UUID.nameUUIDFromBytes(("night_barricade:" + entry.data.id() + ":" + barricadePos.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            entry.barricadeTaskId = taskId;
                             var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 95.0,
                                     dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
                             candidates.add(new NativeTaskCandidate(candidate, "native_place", Map.of(
@@ -3355,6 +3362,8 @@ final class PlayerRuntime {
                         }
                     }
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments());
+                    if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
+                    if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     entry.activeCampaignTask = res == 1 ? entry.campaignTasks.get(chosen.id()) : null;
                     if (res != 1) {
                         if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
@@ -5139,6 +5148,10 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         private boolean awaitingRespawn;
         private boolean campaignFightInterrupt;
+        private UUID tacticalRetreatTaskId;
+        private long lastTacticalRetreatTick = Long.MIN_VALUE / 2;
+        private UUID barricadeTaskId;
+        private long lastBarricadeTick = Long.MIN_VALUE / 2;
         private boolean nativePending;
         private ConnectionToken pendingConnection;
         private LedgerCheckState ledgerState = LedgerCheckState.PENDING;

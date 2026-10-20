@@ -247,12 +247,26 @@ final class PortalRunCampaign {
                 return pickup;
             }
         }
+        // Nights on the surface belong to skeletons: get below ground, and leave surface jobs for daylight.
+        boolean night = player.getServerWorld().isNight() && player.getServerWorld().getDimension().hasSkyLight();
+        if (night && !underground(player)) {
+            Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
+            if (dig.isPresent()) {
+                progress = stageLabel(stage) + ": shelter for the night - " + dig.get().label();
+                return dig;
+            }
+        }
+        if (night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS) {
+            progress = stageLabel(stage) + ": wait for daylight before going up for logs";
+            return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
+        }
         Optional<Task> recover = recoverDrops(player, tick);
         if (recover.isPresent()) {
             progress = stageLabel(stage) + ": pick up what was dropped at death - " + recover.get().label();
             return recover;
         }
         for (PortalRunPlanner.Step step : steps) {
+            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
             Optional<Task> task = realize(step, snapshot, body, policy);
             if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
             if (task.isPresent()) {
@@ -581,7 +595,8 @@ final class PortalRunCampaign {
     private static boolean underground(ServerPlayerEntity player) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 8;
+        // Below the ground surface (leaves do not count as cover) with no open sky: a shaft or a cave, not a forest floor.
+        return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 2;
     }
 
     /**
