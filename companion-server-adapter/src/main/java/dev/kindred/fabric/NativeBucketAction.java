@@ -43,7 +43,6 @@ final class NativeBucketAction extends NativeRecordedAction {
     private final Item held;
     private final int sourceSlot;
     private final int hotbarSlot;
-    private final Vec3d aim;
     private final String claimKey;
     private ActionLease issuedLease;
     private ClaimRegistry.Grant claim;
@@ -68,12 +67,11 @@ final class NativeBucketAction extends NativeRecordedAction {
         if (mode == Mode.FILL) {
             if (!fluid.isStill()) throw new IllegalArgumentException("Only a fluid source can fill a bucket");
             held = Items.BUCKET;
-            aim = Vec3d.ofCenter(target);
-            if (!rayLands(target, null)) throw new IllegalArgumentException("The fluid source is not in reach or sight");
+            if (fillAim().isEmpty()) throw new IllegalArgumentException("The fluid source is not in reach or sight");
         } else {
             if (!world.getBlockState(target).isReplaceable() && !fluid.isIn(FluidTags.WATER)) throw new IllegalArgumentException("Pour target is occupied");
             held = Items.WATER_BUCKET;
-            aim = pourAim().orElseThrow(() -> new IllegalArgumentException("No reachable face to pour water onto that position"));
+            if (pourAim().isEmpty()) throw new IllegalArgumentException("No reachable face to pour water onto that position");
         }
         sourceSlot = slotOf(held);
         if (sourceSlot < 0) throw new IllegalArgumentException("No owned " + (mode == Mode.FILL ? "empty bucket" : "water bucket"));
@@ -93,6 +91,19 @@ final class NativeBucketAction extends NativeRecordedAction {
         return 8;
     }
 
+    /**
+     * Aim point in the source, centre first: a pool set into the floor shows only its surface from a few blocks
+     * away, so points nearer the top and edges are tried too, as a player clicks whatever part of it is in view.
+     */
+    private Optional<Vec3d> fillAim() {
+        double[] spread = {0, 0.3, -0.3};
+        for (double dy : spread) for (double dx : spread) for (double dz : spread) {
+            Vec3d point = Vec3d.ofCenter(target).add(dx, dy, dz);
+            if (rayLands(target, null, point)) return Optional.of(point);
+        }
+        return Optional.empty();
+    }
+
     /** Aim point on a solid neighbour's face whose clicked side places water exactly at the target. */
     private Optional<Vec3d> pourAim() {
         var world = body.entity().getServerWorld();
@@ -104,10 +115,6 @@ final class NativeBucketAction extends NativeRecordedAction {
             if (rayLands(support, toward, inside)) return Optional.of(inside);
         }
         return Optional.empty();
-    }
-
-    private boolean rayLands(BlockPos expected, Direction side) {
-        return rayLands(expected, side, aim);
     }
 
     private boolean rayLands(BlockPos expected, Direction side, Vec3d point) {
@@ -162,8 +169,8 @@ final class NativeBucketAction extends NativeRecordedAction {
             };
         }
         if (admission.phase() == ActionAdmission.Phase.READY) {
-            boolean ready = claim != null && claims.holdsAll(claim, System.currentTimeMillis())
-                    && (mode == Mode.FILL ? rayLands(target, null) : pourAim().isPresent())
+            Optional<Vec3d> point = mode == Mode.FILL ? fillAim() : pourAim();
+            boolean ready = claim != null && claims.holdsAll(claim, System.currentTimeMillis()) && point.isPresent()
                     && RoamingEdits.workstationDenial(body.entity(), target, policy.get()) == null;
             if (!ready) {
                 result = Step.blocked("Bucket target changed before use; nothing happened", true);
@@ -172,7 +179,7 @@ final class NativeBucketAction extends NativeRecordedAction {
             }
             if (admission.take().isEmpty()) return waiting();
             boolean moved = sourceSlot == hotbarSlot || body.swapSlots(issuedLease, sourceSlot, hotbarSlot);
-            used = moved && body.useItemToward(issuedLease, hotbarSlot, mode == Mode.FILL ? aim : pourAim().orElse(aim), target);
+            used = moved && body.useItemToward(issuedLease, hotbarSlot, point.get(), target);
             if (!used) settle("Bucket use was denied", false);
             return waiting();
         }

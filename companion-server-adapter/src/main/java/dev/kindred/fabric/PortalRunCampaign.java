@@ -161,6 +161,7 @@ final class PortalRunCampaign {
             tunnelled.add(position(task.args()).asLong());
         }
         if (task != null && completed) repeatFailures.remove(task);
+        if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) castFailedFrom = null;
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
         if (repeatFailures.merge(task, 1, Integer::sum) >= 3) {
@@ -185,6 +186,8 @@ final class PortalRunCampaign {
         if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel") || task.label().startsWith("Climb")) digDirection = digDirection.rotateYClockwise();
         if (task.label().startsWith("Obsidian")) obsidianSite = null;
         if (task.label().startsWith("Portal") && "native_goto".equals(task.skill())) portalSite = null;
+        // Another spot may see the faces, or the lava, that this one could not.
+        if ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill")) castFailedFrom = lastFeet;
     }
 
     void placedWorkstation(BlockPos pos) { ownWorkstations.add(pos.asLong()); }
@@ -616,7 +619,7 @@ final class PortalRunCampaign {
             else if (item == Items.FLINT) flint += n;
             else if (item == Items.GRAVEL) gravel += n;
             else if (item == Items.OBSIDIAN) obsidian += n;
-            else if (item == Items.BUCKET) buckets += n;
+            else if (item == Items.BUCKET || item == Items.LAVA_BUCKET) buckets += n; // Lava carried to a cast empties into it.
             else if (item == Items.WATER_BUCKET) water += n;
             else if (item == Items.FLINT_AND_STEEL) fns += n;
             else if (item == Items.CRAFTING_TABLE) tables += n;
@@ -716,12 +719,12 @@ final class PortalRunCampaign {
             case GATHER_FLINT -> flint(body);
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
-            case CAST_PORTAL -> Optional.empty(); // Not offered until casting can be carried out (F-25c5 slice b).
+            case CAST_PORTAL -> castPortal(body);
         };
     }
 
     /** Methods the campaign can carry out; the planner never chooses one outside this set. */
-    private static final Set<WorldFacts.Method> METHODS = java.util.EnumSet.of(WorldFacts.Method.MINE_OBSIDIAN);
+    private static final Set<WorldFacts.Method> METHODS = java.util.EnumSet.of(WorldFacts.Method.MINE_OBSIDIAN, WorldFacts.Method.CAST_OBSIDIAN);
     private static final Map<WorldFacts.Source, WorldKnowledge.Kind> SOURCES = Map.of(
             WorldFacts.Source.TREE, WorldKnowledge.Kind.LOG, WorldFacts.Source.STONE, WorldKnowledge.Kind.STONE,
             WorldFacts.Source.COAL_ORE, WorldKnowledge.Kind.COAL_ORE, WorldFacts.Source.IRON_ORE, WorldKnowledge.Kind.IRON_ORE,
@@ -1386,33 +1389,8 @@ final class PortalRunCampaign {
         if (portalSite == null) return tunnel(body, "Portal: look for open ground");
         PortalSite site = portalSite;
         if (!player.getBlockPos().equals(site.stand())) return Optional.of(go(site.stand(), 0.3, false, "Portal: stand in front of the frame site"));
-        // Open a room: the row in front of the frame first, so every frame cell can be seen and reached.
-        for (int up = 0; up <= 4; up++) {
-            for (int across = 0; across <= 3; across++) {
-                BlockPos cell = site.front(across, up);
-                if (cell.equals(site.stand()) || cell.equals(site.stand().up())) continue;
-                if (world.getBlockState(cell).isReplaceable() && world.getFluidState(cell).isEmpty()) continue;
-                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, "Portal: clear " + cell.toShortString()));
-                portalSite = null;
-                return Optional.empty();
-            }
-        }
-        // Then the frame plane and its interior.
-        for (int up = 0; up <= 4; up++) {
-            for (int across = 0; across <= 3; across++) {
-                BlockPos cell = site.at(across, up);
-                BlockState state = world.getBlockState(cell);
-                boolean frame = across == 0 || across == 3 || up == 0 || up == 4;
-                boolean corner = (across == 0 || across == 3) && (up == 0 || up == 4);
-                boolean wanted = frame ? (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) : state.isAir();
-                if (wanted) continue;
-                if (!state.isReplaceable() && !state.isOf(Blocks.OBSIDIAN)) {
-                    if (breakableNow(body, cell)) return Optional.of(clearAt(cell, "Portal: clear " + cell.toShortString()));
-                    portalSite = null;
-                    return Optional.empty();
-                }
-            }
-        }
+        Optional<Task> clear = clearPortalSite(body, site, "Portal");
+        if (clear.isPresent() || portalSite == null) return clear;
         // Place: bottom row and corners on the ground, sides upward, top corners, then the top row against them.
         int[][] order = {{1, 0}, {2, 0}, {0, 0}, {3, 0}, {0, 1}, {3, 1}, {0, 2}, {3, 2}, {0, 3}, {3, 3}, {0, 4}, {3, 4}, {1, 4}, {2, 4}};
         for (int[] cell : order) {
@@ -1427,6 +1405,139 @@ final class PortalRunCampaign {
             Direction side = cell[1] == 4 && !corner ? (cell[0] == 1 ? site.along() : site.along().getOpposite()) : Direction.UP;
             return Optional.of(new Task("native_place", coords(pos, Map.of("side", side.getName(), "slot", String.valueOf(slot))),
                     "Portal: place " + (corner ? "corner" : "obsidian") + " at " + pos.toShortString()));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Open the room for a frame: the row in front of it first, so every frame cell can be seen and reached, then the
+     * frame plane and its interior. A cell that cannot be cleared abandons the site ({@code portalSite} becomes null).
+     */
+    private Optional<Task> clearPortalSite(NativePlayerBody body, PortalSite site, String label) {
+        var world = body.entity().getServerWorld();
+        for (int up = 0; up <= 4; up++) {
+            for (int across = 0; across <= 3; across++) {
+                BlockPos cell = site.front(across, up);
+                if (cell.equals(site.stand()) || cell.equals(site.stand().up())) continue;
+                if (world.getBlockState(cell).isReplaceable() && world.getFluidState(cell).isEmpty()) continue;
+                if (!world.getFluidState(cell).isEmpty()) continue; // Water left from casting drains away by itself.
+                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                portalSite = null;
+                return Optional.empty();
+            }
+        }
+        for (int up = 0; up <= 4; up++) {
+            for (int across = 0; across <= 3; across++) {
+                BlockPos cell = site.at(across, up);
+                BlockState state = world.getBlockState(cell);
+                boolean frame = across == 0 || across == 3 || up == 0 || up == 4;
+                boolean corner = (across == 0 || across == 3) && (up == 0 || up == 4);
+                boolean wanted = frame ? (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) : state.isAir();
+                if (wanted) continue;
+                if (!state.isReplaceable() && !state.isOf(Blocks.OBSIDIAN)) {
+                    if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                    portalSite = null;
+                    return Optional.empty();
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    // ------------------------------------------------------------------ casting
+
+    /** The lava source the casts are refilled from. */
+    private BlockPos castLava;
+    /** Where the player stood when a cast was last refused or failed. */
+    private BlockPos castFailedFrom;
+
+    /**
+     * Cast the frame in place, as speedrunners build a portal without a diamond pickaxe: a bucket of lava from a
+     * source it has seen, a site cleared as for a mined frame, cobblestone corners, then the ten frame blocks cast
+     * bottom-up, each by one recorded {@code native_cast} (water above, lava in, the water taken back) after a mould
+     * block from its own stock behind the cell and the one above, so every pour has a face to aim at. Once the frame
+     * is complete the plan moves on to flint and steel and ignition.
+     */
+    private Optional<Task> castPortal(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        BlockPos feet = player.getBlockPos();
+        if (castLava != null && !(world.getFluidState(castLava).isIn(FluidTags.LAVA) && world.getFluidState(castLava).isStill())) castLava = null;
+        if (castLava == null) castLava = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, feet, p -> !blocked(p)).orElse(null);
+        if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) {
+            if (castLava == null) {
+                return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
+            }
+            if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
+            if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
+            if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
+            return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+        }
+        if (portalSite == null) {
+            portalSite = choosePortalSite(player).orElse(null);
+            if (portalSite == null) return tunnel(body, "Cast: look for room for the frame");
+        }
+        PortalSite site = portalSite;
+        if (!player.getBlockPos().equals(site.stand()) && clearPortalSiteNeeded(world, site)) {
+            return Optional.of(go(site.stand(), 0.3, false, "Cast: stand in front of the frame site"));
+        }
+        Optional<Task> clear = clearPortalSite(body, site, "Cast");
+        if (clear.isPresent() || portalSite == null) return clear;
+        int[][] order = {{0, 0}, {3, 0}, {1, 0}, {2, 0}, {0, 1}, {3, 1}, {0, 2}, {3, 2}, {0, 3}, {3, 3}, {0, 4}, {3, 4}, {1, 4}, {2, 4}};
+        for (int[] at : order) {
+            BlockPos cell = site.at(at[0], at[1]);
+            boolean corner = (at[0] == 0 || at[0] == 3) && (at[1] == 0 || at[1] == 4);
+            BlockState state = world.getBlockState(cell);
+            if (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) continue;
+            if (corner) return within(body, site, at[0], cell, () -> placeBlock(body, cell, "Cast: corner at " + cell.toShortString()));
+            // A cast needs open air at the cell and above it; water left by the last cast drains in a moment.
+            for (BlockPos open : List.of(cell, cell.up())) {
+                if (world.getBlockState(open).isAir()) continue;
+                if (!world.getFluidState(open).isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
+                if (breakableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));
+                portalSite = null;
+                return Optional.empty();
+            }
+            // The mould: a block behind the cell and behind the one above, faces the pours can be aimed at from the front.
+            for (BlockPos back : List.of(cell.offset(site.toward()), cell.up().offset(site.toward()))) {
+                if (!passable(world, back)) continue;
+                Optional<Task> mould = within(body, site, at[0], back, () -> placeBlock(body, back, "Cast: mould at " + back.toShortString()));
+                if (mould.isPresent()) return mould;
+            }
+            if (player.getBlockPos().equals(castFailedFrom)) {
+                Optional<Task> move = stepCloser(body, site, at[0], cell);
+                if (move.isPresent()) return move;
+            }
+            return within(body, site, at[0], cell, () -> Optional.of(new Task("native_cast", coords(cell, Map.of()), "Cast obsidian at " + cell.toShortString())));
+        }
+        return Optional.empty();
+    }
+
+    private boolean clearPortalSiteNeeded(ServerWorld world, PortalSite site) {
+        for (int up = 0; up <= 4; up++) for (int across = 0; across <= 3; across++) {
+            BlockPos cell = site.front(across, up);
+            if (!world.getBlockState(cell).isReplaceable()) return true;
+        }
+        return false;
+    }
+
+    /** Eye to block centre: the mould's top row, two blocks back and five up, is just inside it from the front row. */
+    private static final double CAST_REACH = 4.4;
+
+    /** Do {@code then} from where the player stands if {@code cell} is in reach, else step along the front row to a spot that is. */
+    private Optional<Task> within(NativePlayerBody body, PortalSite site, int across, BlockPos cell, java.util.function.Supplier<Optional<Task>> then) {
+        return eyeDistance(body.entity(), cell) <= CAST_REACH ? then.get() : stepCloser(body, site, across, cell);
+    }
+
+    /** A step to another spot on the front row (or the stand) from which {@code cell} is in reach. */
+    private Optional<Task> stepCloser(NativePlayerBody body, PortalSite site, int across, BlockPos cell) {
+        var player = body.entity();
+        var navigator = new NativeNavigator(player.getServerWorld());
+        for (BlockPos stand : List.of(site.front(Math.clamp(across, 0, 3), 0), site.front(1, 0), site.front(2, 0), site.front(0, 0), site.front(3, 0), site.stand())) {
+            if (stand.equals(player.getBlockPos()) || !navigator.standable(stand) || blocked(stand)) continue;
+            if (Vec3d.ofBottomCenter(stand).add(0, 1.62, 0).distanceTo(Vec3d.ofCenter(cell)) > CAST_REACH) continue;
+            return Optional.of(go(stand, 0.3, false, "Cast: step closer"));
         }
         return Optional.empty();
     }

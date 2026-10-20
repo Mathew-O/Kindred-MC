@@ -35,6 +35,8 @@ import java.util.function.Supplier;
 final class NativeCastAction extends NativeRecordedAction {
     private enum Phase { WATER, LAVA, RECOVER, DONE }
     private static final int SETTLE_TICKS = 6;
+    /** Offsets from a centre, centre first: the next block down can hide a face's centre from a low eye. */
+    private static final double[] SPREAD = {0, 0.4, -0.4};
 
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -50,6 +52,7 @@ final class NativeCastAction extends NativeRecordedAction {
     private InventoryEvidence before;
     private Phase phase = Phase.WATER;
     private boolean halted, unknown, used;
+    private String failure;
     private int waits;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
@@ -87,7 +90,23 @@ final class NativeCastAction extends NativeRecordedAction {
             if (!world.isChunkLoaded(support) || world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue;
             Vec3d face = Vec3d.ofCenter(support).add(toward.getOffsetX() * 0.5, toward.getOffsetY() * 0.5, toward.getOffsetZ() * 0.5);
             Vec3d inside = face.subtract(toward.getOffsetX() * 0.02, toward.getOffsetY() * 0.02, toward.getOffsetZ() * 0.02);
-            if (rayLands(support, toward, inside, RaycastContext.FluidHandling.NONE)) return Optional.of(inside);
+            for (double u : SPREAD) for (double v : SPREAD) {
+                Vec3d point = inside.add(switch (toward.getAxis()) {
+                    case X -> new Vec3d(0, v, u);
+                    case Y -> new Vec3d(u, 0, v);
+                    case Z -> new Vec3d(u, v, 0);
+                });
+                if (rayLands(support, toward, point, RaycastContext.FluidHandling.NONE)) return Optional.of(point);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Aim point inside the poured water source that a bucket reaches without passing through the cast block. */
+    private Optional<Vec3d> sourceAim() {
+        for (double dx : SPREAD) for (double dy : SPREAD) for (double dz : SPREAD) {
+            Vec3d point = Vec3d.ofCenter(water).add(dx, dy, dz);
+            if (rayLands(water, null, point, RaycastContext.FluidHandling.SOURCE_ONLY)) return Optional.of(point);
         }
         return Optional.empty();
     }
@@ -173,7 +192,10 @@ final class NativeCastAction extends NativeRecordedAction {
                     return waiting();
                 }
                 Optional<Vec3d> aim = aimAt(target);
-                if (aim.isEmpty() || !use(Items.LAVA_BUCKET, aim.get(), target)) { settle("Pouring the lava was denied", false); return waiting(); }
+                if (aim.isEmpty() || !use(Items.LAVA_BUCKET, aim.get(), target)) {
+                    takeWaterBack("Pouring the lava was denied"); // Nothing cast: leave the place as it was found.
+                    return waiting();
+                }
                 phase = Phase.LAVA;
                 waits = 0;
             }
@@ -182,21 +204,27 @@ final class NativeCastAction extends NativeRecordedAction {
                     if (++waits > SETTLE_TICKS) settle("The lava did not harden", false);
                     return waiting();
                 }
-                Vec3d aim = Vec3d.ofCenter(water);
-                if (!rayLands(water, null, aim, RaycastContext.FluidHandling.SOURCE_ONLY) || !use(Items.BUCKET, aim, water)) {
-                    settle("Taking the water back was denied", false);
-                    return waiting();
-                }
-                phase = Phase.RECOVER;
-                waits = 0;
+                takeWaterBack(null);
             }
             case RECOVER -> {
                 if (world.getFluidState(water).isStill() && world.getFluidState(water).isIn(FluidTags.WATER) && ++waits <= SETTLE_TICKS) return waiting();
-                settle("Obsidian cast", true);
+                settle(failure == null ? "Obsidian cast" : failure, failure == null);
             }
             default -> { }
         }
         return waiting();
+    }
+
+    /** Fill a bucket from the water poured over the target; {@code failure} is why the cast is being abandoned, if it is. */
+    private void takeWaterBack(String failure) {
+        this.failure = failure;
+        Optional<Vec3d> aim = sourceAim();
+        if (aim.isEmpty() || !use(Items.BUCKET, aim.get(), water)) {
+            settle(failure == null ? "Taking the water back was denied" : failure + "; the water could not be taken back", false);
+            return;
+        }
+        phase = Phase.RECOVER;
+        waits = 0;
     }
 
     /** Exactly one lava bucket became an empty bucket, and the water bucket came back. */
@@ -221,13 +249,14 @@ final class NativeCastAction extends NativeRecordedAction {
         if (cast && hardened && conserved(after)) {
             admission.verify(after.description() + "; obsidian at " + target.toShortString(), "Lava hardened in place under poured water");
             result = Step.completed(Map.of("obsidian", target.toShortString()));
-        } else if (before.sameContents(body) && world.getBlockState(target).isAir()) {
-            admission.noEffect(before.description() + "; nothing poured", reason);
-            result = Step.blocked(reason + "; nothing was poured", true);
+        } else if (before.sameContents(body) && !hardened && !world.getFluidState(target).isIn(FluidTags.LAVA)) {
+            // Both buckets as they were and no lava out: at most water still draining from the target.
+            admission.noEffect(before.description() + "; buckets as before, nothing cast", reason);
+            result = Step.blocked(reason + "; nothing was cast", true);
         } else {
             unknown = true;
             admission.uncertain(reason + "; buckets or blocks changed without a complete cast");
-            result = Step.blocked("Cast outcome requires reconciliation", true);
+            result = Step.blocked("Cast outcome requires reconciliation: " + reason, true);
         }
     }
 

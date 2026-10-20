@@ -225,6 +225,20 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void castingKeepsBlocksForTheMouldAndNoMoreThanItNeeds() {
+        Sim sim = ironDone();
+        sim.buckets = 1;
+        sim.water = 1;
+        sim.cobble = 10;
+        var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast();
+        assertEquals(Action.GATHER_STONE, step.action(), "ten frame blocks to cast need about twenty blocks of mould and corners");
+        assertEquals(10, step.count());
+        sim.obsidian = 6;
+        assertEquals(Action.CAST_PORTAL, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(),
+                "four left to cast need eight blocks; the classic route's stockpile of eighteen is not asked for");
+    }
+
+    @Test
     void factsRejectNegativeDistances() {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new WorldFacts(java.util.Map.of(WorldFacts.Source.LAVA, -1), java.util.Set.of()));

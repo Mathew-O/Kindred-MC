@@ -434,7 +434,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
                     inventory.setStack(4, new ItemStack(Items.STICK, 4));
                     inventory.setStack(5, new ItemStack(Items.RAW_IRON, 14));
-                    inventory.setStack(6, new ItemStack(Items.IRON_INGOT));
+                    inventory.setStack(6, new ItemStack(Items.IRON_INGOT, 4)); // With the raw iron, enough for every iron item and two buckets.
                     inventory.setStack(7, new ItemStack(Items.COAL));
                     inventory.setStack(8, new ItemStack(Items.FURNACE));
                     inventory.setStack(9, new ItemStack(Items.CRAFTING_TABLE));
@@ -448,7 +448,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var block = (net.minecraft.block.entity.AbstractFurnaceBlockEntity) context.getWorld().getBlockEntity(furnace[0]);
                     var inventory = f.player().getInventory();
-                    context.assertTrue(block.getStack(0).getCount() + block.getStack(2).getCount() + ItemMoves.count(inventory, Items.IRON_INGOT) == 9
+                    context.assertTrue(block.getStack(0).getCount() + block.getStack(2).getCount() + ItemMoves.count(inventory, Items.IRON_INGOT) == 12
                                     && ItemMoves.count(inventory, Items.RAW_IRON) == 6 && ItemMoves.count(inventory, Items.COAL) == 0,
                             "One coal took eight raw iron and the other six stayed in the inventory: furnace " + block.getStack(0)
                                     + ", raw iron held " + ItemMoves.count(inventory, Items.RAW_IRON));
@@ -666,6 +666,74 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(action != null && action.kind().equals("native_cast") && action.state() == ActionRecord.State.VERIFIED,
                             "Durable ledger records a verified cast: " + action);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * No diamonds anywhere, only a lava pool: the goal casts the whole frame instead of mining obsidian. Each frame
+     * block is lava carried from the pool in its own bucket and hardened in place under water from its other
+     * bucket, against a mould of its own cobblestone; the corners are cobblestone; then flint and steel lights it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "castPortal", tickLimit = 7000)
+    public void goalCastsAWholePortalFrameFromALavaPoolWithoutDiamonds(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Founder"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute positions around where the player stood up: open stone ground with room above for a
+                    // frame, a low wall keeping cast water in, and a lava pool set into the floor three blocks south.
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    for (int x = -6; x <= 6; x++) for (int z = -7; z <= 6; z++) {
+                        boolean edge = Math.abs(x) == 6 || z == -7 || z == 6;
+                        world.setBlockState(p.add(x, -2, z), Blocks.STONE.getDefaultState());
+                        world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 8; y++) {
+                            world.setBlockState(p.add(x, y, z), edge && y == 0 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    for (int x = -3; x <= 3; x++) for (int z = 3; z <= 4; z++) world.setBlockState(p.add(x, -1, z), Blocks.LAVA.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.BUCKET));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    int portal = 0, frame = 0;
+                    for (BlockPos pos : BlockPos.iterate(feet[0].add(-6, 0, -7), feet[0].add(6, 8, 6))) {
+                        var state = context.getWorld().getBlockState(pos);
+                        if (state.isOf(Blocks.NETHER_PORTAL)) portal++;
+                        if (state.isOf(Blocks.OBSIDIAN) && pos.getY() >= feet[0].getY()) frame++;
+                    }
+                    context.assertTrue(portal == 6 && frame >= 10, "A cast frame stands lit: " + portal + " portal blocks, " + frame
+                            + " obsidian; " + f.runtime.nativeActivityStatus(Actor.console(), f.id));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0 && ItemMoves.count(inventory, Items.WATER_BUCKET) == 1
+                            && ItemMoves.count(inventory, Items.BUCKET) == 1, "Both buckets kept, the water one full");
+                    context.assertTrue(ItemMoves.count(inventory, Items.DIAMOND) == 0 && ItemMoves.count(inventory, Items.OBSIDIAN) == 0,
+                            "No diamonds and no mined obsidian: the frame was cast where it stands");
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 10, "Unhurt by the lava: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

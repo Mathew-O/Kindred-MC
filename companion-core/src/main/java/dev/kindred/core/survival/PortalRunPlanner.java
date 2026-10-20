@@ -155,7 +155,8 @@ public final class PortalRunPlanner {
             if (s.logs() > 0) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
         }
-        if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < 4) {
+        // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast.
+        if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4)) {
             return new Step(Action.GATHER_STONE, "", COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
         }
 
@@ -192,6 +193,8 @@ public final class PortalRunPlanner {
         // Cast: the frame hardens in place from lava poured into it and water poured over it.
         if (frame == WorldFacts.Method.CAST_OBSIDIAN && !s.portalFramed() && s.obsidian() < PORTAL_OBSIDIAN) {
             if (s.waterBuckets() == 0) return Step.of(Action.FILL_WATER, Stage.OBSIDIAN, "Fill a bucket with water");
+            int blocks = castBlocks(s);
+            if (s.cobble() < blocks) return new Step(Action.GATHER_STONE, "", blocks - s.cobble(), Stage.OBSIDIAN, "Mine blocks for the casting mould");
             return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
         }
 
@@ -213,6 +216,14 @@ public final class PortalRunPlanner {
             return Step.of(Action.BUILD_PORTAL, Stage.PORTAL, "Build the obsidian portal frame");
         }
         return Step.of(Action.IGNITE_PORTAL, Stage.PORTAL, "Light the portal with flint and steel");
+    }
+
+    /**
+     * Blocks a cast frame still needs: about two per obsidian left to cast, for the corners and the mould behind
+     * the frame that each pour is aimed against.
+     */
+    static int castBlocks(PortalRunSnapshot s) {
+        return 2 * Math.max(0, PORTAL_OBSIDIAN - s.obsidian());
     }
 
     /** Buckets the route needs: one for water when mining obsidian, a second for lava when casting it. */
