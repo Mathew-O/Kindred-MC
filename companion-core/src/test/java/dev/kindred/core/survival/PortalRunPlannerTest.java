@@ -15,7 +15,7 @@ class PortalRunPlannerTest {
     /** Mutable stand-in for a player's inventory that applies each step's vanilla outcome. */
     private static final class Sim {
         int logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, lava, water, fns,
-                tables, furnaces, saplings, food = 5, pick, sword, chest, shields, furnaceInput, furnaceOutput, foodLevel = 20;
+                tables, furnaces, saplings, food = 5, pick, pickaxes, sword, chest, shields, furnaceInput, furnaceOutput, foodLevel = 20;
         boolean tableNearby, furnaceNearby, framed, lit;
         /** A sky island: no ground to dig, logs only from standing trees, which grow only from planted saplings. */
         boolean sky, generator;
@@ -23,7 +23,7 @@ class PortalRunPlannerTest {
 
         PortalRunSnapshot snapshot() {
             return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
-                    flint, gravel, obsidian, buckets, lava, water, fns, tables, furnaces, saplings, food, pick, sword, chest, shields,
+                    flint, gravel, obsidian, buckets, lava, water, fns, tables, furnaces, saplings, food, pick, Math.max(pickaxes, pick >= 2 ? 1 : 0), sword, chest, shields,
                     tableNearby, furnaceNearby, furnaceInput > 0, furnaceOutput, foodLevel, framed, lit);
         }
 
@@ -93,13 +93,13 @@ class PortalRunPlannerTest {
                 case "stick" -> { assertTrue(planks >= 2); planks -= 2; sticks += 4; }
                 case "crafting_table" -> { assertTrue(planks >= 4); planks -= 4; tables++; }
                 case "wooden_pickaxe" -> { need(3, 2, 0); pick = 1; }
-                case "stone_pickaxe" -> { need(0, 2, 3); pick = 2; }
+                case "stone_pickaxe" -> { need(0, 2, 3); pickaxes = Math.max(pickaxes, pick >= 2 ? 1 : 0) + 1; pick = Math.max(pick, 2); }
                 case "stone_sword" -> { need(0, 1, 2); sword = 2; }
                 case "furnace" -> { need(0, 0, 8); furnaces++; }
-                case "iron_pickaxe" -> { needIron(3); sticks -= 2; pick = 3; }
+                case "iron_pickaxe" -> { needIron(3); sticks -= 2; pickaxes = Math.max(pickaxes, pick >= 2 ? 1 : 0) + 1; pick = 3; }
                 case "bucket" -> { needIron(3); buckets++; }
                 case "iron_chestplate" -> { needIron(8); chest = 3; }
-                case "diamond_pickaxe" -> { assertTrue(diamonds >= 3 && sticks >= 2 && tableNearby); diamonds -= 3; sticks -= 2; pick = 4; }
+                case "diamond_pickaxe" -> { assertTrue(diamonds >= 3 && sticks >= 2 && tableNearby); diamonds -= 3; sticks -= 2; pickaxes = Math.max(pickaxes, pick >= 2 ? 1 : 0) + 1; pick = 4; }
                 case "flint_and_steel" -> { assertTrue(flint > 0 && iron > 0); flint--; iron--; fns++; }
                 case "shield" -> { need(6, 0, 0); needIron(1); shields++; }
                 default -> throw new AssertionError("Unexpected craft " + item);
@@ -320,9 +320,38 @@ class PortalRunPlannerTest {
     /** Iron work done: iron pickaxe, one bucket, chestplate, flint and steel, table at hand. */
     private static Sim ironDone() {
         Sim sim = new Sim();
-        sim.pick = 3; sim.sword = 2; sim.chest = 3; sim.shields = 1; sim.buckets = 1; sim.fns = 1; sim.cobble = 24; sim.sticks = 4;
+        sim.pick = 3; sim.pickaxes = 2; sim.sword = 2; sim.chest = 3; sim.shields = 1; sim.buckets = 1; sim.fns = 1; sim.cobble = 24; sim.sticks = 4;
         sim.tableNearby = true; sim.furnaceNearby = true;
         return sim;
+    }
+
+    @Test
+    void beforeTheWorkBelowItPacksASparePickaxeAndATablesWorthOfWood() {
+        // Live run 57 left its table in a branch tunnel and wore out its last pickaxe at Y=54, with no way to make another.
+        Sim sim = new Sim();
+        // The reserve's twelve sticks and the spare's two (sticks used for a spare are topped up like any others).
+        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 24; sim.sticks = 14; sim.shields = 1; sim.tableNearby = true;
+        var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
+        var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
+        assertEquals("stone_pickaxe", step.item(), "a spare pickaxe, made while it is cheap");
+        assertTrue(step.why().contains("spare"));
+        sim.apply(step);
+        assertEquals(2, sim.snapshot().pickaxes());
+        assertEquals("Gather a log for a spare crafting table", PortalRunPlanner.plan(sim.snapshot(), trees).getLast().why(),
+                "a table's worth of wood while the trees are in sight");
+        sim.logs = 1;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), trees).getLast().action(), "packed: on to the iron");
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
+                "below ground with no trees in sight, no trip back up for it");
+
+        // The table's wood is not burnt as fuel.
+        sim.logs = 0; sim.planks = 4; sim.rawIron = 3; sim.furnaceNearby = true;
+        assertEquals(Action.MINE_COAL, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action());
+
+        // Nothing to pack for where there is no ground below.
+        Sim sky = skyIsland();
+        sky.pick = 2; sky.pickaxes = 1; sky.sword = 2; sky.cobble = 24; sky.sticks = 12; sky.shields = 1; sky.tableNearby = true;
+        assertNotEquals("stone_pickaxe", PortalRunPlanner.plan(sky.snapshot(), sky.skyFacts()).getLast().item());
     }
 
     @Test
@@ -382,7 +411,8 @@ class PortalRunPlannerTest {
     @Test
     void castingKeepsNoSticksForADiamondPickaxe() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 10; sim.shields = 1; sim.tableNearby = true;
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 10; sim.shields = 1; sim.tableNearby = true;
+        sim.planks = 4; // A spare table's wood.
         var mineNearTrees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
         var bothNearTrees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), BOTH.methods());
         assertEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(sim.snapshot(), mineNearTrees).getLast().action(),
@@ -396,7 +426,7 @@ class PortalRunPlannerTest {
     @Test
     void aShieldIsMadeFromWoodKeptNearTheTreesAndTheFirstIron() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 12; sim.tableNearby = true; // Pickaxe sticks and four spare pairs.
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 12; sim.tableNearby = true; // Pickaxe sticks and four spare pairs.
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 12), WorldFacts.ordinary().methods());
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals(Action.GATHER_LOGS, step.action(), "wood for a shield before going down for iron, while trees are in sight");
@@ -404,6 +434,9 @@ class PortalRunPlannerTest {
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
                 "no tree in sight: no detour for a shield");
         sim.logs = 2;
+        assertEquals("Gather a log for a spare crafting table", PortalRunPlanner.plan(sim.snapshot(), trees).getLast().why(),
+                "a shield's wood is not all: a table's worth more while the trees are in sight");
+        sim.logs = 3;
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), trees).getLast().action());
         assertEquals(PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN), 3 + 3 + 8 + 1 + 1,
                 "with the wood in hand, one more iron for the shield");
@@ -424,7 +457,7 @@ class PortalRunPlannerTest {
     @Test
     void theIronPickaxeIsMadeAsSoonAsThereIsIronForIt() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 8; sim.shields = 1; sim.coal = 1;
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 8; sim.shields = 1; sim.coal = 1;
         sim.tableNearby = true; sim.furnaceNearby = true;
         sim.rawIron = 2;
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot()).getLast().action(), "not enough for a pickaxe yet");
@@ -443,14 +476,16 @@ class PortalRunPlannerTest {
     @Test
     void spareSticksAreToppedUpNearTreesButNeverFetchedFromBelow() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true;
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true;
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), BOTH.methods());
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals(Action.GATHER_LOGS, step.action(), "trees in sight: two sticks for the iron pickaxe and four spare pairs");
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(),
                 "underground with no wood: no climb back up for spares");
-        sim.planks = 2;
-        assertEquals("stick", PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().item(), "carried wood still becomes spare sticks");
+        sim.planks = 4;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(), "a spare table's wood is kept, not made into sticks");
+        sim.planks = 6;
+        assertEquals("stick", PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().item(), "carried wood beyond it still becomes spare sticks");
         assertEquals(10, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
     }
 

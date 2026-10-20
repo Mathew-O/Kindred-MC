@@ -1151,6 +1151,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
                     // The iron and diamond pickaxes' four, four spare pairs, and one for a torch.
                     inventory.setStack(4, new ItemStack(Items.STICK, 13));
+                    inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE)); // Already packed: a spare for the work below.
                     inventory.setStack(5, new ItemStack(Items.COAL, 4));
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
@@ -1274,6 +1275,76 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     context.assertTrue(lava == 1, "The poured lava stays in the generator: " + lava);
                     context.assertTrue(player.isAlive() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
                     context.assertTrue(ItemMoves.count(player.getInventory(), Items.BUCKET) == 2, "Both buckets came back empty");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Live run 57's dead end, reached the ordinary way: the player walks down an open staircase into rock after iron,
+     * and its pickaxe, one block from worn out, breaks on the first thing it digs down there. With no pickaxe and no
+     * wood, it walks back up the way it came for logs, breaking nothing on the way.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1600)
+    public void goalWalksBackUpTheWayItCameWhenItsPickaxeBreaksBelow(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] base = new BlockPos[1];
+        long[] stone = new long[1];
+        java.util.function.Supplier<Long> stoneLeft = () -> {
+            BlockPos b = base[0];
+            return BlockPos.stream(b.add(-2, 0, -2), b.add(10, 7, 2)).filter(pos -> context.getWorld().getBlockState(pos).isOf(Blocks.STONE)).count();
+        };
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Returner"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos b = base[0] = f.player().getBlockPos().toImmutable();
+                    // A rock mass eight high with a staircase cut down into it from its top to a small room, and iron
+                    // ore in the room's far wall, in sight straight down the cut.
+                    for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 0; y <= 7; y++) {
+                        world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
+                    }
+                    for (int k = 1; k <= 8; k++) for (int y = 8 - k; y <= 10 - k; y++) world.setBlockState(b.add(k, y, 0), Blocks.AIR.getDefaultState());
+                    world.setBlockState(b.add(9, 0, 0), Blocks.AIR.getDefaultState());
+                    world.setBlockState(b.add(9, 1, 0), Blocks.AIR.getDefaultState());
+                    world.setBlockState(b.add(10, 0, 0), Blocks.IRON_ORE.getDefaultState());
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(b.getX() + 0.5, b.getY() + 8, b.getZ() + 0.5, -90, 30);
+                    var inventory = player.getInventory();
+                    ItemStack pickaxe = new ItemStack(Items.IRON_PICKAXE);
+                    pickaxe.setDamage(pickaxe.getMaxDamage() - 1); // One block left in it.
+                    inventory.setStack(0, pickaxe);
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 12));
+                    inventory.setStack(40, new ItemStack(Items.SHIELD));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.IRON_PICKAXE) == 0,
+                            "The pickaxe broke on the work below: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    context.assertTrue(f.player().getBlockY() <= base[0].getY() + 4, "Well down the staircase when it broke: " + f.player().getBlockPos().toShortString());
+                    stone[0] = stoneLeft.get();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    context.assertTrue(player.getBlockY() >= base[0].getY() + 6 && context.getWorld().isSkyVisible(player.getBlockPos().up()),
+                            "Back up under open sky: " + player.getBlockPos().toShortString() + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(stoneLeft.get() == stone[0], "Nothing dug on the way back up: " + stoneLeft.get() + " of " + stone[0] + " stone left");
+                    context.assertTrue(f.player().isAlive(), "Alive");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();

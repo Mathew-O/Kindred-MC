@@ -43,6 +43,12 @@ public final class PortalRunPlanner {
      * on another island across the void.
      */
     public static final int ISLAND_REACH = 8;
+    /**
+     * Planks kept back for another crafting table while there is work below ground, beyond the sticks: a table lost
+     * or left behind down there cannot be replaced from trees (live run 57 left its table in a branch tunnel, then
+     * wore out its last pickaxe at Y=54 with cobblestone and sticks in hand and no way to craft another).
+     */
+    static final int SPARE_TABLE_PLANKS = 4;
     /** Food items to carry before work takes the player away from animals. */
     public static final int FOOD_STOCK = 3;
 
@@ -186,7 +192,11 @@ public final class PortalRunPlanner {
         // Sticks for the pickaxes still to make and spares for ones that wear out, made while trees are in sight
         // or from wood already carried: there are none deep below, and a climb back up costs more than the sticks.
         boolean treesNear = facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_RANGE;
-        int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0);
+        // Packing for the work below, as players do before a trip down: what it will use, and a little over for
+        // what can go wrong there (a table lost, a pickaxe wearing out halfway up a climb).
+        boolean below = belowGroundWork(s, facts, frame);
+        int tableWood = below ? SPARE_TABLE_PLANKS : 0;
+        int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0) - tableWood;
         if (s.sticks() < sticksReserved(s, frame) && (treesNear || spareWood >= 2)) {
             if (s.planks() >= 2 && spareWood >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
             if (s.logs() > 0 && spareWood >= 2) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
@@ -204,6 +214,11 @@ public final class PortalRunPlanner {
             return stone(s, facts, COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
         }
 
+        // A spare pickaxe, made while it is cheap: one wearing out halfway up a climb never leaves the player with none.
+        if (below && s.pickaxes() < 2 && s.cobble() >= 3) {
+            return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE, "Craft a spare stone pickaxe for the work below");
+        }
+
         // Iron: pickaxe, bucket and flint and steel, smelted in an owned furnace.
         boolean caves = caves(facts);
         int ironWanted = ironShortfall(s, frame, caves);
@@ -215,6 +230,10 @@ public final class PortalRunPlanner {
         // branch mines wear a stone one out every few minutes (live run 50 used six in one life before its iron).
         boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3;
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
+        // Wood for another table, should the carried one be lost below, taken while trees are in sight.
+        if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
+            return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for a spare crafting table");
+        }
         if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
@@ -326,6 +345,14 @@ public final class PortalRunPlanner {
         return facts.distance(WorldFacts.Source.STONE).orElse(Integer.MAX_VALUE) <= ISLAND_REACH;
     }
 
+    /**
+     * Mining ahead below ground: where there is ground to dig, from the stone pickaxe until the final one (diamond
+     * on the classic route, iron when the frame is cast) is in hand.
+     */
+    static boolean belowGroundWork(PortalRunSnapshot s, WorldFacts facts, WorldFacts.Method frame) {
+        return caves(facts) && s.pickaxeTier() >= 2 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4);
+    }
+
     /** Ground below to dig into, and so caves full of mobs: a sky island has neither. */
     private static boolean caves(WorldFacts facts) {
         return facts.can(WorldFacts.Method.DIG_FOR_STONE);
@@ -378,6 +405,10 @@ public final class PortalRunPlanner {
      * {@code planksNeeded} and {@code sticksNeeded} are the recipe's own wood inputs.
      */
     private static Step craftAtTable(PortalRunSnapshot s, WorldFacts facts, String item, int planksNeeded, int sticksNeeded, Stage stage) {
+        return craftAtTable(s, facts, item, planksNeeded, sticksNeeded, stage, "Craft " + item.replace('_', ' '));
+    }
+
+    private static Step craftAtTable(PortalRunSnapshot s, WorldFacts facts, String item, int planksNeeded, int sticksNeeded, Stage stage, String why) {
         if (s.sticks() < sticksNeeded) {
             if (s.planks() >= 2) return Step.craft("stick", stage, "Craft sticks");
             if (s.logs() > 0) return Step.craft("planks", stage, "Craft planks");
@@ -393,6 +424,6 @@ public final class PortalRunPlanner {
             if (s.logs() > 0) return Step.craft("planks", stage, "Craft planks for a crafting table");
             return logs(facts, 1, stage, "Gather logs for a crafting table");
         }
-        return Step.craft(item, stage, "Craft " + item.replace('_', ' '));
+        return Step.craft(item, stage, why);
     }
 }
