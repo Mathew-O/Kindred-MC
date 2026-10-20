@@ -229,6 +229,11 @@ final class PortalRunCampaign {
             steps.addFirst(new PortalRunPlanner.Step(PortalRunPlanner.Action.FILL_WATER, "", 1, stage, "Fill a bucket with water while it is close"));
         }
         if (home == null) home = player.getBlockPos().toImmutable();
+        Optional<Task> room = makeRoom(player);
+        if (room.isPresent()) {
+            progress = stageLabel(stage) + ": inventory full - " + room.get().label();
+            return room;
+        }
         Optional<Task> defense = defend(player);
         if (defense.isPresent()) {
             progress = stageLabel(stage) + ": fight back - " + defense.get().label();
@@ -275,6 +280,44 @@ final class PortalRunCampaign {
             }
         }
         progress = stageLabel(stage) + ": waiting for a feasible step";
+        return Optional.empty();
+    }
+
+    /** Stone, dirt and odds and ends the route never needs, beyond a small keep; cobblestone-like blocks keep 64. */
+    private static final Set<Item> JUNK = Set.of(Items.ANDESITE, Items.GRANITE, Items.DIORITE, Items.TUFF, Items.CALCITE,
+            Items.DRIPSTONE_BLOCK, Items.DIRT, Items.COARSE_DIRT, Items.ROOTED_DIRT, Items.SAND, Items.RED_SAND, Items.SANDSTONE,
+            Items.RAW_COPPER, Items.ROTTEN_FLESH, Items.BONE, Items.ARROW, Items.SPIDER_EYE, Items.POISONOUS_POTATO,
+            Items.FEATHER, Items.SMOOTH_BASALT, Items.WHEAT_SEEDS);
+
+    /**
+     * A full inventory cannot take crafted tools or a diamond; drop surplus where the player stands, as a person
+     * would. Items dropped stay in the world.
+     */
+    private Optional<Task> makeRoom(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        int free = 0;
+        for (int s = 0; s < 36; s++) if (inventory.getStack(s).isEmpty()) free++;
+        if (free >= 3) return Optional.empty();
+        int stoneKept = 0, gravelKept = 0;
+        for (int s = 0; s < 36; s++) {
+            ItemStack stack = inventory.getStack(s);
+            if (stack.isEmpty()) continue;
+            boolean stoneLike = stack.isIn(ItemTags.STONE_TOOL_MATERIALS) || stack.isOf(Items.COBBLESTONE);
+            int surplus;
+            if (stoneLike) {
+                surplus = Math.max(0, stoneKept + stack.getCount() - 64);
+                stoneKept += stack.getCount() - surplus;
+            } else if (stack.isOf(Items.GRAVEL)) {
+                surplus = Math.max(0, gravelKept + stack.getCount() - 8);
+                gravelKept += stack.getCount() - surplus;
+            } else {
+                surplus = JUNK.contains(stack.getItem()) ? stack.getCount() : 0;
+            }
+            if (surplus > 0) {
+                return Optional.of(new Task("native_discard", Map.of("slot", String.valueOf(s), "count", String.valueOf(surplus)),
+                        "Drop surplus " + Registries.ITEM.getId(stack.getItem()).getPath().replace('_', ' ')));
+            }
+        }
         return Optional.empty();
     }
 

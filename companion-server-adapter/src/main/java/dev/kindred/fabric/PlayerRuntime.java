@@ -1129,6 +1129,9 @@ final class PlayerRuntime {
                         nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         "pour".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR : NativeBucketAction.Mode.FILL);
+            } else if (skill.equals("native_discard")) {
+                task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("count")), null);
             } else if (skill.equals("native_toss")) {
                 task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")),
@@ -1266,7 +1269,7 @@ final class PlayerRuntime {
                     || ("native_sleep".equals(entry.skillId) && intent == NativePlayerBody.Intent.SLEEP)
                     || ("native_ignite_portal".equals(entry.skillId) && (intent == NativePlayerBody.Intent.IGNITE_PORTAL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_organize_chest".equals(entry.skillId) && intent == NativePlayerBody.Intent.CHEST_ORGANIZE)
-                    || ("native_toss".equals(entry.skillId) && intent == NativePlayerBody.Intent.TOSS))
+                    || (("native_toss".equals(entry.skillId) || "native_discard".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TOSS))
                 && NativePlayerSkills.permits(entry.nativeTask, intent, target)
                 && entry.activity != null && entry.activity.paid();
     }

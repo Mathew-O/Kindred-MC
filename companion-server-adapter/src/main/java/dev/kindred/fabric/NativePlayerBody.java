@@ -1418,6 +1418,22 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /** Drops owned items at the player's feet the way a person presses Q; the items stay in the world. */
+    boolean discard(ActionLease lease, int inventorySlot, int count) {
+        requireThread();
+        if (inventorySlot < 0 || inventorySlot >= 36 || count <= 0) return false;
+        var stack = player.getInventory().getStack(inventorySlot);
+        if (stack.isEmpty() || stack.getCount() < count) return false;
+        return execute(lease, Intent.TOSS, null, () -> {
+            ItemStack live = player.getInventory().getStack(inventorySlot);
+            if (live.isEmpty() || live.getCount() < count) return;
+            // Throw it behind, away from the way the player is heading, so it is not walked straight back over.
+            player.setYaw(player.getYaw() + 180);
+            player.setPitch(0);
+            player.dropItem(live.split(count), false, false);
+        });
+    }
+
     private boolean execute(ActionLease lease, Intent intent, BlockPos target, Runnable action) {
         requireThread();
         return current(lease) && gate.permits(lease, intent, target)
