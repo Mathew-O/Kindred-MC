@@ -283,6 +283,25 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void theIronPickaxeIsMadeAsSoonAsThereIsIronForIt() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 8; sim.shields = 1; sim.coal = 1;
+        sim.tableNearby = true; sim.furnaceNearby = true;
+        sim.rawIron = 2;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot()).getLast().action(), "not enough for a pickaxe yet");
+        sim.rawIron = 3;
+        assertEquals(Action.SMELT, PortalRunPlanner.plan(sim.snapshot()).getLast().action(),
+                "three raw iron are smelted at once, before the rest of the route's iron is mined");
+        sim.apply(PortalRunPlanner.plan(sim.snapshot()).getLast());
+        sim.apply(PortalRunPlanner.plan(sim.snapshot()).getLast());
+        sim.apply(PortalRunPlanner.plan(sim.snapshot()).getFirst());
+        var craft = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals("iron_pickaxe", craft.item(), "then made into an iron pickaxe");
+        sim.apply(craft);
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot()).getLast().action(), "and the mining goes on with it");
+    }
+
+    @Test
     void spareSticksAreToppedUpNearTreesButNeverFetchedFromBelow() {
         Sim sim = new Sim();
         sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true;

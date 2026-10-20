@@ -345,6 +345,69 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * The same dead end, with a skeleton standing in the cave beyond that has not noticed the player (no AI, so it
+     * never will): without a shield the player walls off the way in from the passage instead of going to look,
+     * as live run 50 walked into the cave under spawn and was shot.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalWallsOffACaveWithASkeletonInViewBeforeItComes(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.SkeletonEntity[] skeleton = new net.minecraft.entity.mob.SkeletonEntity[1];
+        BlockPos[] way = new BlockPos[2];
+        int[] settle = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Peeker"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
+                        boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
+                                || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 2);
+                        world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    way[0] = p.add(0, 0, 1);
+                    way[1] = p.add(0, 1, 1);
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.STONE_SWORD));
+                    player.getInventory().setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    player.getInventory().setStack(3, new ItemStack(Items.BREAD, 5));
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settles"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = way[0].north();
+                    skeleton[0] = net.minecraft.entity.EntityType.SKELETON.create(world);
+                    skeleton[0].refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 4.5, 180, 0);
+                    skeleton[0].equipStack(net.minecraft.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+                    skeleton[0].setPersistent();
+                    skeleton[0].setAiDisabled(true);
+                    world.spawnEntity(skeleton[0]);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(!world.getBlockState(way[0]).isAir() && !world.getBlockState(way[1]).isAir(),
+                            "It walled off the way into the cave: " + world.getBlockState(way[0]) + " " + world.getBlockState(way[1])
+                                    + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18 && player.getBlockPos().equals(way[0].north()),
+                            "Unhurt, still in its passage: " + player.getHealth() + " at " + player.getBlockPos().toShortString());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                    skeleton[0].discard();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Nothing in hand, as just after a respawn, and a zombie after it a few blocks off: the player keeps away rather
      * than start a fist fight it would lose.
      */

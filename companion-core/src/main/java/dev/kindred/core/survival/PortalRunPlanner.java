@@ -183,8 +183,11 @@ public final class PortalRunPlanner {
         // With a shield's wood in hand, the first iron is smelted and made into one at once, as players do: the caves
         // where the rest of the iron is found are where skeletons end most runs.
         boolean shieldFirst = s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS;
+        // Then the iron pickaxe as soon as there is iron for it: it lasts twice as long as stone, and staircases and
+        // branch mines wear a stone one out every few minutes (live run 50 used six in one life before its iron).
+        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3;
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, "shield", SHIELD_PLANKS, 0, Stage.IRON);
-        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0)) {
+        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {

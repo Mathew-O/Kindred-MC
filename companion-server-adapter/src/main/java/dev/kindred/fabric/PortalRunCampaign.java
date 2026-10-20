@@ -2035,6 +2035,20 @@ final class PortalRunCampaign {
             }
             return Optional.empty(); // Nowhere to hole up: fight, run or back off as before.
         }
+        // A look before going in: a cave that shows mobs the player is no match for yet is walled off from the
+        // passage it opened into, before any of them comes for it, and left alone for a while.
+        HostileEntity peril = pressed ? null : peril(player);
+        if (peril != null) {
+            markDanger(peril.getBlockPos(), lastTick + CAVE_DANGER_TICKS);
+            if (open.size() <= 4) {
+                Vec3d toward = peril.getPos().subtract(Vec3d.ofBottomCenter(feet));
+                for (BlockPos cell : open) {
+                    if (Vec3d.ofCenter(cell).subtract(Vec3d.ofCenter(feet)).dotProduct(toward) <= 0) continue; // The way back stays open.
+                    Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
+                    if (place.isPresent()) return place;
+                }
+            }
+        }
         if (player.isOnGround() && open.size() <= 3 && world.getFluidState(feet).isEmpty()) snug = feet.toImmutable();
         if (holedUpSince >= 0) {
             if (pressed) return Optional.empty(); // Something got in: fight back rather than wait.
@@ -2067,6 +2081,20 @@ final class PortalRunCampaign {
             return hunters.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         }
         return null;
+    }
+
+    /**
+     * Mobs in view down here that the player is no match for yet, though none has come for it: a shooter or a
+     * creeper, or two mobs at once, without a shield; three at once with one. The nearest of them, or null.
+     */
+    private static HostileEntity peril(ServerPlayerEntity player) {
+        boolean shield = player.getOffHandStack().isOf(Items.SHIELD);
+        var seen = player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 8, 16),
+                mob -> mob.isAlive() && !(mob instanceof EndermanEntity) && player.canSee(mob));
+        boolean many = seen.size() >= (shield ? 3 : 2);
+        boolean deadly = !shield && seen.stream().anyMatch(mob -> mob instanceof net.minecraft.entity.ai.RangedAttackMob || mob instanceof CreeperEntity);
+        if (!many && !deadly) return null;
+        return seen.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
     private static boolean opening(ServerWorld world, BlockPos cell) {
