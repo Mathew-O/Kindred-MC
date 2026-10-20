@@ -92,13 +92,14 @@ class AttentionWorkSchedulerTest {
         scheduler.synchronizeEntries(List.of(
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true)
         ));
-        scheduler.beginTick(tick, System.nanoTime());
+        long now = System.nanoTime(); // One clock reading: a slow machine must not spend the tick's soft time budget.
+        scheduler.beginTick(tick, now);
 
         var token = scheduler.selectNext().orElseThrow();
 
         // 1. Cannot start twice
-        assertTrue(scheduler.tryStart(token, System.nanoTime()));
-        assertFalse(scheduler.tryStart(token, System.nanoTime()), "Duplicate tryStart must fail");
+        assertTrue(scheduler.tryStart(token, now));
+        assertFalse(scheduler.tryStart(token, now), "Duplicate tryStart must fail");
 
         // 2. Invalidation while in flight supersedes token
         scheduler.invalidate(player1, token.kind());

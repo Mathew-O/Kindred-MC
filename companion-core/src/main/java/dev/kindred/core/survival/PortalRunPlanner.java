@@ -171,7 +171,11 @@ public final class PortalRunPlanner {
         // Iron: pickaxe, bucket and flint and steel, smelted in an owned furnace.
         int ironWanted = ironShortfall(s, frame);
         int ironHave = s.ironIngots() + s.rawIron();
-        if (ironHave < ironWanted) {
+        // With a shield's wood in hand, the first iron is smelted and made into one at once, as players do: the caves
+        // where the rest of the iron is found are where skeletons end most runs.
+        boolean shieldFirst = s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS;
+        if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, "shield", SHIELD_PLANKS, 0, Stage.IRON);
+        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0)) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {
@@ -188,8 +192,6 @@ public final class PortalRunPlanner {
             return new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron");
         }
         if (s.pickaxeTier() < 3) return craftAtTable(s, "iron_pickaxe", 0, 2, Stage.IRON);
-        // A shield from the first spare ingot, if the wood kept for it is still in hand; no trip up for more.
-        if (s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS) return craftAtTable(s, "shield", SHIELD_PLANKS, 0, Stage.IRON);
         if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, "bucket", 0, 0, Stage.IRON);
         // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
         if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, "iron_chestplate", 0, 0, Stage.IRON);

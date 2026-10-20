@@ -253,7 +253,7 @@ class PortalRunPlannerTest {
     }
 
     @Test
-    void aShieldIsMadeFromWoodKeptNearTheTreesRightAfterTheIronPickaxe() {
+    void aShieldIsMadeFromWoodKeptNearTheTreesAndTheFirstIron() {
         Sim sim = new Sim();
         sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 4; sim.tableNearby = true;
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 12), WorldFacts.ordinary().methods());
@@ -267,12 +267,15 @@ class PortalRunPlannerTest {
         assertEquals(PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN), 3 + 3 + 8 + 1 + 1,
                 "with the wood in hand, one more iron for the shield");
 
-        sim.pick = 3; sim.iron = 13; sim.logs = 0; sim.planks = 6; // Bucket 3, chestplate 8, flint and steel 1, shield 1.
-        var craft = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast();
+        sim.rawIron = 1; sim.coal = 1; sim.furnaceNearby = true;
+        assertEquals(Action.SMELT, PortalRunPlanner.plan(sim.snapshot(), trees).getLast().action(),
+                "the first raw iron is smelted at once for the shield, before mining the rest");
+        sim.rawIron = 0; sim.coal = 0; sim.iron = 1; sim.logs = 0; sim.planks = 8;
+        var craft = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals(Action.CRAFT, craft.action());
-        assertEquals("shield", craft.item(), "a shield right after the pickaxe, before the bucket and chestplate");
+        assertEquals("shield", craft.item(), "then made into a shield");
 
-        sim.planks = 0;
+        sim.pick = 3; sim.iron = 13; sim.logs = 0; sim.planks = 0;
         assertNotEquals("shield", PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().item(),
                 "without the kept wood there is no trip back up for a shield");
     }
