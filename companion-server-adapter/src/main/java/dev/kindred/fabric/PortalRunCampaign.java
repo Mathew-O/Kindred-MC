@@ -94,6 +94,8 @@ final class PortalRunCampaign {
     private final Set<Long> visitedCaves = new HashSet<>();
     /** Where tunnelling has already advanced: walking an old corridor back and forth is not progress. */
     private final Set<Long> tunnelled = new HashSet<>();
+    /** A run from a creeper found no way out: until then, wall it off or fight it instead. */
+    private long runFailedUntil;
     private int branchRun;
     private boolean branchSide, branchStepping;
     /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
@@ -171,6 +173,7 @@ final class PortalRunCampaign {
             exploreFailures++;
             exploreHeading = null;
         }
+        if (task.label().equals("Run from creeper")) runFailedUntil = tick + 200;
         if (task.label().startsWith("Recover")) dropSite = null;
         if (task.label().startsWith("Cut through")) exploreStalls = 0; // That way is closed too; walk and look again.
         // A foe in a hole or across a ravine cannot be reached; leave it be for a while rather than try forever.
@@ -456,6 +459,7 @@ final class PortalRunCampaign {
         if (underground(player)) {
             Optional<Task> up = climb(body, "Climb to find another way");
             if (up.isPresent()) {
+                blockedUntil.merge(lastFeet.asLong(), lastTick + 2400, Math::max); // A dead end: do not step back down into it.
                 progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
                 return up;
             }
@@ -968,7 +972,7 @@ final class PortalRunCampaign {
                 // Never step into a drop deeper than the navigator allows; turn away from a pit instead.
                 BlockPos landing = step;
                 while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
-                if (!passable(world, landing.down()) && !liquidNear(world, landing)) {
+                if (!passable(world, landing.down()) && !liquidNear(world, landing) && !blocked(landing)) {
                     return Optional.of(go(landing, 0.4, false, label + ": step down"));
                 }
             }
@@ -1469,7 +1473,10 @@ final class PortalRunCampaign {
             foeUntil = lastTick;
             Task strike = strike(player, creeper, "Fight creeper");
             if (strike.args().containsKey("slot") && player.getHealth() >= 10) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
-            return Optional.of(runFrom(player, creeper));
+            if (lastTick >= runFailedUntil) return Optional.of(runFrom(player, creeper));
+            // Nowhere to run (a pit, a dead end): wall it off, and failing that, knock it back with whatever is in hand.
+            Optional<Task> wall = cover(body, creeper);
+            return wall.isPresent() ? wall : Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
         if (player.getHealth() < 6) return backOff(player);
         var threats = threats(player);
@@ -1525,8 +1532,8 @@ final class PortalRunCampaign {
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
-    /** Block the first open cell beside the player's head or feet along the line of fire from {@code shooter}. */
-    private Optional<Task> cover(NativePlayerBody body, HostileEntity shooter) {
+    /** Block the first open cell beside the player's head or feet along the line from {@code shooter} to it. */
+    private Optional<Task> cover(NativePlayerBody body, net.minecraft.entity.LivingEntity shooter) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -1623,7 +1630,8 @@ final class PortalRunCampaign {
 
     /** Creeper work outranks the runtime's one-block retreat: its own hit and run or sprint away is the better escape. */
     static boolean creeperTask(Task task) {
-        return task != null && (task.label().equals("Fight creeper") || task.label().equals("Run from creeper"));
+        return task != null && (task.label().equals("Fight creeper") || task.label().equals("Run from creeper")
+                || task.label().equals("Take cover from creeper"));
     }
 
     /** Work stopped for a fight is not a failed target; plan again without counting it. */
