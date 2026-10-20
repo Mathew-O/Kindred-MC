@@ -285,6 +285,75 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * A dark L-shaped cave passage with iron ore out of sight around the corner. At the iron stage the goal lights
+     * the dark with a torch crafted from its own coal and a spare stick, walks to the part of the cave it can see,
+     * spots the ore from the corner, and mines it, rather than digging a tunnel from where it stood.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1200)
+    public void goalExploresACaveAndMinesIronItCouldNotSeeAtFirst(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] ore = new BlockPos[1];
+        int[] settle = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Caver"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute layout around wherever the player stood up. The first leg runs toward the near edge
+                    // of a 4-block knowledge cell, so the corner lies in a cave cell the player has not walked yet.
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
+                    Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
+                    for (int dx = -3; dx <= 3; dx++) for (int dz = -3; dz <= 3; dz++) for (int dy = -1; dy <= 3; dy++) {
+                        world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
+                    }
+                    // Sealed inside the stone block, so no daylight reaches it.
+                    var passage = new java.util.ArrayList<BlockPos>();
+                    for (int i = 0; i <= 2; i++) passage.add(p.offset(alongX, i));
+                    for (int i = 1; i <= 2; i++) passage.add(p.offset(alongX, 2).offset(alongZ, i));
+                    for (BlockPos cell : passage) {
+                        world.setBlockState(cell, Blocks.AIR.getDefaultState());
+                        world.setBlockState(cell.up(), Blocks.AIR.getDefaultState());
+                    }
+                    ore[0] = p.offset(alongX, 2).offset(alongZ, 3);
+                    world.setBlockState(ore[0], Blocks.IRON_ORE.getDefaultState());
+                })
+                // A cave is old ground, not freshly built: let the light engine darken the passage first.
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settling"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 6));
+                    inventory.setStack(5, new ItemStack(Items.COAL, 4));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) >= 1,
+                        "Found and mined the iron around the corner"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertFalse(world.getBlockState(ore[0]).isOf(Blocks.IRON_ORE), "The ore is gone");
+                    long torches = BlockPos.streamOutwards(ore[0], 6, 3, 6).filter(pos -> world.getBlockState(pos).isOf(Blocks.TORCH)).count();
+                    context.assertTrue(torches >= 1, "It lit the dark passage with its own torch");
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 5,
+                            "One coal and one spare stick became torches: coal " + ItemMoves.count(inventory, Items.COAL)
+                                    + ", sticks " + ItemMoves.count(inventory, Items.STICK));
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);

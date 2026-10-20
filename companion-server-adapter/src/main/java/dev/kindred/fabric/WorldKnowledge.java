@@ -26,10 +26,11 @@ import java.util.function.Predicate;
 /**
  * What one AI player has seen of the world near it. Blocks are remembered only when exposed to open air
  * within a bounded radius, and ores and fluids additionally only when a line of sight from the player's eyes
- * reaches them, so the player plans from what it could see rather than from hidden world data.
+ * reaches them, so the player plans from what it could see rather than from hidden world data. Cave floor it
+ * has seen (a dim, two-high space over stone) is remembered as places to explore, one per 4×4×4 block cell.
  */
 final class WorldKnowledge {
-    enum Kind { LOG, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, GRAVEL, WATER, LAVA, CRAFTING_TABLE, FURNACE, OBSIDIAN }
+    enum Kind { LOG, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, GRAVEL, WATER, LAVA, CRAFTING_TABLE, FURNACE, OBSIDIAN, CAVE }
 
     static final int HORIZONTAL_RADIUS = 32;
     static final int VERTICAL_RADIUS = 24;
@@ -42,6 +43,7 @@ final class WorldKnowledge {
     private final List<ChunkSectionPos> sweep = new ArrayList<>();
     private int cursor;
     private int index;
+    private int sweeps;
 
     WorldKnowledge() {
         for (Kind kind : Kind.values()) known.put(kind, new HashMap<>());
@@ -64,7 +66,22 @@ final class WorldKnowledge {
     }
 
     private static boolean needsSight(Kind kind) {
-        return kind == Kind.COAL_ORE || kind == Kind.IRON_ORE || kind == Kind.DIAMOND_ORE || kind == Kind.WATER || kind == Kind.LAVA;
+        return kind == Kind.COAL_ORE || kind == Kind.IRON_ORE || kind == Kind.DIAMOND_ORE || kind == Kind.WATER || kind == Kind.LAVA
+                || kind == Kind.CAVE;
+    }
+
+    /**
+     * A place a player could stand in a cave: two blocks of air over a stone floor, out of daylight (sky light
+     * at most 7, so overhangs at a cave mouth count and open ground does not).
+     */
+    static boolean caveFloor(ServerWorld world, BlockPos feet) {
+        if (!world.getBlockState(feet).isAir() || !world.getBlockState(feet.up()).isAir()) return false;
+        if (classify(world.getBlockState(feet.down())) != Kind.STONE) return false;
+        return world.getLightLevel(net.minecraft.world.LightType.SKY, feet) <= 7;
+    }
+
+    private static long cell(BlockPos pos) {
+        return BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2);
     }
 
     /** Advances the incremental sweep around the player by a bounded amount of block reads. */
@@ -98,6 +115,14 @@ final class WorldKnowledge {
                 Kind kind = classify(state);
                 if (kind != null) {
                     BlockPos pos = new BlockPos(sectionPos.getMinX() + x, sectionPos.getMinY() + y, sectionPos.getMinZ() + z);
+                    // Stone with a cave floor on top: one sighting per cell is enough to know there is a cave there.
+                    BlockPos floor = pos.up();
+                    boolean airAbove = y < 15 ? section.getBlockState(x, y + 1, z).isAir() : world.getBlockState(floor).isAir();
+                    if (kind == Kind.STONE && airAbove && !known.get(Kind.CAVE).containsKey(cell(floor)) && caveFloor(world, floor)) {
+                        if (raycasts >= RAYCASTS_PER_SCAN) return;
+                        raycasts++;
+                        if (visible(player, floor)) remember(Kind.CAVE, floor);
+                    }
                     if (exposed(world, pos, kind)) {
                         if (needsSight(kind)) {
                             if (raycasts >= RAYCASTS_PER_SCAN) return; // Resume at this exact block next scan.
@@ -119,7 +144,11 @@ final class WorldKnowledge {
         index = 0;
     }
 
+    /** Completed sweeps of the surroundings so far; a new one starts around wherever the player then is. */
+    int sweeps() { return sweeps; }
+
     private void rebuildSweep(ServerPlayerEntity player) {
+        if (!sweep.isEmpty()) sweeps++;
         sweep.clear();
         cursor = 0;
         index = 0;
@@ -170,12 +199,19 @@ final class WorldKnowledge {
 
     void remember(Kind kind, BlockPos pos) {
         var map = known.get(kind);
-        if (map.size() >= MAX_PER_KIND && !map.containsKey(pos.asLong())) return;
-        map.put(pos.asLong(), pos.toImmutable());
+        long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
+        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
+        map.put(key, pos.toImmutable());
     }
 
     void forget(BlockPos pos) {
         for (var map : known.values()) map.remove(pos.asLong());
+        known.get(Kind.CAVE).remove(cell(pos));
+    }
+
+    /** Still what it was remembered as: the same kind of block, or for a cave, still a cave floor. */
+    private static boolean still(ServerWorld world, Kind kind, BlockPos pos) {
+        return kind == Kind.CAVE ? caveFloor(world, pos) : classify(world.getBlockState(pos)) == kind;
     }
 
     int count(Kind kind) { return known.get(kind).size(); }
@@ -187,7 +223,7 @@ final class WorldKnowledge {
         var stale = new ArrayList<Long>();
         for (var entry : known.get(kind).entrySet()) {
             BlockPos pos = entry.getValue();
-            if (world.isChunkLoaded(pos) && classify(world.getBlockState(pos)) != kind) {
+            if (world.isChunkLoaded(pos) && !still(world, kind, pos)) {
                 stale.add(entry.getKey());
                 continue;
             }
@@ -202,4 +238,26 @@ final class WorldKnowledge {
     }
 
     List<BlockPos> all(Kind kind) { return List.copyOf(known.get(kind).values()); }
+
+    /** Lowest-scoring remembered block of a kind that still matches the world and the caller's filter. */
+    Optional<BlockPos> best(ServerWorld world, Kind kind, java.util.function.ToDoubleFunction<BlockPos> score, Predicate<BlockPos> filter) {
+        BlockPos best = null;
+        double bestScore = Double.MAX_VALUE;
+        var stale = new ArrayList<Long>();
+        for (var entry : known.get(kind).entrySet()) {
+            BlockPos pos = entry.getValue();
+            if (world.isChunkLoaded(pos) && !still(world, kind, pos)) {
+                stale.add(entry.getKey());
+                continue;
+            }
+            if (!filter.test(pos)) continue;
+            double value = score.applyAsDouble(pos);
+            if (value < bestScore) {
+                bestScore = value;
+                best = pos;
+            }
+        }
+        stale.forEach(key -> known.get(kind).remove(key));
+        return Optional.ofNullable(best);
+    }
 }

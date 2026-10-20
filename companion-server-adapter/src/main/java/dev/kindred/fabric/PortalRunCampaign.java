@@ -52,7 +52,10 @@ final class PortalRunCampaign {
     record Task(String skill, Map<String, String> args, String label) { }
 
     private static final double REACH = 4.3;
-    private static final int IRON_TOP = 56, IRON_TARGET = 32;
+    /** Iron is most common around Y=16; coal in caves well above deepslate, which has very little. */
+    private static final int IRON_TOP = 56, IRON_TARGET = 16, COAL_TARGET = 48;
+    /** Branch mining: legs this long, side steps this wide (two solid blocks between legs, each wall seen). */
+    private static final int BRANCH_LEG = 20, BRANCH_STEP = 3;
     /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
     private static final int EXPLORE_RADIUS = 192;
     private static final java.util.EnumSet<PortalRunPlanner.Action> TRAVEL = java.util.EnumSet.of(
@@ -87,6 +90,12 @@ final class PortalRunCampaign {
     private final Map<java.util.UUID, Long> ignoredFoes = new HashMap<>();
     private long foeUntil;
     private BlockPos home;
+    /** 4×4×4 cells of cave the player has already walked through; exploration heads for the rest. */
+    private final Set<Long> visitedCaves = new HashSet<>();
+    private int branchRun;
+    private boolean branchSide, branchStepping;
+    /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
+    private int lookUntilSweep = 1;
     private long dropSiteUntil;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
@@ -136,6 +145,12 @@ final class PortalRunCampaign {
             BlockPos at = position(task.args()); // A drop that keeps drifting off is let go after a few tries.
             if (approaches.merge(at.asLong(), 1, Integer::sum) >= 3) blockedUntil.put(at.asLong(), tick + 1200);
         }
+        if (task != null && completed && task.label().startsWith("Explore the cave") && position(task.args()) != null) {
+            BlockPos at = position(task.args());
+            visitedCaves.add(BlockPos.asLong(at.getX() >> 2, at.getY() >> 2, at.getZ() >> 2));
+            lookUntilSweep = knowledge.sweeps() + 2; // Finish the sweep under way, then one full look from here.
+        }
+        if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) branchTurn();
         if (task != null && completed) repeatFailures.remove(task);
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
@@ -225,6 +240,9 @@ final class PortalRunCampaign {
         }
         this.policy = policy;
         ServerPlayerEntity player = body.entity();
+        if (underground(player) && visitedCaves.size() < 50_000) {
+            visitedCaves.add(BlockPos.asLong(lastFeet.getX() >> 2, lastFeet.getY() >> 2, lastFeet.getZ() >> 2));
+        }
         PortalRunSnapshot snapshot = snapshot(body);
         stage = PortalRunPlanner.stage(snapshot);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot));
@@ -248,6 +266,12 @@ final class PortalRunCampaign {
         if (player.getHealth() < 10 && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
             progress = stageLabel(stage) + ": heal before going on";
             return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+        }
+        // Underground in the dark: light it, so nothing spawns beside the player while it works.
+        Optional<Task> light = light(body, snapshot);
+        if (light.isPresent()) {
+            progress = stageLabel(stage) + ": light the way - " + light.get().label();
+            return light;
         }
         // Leaving to gather: take the table and an emptied furnace along, as a player would.
         if (TRAVEL.contains(steps.getLast().action())) {
@@ -471,12 +495,15 @@ final class PortalRunCampaign {
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
             case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"))
                     .or(() -> search(body, "stone"));
+            // Ore in view first, then caves it has seen, which show far more ore than a tunnel; digging comes last.
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
-                    .or(() -> tunnel(body, "Tunnel for coal"));
-            case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
+                    .or(() -> cave(body, "coal", COAL_TARGET)).or(this::lookAround).or(() -> tunnel(body, "Tunnel for coal"));
+            case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore")
+                    .or(() -> cave(body, "iron", IRON_TARGET)).or(this::lookAround).or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
             case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
                     .or(() -> gather(body, WorldKnowledge.Kind.IRON_ORE, 6, "iron ore on the way"))
-                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "diamonds"));
+                    .or(() -> cave(body, "diamonds", DIAMOND_TARGET))
+                    .or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "diamonds"));
             case CRAFT -> craft(body, step.item());
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
@@ -487,19 +514,88 @@ final class PortalRunCampaign {
                     ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
                     .or(() -> fillWater(body)).or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
-                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
+                    .or(() -> cave(body, "lava", DIAMOND_TARGET))
+                    .or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
             case GATHER_FLINT -> flint(body);
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
         };
     }
 
-    /**
-     * Underground, ore across an open cave is a walk into the dark where skeletons wait; take what the tunnel
-     * exposes close by and keep digging instead.
-     */
+    /** Underground, sight lines are shorter and every walk is through the dark: ore within two dozen blocks. */
     private static int oreRadius(ServerPlayerEntity player, int surfaceRadius) {
-        return underground(player) ? 12 : surfaceRadius;
+        return underground(player) ? 24 : surfaceRadius;
+    }
+
+    /**
+     * Walk on into a cave it has seen, toward the depth where {@code what} is common, as players go caving: the
+     * walls show ore a tunnel never would, and the ore becomes known as it comes into view. Cave cells already
+     * walked are left for new ones; a cave leading well away from the wanted depth is not followed.
+     */
+    private Optional<Task> cave(NativePlayerBody body, String what, int targetY) {
+        var world = body.entity().getServerWorld();
+        BlockPos feet = lastFeet;
+        BlockPos anchor = home == null ? feet : home;
+        int gapNow = Math.abs(feet.getY() - targetY);
+        // About eight blocks on is a good stride: far enough to open new views, near enough to stay on known ground.
+        return knowledge.best(world, WorldKnowledge.Kind.CAVE,
+                        pos -> Math.abs(Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) - 8) + 1.5 * Math.abs(pos.getY() - targetY),
+                        pos -> !visitedCaves.contains(BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2))
+                                && !blocked(pos) && !unreachable(pos) && pos.getSquaredDistance(feet) >= 4
+                                && Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) <= 48
+                                && Math.hypot(pos.getX() - anchor.getX(), pos.getZ() - anchor.getZ()) <= EXPLORE_RADIUS
+                                && Math.abs(pos.getY() - targetY) < gapNow + 8)
+                .map(pos -> go(pos, 0.8, true, "Explore the cave toward " + what));
+    }
+
+    /** Arrived somewhere new: look around (one full knowledge sweep) before deciding there is nothing but digging. */
+    private Optional<Task> lookAround() {
+        if (knowledge.sweeps() >= lookUntilSweep) return Optional.empty();
+        return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Look around"));
+    }
+
+    /**
+     * Branch mining: after a leg of {@link #BRANCH_LEG} blocks, step {@link #BRANCH_STEP} to one side and run
+     * the next leg back the other way, alternating sides so the legs zigzag across fresh stone.
+     */
+    private void branchTurn() {
+        if (++branchRun < (branchStepping ? BRANCH_STEP : BRANCH_LEG)) return;
+        branchRun = 0;
+        digDirection = branchSide ? digDirection.rotateYCounterclockwise() : digDirection.rotateYClockwise();
+        if (branchStepping) branchSide = !branchSide;
+        branchStepping = !branchStepping;
+    }
+
+    /**
+     * In the dark underground (no block light where it stands), place an owned torch, crafting four from its own
+     * coal and a stick when it has none and coal to spare. Hostile mobs spawn only in darkness, so a torch every
+     * dozen blocks keeps the way it works and walks clear of new spawns.
+     */
+    private Optional<Task> light(NativePlayerBody body, PortalRunSnapshot snapshot) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!underground(player) || !player.isOnGround()) return Optional.empty();
+        BlockPos feet = player.getBlockPos();
+        if (world.getLightLevel(net.minecraft.world.LightType.BLOCK, feet) > 1) return Optional.empty();
+        var inventory = player.getInventory();
+        int torch = slotOf(body, Items.TORCH);
+        if (torch < 0) {
+            // Fuel for smelting and the sticks kept for the iron and diamond pickaxes come first.
+            int coal = ItemMoves.count(inventory, Items.COAL) + ItemMoves.count(inventory, Items.CHARCOAL);
+            int keptSticks = (snapshot.pickaxeTier() < 3 ? 2 : 0) + (snapshot.pickaxeTier() < 4 ? 2 : 0);
+            if (coal < 2) return Optional.empty();
+            if (snapshot.sticks() > keptSticks) return craft(body, "torch");
+            return snapshot.planks() >= 2 ? craft(body, "stick") : Optional.empty();
+        }
+        if (torch >= 9) return Optional.of(swapToHotbar(body, torch, "Ready a torch"));
+        for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
+            BlockPos spot = feet.offset(direction);
+            if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
+            if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP)) continue;
+            return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
+                    "Place a torch at " + spot.toShortString()));
+        }
+        return Optional.empty();
     }
 
     private static Map<String, String> coords(BlockPos pos, Map<String, String> extra) {
@@ -692,8 +788,8 @@ final class PortalRunCampaign {
         if (y > Math.min(top, target + 3)) {
             return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what));
         }
-        // Below the richest band there is still some: tunnel where it stands rather than give up.
-        return tunnel(body, "Tunnel for " + what);
+        // At the richest depth with no ore or cave in view: branch mine, legs zigzagging through fresh stone.
+        return tunnel(body, "Branch mine for " + what);
     }
 
     /**
