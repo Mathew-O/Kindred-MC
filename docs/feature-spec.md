@@ -16,6 +16,7 @@ Claim an open ID before implementation. Preserve IDs; add explicit children. Put
 ## Active work
 | Feature | State | Agent | Files / boundaries | Remaining work |
 | --- | --- | --- | --- | --- |
+| F-25c4 | In progress | Claude | PortalRunPlanner (core), PortalRunCampaign, WorldKnowledge, NativeNavigator, NativeGoToSkill, NativeBreakAction, NativeBucketAction, RoamingEdits, NativeEdits, PlayerRuntime, PlayerCommands, KindredPanel*; docs/evidence/F-25c4.md | Earned Nether-portal run from an empty inventory under the roaming-edit policy. Live seed 8675309 earns everything up to a diamond pickaxe with real crafting, smelting and respawns; native fixtures pass for obsidian from lava and for frame building and ignition driven by the goal. Remaining: one live run end to end to a lit portal, then two more seeds; cave combat is the main live failure. |
 | E-15 | In progress | Codex | PlayerRuntime, NativePlayerBody, ProgressionPolicy, NativeNetherGameTests, NativeExpeditionGameTests, progression unit tests; docs/evidence/E-15.md, docs/validation.md, release-manifest.json | Portal entry/return, restart conservation, hazard observation, observed-Blaze native-attack candidate and durable kill, owned-frame assembly, and scoped Nether-wart harvest pass native fixtures. Two serialized JDK 21 native suites pass 182/182 after E-14 traversal timing stabilization. Remaining: earned obsidian-to-portal journey, physical Blaze Rod acquisition, naturally sourced wart trip, F-25b qualification, ordinary-client and earned-playthrough gates. |
 | E-14 | Complete | Antigravity | companion-core (expedition), companion-server-adapter, NativeExpeditionGameTests | Waypoint tracking, distance bounding, multi-factor return triggers (nightfall, capacity, health, rations), breadcrumb backtracking via native_traverse, base arrival reset, and team landmark registry complete. |
 | E-13 | Complete | Antigravity | companion-server-adapter (skills, body, runtime), companion-core, NativeFarmGameTests | Hoe crafting/wear, tilling near water under edit policy, crop planting, mature harvest with replanting conservation, bed placement, night/thunderstorm sleep with spawn anchoring, shared team farm/shelter projects complete. |
@@ -26,7 +27,7 @@ Claim an open ID before implementation. Preserve IDs; add explicit children. Put
 | F-12a | Complete | Antigravity | companion-core (attention), PlayerRuntime | Attention-state policy, fair multi-player scheduler, and budgeted native candidate planning complete; parent F-12 remains open. |
 | F-05e | Complete | Antigravity | NativePlaceAction, NativeGatherAction, ItemMoves, NativePlayerBody | Stage A shared-action correctness complete; parent F-05 remains open. |
 | F-07 | Reopened | unclaimed | Native equipment conservation | F-07a conserved equipment complete; broader equipment transfers and death/inventory recovery remain open. |
-| F-25b | Incomplete | unclaimed | Native player lifecycle and qualification | Mechanics/registration/development lifecycle and short paid wait/eat/walk/equip/mine exist. Need broader skills/renewable admission, clients, death/respawn, crafting/combat and portals. |
+| F-25b | Incomplete | unclaimed | Native player lifecycle and qualification | Mechanics/registration/development lifecycle, short paid wait/eat/walk/equip/mine, pathfinding goto (F-10c), roaming break (E-03a) and death settlement with vanilla respawn (F-25b4) exist. Need renewable admission, ordinary clients, restart-while-dead, combat/portal qualification. |
 | F-25c | Foundations only | unclaimed | Durable identity/access/team migration and automatic progression | F-25c1 metadata, F-25c2 autonomy dispatch, and F-25c3 early survival progression complete. Full body, skills/accounting/recovery, teams and automatic progression remain open; no legacy conversion. |
 | F-11 | Partial pre-existing work | unclaimed | Scheduler, runtime limits and command | Timezone command now rejects safely; implement period transition, prepaid renewal and native enforcement. Preserve earlier accounting code. |
 | F-03/04/05/10 | Partial foundations | unclaimed | Setup, skill runner, ledger and movement | Native cancellation/traversal, permission integration and complete action reconciliation. |
@@ -42,10 +43,12 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [x] F-25b1 — Native survival body and fenced interaction foundation. Completed 2026-10-15; [bounded native evidence and remaining integration](evidence/F-25b1.md).
 - [x] F-25b2 — Native player-manager registration and prepared-save lifecycle. Completed 2026-10-15; [bounded evidence](evidence/F-25b2.md).
 - [x] F-25b3 — Native runtime creation, controls and save reconciliation. Completed 2026-10-15; [development lifecycle evidence and limits](evidence/F-25b3.md).
+- [x] F-25b4 — Native death settlement and vanilla respawn. Completed 2026-10-20; [evidence and limits](evidence/F-25b4.md).
 - [ ] F-25c — Durable identity/access/team migration and automatic local progression.
 - [x] F-25c1 — Durable native identities and administrative access foundation. Completed 2026-10-15; [evidence](evidence/F-25c1.md).
 - [x] F-25c2 — Bounded native autonomous candidate selection and skill dispatch. Completed 2026-10-16; [evidence](evidence/F-25c2.md).
 - [x] F-25c3 — Autonomous local survival, 3D approach traversal, and tool crafting progression. Completed 2026-10-17; [evidence](evidence/F-25c3.md).
+- [ ] F-25c4 — Earned Nether-portal campaign from an empty inventory. In progress; [evidence so far](evidence/F-25c4.md).
 - [x] FND-01 — Native entity registration, villager fallback, legacy creation and basic command foundation. Completed 2026-10-13; [evidence and limitations](validation.md), [adapter source](../companion-server-adapter/src/main/java/dev/kindred/fabric/PlayerRuntime.java). Live acceptance remains F-01.
 - [x] FND-02 — Exclusive leases, hard-stop revocation, epoch/revision fencing and cancellation settlement barrier. Completed 2026-10-13; [evidence](validation.md), [arbiter](../companion-core/src/main/java/dev/kindred/core/ActionArbiter.java). Full checkpointed skills remain F-04.
 - [x] FND-03 — Ordered async SQLite identity/profile persistence, optimistic revisions and migrations through schema 3 (schema 4 mannerism profiles added later the same day under E-32). Completed 2026-10-13; [evidence](validation.md), [store](../companion-persistence/src/main/java/dev/kindred/persistence/SqliteCompanionStore.java). No world-action ledger is claimed.
@@ -78,6 +81,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] F-10 — Move to marker, return home and bounded wait.
 - [x] F-10a — Bounded paid native flat walking. Completed 2026-10-15; [native traversal evidence](evidence/F-10a.md).
 - [x] F-10b — Bounded paid native 3D terrain traversal (elevation step-up and safe step-down). Completed 2026-10-17; [native 3D traversal evidence](evidence/F-10b.md).
+- [x] F-10c — Bounded pathfinding goto with native movement. Completed 2026-10-20; [evidence](evidence/F-10c.md).
 - [x] F-24 — Bounded block perception: chunk-section index with palette prefilter, exposure filter and a per-tick budget. Completed 2026-10-13; [evidence](evidence/F-24.md).
 - [ ] F-11 — Native schedule configuration and prepaid runtime enforcement.
 - [x] F-11a — Acknowledged prepaid activity permit boundary. Completed 2026-10-15; [pure boundary evidence](evidence/F-11a.md).
@@ -99,6 +103,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] E-01 — Fetch and deliver supplies.
 - [ ] E-02 — Harvest and replant crops; replant approved trees.
 - [ ] E-03 — Mine approved exposed materials.
+- [x] E-03a — Recorded roaming survival break under the server roaming-edit policy. Completed 2026-10-20; [evidence](evidence/E-03a.md).
 - [x] E-04 — Registry-based crafting and assigned-furnace smelting. Completed 2026-10-17; [evidence](evidence/E-04.md).
 - [x] E-04a — Native player 2x2 inventory crafting and crafting table creation. Completed 2026-10-16; [evidence](evidence/E-04a.md).
 - [x] E-04b — Crafting table placement and 3x3 workstation tool crafting. Completed 2026-10-17; [evidence](evidence/E-04b.md).
@@ -113,9 +118,10 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] E-08 — Build and repair approved blueprints.
 - [ ] E-09 — Player-shaped appearance and richer visible expression.
 - [ ] E-10 — Optional client profile, project and journal screens.
+- [x] E-10a — K-key AI player panel and roster skins. Completed 2026-10-20; [evidence](evidence/E-10a.md).
 - [x] E-11 — Shared projects and AI-player task assignments. Completed 2026-10-18; [evidence](evidence/E-11.md).
 - [x] E-12 — Personal milestone graph and standing progression policy. Completed 2026-10-18; [evidence](evidence/E-12.md).
-- [x] E-13 — Establish and maintain a home and farm. Completed 2026-10-18; [evidence](evidence/E-13.md).
+- [x] E-13 — Establish and maintain a home and farm. Completed 2026-10-18; [evidence](evidence/E-13.md). Corrected 2026-10-20: the original harvest created its drops directly; harvest now breaks the crop with vanilla mining and collects the loot-table drops, and `NativeFarmGameTests` pass on that path.
 - [x] E-14 — Bounded expeditions, exploration and return planning. Completed 2026-10-18; [evidence](evidence/E-14.md).
 - [ ] E-15 — Explicit Nether travel, resource trips and cross-dimension recovery.
 - [ ] E-16 — Equipment progression, upgrades and netherite goals.
@@ -228,6 +234,12 @@ Depends on F-10a/F-25b3. Extend paid native movement across short 3D terrain pro
 
 ### F-25c3 — Autonomous local survival, 3D approach traversal, and tool crafting progression
 Depends on F-25c2/F-10b/F-08/E-04b. Unify local candidate generation and autonomous execution through the PlayerDecisionLoop: (1) native log gathering with drop collection and tool wear, (2) autonomous 3D approach traversal (1..3 blocks, step-up/step-down) toward out-of-reach assigned patch targets, (3) multi-step crafting progression from gathered logs to planks, crafting table creation, legal block placement under EditPolicy, stick crafting, and 3x3 workstation wooden pickaxe crafting. Recheck permissions, claims, and durable ActionAdmission at every mutation. Stop cancels synchronously; default server policy blocks edits. Full general pathfinding, team assignments, and earned Dragon playthrough remain open.
+
+### F-25b4 — Native death settlement and vanilla respawn
+Depends on F-25b2/F-05/F-11b. When a native body dies, settle its in-flight work through the shared cancellation barrier while its inventory is still intact, let vanilla drop that inventory, and respawn the same identity through vanilla `PlayerManager.respawnPlayer` as a native body. Nothing is restored or recreated; team assignments are revoked; a failed respawn blocks for reconciliation. Acceptance: a native fixture kills a body mid-break and proves an unambiguous action record, the real drops at the death site, an empty respawned inventory, the same UUID at its spawn point and an unblocked established record; the full suite passes. Restart while dead, keepInventory and hardcore remain F-13.
+
+### F-25c4 — Earned Nether-portal campaign from an empty inventory
+Depends on F-25c3/F-10c/E-03a/E-04/F-25b4. One AI player with an empty inventory earns a lit Nether portal under the server roaming-edit policy, with no human task-by-task instruction or inference: logs, table and wooden pickaxe, cobblestone, stone tools, iron smelted in its own furnace, an iron pickaxe and bucket, diamonds for a diamond pickaxe, obsidian made from lava with poured water, flint from gravel, a 4×5 frame and ignition with its own flint and steel. It plans from what it has seen (exposed blocks; ores and fluids need line of sight), never from seeds or hidden world data, and every step is one bounded admitted skill through PlayerRuntime, the paid activity, the durable ledger and body checks. Acceptance: pure planner tests over the whole route; native fixtures for bucket pour/fill, guarded obsidian mining and portal frame placement; live runs on at least three seeds reaching a lit portal, with deaths recovered by respawn and no items created.
 
 ### E-07a — Autonomous health recovery, inventory food management, and environmental hazard retreat
 Depends on F-04a/F-10b/F-25c3/E-04. Health-aware autonomous survival: (1) elevate eating urgency when damaged or hungry, scaling up to Priority.URGENT (100.0) at critical health; (2) full 36-slot inventory scanning for eligible food with automatic swapping into hotbar; (3) environmental hazard detection (standing in or adjacent to fire, soul fire, lava, magma blocks, cactus, sweet berry bushes, powder snow) with immediate evasive retreat to safe solid ground via native movement; (4) single-take durable ActionAdmission and 100% item conservation; (5) synchronous stop cancellation and safety. Full hostile mob defense, tactical retreat from entities, and shelter qualification remain E-07b/c and parent E-07.

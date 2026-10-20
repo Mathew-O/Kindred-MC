@@ -1,6 +1,16 @@
 # AI-player development validation
 
-## Current regression — 19 October 2026
+## Current regression — 20 October 2026
+
+Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
+
+- `./gradlew build` passed (37 tasks); 336 JUnit results, zero failures or errors. `:companion-testkit:run` passed its contract checks and `:companion-testkit:runPersonalityDemo` printed all four preference scenarios.
+- `./gradlew :companion-server-adapter:runGametest` passed 187/187 in two consecutive runs. New since the 19 October gate: [F-25b4](evidence/F-25b4.md) death settlement and vanilla respawn, [F-10c](evidence/F-10c.md) pathfinding goto, [E-03a](evidence/E-03a.md) roaming break, and the two [F-25c4](evidence/F-25c4.md) Nether-portal goal fixtures (obsidian made from lava with poured water; frame placement and ignition from owned blocks).
+- Earlier runs of this suite on the same branch had one flaky night-barricade failure (an autonomous retreat loop beside a frozen zombie) that passed on rerun, and an intermittent obsidian-fixture failure: the poured water pushed the player off its mining spot. The latter was fixed by holding position while mining.
+- Development live runs (not a release gate): a dedicated server on seed 8675309 with `/tick sprint`. One AI player from an empty inventory earned wood, stone and iron tools, smelted iron in its own furnace, a bucket, three diamonds and a diamond pickaxe. It respawned after deaths and recovered its drops. A lit portal has not yet been reached live; see F-25c4 for the open steps.
+- JAR SHA-256: `468c42e1104382fba0907caf19a4aef15aeefe8d81d02006e735955f7ad83355` (`kindred-mc-0.1.0-SNAPSHOT.jar`).
+
+## Previous regression — 19 October 2026
 
 The earlier serialized JDK 21 gate passed 179/179 twice on its source version. On the current E-15 source, two consecutive serialized JDK 21 runs passed 182/182 after E-14 outward-expedition and night-return assertions were changed to wait for activity to settle. The runs include portal/restart, actual-arrival hazard observation, observed-Blaze durable native attack, owned-frame assembly and assigned wart harvest fixtures. See [E-15 stabilization](evidence/E-15-stabilization.md).
 

@@ -7,6 +7,25 @@ Use the pinned Java 21/Fabric stack and server JAR. Ordinary clients remain the 
 
 Use /aiplayer for command help; /companion redirects to the same tree. Creation, status, follow/stay/stop/resume, setup, movement, gather/deposit fixtures, personality and journal retain their existing restrictions. Commands do not imply planned skills are enabled.
 
+## Quick start: the K panel and the Nether-portal goal
+Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Vesp) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect and the server's World edits switch. Operator-only buttons need permission level 2. Commands behind the buttons:
+```text
+/aiplayer roster spawn Kindred       spawn a roster player beside you
+/aiplayer edits on|off               server-wide switch for AI block breaking and placing (default off)
+/aiplayer goal nether [bot]          earn a lit Nether portal from what the player owns
+/aiplayer goal none [bot]            stop pursuing the goal
+/aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
+/aiplayer native break <x y z> [bot] one recorded survival break with the best owned tool
+```
+World edits stay off until an operator turns them on; a fresh world has no `edits.properties`, which means off (decision D4). With edits on and no assigned work area, the player follows the roaming policy: it may break and place where a survival player could, never containers or block entities other than its own empty furnace, never in spawn protection, never the block under its own feet, and never a break that would let lava out (obsidian guarded by water is the one exception).
+
+The Nether goal is a local plan, not a script: logs, crafting table and wooden pickaxe, cobblestone and stone tools, iron smelted in its own furnace, a bucket, diamonds for a diamond pickaxe, obsidian made by pouring water over lava, flint from gravel, then a 4×5 frame lit with its own flint and steel. It sees only blocks it could see (exposed blocks nearby; ores and fluids also need a line of sight) and every step is one bounded skill through the same activity, ledger and body checks as the commands above. It takes the crafting table and an emptied furnace along when it leaves to gather. Progress shows in the panel and in the server log as `<name> goal at x y z: …`.
+
+When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn, then tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
+
+Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`).
+
+## Development native bodies
 Explicit development native bodies are available:
 ```text
 /aiplayer native create Ada
@@ -31,7 +50,7 @@ A resource-work patch is explicit bounded task scope: at most nine loaded chunks
 
 Mine executes a single scoped log break using owned hotbar contents, native survival timing, and tool wear. It requires explicit server edit policy opt-in, active paid activity, an unexpired resource claim, and a matching work patch. A matching native break receipt completes the action; drop collection is not claimed. Stop cancels digging immediately; conflicting world changes block for reconciliation without replay.
 
-Missing, foreign, dead, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous survival and portals remain disabled. Default /aiplayer create still uses the legacy body; no saves are converted. Full client/death/recovery qualification remains open.
+Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
 
 Legacy owner/mode/scope fields preserve access and saves; they are not the new product interface. Native creation has its development cap; team management and legacy migration remain unfinished. Combat/duels reject until qualified native skills use the arbiter. Timezone changes reject until safe accounting transitions exist; spent activity is not reset.
 
