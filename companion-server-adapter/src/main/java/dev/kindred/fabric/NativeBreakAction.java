@@ -78,8 +78,11 @@ final class NativeBreakAction extends NativeRecordedAction {
         body.faceBlock(target);
         if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
         resource = Registries.BLOCK.getId(state.getBlock()).toString();
-        toolSlot = bestTool(body, state);
-        if (toolSlot == -2) throw new IllegalArgumentException("No owned tool can harvest " + resource);
+        int tool = bestTool(body, state);
+        // A block that needs a tool still gives way to a bare hand, slowly and dropping nothing: only a clearing
+        // (nothing collected) may be dug like that, as a player punches through rock with no pickaxe left.
+        if (tool == -2 && collect) throw new IllegalArgumentException("No owned tool can harvest " + resource);
+        toolSlot = tool == -2 ? -1 : tool;
         hotbarSlot = toolSlot >= 0 && toolSlot < 9 ? toolSlot : toolSlot < 0 ? bareHandSlot(body) : swapDestination(body);
         priorReceipt = body.miningReceipt().map(NativePlayerBody.MiningReceipt::sequence).orElse(0L);
         claimKey = "block:" + worldId + ":" + world.getRegistryKey().getValue() + ":" + target.toShortString();

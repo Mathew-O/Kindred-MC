@@ -356,7 +356,7 @@ final class PortalRunCampaign {
         }
         boolean active = planned.isEmpty() || !passive(planned.get());
         if (active) {
-            if (relocate == null && stuckClock > STUCK_TICKS) startRelocating();
+            if (relocate == null && stuckClock > STUCK_TICKS) startRelocating(groundBelow(body.entity()));
             Optional<Task> away = relocateStep(body);
             // A step that keeps failing ends this move elsewhere, as it would end any plan step; the next stuck spell tries another heading.
             if (away.isPresent() && setAside.getOrDefault(away.get(), Long.MIN_VALUE) > tick) {
@@ -374,14 +374,17 @@ final class PortalRunCampaign {
         return planned;
     }
 
-    /** Safety, shelter and honest waiting: time spent on these is not time stuck. */
+    /**
+     * Safety, shelter and honest waiting: time spent on these is not time stuck. A sapling takes many minutes to
+     * grow, and on a sky island nothing else gives wood (sky-island run 1's watchdog fired while it waited).
+     */
     private static boolean passive(Task task) {
         String label = task.label();
         return label.equals("Wait for daylight") || label.equals("Rest to heal") || label.startsWith("Fight")
                 || label.startsWith("Take cover") || label.startsWith("Run from") || label.startsWith("Back off")
                 || label.startsWith("Close in") || label.startsWith("Seal the shelter") || label.startsWith("Dig in")
                 || label.startsWith("Place a torch") || label.startsWith("Get out of the water") || label.startsWith("Hole up")
-                || label.startsWith("Hold the passage");
+                || label.startsWith("Hold the passage") || label.endsWith(" by hand") || label.startsWith("Wait for the sapling");
     }
 
     /** A new stage, or a new best in a counter the route needs. */
@@ -403,11 +406,29 @@ final class PortalRunCampaign {
         return better;
     }
 
-    /** Pick somewhere else to work from: a new heading two dozen blocks off, and every third time home. */
-    private void startRelocating() {
+    /**
+     * Pick somewhere else to work from: a new heading two dozen blocks off, and every third time home. A sky island
+     * has no somewhere else, and a tunnel across it only spends the ground it stands on (sky-island run 1 dug its
+     * top layer away): there, everything set aside is looked at again from where the player stands.
+     */
+    private void startRelocating(boolean elsewhere) {
         stuckLevel++;
         stuckClock = 0;
         tunnelled.clear();
+        if (!elsewhere) {
+            blockedUntil.clear();
+            unreachableUntil.clear();
+            unreachableFrom.clear();
+            failures.clear();
+            approaches.clear();
+            repeatFailures.clear();
+            setAside.clear();
+            generatorTried.clear();
+            exploreStalls = 0;
+            KindredMod.LOGGER.info("Goal made no progress for {} ticks near {} with nowhere else to go; looking again at what was set aside (attempt {})",
+                    STUCK_TICKS, lastFeet.toShortString(), stuckLevel);
+            return;
+        }
         Direction heading = digDirection;
         for (int i = 0; i < stuckLevel; i++) heading = heading.rotateYClockwise();
         relocate = stuckLevel % 3 == 0 && home != null && home.getSquaredDistance(lastFeet) > 16 * 16 ? home : lastFeet.offset(heading, 24);
@@ -660,7 +681,11 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         if (s.craftingTables() == 0) {
-            var table = nearestWorkstation(player, Blocks.CRAFTING_TABLE, 6);
+            // Its own table, just used: whatever was set aside around here, this is in reach (live run 57 left one in
+            // a branch tunnel where an earlier target had failed, and later lost its last pickaxe with no table).
+            BlockPos feet = player.getBlockPos();
+            var table = knowledge.nearest(world, WorldKnowledge.Kind.CRAFTING_TABLE, feet,
+                    p -> p.getSquaredDistance(feet) <= 36 && ownWorkstations.contains(p.asLong()));
             if (table.isPresent() && breakableNow(body, table.get())) return Optional.of(breakAt(table.get(), "Pick up the crafting table"));
         }
         if (s.furnaces() == 0 && ItemMoves.count(player.getInventory(), Items.RAW_IRON) == 0) {
@@ -811,7 +836,7 @@ final class PortalRunCampaign {
                     .or(() -> cave(body, "coal", COAL_TARGET)).or(this::lookAround)
                     // Coal is scarce deep down: climb toward where it is common before tunnelling for it.
                     .or(() -> player.getBlockY() < COAL_TARGET - 12 ? climb(body, "Climb toward coal") : Optional.<Task>empty())
-                    .or(() -> tunnel(body, "Tunnel for coal"));
+                    .or(() -> groundBelow(player) ? tunnel(body, "Tunnel for coal") : Optional.<Task>empty());
             case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore")
                     .or(() -> cave(body, "iron", IRON_TARGET)).or(this::lookAround).or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
             case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
@@ -1049,6 +1074,17 @@ final class PortalRunCampaign {
         return NativeBreakAction.bestTool(body, player.getServerWorld().getBlockState(pos)) != -2;
     }
 
+    /** Rock a player with no pickaxe at all can still punch through: no drop, but a way out. */
+    private boolean handClearable(NativePlayerBody body, BlockPos pos) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isIn(ItemTags.PICKAXES)) return false;
+        BlockState state = world.getBlockState(pos);
+        if (state.getHardness(world, pos) > 3.0f || eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null;
+    }
+
     private boolean harvestable(NativePlayerBody body, BlockPos pos) {
         var state = body.entity().getServerWorld().getBlockState(pos);
         return NativeBreakAction.bestTool(body, state) != -2;
@@ -1086,9 +1122,12 @@ final class PortalRunCampaign {
             }
             var cover = obstruction(body, pos);
             if (cover.isPresent()) return Optional.of(breakAt(cover.get(), "Clear the way to " + what + " at " + pos.toShortString()));
-            // Plans are re-evaluated often; only finished walks count as approaches.
-            if (approaches.getOrDefault(pos.asLong(), 0) < 2) {
-                return Optional.of(go(pos, 3.5, false, "Walk to " + what + " at " + pos.toShortString()));
+            // Plans are re-evaluated often; only finished walks count as approaches. A walk that ended in reach without
+            // a view of it (ore it cannot harvest yet in the way) closes in square beside it the second time.
+            int tries = approaches.getOrDefault(pos.asLong(), 0);
+            if (tries < 2) {
+                double range = tries == 0 ? 3.5 : pos.getY() > feet.getY() ? 1.5 : 1.0;
+                return Optional.of(go(pos, range, false, "Walk to " + what + " at " + pos.toShortString()));
             }
             approaches.remove(pos.asLong());
             avoid(pos, true, lastTick);
@@ -1140,9 +1179,13 @@ final class PortalRunCampaign {
         return Optional.of(first);
     }
 
-    /** Underground, search by tunnelling along the current level; on the surface, walk out and look. */
+    /**
+     * Underground, search by tunnelling along the current level; on the surface, walk out and look. Over the void
+     * there is nothing to tunnel toward: a cut through a sky island only spends it.
+     */
     private Optional<Task> search(NativePlayerBody body, String what) {
         var player = body.entity();
+        if (!groundBelow(player)) return explore(player, what);
         if (underground(player)) return tunnel(body, "Tunnel for " + what).or(() -> explore(body, what));
         return explore(body, what).or(() -> tunnel(body, "Tunnel for " + what));
     }
@@ -1195,6 +1238,8 @@ final class PortalRunCampaign {
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
+        // Over the void there is nothing below to reach: digging would only spend the island.
+        if (!groundBelow(body.entity())) return Optional.empty();
         int y = body.entity().getBlockY();
         // Water or lava under every way down (an aquifer, a lava lake): tunnel on until the ground below is solid.
         if (y > Math.min(top, target + 3)) {
@@ -1270,6 +1315,9 @@ final class PortalRunCampaign {
                 if (refused || passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                // Its last pickaxe gone below ground: punch the way up, slowly, as a player would (live run 57 broke
+                // its last one climbing out and stood at Y 54 for good).
+                if (handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
                 refused = true;
             }
             if (!refused) return Optional.of(go(landing, 0.4, false, label + ": step up"));

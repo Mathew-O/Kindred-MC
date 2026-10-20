@@ -1283,6 +1283,99 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Sealed in rock with no pickaxe left and no wood, as live run 57 ended up after its last stone pickaxe broke on
+     * the way up: the goal punches its way up toward the surface by hand, slowly, rather than standing there.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 2400)
+    public void goalPunchesItsWayUpWithNoPickaxeLeft(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] start = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Puncher"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = start[0] = f.player().getBlockPos().toImmutable();
+                    for (int dx = -3; dx <= 3; dx++) for (int dz = -3; dz <= 3; dz++) for (int dy = -1; dy <= 7; dy++) {
+                        world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
+                    }
+                    world.setBlockState(p, Blocks.AIR.getDefaultState());
+                    world.setBlockState(p.up(), Blocks.AIR.getDefaultState());
+                    world.setTimeOfDay(1000);
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(2, new ItemStack(Items.STICK, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.player().getBlockY() >= start[0].getY() + 2,
+                            "Two blocks up by hand: " + f.player().getBlockPos().toShortString() + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.COBBLESTONE) == 24, "Rock punched out drops nothing: " + ItemMoves.count(inventory, Items.COBBLESTONE));
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * The bundled sky island's outcrop (docs/worlds/sky-island): eighteen stone with iron ore on its faces, so seen
+     * from beside it the middle of a stone block is often behind ore a wooden pickaxe cannot take. The goal still
+     * mines its way in, makes a stone pickaxe, then takes the iron, rather than writing the outcrop off and leaving
+     * to look for stone across the void (live sky-island run 1).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyOutcrop", tickLimit = 2400)
+    public void goalMinesTheIslandOutcropPastTheOreOnItsFaces(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] center = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Islander"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos c = center[0] = skyIsland(context, f.player());
+                    for (int x = 2; x <= 4; x++) for (int y = 0; y <= 1; y++) for (int z = 1; z <= 4; z++) world.setBlockState(c.add(x, y, z), Blocks.STONE.getDefaultState());
+                    for (int[] ore : new int[][] {{2, 0, 1}, {4, 1, 1}, {2, 1, 3}, {4, 0, 4}, {3, 1, 4}, {4, 0, 2}}) {
+                        world.setBlockState(c.add(ore[0], ore[1], ore[2]), Blocks.IRON_ORE.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(c.getX() - 2.5, c.getY(), c.getZ() + 2.5, player.getYaw(), player.getPitch());
+                    var inventory = player.getInventory();
+                    inventory.setStack(0, new ItemStack(Items.WOODEN_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(2, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(3, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) >= 3,
+                            "Iron from the outcrop after a stone pickaxe from its stone: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive(), "Alive");
+                    context.assertTrue(player.getBlockY() >= center[0].getY() - 1, "Still on the island: " + player.getBlockPos().toShortString());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A sky island with no tree left, a sapling in hand and nothing else: the goal plants the sapling on the grass
      * and waits by it for wood. The fixture then grows it, as time would, and the goal cuts the tree.
      */

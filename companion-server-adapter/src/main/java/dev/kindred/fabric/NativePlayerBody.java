@@ -1466,15 +1466,37 @@ final class NativePlayerBody implements BodyAdapter {
                 || !player.canInteractWithBlockAt(target, 0) || !world.canPlayerModifyAt(player, target)
                 || world.getBlockState(target).isAir()
                 || world.getBlockState(target).getHardness(world, target) < 0) return false;
-        BlockHitResult hit = world.raycast(new RaycastContext(player.getEyePos(), Vec3d.ofCenter(target),
-                RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
+        return aimPoint(target) != null;
+    }
+
+    /**
+     * Where the eyes can see {@code target}: its centre, or else the middle of a face turned toward the player, as
+     * a player aims at whatever part of a block shows. A block seen past a corner, its centre hidden behind a
+     * neighbour, is still in view (live sky-island run 1 wrote off a whole outcrop it stood diagonally beside).
+     */
+    private Vec3d aimPoint(BlockPos target) {
+        ServerWorld world = player.getServerWorld();
+        Vec3d eye = player.getEyePos();
+        Vec3d center = Vec3d.ofCenter(target);
+        if (sees(world, eye, center, target)) return center;
+        for (Direction face : Direction.values()) {
+            Vec3d point = center.add(face.getOffsetX() * 0.45, face.getOffsetY() * 0.45, face.getOffsetZ() * 0.45);
+            if (point.subtract(eye).dotProduct(Vec3d.of(face.getVector())) >= 0) continue; // Faces away from the eyes.
+            if (sees(world, eye, point, target)) return point;
+        }
+        return null;
+    }
+
+    private boolean sees(ServerWorld world, Vec3d eye, Vec3d point, BlockPos target) {
+        BlockHitResult hit = world.raycast(new RaycastContext(eye, point, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
         return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(target);
     }
 
     void faceBlock(BlockPos target) {
         requireThread();
         Vec3d eye = player.getEyePos();
-        Vec3d center = Vec3d.ofCenter(target);
+        Vec3d aim = player.getServerWorld().isChunkLoaded(target) ? aimPoint(target) : null;
+        Vec3d center = aim != null ? aim : Vec3d.ofCenter(target);
         Vec3d delta = center.subtract(eye);
         double horiz = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
         float pitch = (float) -Math.toDegrees(Math.atan2(delta.y, horiz));
