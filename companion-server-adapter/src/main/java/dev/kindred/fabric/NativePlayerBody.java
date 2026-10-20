@@ -1067,6 +1067,20 @@ final class NativePlayerBody implements BodyAdapter {
             }
         }
 
+        // Ore matched to fuel: with too little fuel for the whole stack, load only what the fuel at hand (in the
+        // furnace and in the inventory) can smelt, so the rest stays with the player rather than in a cold furnace.
+        if (chosenInputSlot >= 0 && inputToInsert > 0 && countArg == null) {
+            int fuelTicks = currentFuel.isEmpty() ? 0 : currentFuel.getCount() * approximateFuelBurnTicks(currentFuel.getItem());
+            if (chosenFuelSlot >= 0) {
+                var playerFuel = player.getInventory().getStack(chosenFuelSlot);
+                fuelTicks += Math.min(playerFuel.getCount(), Math.max(0, fuelToInsert)) * approximateFuelBurnTicks(playerFuel.getItem());
+            }
+            // Fuel still burning in a lit furnace is not counted: better one more trip than ore left in a cold furnace.
+            int smeltable = fuelTicks / 200 - currentInput.getCount();
+            inputToInsert = Math.max(0, Math.min(inputToInsert, smeltable));
+            if (inputToInsert == 0) chosenInputSlot = -1;
+        }
+
         if (chosenFuelSlot >= 0 && fuelToInsert > 0) {
             var playerFuel = player.getInventory().getStack(chosenFuelSlot);
             int burnTicksPerUnit = approximateFuelBurnTicks(playerFuel.getItem());

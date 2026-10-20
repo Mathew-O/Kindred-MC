@@ -355,9 +355,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
-     * One coal smelts eight of fourteen raw iron and the furnace goes cold with six still in it. The goal does not
-     * wait by a cold furnace: when it next has coal, it goes back and adds it as fuel, and the rest is smelted.
-     * Obsidian walls keep its search for coal inside the plot.
+     * Fuel and ore matched: with fourteen raw iron and one coal (eight items' worth), the goal loads eight and keeps
+     * six. Then, as if a load had been left in a cold furnace, the six are put in the furnace with no fuel: the
+     * goal does not wait by it, and when it next holds coal it goes back and adds it as fuel. Obsidian walls keep
+     * its search for coal inside the plot.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 6000)
     public void goalRefuelsAFurnaceThatWentColdWithIronStillInIt(TestContext context) {
@@ -395,13 +396,24 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     context.assertTrue(furnace[0] != null, "It placed its own furnace");
                 })
                 .createAndAdd(() -> {
+                    var block = (net.minecraft.block.entity.AbstractFurnaceBlockEntity) context.getWorld().getBlockEntity(furnace[0]);
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(block.getStack(0).getCount() + block.getStack(2).getCount() + ItemMoves.count(inventory, Items.IRON_INGOT) == 9
+                                    && ItemMoves.count(inventory, Items.RAW_IRON) == 6 && ItemMoves.count(inventory, Items.COAL) == 0,
+                            "One coal took eight raw iron and the other six stayed in the inventory: furnace " + block.getStack(0)
+                                    + ", raw iron held " + ItemMoves.count(inventory, Items.RAW_IRON));
+                })
+                .createAndAdd(() -> {
                     var world = context.getWorld();
                     var block = (net.minecraft.block.entity.AbstractFurnaceBlockEntity) world.getBlockEntity(furnace[0]);
                     boolean lit = world.getBlockState(furnace[0]).get(net.minecraft.block.AbstractFurnaceBlock.LIT);
-                    context.assertTrue(block.getStack(0).isOf(Items.RAW_IRON) && block.getStack(0).getCount() == 6 && block.getStack(1).isEmpty() && !lit,
-                            "The one coal ran out with six raw iron left: " + block.getStack(0) + ", fuel " + block.getStack(1) + ", lit " + lit);
-                    // The coal it would have found next.
-                    f.player().getInventory().insertStack(new ItemStack(Items.COAL));
+                    context.assertTrue(block.getStack(0).isEmpty() && block.getStack(2).isEmpty() && !lit, "The eight are smelted and taken");
+                    // A load left in a cold furnace: its own six raw iron moved into the input, and the coal it would find next.
+                    var inventory = f.player().getInventory();
+                    for (int slot = 0; slot < 36; slot++) {
+                        if (inventory.getStack(slot).isOf(Items.RAW_IRON)) block.setStack(0, inventory.removeStack(slot));
+                    }
+                    inventory.insertStack(new ItemStack(Items.COAL));
                 })
                 .createAndAdd(() -> {
                     var block = (net.minecraft.block.entity.AbstractFurnaceBlockEntity) context.getWorld().getBlockEntity(furnace[0]);
