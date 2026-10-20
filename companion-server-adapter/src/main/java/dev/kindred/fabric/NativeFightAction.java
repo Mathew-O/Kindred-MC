@@ -36,6 +36,8 @@ final class NativeFightAction extends NativeRecordedAction {
     /** A hissing creeper this close is run from; it stops its fuse once the player is beyond seven blocks. */
     private static final double CREEPER_FLEE = 7.5;
     private static final int UNSAFE_TICKS = 40;
+    /** How long the shield stays up after a shooter stops drawing: long enough for the arrow to arrive. */
+    private static final int SHOT_GUARD_TICKS = 12;
 
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -47,7 +49,7 @@ final class NativeFightAction extends NativeRecordedAction {
     private ActionAdmission admission;
     private InventoryEvidence before;
     private boolean halted, unknown, fighting;
-    private int ticks, unseen, hits, unsafe;
+    private int ticks, unseen, hits, unsafe, guardTicks;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
@@ -127,8 +129,10 @@ final class NativeFightAction extends NativeRecordedAction {
         } else if (distance > STRIKE_RANGE || !visible) {
             if (navigator.safeHeading(player, yaw)) {
                 unsafe = 0;
-                // Closing in on a shooter with a shield up, as players do: arrows stop at the shield, not the player.
-                guard(target instanceof RangedAttackMob && visible);
+                // Closing in on a shooter, the shield goes up while it draws its bow and a moment after, as players
+                // do: arrows stop at the shield, and the rest of the way is covered at full pace.
+                if (target instanceof RangedAttackMob && visible && target.isUsingItem()) guardTicks = SHOT_GUARD_TICKS;
+                guard(guardTicks-- > 0);
                 boolean climb = player.isOnGround() && (player.horizontalCollision || target.getY() > player.getY() + 0.6 && Math.hypot(dx, dz) < 1.5);
                 moved = body.move(issuedLease, 1.0f, 0, climb || player.isTouchingWater(), false, yaw);
             } else {

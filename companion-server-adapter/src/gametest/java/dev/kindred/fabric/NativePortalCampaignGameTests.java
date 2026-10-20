@@ -238,6 +238,54 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Badly hurt, with a shield, and a creeper already hissing three blocks away: running would not get clear in
+     * time, so the goal faces it behind the shield, and the player lives through the blast.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalFacesAHissingCreeperBehindItsShieldEvenWhenBadlyHurt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.CreeperEntity[] creeper = new net.minecraft.entity.mob.CreeperEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 6; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Bruised");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(10);
+                    player.getHungerManager().setSaturationLevel(0);
+                    creeper[0] = net.minecraft.entity.EntityType.CREEPER.create(context.getWorld());
+                    creeper[0].refreshPositionAndAngles(player.getX() + 3, player.getY(), player.getZ(), 0, 0);
+                    if (!context.getWorld().isSpaceEmpty(creeper[0])) creeper[0].refreshPositionAndAngles(player.getX() - 3, player.getY(), player.getZ(), 0, 0);
+                    creeper[0].setPersistent();
+                    context.getWorld().spawnEntity(creeper[0]);
+                    creeper[0].setTarget(player);
+                    creeper[0].ignite();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertFalse(creeper[0].isAlive(), "The creeper went off"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive(), "The raised shield took the blast: health " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A creeper lights up close by while the player is fighting something else: the fight is not cut short, and it
      * turns its raised shield to the creeper until the blast is over.
      */
@@ -959,7 +1007,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     }
                     context.assertTrue(portal == 6 && frame >= 10, "A cast frame stands lit: " + portal + " portal blocks, " + frame
                             + " obsidian; " + f.runtime.nativeActivityStatus(Actor.console(), f.id) + "; at " + f.player().getBlockPos()
-                            + " from " + feet[0] + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                            + " from " + feet[0] + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress() + "; " + pool(context, feet[0]));
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
@@ -975,6 +1023,21 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** What became of the cast fixture's lava pool, for a failure message. */
+    private static String pool(TestContext context, BlockPos p) {
+        int sources = 0, flowing = 0, obsidian = 0, stone = 0, air = 0;
+        for (int x = -3; x <= 3; x++) for (int z = 3; z <= 4; z++) {
+            BlockPos at = p.add(x, -1, z);
+            var fluid = context.getWorld().getFluidState(at);
+            var state = context.getWorld().getBlockState(at);
+            if (fluid.isIn(FluidTags.LAVA)) { if (fluid.isStill()) sources++; else flowing++; }
+            else if (state.isOf(Blocks.OBSIDIAN)) obsidian++;
+            else if (state.isAir()) air++;
+            else stone++;
+        }
+        return "pool: " + sources + " lava sources, " + flowing + " flowing, " + obsidian + " obsidian, " + stone + " other blocks, " + air + " empty";
     }
 
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */

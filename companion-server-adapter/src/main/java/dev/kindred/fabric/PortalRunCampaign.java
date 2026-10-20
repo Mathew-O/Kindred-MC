@@ -179,8 +179,11 @@ final class PortalRunCampaign {
             setAside.put(task, tick + 1200);
         }
         BlockPos pos = position(task.args());
+        // A lava fill refused from where the player stood is first tried again from closer up; the source is set
+        // aside only when that fails too, or a pool would run out of sources it will use.
+        boolean firstRefusedFill = task.label().startsWith("Cast: fill") && pos != null && fillRefusals.merge(pos.asLong(), 1, Integer::sum) < 2;
         // An unreachable trunk or ore column usually stays unreachable; skip its neighbours too.
-        if (pos != null) avoid(pos, "native_goto".equals(task.skill()) && task.label().startsWith("Walk to"), tick);
+        if (pos != null && !firstRefusedFill) avoid(pos, "native_goto".equals(task.skill()) && task.label().startsWith("Walk to"), tick);
         if ("native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploreFailures++;
             exploreHeading = null;
@@ -318,6 +321,11 @@ final class PortalRunCampaign {
         if (active) {
             if (relocate == null && stuckClock > STUCK_TICKS) startRelocating();
             Optional<Task> away = relocateStep(body);
+            // A step that keeps failing ends this move elsewhere, as it would end any plan step; the next stuck spell tries another heading.
+            if (away.isPresent() && setAside.getOrDefault(away.get(), Long.MIN_VALUE) > tick) {
+                relocate = null;
+                away = Optional.empty();
+            }
             if (away.isPresent()) {
                 progress = stageLabel(stage) + ": no progress here for a while - " + away.get().label();
                 lastActive = true;
@@ -1497,6 +1505,8 @@ final class PortalRunCampaign {
     private BlockPos castLava;
     /** Where the player stood when a cast was last refused or failed. */
     private BlockPos castFailedFrom;
+    /** Lava fills refused per source; the first refusal leads to a closer try, not to setting the source aside. */
+    private final Map<Long, Integer> fillRefusals = new HashMap<>();
     /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
     private final Set<Long> castFailedStands = new java.util.HashSet<>();
 
@@ -1512,7 +1522,8 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         var inventory = player.getInventory();
         BlockPos feet = player.getBlockPos();
-        if (castLava != null && !(world.getFluidState(castLava).isIn(FluidTags.LAVA) && world.getFluidState(castLava).isStill())) castLava = null;
+        // A source that was taken, or that could not be reached or filled from here (set aside), gives way to the next.
+        if (castLava != null && (blocked(castLava) || !(world.getFluidState(castLava).isIn(FluidTags.LAVA) && world.getFluidState(castLava).isStill()))) castLava = null;
         if (castLava == null) castLava = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, feet, p -> !blocked(p)).orElse(null);
         if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) {
             if (castLava == null) {
@@ -1667,6 +1678,20 @@ final class PortalRunCampaign {
         return site.origin().asLong() * 4 + site.toward().getHorizontal();
     }
 
+    /**
+     * Lava within three blocks of the frame, the row in front of it or the stand: water poured while casting would run
+     * into it and harden the pool, and the player works with its back to it. Players build away from lava too.
+     */
+    private static boolean lavaNear(ServerWorld world, PortalSite site) {
+        BlockPos a = site.at(0, 0), b = site.at(3, 0), c = site.stand();
+        int minX = Math.min(Math.min(a.getX(), b.getX()), c.getX()) - 3, maxX = Math.max(Math.max(a.getX(), b.getX()), c.getX()) + 3;
+        int minZ = Math.min(Math.min(a.getZ(), b.getZ()), c.getZ()) - 3, maxZ = Math.max(Math.max(a.getZ(), b.getZ()), c.getZ()) + 3;
+        for (BlockPos pos : BlockPos.iterate(minX, a.getY() - 2, minZ, maxX, a.getY() + 5, maxZ)) {
+            if (world.getFluidState(pos).isIn(FluidTags.LAVA)) return true;
+        }
+        return false;
+    }
+
     private static Optional<PortalSite> portalSiteFrom(ServerWorld world, NativeNavigator navigator, BlockPos stand,
                                                       Predicate<PortalSite> wanted) {
         Vec3d eye = Vec3d.ofBottomCenter(stand).add(0, 1.62, 0);
@@ -1692,7 +1717,7 @@ final class PortalRunCampaign {
                     }
                 }
                 PortalSite site = new PortalSite(origin.toImmutable(), along, facing, stand.toImmutable());
-                if (ok && wanted.test(site)) return Optional.of(site);
+                if (ok && wanted.test(site) && !lavaNear(world, site)) return Optional.of(site);
             }
         }
         return Optional.empty();
@@ -1764,8 +1789,11 @@ final class PortalRunCampaign {
             foe = creeper.getUuid(); // A fight that fails leaves it alone for a while, as with any foe.
             foeUntil = lastTick;
             Task strike = strike(player, creeper, "Fight creeper");
-            // A shield in the off hand stops the blast, so a shielded player takes a creeper on with less health to spare.
-            float nerve = player.getOffHandStack().isOf(Items.SHIELD) ? 6 : 10;
+            // A shield in the off hand stops the blast, so a shielded player takes a creeper on with less health to
+            // spare, and faces one whose fuse is already burning close by rather than run, however hurt it is.
+            boolean shield = player.getOffHandStack().isOf(Items.SHIELD);
+            if (shield && creeper.getFuseSpeed() > 0 && player.distanceTo(creeper) < 6) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+            float nerve = shield ? 6 : 10;
             if (strike.args().containsKey("slot") && player.getHealth() >= nerve) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
             if (lastTick >= runFailedUntil) return Optional.of(runFrom(player, creeper));
             // Nowhere to run (a pit, a dead end): wall it off, and failing that, knock it back with whatever is in hand.
@@ -1931,8 +1959,10 @@ final class PortalRunCampaign {
                 || running.label().startsWith("Take cover")) return null;
         if (running.label().startsWith("Fight") || running.label().startsWith("Close in")) {
             // Worn down mid-fight: break it off, as a player does, so backing off or taking cover can take over.
-            // The same line below which the goal never starts a fight.
-            return player.getHealth() < 6 ? "Badly hurt; break off the fight" : null;
+            // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:
+            // running from its blast is worse than taking it on the shield.
+            boolean shielded = running.label().equals("Fight creeper") && player.getOffHandStack().isOf(Items.SHIELD);
+            return player.getHealth() < 6 && !shielded ? "Badly hurt; break off the fight" : null;
         }
         return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;

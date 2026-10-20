@@ -192,7 +192,17 @@ final class WorldKnowledge {
         Vec3d eye = player.getEyePos();
         Vec3d center = Vec3d.ofCenter(pos);
         if (eye.squaredDistanceTo(center) > (HORIZONTAL_RADIUS + 8) * (HORIZONTAL_RADIUS + 8)) return false;
-        BlockHitResult hit = player.getServerWorld().raycast(new RaycastContext(eye, center, RaycastContext.ShapeType.COLLIDER,
+        if (sees(player, eye, center, pos)) return true;
+        // A pool set into the floor shows only its surface: from a few blocks away the ray to its centre meets the
+        // floor's edge, while a player plainly sees the lava or water. Look at the surface too.
+        var fluid = player.getServerWorld().getFluidState(pos);
+        if (fluid.isEmpty()) return false;
+        float height = fluid.getHeight(player.getServerWorld(), pos);
+        return sees(player, eye, new Vec3d(pos.getX() + 0.5, pos.getY() + Math.max(0.1, height - 0.05), pos.getZ() + 0.5), pos);
+    }
+
+    private static boolean sees(ServerPlayerEntity player, Vec3d eye, Vec3d point, BlockPos pos) {
+        BlockHitResult hit = player.getServerWorld().raycast(new RaycastContext(eye, point, RaycastContext.ShapeType.COLLIDER,
                 RaycastContext.FluidHandling.ANY, player));
         return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos);
     }
