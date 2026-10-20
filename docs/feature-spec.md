@@ -10,6 +10,20 @@ First qualify the native player body (F-25b), then integrate local survival/reci
 
 Compatibility names, save fields and old command aliases are not instructions to rebuild the old concept. Historical checked foundations establish only their dated bounded evidence; none proves current player-body mechanics or a full release.
 
+## Game modes (direction recorded 2026-10-20)
+The owner set four core modes. Each is a parent feature below (M-01..M-04) on a shared mode and match framework (M-00) and schematic library (M-05). Until the proposed decisions D6–D8 are confirmed, the player contract and AGENTS.md still describe the cooperative survival product; revise them in the same change that confirms the decisions.
+- **Co-op Survival (M-01):** progress at the human's natural pace; never seek out a boss fight, but be ready when the human is; bases, farms, enchanting, and builds planned from schematics with every block earned.
+- **Manhunt (M-02):** runner or hunter, between humans and AI players, including two or more AIs; the hunter gets iron-level gear and then hunts, going further only when it is opportune; the runner speedruns while evading.
+- **Speedrun (M-03):** random seed; any% glitchless with the techniques the speedrunning community accepts.
+- **Builder (M-04):** a creative build 1v1 on a random theme in a generated arena, with the presentation of a minigame server.
+
+Recommended order: finish the survival core (F-25c4, then E-07 combat and caves, E-15 portal travel); then build M-00; M-04 can proceed in parallel because creative play does not depend on survival. After that come M-03, M-02 (built on the M-03 runner plus PvP), and the remainder of M-01 (schematic builds, enchanting, farms).
+
+Proposed decisions (not yet confirmed):
+- **D6:** A mode rule may hand out an item only when it is announced and identical for human and AI participants, such as Manhunt's tracking compass. Survival modes have no other exception to earned progress.
+- **D7:** An AI player attacks a human only inside a match that human joined; outside matches, player attacks stay refused.
+- **D8:** Schematics come from files the owner or operator supplies, or from single links they provide, used within each site's terms and the creator's license, with attribution kept. No bulk scraping.
+
 ## Work protocol
 Claim an open ID before implementation. Preserve IDs; add explicit children. Put a LIVE EDIT marker first while editing contracts; remove it when finished. Check all acceptance criteria before marking done, with date/evidence and affected user docs in the same change. Reopen invalid evidence; keep blocked work open. Native outcomes require native evidence; live scenarios require real clients/runs. Use [the evidence template](evidence/README.md). Update the manifest only with supported capabilities/qualified gates.
 
@@ -128,6 +142,12 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] E-17 — Integrated personal progression and recovery qualification.
 - [ ] E-39 — Authorized team End expedition and Dragon skills.
 - [ ] E-40 — Authentic three-player playthrough qualification.
+- [ ] M-00 — Game-mode and match framework: mode selection, per-mode rules, roles, lifecycle and HUD.
+- [ ] M-01 — Co-op Survival mode.
+- [ ] M-02 — Manhunt mode.
+- [ ] M-03 — Speedrun mode (random-seed any% glitchless).
+- [ ] M-04 — Builder mode (creative build battle).
+- [ ] M-05 — Schematic library: import, bill of materials, placement order and attribution.
 - [ ] E-18 — Saved maturity presets, expression controls and command/profile editing.
 - [ ] E-19 — Recipient preferences, audience limits and reply invalidation.
 - [ ] E-20 — Contextual dialogue styles and native delivery qualification.
@@ -335,9 +355,21 @@ Depends on E-04b, F-25c3, and F-08b. Extend native mining to stone and pickaxe-m
 ### E-04d — Assigned-furnace smelting and fuel accounting
 Depends on E-04c, F-05a/b, and F-07a. Interact with reachable placed furnace workstations (`Blocks.FURNACE`, `AbstractFurnaceBlockEntity`) to authentically smelt ingredients into products using owned fuel and smelting inputs. Require paid activity authority, server edit policy (`EditPolicy.Kind.PLACE` / workstation interaction), and durable `ActionAdmission` (`native_smelt`) tracking. Support: (1) fuel insertion (coal, charcoal, wood planks, logs) into furnace fuel slot, (2) smeltable ingredient insertion (raw iron/copper/gold, cobblestone to stone, food/meat, logs to charcoal) into furnace input slot, (3) authentic smelting progress through vanilla furnace entity ticking, and (4) extraction of finished output items into player inventory. Enforce strict 100% item and fuel conservation (exact counts transferred, fuel burn times accounted, zero duplication, zero item deletion). Autonomous progression evaluates placed furnace proximity, owned fuel, unsmelted resources, and finished outputs to smelt charcoal/iron/food and collect products. Test fuel loading, ingredient insertion, output extraction, item conservation, and autonomous smelting progression in native GameTests.
 
+## Game-mode cards
+### M-00 — Game-mode and match framework
+Depends on F-25b/F-25c. Owner/operator selects a mode per world or match from the K panel or `/aiplayer mode`; the existing playstyle profile maps onto it rather than running beside it. A mode declares its rules: survival or creative, edit policy, PvP among opted-in participants (D7), announced mode items (D6), respawn rules and win conditions. Matches have a lobby, roles, countdown, timer, end and results. Presentation: titles, boss bar, action bar, scoreboard, sounds and particles, visible without the client mod, with richer screens when it is installed. Acceptance: native fixtures for every lifecycle transition and rule; live runs with ordinary clients; stopping a match revokes all match-granted rules synchronously.
 
+### M-01 — Co-op Survival mode
+Depends on M-00, F-25c4, E-07, E-13, E-16, E-39, M-05. Progress tracks the human: the AI player does not run ahead of the group's milestones, prepares gear and supplies for a boss but starts one only when a human does, and then fights alongside. It establishes a base, farms and enchanting with earned materials. It builds chosen schematics by computing the bill of materials, gathering or crafting every block, and placing them in a buildable order. Acceptance: live sessions in which a human sets the pace, nothing is granted, and a schematic build completes from earned blocks.
 
+### M-02 — Manhunt mode
+Depends on M-00, M-03 and native PvP combat. Roles: runner or hunter, with humans and AI players in any mix, including AI against AI. Hunters track the runner with the announced compass rule (D6), the same for humans and AIs, pointing at the runner's last portal across dimensions. The hunter doctrine is iron gear and a shield, then pursuit, going further only when it is opportune. The runner doctrine is the M-03 route with evasion: keep distance, block pursuit, and fight only when cornered. Win conditions are dragon dead or runner dead; hunters respawn. Acceptance: matches of AI against human and AI against AI that run to a result with no shortcuts.
 
+### M-03 — Speedrun mode
+Depends on F-25c4, E-15, Nether and End skills, E-39. A random seed, with no seed knowledge or locator (the seed locator was removed). Any% glitchless along community-accepted routes: lava-pool or ruined-portal entry, bastion bartering for pearls, fortress blaze rods, eye-of-ender triangulation, and bed or one-cycle dragon kills. An in-game timer and splits. Acceptance: completed runs on several random seeds with recorded times and no rule-breaking actions.
 
+### M-04 — Builder mode
+Depends on M-00, E-29 and M-05; optionally F-19 for theme interpretation. A generated arena with a lobby, protected plots, and spectator and voting paths. Each round has a random theme announced with a title, a timed build in creative mode (blocks are free in this mode only), voting by human and AI players, then results with a podium and fireworks. AI builders turn the theme into a structured build plan, using the local design grammar, reference schematics from M-05, and optionally the model as planner through companion-model (data plans only, no generated code), then place it block by block within the time limit. Acceptance: complete 1v1 rounds against a human and between AIs, with ordinary-client presentation.
 
-
+### M-05 — Schematic library
+Depends on E-08. Import Sponge `.schem`, Litematica `.litematic` and vanilla structure `.nbt` files that the owner or operator supplies (D8). Store the source link, creator and license with each import. Compute a bill of materials and a buildable placement order (supports first, gravity blocks last), and report blocks that survival cannot obtain. Acceptance: pure parser and ordering tests; a native fixture that builds a small imported structure from owned blocks.
