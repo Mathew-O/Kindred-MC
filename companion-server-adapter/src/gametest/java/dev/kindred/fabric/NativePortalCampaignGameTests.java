@@ -238,6 +238,60 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A creeper lights up close by while the player is fighting something else: the fight is not cut short, and it
+     * turns its raised shield to the creeper until the blast is over.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalShieldsAgainstACreeperThatLightsUpMidFight(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.HuskEntity[] husk = new net.minecraft.entity.mob.HuskEntity[1];
+        net.minecraft.entity.mob.CreeperEntity[] creeper = new net.minecraft.entity.mob.CreeperEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 6; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Steady");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.WOODEN_SWORD)); // A long fight, so the creeper comes mid-way.
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
+                    player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
+                    husk[0] = context.spawnMob(net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    husk[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    context.assertTrue("native_fight".equals(bot.task()) && bot.goalProgress().contains("Fight husk"), "It fights the husk");
+                    // A creeper two blocks off the player, already hissing.
+                    var player = f.player();
+                    creeper[0] = net.minecraft.entity.EntityType.CREEPER.create(context.getWorld());
+                    creeper[0].refreshPositionAndAngles(player.getX() + 2, player.getY(), player.getZ(), 0, 0);
+                    if (!context.getWorld().isSpaceEmpty(creeper[0])) creeper[0].refreshPositionAndAngles(player.getX() - 2, player.getY(), player.getZ(), 0, 0);
+                    creeper[0].setPersistent();
+                    context.getWorld().spawnEntity(creeper[0]);
+                    creeper[0].ignite();
+                })
+                .createAndAdd(() -> context.assertFalse(creeper[0].isAlive(), "The creeper went off"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 10, "The shield took the blast: health " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The last stage of the goal: holding ten obsidian, four cobblestone and its own flint and steel, the player
      * chooses a site, places the 4×5 frame block by block with cobblestone corners, and lights it.
      */

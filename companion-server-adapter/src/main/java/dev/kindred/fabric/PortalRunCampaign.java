@@ -161,7 +161,10 @@ final class PortalRunCampaign {
             tunnelled.add(position(task.args()).asLong());
         }
         if (task != null && completed) repeatFailures.remove(task);
-        if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) castFailedFrom = null;
+        if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
+            castFailedFrom = null;
+            castFailedStands.clear();
+        }
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
         if (repeatFailures.merge(task, 1, Integer::sum) >= 3) {
@@ -190,6 +193,7 @@ final class PortalRunCampaign {
         }
         // Another spot may see the faces, or the lava, that this one could not.
         if ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill")) castFailedFrom = lastFeet;
+        if ("native_cast".equals(task.skill())) castFailedStands.add(lastFeet.asLong());
     }
 
     void placedWorkstation(BlockPos pos) { ownWorkstations.add(pos.asLong()); }
@@ -209,6 +213,23 @@ final class PortalRunCampaign {
         boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
         dropSite = burned || killedByMob ? null : pos.toImmutable();
         dropSiteUntil = tick + 5_000;
+        if (killedByMob) {
+            if (deathZones.size() >= 8) deathZones.removeFirst();
+            deathZones.add(new DeathZone(pos.toImmutable(), tick + DANGER_TICKS));
+        }
+    }
+
+    /** Where mobs killed the player: for a day it does not go back to caves or ore there, as a player would not. */
+    private record DeathZone(BlockPos center, long until) { }
+    private final java.util.ArrayList<DeathZone> deathZones = new java.util.ArrayList<>();
+    private static final int DANGER_RADIUS = 12;
+    private static final long DANGER_TICKS = 24_000;
+
+    private boolean dangerous(BlockPos pos) {
+        for (DeathZone zone : deathZones) {
+            if (zone.until() > lastTick && zone.center().getSquaredDistance(pos) < DANGER_RADIUS * DANGER_RADIUS) return true;
+        }
+        return false;
     }
 
     /**
@@ -780,7 +801,7 @@ final class PortalRunCampaign {
         return knowledge.best(world, WorldKnowledge.Kind.CAVE,
                         pos -> Math.abs(Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) - 8) + 1.5 * Math.abs(pos.getY() - targetY),
                         pos -> !visitedCaves.contains(BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2))
-                                && !blocked(pos) && !unreachable(pos) && pos.getSquaredDistance(feet) >= 4
+                                && !blocked(pos) && !unreachable(pos) && !dangerous(pos) && pos.getSquaredDistance(feet) >= 4
                                 && Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) <= 48
                                 && Math.hypot(pos.getX() - anchor.getX(), pos.getZ() - anchor.getZ()) <= EXPLORE_RADIUS
                                 && Math.abs(pos.getY() - targetY) < gapNow + 8)
@@ -916,7 +937,7 @@ final class PortalRunCampaign {
         var player = body.entity();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
-        Predicate<BlockPos> usable = p -> !blocked(p) && !unreachable(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+        Predicate<BlockPos> usable = p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
                 && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
                 && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + 4 && reachableFromGround(player.getServerWorld(), p));
@@ -1469,6 +1490,8 @@ final class PortalRunCampaign {
     private BlockPos castLava;
     /** Where the player stood when a cast was last refused or failed. */
     private BlockPos castFailedFrom;
+    /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
+    private final Set<Long> castFailedStands = new java.util.HashSet<>();
 
     /**
      * Cast the frame in place, as speedrunners build a portal without a diamond pickaxe: a bucket of lava from a
@@ -1524,7 +1547,7 @@ final class PortalRunCampaign {
                 Optional<Task> mould = within(body, site, at[0], back, () -> placeBlock(body, back, "Cast: mould at " + back.toShortString()));
                 if (mould.isPresent()) return mould;
             }
-            if (player.getBlockPos().equals(castFailedFrom)) {
+            if (castFailedStands.contains(player.getBlockPos().asLong())) {
                 Optional<Task> move = stepCloser(body, site, at[0], cell);
                 if (move.isPresent()) return move;
             }
@@ -1543,6 +1566,9 @@ final class PortalRunCampaign {
         if (!player.getBlockPos().equals(site.stand()) && eyeDistance(player, cell) > REACH) {
             return Optional.of(go(site.stand(), 0.3, false, label + ": stand in front of the frame site"));
         }
+        KindredMod.LOGGER.info("{} gives up the frame site at {}: cannot clear {} ({})", player.getName().getString(),
+                site.origin().toShortString(), cell.toShortString(), player.getServerWorld().getBlockState(cell));
+        abandonedSites.add(siteKey(site));
         portalSite = null;
         return Optional.empty();
     }
@@ -1568,8 +1594,12 @@ final class PortalRunCampaign {
     private Optional<Task> stepCloser(NativePlayerBody body, PortalSite site, int across, BlockPos cell) {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld());
-        for (BlockPos stand : List.of(site.front(Math.clamp(across, 0, 3), 0), site.front(1, 0), site.front(2, 0), site.front(0, 0), site.front(3, 0), site.stand())) {
-            if (stand.equals(player.getBlockPos()) || !navigator.standable(stand) || blocked(stand)) continue;
+        // The front row first, then the row behind it, from which the upper cells' faces show past the frame below.
+        var stands = new java.util.ArrayList<BlockPos>();
+        for (int a : new int[]{Math.clamp(across, 0, 3), 1, 2, 0, 3}) stands.add(site.front(a, 0));
+        for (int a : new int[]{Math.clamp(across, 0, 3), 1, 2, 0, 3}) stands.add(site.front(a, 0).offset(site.toward().getOpposite()));
+        for (BlockPos stand : stands) {
+            if (stand.equals(player.getBlockPos()) || castFailedStands.contains(stand.asLong()) || !navigator.standable(stand) || blocked(stand)) continue;
             if (Vec3d.ofBottomCenter(stand).add(0, 1.62, 0).distanceTo(Vec3d.ofCenter(cell)) > CAST_REACH) continue;
             return Optional.of(go(stand, 0.3, false, "Cast: step closer"));
         }
@@ -1614,7 +1644,7 @@ final class PortalRunCampaign {
                 for (int dy : r == 0 ? new int[]{0} : new int[]{0, 1, -1}) {
                     BlockPos stand = feet.add(dx, dy, dz);
                     if (r > 0 && blocked(stand)) continue;
-                    Optional<PortalSite> site = portalSiteFrom(world, navigator, stand);
+                    Optional<PortalSite> site = portalSiteFrom(world, navigator, stand, s -> !abandonedSites.contains(siteKey(s)));
                     if (site.isPresent()) return site;
                 }
             }
@@ -1623,7 +1653,15 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
-    private static Optional<PortalSite> portalSiteFrom(ServerWorld world, NativeNavigator navigator, BlockPos stand) {
+    /** Sites given up because a cell could not be cleared; never chosen again in this run. */
+    private final Set<Long> abandonedSites = new java.util.HashSet<>();
+
+    private static long siteKey(PortalSite site) {
+        return site.origin().asLong() * 4 + site.toward().getHorizontal();
+    }
+
+    private static Optional<PortalSite> portalSiteFrom(ServerWorld world, NativeNavigator navigator, BlockPos stand,
+                                                      Predicate<PortalSite> wanted) {
         Vec3d eye = Vec3d.ofBottomCenter(stand).add(0, 1.62, 0);
         for (int distance = 2; distance <= 2; distance++) {
             for (Direction facing : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
@@ -1646,7 +1684,8 @@ final class PortalRunCampaign {
                         if (!world.getFluidState(cell).isEmpty() || world.getBlockState(cell).hasBlockEntity()) ok = false;
                     }
                 }
-                if (ok) return Optional.of(new PortalSite(origin.toImmutable(), along, facing, stand.toImmutable()));
+                PortalSite site = new PortalSite(origin.toImmutable(), along, facing, stand.toImmutable());
+                if (ok && wanted.test(site)) return Optional.of(site);
             }
         }
         return Optional.empty();

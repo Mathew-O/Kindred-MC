@@ -177,10 +177,10 @@
   "liveAcceptanceGatesPassed": [],
   "automatedValidation": {
     "junitTestsPassed": 344,
-    "nativeGameTestsPassed": 203,
+    "nativeGameTestsPassed": 204,
     "nativeGameTestConsecutivePasses": 2,
     "latestRegressionEvidence": "docs/validation.md",
-    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 190/190, then 191/191 with the break-pickup shaft fixture 192/192 twice with the caving fixture 193/193 twice with the cold-furnace fixture 194/194 twice with the cover fixture 195/195 twice with the aquifer staircase fixture 196/196 twice with the progress watchdog fixture 197/197 twice with the jump-down fixture 199/199 twice with the two casting fixtures (one obsidian cast in place; a whole frame cast and lit without diamonds) 200/200 twice with a fight broken off once badly hurt and 201/201 twice with digging out of a block in the head space and 203/203 twice with the shield fixtures, including the death/respawn fixture and five Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player; a fight chase that stops at lava; a sealed night shelter). Full build passed with 344 JUnit results. Native fixtures and development live runs only; no live gate passed.",
+    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 190/190, then 191/191 with the break-pickup shaft fixture 192/192 twice with the caving fixture 193/193 twice with the cold-furnace fixture 194/194 twice with the cover fixture 195/195 twice with the aquifer staircase fixture 196/196 twice with the progress watchdog fixture 197/197 twice with the jump-down fixture 199/199 twice with the two casting fixtures (one obsidian cast in place; a whole frame cast and lit without diamonds) 200/200 twice with a fight broken off once badly hurt and 201/201 twice with digging out of a block in the head space and 203/203 twice with the shield fixtures and 204/204 twice with a creeper lighting up mid-fight, including the death/respawn fixture and five Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player; a fight chase that stops at lava; a sealed night shelter). Full build passed with 344 JUnit results. Native fixtures and development live runs only; no live gate passed.",
     "evidence": "docs/validation.md"
   },
   "supportExclusions": [
