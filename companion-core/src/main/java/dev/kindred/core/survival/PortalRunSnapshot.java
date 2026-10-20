@@ -15,11 +15,13 @@ package dev.kindred.core.survival;
  * @param flint           flint
  * @param gravel          gravel blocks carried (for re-rolling flint)
  * @param obsidian        obsidian blocks carried
- * @param emptyBuckets    empty buckets
+ * @param emptyBuckets    empty buckets, and those holding lava (a lava bucket empties into whatever it is used for)
+ * @param lavaBuckets     of those, the ones holding lava
  * @param waterBuckets    water buckets
  * @param flintAndSteel   flint and steel items
  * @param craftingTables  crafting table items carried
  * @param furnaces        furnace items carried
+ * @param saplings        saplings of any tree
  * @param edibleFood      edible food items that are safe to eat
  * @param pickaxeTier     best pickaxe: 0 none, 1 wood/gold, 2 stone, 3 iron, 4 diamond, 5 netherite
  * @param swordTier       best sword on the same scale
@@ -35,8 +37,8 @@ package dev.kindred.core.survival;
  */
 public record PortalRunSnapshot(
         int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
-        int flint, int gravel, int obsidian, int emptyBuckets, int waterBuckets, int flintAndSteel,
-        int craftingTables, int furnaces, int edibleFood,
+        int flint, int gravel, int obsidian, int emptyBuckets, int lavaBuckets, int waterBuckets, int flintAndSteel,
+        int craftingTables, int furnaces, int saplings, int edibleFood,
         int pickaxeTier, int swordTier, int chestArmorTier, int shields,
         boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
         int foodLevel, boolean portalFramed, boolean portalLit) {

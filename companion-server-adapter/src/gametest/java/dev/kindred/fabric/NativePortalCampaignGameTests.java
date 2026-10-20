@@ -1062,8 +1062,9 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
-     * A dark L-shaped cave passage with iron ore out of sight around the corner. At the iron stage, with a shield in
-     * hand, the goal lights the dark with a torch crafted from its own coal and a spare stick, walks to the part of the cave it can see,
+     * A dark L-shaped cave passage with iron ore out of sight around the corner, and no mob within earshot. At the
+     * iron stage, with no shield yet, the goal lights the dark with a torch crafted from its own coal and a spare
+     * stick, walks to the part of the cave it can see,
      * spots the ore from the corner, and mines it, rather than digging a tunnel from where it stood.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1200)
@@ -1106,11 +1107,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
                     inventory.setStack(2, new ItemStack(Items.BREAD, 5));
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
-                    // The iron and diamond pickaxes' four, two spare pairs, and one for a torch.
-                    inventory.setStack(4, new ItemStack(Items.STICK, 9));
+                    // The iron and diamond pickaxes' four, four spare pairs, and one for a torch.
+                    inventory.setStack(4, new ItemStack(Items.STICK, 13));
                     inventory.setStack(5, new ItemStack(Items.COAL, 4));
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
-                    inventory.offHand.set(0, new ItemStack(Items.SHIELD)); // Caves are explored only with a shield to raise.
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) >= 1,
@@ -1121,7 +1121,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     long torches = BlockPos.streamOutwards(ore[0], 6, 3, 6).filter(pos -> world.getBlockState(pos).isOf(Blocks.TORCH)).count();
                     context.assertTrue(torches >= 1, "It lit the dark passage with its own torch");
                     var inventory = f.player().getInventory();
-                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 8,
+                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 12,
                             "One coal and one spare stick became torches: coal " + ItemMoves.count(inventory, Items.COAL)
                                     + ", sticks " + ItemMoves.count(inventory, Items.STICK));
                     context.assertTrue(f.player().isAlive(), "Alive");
@@ -1134,11 +1134,12 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
-     * The same kind of dark cave opening ahead, but no shield yet: the goal does not go exploring it for iron, as
-     * open caves are where skeletons ended most early lives; it digs its own way instead.
+     * The same kind of dark cave opening ahead, no shield yet, and a zombie within earshot behind the rock (out of
+     * sight, no AI): the goal does not go exploring the cave for iron, as open caves are where skeletons ended most
+     * early lives; it digs its own way instead.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
-    public void goalLeavesCavesAloneUntilItHasAShield(TestContext context) {
+    public void goalLeavesCavesAloneWithoutAShieldWhileItHearsMobs(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         boolean[] explored = {false};
         int[] settle = {0};
@@ -1155,12 +1156,21 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         boolean air = x == 0 && z == 0 && (y == 0 || y == 1) || Math.abs(x) <= 2 && z >= 1 && z <= 3 && y >= 0 && y <= 2;
                         world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
                     }
+                    // A pocket in the rock behind the player, sealed off, with a zombie in it.
+                    BlockPos pocket = p.add(-3, 0, -3);
+                    world.setBlockState(pocket, Blocks.AIR.getDefaultState());
+                    world.setBlockState(pocket.up(), Blocks.AIR.getDefaultState());
+                    var zombie = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    zombie.refreshPositionAndAngles(pocket.getX() + 0.5, pocket.getY(), pocket.getZ() + 0.5, 0, 0);
+                    zombie.setPersistent();
+                    zombie.setAiDisabled(true);
+                    world.spawnEntity(zombie);
                     var inventory = f.player().getInventory();
                     inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
                     inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
                     inventory.setStack(2, new ItemStack(Items.BREAD, 5));
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
-                    inventory.setStack(4, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 12));
                     inventory.setStack(5, new ItemStack(Items.CRAFTING_TABLE));
                 })
                 .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settles"))
@@ -1172,7 +1182,156 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                             "It digs its own way for iron: " + progress);
                 })
                 .createAndAdd(() -> {
-                    context.assertFalse(explored[0], "It did not go exploring the cave without a shield");
+                    context.assertFalse(explored[0], "It did not go exploring the cave without a shield while it could hear a mob");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A sky island: a dirt island with nothing under it at the bottom of the world, no stone anywhere, a wooden
+     * pickaxe and the classic starter buckets of lava and water. With no ground to dig the goal builds a
+     * cobblestone generator (a trench with water at one end falling into a hole and lava at the other), mines
+     * cobblestone from it, and makes a stone pickaxe. Run in its own batch so no other plot's stone is in view.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyGenerator", tickLimit = 2400)
+    public void goalBuildsACobblestoneGeneratorWhereThereIsNoStone(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] center = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Islander"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    center[0] = skyIsland(context, f.player());
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.WOODEN_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.LAVA_BUCKET));
+                    inventory.setStack(2, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(5, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.STONE_PICKAXE) >= 1,
+                            "A stone pickaxe from the generator's cobblestone: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = f.player();
+                    long fires = BlockPos.streamOutwards(center[0], 10, 4, 10).filter(pos -> world.getBlockState(pos).isOf(Blocks.FIRE)).count();
+                    context.assertTrue(fires == 0, "Nothing caught fire");
+                    long lava = BlockPos.streamOutwards(center[0], 8, 3, 8).filter(pos -> world.getFluidState(pos).isIn(net.minecraft.registry.tag.FluidTags.LAVA)
+                            && world.getFluidState(pos).isStill()).count();
+                    context.assertTrue(lava == 1, "The poured lava stays in the generator: " + lava);
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    context.assertTrue(ItemMoves.count(player.getInventory(), Items.BUCKET) == 2, "Both buckets came back empty");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A sky island with no tree left, a sapling in hand and nothing else: the goal plants the sapling on the grass
+     * and waits by it for wood. The fixture then grows it, as time would, and the goal cuts the tree.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyReplant", tickLimit = 2400)
+    public void goalPlantsASaplingAndWaitsForTheTreeWhereTreesDoNotComeBack(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] center = new BlockPos[1];
+        BlockPos[] sapling = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Planter"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    center[0] = skyIsland(context, f.player());
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.OAK_SAPLING));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 5));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    sapling[0] = BlockPos.streamOutwards(center[0], 8, 3, 8).filter(pos -> world.getBlockState(pos).isOf(Blocks.OAK_SAPLING))
+                            .map(BlockPos::toImmutable).findFirst().orElse(null);
+                    context.assertTrue(sapling[0] != null, "It planted the sapling");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Wait for the sapling"),
+                            "It waits for the sapling to grow: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    // Time passing: the sapling grows into a tree.
+                    var world = context.getWorld();
+                    var state = world.getBlockState(sapling[0]);
+                    for (int i = 0; i < 20 && world.getBlockState(sapling[0]).isOf(Blocks.OAK_SAPLING); i++) {
+                        ((net.minecraft.block.SaplingBlock) Blocks.OAK_SAPLING).generate(world, sapling[0], world.getBlockState(sapling[0]), world.getRandom());
+                    }
+                    context.assertTrue(world.getBlockState(sapling[0]).isIn(net.minecraft.registry.tag.BlockTags.LOGS), "The sapling grew: " + state);
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OAK_LOG) >= 1,
+                            "It cut the grown tree: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A sky island whose tree has been cut, its leaves still hanging over the grass: with no sapling yet the goal
+     * breaks the leaves within reach for the saplings they drop, until one does (each leaf drops one by chance), and
+     * plants it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyLeaves", tickLimit = 1200)
+    public void goalBreaksLeftoverLeavesForSaplings(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        java.util.List<BlockPos> leaves = new java.util.ArrayList<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Gleaner"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = skyIsland(context, f.player());
+                    // A canopy left floating three blocks over the grass, two blocks off, as after the logs were cut.
+                    for (int dx = 1; dx <= 3; dx++) for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos leaf = p.add(dx + 1, 3, dz);
+                        world.setBlockState(leaf, Blocks.OAK_LEAVES.getDefaultState().with(net.minecraft.block.LeavesBlock.PERSISTENT, true));
+                        leaves.add(leaf);
+                    }
+                    f.player().getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    long left = leaves.stream().filter(pos -> world.getBlockState(pos).isOf(Blocks.OAK_LEAVES)).count();
+                    boolean planted = BlockPos.streamOutwards(f.player().getBlockPos(), 6, 2, 6).anyMatch(pos -> world.getBlockState(pos).isOf(Blocks.OAK_SAPLING));
+                    context.assertTrue(left == 0 || planted && left < leaves.size(), "It broke the leaves until a sapling dropped, and planted it: "
+                            + left + " left, planted " + planted + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();
@@ -1535,6 +1694,25 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
+    /**
+     * A grass-topped dirt island eleven blocks across and three deep, floating twelve blocks over the plot with
+     * nothing at the bottom of the world under it (the void, as below a sky island), and the player moved onto its
+     * middle. Nothing to walk off to: concurrent sky fixtures sit a dozen blocks apart. Returns the player's feet.
+     */
+    private static BlockPos skyIsland(TestContext context, net.minecraft.server.network.ServerPlayerEntity player) {
+        var world = context.getWorld();
+        BlockPos p = player.getBlockPos().up(12).toImmutable();
+        for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) {
+            for (int dy = -3; dy <= -1; dy++) world.setBlockState(p.add(dx, dy, dz), (dy == -1 ? Blocks.GRASS_BLOCK : Blocks.DIRT).getDefaultState());
+            for (int dy = 0; dy <= 8; dy++) world.setBlockState(p.add(dx, dy, dz), Blocks.AIR.getDefaultState());
+            world.setBlockState(new BlockPos(p.getX() + dx, world.getBottomY(), p.getZ() + dz), Blocks.AIR.getDefaultState());
+        }
+        player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, player.getYaw(), player.getPitch());
+        player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+        world.setTimeOfDay(1000); // Daytime: these fixtures are not about the night.
+        return p;
+    }
+
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
     }

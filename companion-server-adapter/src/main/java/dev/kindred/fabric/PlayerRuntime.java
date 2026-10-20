@@ -1138,7 +1138,8 @@ final class PlayerRuntime {
                 task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
-                        "pour".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR : NativeBucketAction.Mode.FILL);
+                        "pour".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR
+                                : "pour_lava".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR_LAVA : NativeBucketAction.Mode.FILL);
             } else if (skill.equals("native_cast")) {
                 task = new NativeCastAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), server::execute,

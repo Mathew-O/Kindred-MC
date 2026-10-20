@@ -17,14 +17,31 @@ import java.util.Set;
  */
 public record WorldFacts(Map<Source, Integer> nearest, Set<Method> methods) {
     /** Kinds of sources a route choice can depend on. */
-    public enum Source { TREE, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, LAVA, WATER, GRAVEL, CAVE }
+    public enum Source {
+        TREE, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, LAVA, WATER, GRAVEL, CAVE,
+        /** Leaves left after the logs, broken by hand for saplings. */
+        LEAVES,
+        /** A cobblestone generator this player built, mined again and again. */
+        GENERATOR,
+        /** A sapling this player planted, growing into a tree. */
+        SAPLING
+    }
 
     /** Alternative ways of reaching a sub-goal of the route. */
     public enum Method {
         /** Diamonds for a diamond pickaxe, then water poured onto lava and the obsidian mined: the classic route. */
         MINE_OBSIDIAN,
         /** Lava poured into the frame and hardened in place with water: two buckets and a lava source, no diamonds. */
-        CAST_OBSIDIAN
+        CAST_OBSIDIAN,
+        /** Stone dug out of the ground below, the ordinary way: wherever there is ground under the player. */
+        DIG_FOR_STONE,
+        /**
+         * Cobblestone from lava flowing into water in a short channel, mined again and again: where there is no stone
+         * to dig, as on a sky island. Built from a bucket of each.
+         */
+        COBBLE_GENERATOR,
+        /** Saplings planted to grow more trees: where the trees there are will not last, as on a sky island. */
+        REPLANT
     }
 
     public WorldFacts {
@@ -35,9 +52,9 @@ public record WorldFacts(Map<Source, Integer> nearest, Set<Method> methods) {
         for (int distance : nearest.values()) if (distance < 0) throw new IllegalArgumentException("Distances are not negative");
     }
 
-    /** Nothing seen yet, and only the classic route available. */
+    /** Nothing seen yet, ground to dig, and only the classic route available. */
     public static WorldFacts ordinary() {
-        return new WorldFacts(Map.of(), Set.of(Method.MINE_OBSIDIAN));
+        return new WorldFacts(Map.of(), Set.of(Method.MINE_OBSIDIAN, Method.DIG_FOR_STONE));
     }
 
     public boolean can(Method method) { return methods.contains(method); }

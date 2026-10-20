@@ -30,7 +30,7 @@ import java.util.function.Predicate;
  * has seen (a dim, two-high space over stone) is remembered as places to explore, one per 4×4×4 block cell.
  */
 final class WorldKnowledge {
-    enum Kind { LOG, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, GRAVEL, WATER, LAVA, CRAFTING_TABLE, FURNACE, OBSIDIAN, CAVE }
+    enum Kind { LOG, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, GRAVEL, WATER, LAVA, CRAFTING_TABLE, FURNACE, OBSIDIAN, CAVE, LEAVES }
 
     static final int HORIZONTAL_RADIUS = 32;
     static final int VERTICAL_RADIUS = 24;
@@ -51,6 +51,7 @@ final class WorldKnowledge {
 
     static Kind classify(BlockState state) {
         if (state.isIn(BlockTags.LOGS)) return Kind.LOG;
+        if (state.isIn(BlockTags.LEAVES)) return Kind.LEAVES;
         if (state.isOf(Blocks.STONE) || state.isOf(Blocks.COBBLESTONE) || state.isOf(Blocks.DEEPSLATE) || state.isOf(Blocks.COBBLED_DEEPSLATE)) return Kind.STONE;
         if (state.isOf(Blocks.COAL_ORE) || state.isOf(Blocks.DEEPSLATE_COAL_ORE)) return Kind.COAL_ORE;
         if (state.isOf(Blocks.IRON_ORE) || state.isOf(Blocks.DEEPSLATE_IRON_ORE)) return Kind.IRON_ORE;

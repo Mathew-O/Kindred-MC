@@ -158,6 +158,9 @@ final class PortalRunCampaign {
             lookUntilSweep = knowledge.sweeps() + 2; // Finish the sweep under way, then one full look from here.
         }
         if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) branchTurn();
+        if (task != null && completed && task.label().startsWith("Plant a sapling at") && position(task.args()) != null) {
+            planted.add(position(task.args()).asLong());
+        }
         if (task != null && completed && "native_break".equals(task.skill()) && task.label().contains(": clear ") && position(task.args()) != null) {
             if (dug.size() > 20_000) dug.clear();
             dug.add(position(task.args()).asLong());
@@ -421,6 +424,8 @@ final class PortalRunCampaign {
         int dx = relocate.getX() - lastFeet.getX(), dz = relocate.getZ() - lastFeet.getZ();
         digDirection = Math.abs(dx) >= Math.abs(dz) ? (dx >= 0 ? Direction.EAST : Direction.WEST) : (dz >= 0 ? Direction.SOUTH : Direction.NORTH);
         Optional<Task> dig = relocate.getY() > lastFeet.getY() + 2 ? climb(body, "dig toward elsewhere") : tunnel(body, "dig toward elsewhere");
+        // Water or lava on every side of a tunnel (a flooded cave): up and out instead (live run 54 tried 18 times).
+        if (dig.isEmpty()) dig = climb(body, "climb away from here");
         if (dig.isEmpty()) relocate = null; // Nothing works that way either; the next stuck spell tries another.
         return dig;
     }
@@ -443,8 +448,13 @@ final class PortalRunCampaign {
         stage = PortalRunPlanner.stage(snapshot, facts);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
-        if (snapshot.emptyBuckets() > 0 && snapshot.waterBuckets() == 0 && obsidianSite == null
-                && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, player.getBlockPos(), p -> !blocked(p) && p.getSquaredDistance(player.getBlockPos()) < 64 * 64).isPresent()) {
+        // Not with a bucket that holds lava, nor while a generator is being built: its own water is not to be taken.
+        // Close means close: a lake far overhead is a climb, not a detour (live run 53 tried one from 27 blocks below
+        // for minutes).
+        if (snapshot.emptyBuckets() > snapshot.lavaBuckets() && snapshot.waterBuckets() == 0 && obsidianSite == null && generatorPlan == null
+                && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, player.getBlockPos(),
+                        p -> !blocked(p) && !unreachable(p) && !generatorCell(p) && p.getSquaredDistance(player.getBlockPos()) < 24 * 24
+                                && Math.abs(p.getY() - player.getBlockY()) <= 6).isPresent()) {
             steps.addFirst(new PortalRunPlanner.Step(PortalRunPlanner.Action.FILL_WATER, "", 1, stage, "Fill a bucket with water while it is close"));
         }
         // Coal in view is worth taking early, as players do: torches for the caves and fuel for the furnace.
@@ -678,7 +688,8 @@ final class PortalRunCampaign {
         var player = body.entity();
         var inventory = player.getInventory();
         int logs = 0, planks = 0, sticks = 0, cobble = 0, coal = 0, rawIron = 0, iron = 0, diamonds = 0, flint = 0, gravel = 0,
-                obsidian = 0, buckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, food = 0, pick = 0, sword = 0, chest = 0, shields = 0;
+                obsidian = 0, buckets = 0, lavaBuckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, saplings = 0, food = 0, pick = 0, sword = 0,
+                chest = 0, shields = 0;
         for (ItemStack worn : player.getArmorItems()) {
             if (!worn.isEmpty() && Registries.ITEM.getId(worn.getItem()).getPath().endsWith("_chestplate")) chest = Math.max(chest, tier(worn.getItem()));
         }
@@ -698,12 +709,17 @@ final class PortalRunCampaign {
             else if (item == Items.FLINT) flint += n;
             else if (item == Items.GRAVEL) gravel += n;
             else if (item == Items.OBSIDIAN) obsidian += n;
-            else if (item == Items.BUCKET || item == Items.LAVA_BUCKET) buckets += n; // Lava carried to a cast empties into it.
+            else if (item == Items.BUCKET) buckets += n;
+            else if (item == Items.LAVA_BUCKET) {
+                buckets += n; // Lava carried to a cast or a generator empties into it.
+                lavaBuckets += n;
+            }
             else if (item == Items.WATER_BUCKET) water += n;
             else if (item == Items.FLINT_AND_STEEL) fns += n;
             else if (item == Items.CRAFTING_TABLE) tables += n;
             else if (item == Items.FURNACE) furnaces += n;
             else if (item == Items.SHIELD) shields += n; // The inventory's last slot is the off hand.
+            else if (stack.isIn(ItemTags.SAPLINGS)) saplings += n;
             if (stack.contains(DataComponentTypes.FOOD) && safeFood(stack)) food += n;
             pick = Math.max(pick, stack.isIn(ItemTags.PICKAXES) ? tier(item) : 0);
             sword = Math.max(sword, stack.isIn(ItemTags.SWORDS) ? tier(item) : 0);
@@ -729,8 +745,8 @@ final class PortalRunCampaign {
         }
         boolean framed = portalSite != null && portalComplete(player.getServerWorld(), portalSite);
         boolean lit = portalSite != null && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
-        return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, water,
-                fns, tables, furnaces, food, pick, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
+        return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, lavaBuckets,
+                water, fns, tables, furnaces, saplings, food, pick, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
                 player.getHungerManager().getFoodLevel(), framed, lit);
     }
 
@@ -770,8 +786,16 @@ final class PortalRunCampaign {
                             .or(() -> home == null ? Optional.empty() : Optional.of(go(home, 3, true, "Head back up toward home")))
                             : explore(body, "logs"));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
-            case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"))
+            // Over a sky island there is no stone below to dig for: only what is in sight, or the generator's.
+            case GATHER_STONE -> mineGenerator(body).or(() -> generatorPlan != null ? buildGenerator(body) : Optional.<Task>empty())
+                    .or(() -> gather(body, WorldKnowledge.Kind.STONE, groundBelow(player) ? 6 : PortalRunPlanner.ISLAND_REACH, "stone"))
+                    .or(() -> groundBelow(player) ? digDown(body, player.getBlockY() - 6, "Dig for stone") : Optional.<Task>empty())
                     .or(() -> search(body, "stone"));
+            case FILL_LAVA -> fillLava(body);
+            case BUILD_GENERATOR -> buildGenerator(body);
+            case PLANT_SAPLING -> plantSapling(body);
+            case AWAIT_TREE -> awaitTree(body);
+            case GATHER_SAPLINGS -> gatherSaplings(body);
             // Ore in view first, then caves it has seen, which show far more ore than a tunnel; digging comes last.
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
                     .or(() -> cave(body, "coal", COAL_TARGET)).or(this::lookAround)
@@ -803,14 +827,33 @@ final class PortalRunCampaign {
         };
     }
 
-    /** Methods the campaign can carry out; the planner never chooses one outside this set. */
-    private static final Set<WorldFacts.Method> METHODS = java.util.EnumSet.of(WorldFacts.Method.MINE_OBSIDIAN, WorldFacts.Method.CAST_OBSIDIAN);
+    /**
+     * Methods the campaign can carry out where the player is; the planner never chooses one outside this set. Stone
+     * is dug where there is ground below; over the void of a sky island it comes from a cobblestone generator.
+     */
+    private static Set<WorldFacts.Method> methods(ServerPlayerEntity player) {
+        var methods = java.util.EnumSet.of(WorldFacts.Method.MINE_OBSIDIAN, WorldFacts.Method.CAST_OBSIDIAN);
+        if (groundBelow(player)) {
+            methods.add(WorldFacts.Method.DIG_FOR_STONE);
+        } else {
+            // A sky island's trees are all there will be unless they are replanted.
+            methods.add(WorldFacts.Method.COBBLE_GENERATOR);
+            methods.add(WorldFacts.Method.REPLANT);
+        }
+        return methods;
+    }
+
+    /** A floor at the bottom of the world under the player: bedrock in an ordinary world, nothing under a sky island. */
+    private static boolean groundBelow(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        return !world.getBlockState(new BlockPos(player.getBlockX(), world.getBottomY(), player.getBlockZ())).isAir();
+    }
     private static final Map<WorldFacts.Source, WorldKnowledge.Kind> SOURCES = Map.of(
             WorldFacts.Source.TREE, WorldKnowledge.Kind.LOG, WorldFacts.Source.STONE, WorldKnowledge.Kind.STONE,
             WorldFacts.Source.COAL_ORE, WorldKnowledge.Kind.COAL_ORE, WorldFacts.Source.IRON_ORE, WorldKnowledge.Kind.IRON_ORE,
             WorldFacts.Source.DIAMOND_ORE, WorldKnowledge.Kind.DIAMOND_ORE, WorldFacts.Source.LAVA, WorldKnowledge.Kind.LAVA,
             WorldFacts.Source.WATER, WorldKnowledge.Kind.WATER, WorldFacts.Source.GRAVEL, WorldKnowledge.Kind.GRAVEL,
-            WorldFacts.Source.CAVE, WorldKnowledge.Kind.CAVE);
+            WorldFacts.Source.CAVE, WorldKnowledge.Kind.CAVE, WorldFacts.Source.LEAVES, WorldKnowledge.Kind.LEAVES);
     private WorldFacts facts;
     private long factsTick = Long.MIN_VALUE;
 
@@ -828,10 +871,16 @@ final class PortalRunCampaign {
             // Trees count only from up among them: from below ground, getting back up to them is a trip, not a detour.
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
             // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight.
-            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p))
+            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
-        facts = new WorldFacts(nearest, METHODS);
+        // A generator counts from the moment its water is in: the lava that finishes it is already in hand.
+        Generator g = generator != null ? generator : generatorPlan;
+        if (g != null && (generator != null || still(world, g.water(), FluidTags.WATER))) {
+            nearest.put(WorldFacts.Source.GENERATOR, (int) Math.round(Math.sqrt(g.cobble().getSquaredDistance(feet))));
+        }
+        nearestSapling(player).ifPresent(sapling -> nearest.put(WorldFacts.Source.SAPLING, (int) Math.round(Math.sqrt(sapling.getSquaredDistance(feet)))));
+        facts = new WorldFacts(nearest, methods(player));
         factsTick = lastTick;
         return facts;
     }
@@ -848,9 +897,11 @@ final class PortalRunCampaign {
      */
     private Optional<Task> cave(NativePlayerBody body, String what, int targetY) {
         var world = body.entity().getServerWorld();
-        // Not before there is a shield to raise: open caves are where skeletons end most early lives (live runs
-        // 39 to 51), so the first iron comes from its own tunnels, which a cave they break into is walled off from.
-        if (!shielded(body.entity())) return Optional.empty();
+        // Without a shield to raise, only where no mob can be heard: open caves are where skeletons ended most early
+        // lives (live runs 39 to 51). A player hears zombies and skeletons through rock; the first iron otherwise
+        // comes from its own tunnels, which a cave they break into is walled off from.
+        boolean shield = shielded(body.entity());
+        if (!shield && !quietAround(world, lastFeet)) return Optional.empty();
         BlockPos feet = lastFeet;
         BlockPos anchor = home == null ? feet : home;
         int gapNow = Math.abs(feet.getY() - targetY);
@@ -859,6 +910,7 @@ final class PortalRunCampaign {
                         pos -> Math.abs(Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) - 8) + 1.5 * Math.abs(pos.getY() - targetY),
                         pos -> !visitedCaves.contains(BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2))
                                 && !blocked(pos) && !unreachable(pos) && !dangerous(pos) && pos.getSquaredDistance(feet) >= 4
+                                && (shield || quietAround(world, pos))
                                 && Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) <= 48
                                 && Math.hypot(pos.getX() - anchor.getX(), pos.getZ() - anchor.getZ()) <= EXPLORE_RADIUS
                                 && Math.abs(pos.getY() - targetY) < gapNow + 8)
@@ -1026,14 +1078,16 @@ final class PortalRunCampaign {
     }
 
     /**
-     * A log a player standing beside its trunk can reach: the trunk stands on solid ground no more than four
-     * blocks below it. Logs left hanging after the trunk below was cut would need a pillar, so they are skipped.
+     * A log a player standing beside its trunk can reach: solid ground no more than four blocks below it, through
+     * the trunk or the cells where its lower logs were cut. Logs held up by leaves, or hanging higher, would need a
+     * pillar, so they are skipped.
      */
     private static boolean reachableFromGround(ServerWorld world, BlockPos log) {
         BlockPos below = log.down();
         for (int depth = 1; depth <= 4; depth++, below = below.down()) {
             BlockState state = world.getBlockState(below);
-            if (state.isIn(BlockTags.LOGS)) continue;
+            // The rest of a trunk whose bottom logs were cut is still chopped from the ground beneath it.
+            if (state.isIn(BlockTags.LOGS) || state.isAir()) continue;
             return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES);
         }
         return false;
@@ -1321,6 +1375,14 @@ final class PortalRunCampaign {
         int slot = -1;
         for (int s = 0; s < 36; s++) if (inventory.getStack(s).isOf(item)) { slot = s; break; }
         if (slot < 0) return Optional.empty();
+        // A wooden workstation goes nowhere near a generator's lava: first walk out of its reach.
+        if (generator != null && (nearGeneratorLava(player.getBlockPos()) || player.getBlockPos().equals(generator.stand()))) {
+            Vec3d away = Vec3d.ofCenter(player.getBlockPos()).subtract(Vec3d.ofCenter(generator.flow())).multiply(1, 0, 1);
+            if (away.lengthSquared() < 1.0E-4) away = Vec3d.of(generator.side().getVector());
+            away = away.normalize().multiply(5);
+            BlockPos target = BlockPos.ofFloored(Vec3d.ofCenter(generator.flow()).add(away)).withY(generator.flow().getY() + 1);
+            return Optional.of(go(target, 1.5, true, "Step away from the generator's lava"));
+        }
         if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready " + Registries.ITEM.getId(item).getPath().replace('_', ' ')));
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -1328,7 +1390,7 @@ final class PortalRunCampaign {
             for (BlockPos spot : List.of(feet.offset(direction), feet.offset(direction, 2))) {
                 if (!world.getBlockState(spot).isReplaceable() || !world.getFluidState(spot).isEmpty()) continue;
                 if (world.getBlockState(spot.down()).getCollisionShape(world, spot.down()).isEmpty()) continue;
-                if (eyeDistance(player, spot) > 4.4 || blocked(spot)) continue;
+                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
                 return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(slot))), label));
             }
         }
@@ -1385,11 +1447,17 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && p.getSquaredDistance(feet) < 64 * 64);
+        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
+                && p.getSquaredDistance(feet) < 64 * 64);
         if (source.isEmpty()) return Optional.empty();
         BlockPos water = source.get();
         if (eyeDistance(player, water) <= 4.0) {
             return Optional.of(new Task("native_bucket", coords(water, Map.of("mode", "fill")), "Fill a bucket at " + water.toShortString()));
+        }
+        // Water well overhead from underground is reached by digging up toward it, not by a walk that has no route.
+        if (underground(player) && water.getY() > feet.getY() + 4) {
+            Optional<Task> up = climb(body, "Climb toward water at " + water.toShortString());
+            if (up.isPresent()) return up;
         }
         return Optional.of(go(water, 2.5, false, "Walk to water at " + water.toShortString()));
     }
@@ -1594,7 +1662,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // A source that was taken, or that could not be reached or filled from here (set aside), gives way to the next.
         if (castLava != null && (blocked(castLava) || !(world.getFluidState(castLava).isIn(FluidTags.LAVA) && world.getFluidState(castLava).isStill()))) castLava = null;
-        if (castLava == null) castLava = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, feet, p -> !blocked(p)).orElse(null);
+        if (castLava == null) castLava = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, feet, p -> !blocked(p) && !generatorCell(p)).orElse(null);
         if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) {
             if (castLava == null) {
                 return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
@@ -2019,6 +2087,309 @@ final class PortalRunCampaign {
         return open;
     }
 
+    // ------------------------------------------------------------------ cobblestone generator
+
+    /**
+     * A cobblestone generator dug into the ground, as sky-island players build one: a one-wide trench with lava at
+     * one end and water at the other, the water falling into a hole dug next to it, so lava flowing down the trench
+     * meets the falling water and hardens into cobblestone in the same cell each time that cell is mined. The
+     * player mines it from a pocket dug beside that cell, low enough to pick up what drops. It digs and pours from
+     * the ground beside the trench: the water end from beside the water, the rest from beyond the pocket, and the
+     * lava from beside the lava.
+     */
+    private record Generator(BlockPos lava, BlockPos flow, BlockPos cobble, BlockPos hole, BlockPos water, BlockPos stand, BlockPos pourFrom) {
+        /** Cells dug out, in the order they are dug: the water end first, so nothing is dug beside poured lava. */
+        List<BlockPos> dug() { return List.of(water, hole, hole.down(), cobble, flow, lava, stand); }
+
+        Direction along() { return Direction.fromVector(flow.getX() - lava.getX(), 0, flow.getZ() - lava.getZ()); }
+
+        Direction side() { return Direction.fromVector(stand.getX() - cobble.getX(), 0, stand.getZ() - cobble.getZ()); }
+
+        /** Where the player stands on the ground beside the trench to dig or pour into {@code cell}. */
+        BlockPos from(BlockPos cell) {
+            if (cell.equals(water) || cell.equals(hole) || cell.equals(hole.down())) return water.offset(side()).up();
+            if (cell.equals(lava)) return lava.offset(side()).up();
+            return pourFrom;
+        }
+
+        /** Other places on the ground around the trench to try digging from, if the first gives no view of a cell. */
+        List<BlockPos> stands(BlockPos cell) {
+            Direction far = side().getOpposite();
+            return List.of(from(cell), pourFrom, water.offset(side()).up(), hole.offset(far).up(), water.offset(far).up(),
+                    cobble.offset(far).up(), water.offset(along()).up(), lava.offset(side()).up());
+        }
+
+        /** The floors and walls that keep the lava and water in, and the stand's own walls. */
+        List<BlockPos> walls() {
+            Direction along = along(), side = side();
+            var walls = new java.util.ArrayList<BlockPos>(List.of(lava.down(), flow.down(), cobble.down(), water.down(), stand.down(), hole.down(2),
+                    lava.offset(along.getOpposite()), water.offset(along), stand.offset(side), cobble.offset(side.getOpposite())));
+            for (BlockPos cell : List.of(lava, flow, hole, water, hole.down())) {
+                walls.add(cell.offset(side));
+                walls.add(cell.offset(side.getOpposite()));
+            }
+            return walls;
+        }
+    }
+
+    /** The generator this player built and mines, and the one it is building. */
+    private Generator generator, generatorPlan;
+    /** Cells of the generator being built paired with places they could not be dug from. */
+    private final Set<Long> generatorTried = new HashSet<>();
+
+    /** Within fire range of a generator's lava: no wooden workstation goes there. */
+    private boolean nearGeneratorLava(BlockPos pos) {
+        for (Generator g : java.util.Arrays.asList(generator, generatorPlan)) {
+            if (g == null) continue;
+            for (BlockPos near : burnZone(g)) if (near.equals(pos)) return true;
+        }
+        return false;
+    }
+
+    /** One of the cells of the generator built or being built, which no other work takes fluid from or digs into. */
+    private boolean generatorCell(BlockPos pos) {
+        for (Generator g : java.util.Arrays.asList(generator, generatorPlan)) {
+            if (g != null && (g.dug().contains(pos) || pos.equals(g.pourFrom()))) return true;
+        }
+        return false;
+    }
+
+    private Optional<Task> buildGenerator(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (generatorPlan != null && generatorPlan.dug().stream().anyMatch(this::blocked)) generatorPlan = null; // A dig there failed.
+        if (generatorPlan == null) generatorPlan = generatorSite(player).orElse(null);
+        Generator g = generatorPlan;
+        if (g == null) return Optional.empty();
+        boolean watered = still(world, g.water(), FluidTags.WATER), lit = still(world, g.lava(), FluidTags.LAVA);
+        if (watered && lit) {
+            generator = g;
+            generatorPlan = null;
+            // Nothing else digs into it, carves room for a workstation out of its walls or jumps into its hole.
+            for (BlockPos cell : g.dug()) blockedUntil.put(cell.asLong(), Long.MAX_VALUE);
+            for (BlockPos cell : g.walls()) blockedUntil.put(cell.asLong(), Long.MAX_VALUE);
+            return mineGenerator(body);
+        }
+        if (!watered) {
+            for (BlockPos cell : g.dug()) {
+                if (world.getBlockState(cell).getCollisionShape(world, cell).isEmpty()) continue;
+                if (breakableNow(body, cell) && !feet.down().equals(cell)) return Optional.of(clearAt(cell, "Generator: dig " + cell.toShortString()));
+                // No view of it from here: the next place around the trench, as a player steps round for a better
+                // angle; with none left, the site is given up for another.
+                generatorTried.add(cell.asLong() * 31 + feet.asLong());
+                for (BlockPos stand : g.stands(cell)) {
+                    if (generatorTried.contains(cell.asLong() * 31 + stand.asLong()) || !standable(world, stand)) continue;
+                    return Optional.of(go(stand, 0.4, false, "Generator: stand by the trench"));
+                }
+                for (BlockPos dug : g.dug()) blockedUntil.merge(dug.asLong(), lastTick + 6000, Math::max);
+                generatorPlan = null;
+                generatorTried.clear();
+                return Optional.empty();
+            }
+            if (ItemMoves.count(player.getInventory(), Items.WATER_BUCKET) == 0) return Optional.empty();
+            if (!feet.equals(g.from(g.water()))) return Optional.of(go(g.from(g.water()), 0.4, false, "Generator: stand by the water end"));
+            return Optional.of(new Task("native_bucket", coords(g.water(), Map.of("mode", "pour")), "Generator: pour water"));
+        }
+        // Grass and flowers near the lava would catch fire and spread it: cleared first.
+        for (BlockPos near : burnZone(g)) {
+            var state = world.getBlockState(near);
+            if (state.isBurnable() && state.isReplaceable() && breakableNow(body, near)) return Optional.of(clearAt(near, "Generator: clear " + near.toShortString()));
+        }
+        if (ItemMoves.count(player.getInventory(), Items.LAVA_BUCKET) == 0) return Optional.empty();
+        if (!feet.equals(g.from(g.lava()))) return Optional.of(go(g.from(g.lava()), 0.4, false, "Generator: stand by the lava end"));
+        return Optional.of(new Task("native_bucket", coords(g.lava(), Map.of("mode", "pour_lava")), "Generator: pour lava"));
+    }
+
+    /** Mine the generator's cobblestone from its stand; a generator whose lava or water is gone is forgotten. */
+    private Optional<Task> mineGenerator(NativePlayerBody body) {
+        if (generator == null) return Optional.empty();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        Generator g = generator;
+        if (!still(world, g.lava(), FluidTags.LAVA) || !still(world, g.water(), FluidTags.WATER)) {
+            generator = null;
+            return Optional.empty();
+        }
+        if (!player.getBlockPos().equals(g.stand())) return Optional.of(go(g.stand(), 0.3, false, "Generator: step into its stand"));
+        var state = world.getBlockState(g.cobble());
+        // Mined beside the flowing lava: the lava that runs into the gap meets the water and hardens again.
+        if (state.isOf(Blocks.COBBLESTONE) || state.isOf(Blocks.STONE)) {
+            return Optional.of(new Task("native_break", coords(g.cobble(), Map.of("guarded", "true")), "Generator: mine cobblestone"));
+        }
+        return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Generator: wait for the cobblestone"));
+    }
+
+    private Optional<Task> fillLava(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var source = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
+                && still(world, p, FluidTags.LAVA) && p.getSquaredDistance(feet) < 64 * 64);
+        if (source.isEmpty()) return Optional.empty();
+        BlockPos lava = source.get();
+        if (eyeDistance(player, lava) <= 4.0) {
+            return Optional.of(new Task("native_bucket", coords(lava, Map.of("mode", "fill")), "Fill a bucket with lava at " + lava.toShortString()));
+        }
+        return Optional.of(go(lava, 2.5, false, "Walk to lava at " + lava.toShortString()));
+    }
+
+    /** The nearest place within six blocks where a generator fits, in the layer the player stands on. */
+    private Optional<Generator> generatorSite(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        Generator best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
+            BlockPos origin = feet.add(dx, -1, dz);
+            for (Direction along : Direction.Type.HORIZONTAL) {
+                for (Direction side : List.of(along.rotateYClockwise(), along.rotateYCounterclockwise())) {
+                    Generator g = generatorAt(world, origin, along, side);
+                    if (g == null || g.dug().contains(feet.down()) || g.dug().stream().anyMatch(this::blocked)) continue;
+                    double distance = g.pourFrom().getSquaredDistance(feet);
+                    if (distance < bestDistance) {
+                        best = g;
+                        bestDistance = distance;
+                    }
+                }
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
+    /**
+     * A generator laid out from {@code origin} along {@code along}, its stand on {@code side}, or null when the
+     * ground there will not hold one: every cell to dig must be plain diggable ground, open above; the floors and
+     * walls that keep the lava and water in must be solid; and nothing but grass that can be cleared may burn
+     * within reach of the lava.
+     */
+    private static Generator generatorAt(ServerWorld world, BlockPos origin, Direction along, Direction side) {
+        BlockPos lava = origin, flow = lava.offset(along), cobble = flow.offset(along), hole = cobble.offset(along), water = hole.offset(along);
+        BlockPos stand = cobble.offset(side);
+        var g = new Generator(lava, flow, cobble, hole, water, stand, stand.offset(side).up());
+        for (BlockPos cell : g.dug()) if (!diggable(world, cell)) return null;
+        for (BlockPos cell : List.of(lava, flow, cobble, hole, water, stand)) if (!world.getBlockState(cell.up()).isAir()) return null;
+        for (BlockPos from : List.of(g.pourFrom(), g.from(water), g.from(lava))) {
+            if (!world.getBlockState(from).isAir() || !world.getBlockState(from.up()).isAir()) return null;
+        }
+        for (BlockPos cell : g.walls()) if (!sturdy(world, cell)) return null;
+        for (BlockPos near : burnZone(g)) {
+            var state = world.getBlockState(near);
+            if (state.isBurnable() && !state.isReplaceable()) return null;
+        }
+        return g;
+    }
+
+    /** Where lava in the trench could set fire: three blocks around its two lava cells, from their level up. */
+    private static Iterable<BlockPos> burnZone(Generator g) {
+        BlockPos a = g.lava(), b = g.flow();
+        return BlockPos.iterate(Math.min(a.getX(), b.getX()) - 3, a.getY(), Math.min(a.getZ(), b.getZ()) - 3,
+                Math.max(a.getX(), b.getX()) + 3, a.getY() + 3, Math.max(a.getZ(), b.getZ()) + 3);
+    }
+
+    /** Room for the player to stand: solid ground under two open cells, no liquid. */
+    private static boolean standable(ServerWorld world, BlockPos pos) {
+        return sturdy(world, pos.down()) && world.getBlockState(pos).isAir() && world.getBlockState(pos.up()).isAir();
+    }
+
+    private static boolean sturdy(ServerWorld world, BlockPos pos) {
+        var state = world.getBlockState(pos);
+        return state.isFullCube(world, pos) && state.getFluidState().isEmpty() && !(state.getBlock() instanceof net.minecraft.block.FallingBlock);
+    }
+
+    /** Plain ground a player digs by hand or with a pickaxe: dirt, grass, stone, nothing with contents. */
+    private static boolean diggable(ServerWorld world, BlockPos pos) {
+        var state = world.getBlockState(pos);
+        float hardness = state.getHardness(world, pos);
+        return sturdy(world, pos) && hardness >= 0 && hardness <= 2.0f && !state.hasBlockEntity();
+    }
+
+    private static boolean still(ServerWorld world, BlockPos pos, net.minecraft.registry.tag.TagKey<net.minecraft.fluid.Fluid> fluid) {
+        var state = world.getFluidState(pos);
+        return state.isIn(fluid) && state.isStill();
+    }
+
+    // ------------------------------------------------------------------ replanting
+
+    /** Saplings this player planted, until each grows into a tree or is gone. */
+    private final Set<Long> planted = new HashSet<>();
+
+    /** The nearest sapling this player planted that is still a sapling; grown or lost ones are forgotten. */
+    private Optional<BlockPos> nearestSapling(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        planted.removeIf(key -> {
+            BlockPos pos = BlockPos.fromLong(key);
+            return world.isChunkLoaded(pos) && !world.getBlockState(pos).isIn(BlockTags.SAPLINGS);
+        });
+        BlockPos feet = player.getBlockPos();
+        return planted.stream().map(BlockPos::fromLong).min(java.util.Comparator.comparingDouble(pos -> pos.getSquaredDistance(feet)));
+    }
+
+    /**
+     * Plant a carried sapling on dirt or grass open to the sky, with room above for a trunk, two blocks clear of
+     * other saplings and trunks, and out of reach of a generator's lava.
+     */
+    private Optional<Task> plantSapling(NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        int slot = -1;
+        for (int s = 0; s < 36 && slot < 0; s++) if (inventory.getStack(s).isIn(ItemTags.SAPLINGS)) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a sapling"));
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (BlockPos ground : BlockPos.iterate(feet.add(-6, -3, -6), feet.add(6, 2, 6))) {
+            BlockPos spot = ground.up();
+            if (!world.getBlockState(ground).isIn(BlockTags.DIRT) || !world.getBlockState(spot).isAir() || !world.isSkyVisible(spot)) continue;
+            if (spot.equals(feet) || spot.equals(feet.up()) || blocked(spot) || generatorCell(ground) || nearGeneratorLava(spot)) continue;
+            boolean room = true;
+            for (int h = 1; h <= 5 && room; h++) room = world.getBlockState(spot.up(h)).isAir();
+            if (!room) continue;
+            boolean crowded = false;
+            for (BlockPos near : BlockPos.iterate(spot.add(-2, 0, -2), spot.add(2, 1, 2))) {
+                var state = world.getBlockState(near);
+                if (state.isIn(BlockTags.SAPLINGS) || state.isIn(BlockTags.LOGS)) { crowded = true; break; }
+            }
+            if (crowded) continue;
+            double distance = spot.getSquaredDistance(feet);
+            if (distance < bestDistance) {
+                best = spot.toImmutable();
+                bestDistance = distance;
+            }
+        }
+        if (best == null) return Optional.empty();
+        if (eyeDistance(player, best) > 4.4) return Optional.of(go(best, 2.5, true, "Walk to a place to plant"));
+        return Optional.of(new Task("native_place", coords(best, Map.of("side", "up", "slot", String.valueOf(slot))), "Plant a sapling at " + best.toShortString()));
+    }
+
+    /** Stay by the nearest planted sapling until it grows; it needs daylight, so this waits out the night too. */
+    private Optional<Task> awaitTree(NativePlayerBody body) {
+        var player = body.entity();
+        var sapling = nearestSapling(player);
+        if (sapling.isEmpty()) return Optional.empty();
+        if (player.getBlockPos().getSquaredDistance(sapling.get()) > 6 * 6) return Optional.of(go(sapling.get(), 4, true, "Walk back to the saplings"));
+        return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for the sapling at " + sapling.get().toShortString() + " to grow"));
+    }
+
+    /** Break the nearest leaves in reach for the saplings they drop, picking the drops up. */
+    private Optional<Task> gatherSaplings(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var leaves = knowledge.nearest(world, WorldKnowledge.Kind.LEAVES, feet, p -> !blocked(p) && !unreachable(p)
+                && world.getBlockState(p).isIn(BlockTags.LEAVES) && p.getSquaredDistance(feet) <= PortalRunPlanner.ISLAND_REACH * PortalRunPlanner.ISLAND_REACH);
+        if (leaves.isEmpty()) return Optional.empty();
+        BlockPos leaf = leaves.get();
+        if (breakableNow(body, leaf)) return Optional.of(breakAt(leaf, "Break leaves for saplings at " + leaf.toShortString()));
+        if (Math.hypot(leaf.getX() - feet.getX(), leaf.getZ() - feet.getZ()) <= 2) {
+            blockedUntil.merge(leaf.asLong(), lastTick + 1200, Math::max); // Overhead and out of reach from here.
+            return Optional.empty();
+        }
+        return Optional.of(go(leaf, 2.0, true, "Walk to the leaves at " + leaf.toShortString()));
+    }
+
     // ------------------------------------------------------------------ holing up
 
     /** The last spot underground with few ways in (a staircase step, a tunnel), where the player can wall itself in. */
@@ -2204,6 +2575,11 @@ final class PortalRunCampaign {
         progress = "Interrupted: " + (task == null ? "work" : task.label());
     }
 
+    /** No hostile mob within earshot (sixteen blocks) of {@code pos}; endermen keep to themselves unless provoked. */
+    private static boolean quietAround(ServerWorld world, BlockPos pos) {
+        return world.getEntitiesByClass(HostileEntity.class, new Box(pos).expand(16), mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty();
+    }
+
     /** A shield in the off hand or carried. */
     private static boolean shielded(ServerPlayerEntity player) {
         return player.getOffHandStack().isOf(Items.SHIELD) || ItemMoves.count(player.getInventory(), Items.SHIELD) > 0;
@@ -2253,10 +2629,26 @@ final class PortalRunCampaign {
         var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(8, 3, 8),
                 drop -> KEEP.contains(drop.getStack().getItem()) && player.canSee(drop) && !blocked(drop.getBlockPos())
                         && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
-        if (drops.isEmpty()) return Optional.empty();
+        if (drops.isEmpty()) {
+            // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
+            // fixture's obsidian was left behind once caving without a shield was allowed). Five seconds at most each,
+            // and not while its own poured water is still to be taken back.
+            if (obsidianSite != null) return Optional.empty();
+            if (dropWaits.size() > 256) dropWaits.clear();
+            var settling = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(5, 3, 5),
+                    drop -> KEEP.contains(drop.getStack().getItem()) && !blocked(drop.getBlockPos()));
+            for (ItemEntity drop : settling) {
+                long since = dropWaits.computeIfAbsent(drop.getUuid(), id -> lastTick);
+                if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the water to clear off the drop"));
+            }
+            return Optional.empty();
+        }
         ItemEntity nearest = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
         return Optional.of(go(nearest.getBlockPos(), 0.6, false, "Pick up " + Registries.ITEM.getId(nearest.getStack().getItem()).getPath().replace('_', ' ')));
     }
+
+    /** When the player started waiting for each drop still in water. */
+    private final Map<java.util.UUID, Long> dropWaits = new HashMap<>();
 
     // ------------------------------------------------------------------ food
 

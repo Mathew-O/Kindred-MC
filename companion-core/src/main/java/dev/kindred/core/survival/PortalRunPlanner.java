@@ -18,7 +18,9 @@ import java.util.Objects;
  * one method for a sub-goal, the planner picks the cheapest from the player's items and what it has seen; the
  * adapter passes fresh facts on every pass, so the plan changes as soon as the world does. The first alternative
  * is the frame itself: obsidian mined with a diamond pickaxe, or cast in place from lava and water with a second
- * bucket and no diamonds at all.
+ * bucket and no diamonds at all. Where there is no ground to dig, as on a sky island, stone comes from a
+ * cobblestone generator built from a bucket of lava and one of water, wood from saplings planted as the trees are
+ * cut, and the chestplate kept for deep caves is not made.
  */
 public final class PortalRunPlanner {
     public static final int PORTAL_OBSIDIAN = 10;
@@ -30,12 +32,17 @@ public final class PortalRunPlanner {
     /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
     static final int TREE_RANGE = 24;
     /**
-     * Sticks kept beyond the pickaxes still to make: two replacements for ones that wear out. Staircases and branch
-     * mines wear out a stone pickaxe every few minutes; live run 49 used three before its sixth iron and was left at
-     * Y=19 with cobblestone, a table and no sticks.
+     * Sticks kept beyond the pickaxes still to make: four replacements for ones that wear out, a log's worth.
+     * Staircases and branch mines wear out a stone pickaxe every few minutes; live run 49 used three before its sixth
+     * iron and was left at Y=19 with cobblestone, a table and no sticks, and run 53 used five before its third.
      */
-    static final int SPARE_STICKS = 4;
+    static final int SPARE_STICKS = 8;
     public static final int DIAMONDS_NEEDED = 3;
+    /**
+     * Where there is no ground to dig, stone and leaves in sight count only this close: farther off they are likely
+     * on another island across the void.
+     */
+    public static final int ISLAND_REACH = 8;
     /** Food items to carry before work takes the player away from animals. */
     public static final int FOOD_STOCK = 3;
 
@@ -46,7 +53,17 @@ public final class PortalRunPlanner {
         MINE_COAL, MINE_IRON, SMELT, AWAIT_SMELT, FILL_WATER, MINE_DIAMOND, MAKE_OBSIDIAN, GATHER_FLINT,
         BUILD_PORTAL, IGNITE_PORTAL,
         /** Cast the frame in place: lava poured into each frame cell and hardened with water. */
-        CAST_PORTAL
+        CAST_PORTAL,
+        /** Fill an empty bucket at a lava source. */
+        FILL_LAVA,
+        /** Build a cobblestone generator: a short channel where lava flows into water. */
+        BUILD_GENERATOR,
+        /** Plant a carried sapling where it can grow. */
+        PLANT_SAPLING,
+        /** Wait by planted saplings for one to grow into a tree. */
+        AWAIT_TREE,
+        /** Break leaves left after the logs for the saplings they drop. */
+        GATHER_SAPLINGS
     }
 
     /**
@@ -91,6 +108,16 @@ public final class PortalRunPlanner {
             // There are no animals deep underground: take a little food while some are in sight.
             steps.add(new Step(Action.HUNT, "", FOOD_STOCK - s.edibleFood(), stage(s, facts), "Stock some food while animals are around"));
         }
+        // Where trees do not come back by themselves, every tree cut is replanted, as sky-island players do: saplings
+        // go straight into the ground, and the leaves a cut tree leaves behind are broken for more before they decay.
+        if (facts.can(WorldFacts.Method.REPLANT)) {
+            if (s.saplings() > 0) {
+                steps.add(new Step(Action.PLANT_SAPLING, "", s.saplings(), stage(s, facts), "Plant saplings to grow more wood"));
+            } else if (!facts.knows(WorldFacts.Source.TREE) && !facts.knows(WorldFacts.Source.SAPLING)
+                    && facts.distance(WorldFacts.Source.LEAVES).orElse(Integer.MAX_VALUE) <= ISLAND_REACH) {
+                steps.add(Step.of(Action.GATHER_SAPLINGS, stage(s, facts), "Break the leaves left behind for saplings"));
+            }
+        }
         steps.add(primary(s, facts));
         return steps;
     }
@@ -105,7 +132,7 @@ public final class PortalRunPlanner {
         if (s.pickaxeTier() <= 0) return Stage.WOOD;
         if (s.pickaxeTier() == 1) return Stage.STONE;
         WorldFacts.Method frame = frameMethod(s, facts);
-        if (s.pickaxeTier() == 2 || ironShortfall(s, frame) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
+        if (s.pickaxeTier() == 2 || ironShortfall(s, frame, caves(facts)) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
         if (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() == 3) return Stage.DIAMOND;
         if (s.obsidian() < PORTAL_OBSIDIAN) return Stage.OBSIDIAN;
         return Stage.FLINT;
@@ -139,24 +166,22 @@ public final class PortalRunPlanner {
         // Wood: a crafting table and a wooden pickaxe, with logs to spare for sticks and fuel.
         if (s.pickaxeTier() <= 0) {
             // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone.
-            if (s.cobble() >= 3) return craftAtTable(s, "stone_pickaxe", 0, 2, Stage.WOOD);
+            if (s.cobble() >= 3) return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.WOOD);
             boolean haveTable = s.tableNearby() || s.craftingTables() > 0;
             int woodWanted = haveTable ? 6 : 12;
             if (s.woodUnits() < woodWanted) {
-                return new Step(Action.GATHER_LOGS, "", Math.max(1, (woodWanted - s.woodUnits() + 3) / 4), Stage.WOOD,
+                return logs(facts, Math.max(1, (woodWanted - s.woodUnits() + 3) / 4), Stage.WOOD,
                         haveTable ? "Gather logs for a wooden pickaxe" : "Gather logs for a table and a wooden pickaxe");
             }
-            return craftAtTable(s, "wooden_pickaxe", 3, 2, Stage.WOOD);
+            return craftAtTable(s, facts, "wooden_pickaxe", 3, 2, Stage.WOOD);
         }
         // Stone: cobblestone for a stone pickaxe, sword, furnace and portal corners.
         if (s.pickaxeTier() == 1) {
-            if (s.cobble() < 3) {
-                return new Step(Action.GATHER_STONE, "", 3 - s.cobble(), Stage.STONE, "Mine cobblestone for a stone pickaxe");
-            }
-            return craftAtTable(s, "stone_pickaxe", 0, 2, Stage.STONE);
+            if (s.cobble() < 3) return stone(s, facts, 3 - s.cobble(), Stage.STONE, "Mine cobblestone for a stone pickaxe");
+            return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE);
         }
         if (s.swordTier() < 2 && s.cobble() >= 2) {
-            return craftAtTable(s, "stone_sword", 0, 1, Stage.STONE);
+            return craftAtTable(s, facts, "stone_sword", 0, 1, Stage.STONE);
         }
         // Sticks for the pickaxes still to make and spares for ones that wear out, made while trees are in sight
         // or from wood already carried: there are none deep below, and a climb back up costs more than the sticks.
@@ -172,13 +197,16 @@ public final class PortalRunPlanner {
                 && treesNear) {
             return new Step(Action.GATHER_LOGS, "", 2, Stage.STONE, "Gather logs for a shield");
         }
-        // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast.
-        if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4)) {
-            return new Step(Action.GATHER_STONE, "", COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
+        // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast. Not while no
+        // more stone can be had (a limited world's few stone blocks used up, no generator yet): iron for the buckets
+        // that build one comes first.
+        if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4) && stoneAvailable(s, facts)) {
+            return stone(s, facts, COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
         }
 
         // Iron: pickaxe, bucket and flint and steel, smelted in an owned furnace.
-        int ironWanted = ironShortfall(s, frame);
+        boolean caves = caves(facts);
+        int ironWanted = ironShortfall(s, frame, caves);
         int ironHave = s.ironIngots() + s.rawIron();
         // With a shield's wood in hand, the first iron is smelted and made into one at once, as players do: the caves
         // where the rest of the iron is found are where skeletons end most runs.
@@ -186,40 +214,45 @@ public final class PortalRunPlanner {
         // Then the iron pickaxe as soon as there is iron for it: it lasts twice as long as stone, and staircases and
         // branch mines wear a stone one out every few minutes (live run 50 used six in one life before its iron).
         boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3;
-        if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, "shield", SHIELD_PLANKS, 0, Stage.IRON);
+        if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
         if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {
             if (s.furnaceSmelting()) return Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron");
             // Wood kept for a shield is not fuel.
-            if (s.coal() == 0 && spareWood < (s.rawIron() * 2 + 2) / 3) {
+            int fuelWood = (s.rawIron() * 2 + 2) / 3;
+            if (s.coal() == 0 && spareWood < fuelWood) {
+                // Where there is no coal and wood is grown, the fuel is wood.
+                if (facts.can(WorldFacts.Method.REPLANT) && !facts.knows(WorldFacts.Source.COAL_ORE)) {
+                    return logs(facts, (fuelWood - spareWood + 3) / 4, Stage.IRON, "Gather logs for fuel to smelt iron");
+                }
                 return new Step(Action.MINE_COAL, "", 1, Stage.IRON, "Find fuel to smelt iron");
             }
             if (!s.furnaceNearby() && s.furnaces() == 0) {
-                if (s.cobble() < 8) return new Step(Action.GATHER_STONE, "", 8 - s.cobble(), Stage.IRON, "Mine cobblestone for a furnace");
-                return craftAtTable(s, "furnace", 0, 0, Stage.IRON);
+                if (s.cobble() < 8) return stone(s, facts, 8 - s.cobble(), Stage.IRON, "Mine cobblestone for a furnace");
+                return craftAtTable(s, facts, "furnace", 0, 0, Stage.IRON);
             }
             return new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron");
         }
-        if (s.pickaxeTier() < 3) return craftAtTable(s, "iron_pickaxe", 0, 2, Stage.IRON);
-        if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, "bucket", 0, 0, Stage.IRON);
+        if (s.pickaxeTier() < 3) return craftAtTable(s, facts, "iron_pickaxe", 0, 2, Stage.IRON);
+        if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, facts, "bucket", 0, 0, Stage.IRON);
         // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
-        if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, "iron_chestplate", 0, 0, Stage.IRON);
+        if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, facts, "iron_chestplate", 0, 0, Stage.IRON);
 
         // Diamonds for a pickaxe that can mine obsidian, unless the frame is cast instead.
         if (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4) {
             if (s.diamonds() < DIAMONDS_NEEDED) {
                 return new Step(Action.MINE_DIAMOND, "", DIAMONDS_NEEDED - s.diamonds(), Stage.DIAMOND, "Strip-mine for diamonds (" + s.diamonds() + "/3)");
             }
-            return craftAtTable(s, "diamond_pickaxe", 0, 2, Stage.DIAMOND);
+            return craftAtTable(s, facts, "diamond_pickaxe", 0, 2, Stage.DIAMOND);
         }
 
         // Cast: the frame hardens in place from lava poured into it and water poured over it.
         if (frame == WorldFacts.Method.CAST_OBSIDIAN && !s.portalFramed() && s.obsidian() < PORTAL_OBSIDIAN) {
             if (s.waterBuckets() == 0) return Step.of(Action.FILL_WATER, Stage.OBSIDIAN, "Fill a bucket with water");
             int blocks = castBlocks(s);
-            if (s.cobble() < blocks) return new Step(Action.GATHER_STONE, "", blocks - s.cobble(), Stage.OBSIDIAN, "Mine blocks for the casting mould");
+            if (s.cobble() < blocks) return stone(s, facts, blocks - s.cobble(), Stage.OBSIDIAN, "Mine blocks for the casting mould");
             return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
         }
 
@@ -237,10 +270,65 @@ public final class PortalRunPlanner {
         }
 
         if (!s.portalFramed()) {
-            if (s.cobble() < PORTAL_CORNERS) return new Step(Action.GATHER_STONE, "", PORTAL_CORNERS - s.cobble(), Stage.PORTAL, "Mine corner blocks for the frame");
+            if (s.cobble() < PORTAL_CORNERS) return stone(s, facts, PORTAL_CORNERS - s.cobble(), Stage.PORTAL, "Mine corner blocks for the frame");
             return Step.of(Action.BUILD_PORTAL, Stage.PORTAL, "Build the obsidian portal frame");
         }
         return Step.of(Action.IGNITE_PORTAL, Stage.PORTAL, "Light the portal with flint and steel");
+    }
+
+    /**
+     * The step toward {@code count} more cobblestone. Stone in sight or ground to dig is the ordinary way. With
+     * neither, as on a sky island, a cobblestone generator: lava flowing into water in a short channel, mined again
+     * and again, built from a bucket of each (water first, so the lava never meets a water source).
+     */
+    private static Step stone(PortalRunSnapshot s, WorldFacts facts, int count, Stage stage, String why) {
+        if (stoneNear(facts) || facts.knows(WorldFacts.Source.GENERATOR) || !facts.can(WorldFacts.Method.COBBLE_GENERATOR)) {
+            return new Step(Action.GATHER_STONE, "", count, stage, why);
+        }
+        int empty = s.emptyBuckets() - s.lavaBuckets();
+        if (s.waterBuckets() == 0) {
+            if (empty > 0 && facts.knows(WorldFacts.Source.WATER)) return Step.of(Action.FILL_WATER, stage, "Fill a bucket with water for a cobblestone generator");
+        } else if (s.lavaBuckets() == 0) {
+            if (empty > 0 && facts.knows(WorldFacts.Source.LAVA)) return Step.of(Action.FILL_LAVA, stage, "Fill a bucket with lava for a cobblestone generator");
+        } else {
+            return Step.of(Action.BUILD_GENERATOR, stage, "Build a cobblestone generator from lava and water");
+        }
+        return new Step(Action.GATHER_STONE, "", count, stage, why); // Nothing to build one with yet: look for stone.
+    }
+
+    /**
+     * Some way to more stone right now: stone in sight, ground to dig, a generator built, or the buckets (or the
+     * empty buckets and the sources) to build one.
+     */
+    static boolean stoneAvailable(PortalRunSnapshot s, WorldFacts facts) {
+        if (stoneNear(facts) || facts.knows(WorldFacts.Source.GENERATOR)) return true;
+        if (!facts.can(WorldFacts.Method.COBBLE_GENERATOR)) return true; // Nothing else to try: look for it, as ever.
+        int empty = s.emptyBuckets() - s.lavaBuckets();
+        boolean water = s.waterBuckets() > 0 || empty > 0 && facts.knows(WorldFacts.Source.WATER);
+        boolean lava = s.lavaBuckets() > 0 || empty > (s.waterBuckets() > 0 ? 0 : 1) && facts.knows(WorldFacts.Source.LAVA);
+        return water && lava;
+    }
+
+    /**
+     * The step toward {@code count} more logs: trees in sight, else, where trees grow only from what is planted,
+     * a wait by the saplings already in the ground.
+     */
+    private static Step logs(WorldFacts facts, int count, Stage stage, String why) {
+        if (!facts.knows(WorldFacts.Source.TREE) && facts.can(WorldFacts.Method.REPLANT) && facts.knows(WorldFacts.Source.SAPLING)) {
+            return new Step(Action.AWAIT_TREE, "", count, stage, "Wait for a planted sapling to grow: " + why);
+        }
+        return new Step(Action.GATHER_LOGS, "", count, stage, why);
+    }
+
+    /** Ground below to dig, or, where there is none, stone in sight close by. */
+    private static boolean stoneNear(WorldFacts facts) {
+        if (facts.can(WorldFacts.Method.DIG_FOR_STONE)) return true;
+        return facts.distance(WorldFacts.Source.STONE).orElse(Integer.MAX_VALUE) <= ISLAND_REACH;
+    }
+
+    /** Ground below to dig into, and so caves full of mobs: a sky island has neither. */
+    private static boolean caves(WorldFacts facts) {
+        return facts.can(WorldFacts.Method.DIG_FOR_STONE);
     }
 
     /**
@@ -251,7 +339,7 @@ public final class PortalRunPlanner {
         return 2 * Math.max(0, PORTAL_OBSIDIAN - s.obsidian());
     }
 
-    /** Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and two spare pairs. */
+    /** Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and four spare pairs. */
     public static int sticksReserved(PortalRunSnapshot s, WorldFacts.Method frame) {
         return sticksKept(s, frame) + SPARE_STICKS;
     }
@@ -266,15 +354,20 @@ public final class PortalRunPlanner {
         return frame == WorldFacts.Method.CAST_OBSIDIAN ? 2 : 1;
     }
 
-    /**
-     * Iron still needed for whatever iron items are missing: pickaxe 3, three per bucket still wanted, chestplate 8,
-     * flint and steel 1, and a shield's 1 when the wood for it is in hand.
-     */
+    /** {@link #ironShortfall(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to go down into. */
     static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame) {
+        return ironShortfall(s, frame, true);
+    }
+
+    /**
+     * Iron still needed for whatever iron items are missing: pickaxe 3, three per bucket still wanted, chestplate 8
+     * where there are caves to go down into, flint and steel 1, and a shield's 1 when the wood for it is in hand.
+     */
+    static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
         int wanted = 0;
         if (s.pickaxeTier() < 3) wanted += 3;
         wanted += Math.max(0, bucketsWanted(frame) - s.emptyBuckets() - s.waterBuckets()) * 3;
-        if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
+        if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
         if (s.flintAndSteel() == 0) wanted += 1;
         if (s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS) wanted += 1; // Only with the wood for it in hand.
         return wanted;
@@ -284,21 +377,21 @@ public final class PortalRunPlanner {
      * The step toward crafting {@code item}: planks and sticks first, then a reachable crafting table.
      * {@code planksNeeded} and {@code sticksNeeded} are the recipe's own wood inputs.
      */
-    private static Step craftAtTable(PortalRunSnapshot s, String item, int planksNeeded, int sticksNeeded, Stage stage) {
+    private static Step craftAtTable(PortalRunSnapshot s, WorldFacts facts, String item, int planksNeeded, int sticksNeeded, Stage stage) {
         if (s.sticks() < sticksNeeded) {
             if (s.planks() >= 2) return Step.craft("stick", stage, "Craft sticks");
             if (s.logs() > 0) return Step.craft("planks", stage, "Craft planks");
-            return new Step(Action.GATHER_LOGS, "", 2, stage, "Gather logs for sticks");
+            return logs(facts, 2, stage, "Gather logs for sticks");
         }
         if (s.planks() < planksNeeded) {
             if (s.logs() > 0) return Step.craft("planks", stage, "Craft planks");
-            return new Step(Action.GATHER_LOGS, "", 2, stage, "Gather logs for planks");
+            return logs(facts, 2, stage, "Gather logs for planks");
         }
         if (!s.tableNearby()) {
             if (s.craftingTables() > 0) return Step.of(Action.PLACE_TABLE, stage, "Place a crafting table");
             if (s.planks() >= 4) return Step.craft("crafting_table", stage, "Craft a crafting table");
             if (s.logs() > 0) return Step.craft("planks", stage, "Craft planks for a crafting table");
-            return new Step(Action.GATHER_LOGS, "", 1, stage, "Gather logs for a crafting table");
+            return logs(facts, 1, stage, "Gather logs for a crafting table");
         }
         return Step.craft(item, stage, "Craft " + item.replace('_', ' '));
     }

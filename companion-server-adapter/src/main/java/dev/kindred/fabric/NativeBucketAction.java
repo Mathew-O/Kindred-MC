@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * position. Vanilla bucket use decides the outcome from where the player looks; this action only aims.
  */
 final class NativeBucketAction extends NativeRecordedAction {
-    enum Mode { FILL, POUR }
+    enum Mode { FILL, POUR, POUR_LAVA }
 
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -68,13 +68,17 @@ final class NativeBucketAction extends NativeRecordedAction {
             if (!fluid.isStill()) throw new IllegalArgumentException("Only a fluid source can fill a bucket");
             held = Items.BUCKET;
             if (fillAim().isEmpty()) throw new IllegalArgumentException("The fluid source is not in reach or sight");
+        } else if (mode == Mode.POUR_LAVA) {
+            if (!world.getBlockState(target).isAir()) throw new IllegalArgumentException("Lava is only poured into an empty cell");
+            held = Items.LAVA_BUCKET;
+            if (pourAim().isEmpty()) throw new IllegalArgumentException("No reachable face to pour lava onto that position");
         } else {
             if (!world.getBlockState(target).isReplaceable() && !fluid.isIn(FluidTags.WATER)) throw new IllegalArgumentException("Pour target is occupied");
             held = Items.WATER_BUCKET;
             if (pourAim().isEmpty()) throw new IllegalArgumentException("No reachable face to pour water onto that position");
         }
         sourceSlot = slotOf(held);
-        if (sourceSlot < 0) throw new IllegalArgumentException("No owned " + (mode == Mode.FILL ? "empty bucket" : "water bucket"));
+        if (sourceSlot < 0) throw new IllegalArgumentException("No owned " + (mode == Mode.FILL ? "empty bucket" : mode == Mode.POUR_LAVA ? "lava bucket" : "water bucket"));
         hotbarSlot = sourceSlot < 9 ? sourceSlot : freeHotbarSlot();
         claimKey = "block:" + worldId + ":" + world.getRegistryKey().getValue() + ":" + target.toShortString();
     }
@@ -134,6 +138,9 @@ final class NativeBucketAction extends NativeRecordedAction {
             int filled = ItemMoves.count(inventory, Items.WATER_BUCKET) + ItemMoves.count(inventory, Items.LAVA_BUCKET);
             return !world.getFluidState(target).isStill() && filled > filledBefore;
         }
+        if (mode == Mode.POUR_LAVA) {
+            return world.getFluidState(target).isIn(FluidTags.LAVA) && ItemMoves.count(inventory, Items.LAVA_BUCKET) < pouredBefore;
+        }
         return world.getFluidState(target).isIn(FluidTags.WATER) && ItemMoves.count(inventory, Items.WATER_BUCKET) < pouredBefore;
     }
 
@@ -149,7 +156,7 @@ final class NativeBucketAction extends NativeRecordedAction {
             before = InventoryEvidence.capture(body);
             var inventory = body.entity().getInventory();
             filledBefore = ItemMoves.count(inventory, Items.WATER_BUCKET) + ItemMoves.count(inventory, Items.LAVA_BUCKET);
-            pouredBefore = ItemMoves.count(inventory, Items.WATER_BUCKET);
+            pouredBefore = ItemMoves.count(inventory, mode == Mode.POUR_LAVA ? Items.LAVA_BUCKET : Items.WATER_BUCKET);
             admission = new ActionAdmission(ActionRecord.prepare(issuedLease.actionId(), issuedLease, "native_bucket",
                     mode + " at " + target.toShortString()), before.description(), writer, dispatch);
         }
