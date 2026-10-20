@@ -1307,7 +1307,8 @@ final class PortalRunCampaign {
             Optional<Task> cover = cover(body, shooter);
             if (cover.isPresent()) return cover;
         }
-        if (player.getHealth() < 6) return backOff(player);
+        // A creeper comes first even when badly hurt: a general back-off averages away from every mob and can walk
+        // past it, and only the creeper's own escape outranks the runtime's one-block retreat.
         CreeperEntity creeper = creeperAfter(player);
         if (creeper != null) {
             // Armed and healthy: hit and run, which keeps it from getting close enough to light. Otherwise get away.
@@ -1317,6 +1318,7 @@ final class PortalRunCampaign {
             if (strike.args().containsKey("slot") && player.getHealth() >= 10) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
             return Optional.of(runFrom(player, creeper));
         }
+        if (player.getHealth() < 6) return backOff(player);
         var threats = threats(player);
         HostileEntity nearest = threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
