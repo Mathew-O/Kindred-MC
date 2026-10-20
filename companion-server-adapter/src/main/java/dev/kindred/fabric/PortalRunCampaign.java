@@ -187,6 +187,11 @@ final class PortalRunCampaign {
 
     /** Remembers where the player died, like a person would, so it can try once to pick its things back up. */
     void died(BlockPos pos, ServerWorld world, long tick, boolean killedByMob) {
+        // Counters start again from an empty inventory: progress is measured afresh.
+        best.clear();
+        stuckClock = 0;
+        stuckLevel = 0;
+        relocate = null;
         obsidianSite = null;
         exploreHeading = null;
         approaches.clear();
@@ -237,7 +242,120 @@ final class PortalRunCampaign {
 
     // ------------------------------------------------------------------ planning
 
+    // ------------------------------------------------------------------ progress watchdog
+
+    /** Game time with no progress, spent on active work or with nothing feasible, before trying somewhere else. */
+    static final int STUCK_TICKS = 3_600;
+    private long stuckClock;
+    private boolean lastActive;
+    private int stuckLevel;
+    private BlockPos relocate;
+    private long relocateUntil;
+    private double relocateBest;
+    private boolean relocateDig;
+    private PortalRunSnapshot lastSnapshot;
+    private final Map<String, Integer> best = new HashMap<>();
+    private final Set<Long> seenCells = new HashSet<>();
+
+    /**
+     * The next task, under a watchdog that catches any loop, whatever its cause (pacing a corridor, bouncing
+     * between spots, a plan with nothing feasible): when the route makes no progress for {@link #STUCK_TICKS} of
+     * game time spent working, the player leaves for somewhere else, as a player gives up on a spot. Progress is a
+     * new stage, a new best in a counter the route needs, or ground it has never stood in. Fights, cover, the night
+     * shelter, waiting for daylight and resting do not count as time stuck.
+     */
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
+        if (lastActive && tick > lastTick) stuckClock += tick - lastTick;
+        Optional<Task> planned = plan(body, policy, tick);
+        // New ground restarts the clock; only material progress ends a move elsewhere and the run of attempts.
+        boolean newGround = seenCells.size() < 100_000
+                && seenCells.add(BlockPos.asLong(lastFeet.getX() >> 3, lastFeet.getY() >> 3, lastFeet.getZ() >> 3));
+        if (gainedSomething()) {
+            stuckClock = 0;
+            stuckLevel = 0;
+            relocate = null;
+        } else if (newGround) {
+            stuckClock = 0;
+        }
+        boolean active = planned.isEmpty() || !passive(planned.get());
+        if (active) {
+            if (relocate == null && stuckClock > STUCK_TICKS) startRelocating();
+            Optional<Task> away = relocateStep(body);
+            if (away.isPresent()) {
+                progress = stageLabel(stage) + ": no progress here for a while - " + away.get().label();
+                lastActive = true;
+                return away;
+            }
+        }
+        lastActive = active;
+        if (stuckLevel > 0) progress += " (tried elsewhere " + stuckLevel + (stuckLevel == 1 ? " time)" : " times)");
+        return planned;
+    }
+
+    /** Safety, shelter and honest waiting: time spent on these is not time stuck. */
+    private static boolean passive(Task task) {
+        String label = task.label();
+        return label.equals("Wait for daylight") || label.equals("Rest to heal") || label.startsWith("Fight")
+                || label.startsWith("Take cover") || label.startsWith("Run from") || label.startsWith("Back off")
+                || label.startsWith("Close in") || label.startsWith("Seal the shelter") || label.startsWith("Dig in")
+                || label.startsWith("Place a torch") || label.startsWith("Get out of the water");
+    }
+
+    /** A new stage, or a new best in a counter the route needs. */
+    private boolean gainedSomething() {
+        boolean better = false;
+        PortalRunSnapshot s = lastSnapshot;
+        if (s != null) {
+            int[] values = {stage.ordinal(), s.pickaxeTier(), s.swordTier(), s.chestArmorTier(), Math.min(s.woodUnits(), 40),
+                    Math.min(s.cobble(), PortalRunPlanner.COBBLE_TARGET), Math.min(s.coal(), 8), Math.min(s.rawIron() + s.ironIngots(), 24),
+                    s.ironIngots(), s.diamonds(), s.obsidian(), s.flint(), s.flintAndSteel(), s.emptyBuckets() + s.waterBuckets()};
+            for (int i = 0; i < values.length; i++) {
+                Integer before = best.get("c" + i);
+                if (before == null || values[i] > before) {
+                    if (before != null) better = true;
+                    best.put("c" + i, values[i]);
+                }
+            }
+        }
+        return better;
+    }
+
+    /** Pick somewhere else to work from: a new heading two dozen blocks off, and every third time home. */
+    private void startRelocating() {
+        stuckLevel++;
+        stuckClock = 0;
+        tunnelled.clear();
+        Direction heading = digDirection;
+        for (int i = 0; i < stuckLevel; i++) heading = heading.rotateYClockwise();
+        relocate = stuckLevel % 3 == 0 && home != null && home.getSquaredDistance(lastFeet) > 16 * 16 ? home : lastFeet.offset(heading, 24);
+        relocateUntil = lastTick + STUCK_TICKS;
+        relocateBest = Double.MAX_VALUE;
+        relocateDig = false;
+        KindredMod.LOGGER.info("Goal made no progress for {} ticks near {}; trying {} (attempt {})", STUCK_TICKS,
+                lastFeet.toShortString(), relocate.toShortString(), stuckLevel);
+    }
+
+    /** Walk toward the new place while that gets closer; once walking stalls, dig toward it. */
+    private Optional<Task> relocateStep(NativePlayerBody body) {
+        if (relocate == null) return Optional.empty();
+        double distance = Math.sqrt(lastFeet.getSquaredDistance(relocate));
+        if (lastTick > relocateUntil || distance < 4) {
+            relocate = null;
+            return Optional.empty();
+        }
+        if (!relocateDig && !blocked(relocate) && distance < relocateBest - 1) {
+            relocateBest = distance;
+            return Optional.of(go(relocate, 3, true, "try elsewhere, toward " + relocate.toShortString()));
+        }
+        relocateDig = true;
+        int dx = relocate.getX() - lastFeet.getX(), dz = relocate.getZ() - lastFeet.getZ();
+        digDirection = Math.abs(dx) >= Math.abs(dz) ? (dx >= 0 ? Direction.EAST : Direction.WEST) : (dz >= 0 ? Direction.SOUTH : Direction.NORTH);
+        Optional<Task> dig = relocate.getY() > lastFeet.getY() + 2 ? climb(body, "dig toward elsewhere") : tunnel(body, "dig toward elsewhere");
+        if (dig.isEmpty()) relocate = null; // Nothing works that way either; the next stuck spell tries another.
+        return dig;
+    }
+
+    private Optional<Task> plan(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
         if (exploredFrom != null) {
@@ -250,6 +368,7 @@ final class PortalRunCampaign {
             visitedCaves.add(BlockPos.asLong(lastFeet.getX() >> 2, lastFeet.getY() >> 2, lastFeet.getZ() >> 2));
         }
         PortalRunSnapshot snapshot = snapshot(body);
+        lastSnapshot = snapshot;
         stage = PortalRunPlanner.stage(snapshot);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.

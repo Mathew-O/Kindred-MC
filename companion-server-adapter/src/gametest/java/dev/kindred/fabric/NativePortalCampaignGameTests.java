@@ -530,6 +530,52 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The progress watchdog: sealed in an obsidian room it cannot dig with a stone pickaxe, the goal looks around
+     * the room and then has nothing feasible. After {@link PortalRunCampaign#STUCK_TICKS} of game time with no
+     * progress it gives up on the spot and tries to leave for somewhere else, rather than waiting forever.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 9000)
+    public void goalLeavesForElsewhereAfterMakingNoProgress(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] gaveUp = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        context.setBlockState(x, 1, z, Blocks.OBSIDIAN);
+                        context.setBlockState(x, 5, z, Blocks.OBSIDIAN);
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.OBSIDIAN);
+                    }
+                    f.runtime.createNative(f.source, "Restless");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 4));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    gaveUp[0] |= progress.contains("no progress here for a while") || progress.contains("tried elsewhere");
+                    context.assertTrue(gaveUp[0], "The watchdog gave up on the spot and tried somewhere else");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
