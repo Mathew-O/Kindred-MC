@@ -57,6 +57,55 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A fight that wears the player down is broken off: once a zombie's hits take it below six health, the recorded
+     * fight is stopped and the goal backs off instead of fighting on to the death, as both live deaths in run 37 did.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalBreaksOffAFightOnceBadlyHurt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Spent");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.setHealth(8); // Bare-handed, so the fight is still on when the hit lands.
+                    player.getHungerManager().setFoodLevel(10); // No natural healing while it fights.
+                    player.getHungerManager().setSaturationLevel(0);
+                    zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    zombie[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue("native_fight".equals(f.runtime.panelBots(Actor.console()).getFirst().task()), "It fights the zombie"))
+                .createAndAdd(() -> {
+                    // The zombie's hit, applied now so the test does not wait on its swing: below six health.
+                    var player = f.player();
+                    player.damage(context.getWorld().getDamageSources().mobAttack(zombie[0]), 3);
+                    context.assertTrue(player.getHealth() < 6, "Hurt: " + player.getHealth());
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    context.assertTrue(f.player().isAlive() && zombie[0].isAlive() && bot.health() < 6
+                                    && "native_goto".equals(bot.task()) && bot.goalProgress().contains("Back off from zombie"),
+                            "Badly hurt, it broke off the fight and backed off: " + bot.health() + " " + bot.task() + " " + bot.goalProgress()
+                                    + "; zombie alive " + zombie[0].isAlive());
+                })
+                .createAndAdd(() -> {
+                    f.runtime.stop();
+                    zombie[0].discard();
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The last stage of the goal: holding ten obsidian, four cobblestone and its own flint and steel, the player
      * chooses a site, places the 4×5 frame block by block with cobblestone corners, and lights it.
      */
@@ -688,7 +737,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     // Absolute positions around where the player stood up: open stone ground with room above for a
-                    // frame, a low wall keeping cast water in, and a lava pool set into the floor three blocks south.
+                    // frame, walled in so cast water and the player stay inside, and a lava pool set into the floor
+                    // three blocks south.
                     var world = context.getWorld();
                     world.setTimeOfDay(1000);
                     BlockPos p = f.player().getBlockPos().toImmutable();
@@ -698,7 +748,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         world.setBlockState(p.add(x, -2, z), Blocks.STONE.getDefaultState());
                         world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 8; y++) {
-                            world.setBlockState(p.add(x, y, z), edge && y == 0 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                            world.setBlockState(p.add(x, y, z), edge && y <= 3 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
                         }
                     }
                     for (int x = -3; x <= 3; x++) for (int z = 3; z <= 4; z++) world.setBlockState(p.add(x, -1, z), Blocks.LAVA.getDefaultState());

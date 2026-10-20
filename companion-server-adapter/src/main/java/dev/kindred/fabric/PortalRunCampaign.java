@@ -185,7 +185,9 @@ final class PortalRunCampaign {
         }
         if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel") || task.label().startsWith("Climb")) digDirection = digDirection.rotateYClockwise();
         if (task.label().startsWith("Obsidian")) obsidianSite = null;
-        if (task.label().startsWith("Portal") && "native_goto".equals(task.skill())) portalSite = null;
+        if ("native_goto".equals(task.skill()) && (task.label().startsWith("Portal") || task.label().equals("Cast: stand in front of the frame site"))) {
+            portalSite = null; // Its stand is out of reach: choose again, without that spot.
+        }
         // Another spot may see the faces, or the lava, that this one could not.
         if ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill")) castFailedFrom = lastFeet;
     }
@@ -1562,15 +1564,39 @@ final class PortalRunCampaign {
         return -1;
     }
 
+    /** Where a site search last found no room, so it is not repeated every tick from the same spot. */
+    private BlockPos noSiteFrom;
+
+    /**
+     * A frame site in front of where the player stands, or else in front of the nearest open spot within a few
+     * blocks that has room, as a player steps aside to find a clear patch of ground.
+     */
     private Optional<PortalSite> choosePortalSite(ServerPlayerEntity player) {
         var world = player.getServerWorld();
         var navigator = new NativeNavigator(world);
         BlockPos feet = player.getBlockPos();
+        if (feet.equals(noSiteFrom)) return Optional.empty();
+        for (int r = 0; r <= 6; r++) {
+            for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+                if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                for (int dy : r == 0 ? new int[]{0} : new int[]{0, 1, -1}) {
+                    BlockPos stand = feet.add(dx, dy, dz);
+                    if (r > 0 && blocked(stand)) continue;
+                    Optional<PortalSite> site = portalSiteFrom(world, navigator, stand);
+                    if (site.isPresent()) return site;
+                }
+            }
+        }
+        noSiteFrom = feet;
+        return Optional.empty();
+    }
+
+    private static Optional<PortalSite> portalSiteFrom(ServerWorld world, NativeNavigator navigator, BlockPos stand) {
+        Vec3d eye = Vec3d.ofBottomCenter(stand).add(0, 1.62, 0);
         for (int distance = 2; distance <= 2; distance++) {
             for (Direction facing : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
                 Direction along = facing.rotateYClockwise();
-                BlockPos origin = feet.offset(facing, distance).offset(along.getOpposite(), 1);
-                BlockPos stand = feet;
+                BlockPos origin = stand.offset(facing, distance).offset(along.getOpposite(), 1);
                 boolean ok = navigator.standable(stand);
                 for (int across = 0; across <= 3 && ok; across++) {
                     BlockPos ground = origin.offset(along, across).down();
@@ -1579,7 +1605,7 @@ final class PortalRunCampaign {
                         BlockPos cell = origin.offset(along, across).up(up);
                         var state = world.getBlockState(cell);
                         if (!world.getFluidState(cell).isEmpty() || state.hasBlockEntity() || state.getHardness(world, cell) < 0) ok = false;
-                        else if (player.getEyePos().distanceTo(Vec3d.ofCenter(cell)) > 4.4) ok = false;
+                        else if (eye.distanceTo(Vec3d.ofCenter(cell)) > 4.4) ok = false;
                     }
                 }
                 for (int across = 0; across <= 3 && ok; across++) {
@@ -1815,12 +1841,17 @@ final class PortalRunCampaign {
                         && (ignoredFoes.getOrDefault(mob.getUuid(), Long.MIN_VALUE) < lastTick || player.squaredDistanceTo(mob) < 4 * 4));
     }
 
-    /** Work in progress should stop for a fight: a hostile in sight is after the player and the task is not the fight. */
-    boolean shouldStopForAFight(ServerPlayerEntity player, Task running) {
-        if (running == null || running.label().startsWith("Fight") || running.label().startsWith("Close in")
-                || running.label().startsWith("Back off") || running.label().startsWith("Run from")
-                || running.label().startsWith("Take cover")) return false;
-        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null;
+    /** Why the running goal task should stop, or null: a hostile after the player while other work runs, or a fight that has worn the player down. */
+    String stopFor(ServerPlayerEntity player, Task running) {
+        if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
+                || running.label().startsWith("Take cover")) return null;
+        if (running.label().startsWith("Fight") || running.label().startsWith("Close in")) {
+            // Worn down mid-fight: break it off, as a player does, so backing off or taking cover can take over.
+            // The same line below which the goal never starts a fight.
+            return player.getHealth() < 6 ? "Badly hurt; break off the fight" : null;
+        }
+        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
+                ? "A hostile mob is attacking; fight back first" : null;
     }
 
     /** Creeper work outranks the runtime's one-block retreat: its own hit and run or sprint away is the better escape. */

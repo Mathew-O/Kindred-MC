@@ -3271,11 +3271,12 @@ final class PlayerRuntime {
 
         // Bounded danger observation while busy: interrupt through SkillRunner/ActionArbiter cancellation barrier
         // A goal task never keeps the player busy while a mob it could fight is attacking it.
-        if (usable && busy && entry.campaign != null && entry.activeCampaignTask != null
-                && entry.campaign.shouldStopForAFight(body.entity(), entry.activeCampaignTask)) {
+        String campaignStop = usable && busy && entry.campaign != null && entry.activeCampaignTask != null
+                ? entry.campaign.stopFor(body.entity(), entry.activeCampaignTask) : null;
+        if (campaignStop != null) {
             entry.campaignFightInterrupt = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
-            entry.runner.abort("A hostile mob is attacking; fight back first");
+            entry.runner.abort(campaignStop);
             body.stopInputs();
             observeRunner(entry);
             busy = runnerBusy(entry);

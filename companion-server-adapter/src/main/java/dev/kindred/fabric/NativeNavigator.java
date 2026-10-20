@@ -223,9 +223,16 @@ final class NativeNavigator {
         return shape.isEmpty() || shape.getMax(Direction.Axis.Y) <= 0.2;
     }
 
-    /** A body can stand at {@code feet}: solid support below and room for the body. */
+    /**
+     * A body can stand at {@code feet}: solid support below and room for the body, and no lava beside the body or
+     * just above it, which would flow in. A hole left by a bucket filled at the edge of a lava pool fills again
+     * from the sources around it within a couple of seconds.
+     */
     boolean standable(BlockPos feet) {
-        if (!clear(feet)) return false;
+        if (!clear(feet) || lavaAt(feet.up(2))) return false;
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            if (lavaAt(feet.offset(side)) || lavaAt(feet.up().offset(side))) return false;
+        }
         BlockPos below = feet.down();
         if (!loaded(below)) return false;
         BlockState support = state(below);
@@ -238,6 +245,10 @@ final class NativeNavigator {
     /** Feet in water deep enough to swim, never in lava. */
     boolean swimmable(BlockPos feet) {
         return loaded(feet) && state(feet).getFluidState().isIn(FluidTags.WATER) && !hazard(state(feet));
+    }
+
+    private boolean lavaAt(BlockPos pos) {
+        return loaded(pos) && state(pos).getFluidState().isIn(FluidTags.LAVA);
     }
 
     boolean hazard(BlockPos pos) {
