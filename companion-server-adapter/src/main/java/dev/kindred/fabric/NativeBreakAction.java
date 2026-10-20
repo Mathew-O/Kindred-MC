@@ -7,6 +7,8 @@ import dev.kindred.core.Checkpoint;
 import dev.kindred.core.ClaimRegistry;
 import dev.kindred.core.EditPolicy;
 import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
@@ -90,16 +92,26 @@ final class NativeBreakAction extends NativeRecordedAction {
     static int bestTool(NativePlayerBody body, BlockState state) {
         var inventory = body.entity().getInventory();
         boolean required = state.isToolRequired();
+        // Plain rock is dug with a stone pickaxe if there is one, else the humblest that can, keeping better ones for ore.
+        boolean plainRock = state.isIn(BlockTags.BASE_STONE_OVERWORLD) || state.isOf(Blocks.COBBLESTONE) || state.isOf(Blocks.COBBLED_DEEPSLATE);
         int best = -1;
         float bestSpeed = required ? 0 : 1.0f;
+        int bestTier = Integer.MAX_VALUE;
         for (int slot = 0; slot < 36; slot++) {
             ItemStack stack = inventory.getStack(slot);
             if (stack.isEmpty()) continue;
             if (required && !stack.isSuitableFor(state)) continue;
             float speed = stack.getMiningSpeedMultiplier(state);
-            // Prefer a hotbar copy of an equally good tool so no inventory move is needed.
-            if (speed > bestSpeed || speed == bestSpeed && best >= 9 && slot < 9) {
+            if (speed <= 1.0f && !required) continue;
+            int tier = PortalRunCampaign.tier(stack.getItem());
+            tier = tier == 2 ? 0 : tier; // A stone pickaxe first: fast enough for rock and cheap to replace.
+            boolean better = plainRock && speed > 1.0f
+                    ? tier < bestTier || tier == bestTier && (speed > bestSpeed || best >= 9 && slot < 9)
+                    // Prefer a hotbar copy of an equally good tool so no inventory move is needed.
+                    : speed > bestSpeed || speed == bestSpeed && best >= 9 && slot < 9;
+            if (better) {
                 bestSpeed = speed;
+                bestTier = tier;
                 best = slot;
             }
         }

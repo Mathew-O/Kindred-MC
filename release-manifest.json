@@ -96,7 +96,9 @@
       "native_goto",
       "native_break",
       "native_bucket",
-      "native_ignite_portal"
+      "native_ignite_portal",
+      "native_fight",
+      "native_discard"
     ],
     "nativePaidSkillEvidence": "docs/evidence/F-04a.md",
     "nativeWalkingEvidence": "docs/evidence/F-10a.md",
@@ -171,10 +173,10 @@
   "liveAcceptanceGatesPassed": [],
   "automatedValidation": {
     "junitTestsPassed": 336,
-    "nativeGameTestsPassed": 187,
+    "nativeGameTestsPassed": 188,
     "nativeGameTestConsecutivePasses": 2,
     "latestRegressionEvidence": "docs/validation.md",
-    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 187/187, including the new death/respawn fixture and the two Nether-portal goal fixtures (obsidian from lava; frame and ignition). Full build passed with 336 JUnit results. Native fixtures and development live runs only; no live gate passed.",
+    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 188/188, including the death/respawn fixture and three Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player). Full build passed with 336 JUnit results. Native fixtures and development live runs only; no live gate passed.",
     "evidence": "docs/validation.md"
   },
   "supportExclusions": [

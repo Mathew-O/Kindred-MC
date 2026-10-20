@@ -52,7 +52,7 @@ final class PortalRunCampaign {
     record Task(String skill, Map<String, String> args, String label) { }
 
     private static final double REACH = 4.3;
-    private static final int IRON_TOP = 56, IRON_TARGET = 32, IRON_BOTTOM = -24;
+    private static final int IRON_TOP = 56, IRON_TARGET = 32;
     /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
     private static final int EXPLORE_RADIUS = 192;
     private static final java.util.EnumSet<PortalRunPlanner.Action> TRAVEL = java.util.EnumSet.of(
@@ -295,30 +295,31 @@ final class PortalRunCampaign {
      */
     private Optional<Task> makeRoom(ServerPlayerEntity player) {
         var inventory = player.getInventory();
-        int free = 0;
-        for (int s = 0; s < 36; s++) if (inventory.getStack(s).isEmpty()) free++;
+        int free = 0, stoneTotal = 0, gravelTotal = 0;
+        for (int s = 0; s < 36; s++) {
+            ItemStack stack = inventory.getStack(s);
+            if (stack.isEmpty()) free++;
+            else if (stoneLike(stack)) stoneTotal += stack.getCount();
+            else if (stack.isOf(Items.GRAVEL)) gravelTotal += stack.getCount();
+        }
         if (free >= 3) return Optional.empty();
-        int stoneKept = 0, gravelKept = 0;
+        // The biggest surplus stack goes first, so a few drops clear real room.
+        int bestSlot = -1, bestCount = 0;
         for (int s = 0; s < 36; s++) {
             ItemStack stack = inventory.getStack(s);
             if (stack.isEmpty()) continue;
-            boolean stoneLike = stack.isIn(ItemTags.STONE_TOOL_MATERIALS) || stack.isOf(Items.COBBLESTONE);
-            int surplus;
-            if (stoneLike) {
-                surplus = Math.max(0, stoneKept + stack.getCount() - 64);
-                stoneKept += stack.getCount() - surplus;
-            } else if (stack.isOf(Items.GRAVEL)) {
-                surplus = Math.max(0, gravelKept + stack.getCount() - 8);
-                gravelKept += stack.getCount() - surplus;
-            } else {
-                surplus = JUNK.contains(stack.getItem()) ? stack.getCount() : 0;
-            }
-            if (surplus > 0) {
-                return Optional.of(new Task("native_discard", Map.of("slot", String.valueOf(s), "count", String.valueOf(surplus)),
-                        "Drop surplus " + Registries.ITEM.getId(stack.getItem()).getPath().replace('_', ' ')));
-            }
+            int surplus = JUNK.contains(stack.getItem()) ? stack.getCount()
+                    : stoneLike(stack) ? Math.min(stack.getCount(), stoneTotal - 64)
+                    : stack.isOf(Items.GRAVEL) ? Math.min(stack.getCount(), gravelTotal - 8) : 0;
+            if (surplus > bestCount) { bestCount = surplus; bestSlot = s; }
         }
-        return Optional.empty();
+        if (bestSlot < 0) return Optional.empty();
+        return Optional.of(new Task("native_discard", Map.of("slot", String.valueOf(bestSlot), "count", String.valueOf(bestCount)),
+                "Drop surplus " + Registries.ITEM.getId(inventory.getStack(bestSlot).getItem()).getPath().replace('_', ' ')));
+    }
+
+    private static boolean stoneLike(ItemStack stack) {
+        return stack.isIn(ItemTags.STONE_TOOL_MATERIALS) || stack.isOf(Items.COBBLESTONE);
     }
 
     private Optional<Task> pickUpWorkstation(NativePlayerBody body, PortalRunSnapshot s) {
@@ -455,10 +456,10 @@ final class PortalRunCampaign {
             case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"));
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
                     .or(() -> tunnel(body, "Tunnel for coal"));
-            case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, IRON_BOTTOM, "iron"));
+            case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
             case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
                     .or(() -> gather(body, WorldKnowledge.Kind.IRON_ORE, 6, "iron ore on the way"))
-                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, -63, "diamonds"));
+                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "diamonds"));
             case CRAFT -> craft(body, step.item());
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
@@ -469,7 +470,7 @@ final class PortalRunCampaign {
                     ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
                     .or(() -> fillWater(body)).or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
-                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, -63, "lava"));
+                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
             case GATHER_FLINT -> flint(body);
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
@@ -668,10 +669,10 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
-    private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, int bottom, String what) {
+    private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
         int y = body.entity().getBlockY();
         if (y > Math.min(top, target + 3)) return digDown(body, target, "Dig down toward " + what);
-        if (y < bottom) return Optional.empty();
+        // Below the richest band there is still some: tunnel where it stands rather than give up.
         return tunnel(body, "Tunnel for " + what);
     }
 
