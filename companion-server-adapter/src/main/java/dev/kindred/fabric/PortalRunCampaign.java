@@ -469,7 +469,8 @@ final class PortalRunCampaign {
                             .or(() -> home == null ? Optional.empty() : Optional.of(go(home, 3, true, "Head back up toward home")))
                             : explore(body, "logs"));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
-            case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"));
+            case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"))
+                    .or(() -> search(body, "stone"));
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
                     .or(() -> tunnel(body, "Tunnel for coal"));
             case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
