@@ -933,19 +933,26 @@ final class PortalRunCampaign {
         return player.getEyePos().distanceTo(Vec3d.ofCenter(pos));
     }
 
-    /** A block this player could break right now from where it stands. */
     /** Break the block the player's head (or feet) is stuck in, as a player digs out of gravel that fell on it. */
     private Optional<Task> digOut(NativePlayerBody body) {
         var player = body.entity();
         if (!player.isInsideWall()) return Optional.empty();
         var world = player.getServerWorld();
-        for (BlockPos cell : List.of(BlockPos.ofFloored(player.getEyePos()), player.getBlockPos())) {
+        // The same thin slab around the eyes that suffocation tests, which reaches into the next cell when the player
+        // stands near its edge; then the feet.
+        float width = player.getWidth() * 0.8F;
+        var cells = new java.util.ArrayList<BlockPos>();
+        BlockPos.stream(Box.of(player.getEyePos(), width, 1.0E-6, width)).forEach(cell -> cells.add(cell.toImmutable()));
+        cells.sort(java.util.Comparator.comparingDouble(cell -> player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(cell))));
+        cells.add(player.getBlockPos());
+        for (BlockPos cell : cells) {
             if (world.getBlockState(cell).getCollisionShape(world, cell).isEmpty() || !breakableNow(body, cell)) continue;
             return Optional.of(clearAt(cell, "Dig out of the wall at " + cell.toShortString()));
         }
         return Optional.empty();
     }
 
+    /** A block this player could break right now from where it stands. */
     private boolean breakableNow(NativePlayerBody body, BlockPos pos) {
         return breakableNow(body, pos, false);
     }
@@ -1157,7 +1164,8 @@ final class PortalRunCampaign {
         for (int turn = 0; turn < 4; turn++) {
             BlockPos step = feet.offset(digDirection);
             BlockPos landing = step.up();
-            boolean refused = passable(world, step); // Nothing to climb onto this way.
+            // Nothing to climb onto this way, or a landing it already failed to reach (live run 49 tried one 232 times).
+            boolean refused = passable(world, step) || blocked(landing);
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
                 if (refused || passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
@@ -1186,12 +1194,12 @@ final class PortalRunCampaign {
                 break;
             }
             // Walking dug ground again is fine on the way to rock it can dig; pacing a dead-end corridor is not.
-            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && world.getFluidState(ahead).isEmpty()
+            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && world.getFluidState(ahead).isEmpty() && !blocked(ahead)
                     && (!tunnelled.contains(ahead.asLong()) || diggableFaceAhead(body, ahead))) {
                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
             }
             // Never a step down into water: wading back out to here and stepping in again would go round for ever.
-            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2))
+            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down())
                     && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
             }
@@ -1833,6 +1841,15 @@ final class PortalRunCampaign {
         if (player.getHealth() < 6) return backOff(player);
         // Outnumbered and already hurt: do not take them on one by one in the dark; get some distance first.
         if (player.getHealth() < 14 && hunters(player) >= 3) return backOff(player);
+        // No weapon in hand (just respawned, say): a fist fight with a zombie or a skeleton is lost, so keep away, as
+        // a player with nothing does. Something that has closed right in is still struck below.
+        if (!armed(player)) {
+            boolean closeIn = threats(player).stream().anyMatch(mob -> player.squaredDistanceTo(mob) < 2.5 * 2.5);
+            // Walking away from a skeleton stays in its line of fire; a block between them does not.
+            Optional<Task> away = closeIn || shooter == null ? Optional.empty() : cover(body, shooter);
+            if (away.isEmpty() && !closeIn) away = backOff(player);
+            if (away.isPresent()) return away;
+        }
         var threats = threats(player);
         HostileEntity nearest = threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
@@ -1995,9 +2012,11 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         var open = openings(world, feet);
-        // A mob on foot already within reach is past any wall: fight it where the player stands.
-        boolean pressed = player.hurtTime > 0 || world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(2.5, 1, 2.5),
-                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)).size() > 0;
+        // A mob on foot already within reach is past any wall: fight it where the player stands. So is one it is
+        // already fighting that a hit has only knocked a step or two back: it comes straight back.
+        boolean pressed = player.hurtTime > 0 || world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(4, 1.5, 4),
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                        && (player.squaredDistanceTo(mob) < 2.5 * 2.5 || mob.getUuid().equals(foe) && lastTick <= foeUntil)).size() > 0;
         net.minecraft.entity.LivingEntity danger = outmatchedBy(player);
         if (danger != null && pressed && !(danger instanceof CreeperEntity)) return Optional.empty();
         if (danger != null) {
@@ -2119,6 +2138,15 @@ final class PortalRunCampaign {
     /** Work stopped for a fight is not a failed target; plan again without counting it. */
     void taskInterrupted(Task task) {
         progress = "Interrupted: " + (task == null ? "work" : task.label());
+    }
+
+    /** A sword or an axe in the hotbar, as {@link #strike} would use. */
+    private static boolean armed(ServerPlayerEntity player) {
+        for (int s = 0; s < 9; s++) {
+            var stack = player.getInventory().getStack(s);
+            if (stack.isIn(ItemTags.SWORDS) || stack.isIn(ItemTags.AXES)) return true;
+        }
+        return false;
     }
 
     private static Task strike(ServerPlayerEntity player, net.minecraft.entity.LivingEntity target, String label) {

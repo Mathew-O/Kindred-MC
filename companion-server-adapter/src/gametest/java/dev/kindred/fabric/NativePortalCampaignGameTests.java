@@ -74,7 +74,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var player = f.player();
-                    player.setHealth(8); // Bare-handed, so the fight is still on when the hit lands.
+                    player.getInventory().setStack(0, new ItemStack(Items.WOODEN_SWORD)); // Weak, so the fight is still on when the hit lands.
+                    player.setHealth(8);
                     player.getHungerManager().setFoodLevel(10); // No natural healing while it fights.
                     player.getHungerManager().setSaturationLevel(0);
                     zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
@@ -130,6 +131,46 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(context.getWorld().getBlockState(head[0]).isAir() && !f.player().isInsideWall(),
                         "It broke the block in its head space: " + context.getWorld().getBlockState(head[0])))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive() && f.player().getHealth() >= 15, "Barely hurt: " + f.player().getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Standing at the edge of its cell, a block lands beside its head that still reaches into its eyes: the goal
+     * breaks that block, not just the one its eyes are centred in, as live run 48 suffocated there.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)
+    public void goalDigsOutOfABlockReachingIntoItsHeadFromBeside(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] beside = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Edged");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
+                    BlockPos feet = player.getBlockPos();
+                    // Against the west edge of its cell, so its eyes reach into the cell beside it.
+                    player.refreshPositionAndAngles(feet.getX() + 0.05, player.getY(), feet.getZ() + 0.5, player.getYaw(), player.getPitch());
+                    beside[0] = BlockPos.ofFloored(player.getEyePos()).west().toImmutable();
+                    context.getWorld().setBlockState(beside[0], Blocks.DIRT.getDefaultState());
+                    context.assertTrue(player.isInsideWall() && context.getWorld().getBlockState(BlockPos.ofFloored(player.getEyePos())).isAir(),
+                            "Stuck in the wall beside it");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(!f.player().isInsideWall(),
+                        "It got its head out of the block beside it: " + context.getWorld().getBlockState(beside[0])))
                 .createAndAdd(() -> {
                     context.assertTrue(f.player().isAlive() && f.player().getHealth() >= 15, "Barely hurt: " + f.player().getHealth());
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
@@ -298,6 +339,92 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Nothing in hand, as just after a respawn, and a zombie after it a few blocks off: the player keeps away rather
+     * than start a fist fight it would lose.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalKeepsAwayFromAZombieWhenUnarmed(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        boolean[] fought = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Barehanded");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    f.player().getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
+                    zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    zombie[0].setTarget(f.player());
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    fought[0] |= "native_fight".equals(bot.task()) && f.player().squaredDistanceTo(zombie[0]) > 2.5 * 2.5;
+                    context.assertTrue("native_goto".equals(bot.task()) && bot.goalProgress().contains("Back off from zombie"),
+                            "Unarmed, it keeps away from the zombie: " + bot.task() + " " + bot.goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(fought[0], "It did not walk into a fist fight");
+                    f.runtime.stop();
+                    zombie[0].discard();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Nothing in hand and a skeleton shooting at it across a dark plot: walking away would stay in its line of fire,
+     * so the player puts a block between them, as a player without a weapon ducks behind cover.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalTakesCoverFromASkeletonWhenUnarmed(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.SkeletonEntity[] skeleton = new net.minecraft.entity.mob.SkeletonEntity[1];
+        boolean[] fought = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 6; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Unarmed");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
+                    player.getInventory().setStack(1, new ItemStack(Items.COBBLESTONE, 16));
+                    BlockPos feet = player.getBlockPos();
+                    BlockPos a = context.getAbsolutePos(new BlockPos(1, 2, 1)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
+                    BlockPos corner = feet.getSquaredDistance(a) > feet.getSquaredDistance(b) ? new BlockPos(1, 2, 1) : new BlockPos(6, 2, 6);
+                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, net.minecraft.util.math.Vec3d.ofBottomCenter(corner));
+                    skeleton[0].equipStack(net.minecraft.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+                    skeleton[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    fought[0] |= "native_fight".equals(bot.task()) && f.player().squaredDistanceTo(skeleton[0]) > 2.5 * 2.5;
+                    context.assertTrue(bot.goalProgress().contains("Take cover from skeleton"),
+                            "Unarmed, it takes cover from the skeleton: " + bot.task() + " " + bot.goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(fought[0], "It did not walk into a fist fight");
+                    f.runtime.stop();
+                    skeleton[0].discard();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
@@ -828,7 +955,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     BlockPos p = f.player().getBlockPos().toImmutable();
                     Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
                     Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
-                    for (int dx = -3; dx <= 3; dx++) for (int dz = -3; dz <= 3; dz++) for (int dy = -1; dy <= 3; dy++) {
+                    // One block wider than the passage needs, so stone stands behind the ore and its drop cannot fly out.
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
                         world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
                     }
                     // Sealed inside the stone block, so no daylight reaches it.
@@ -850,7 +978,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
                     inventory.setStack(2, new ItemStack(Items.BREAD, 5));
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
-                    inventory.setStack(4, new ItemStack(Items.STICK, 6));
+                    // The iron and diamond pickaxes' four, two spare pairs, and one for a torch.
+                    inventory.setStack(4, new ItemStack(Items.STICK, 9));
                     inventory.setStack(5, new ItemStack(Items.COAL, 4));
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
@@ -863,7 +992,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     long torches = BlockPos.streamOutwards(ore[0], 6, 3, 6).filter(pos -> world.getBlockState(pos).isOf(Blocks.TORCH)).count();
                     context.assertTrue(torches >= 1, "It lit the dark passage with its own torch");
                     var inventory = f.player().getInventory();
-                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 5,
+                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 8,
                             "One coal and one spare stick became torches: coal " + ItemMoves.count(inventory, Items.COAL)
                                     + ", sticks " + ItemMoves.count(inventory, Items.STICK));
                     context.assertTrue(f.player().isAlive(), "Alive");

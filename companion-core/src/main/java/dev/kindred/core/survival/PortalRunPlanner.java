@@ -29,8 +29,12 @@ public final class PortalRunPlanner {
     public static final int SHIELD_PLANKS = 6;
     /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
     static final int TREE_RANGE = 24;
-    /** Sticks kept beyond the pickaxes still to make: a replacement for one that wears out. */
-    static final int SPARE_STICKS = 2;
+    /**
+     * Sticks kept beyond the pickaxes still to make: two replacements for ones that wear out. Staircases and branch
+     * mines wear out a stone pickaxe every few minutes; live run 49 used three before its sixth iron and was left at
+     * Y=19 with cobblestone, a table and no sticks.
+     */
+    static final int SPARE_STICKS = 4;
     public static final int DIAMONDS_NEEDED = 3;
     /** Food items to carry before work takes the player away from animals. */
     public static final int FOOD_STOCK = 3;
@@ -154,7 +158,7 @@ public final class PortalRunPlanner {
         if (s.swordTier() < 2 && s.cobble() >= 2) {
             return craftAtTable(s, "stone_sword", 0, 1, Stage.STONE);
         }
-        // Sticks for the pickaxes still to make and a spare pair for one that wears out, made while trees are in sight
+        // Sticks for the pickaxes still to make and spares for ones that wear out, made while trees are in sight
         // or from wood already carried: there are none deep below, and a climb back up costs more than the sticks.
         boolean treesNear = facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_RANGE;
         int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0);
@@ -244,7 +248,7 @@ public final class PortalRunPlanner {
         return 2 * Math.max(0, PORTAL_OBSIDIAN - s.obsidian());
     }
 
-    /** Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and a spare pair. */
+    /** Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and two spare pairs. */
     public static int sticksReserved(PortalRunSnapshot s, WorldFacts.Method frame) {
         return sticksKept(s, frame) + SPARE_STICKS;
     }
