@@ -92,6 +92,8 @@ final class PortalRunCampaign {
     private BlockPos home;
     /** 4×4×4 cells of cave the player has already walked through; exploration heads for the rest. */
     private final Set<Long> visitedCaves = new HashSet<>();
+    /** Where tunnelling has already advanced: walking an old corridor back and forth is not progress. */
+    private final Set<Long> tunnelled = new HashSet<>();
     private int branchRun;
     private boolean branchSide, branchStepping;
     /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
@@ -151,6 +153,10 @@ final class PortalRunCampaign {
             lookUntilSweep = knowledge.sweeps() + 2; // Finish the sweep under way, then one full look from here.
         }
         if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) branchTurn();
+        if (task != null && completed && task.label().endsWith(": advance") && position(task.args()) != null) {
+            if (tunnelled.size() > 20_000) tunnelled.clear();
+            tunnelled.add(position(task.args()).asLong());
+        }
         if (task != null && completed) repeatFailures.remove(task);
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
@@ -891,7 +897,7 @@ final class PortalRunCampaign {
                 refused = true;
                 break;
             }
-            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead)) {
+            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && !tunnelled.contains(ahead.asLong())) {
                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
             }
             if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2))) {
