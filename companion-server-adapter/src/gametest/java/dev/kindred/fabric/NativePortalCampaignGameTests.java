@@ -296,6 +296,60 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * The same tunnel mouth with a zombie in the cave beyond: the player holds the passage and lets the zombie come
+     * to it, as players do, instead of chasing it out into the open cave, and kills it there.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalHoldsThePassageAgainstAZombie(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        BlockPos[] mouth = new BlockPos[1];
+        int[] farthest = {0};
+        boolean[] held = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Steadfast"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    mouth[0] = p;
+                    for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
+                        boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
+                                || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 2);
+                        world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    player.getInventory().setStack(3, new ItemStack(Items.BREAD, 5));
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    zombie[0].refreshPositionAndAngles(p.getX() + 1.5, p.getY(), p.getZ() + 4.5, 180, 0);
+                    zombie[0].setPersistent();
+                    world.spawnEntity(zombie[0]);
+                    zombie[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    farthest[0] = Math.max(farthest[0], f.player().getBlockPos().getZ() - mouth[0].getZ());
+                    held[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Hold the passage");
+                    context.assertFalse(zombie[0].isAlive(), "The zombie was killed");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(held[0], "It held the passage while the zombie came");
+                    context.assertTrue(farthest[0] <= 1, "It never went out into the cave: " + farthest[0] + " blocks in");
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Badly hurt, with a shield, and a creeper already hissing three blocks away: running would not get clear in
      * time, so the goal faces it behind the shield, and the player lives through the blast.
      */

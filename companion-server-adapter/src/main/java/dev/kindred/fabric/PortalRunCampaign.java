@@ -221,6 +221,9 @@ final class PortalRunCampaign {
         obsidianSite = null;
         exploreHeading = null;
         approaches.clear();
+        snug = null; // A new life starts somewhere else, walled in nowhere.
+        holedUpSince = -1;
+        holdingSince = -1;
         // Lava burns the drops; anything else stays on the ground for about five minutes. Whatever killed the
         // player is probably still standing over them, so a mob kill is not worth walking back into.
         boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
@@ -358,7 +361,8 @@ final class PortalRunCampaign {
         return label.equals("Wait for daylight") || label.equals("Rest to heal") || label.startsWith("Fight")
                 || label.startsWith("Take cover") || label.startsWith("Run from") || label.startsWith("Back off")
                 || label.startsWith("Close in") || label.startsWith("Seal the shelter") || label.startsWith("Dig in")
-                || label.startsWith("Place a torch") || label.startsWith("Get out of the water") || label.startsWith("Hole up");
+                || label.startsWith("Place a torch") || label.startsWith("Get out of the water") || label.startsWith("Hole up")
+                || label.startsWith("Hold the passage");
     }
 
     /** A new stage, or a new best in a counter the route needs. */
@@ -1182,11 +1186,13 @@ final class PortalRunCampaign {
                 break;
             }
             // Walking dug ground again is fine on the way to rock it can dig; pacing a dead-end corridor is not.
-            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead)
+            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && world.getFluidState(ahead).isEmpty()
                     && (!tunnelled.contains(ahead.asLong()) || diggableFaceAhead(body, ahead))) {
                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
             }
-            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2))) {
+            // Never a step down into water: wading back out to here and stepping in again would go round for ever.
+            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2))
+                    && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
             }
             digDirection = digDirection.rotateYClockwise();
@@ -1835,6 +1841,17 @@ final class PortalRunCampaign {
         foe = nearest.getUuid();
         foeUntil = lastTick + 100;
         String name = Registries.ENTITY_TYPE.getId(nearest.getType()).getPath();
+        // Underground in a passage, a mob on foot is met where the player stands, as players hold a tunnel mouth,
+        // rather than chased out into the open cave; for ten seconds at most, in case it never comes.
+        boolean passage = underground(player) && player.getBlockPos().equals(snug);
+        if (passage && !(nearest instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(nearest) > 3.0) {
+            if (holdingSince < 0) holdingSince = lastTick;
+            if (lastTick - holdingSince < 200) {
+                return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Hold the passage against " + name));
+            }
+        } else {
+            holdingSince = -1;
+        }
         Task strike = strike(player, nearest, "Fight " + name);
         return Optional.of(new Task("native_fight", strike.args(), strike.label()));
     }
@@ -1959,6 +1976,8 @@ final class PortalRunCampaign {
     private BlockPos snug;
     /** Since when the player has been walled in to recover; negative when it is not. */
     private long holedUpSince = -1;
+    /** Since when it has been waiting in a passage for a mob to come to it; negative when it is not. */
+    private long holdingSince = -1;
 
     /**
      * Underground and outmatched for its gear (a creeper or a shooter without a shield, several mobs after it, low
@@ -2057,7 +2076,8 @@ final class PortalRunCampaign {
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
-                || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")) return null;
+                || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
+                || running.label().startsWith("Hold the passage")) return null;
         if (running.label().startsWith("Fight") || running.label().startsWith("Close in")) {
             // Worn down mid-fight: break it off, as a player does, so backing off or taking cover can take over.
             // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:
