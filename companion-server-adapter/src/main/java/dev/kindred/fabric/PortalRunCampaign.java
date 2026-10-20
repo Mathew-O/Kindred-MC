@@ -788,8 +788,12 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         var nearest = new java.util.EnumMap<WorldFacts.Source, Integer>(WorldFacts.Source.class);
+        boolean below = underground(player);
         for (var source : SOURCES.entrySet()) {
-            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p))
+            // Trees count only from up among them: from below ground, getting back up to them is a trip, not a detour.
+            if (below && source.getKey() == WorldFacts.Source.TREE) continue;
+            // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight.
+            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         facts = new WorldFacts(nearest, METHODS);
