@@ -140,8 +140,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue("native_fight".equals(f.runtime.panelBots(Actor.console()).getFirst().task()), "It fights the zombie"))
                 .createAndAdd(() -> {
-                    // The zombie's hit, applied now so the test does not wait on its swing: below six health.
+                    // The zombie's hit, applied now so the test does not wait on its swing: below six health. The zombie is
+                    // whole again, so this is a fight being lost, not one two more swings would win.
                     var player = f.player();
+                    zombie[0].setHealth(zombie[0].getMaxHealth());
                     player.damage(context.getWorld().getDamageSources().mobAttack(zombie[0]), 3);
                     context.assertTrue(player.getHealth() < 6, "Hurt: " + player.getHealth());
                 })
@@ -512,8 +514,11 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var bot = f.runtime.panelBots(Actor.console()).getFirst();
                     chased[0] |= "native_fight".equals(bot.task()) && f.player().squaredDistanceTo(enderman[0]) > 3.5 * 3.5;
                     var world = context.getWorld();
-                    context.assertTrue(!world.getBlockState(way[0]).isAir() && !world.getBlockState(way[1]).isAir(),
-                            "It walled itself into the passage: " + bot.goalProgress());
+                    // Walled in toward the cave, wherever in the passage it now stands (an enderman that teleports away
+                    // and back can find it a step further back).
+                    BlockPos at = f.player().getBlockPos();
+                    boolean walled = at.getZ() <= way[0].getZ() && !world.getBlockState(at.south()).isAir() && !world.getBlockState(at.south().up()).isAir();
+                    context.assertTrue(walled, "It walled itself into the passage: " + bot.goalProgress());
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
@@ -1377,6 +1382,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     for (int k = 1; k <= 8; k++) for (int y = 8 - k; y <= 10 - k; y++) world.setBlockState(b.add(k, y, 0), Blocks.AIR.getDefaultState());
                     world.setBlockState(b.add(9, 1, 0), Blocks.AIR.getDefaultState());
                     world.setBlockState(b.add(9, 0, 0), Blocks.IRON_ORE.getDefaultState());
+                    // A wall round the top, two high, so the staircase is the only way on from there.
+                    for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 8; y <= 9; y++) {
+                        if (x == -2 || x == 10 || z == -2 || z == 2) world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
+                    }
                     world.setTimeOfDay(1000);
                     var player = f.player();
                     player.refreshPositionAndAngles(b.getX() + 0.5, b.getY() + 8, b.getZ() + 0.5, -90, 30);
@@ -1462,7 +1471,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
-     * The bundled sky island's outcrop (docs/worlds/sky-island): eighteen stone with iron ore on its faces, so seen
+     * The bundled sky island's outcrop (docs/worlds/sky-island): sixteen stone with iron ore on its faces, so seen
      * from beside it the middle of a stone block is often behind ore a wooden pickaxe cannot take. The goal still
      * mines its way in, makes a stone pickaxe, then takes the iron, rather than writing the outcrop off and leaving
      * to look for stone across the void (live sky-island run 1).
@@ -1484,7 +1493,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         world.setBlockState(edge, Blocks.COBBLESTONE_WALL.getDefaultState());
                     }
                     for (int x = 2; x <= 4; x++) for (int y = 0; y <= 1; y++) for (int z = 1; z <= 4; z++) world.setBlockState(c.add(x, y, z), Blocks.STONE.getDefaultState());
-                    for (int[] ore : new int[][] {{2, 0, 1}, {4, 1, 1}, {2, 1, 3}, {4, 0, 4}, {3, 1, 4}, {4, 0, 2}}) {
+                    for (int[] ore : new int[][] {{2, 0, 1}, {4, 1, 1}, {2, 1, 3}, {4, 0, 4}, {3, 1, 4}, {4, 0, 2}, {3, 1, 2}, {2, 0, 4}}) {
                         world.setBlockState(c.add(ore[0], ore[1], ore[2]), Blocks.IRON_ORE.getDefaultState());
                     }
                     var player = f.player();

@@ -102,6 +102,7 @@ final class PortalRunCampaign {
     private static final int TRAIL_LENGTH = 4096;
     /** A run from a creeper found no way out: until then, wall it off or fight it instead. */
     private long runFailedUntil;
+    private long backOffFailedUntil;
     private int branchRun;
     private boolean branchSide, branchStepping;
     /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
@@ -204,6 +205,7 @@ final class PortalRunCampaign {
             exploreHeading = null;
         }
         if (task.label().equals("Run from creeper")) runFailedUntil = tick + 200;
+        if (task.label().startsWith("Back off")) backOffFailedUntil = tick + 100; // No way off: cover instead, for now.
         if (task.label().startsWith("Recover")) dropSite = null;
         if (task.label().startsWith("Cut through")) exploreStalls = 0; // That way is closed too; walk and look again.
         // A foe in a hole or across a ravine cannot be reached; leave it be for a while rather than try forever.
@@ -545,7 +547,8 @@ final class PortalRunCampaign {
         }
         // Hurt below ground with nothing to eat, so nothing to heal with: up to where the animals are, rather than on
         // with the work (live run 58 went back to exploring a cave, out of food and below six health, and was shot).
-        if (player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18 && underground(player)) {
+        boolean dark = player.getServerWorld().isNight() && player.getServerWorld().getDimension().hasSkyLight();
+        if (player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18 && underground(player) && !dark) {
             Optional<Task> up = wayUp(body, "Climb toward the surface for food");
             if (up.isPresent()) {
                 progress = stageLabel(stage) + ": hurt and out of food - " + up.get().label();
@@ -1330,6 +1333,11 @@ final class PortalRunCampaign {
                 if (passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                // A night shelter is dug by hand when there is no pickaxe: slow in rock, but better than waiting in the
+                // open (live run 59 died four times at night on the surface just after respawning with nothing).
+                if (label.startsWith("Dig in for the night") && handClearable(body, cell)) {
+                    return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
+                }
                 refused = true;
                 break;
             }
@@ -1370,6 +1378,29 @@ final class PortalRunCampaign {
         // A step of the way back costs about a third of a staircase step (three blocks dug per block climbed).
         boolean walkBack = stepsBackToDaylight(player.getServerWorld()) <= 3 * depth;
         return walkBack ? retrace(body, label).or(() -> climb(body, label)) : climb(body, label).or(() -> retrace(body, label));
+    }
+
+    /**
+     * A cell on the way it came, four to twelve steps back along its trail and within sixteen blocks, that leaves
+     * every one of {@code hunters} at least two blocks further off than now.
+     */
+    private Optional<BlockPos> trailAwayFrom(List<HostileEntity> hunters) {
+        if (trail.size() < 3) return Optional.empty();
+        int index = nearestOnTrail();
+        var cells = new java.util.ArrayList<>(trail);
+        for (int back = 12; back >= 4; back--) {
+            int i = index - back;
+            if (i < 0) continue;
+            BlockPos cell = cells.get(i);
+            if (cell.getSquaredDistance(lastFeet) > 16 * 16 || blocked(cell) || dangerous(cell)) continue;
+            boolean away = true;
+            for (HostileEntity mob : hunters) {
+                double now = Math.sqrt(mob.getBlockPos().getSquaredDistance(lastFeet));
+                if (Math.sqrt(mob.getBlockPos().getSquaredDistance(cell)) < now + 2) { away = false; break; }
+            }
+            if (away) return Optional.of(cell);
+        }
+        return Optional.empty();
     }
 
     /** Trail steps from where the player stands back to the last place on it under open sky, or a large number. */
@@ -1587,6 +1618,9 @@ final class PortalRunCampaign {
                 if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
                 if (!ground && besideTheVoid(world, spot)) continue;
+                // Not where the player (standing off the middle of its block) or anything living overlaps it: vanilla
+                // refuses that placement, and the island outcrop fixture waited on one such spot for good.
+                if (!world.getEntitiesByClass(net.minecraft.entity.LivingEntity.class, new Box(spot).contract(0.01), net.minecraft.entity.LivingEntity::isAlive).isEmpty()) continue;
                 return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(slot))), label));
             }
         }
@@ -1598,7 +1632,16 @@ final class PortalRunCampaign {
             if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
             if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
         }
-        return Optional.empty();
+        // Nowhere here (on top of a half-mined outcrop, say): step over to the nearest open floor that will take it.
+        BlockPos room = null;
+        for (BlockPos cell : BlockPos.iterateOutwards(feet, 5, 2, 5)) {
+            if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
+            var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
+            if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)) continue;
+            room = cell.toImmutable();
+            break;
+        }
+        return room == null ? Optional.empty() : Optional.of(go(room, 2.5, true, "Walk to room for a workstation"));
     }
 
     /** Beside a column with nothing in it for four blocks down from {@code spot}'s level: an island's edge over the void. */
@@ -2155,9 +2198,9 @@ final class PortalRunCampaign {
             Task strike = strike(player, last, "Fight " + Registries.ENTITY_TYPE.getId(last.getType()).getPath());
             return Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
-        if (player.getHealth() < 6) return backOff(player);
+        if (player.getHealth() < 6) return backOff(player).or(() -> coverFromHunters(body));
         // Outnumbered and already hurt: do not take them on one by one in the dark; get some distance first.
-        if (player.getHealth() < 14 && hunters(player) >= 3) return backOff(player);
+        if (player.getHealth() < 14 && hunters(player) >= 3) return backOff(player).or(() -> coverFromHunters(body));
         // No weapon in hand (just respawned, say): a fist fight with a zombie or a skeleton is lost, so keep away, as
         // a player with nothing does. Something that has closed right in is still struck below.
         if (!armed(player)) {
@@ -2197,6 +2240,9 @@ final class PortalRunCampaign {
 
     /** Too hurt to fight: put distance between the player and whatever is after it. */
     private Optional<Task> backOff(ServerPlayerEntity player) {
+        // A way off that just failed is not tried again at once: in live run 59 it was tried a dozen times in a row
+        // while a skeleton went on shooting, and cover came too late.
+        if (lastTick < backOffFailedUntil) return Optional.empty();
         var world = player.getServerWorld();
         var hunters = world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
                 mob -> mob.isAlive() && mob.getTarget() == player);
@@ -2204,11 +2250,18 @@ final class PortalRunCampaign {
         Vec3d away = Vec3d.ZERO;
         for (HostileEntity mob : hunters) away = away.add(player.getPos().subtract(mob.getPos()).normalize());
         if (away.lengthSquared() < 1.0E-4) return Optional.empty();
+        String name = Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath();
+        // Back the way it came first, ground it knows it can walk: straight away from the mobs led live run 59 down
+        // into a dark cave beyond its staircase, onto a creeper.
+        Optional<BlockPos> back = trailAwayFrom(hunters);
+        if (back.isPresent()) {
+            return Optional.of(new Task("native_goto", coords(back.get(), Map.of("range", "1", "partial", "true", "sprint", "true")),
+                    "Back off from " + name + " the way it came"));
+        }
         away = away.normalize().multiply(10);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         // At a sprint: walking, a zombie keeps pace and strikes the player's back all the way.
-        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")),
-                "Back off from " + Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath()));
+        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Back off from " + name));
     }
 
     /**
@@ -2239,6 +2292,14 @@ final class PortalRunCampaign {
     }
 
     /** Block the first open cell beside the player's head or feet along the line from {@code shooter} to it. */
+    /** A block between the player and the nearest mob after it, when there is nowhere to back off to. */
+    private Optional<Task> coverFromHunters(NativePlayerBody body) {
+        var player = body.entity();
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                        mob -> mob.isAlive() && mob.getTarget() == player)
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).flatMap(mob -> cover(body, mob));
+    }
+
     private Optional<Task> cover(NativePlayerBody body, net.minecraft.entity.LivingEntity shooter) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -2771,7 +2832,8 @@ final class PortalRunCampaign {
             // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:
             // running from its blast is worse than taking it on the shield.
             boolean shielded = running.label().equals("Fight creeper") && player.getOffHandStack().isOf(Items.SHIELD);
-            return player.getHealth() < 6 && !shielded && finishable(player) == null ? "Badly hurt; break off the fight" : null;
+            // A mob a hit has just knocked a few steps back still counts as one in reach.
+            return player.getHealth() < 6 && !shielded && finishable(player, 5.0) == null ? "Badly hurt; break off the fight" : null;
         }
         return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;
@@ -2844,11 +2906,15 @@ final class PortalRunCampaign {
 
     /** The nearest mob on foot after the player, within reach, that two full swings of its best sword will kill. */
     private static HostileEntity finishable(ServerPlayerEntity player) {
+        return finishable(player, 3.0);
+    }
+
+    private static HostileEntity finishable(ServerPlayerEntity player, double reach) {
         if (!armed(player)) return null;
         float damage = swordDamage(swordTier(player)) * 0.9f; // Allowing for a little armour.
-        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3, 1.5, 3),
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(reach, 1.5, reach),
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
-                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0
+                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < reach
                                 && player.canSee(mob) && mob.getHealth() <= 2 * damage)
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }

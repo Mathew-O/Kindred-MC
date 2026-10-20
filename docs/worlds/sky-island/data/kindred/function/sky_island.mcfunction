@@ -14,7 +14,8 @@ place feature minecraft:oak -3 64 2
 fill -4 63 -4 -3 63 -3 minecraft:water
 # Lava: twelve sources sunk into the ground, north-east, away from the tree.
 fill 1 63 -4 4 63 -2 minecraft:lava
-# Stone: a small outcrop, south-east, eighteen stone with six iron ore showing on its faces.
+# Stone: a small outcrop, south-east, sixteen stone with eight iron ore showing on its faces: two buckets and a
+# flint and steel take seven, and one is spare.
 fill 2 64 1 4 65 4 minecraft:stone
 setblock 2 64 1 minecraft:iron_ore
 setblock 4 65 1 minecraft:iron_ore
@@ -22,6 +23,8 @@ setblock 2 65 3 minecraft:iron_ore
 setblock 4 64 4 minecraft:iron_ore
 setblock 3 65 4 minecraft:iron_ore
 setblock 4 64 2 minecraft:iron_ore
+setblock 3 65 2 minecraft:iron_ore
+setblock 2 64 4 minecraft:iron_ore
 # Gravel for flint, south.
 fill -1 64 3 0 64 4 minecraft:gravel
 fill -1 64 2 -1 64 2 minecraft:gravel

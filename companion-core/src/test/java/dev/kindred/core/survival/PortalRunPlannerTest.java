@@ -222,6 +222,7 @@ class PortalRunPlannerTest {
                 assertTrue(seen.contains(Action.PLANT_SAPLING) && seen.contains(Action.AWAIT_TREE), "wood came from replanted trees");
                 assertTrue(seen.contains(Action.CAST_PORTAL) && !seen.contains(Action.MINE_DIAMOND), "the frame was cast");
                 assertEquals(0, sim.chest, "no chestplate where there are no caves");
+                assertEquals(2, sim.pick, "no iron pickaxe either: the island's iron goes to the buckets and the flint and steel");
                 return;
             }
             seen.add(step.action());
@@ -498,8 +499,8 @@ class PortalRunPlannerTest {
         assertEquals("stick", PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().item(), "carried wood beyond it still becomes spare sticks");
         // Eighteen iron to mine at about fifty blocks each wears out seven stone pickaxes, and a pair over: sixteen spares.
         assertEquals(2 + 16, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
-        assertEquals(2 + 8, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN, false),
-                "no caves to dig in: the four spare pairs as before");
+        assertEquals(8, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN, false),
+                "no caves to dig in, and so no iron pickaxe to make: the four spare pairs as before");
         sim.rawIron = 15;
         assertEquals(2 + 8, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN), "most of the iron in hand: fewer spares");
         sim.rawIron = 0;

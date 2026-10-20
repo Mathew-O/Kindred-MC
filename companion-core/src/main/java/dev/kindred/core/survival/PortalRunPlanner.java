@@ -149,7 +149,7 @@ public final class PortalRunPlanner {
         if (s.pickaxeTier() <= 0) return Stage.WOOD;
         if (s.pickaxeTier() == 1) return Stage.STONE;
         WorldFacts.Method frame = frameMethod(s, facts);
-        if (s.pickaxeTier() == 2 || ironShortfall(s, frame, caves(facts)) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
+        if (s.pickaxeTier() == 2 && ironPickaxeWanted(facts, frame) || ironShortfall(s, frame, caves(facts)) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
         if (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() == 3) return Stage.DIAMOND;
         if (s.obsidian() < PORTAL_OBSIDIAN) return Stage.OBSIDIAN;
         return Stage.FLINT;
@@ -239,7 +239,7 @@ public final class PortalRunPlanner {
         boolean shieldFirst = s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS;
         // Then the iron pickaxe as soon as there is iron for it: it lasts twice as long as stone, and staircases and
         // branch mines wear a stone one out every few minutes (live run 50 used six in one life before its iron).
-        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3;
+        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3 && ironPickaxeWanted(facts, frame);
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
         // Wood for another table, should the carried one be lost below, taken while trees are in sight.
         if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
@@ -265,7 +265,7 @@ public final class PortalRunPlanner {
             }
             return new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron");
         }
-        if (s.pickaxeTier() < 3) return craftAtTable(s, facts, "iron_pickaxe", 0, 2, Stage.IRON);
+        if (s.pickaxeTier() < 3 && ironPickaxeWanted(facts, frame)) return craftAtTable(s, facts, "iron_pickaxe", 0, 2, Stage.IRON);
         if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, facts, "bucket", 0, 0, Stage.IRON);
         // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
         if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, facts, "iron_chestplate", 0, 0, Stage.IRON);
@@ -395,7 +395,7 @@ public final class PortalRunPlanner {
             int pickaxes = (iron * BLOCKS_PER_IRON + STONE_PICKAXE_USES - 1) / STONE_PICKAXE_USES + 1;
             spares = Math.max(SPARE_STICKS, 2 * pickaxes);
         }
-        return sticksKept(s, frame) + spares;
+        return sticksKept(s, frame, caves) + spares;
     }
 
     /** Planks held back from sticks, torches and fuel: a shield's still to make, and a spare table's for the work below. */
@@ -405,7 +405,22 @@ public final class PortalRunPlanner {
 
     /** Sticks kept for pickaxes still to make: the iron one, and the diamond one only when the frame is mined. */
     public static int sticksKept(PortalRunSnapshot s, WorldFacts.Method frame) {
-        return (s.pickaxeTier() < 3 ? 2 : 0) + (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4 ? 2 : 0);
+        return sticksKept(s, frame, true);
+    }
+
+    static int sticksKept(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
+        boolean iron = caves || frame == WorldFacts.Method.MINE_OBSIDIAN;
+        return (iron && s.pickaxeTier() < 3 ? 2 : 0) + (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4 ? 2 : 0);
+    }
+
+    /**
+     * An iron pickaxe is wanted for long digging, where there is ground to dig, or to mine diamonds for a mined frame.
+     * Where there is neither, as on a sky island casting its frame, a stone pickaxe does: the generator's cobblestone
+     * replaces it, and the island's few iron go to the buckets and the flint and steel (sky-island run 3 spent three of
+     * six on a pickaxe and was left short).
+     */
+    static boolean ironPickaxeWanted(WorldFacts facts, WorldFacts.Method frame) {
+        return caves(facts) || frame == WorldFacts.Method.MINE_OBSIDIAN;
     }
 
     /** Buckets the route needs: one for water when mining obsidian, a second for lava when casting it. */
@@ -424,7 +439,7 @@ public final class PortalRunPlanner {
      */
     static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
         int wanted = 0;
-        if (s.pickaxeTier() < 3) wanted += 3;
+        if (s.pickaxeTier() < 3 && (caves || frame == WorldFacts.Method.MINE_OBSIDIAN)) wanted += 3;
         wanted += Math.max(0, bucketsWanted(frame) - s.emptyBuckets() - s.waterBuckets()) * 3;
         if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
         if (s.flintAndSteel() == 0) wanted += 1;
