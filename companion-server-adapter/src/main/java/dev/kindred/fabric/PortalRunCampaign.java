@@ -160,6 +160,13 @@ final class PortalRunCampaign {
             if (tunnelled.size() > 20_000) tunnelled.clear();
             tunnelled.add(position(task.args()).asLong());
         }
+        if (task != null && completed && task.label().equals("Jump down from the ledge") && position(task.args()) != null) {
+            // A last resort taken once: landing there again (bobbing in the same pool, say) would only loop.
+            BlockPos landed = position(task.args());
+            for (BlockPos near : BlockPos.iterate(landed.add(-2, -2, -2), landed.add(2, 2, 2))) {
+                blockedUntil.merge(near.asLong(), tick + 1200, Math::max);
+            }
+        }
         if (task != null && completed) repeatFailures.remove(task);
         if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
             castFailedFrom = null;
