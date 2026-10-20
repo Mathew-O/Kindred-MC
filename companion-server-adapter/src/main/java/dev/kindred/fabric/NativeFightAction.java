@@ -23,8 +23,9 @@ import java.util.function.Supplier;
  * the attack cooldown allow, until it dies, gets away or the bounded time runs out. One continuous action, as a
  * player fights, rather than a walk and a single swing per task while a skeleton keeps shooting. The only effects
  * a fight may have on owned items are weapon and armor wear (or the weapon breaking) and drops picked up on the way.
- * The chase never steps into lava, fire or a drop deeper than the navigator allows. A creeper is fought hit and
- * run, backing off while the cooldown recovers, and any creeper that starts to hiss nearby is run from.
+ * The chase never steps into lava, fire or a drop deeper than the navigator allows; when that leaves no way to the
+ * target, the player backs away from the edge before giving up. A creeper is fought hit and run, backing off while
+ * the cooldown recovers, and any creeper that starts to hiss nearby is run from.
  */
 final class NativeFightAction extends NativeRecordedAction {
     static final int MAX_TICKS = 300;
@@ -120,7 +121,9 @@ final class NativeFightAction extends NativeRecordedAction {
                 boolean climb = player.isOnGround() && (player.horizontalCollision || target.getY() > player.getY() + 0.6 && Math.hypot(dx, dz) < 1.5);
                 moved = body.move(issuedLease, 1.0f, 0, climb || player.isTouchingWater(), false, yaw);
             } else {
-                moved = body.move(issuedLease, 0, 0, false, false, yaw);
+                // Cannot get at it from here (a ledge, lava between): step back from the edge, where a hit or an
+                // arrow could knock the player over, until giving up on this fight.
+                moved = flee(navigator, target);
                 if (++unsafe > UNSAFE_TICKS) { settle("The way to the target is unsafe", false); return waiting(); }
             }
         } else {

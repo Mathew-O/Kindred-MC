@@ -547,7 +547,8 @@ final class PortalRunCampaign {
                                 && Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) <= 48
                                 && Math.hypot(pos.getX() - anchor.getX(), pos.getZ() - anchor.getZ()) <= EXPLORE_RADIUS
                                 && Math.abs(pos.getY() - targetY) < gapNow + 8)
-                .map(pos -> go(pos, 0.8, true, "Explore the cave toward " + what));
+                // A full route only: a cave floor seen below a ledge is reached by digging down, not by standing at the edge.
+                .map(pos -> go(pos, 0.8, false, "Explore the cave toward " + what));
     }
 
     /** Arrived somewhere new: look around (one full knowledge sweep) before deciding there is nothing but digging. */
