@@ -344,6 +344,13 @@ class PortalRunPlannerTest {
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
                 "below ground with no trees in sight, no trip back up for it");
 
+        // More food before the work below: three more than the usual stock, taken while animals are in sight.
+        sim.food = 4;
+        var hunt = PortalRunPlanner.plan(sim.snapshot(), trees).stream().filter(candidate -> candidate.action() == Action.HUNT).findFirst();
+        assertTrue(hunt.isPresent() && hunt.get().count() == 2, "four of six: " + hunt);
+        sim.food = 6;
+        assertTrue(PortalRunPlanner.plan(sim.snapshot(), trees).stream().noneMatch(candidate -> candidate.action() == Action.HUNT));
+
         // The table's wood is not burnt as fuel.
         sim.logs = 0; sim.planks = 4; sim.rawIron = 3; sim.furnaceNearby = true;
         assertEquals(Action.MINE_COAL, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action());

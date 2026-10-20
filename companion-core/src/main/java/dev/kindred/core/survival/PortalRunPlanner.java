@@ -58,6 +58,8 @@ public final class PortalRunPlanner {
     static final int SPARE_TABLE_PLANKS = 4;
     /** Food items to carry before work takes the player away from animals. */
     public static final int FOOD_STOCK = 3;
+    /** More food carried for the work below ground. */
+    static final int BELOW_FOOD = 3;
 
     public enum Stage { WOOD, STONE, IRON, DIAMOND, OBSIDIAN, FLINT, PORTAL, DONE }
 
@@ -115,11 +117,13 @@ public final class PortalRunPlanner {
         if (s.furnaceNearby() && s.furnaceOutput() > 0) {
             steps.add(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect smelted items from the furnace"));
         }
+        // There are no animals deep underground: take some food while some are in sight, more before the work below,
+        // where fights go on longer than the food did in live run 58.
+        int foodStock = FOOD_STOCK + (belowGroundWork(s, facts, frameMethod(s, facts)) ? BELOW_FOOD : 0);
         if (s.edibleFood() == 0 && s.foodLevel() <= 14) {
             steps.add(new Step(Action.HUNT, "", 1, stage(s, facts), "Out of food; hunt an animal in sight"));
-        } else if (s.edibleFood() < FOOD_STOCK) {
-            // There are no animals deep underground: take a little food while some are in sight.
-            steps.add(new Step(Action.HUNT, "", FOOD_STOCK - s.edibleFood(), stage(s, facts), "Stock some food while animals are around"));
+        } else if (s.edibleFood() < foodStock) {
+            steps.add(new Step(Action.HUNT, "", foodStock - s.edibleFood(), stage(s, facts), "Stock some food while animals are around"));
         }
         // Where trees do not come back by themselves, every tree cut is replanted, as sky-island players do: saplings
         // go straight into the ground, and the leaves a cut tree leaves behind are broken for more before they decay.

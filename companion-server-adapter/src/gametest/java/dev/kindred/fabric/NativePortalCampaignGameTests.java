@@ -667,6 +667,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
         BlockPos[] mouth = new BlockPos[1];
         int[] settle = {0};
         boolean[] walled = {false};
+        boolean[] fought = {false}, flipped = {false};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Cornered"))
@@ -701,12 +702,18 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
-                    walled[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Hole up: seal");
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    walled[0] |= progress.contains("Hole up: seal");
+                    // Once the fight is on, it stays on until the zombie is dead: no turning to hole up or back off when a
+                    // hit knocks it a step back.
+                    fought[0] |= progress.contains("Fight zombie");
+                    flipped[0] |= fought[0] && zombie[0].isAlive() && (progress.contains("Hole up") || progress.contains("Back off"));
                     context.assertFalse(zombie[0].isAlive(), "The zombie in the tunnel was fought and killed");
                 })
                 .createAndAdd(() -> {
                     context.assertTrue(f.player().isAlive(), "Alive: " + f.player().getHealth());
                     context.assertFalse(walled[0], "It did not turn to wall off a tunnel the zombie was already in");
+                    context.assertFalse(flipped[0], "It held the fight once it was on");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();

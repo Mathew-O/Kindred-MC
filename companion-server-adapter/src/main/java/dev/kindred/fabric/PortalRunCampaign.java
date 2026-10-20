@@ -237,6 +237,8 @@ final class PortalRunCampaign {
         trail.clear();
         holedUpSince = -1;
         holdingSince = -1;
+        fightHeldUntil = -1;
+        retreatHeldUntil = -1;
         // Lava burns the drops; anything else stays on the ground for about five minutes. Whatever killed the
         // player is probably still standing over them, so a mob kill is not worth walking back into.
         boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
@@ -514,15 +516,41 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
         }
-        Optional<Task> hole = holeUp(body);
+        // A fight or a retreat, once chosen, is held for a few seconds, as a player commits to one: a zombie knocked a
+        // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
+        // into its fire (live run 58's three deaths came as the goal switched between them every second). Only a
+        // fall below six health ends a fight early; a retreat turns to fight only when there is nowhere to back off to.
+        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
+        boolean retreating = lastTick < retreatHeldUntil;
+        Optional<Task> hole = fighting ? Optional.empty() : holeUp(body);
         if (hole.isPresent()) {
+            retreatHeldUntil = Math.max(retreatHeldUntil, lastTick + RETREAT_HOLD);
             progress = stageLabel(stage) + ": outmatched - " + hole.get().label();
             return hole;
         }
         Optional<Task> defense = defend(body);
+        if (defense.isPresent() && retreating && defense.get().label().startsWith("Fight") && !creeperTask(defense.get())
+                && finishable(player) == null) {
+            Optional<Task> away = backOff(player);
+            if (away.isPresent()) defense = away;
+        }
         if (defense.isPresent()) {
-            progress = stageLabel(stage) + ": fight back - " + defense.get().label();
+            String label = defense.get().label();
+            if (label.startsWith("Fight") || label.startsWith("Close in")) fightHeldUntil = lastTick + FIGHT_HOLD;
+            else if (label.startsWith("Back off") || label.startsWith("Take cover") || label.startsWith("Run from")) {
+                retreatHeldUntil = Math.max(retreatHeldUntil, lastTick + RETREAT_HOLD);
+            }
+            progress = stageLabel(stage) + ": fight back - " + label;
             return defense;
+        }
+        // Hurt below ground with nothing to eat, so nothing to heal with: up to where the animals are, rather than on
+        // with the work (live run 58 went back to exploring a cave, out of food and below six health, and was shot).
+        if (player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18 && underground(player)) {
+            Optional<Task> up = wayUp(body, "Climb toward the surface for food");
+            if (up.isPresent()) {
+                progress = stageLabel(stage) + ": hurt and out of food - " + up.get().label();
+                return up;
+            }
         }
         // Hurt with nothing after it: heal before going on (food in hand is eaten by the survival tasks).
         if (player.getHealth() < 10 && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
@@ -959,6 +987,8 @@ final class PortalRunCampaign {
         // comes from its own tunnels, which a cave they break into is walled off from.
         boolean shield = shielded(body.entity());
         if (!shield && !quietAround(world, lastFeet)) return Optional.empty();
+        // Not hurt, either: players heal before going into a cave, not after.
+        if (body.entity().getHealth() < 14) return Optional.empty();
         BlockPos feet = lastFeet;
         BlockPos anchor = home == null ? feet : home;
         int gapNow = Math.abs(feet.getY() - targetY);
@@ -1551,7 +1581,9 @@ final class PortalRunCampaign {
             // no floor beside it and nothing to carve room with once the pickaxe is gone, as in live run 56).
             for (BlockPos spot : List.of(feet.offset(direction), feet.offset(direction, 2), feet.up().offset(direction))) {
                 if (!world.getBlockState(spot).isReplaceable() || !world.getFluidState(spot).isEmpty()) continue;
-                if (world.getBlockState(spot.down()).getCollisionShape(world, spot.down()).isEmpty()) continue;
+                var floor = world.getBlockState(spot.down()).getCollisionShape(world, spot.down());
+                // Not on a wall or a fence: it stands taller than a block, into the spot (the sky island's edge wall).
+                if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0) continue;
                 if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
                 if (!ground && besideTheVoid(world, spot)) continue;
@@ -2583,6 +2615,9 @@ final class PortalRunCampaign {
     private BlockPos snug;
     /** Since when the player has been walled in to recover; negative when it is not. */
     private long holedUpSince = -1;
+    /** Until when a fight, or a retreat (backing off, cover, holing up), just chosen is held. */
+    private long fightHeldUntil = -1, retreatHeldUntil = -1;
+    private static final int FIGHT_HOLD = 60, RETREAT_HOLD = 100;
     /** Since when it has been waiting in a passage for a mob to come to it; negative when it is not. */
     private long holdingSince = -1;
 
