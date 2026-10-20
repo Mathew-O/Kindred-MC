@@ -327,6 +327,14 @@ final class PortalRunCampaign {
                 return Optional.of(go(dry.get(), 0.8, false, "Get out of the water"));
             }
         }
+        // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
+        if (underground(player)) {
+            Optional<Task> up = climb(body, "Climb to find another way");
+            if (up.isPresent()) {
+                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
+                return up;
+            }
+        }
         progress = stageLabel(stage) + ": waiting for a feasible step";
         return Optional.empty();
     }
@@ -818,8 +826,10 @@ final class PortalRunCampaign {
             BlockPos ahead = feet.offset(digDirection);
             BlockPos step = ahead.down();
             List<BlockPos> clear = List.of(ahead.up(), ahead, step);
-            boolean refused = false;
+            // Water or lava under the step: that way down ends in it, so turn before digging anything there.
+            boolean refused = !world.getFluidState(step.down()).isEmpty();
             for (BlockPos cell : clear) {
+                if (refused) break;
                 if (passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));

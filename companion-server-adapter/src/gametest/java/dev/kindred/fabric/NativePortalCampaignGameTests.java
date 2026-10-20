@@ -478,6 +478,58 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The night pit again, but with water under the whole floor, as over an aquifer: every staircase step would
+     * end in the water, so the goal turns away from each without digging anything, and no hole is opened into it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightShelter", tickLimit = 900)
+    public void goalDoesNotDigAStaircaseIntoWaterBelow(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        Runnable night = () -> context.getWorld().setTimeOfDay(14000);
+        BlockPos[] pit = new BlockPos[1];
+        int[] waited = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        context.setBlockState(x, -1, z, Blocks.STONE);
+                        context.setBlockState(x, 0, z, Blocks.WATER);
+                        context.setBlockState(x, 1, z, Blocks.DIRT);
+                    }
+                    night.run();
+                    f.runtime.createNative(f.source, "Wader");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    pit[0] = f.player().getBlockPos().toImmutable();
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) for (int y = 2; y <= 4; y++) {
+                        BlockPos cell = context.getAbsolutePos(new BlockPos(x, y, z));
+                        if (cell.getX() == pit[0].getX() && cell.getZ() == pit[0].getZ()) continue;
+                        context.getWorld().setBlockState(cell, Blocks.DIRT.getDefaultState());
+                    }
+                    night.run();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    night.run();
+                    context.assertTrue(++waited[0] >= 200, "Giving the goal time to try every way down");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    for (Direction side : Direction.Type.HORIZONTAL) {
+                        BlockPos step = pit[0].down().offset(side);
+                        context.assertTrue(world.getBlockState(step).isOf(Blocks.DIRT), "No step dug toward the water: " + step);
+                    }
+                    context.assertTrue(f.player().isAlive() && !f.player().isTouchingWater(), "Dry and alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
