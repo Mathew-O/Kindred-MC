@@ -473,6 +473,48 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * An enderman standing two blocks from a player with an iron sword, minding its own business: nothing strikes it
+     * over five seconds of autonomous play, since hitting one provokes it (live run 56 died to one it had hit).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)
+    public void anEndermanThatIsNotAfterThePlayerIsLeftAlone(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.EndermanEntity[] enderman = new net.minecraft.entity.mob.EndermanEntity[1];
+        int[] waited = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Bystander");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
+                    BlockPos feet = player.getBlockPos();
+                    enderman[0] = net.minecraft.entity.EntityType.ENDERMAN.create(world);
+                    enderman[0].refreshPositionAndAngles(feet.getX() + 2.5, feet.getY(), feet.getZ() + 0.5, 90, 0);
+                    enderman[0].setPersistent();
+                    enderman[0].setAiDisabled(true);
+                    world.spawnEntity(enderman[0]);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 100, "Five seconds of autonomous play"))
+                .createAndAdd(() -> {
+                    context.assertTrue(enderman[0].isAlive() && enderman[0].getHealth() >= enderman[0].getMaxHealth(),
+                            "Nothing struck the enderman: " + enderman[0].getHealth());
+                    context.assertTrue(f.player().isAlive() && f.player().getHealth() >= 20, "The player is unhurt");
+                    f.runtime.stop();
+                    enderman[0].discard();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Nothing in hand, as just after a respawn, and a zombie after it a few blocks off: the player keeps away rather
      * than start a fist fight it would lose.
      */

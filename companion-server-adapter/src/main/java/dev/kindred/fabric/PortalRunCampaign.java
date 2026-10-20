@@ -258,6 +258,16 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /** Within two dozen blocks across of a danger zone at or below this level: no staircase goes down there. */
+    private boolean dangerBelow(BlockPos pos) {
+        for (DangerZone zone : dangerZones) {
+            if (zone.until() <= lastTick || zone.center().getY() > pos.getY() + 4) continue;
+            double dx = zone.center().getX() - pos.getX(), dz = zone.center().getZ() - pos.getZ();
+            if (dx * dx + dz * dz < 24 * 24) return true;
+        }
+        return false;
+    }
+
     private void markDanger(BlockPos pos, long until) {
         for (int i = 0; i < dangerZones.size(); i++) {
             DangerZone zone = dangerZones.get(i);
@@ -1205,9 +1215,10 @@ final class PortalRunCampaign {
             // step dug that opens onto a drop deeper than the navigator allows, a cave's ceiling: that leaves only a
             // pit (live run 52 dug one on every side and stood stranded between them).
             boolean refused = !world.getFluidState(step.down()).isEmpty() || !landingWithin(world, step, feet)
-                    // Nor down into a place where mobs killed or cornered it: the staircase turns, or the tunnel
-                    // fallback carries it past (live run 52 dug back down into the cave it had died in twice).
-                    || dangerous(step);
+                    // Nor down toward a place where mobs killed or cornered it: the staircase turns, or the tunnel
+                    // fallback carries it off sideways to dig down elsewhere (live runs 52 and 56 dug back down into
+                    // the cave under spawn they had died in).
+                    || dangerBelow(step);
             for (BlockPos cell : clear) {
                 if (refused) break;
                 if (passable(world, cell)) continue;
