@@ -816,7 +816,10 @@ final class PortalRunCampaign {
             // Water just poured for obsidian guards the mining: mine what it hardened before taking it back.
             case FILL_WATER -> (obsidianSite != null
                     ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
-                    .or(() -> fillWater(body)).or(() -> search(body, "water"));
+                    // No water known down here: up to the surface, where lakes and rivers are, rather than tunnel about
+                    // blind at depth (live run 55 met a skeleton doing that at Y=12).
+                    .or(() -> fillWater(body)).or(() -> underground(player) ? climb(body, "Climb toward the surface for water") : Optional.<Task>empty())
+                    .or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
                     .or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
