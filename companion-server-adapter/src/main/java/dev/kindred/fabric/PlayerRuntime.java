@@ -3026,9 +3026,9 @@ final class PlayerRuntime {
                 .getBytes(StandardCharsets.UTF_8));
         entry.campaignTasks.clear();
         entry.campaignTasks.put(id, t);
-        boolean creeper = PortalRunCampaign.creeperTask(t);
+        boolean urgent = PortalRunCampaign.urgentTask(t);
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id,
-                creeper ? dev.kindred.core.TaskPreferences.Priority.URGENT : dev.kindred.core.TaskPreferences.Priority.PROJECT, creeper ? 99.0 : 70.0,
+                urgent ? dev.kindred.core.TaskPreferences.Priority.URGENT : dev.kindred.core.TaskPreferences.Priority.PROJECT, urgent ? 99.0 : 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }

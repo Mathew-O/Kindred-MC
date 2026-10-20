@@ -106,6 +106,41 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A block lands in the player's head space, as gravel does when a climb breaks the block under it: the goal
+     * breaks it at once instead of carrying on while it suffocates, as happened in live run 38.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)
+    public void goalDigsOutOfABlockInItsHeadSpace(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] head = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Buried");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    f.player().getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    head[0] = BlockPos.ofFloored(f.player().getEyePos()).toImmutable();
+                    context.getWorld().setBlockState(head[0], Blocks.DIRT.getDefaultState());
+                    context.assertTrue(f.player().isInsideWall(), "Stuck in a wall");
+                })
+                .createAndAdd(() -> context.assertTrue(context.getWorld().getBlockState(head[0]).isAir() && !f.player().isInsideWall(),
+                        "It broke the block in its head space: " + context.getWorld().getBlockState(head[0])))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive() && f.player().getHealth() >= 15, "Barely hurt: " + f.player().getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The last stage of the goal: holding ten obsidian, four cobblestone and its own flint and steel, the player
      * chooses a site, places the 4×5 frame block by block with cobblestone corners, and lights it.
      */

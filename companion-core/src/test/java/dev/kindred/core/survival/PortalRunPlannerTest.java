@@ -239,6 +239,18 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void castingKeepsNoSticksForADiamondPickaxe() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.tableNearby = true;
+        assertEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
+                "the classic route keeps two more sticks for the diamond pickaxe");
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(),
+                "casting needs only the iron pickaxe's two, so it goes on to iron");
+        assertEquals(2, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
+        assertEquals(4, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN));
+    }
+
+    @Test
     void factsRejectNegativeDistances() {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new WorldFacts(java.util.Map.of(WorldFacts.Source.LAVA, -1), java.util.Set.of()));

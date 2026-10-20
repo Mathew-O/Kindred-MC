@@ -393,6 +393,12 @@ final class PortalRunCampaign {
             steps.addFirst(new PortalRunPlanner.Step(PortalRunPlanner.Action.MINE_COAL, "", 1, stage, "Take the coal in view"));
         }
         if (home == null) home = player.getBlockPos().toImmutable();
+        // Gravel or sand that fell into the head space suffocates within seconds: break it before anything else.
+        Optional<Task> trapped = digOut(body);
+        if (trapped.isPresent()) {
+            progress = stageLabel(stage) + ": stuck in a wall - " + trapped.get().label();
+            return trapped;
+        }
         Optional<Task> room = makeRoom(player);
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
@@ -813,9 +819,9 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         int torch = slotOf(body, Items.TORCH);
         if (torch < 0) {
-            // Fuel for smelting and the sticks kept for the iron and diamond pickaxes come first.
+            // Fuel for smelting and the sticks kept for pickaxes still to make come first.
             int coal = ItemMoves.count(inventory, Items.COAL) + ItemMoves.count(inventory, Items.CHARCOAL);
-            int keptSticks = (snapshot.pickaxeTier() < 3 ? 2 : 0) + (snapshot.pickaxeTier() < 4 ? 2 : 0);
+            int keptSticks = PortalRunPlanner.sticksKept(snapshot, PortalRunPlanner.frameMethod(snapshot, facts(player)));
             // About fifteen iron to smelt through the iron stage: two coal stay for the furnace until then.
             int keptCoal = stage.ordinal() <= PortalRunPlanner.Stage.IRON.ordinal() ? 2 : 0;
             if (coal <= keptCoal) return Optional.empty();
@@ -863,6 +869,18 @@ final class PortalRunCampaign {
     }
 
     /** A block this player could break right now from where it stands. */
+    /** Break the block the player's head (or feet) is stuck in, as a player digs out of gravel that fell on it. */
+    private Optional<Task> digOut(NativePlayerBody body) {
+        var player = body.entity();
+        if (!player.isInsideWall()) return Optional.empty();
+        var world = player.getServerWorld();
+        for (BlockPos cell : List.of(BlockPos.ofFloored(player.getEyePos()), player.getBlockPos())) {
+            if (world.getBlockState(cell).getCollisionShape(world, cell).isEmpty() || !breakableNow(body, cell)) continue;
+            return Optional.of(clearAt(cell, "Dig out of the wall at " + cell.toShortString()));
+        }
+        return Optional.empty();
+    }
+
     private boolean breakableNow(NativePlayerBody body, BlockPos pos) {
         return breakableNow(body, pos, false);
     }
@@ -1843,6 +1861,7 @@ final class PortalRunCampaign {
 
     /** Why the running goal task should stop, or null: a hostile after the player while other work runs, or a fight that has worn the player down. */
     String stopFor(ServerPlayerEntity player, Task running) {
+        if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover")) return null;
         if (running.label().startsWith("Fight") || running.label().startsWith("Close in")) {
@@ -1852,6 +1871,11 @@ final class PortalRunCampaign {
         }
         return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;
+    }
+
+    /** Goal work that outranks everything else: a creeper's escape, and digging out of a block the head is stuck in. */
+    static boolean urgentTask(Task task) {
+        return creeperTask(task) || task != null && task.label().startsWith("Dig out of");
     }
 
     /** Creeper work outranks the runtime's one-block retreat: its own hit and run or sprint away is the better escape. */

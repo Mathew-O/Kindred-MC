@@ -149,8 +149,7 @@ public final class PortalRunPlanner {
             return craftAtTable(s, "stone_sword", 0, 1, Stage.STONE);
         }
         // Sticks for the iron and diamond pickaxes, made while trees are still near: there are none deep below.
-        int sticksWanted = (s.pickaxeTier() < 3 ? 2 : 0) + (s.pickaxeTier() < 4 ? 2 : 0);
-        if (s.sticks() < sticksWanted) {
+        if (s.sticks() < sticksKept(s, frame)) {
             if (s.planks() >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
             if (s.logs() > 0) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
@@ -224,6 +223,11 @@ public final class PortalRunPlanner {
      */
     static int castBlocks(PortalRunSnapshot s) {
         return 2 * Math.max(0, PORTAL_OBSIDIAN - s.obsidian());
+    }
+
+    /** Sticks kept for pickaxes still to make: the iron one, and the diamond one only when the frame is mined. */
+    public static int sticksKept(PortalRunSnapshot s, WorldFacts.Method frame) {
+        return (s.pickaxeTier() < 3 ? 2 : 0) + (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4 ? 2 : 0);
     }
 
     /** Buckets the route needs: one for water when mining obsidian, a second for lava when casting it. */
