@@ -897,7 +897,9 @@ final class PortalRunCampaign {
                 refused = true;
                 break;
             }
-            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && !tunnelled.contains(ahead.asLong())) {
+            // Walking dug ground again is fine on the way to rock it can dig; pacing a dead-end corridor is not.
+            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead)
+                    && (!tunnelled.contains(ahead.asLong()) || diggableFaceAhead(body, ahead))) {
                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
             }
             if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2))) {
@@ -906,6 +908,29 @@ final class PortalRunCampaign {
             digDirection = digDirection.rotateYClockwise();
         }
         return Optional.empty();
+    }
+
+    /**
+     * Along {@code digDirection} from {@code start}, over open floored ground for up to eight blocks, the first rock
+     * face is one this player could dig: not set aside, no liquid at it, and a block its tools can harvest.
+     */
+    private boolean diggableFaceAhead(NativePlayerBody body, BlockPos start) {
+        var world = body.entity().getServerWorld();
+        BlockPos at = start;
+        for (int k = 0; k < 8; k++) {
+            BlockPos next = at.offset(digDirection);
+            boolean open = passable(world, next) && passable(world, next.up());
+            if (!open) {
+                for (BlockPos face : List.of(next, next.up())) {
+                    if (passable(world, face)) continue;
+                    if (blocked(face) || liquidNear(world, face) || !harvestable(body, face)) return false;
+                }
+                return true;
+            }
+            if (passable(world, next.down()) || liquidNear(world, next)) return false; // A drop or water on the way.
+            at = next;
+        }
+        return false;
     }
 
     private static boolean passable(ServerWorld world, BlockPos pos) {
