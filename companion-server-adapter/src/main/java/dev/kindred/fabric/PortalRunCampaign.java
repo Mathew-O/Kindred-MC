@@ -2428,6 +2428,7 @@ final class PortalRunCampaign {
             if (open.size() <= 4) {
                 open.sort(java.util.Comparator.comparingDouble(cell -> cell.getSquaredDistance(danger.getBlockPos())));
                 for (BlockPos cell : open) {
+                    if (occupied(world, cell)) continue;
                     Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
                     if (place.isPresent()) return place;
                 }
@@ -2446,7 +2447,7 @@ final class PortalRunCampaign {
             if (open.size() <= 4) {
                 Vec3d toward = peril.getPos().subtract(Vec3d.ofBottomCenter(feet));
                 for (BlockPos cell : open) {
-                    if (Vec3d.ofCenter(cell).subtract(Vec3d.ofCenter(feet)).dotProduct(toward) <= 0) continue; // The way back stays open.
+                    if (Vec3d.ofCenter(cell).subtract(Vec3d.ofCenter(feet)).dotProduct(toward) <= 0 || occupied(world, cell)) continue; // The way back stays open.
                     Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
                     if (place.isPresent()) return place;
                 }
@@ -2461,6 +2462,7 @@ final class PortalRunCampaign {
             }
             if (open.size() <= 4) {
                 for (BlockPos cell : open) {
+                    if (occupied(world, cell)) continue;
                     Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
                     if (place.isPresent()) return place;
                 }
@@ -2506,6 +2508,11 @@ final class PortalRunCampaign {
 
     private static boolean opening(ServerWorld world, BlockPos cell) {
         return passable(world, cell) && world.getFluidState(cell).isEmpty() && world.getBlockState(cell).isReplaceable();
+    }
+
+    /** An opening with a mob standing in it cannot be sealed: the block would not go in (live run 55 tried until it died). */
+    private static boolean occupied(ServerWorld world, BlockPos cell) {
+        return !world.getEntitiesByClass(net.minecraft.entity.LivingEntity.class, new Box(cell), net.minecraft.entity.LivingEntity::isAlive).isEmpty();
     }
 
     private static final Set<Item> SEALING = Set.of(Items.DIRT, Items.COBBLESTONE, Items.COBBLED_DEEPSLATE, Items.STONE,
