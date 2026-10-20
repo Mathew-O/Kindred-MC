@@ -27,8 +27,10 @@ public final class PortalRunPlanner {
     public static final int COBBLE_TARGET = 24;
     /** Planks in a shield, with one iron ingot. */
     public static final int SHIELD_PLANKS = 6;
-    /** Trees this close are worth a detour for a shield's wood; farther ones are not. */
-    static final int SHIELD_TREE_RANGE = 24;
+    /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
+    static final int TREE_RANGE = 24;
+    /** Sticks kept beyond the pickaxes still to make: a replacement for one that wears out. */
+    static final int SPARE_STICKS = 2;
     public static final int DIAMONDS_NEEDED = 3;
     /** Food items to carry before work takes the player away from animals. */
     public static final int FOOD_STOCK = 3;
@@ -152,15 +154,18 @@ public final class PortalRunPlanner {
         if (s.swordTier() < 2 && s.cobble() >= 2) {
             return craftAtTable(s, "stone_sword", 0, 1, Stage.STONE);
         }
-        // Sticks for the iron and diamond pickaxes, made while trees are still near: there are none deep below.
-        if (s.sticks() < sticksKept(s, frame)) {
-            if (s.planks() >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
-            if (s.logs() > 0) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
+        // Sticks for the pickaxes still to make and a spare pair for one that wears out, made while trees are in sight
+        // or from wood already carried: there are none deep below, and a climb back up costs more than the sticks.
+        boolean treesNear = facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_RANGE;
+        int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0);
+        if (s.sticks() < sticksReserved(s, frame) && (treesNear || spareWood >= 2)) {
+            if (s.planks() >= 2 && spareWood >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
+            if (s.logs() > 0 && spareWood >= 2) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
         }
         // Planks for a shield, taken while trees are in sight: arrows kill more players in caves than anything else.
         if (s.shields() == 0 && s.pickaxeTier() < 3 && s.woodUnits() < SHIELD_PLANKS
-                && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= SHIELD_TREE_RANGE) {
+                && treesNear) {
             return new Step(Action.GATHER_LOGS, "", 2, Stage.STONE, "Gather logs for a shield");
         }
         // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast.
@@ -181,7 +186,6 @@ public final class PortalRunPlanner {
         if (s.rawIron() > 0) {
             if (s.furnaceSmelting()) return Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron");
             // Wood kept for a shield is not fuel.
-            int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0);
             if (s.coal() == 0 && spareWood < (s.rawIron() * 2 + 2) / 3) {
                 return new Step(Action.MINE_COAL, "", 1, Stage.IRON, "Find fuel to smelt iron");
             }
@@ -238,6 +242,11 @@ public final class PortalRunPlanner {
      */
     static int castBlocks(PortalRunSnapshot s) {
         return 2 * Math.max(0, PORTAL_OBSIDIAN - s.obsidian());
+    }
+
+    /** Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and a spare pair. */
+    public static int sticksReserved(PortalRunSnapshot s, WorldFacts.Method frame) {
+        return sticksKept(s, frame) + SPARE_STICKS;
     }
 
     /** Sticks kept for pickaxes still to make: the iron one, and the diamond one only when the frame is mined. */

@@ -243,11 +243,13 @@ class PortalRunPlannerTest {
     @Test
     void castingKeepsNoSticksForADiamondPickaxe() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true;
-        assertEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 4; sim.shields = 1; sim.tableNearby = true;
+        var mineNearTrees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
+        var bothNearTrees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), BOTH.methods());
+        assertEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(sim.snapshot(), mineNearTrees).getLast().action(),
                 "the classic route keeps two more sticks for the diamond pickaxe");
-        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(),
-                "casting needs only the iron pickaxe's two, so it goes on to iron");
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), bothNearTrees).getLast().action(),
+                "casting needs only the iron pickaxe's two and the spare pair, so it goes on to iron");
         assertEquals(2, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
         assertEquals(4, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN));
     }
@@ -255,7 +257,7 @@ class PortalRunPlannerTest {
     @Test
     void aShieldIsMadeFromWoodKeptNearTheTreesAndTheFirstIron() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 4; sim.tableNearby = true;
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 6; sim.tableNearby = true; // Pickaxe sticks and a spare pair.
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 12), WorldFacts.ordinary().methods());
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals(Action.GATHER_LOGS, step.action(), "wood for a shield before going down for iron, while trees are in sight");
@@ -278,6 +280,20 @@ class PortalRunPlannerTest {
         sim.pick = 3; sim.iron = 13; sim.logs = 0; sim.planks = 0;
         assertNotEquals("shield", PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().item(),
                 "without the kept wood there is no trip back up for a shield");
+    }
+
+    @Test
+    void spareSticksAreToppedUpNearTreesButNeverFetchedFromBelow() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true;
+        var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), BOTH.methods());
+        var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
+        assertEquals(Action.GATHER_LOGS, step.action(), "trees in sight: two sticks for the iron pickaxe and a spare pair");
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(),
+                "underground with no wood: no climb back up for spares");
+        sim.planks = 2;
+        assertEquals("stick", PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().item(), "carried wood still becomes spare sticks");
+        assertEquals(4, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
     }
 
     @Test

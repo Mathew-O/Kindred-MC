@@ -886,7 +886,7 @@ final class PortalRunCampaign {
         if (torch < 0) {
             // Fuel for smelting and the sticks kept for pickaxes still to make come first.
             int coal = ItemMoves.count(inventory, Items.COAL) + ItemMoves.count(inventory, Items.CHARCOAL);
-            int keptSticks = PortalRunPlanner.sticksKept(snapshot, PortalRunPlanner.frameMethod(snapshot, facts(player)));
+            int keptSticks = PortalRunPlanner.sticksReserved(snapshot, PortalRunPlanner.frameMethod(snapshot, facts(player)));
             // About fifteen iron to smelt through the iron stage: two coal stay for the furnace until then.
             int keptCoal = stage.ordinal() <= PortalRunPlanner.Stage.IRON.ordinal() ? 2 : 0;
             if (coal <= keptCoal) return Optional.empty();
