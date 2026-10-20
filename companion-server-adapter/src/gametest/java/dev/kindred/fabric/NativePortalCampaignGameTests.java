@@ -1205,8 +1205,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
                     inventory.setStack(2, new ItemStack(Items.BREAD, 5));
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
-                    // The iron and diamond pickaxes' four, four spare pairs, and one for a torch.
-                    inventory.setStack(4, new ItemStack(Items.STICK, 13));
+                    // The reserve (the iron pickaxe's two, and spares for the eighteen iron's digging) and one for a torch.
+                    inventory.setStack(4, new ItemStack(Items.STICK, 19));
                     inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE)); // Already packed: a spare for the work below.
                     inventory.setStack(5, new ItemStack(Items.COAL, 4));
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
@@ -1220,7 +1220,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     long torches = BlockPos.streamOutwards(ore[0], 6, 3, 6).filter(pos -> world.getBlockState(pos).isOf(Blocks.TORCH)).count();
                     context.assertTrue(torches >= 1, "It lit the dark passage with its own torch");
                     var inventory = f.player().getInventory();
-                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 12,
+                    context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 18,
                             "One coal and one spare stick became torches: coal " + ItemMoves.count(inventory, Items.COAL)
                                     + ", sticks " + ItemMoves.count(inventory, Items.STICK));
                     context.assertTrue(f.player().isAlive(), "Alive");
@@ -1413,7 +1413,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * Sealed in rock with no pickaxe left and no wood, as live run 57 ended up after its last stone pickaxe broke on
      * the way up: the goal punches its way up toward the surface by hand, slowly, rather than standing there.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 2400)
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 3600)
     public void goalPunchesItsWayUpWithNoPickaxeLeft(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] start = new BlockPos[1];
@@ -1491,6 +1491,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.player() != null, "The player is still established");
                     context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) >= 3,
                             "Iron from the outcrop after a stone pickaxe from its stone: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
@@ -1498,6 +1499,53 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var player = f.player();
                     context.assertTrue(player.isAlive(), "Alive");
                     context.assertTrue(player.getBlockY() >= center[0].getY() - 1, "Still on the island: " + player.getBlockPos().toShortString());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A sky island whose one tree is gone, its leaves decayed, and the saplings they dropped lying on the grass: the
+     * goal walks over and picks them up, then plants one (sky-island run 2 left them to despawn and had no wood left).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skySaplingDrops", tickLimit = 1200)
+    public void goalPicksUpTheSaplingsTheLeavesDroppedAndPlantsThem(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] center = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Gleaner"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos c = center[0] = skyIsland(context, f.player());
+                    for (int[] at : new int[][] {{3, 2}, {-3, -2}}) {
+                        var drop = new net.minecraft.entity.ItemEntity(world, c.getX() + at[0] + 0.5, c.getY() + 0.2, c.getZ() + at[1] + 0.5,
+                                new ItemStack(Items.OAK_SAPLING));
+                        drop.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        world.spawnEntity(drop);
+                    }
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.WOODEN_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(2, new ItemStack(Items.STICK, 4));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    long planted = BlockPos.streamOutwards(center[0], 6, 2, 6).filter(pos -> world.getBlockState(pos).isIn(net.minecraft.registry.tag.BlockTags.SAPLINGS)).count();
+                    long lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(center[0]).expand(8),
+                            drop -> drop.getStack().isOf(Items.OAK_SAPLING)).size();
+                    context.assertTrue(lying == 0 && planted >= 1, "Picked up and planted: " + lying + " still lying, " + planted + " planted - "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();

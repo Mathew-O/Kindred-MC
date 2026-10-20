@@ -45,6 +45,20 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
         return expected.isEmpty();
     }
 
+    /** Everything held before is still held, at least as many of each: anything new was only picked up. */
+    boolean onlyGained(NativePlayerBody body) {
+        var have = new java.util.HashMap<String, Integer>();
+        var inventory = body.entity().getInventory();
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            if (!stack.isEmpty()) have.merge(key(stack), stack.getCount(), Integer::sum);
+        }
+        var held = new java.util.HashMap<String, Integer>();
+        for (ItemStack stack : stacks) if (!stack.isEmpty()) held.merge(key(stack), stack.getCount(), Integer::sum);
+        for (var entry : held.entrySet()) if (have.getOrDefault(entry.getKey(), 0) < entry.getValue()) return false;
+        return true;
+    }
+
     private static String key(ItemStack stack) {
         return Registries.ITEM.getId(stack.getItem()) + "|" + stack.getComponents();
     }

@@ -552,6 +552,14 @@ final class PortalRunCampaign {
                 return dig;
             }
         }
+        // On an island the saplings its tree's leaves drop are picked up at night too: a night outlasts a drop.
+        if (night && !groundBelow(player)) {
+            Optional<Task> loose = pickUpLoose(player);
+            if (loose.isPresent()) {
+                progress = stageLabel(stage) + ": " + loose.get().label();
+                return loose;
+            }
+        }
         if (night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS) {
             // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
             Optional<Task> seal = underground(player) && player.isOnGround() ? seal(body) : Optional.empty();
@@ -827,7 +835,9 @@ final class PortalRunCampaign {
             case HUNT -> hunt(player);
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
                     .or(() -> underground(player) ? wayUp(body, "Climb toward the surface for logs")
-                            .or(() -> home == null ? Optional.empty() : Optional.of(go(home, 3, true, "Head back up toward home")))
+                            // Not when already there: that walk ends where it starts, over and over.
+                            .or(() -> home == null || home.getSquaredDistance(lastFeet) <= 4 * 4 ? Optional.empty()
+                                    : Optional.of(go(home, 3, true, "Head back up toward home")))
                             : explore(body, "logs"));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
             // Over a sky island there is no stone below to dig for: only what is in sight, or the generator's.
@@ -999,12 +1009,15 @@ final class PortalRunCampaign {
         if (torch < 0) {
             // Fuel for smelting and the sticks kept for pickaxes still to make come first.
             int coal = ItemMoves.count(inventory, Items.COAL) + ItemMoves.count(inventory, Items.CHARCOAL);
-            int keptSticks = PortalRunPlanner.sticksReserved(snapshot, PortalRunPlanner.frameMethod(snapshot, facts(player)));
+            WorldFacts known = facts(player);
+            int keptSticks = PortalRunPlanner.sticksReserved(snapshot, PortalRunPlanner.frameMethod(snapshot, known),
+                    known.can(WorldFacts.Method.DIG_FOR_STONE));
             // About fifteen iron to smelt through the iron stage: two coal stay for the furnace until then.
             int keptCoal = stage.ordinal() <= PortalRunPlanner.Stage.IRON.ordinal() ? 2 : 0;
             if (coal <= keptCoal) return Optional.empty();
             if (snapshot.sticks() > keptSticks) return craft(body, "torch");
-            return snapshot.planks() >= 2 ? craft(body, "stick") : Optional.empty();
+            // Not from the planks held back for a shield or a spare table.
+            return snapshot.planks() >= 2 + PortalRunPlanner.woodKept(snapshot, known) ? craft(body, "stick") : Optional.empty();
         }
         if (torch >= 9) return Optional.of(swapToHotbar(body, torch, "Ready a torch"));
         // Never in the cell ahead, whose floor the next step digs away (live run 56 placed 28 torches that way, each
@@ -2835,11 +2848,21 @@ final class PortalRunCampaign {
      */
     private static final Set<Item> KEEP = Set.of(Items.OBSIDIAN, Items.DIAMOND, Items.RAW_IRON, Items.FLINT, Items.CRAFTING_TABLE, Items.FURNACE);
 
+    /**
+     * A drop worth walking back for. Where trees grow only from what is planted, a sapling too: those a cut tree's
+     * leaves drop as they decay are the island's only wood to come (sky-island run 2 cut its one tree, picked up none
+     * and was left with no wood at all).
+     */
+    private static boolean keep(ItemStack stack, boolean saplings) {
+        return KEEP.contains(stack.getItem()) || saplings && stack.isIn(ItemTags.SAPLINGS);
+    }
+
     private Optional<Task> pickUpLoose(ServerPlayerEntity player) {
         // A drop in flowing water, such as the water poured for obsidian, waits until the water is taken back.
         var world = player.getServerWorld();
+        boolean saplings = !groundBelow(player);
         var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(8, 3, 8),
-                drop -> KEEP.contains(drop.getStack().getItem()) && player.canSee(drop) && !blocked(drop.getBlockPos())
+                drop -> keep(drop.getStack(), saplings) && player.canSee(drop) && !blocked(drop.getBlockPos())
                         && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
         if (drops.isEmpty()) {
             // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
@@ -2848,7 +2871,7 @@ final class PortalRunCampaign {
             if (obsidianSite != null) return Optional.empty();
             if (dropWaits.size() > 256) dropWaits.clear();
             var settling = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(5, 3, 5),
-                    drop -> KEEP.contains(drop.getStack().getItem()) && !blocked(drop.getBlockPos()));
+                    drop -> keep(drop.getStack(), saplings) && !blocked(drop.getBlockPos()));
             for (ItemEntity drop : settling) {
                 long since = dropWaits.computeIfAbsent(drop.getUuid(), id -> lastTick);
                 if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the drop to settle"));

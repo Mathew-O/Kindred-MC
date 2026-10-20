@@ -292,6 +292,11 @@ final class NativeBreakAction extends NativeRecordedAction {
         } else if (before.sameContents(body)) {
             admission.noEffect(before.description() + "; inventory contents unchanged", reason);
             result = Step.blocked(reason + "; nothing was broken", true);
+        } else if (intact() && before.onlyGained(body)) {
+            // The block stands as it was and nothing held is gone: what is new was picked up from the ground by
+            // walking over it (a drop a step earlier left a tick behind), not anything this break made.
+            admission.noEffect(InventoryEvidence.capture(body).description() + "; target intact, loose items picked up", reason);
+            result = Step.blocked(reason + "; nothing was broken", true);
         } else {
             unknown = true;
             admission.uncertain(reason + "; inventory changed without an attributable break");

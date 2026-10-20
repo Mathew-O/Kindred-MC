@@ -37,6 +37,13 @@ public final class PortalRunPlanner {
      * iron and was left at Y=19 with cobblestone, a table and no sticks, and run 53 used five before its third.
      */
     static final int SPARE_STICKS = 8;
+    /**
+     * Blocks dug for each iron ore found, a planning figure for the stick reserve: branch mining at the richest depth
+     * took live run 58 about 800 blocks for 14 iron, and it ran out of sticks one iron short of the last pickaxe.
+     */
+    static final int BLOCKS_PER_IRON = 50;
+    /** Blocks a stone pickaxe digs before it wears out. */
+    static final int STONE_PICKAXE_USES = 131;
     public static final int DIAMONDS_NEEDED = 3;
     /**
      * Where there is no ground to dig, stone and leaves in sight count only this close: farther off they are likely
@@ -197,7 +204,7 @@ public final class PortalRunPlanner {
         boolean below = belowGroundWork(s, facts, frame);
         int tableWood = below ? SPARE_TABLE_PLANKS : 0;
         int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0) - tableWood;
-        if (s.sticks() < sticksReserved(s, frame) && (treesNear || spareWood >= 2)) {
+        if (s.sticks() < sticksReserved(s, frame, caves(facts)) && (treesNear || spareWood >= 2)) {
             if (s.planks() >= 2 && spareWood >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
             if (s.logs() > 0 && spareWood >= 2) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
@@ -366,9 +373,30 @@ public final class PortalRunPlanner {
         return 2 * Math.max(0, PORTAL_OBSIDIAN - s.obsidian());
     }
 
-    /** Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and four spare pairs. */
+    /** {@link #sticksReserved(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to dig in. */
     public static int sticksReserved(PortalRunSnapshot s, WorldFacts.Method frame) {
-        return sticksKept(s, frame) + SPARE_STICKS;
+        return sticksReserved(s, frame, true);
+    }
+
+    /**
+     * Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and spares sized to the
+     * digging still ahead, as a player packs for a trip down. Where there is ground to dig, two for each stone pickaxe
+     * the iron still wanted will wear out, at about {@link #BLOCKS_PER_IRON} blocks an iron, and a pair over; never
+     * fewer than four spare pairs.
+     */
+    public static int sticksReserved(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
+        int spares = SPARE_STICKS;
+        if (caves) {
+            int iron = Math.max(0, ironShortfall(s, frame, true) - s.ironIngots() - s.rawIron());
+            int pickaxes = (iron * BLOCKS_PER_IRON + STONE_PICKAXE_USES - 1) / STONE_PICKAXE_USES + 1;
+            spares = Math.max(SPARE_STICKS, 2 * pickaxes);
+        }
+        return sticksKept(s, frame) + spares;
+    }
+
+    /** Planks held back from sticks, torches and fuel: a shield's still to make, and a spare table's for the work below. */
+    public static int woodKept(PortalRunSnapshot s, WorldFacts facts) {
+        return (s.shields() == 0 ? SHIELD_PLANKS : 0) + (belowGroundWork(s, facts, frameMethod(s, facts)) ? SPARE_TABLE_PLANKS : 0);
     }
 
     /** Sticks kept for pickaxes still to make: the iron one, and the diamond one only when the frame is mined. */
