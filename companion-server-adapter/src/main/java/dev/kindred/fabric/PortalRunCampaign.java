@@ -91,6 +91,8 @@ final class PortalRunCampaign {
     private final Map<java.util.UUID, Long> ignoredFoes = new HashMap<>();
     private long foeUntil;
     private BlockPos home;
+    /** Cells this player cleared for its own staircases and tunnels. */
+    private final Set<Long> dug = new HashSet<>();
     /** 4×4×4 cells of cave the player has already walked through; exploration heads for the rest. */
     private final Set<Long> visitedCaves = new HashSet<>();
     /** Where tunnelling has already advanced: walking an old corridor back and forth is not progress. */
@@ -156,6 +158,10 @@ final class PortalRunCampaign {
             lookUntilSweep = knowledge.sweeps() + 2; // Finish the sweep under way, then one full look from here.
         }
         if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) branchTurn();
+        if (task != null && completed && "native_break".equals(task.skill()) && task.label().contains(": clear ") && position(task.args()) != null) {
+            if (dug.size() > 20_000) dug.clear();
+            dug.add(position(task.args()).asLong());
+        }
         if (task != null && completed && task.label().endsWith(": advance") && position(task.args()) != null) {
             if (tunnelled.size() > 20_000) tunnelled.clear();
             tunnelled.add(position(task.args()).asLong());
@@ -582,6 +588,11 @@ final class PortalRunCampaign {
             }
         }
         if (best == null) return Optional.empty();
+        // Not down among mobs without a shield: a player listens before dropping into a cave (live run 52 jumped in
+        // beside a creeper).
+        BlockPos landing = best;
+        if (!shielded(player) && !world.getEntitiesByClass(HostileEntity.class, new Box(landing).expand(12, 6, 12),
+                mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty()) return Optional.empty();
         return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
                 "drop", String.valueOf(Math.min(12, bestDrop)))), "Jump down from the ledge"));
     }
@@ -1133,8 +1144,13 @@ final class PortalRunCampaign {
             BlockPos ahead = feet.offset(digDirection);
             BlockPos step = ahead.down();
             List<BlockPos> clear = List.of(ahead.up(), ahead, step);
-            // Water or lava under the step: that way down ends in it, so turn before digging anything there.
-            boolean refused = !world.getFluidState(step.down()).isEmpty();
+            // Water or lava under the step: that way down ends in it, so turn before digging anything there. Nor is a
+            // step dug that opens onto a drop deeper than the navigator allows, a cave's ceiling: that leaves only a
+            // pit (live run 52 dug one on every side and stood stranded between them).
+            boolean refused = !world.getFluidState(step.down()).isEmpty() || !landingWithin(world, step, feet)
+                    // Nor down into a place where mobs killed or cornered it: the staircase turns, or the tunnel
+                    // fallback carries it past (live run 52 dug back down into the cave it had died in twice).
+                    || dangerous(step);
             for (BlockPos cell : clear) {
                 if (refused) break;
                 if (passable(world, cell)) continue;
@@ -1154,6 +1170,13 @@ final class PortalRunCampaign {
             digDirection = digDirection.rotateYClockwise();
         }
         return Optional.empty();
+    }
+
+    /** Solid ground under {@code step}, or under the open cells below it, no deeper than the navigator will drop. */
+    private static boolean landingWithin(ServerWorld world, BlockPos step, BlockPos feet) {
+        BlockPos landing = step;
+        while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
+        return !passable(world, landing.down());
     }
 
     /**
@@ -1205,6 +1228,12 @@ final class PortalRunCampaign {
             if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down())
                     && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
+            }
+            // A pit it dug itself over a drop (a staircase step that broke through a cave's ceiling): fill it and go on.
+            if (!refused && passable(world, ahead.down()) && passable(world, ahead.down(2)) && dug.contains(ahead.down().asLong())
+                    && world.getFluidState(ahead.down()).isEmpty()) {
+                Optional<Task> fill = placeBlock(body, ahead.down(), label + ": fill " + ahead.down().toShortString());
+                if (fill.isPresent()) return fill;
             }
             digDirection = digDirection.rotateYClockwise();
         }
