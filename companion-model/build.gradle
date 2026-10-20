@@ -1,4 +1,6 @@
-// Optional inference boundary. Local gameplay modules do not depend on this module.
+// Optional inference boundary. Core never depends on it; the server adapter uses it only for the optional strategist (off by default).
 dependencies {
     api project(':companion-core')
+    // The official Anthropic Java SDK, pinned (see release-manifest.json): the Claude strategist's transport (F-19b).
+    implementation 'com.anthropic:anthropic-java:2.75.0'
 }

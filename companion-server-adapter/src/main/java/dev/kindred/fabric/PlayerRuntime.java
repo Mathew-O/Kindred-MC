@@ -153,6 +153,8 @@ final class PlayerRuntime {
 
     private final MinecraftServer server;
     private final Path metadataDirectory;
+    /** The optional model strategist for goals (F-19b), when switched on and a key is set. */
+    private final Optional<StrategistBridge> strategist;
     private final NativePlayerSaves.Reader nativeSaveReader;
     private final java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator;
     private final StartupLedgerReader startupLedgerReader;
@@ -307,6 +309,7 @@ final class PlayerRuntime {
                   StartupLedgerReader startupLedgerReader) {
         this.server = server;
         this.metadataDirectory = metadataDirectory;
+        this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
@@ -3016,6 +3019,8 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> campaignCandidates(Entry entry, NativePlayerBody body) {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         var task = entry.campaign.next(body, edits, server.getTicks());
+        // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
+        strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server));
         entry.goalProgress = entry.campaign.progress();
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
@@ -3202,7 +3207,8 @@ final class PlayerRuntime {
         entry.currentTaskId = null;
         body.stopInputs();
         boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
-        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks(), killedByMob);
+        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks(), killedByMob,
+                player.getDamageTracker().getDeathMessage().getString());
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
         KindredMod.LOGGER.info("{} died at {}: {}", entry.data.displayName(), deathPos.toShortString(),
                 player.getDamageTracker().getDeathMessage().getString());
@@ -4951,6 +4957,7 @@ final class PlayerRuntime {
             ++entry.generation;
         }
         running = false;
+        strategist.ifPresent(StrategistBridge::close);
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
                 .toArray(CompletableFuture[]::new)).handle((ignored, failure) -> null);
@@ -5782,6 +5789,16 @@ final class PlayerRuntime {
         if (entry.snapshot().stopLatched()) return nativeLifecycle(source, "resume", id);
         feedback(source, entry.data.displayName() + ": " + goal.label() + ".");
         return 1;
+    }
+
+    /** Hand a strategist's advice to a native player's running goal, as the strategist bridge does with a reply (F-19b). */
+    boolean adviseGoal(UUID id, dev.kindred.core.survival.StrategyAdvice advice) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE) return false;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.advise(advice, server.getTicks());
+        return true;
     }
 
     /** Daily activity cap for a native player; operators only. */

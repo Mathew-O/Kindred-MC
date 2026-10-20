@@ -3,6 +3,7 @@ package dev.kindred.fabric;
 import dev.kindred.core.EditPolicy;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
+import dev.kindred.core.survival.StrategyAdvice;
 import dev.kindred.core.survival.WorldFacts;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -125,6 +126,96 @@ final class PortalRunCampaign {
 
     String progress() { return progress; }
     PortalRunPlanner.Stage stage() { return stage; }
+
+    // ------------------------------------------------------------------ strategist (F-19b)
+
+    /** A death as the strategist and the player's memory see it. */
+    record Death(BlockPos pos, String cause, PortalRunPlanner.Stage stage) { }
+
+    /** How long a strategist's stance holds without being renewed: five minutes of game time. */
+    static final long ADVICE_TICKS = 6_000;
+    private final java.util.ArrayDeque<String> events = new java.util.ArrayDeque<>();
+    private final java.util.ArrayDeque<Death> deathsSeen = new java.util.ArrayDeque<>();
+    private int deathCount, stuckSpells;
+    private PortalRunPlanner.Stage loggedStage;
+    private StrategyAdvice advice;
+    private long adviceUntil;
+
+    /** Something worth telling the strategist, in game seconds; the last sixteen are kept. */
+    private void event(String text) {
+        if (events.size() >= 16) events.removeFirst();
+        events.addLast("at " + lastTick / 20 + "s: " + text);
+    }
+
+    int deaths() { return deathCount; }
+    int stuckSpells() { return stuckSpells; }
+    Optional<Death> lastDeath() { return Optional.ofNullable(deathsSeen.peekLast()); }
+
+    /** The stance in force: the strategist's while it holds, else pressing on. */
+    StrategyAdvice.Stance stance() {
+        return advice != null && lastTick < adviceUntil ? advice.stance() : StrategyAdvice.Stance.PRESS_ON;
+    }
+
+    /** Take a strategist's advice: a stance for a while, and the places it names marked as danger for a while too. */
+    void advise(StrategyAdvice advice, long tick) {
+        this.advice = advice;
+        adviceUntil = tick + ADVICE_TICKS;
+        for (StrategyAdvice.Place place : advice.avoid()) markDanger(new BlockPos(place.x(), place.y(), place.z()), tick + DANGER_TICKS / 4);
+        event("strategist advised " + advice.stance() + (advice.reason().isEmpty() ? "" : ": " + advice.reason()));
+    }
+
+    /** Places the player itself has reported: where it died, and the danger zones it marked. */
+    List<StrategyAdvice.Place> reportedPlaces() {
+        var places = new java.util.ArrayList<StrategyAdvice.Place>();
+        for (Death death : deathsSeen) places.add(new StrategyAdvice.Place(death.pos().getX(), death.pos().getY(), death.pos().getZ()));
+        for (DangerZone zone : dangerZones) places.add(new StrategyAdvice.Place(zone.center().getX(), zone.center().getY(), zone.center().getZ()));
+        return places;
+    }
+
+    /** What the strategist is told: where the player is, what it has, where the route stands, and what happened. */
+    String strategyReport(ServerPlayerEntity player, String name, List<String> memory) {
+        var world = player.getServerWorld();
+        var s = lastSnapshot;
+        var out = new StringBuilder();
+        long time = world.getTimeOfDay() % 24_000;
+        out.append("Player ").append(name).append(", ").append(world.getRegistryKey().getValue().getPath())
+                .append(", day ").append(world.getTimeOfDay() / 24_000 + 1).append(world.isNight() ? ", night" : ", daytime")
+                .append(" (time ").append(time).append(").\n");
+        BlockPos at = player.getBlockPos();
+        out.append("Position ").append(at.getX()).append(' ').append(at.getY()).append(' ').append(at.getZ())
+                .append(underground(player) ? ", below ground" : ", on the surface")
+                .append(groundBelow(player) ? "" : ", on an island over the void").append(".\n");
+        out.append("Health ").append(Math.round(player.getHealth())).append("/20, food ").append(player.getHungerManager().getFoodLevel()).append("/20");
+        if (s != null) out.append(", food items carried ").append(s.edibleFood());
+        out.append(".\n");
+        out.append("Stage: ").append(stageLabel(stage)).append(". Doing: ").append(progress).append(".\n");
+        if (s != null) {
+            out.append("Gear: pickaxe tier ").append(s.pickaxeTier()).append(" (").append(s.pickaxes()).append(" carried), sword tier ").append(s.swordTier())
+                    .append(s.shields() > 0 ? ", a shield" : ", no shield").append(s.chestArmorTier() > 0 ? ", a chestplate" : ", no armour").append(".\n");
+            out.append("Materials: ").append(s.woodUnits()).append(" planks' worth of wood, ").append(s.sticks()).append(" sticks, ")
+                    .append(s.cobble()).append(" cobblestone, ").append(s.coal()).append(" coal, ").append(s.rawIron()).append(" raw iron, ")
+                    .append(s.ironIngots()).append(" iron ingots, ").append(s.emptyBuckets() + s.waterBuckets()).append(" buckets, ")
+                    .append(s.diamonds()).append(" diamonds, ").append(s.obsidian()).append(" obsidian.\n");
+        }
+        out.append("Deaths so far: ").append(deathCount).append(". No-progress spells: ").append(stuckSpells).append(".\n");
+        out.append("Stance in force: ").append(stance()).append(".\n");
+        if (!events.isEmpty()) {
+            out.append("Recent events, oldest first:\n");
+            for (String e : events) out.append("- ").append(e).append('\n');
+        }
+        if (!dangerZones.isEmpty()) {
+            out.append("Danger zones:");
+            for (DangerZone zone : dangerZones) {
+                if (zone.until() > lastTick) out.append(' ').append(zone.center().toShortString().replace(",", "")).append(';');
+            }
+            out.append('\n');
+        }
+        if (!memory.isEmpty()) {
+            out.append("Your notes from earlier in this world:\n");
+            for (String note : memory) out.append("- ").append(note).append('\n');
+        }
+        return out.toString();
+    }
     WorldKnowledge knowledge() { return knowledge; }
 
     /** Bounded perception each tick; cheap enough to run while other work proceeds. */
@@ -227,6 +318,14 @@ final class PortalRunCampaign {
 
     /** Remembers where the player died, like a person would, so it can try once to pick its things back up. */
     void died(BlockPos pos, ServerWorld world, long tick, boolean killedByMob) {
+        died(pos, world, tick, killedByMob, killedByMob ? "killed by a mob" : "died");
+    }
+
+    void died(BlockPos pos, ServerWorld world, long tick, boolean killedByMob, String cause) {
+        deathCount++;
+        if (deathsSeen.size() >= 8) deathsSeen.removeFirst();
+        deathsSeen.addLast(new Death(pos.toImmutable(), cause, stage));
+        event("died at " + pos.toShortString().replace(",", "") + ": " + cause + " (stage " + stageLabel(stage) + ")");
         // Counters start again from an empty inventory: progress is measured afresh.
         best.clear();
         stuckClock = 0;
@@ -285,6 +384,7 @@ final class PortalRunCampaign {
         }
         if (dangerZones.size() >= 8) dangerZones.removeFirst();
         dangerZones.add(new DangerZone(pos.toImmutable(), until));
+        event("danger marked at " + pos.toShortString().replace(",", ""));
     }
 
     /**
@@ -420,6 +520,8 @@ final class PortalRunCampaign {
      * top layer away): there, everything set aside is looked at again from where the player stands.
      */
     private void startRelocating(boolean elsewhere) {
+        stuckSpells++;
+        event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
         stuckClock = 0;
         tunnelled.clear();
@@ -489,6 +591,10 @@ final class PortalRunCampaign {
         lastSnapshot = snapshot;
         WorldFacts facts = facts(player);
         stage = PortalRunPlanner.stage(snapshot, facts);
+        if (loggedStage != stage) {
+            if (loggedStage != null) event("stage " + stageLabel(loggedStage) + " -> " + stageLabel(stage));
+            loggedStage = stage;
+        }
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
         // Not with a bucket that holds lava, nor while a generator is being built: its own water is not to be taken.
@@ -555,10 +661,24 @@ final class PortalRunCampaign {
                 return up;
             }
         }
+        // Advised to surface and recover: up out of the dark first, in daylight, then heal fully before going on.
+        boolean recovering = stance() == StrategyAdvice.Stance.SURFACE_AND_RECOVER;
+        if (recovering && underground(player) && !dark) {
+            Optional<Task> up = wayUp(body, "Climb to the surface to recover");
+            if (up.isPresent()) {
+                progress = stageLabel(stage) + ": advised to recover - " + up.get().label();
+                return up;
+            }
+        }
         // Hurt with nothing after it: heal before going on (food in hand is eaten by the survival tasks).
-        if (player.getHealth() < 10 && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
+        if (player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
             progress = stageLabel(stage) + ": heal before going on";
             return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+        }
+        // Up and healed: the advice is done with; the rest of its time is spent playing safe, not climbing out again.
+        if (recovering && !underground(player) && player.getHealth() >= 18) {
+            advice = new StrategyAdvice(StrategyAdvice.Stance.PLAY_SAFE, advice.avoid(), advice.note(), advice.reason());
+            event("recovered on the surface; playing safe for the rest of the advice");
         }
         // Underground in the dark: light it, so nothing spawns beside the player while it works.
         Optional<Task> light = light(body, snapshot);
@@ -576,12 +696,24 @@ final class PortalRunCampaign {
         }
         // Nights on the surface belong to skeletons: get below ground, and leave surface jobs for daylight.
         boolean night = player.getServerWorld().isNight() && player.getServerWorld().getDimension().hasSkyLight();
-        if (night && !underground(player)) {
+        if (night && !sheltered(player)) {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
                 progress = stageLabel(stage) + ": shelter for the night - " + dig.get().label();
                 return dig;
             }
+        }
+        // A sky island's ground is a few blocks deep: its night shelter is a pit, sealed over, and waited in, rather
+        // than one hole after another across the island (sky-island run 4 dug half a dozen, broke into its edge wall
+        // and went over the side).
+        if (night && !groundBelow(player) && sheltered(player)) {
+            Optional<Task> seal = player.isOnGround() ? seal(body) : Optional.empty();
+            if (seal.isPresent()) {
+                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                return seal;
+            }
+            progress = stageLabel(stage) + ": wait for daylight in the shelter";
+            return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
         }
         // On an island the saplings its tree's leaves drop are picked up at night too: a night outlasts a drop.
         if (night && !groundBelow(player)) {
@@ -990,8 +1122,8 @@ final class PortalRunCampaign {
         // comes from its own tunnels, which a cave they break into is walled off from.
         boolean shield = shielded(body.entity());
         if (!shield && !quietAround(world, lastFeet)) return Optional.empty();
-        // Not hurt, either: players heal before going into a cave, not after.
-        if (body.entity().getHealth() < 14) return Optional.empty();
+        // Not hurt, either: players heal before going into a cave, not after. Nor while advised to play safe.
+        if (body.entity().getHealth() < 14 || stance() == StrategyAdvice.Stance.PLAY_SAFE) return Optional.empty();
         BlockPos feet = lastFeet;
         BlockPos anchor = home == null ? feet : home;
         int gapNow = Math.abs(feet.getY() - targetY);
@@ -1331,7 +1463,7 @@ final class PortalRunCampaign {
             for (BlockPos cell : clear) {
                 if (refused) break;
                 if (passable(world, cell)) continue;
-                if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
+                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 // A night shelter is dug by hand when there is no pickaxe: slow in rock, but better than waiting in the
                 // open (live run 59 died four times at night on the surface just after respawning with nothing).
@@ -1465,7 +1597,7 @@ final class PortalRunCampaign {
             boolean refused = passable(world, step) || blocked(landing);
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
                 if (refused || passable(world, cell)) continue;
-                if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
+                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 // Its last pickaxe gone below ground: punch the way up, slowly, as a player would (live run 57 broke
                 // its last one climbing out and stood at Y 54 for good).
@@ -1488,7 +1620,7 @@ final class PortalRunCampaign {
             boolean refused = false;
             for (BlockPos cell : List.of(ahead.up(), ahead)) {
                 if (passable(world, cell)) continue;
-                if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
+                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 refused = true;
                 break;
@@ -2357,6 +2489,23 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /** Below ground, or on a sky island down in a pit with ground on every side at feet and head. */
+    private static boolean sheltered(ServerPlayerEntity player) {
+        if (underground(player)) return true;
+        if (groundBelow(player)) return false;
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        for (Direction direction : Direction.Type.HORIZONTAL) {
+            if (passable(world, feet.offset(direction)) || passable(world, feet.up().offset(direction))) return false;
+        }
+        return true;
+    }
+
+    /** Over the void, the island's edge is never dug: its wall and outer blocks are all that keep the player on it. */
+    private boolean islandEdge(ServerPlayerEntity player, BlockPos cell) {
+        return !groundBelow(player) && besideTheVoid(player.getServerWorld(), cell);
+    }
+
     /** Open cells beside the player's feet and head, and above its head: the ways in to where it stands. */
     private static List<BlockPos> openings(ServerWorld world, BlockPos feet) {
         var open = new java.util.ArrayList<BlockPos>();
@@ -2769,7 +2918,9 @@ final class PortalRunCampaign {
         if (hunters.isEmpty()) return null;
         HostileEntity shooter = shooter(player);
         if (shooter != null && !shield && (hunters.size() >= 2 || player.getHealth() < 16)) return shooter;
-        if (hunters.size() >= 2 && !shield || player.getHealth() < (shield ? 8 : 12)) {
+        // Advised to play safe: holed up four health sooner.
+        float careful = stance() == StrategyAdvice.Stance.PLAY_SAFE ? 4 : 0;
+        if (hunters.size() >= 2 && !shield || player.getHealth() < (shield ? 8 : 12) + careful) {
             return hunters.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         }
         return null;

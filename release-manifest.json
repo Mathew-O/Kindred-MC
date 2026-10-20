@@ -6,7 +6,7 @@
   "decisions": {
     "D1": "Server installation required; client mod optional. Ordinary-client compatibility remains a qualification target.",
     "D2": "Fabric on Minecraft Java 1.21.1; selected as initial bounded target",
-    "D3": "Optional Claude/OpenAI APIs with operator-supplied keys; disabled by default. Provider transport/runtime integration not implemented. No Jev or mandatory hosted orchestration.",
+    "D3": "Optional Claude/OpenAI APIs with operator-supplied keys; disabled by default. A Claude strategist for goals (F-19b, Anthropic Java SDK) can be switched on through the server's environment; the SDK is on the development classpath only, not yet in the release jar. No Jev or mandatory hosted orchestration.",
     "D4": "Autonomous block edits are off by default; a missing edits.properties means off. An operator may record the roaming-edit policy with /aiplayer edits on: survival breaking and placing where the player itself may edit, never containers or block entities other than its own empty furnace, never spawn-protected blocks, never a lava-releasing break.",
     "D5": "Unattended progression requires qualified player mechanics, activity admission and recovery.",
     "D6": "A game mode may hand out an item only by an announced rule identical for human and AI participants (Manhunt tracking compass). No other exception to earned progress in survival modes. Not implemented.",
@@ -29,16 +29,28 @@
   "javaMajor": 21,
   "localValidationJdk": "OpenJDK 21 (Linux x64, 2026-10-20); earlier runs OpenJDK 21.0.2 (Windows x64)",
   "sqliteJdbc": "3.50.3.0",
+  "anthropicJavaSdk": "2.75.0 (companion-model; development classpath only, not bundled in the release jar)",
   "persistenceSchema": 8,
   "junit": "5.11.4",
-  "modelConfiguration": null,
+  "modelConfiguration": {
+    "provider": "Anthropic (optional; operator key)",
+    "enabledBy": "KINDRED_STRATEGIST=on and ANTHROPIC_API_KEY in the server environment",
+    "defaultModel": "claude-haiku-5-5",
+    "modelOverride": "KINDRED_STRATEGIST_MODEL",
+    "use": "Goal strategist: a stance and places to avoid, validated in core; never actions, items or code",
+    "bounds": "15 s deadline, no repair, one in flight per player, 6/min per player and 12/min in all, daily tokens 50,000 per player and 100,000 in all by default (KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS, KINDRED_STRATEGIST_DAILY_TOKENS)",
+    "playerContext": "<world>/kindred/model-context/<player UUID>.json",
+    "bundledInReleaseJar": false,
+    "qualified": false,
+    "evidence": "docs/evidence/F-19b.md"
+  },
   "architecture": {
     "contract": "docs/player-architecture.md",
     "productionGoal": "Three artificial players earning a cooperative survival playthrough through the Ender Dragon",
     "productionGoalQualified": false,
     "gameplayRequiresModel": false,
     "optionalModelModule": "companion-model",
-    "modelModuleBundledInServer": false,
+    "modelModuleBundledInServer": true,
     "defaultBossPolicy": "Unqualified encounters blocked; qualified team Dragon progression is a production objective",
     "dependencyPolicy": "Prefer free/open-source components; optional operator-funded model API usage",
     "primaryRuntime": "PlayerRuntime",
@@ -170,17 +182,18 @@
       "keybind": "K",
       "evidence": "docs/evidence/E-10a.md",
       "clientModRequired": true
-    }
+    },
+    "modelSdkBundledInServer": false
   },
   "npcLibrary": null,
   "autonomousWorkEnabled": false,
   "liveAcceptanceGatesPassed": [],
   "automatedValidation": {
-    "junitTestsPassed": 352,
-    "nativeGameTestsPassed": 223,
+    "junitTestsPassed": 357,
+    "nativeGameTestsPassed": 225,
     "nativeGameTestConsecutivePasses": 2,
     "latestRegressionEvidence": "docs/validation.md",
-    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 190/190, then 191/191 with the break-pickup shaft fixture 192/192 twice with the caving fixture 193/193 twice with the cold-furnace fixture 194/194 twice with the cover fixture 195/195 twice with the aquifer staircase fixture 196/196 twice with the progress watchdog fixture 197/197 twice with the jump-down fixture 199/199 twice with the two casting fixtures (one obsidian cast in place; a whole frame cast and lit without diamonds) 200/200 twice with a fight broken off once badly hurt and 201/201 twice with digging out of a block in the head space and 203/203 twice with the shield fixtures and 204/204 twice with a creeper lighting up mid-fight and 205/205 twice with a hissing creeper faced when badly hurt and 206/206 twice with a cave walled off and 207/207 twice with a passage held and 208/208 twice with a mob already in the tunnel fought, 211/211 with the unarmed and edge dig-out fixtures (then 210/211 twice before the cave fixture's stick count and stone block were fixed; its class then passed 25/25 twice), 212/212 twice with the cave-peek fixture, 214/214 twice with the shield-gated caving and enderman fixtures, 217/217 twice with the F-25c5 slice (c) generator and replanting fixtures on 83f546c (one earlier run failed a fixture since fixed; see validation.md), 218/218 twice with the unprovoked-enderman fixture, including the death/respawn fixture and five Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player; a fight chase that stops at lava; a sealed night shelter). Full build passed with 351 JUnit results. Native fixtures and development live runs only; no live gate passed.",
+    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 190/190, then 191/191 with the break-pickup shaft fixture 192/192 twice with the caving fixture 193/193 twice with the cold-furnace fixture 194/194 twice with the cover fixture 195/195 twice with the aquifer staircase fixture 196/196 twice with the progress watchdog fixture 197/197 twice with the jump-down fixture 199/199 twice with the two casting fixtures (one obsidian cast in place; a whole frame cast and lit without diamonds) 200/200 twice with a fight broken off once badly hurt and 201/201 twice with digging out of a block in the head space and 203/203 twice with the shield fixtures and 204/204 twice with a creeper lighting up mid-fight and 205/205 twice with a hissing creeper faced when badly hurt and 206/206 twice with a cave walled off and 207/207 twice with a passage held and 208/208 twice with a mob already in the tunnel fought, 211/211 with the unarmed and edge dig-out fixtures (then 210/211 twice before the cave fixture's stick count and stone block were fixed; its class then passed 25/25 twice), 212/212 twice with the cave-peek fixture, 214/214 twice with the shield-gated caving and enderman fixtures, 217/217 twice with the F-25c5 slice (c) generator and replanting fixtures on 83f546c (one earlier run failed a fixture since fixed; see validation.md), 218/218 twice with the unprovoked-enderman fixture, 225/225 twice with the F-19b strategist fixtures (a cave left alone when advised to play safe; climbing out and healing when advised to surface and recover), including the death/respawn fixture and five Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player; a fight chase that stops at lava; a sealed night shelter). Full build passed with 357 JUnit results (one live model test skipped without its switch). Native fixtures and development live runs only; no live gate passed.",
     "evidence": "docs/validation.md"
   },
   "supportExclusions": [

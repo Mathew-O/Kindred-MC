@@ -23,6 +23,17 @@ The Nether goal is a local plan, not a script: logs, crafting table and wooden p
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 
+### Optional: a Claude strategist for the goal (F-19b)
+The goal plays the same without any model. For development runs a Claude model can be consulted as a strategist: it reads the player's own short report (stage, gear, health, recent deaths and their causes, danger zones, its notes) and picks how careful the player should be for the next five minutes: press on, play safe (no caving, backing off sooner) or surface and recover (climb out to daylight and heal first, then play safe). It may also name up to three places near the player's deaths or danger zones to avoid for a while. It never moves the player, gives items, writes code or decides the goal is done; every moment is still the local plan. It is asked only when something changed (the goal starting, a new stage, a death, a spell with no progress, and otherwise every five minutes while progress changes), never per tick, off the game thread, and a slow or failed reply changes nothing. Switch it on with environment variables in the server's environment:
+```text
+KINDRED_STRATEGIST=on                          required; anything else leaves it off
+ANTHROPIC_API_KEY=<your key>                   required; read from the environment only, never stored or logged
+KINDRED_STRATEGIST_MODEL=<model id>            optional; default Claude Haiku 5.5 (claude-haiku-5-5)
+KINDRED_STRATEGIST_DAILY_TOKENS=100000         optional; daily budget for all players
+KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS=50000   optional; daily budget per player
+```
+The log says `Kindred strategist on` at start and `<name> strategist: <stance> (<in> in, <out> out tokens) - <reason>` for each reply. Each player keeps its own memory for each world in `<world>/kindred/model-context/<player UUID>.json`: its notes, its deaths and their causes, the advice it was given, and the consultations and tokens they cost. Delete the file to make a player forget a world; it holds only the player's own game events and the model's notes about them. Requests are bounded: a fifteen-second deadline, one at a time, at most six a minute per player and twelve in all, and the daily budgets, reserved before each request and settled to what it used. A consultation costs about 1,300 input and 100 to 600 output tokens. The SDK is on the development classpath (`runServer`, GameTests) but not yet in the release jar; there the switch logs a warning and play goes on without it.
+
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`).
 
 ## Development native bodies

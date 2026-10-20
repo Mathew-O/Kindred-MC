@@ -1303,6 +1303,143 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * The cave the goal explores for its iron in the fixture above, with no mob about, but with a strategist's
+     * advice to play safe (F-19b): it leaves the cave alone and digs its own way for the iron.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalStaysOutOfCavesWhenAdvisedToPlaySafe(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] explored = {false};
+        int[] settle = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Careful"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
+                    Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
+                        world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
+                    }
+                    var passage = new java.util.ArrayList<BlockPos>();
+                    for (int i = 0; i <= 2; i++) passage.add(p.offset(alongX, i));
+                    for (int i = 1; i <= 2; i++) passage.add(p.offset(alongX, 2).offset(alongZ, i));
+                    for (BlockPos cell : passage) {
+                        world.setBlockState(cell, Blocks.AIR.getDefaultState());
+                        world.setBlockState(cell.up(), Blocks.AIR.getDefaultState());
+                    }
+                    world.setBlockState(p.offset(alongX, 2).offset(alongZ, 3), Blocks.IRON_ORE.getDefaultState());
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settling"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 19));
+                    inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(5, new ItemStack(Items.COAL, 4));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PLAY_SAFE", java.util.List.of(),
+                            "", "Two deaths in caves already", java.util.List.of()).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    explored[0] |= progress.contains("Explore the cave");
+                    context.assertTrue(progress.contains("Branch mine") || progress.contains("Dig down"),
+                            "It digs its own way for iron: " + progress);
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(explored[0], "It did not go exploring the cave while advised to play safe");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Hurt but fed at the iron stage, sealed in rock ten blocks down in daylight, with a strategist's advice to
+     * surface and recover (F-19b): instead of mining for iron where it stands, it climbs a staircase of its own to
+     * open sky, eating on the way, and goes on only once healed. Then the advice turns to playing safe, so it does
+     * not climb out again.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 2400)
+    public void goalClimbsOutToRecoverWhenAdvised(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] base = new BlockPos[1];
+        boolean[] climbedAgain = {false};
+        int[] watched = new int[1];
+        float[] healthWhenOn = new float[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Recoverer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = base[0] = f.player().getBlockPos().toImmutable();
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 9; dy++) {
+                        boolean pocket = dx == 0 && dz == 0 && (dy == 0 || dy == 1);
+                        world.setBlockState(p.add(dx, dy, dz), pocket ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    world.setTimeOfDay(1000);
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 19));
+                    inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    f.player().setHealth(6);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("SURFACE_AND_RECOVER", java.util.List.of(),
+                            "", "Hurt twice below already", java.util.List.of()).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    context.assertTrue(progress.contains("advised to recover"), "Climbing out as advised: " + progress);
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    context.assertTrue(player.getBlockY() >= base[0].getY() + 7 && context.getWorld().isSkyVisible(player.getBlockPos().up()),
+                            "Up under open sky: " + player.getBlockPos().toShortString() + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    context.assertTrue(!progress.contains("heal before going on") && !progress.contains("advised to recover"), "Recovering: " + progress);
+                    healthWhenOn[0] = f.player().getHealth();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    climbedAgain[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("advised to recover");
+                    context.assertTrue(++watched[0] >= 200, "Watching it carry on");
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(climbedAgain[0], "Once up and healed it did not climb out again");
+                    context.assertTrue(healthWhenOn[0] >= 18, "Healed before it went on: " + healthWhenOn[0]);
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A sky island: a dirt island with nothing under it at the bottom of the world, no stone anywhere, a wooden
      * pickaxe and the classic starter buckets of lava and water. With no ground to dig the goal builds a
      * cobblestone generator (a trench with water at one end falling into a hole and lava at the other), mines

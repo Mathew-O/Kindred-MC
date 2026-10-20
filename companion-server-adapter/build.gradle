@@ -15,9 +15,13 @@ dependencies {
     implementation project(':companion-core')
     implementation project(':companion-scheduler')
     implementation project(':companion-persistence')
+    // The optional model strategist (F-19b). Its Anthropic SDK is on the development classpath; the release jar
+    // does not bundle it yet, so the strategist stays off there.
+    implementation project(':companion-model')
     include project(':companion-core')
     include project(':companion-scheduler')
     include project(':companion-persistence')
+    include project(':companion-model')
     include 'org.xerial:sqlite-jdbc:3.50.3.0'
 }
 
