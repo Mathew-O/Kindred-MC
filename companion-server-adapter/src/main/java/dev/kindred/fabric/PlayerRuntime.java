@@ -874,6 +874,12 @@ final class PlayerRuntime {
                 "z", String.valueOf(target.getZ())));
     }
 
+    /** Cast one obsidian block in place at {@code target} from the player's own lava and water buckets. */
+    int nativeCast(ServerCommandSource source, UUID id, BlockPos target) {
+        return nativeTask(source, id, "native_cast", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ())));
+    }
+
     int nativeRetreat(ServerCommandSource source, UUID id, String direction, int blocks) {
         return nativeTask(source, id, "native_retreat", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
     }
@@ -1129,6 +1135,10 @@ final class PlayerRuntime {
                         nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         "pour".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR : NativeBucketAction.Mode.FILL);
+            } else if (skill.equals("native_cast")) {
+                task = new NativeCastAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
+                        nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
             } else if (skill.equals("native_discard")) {
                 task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("count")), null);
@@ -1251,7 +1261,8 @@ final class PlayerRuntime {
                         || "native_goto".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
-                    || ("native_bucket".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.BUCKET))
+                    || (("native_bucket".equals(entry.skillId) || "native_cast".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.BUCKET))
                     || ("native_equip".equals(entry.skillId) && intent == NativePlayerBody.Intent.EQUIP)
                     || ("native_mine".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gather".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))

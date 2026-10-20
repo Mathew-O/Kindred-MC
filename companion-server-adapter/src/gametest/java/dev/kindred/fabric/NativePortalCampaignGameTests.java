@@ -622,6 +622,56 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * One obsidian cast in place, the speedrunners' way to a portal without a diamond pickaxe: water from the
+     * player's own bucket above the target, lava from its own bucket into the target, where it hardens at once,
+     * and the water taken back. Obsidian stands at the target; one lava bucket became an empty bucket.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void castOneObsidianInPlaceFromOwnBuckets(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] target = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Caster"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute positions around wherever the player stood up: the target two blocks east, a wall behind it.
+                    var world = context.getWorld();
+                    BlockPos feet = f.player().getBlockPos().toImmutable();
+                    target[0] = feet.east(2);
+                    for (int up = 0; up <= 2; up++) {
+                        world.setBlockState(target[0].up(up), Blocks.AIR.getDefaultState());
+                        world.setBlockState(target[0].east().up(up), Blocks.STONE.getDefaultState());
+                    }
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.LAVA_BUCKET));
+                    inventory.setStack(1, new ItemStack(Items.WATER_BUCKET));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeCast(f.source, f.id, target[0]) == 1, "Cast requested");
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_cast"), "Cast completes: " + activity);
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(world.getBlockState(target[0]).isOf(Blocks.OBSIDIAN), "Obsidian stands where the lava was poured");
+                    context.assertFalse(world.getFluidState(target[0].up()).isStill(), "The water was taken back");
+                    context.assertTrue(ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0 && ItemMoves.count(inventory, Items.BUCKET) == 1
+                            && ItemMoves.count(inventory, Items.WATER_BUCKET) == 1, "One lava bucket emptied; the water bucket refilled");
+                    context.assertTrue(f.player().isAlive() && !f.player().isOnFire(), "Unhurt");
+                    var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(action != null && action.kind().equals("native_cast") && action.state() == ActionRecord.State.VERIFIED,
+                            "Durable ledger records a verified cast: " + action);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);

@@ -99,6 +99,7 @@
       "native_goto",
       "native_break",
       "native_bucket",
+      "native_cast",
       "native_ignite_portal",
       "native_fight",
       "native_discard"

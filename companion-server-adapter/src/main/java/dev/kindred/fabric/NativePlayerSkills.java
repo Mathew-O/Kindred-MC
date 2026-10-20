@@ -92,6 +92,8 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
             case "native_bucket" -> new SkillDescriptor(id, Set.of("x", "y", "z", "mode"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
+            case "native_cast" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("bucket"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");
         };
     }
