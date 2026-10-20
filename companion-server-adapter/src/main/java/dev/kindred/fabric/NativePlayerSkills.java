@@ -82,7 +82,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint"), Set.of("move"), Set.of(),
+            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
             case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
@@ -107,7 +107,8 @@ final class NativePlayerSkills {
             return new NativeGoToSkill(body, lease, target, Double.parseDouble(arguments.getOrDefault("range", "1.5")),
                     Boolean.parseBoolean(arguments.getOrDefault("partial", "false")),
                     Integer.parseInt(arguments.getOrDefault("nodes", String.valueOf(NativeNavigator.DEFAULT_MAX_NODES))),
-                    Boolean.parseBoolean(arguments.getOrDefault("sprint", "false")));
+                    Boolean.parseBoolean(arguments.getOrDefault("sprint", "false")),
+                    Integer.parseInt(arguments.getOrDefault("drop", String.valueOf(NativeNavigator.MAX_SAFE_DROP))));
         }
         if (id.equals("native_walk")) return new Walk(body, lease, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
         if (id.equals("native_traverse")) {

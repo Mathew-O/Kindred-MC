@@ -576,6 +576,52 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Stranded on a one-block pillar five blocks above the floor, with every way off a fall the navigator would not
+     * take: the goal jumps down, taking vanilla fall damage it can afford, rather than wait for ever.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 3000)
+    public void goalJumpsDownFromALedgeWhenNothingElseIsFeasible(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] top = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Leaper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Everything but the column under the player sinks to the lowest floor: a pillar it stands on.
+                    var world = context.getWorld();
+                    top[0] = f.player().getBlockPos().toImmutable();
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        BlockPos column = context.getAbsolutePos(new BlockPos(x, 0, z));
+                        boolean pillar = column.getX() == top[0].getX() && column.getZ() == top[0].getZ();
+                        for (int y = -3; y <= 1; y++) {
+                            world.setBlockState(context.getAbsolutePos(new BlockPos(x, y, z)), pillar ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                        world.setBlockState(context.getAbsolutePos(new BlockPos(x, -4, z)), Blocks.STONE.getDefaultState());
+                    }
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 4));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().getBlockY() <= top[0].getY() - 4 && f.player().isOnGround(),
+                        "Jumped down to the floor: " + f.player().getBlockPos()))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 10, "Took only damage it could afford: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);

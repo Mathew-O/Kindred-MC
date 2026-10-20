@@ -33,9 +33,16 @@ final class NativeNavigator {
 
     private final ServerWorld world;
     private final Map<Long, BlockState> states = new HashMap<>();
+    private final int maxDrop;
 
     NativeNavigator(ServerWorld world) {
+        this(world, MAX_SAFE_DROP);
+    }
+
+    /** With a larger {@code maxDrop}, routes may include one deliberate fall that costs some health. */
+    NativeNavigator(ServerWorld world, int maxDrop) {
         this.world = world;
+        this.maxDrop = Math.clamp(maxDrop, MAX_SAFE_DROP, 12);
     }
 
     /**
@@ -129,7 +136,7 @@ final class NativeNavigator {
                     }
                     if (!passable(landing)) break;
                     if (standable(landing) && passable(landing.up())) {
-                        if (k <= MAX_SAFE_DROP) moves.add(new Move(landing, base + k * 0.5));
+                        if (k <= maxDrop) moves.add(new Move(landing, base + k * 0.5 + (k > MAX_SAFE_DROP ? 20 : 0)));
                         break;
                     }
                 }

@@ -27,6 +27,7 @@ final class NativeGoToSkill implements SkillBody {
     private final boolean partial;
     private final int maxNodes;
     private final boolean sprint;
+    private final int maxDrop;
     private List<BlockPos> path;
     private boolean pathComplete;
     private int index;
@@ -37,8 +38,9 @@ final class NativeGoToSkill implements SkillBody {
 
     /** With {@code sprint}, straight stretches are run at sprint speed, as a player gets away from a creeper. */
     NativeGoToSkill(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos target, double range, boolean partial, int maxNodes,
-                    boolean sprint) {
+                    boolean sprint, int maxDrop) {
         this.sprint = sprint;
+        this.maxDrop = maxDrop;
         this.body = body;
         this.lease = lease;
         this.target = target.toImmutable();
@@ -56,7 +58,7 @@ final class NativeGoToSkill implements SkillBody {
 
     private boolean plan() {
         var player = body.entity();
-        var navigator = new NativeNavigator(player.getServerWorld());
+        var navigator = new NativeNavigator(player.getServerWorld(), maxDrop);
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
         if (found.nodes().size() < 2 && !goalReached(start) || !found.complete() && !partial) {

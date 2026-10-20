@@ -379,6 +379,12 @@ final class PortalRunCampaign {
                 && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, player.getBlockPos(), p -> !blocked(p) && p.getSquaredDistance(player.getBlockPos()) < 64 * 64).isPresent()) {
             steps.addFirst(new PortalRunPlanner.Step(PortalRunPlanner.Action.FILL_WATER, "", 1, stage, "Fill a bucket with water while it is close"));
         }
+        // Coal in view is worth taking early, as players do: torches for the caves and fuel for the furnace.
+        if (snapshot.coal() < 4 && stage.ordinal() <= PortalRunPlanner.Stage.DIAMOND.ordinal() && snapshot.pickaxeTier() >= 1
+                && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.COAL_ORE, player.getBlockPos(),
+                        p -> !blocked(p) && !unreachable(p) && p.getSquaredDistance(player.getBlockPos()) < 10 * 10).isPresent()) {
+            steps.addFirst(new PortalRunPlanner.Step(PortalRunPlanner.Action.MINE_COAL, "", 1, stage, "Take the coal in view"));
+        }
         if (home == null) home = player.getBlockPos().toImmutable();
         Optional<Task> room = makeRoom(player);
         if (room.isPresent()) {
@@ -464,8 +470,47 @@ final class PortalRunCampaign {
                 return up;
             }
         }
+        // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
+        // jumps down rather than wait for ever.
+        Optional<Task> drop = jumpDown(player);
+        if (drop.isPresent()) {
+            progress = stageLabel(stage) + ": no way on from here - " + drop.get().label();
+            return drop;
+        }
         progress = stageLabel(stage) + ": waiting for a feasible step";
         return Optional.empty();
+    }
+
+    /**
+     * The shortest drop off the edge within two blocks, at most twelve blocks: onto solid ground if the player keeps
+     * at least ten health after vanilla fall damage, or into water, which takes no fall damage; never onto lava or fire.
+     */
+    private Optional<Task> jumpDown(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        var navigator = new NativeNavigator(world);
+        BlockPos feet = player.getBlockPos();
+        BlockPos best = null;
+        int bestDrop = Integer.MAX_VALUE;
+        for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+            BlockPos edge = feet.add(dx, 0, dz);
+            if ((dx == 0 && dz == 0) || !navigator.clear(edge) || navigator.standable(edge)) continue;
+            for (int k = 1; k <= 24; k++) {
+                BlockPos landing = edge.down(k);
+                if (navigator.swimmable(landing)) {
+                    if (k <= 12 && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
+                    break;
+                }
+                if (!navigator.passable(landing)) break; // Lava and fire are not passable either.
+                if (navigator.standable(landing)) {
+                    boolean affordable = k <= 12 && player.getHealth() - Math.max(0, k - 3) >= 10;
+                    if (affordable && k > NativeNavigator.MAX_SAFE_DROP && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
+                    break;
+                }
+            }
+        }
+        if (best == null) return Optional.empty();
+        return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
+                "drop", String.valueOf(Math.min(12, bestDrop)))), "Jump down from the ledge"));
     }
 
     /** Stone, dirt and odds and ends the route never needs, beyond a small keep; cobblestone-like blocks keep 64. */
@@ -1479,6 +1524,8 @@ final class PortalRunCampaign {
             return wall.isPresent() ? wall : Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
         if (player.getHealth() < 6) return backOff(player);
+        // Outnumbered and already hurt: do not take them on one by one in the dark; get some distance first.
+        if (player.getHealth() < 14 && hunters(player) >= 3) return backOff(player);
         var threats = threats(player);
         HostileEntity nearest = threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
@@ -1489,6 +1536,11 @@ final class PortalRunCampaign {
         String name = Registries.ENTITY_TYPE.getId(nearest.getType()).getPath();
         Task strike = strike(player, nearest, "Fight " + name);
         return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+    }
+
+    private static int hunters(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(12, 6, 12),
+                mob -> mob.isAlive() && mob.getTarget() == player).size();
     }
 
     /** Too hurt to fight: put distance between the player and whatever is after it. */
