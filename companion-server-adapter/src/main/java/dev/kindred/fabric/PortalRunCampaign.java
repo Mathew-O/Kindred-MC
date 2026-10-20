@@ -687,7 +687,10 @@ final class PortalRunCampaign {
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
         int y = body.entity().getBlockY();
-        if (y > Math.min(top, target + 3)) return digDown(body, target, "Dig down toward " + what);
+        // Water or lava under every way down (an aquifer, a lava lake): tunnel on until the ground below is solid.
+        if (y > Math.min(top, target + 3)) {
+            return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what));
+        }
         // Below the richest band there is still some: tunnel where it stands rather than give up.
         return tunnel(body, "Tunnel for " + what);
     }
