@@ -23,6 +23,7 @@ package dev.kindred.core.survival;
  * @param edibleFood      edible food items that are safe to eat
  * @param pickaxeTier     best pickaxe: 0 none, 1 wood/gold, 2 stone, 3 iron, 4 diamond, 5 netherite
  * @param swordTier       best sword on the same scale
+ * @param chestArmorTier  best chest armor worn or carried on the same scale (0 none, 3 iron)
  * @param tableNearby     a crafting table is within reach
  * @param furnaceNearby   a furnace is within reach
  * @param furnaceSmelting the reachable furnace still has input to smelt
@@ -35,7 +36,7 @@ public record PortalRunSnapshot(
         int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
         int flint, int gravel, int obsidian, int emptyBuckets, int waterBuckets, int flintAndSteel,
         int craftingTables, int furnaces, int edibleFood,
-        int pickaxeTier, int swordTier,
+        int pickaxeTier, int swordTier, int chestArmorTier,
         boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
         int foodLevel, boolean portalFramed, boolean portalLit) {
 

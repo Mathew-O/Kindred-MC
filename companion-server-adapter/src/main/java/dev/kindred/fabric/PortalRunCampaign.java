@@ -9,6 +9,7 @@ import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.EndermanEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CowEntity;
@@ -73,11 +74,15 @@ final class PortalRunCampaign {
     private Direction digDirection = Direction.NORTH;
     private Direction exploreHeading;
     private int exploreFailures;
+    private BlockPos exploredFrom;
+    private int exploreStalls;
+    private int cutAdvances;
     private ObsidianSite obsidianSite;
     private int pourWaits;
     private PortalSite portalSite;
     private BlockPos dropSite;
     private java.util.UUID foe;
+    private final Map<java.util.UUID, Long> ignoredFoes = new HashMap<>();
     private long foeUntil;
     private BlockPos home;
     private long dropSiteUntil;
@@ -113,6 +118,13 @@ final class PortalRunCampaign {
             BlockPos poured = position(task.args());
             if (poured != null) knowledge.remember(WorldKnowledge.Kind.WATER, poured); // It knows where it poured.
         }
+        if (task != null && completed && task.label().startsWith("Cut through") && task.label().endsWith("advance") && ++cutAdvances >= 4) {
+            exploreStalls = 0; // A few blocks on: try walking again.
+            cutAdvances = 0;
+        }
+        if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
+            exploredFrom = lastFeet; // Compared with where the player stands at the next plan.
+        }
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Walk to")) {
             BlockPos reached = position(task.args());
             if (reached != null) approaches.merge(reached.asLong(), 1, Integer::sum);
@@ -126,6 +138,12 @@ final class PortalRunCampaign {
             exploreHeading = null;
         }
         if (task.label().startsWith("Recover")) dropSite = null;
+        if (task.label().startsWith("Cut through")) exploreStalls = 0; // That way is closed too; walk and look again.
+        // A foe in a hole or across a ravine cannot be reached; leave it be for a while rather than try forever.
+        if (task.label().startsWith("Close in") && foe != null) {
+            ignoredFoes.put(foe, tick + 600);
+            foe = null;
+        }
         if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel") || task.label().startsWith("Climb")) digDirection = digDirection.rotateYClockwise();
         if (task.label().startsWith("Obsidian")) obsidianSite = null;
         if (task.label().startsWith("Portal") && "native_goto".equals(task.skill())) portalSite = null;
@@ -134,12 +152,14 @@ final class PortalRunCampaign {
     void placedWorkstation(BlockPos pos) { ownWorkstations.add(pos.asLong()); }
 
     /** Remembers where the player died, like a person would, so it can try once to pick its things back up. */
-    void died(BlockPos pos, ServerWorld world, long tick) {
+    void died(BlockPos pos, ServerWorld world, long tick, boolean killedByMob) {
         obsidianSite = null;
         exploreHeading = null;
         approaches.clear();
-        // Lava burns the drops; anything else stays on the ground for about five minutes.
-        dropSite = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE) ? null : pos.toImmutable();
+        // Lava burns the drops; anything else stays on the ground for about five minutes. Whatever killed the
+        // player is probably still standing over them, so a mob kill is not worth walking back into.
+        boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
+        dropSite = burned || killedByMob ? null : pos.toImmutable();
         dropSiteUntil = tick + 5_000;
     }
 
@@ -188,6 +208,10 @@ final class PortalRunCampaign {
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
+        if (exploredFrom != null) {
+            exploreStalls = exploredFrom.getSquaredDistance(lastFeet) < 4 * 4 ? exploreStalls + 1 : 0;
+            exploredFrom = null;
+        }
         this.policy = policy;
         ServerPlayerEntity player = body.entity();
         PortalRunSnapshot snapshot = snapshot(body);
@@ -275,7 +299,10 @@ final class PortalRunCampaign {
         var player = body.entity();
         var inventory = player.getInventory();
         int logs = 0, planks = 0, sticks = 0, cobble = 0, coal = 0, rawIron = 0, iron = 0, diamonds = 0, flint = 0, gravel = 0,
-                obsidian = 0, buckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, food = 0, pick = 0, sword = 0;
+                obsidian = 0, buckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, food = 0, pick = 0, sword = 0, chest = 0;
+        for (ItemStack worn : player.getArmorItems()) {
+            if (!worn.isEmpty() && Registries.ITEM.getId(worn.getItem()).getPath().endsWith("_chestplate")) chest = Math.max(chest, tier(worn.getItem()));
+        }
         for (int slot = 0; slot < inventory.size(); slot++) {
             ItemStack stack = inventory.getStack(slot);
             if (stack.isEmpty()) continue;
@@ -300,6 +327,7 @@ final class PortalRunCampaign {
             if (stack.contains(DataComponentTypes.FOOD) && safeFood(stack)) food += n;
             pick = Math.max(pick, stack.isIn(ItemTags.PICKAXES) ? tier(item) : 0);
             sword = Math.max(sword, stack.isIn(ItemTags.SWORDS) ? tier(item) : 0);
+            if (Registries.ITEM.getId(item).getPath().endsWith("_chestplate")) chest = Math.max(chest, tier(item));
         }
         BlockPos feet = player.getBlockPos();
         boolean tableNearby = nearestWorkstation(player, Blocks.CRAFTING_TABLE, 16).isPresent();
@@ -320,7 +348,7 @@ final class PortalRunCampaign {
         boolean framed = portalSite != null && portalComplete(player.getServerWorld(), portalSite);
         boolean lit = portalSite != null && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, water,
-                fns, tables, furnaces, food, pick, sword, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
+                fns, tables, furnaces, food, pick, sword, chest, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
                 player.getHungerManager().getFoodLevel(), framed, lit);
     }
 
@@ -356,13 +384,15 @@ final class PortalRunCampaign {
                     new Task("native_smelt", coords(f, Map.of("action", "extract")), "Take smelted iron")));
             case HUNT -> hunt(player);
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
-                    .or(() -> underground(player) ? climb(body, "Climb toward the surface for logs") : explore(player, "logs"));
+                    .or(() -> underground(player) ? climb(body, "Climb toward the surface for logs")
+                            .or(() -> home == null ? Optional.empty() : Optional.of(go(home, 3, true, "Head back up toward home")))
+                            : explore(body, "logs"));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
             case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"));
-            case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, 32, "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
+            case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
                     .or(() -> tunnel(body, "Tunnel for coal"));
-            case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, 40, "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, IRON_BOTTOM, "iron"));
-            case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, 40, "diamond ore")
+            case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, IRON_BOTTOM, "iron"));
+            case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
                     .or(() -> gather(body, WorldKnowledge.Kind.IRON_ORE, 6, "iron ore on the way"))
                     .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, -63, "diamonds"));
             case CRAFT -> craft(body, step.item());
@@ -380,6 +410,14 @@ final class PortalRunCampaign {
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
         };
+    }
+
+    /**
+     * Underground, ore across an open cave is a walk into the dark where skeletons wait; take what the tunnel
+     * exposes close by and keep digging instead.
+     */
+    private static int oreRadius(ServerPlayerEntity player, int surfaceRadius) {
+        return underground(player) ? 12 : surfaceRadius;
     }
 
     private static Map<String, String> coords(BlockPos pos, Map<String, String> extra) {
@@ -515,8 +553,22 @@ final class PortalRunCampaign {
     /** Underground, search by tunnelling along the current level; on the surface, walk out and look. */
     private Optional<Task> search(NativePlayerBody body, String what) {
         var player = body.entity();
-        if (underground(player)) return tunnel(body, "Tunnel for " + what).or(() -> explore(player, what));
-        return explore(player, what).or(() -> tunnel(body, "Tunnel for " + what));
+        if (underground(player)) return tunnel(body, "Tunnel for " + what).or(() -> explore(body, what));
+        return explore(body, what).or(() -> tunnel(body, "Tunnel for " + what));
+    }
+
+    /**
+     * Walk out to look, and when walking keeps ending where it started (hemmed in by leaves, trunks or a drop the
+     * routes cannot cross), cut a two-high way through along the heading, as a person would.
+     */
+    private Optional<Task> explore(NativePlayerBody body, String what) {
+        var player = body.entity();
+        if (exploreStalls >= 2 && exploreHeading != null) {
+            digDirection = exploreHeading;
+            Optional<Task> cut = tunnel(body, "Cut through " + exploreHeading.asString() + " for " + what);
+            if (cut.isPresent()) return cut;
+        }
+        return explore(player, what);
     }
 
     private static boolean underground(ServerPlayerEntity player) {
@@ -1063,8 +1115,9 @@ final class PortalRunCampaign {
     }
 
     private HostileEntity rememberedFoe(ServerPlayerEntity player) {
-        if (foe == null || lastTick > foeUntil || player.getHealth() < 6) return null;
+        if (foe == null || lastTick > foeUntil || player.getHealth() < 6 || ignoredFoes.getOrDefault(foe, Long.MIN_VALUE) >= lastTick) return null;
         if (player.getServerWorld().getEntity(foe) instanceof HostileEntity mob && mob.isAlive() && mob.getTarget() == player
+                && !(mob instanceof EndermanEntity)
                 && player.squaredDistanceTo(mob) < 24 * 24) {
             return mob;
         }
@@ -1072,14 +1125,17 @@ final class PortalRunCampaign {
         return null;
     }
 
-    private static List<HostileEntity> threats(ServerPlayerEntity player) {
+    private List<HostileEntity> threats(ServerPlayerEntity player) {
         if (player.getHealth() < 6) return List.of();
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
-                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity) && player.canSee(mob));
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity) && player.canSee(mob)
+                        // An enderman is not chased (it out-teleports and out-hits early gear); it is struck when it comes close.
+                        && !(mob instanceof EndermanEntity && player.squaredDistanceTo(mob) > 3.5 * 3.5)
+                        && ignoredFoes.getOrDefault(mob.getUuid(), Long.MIN_VALUE) < lastTick);
     }
 
     /** Work in progress should stop for a fight: a hostile in sight is after the player and the task is not the fight. */
-    static boolean shouldStopForAFight(ServerPlayerEntity player, Task running) {
+    boolean shouldStopForAFight(ServerPlayerEntity player, Task running) {
         if (running == null || running.label().startsWith("Fight") || running.label().startsWith("Close in")
                 || running.label().startsWith("Back off")) return false;
         return !threats(player).isEmpty();

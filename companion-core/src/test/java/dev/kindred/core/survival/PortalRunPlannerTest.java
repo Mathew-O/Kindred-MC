@@ -14,12 +14,12 @@ class PortalRunPlannerTest {
     /** Mutable stand-in for a player's inventory that applies each step's vanilla outcome. */
     private static final class Sim {
         int logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, water, fns,
-                tables, furnaces, food = 5, pick, sword, furnaceInput, furnaceOutput, foodLevel = 20;
+                tables, furnaces, food = 5, pick, sword, chest, furnaceInput, furnaceOutput, foodLevel = 20;
         boolean tableNearby, furnaceNearby, framed, lit;
 
         PortalRunSnapshot snapshot() {
             return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
-                    flint, gravel, obsidian, buckets, water, fns, tables, furnaces, food, pick, sword,
+                    flint, gravel, obsidian, buckets, water, fns, tables, furnaces, food, pick, sword, chest,
                     tableNearby, furnaceNearby, furnaceInput > 0, furnaceOutput, foodLevel, framed, lit);
         }
 
@@ -61,6 +61,7 @@ class PortalRunPlannerTest {
                 case "furnace" -> { need(0, 0, 8); furnaces++; }
                 case "iron_pickaxe" -> { needIron(3); sticks -= 2; pick = 3; }
                 case "bucket" -> { needIron(3); buckets++; }
+                case "iron_chestplate" -> { needIron(8); chest = 3; }
                 case "diamond_pickaxe" -> { assertTrue(diamonds >= 3 && sticks >= 2 && tableNearby); diamonds -= 3; sticks -= 2; pick = 4; }
                 case "flint_and_steel" -> { assertTrue(flint > 0 && iron > 0); flint--; iron--; fns++; }
                 default -> throw new AssertionError("Unexpected craft " + item);

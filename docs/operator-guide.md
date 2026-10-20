@@ -21,7 +21,7 @@ World edits stay off until an operator turns them on; a fresh world has no `edit
 
 The Nether goal is a local plan, not a script: logs, crafting table and wooden pickaxe, cobblestone and stone tools, iron smelted in its own furnace, a bucket, diamonds for a diamond pickaxe, obsidian made by pouring water over lava, flint from gravel, then a 4×5 frame lit with its own flint and steel. It sees only blocks it could see (exposed blocks nearby; ores and fluids also need a line of sight) and every step is one bounded skill through the same activity, ledger and body checks as the commands above. It takes the crafting table and an emptied furnace along when it leaves to gather. Progress shows in the panel and in the server log as `<name> goal at x y z: …`.
 
-When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn, then tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
+When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`).
 

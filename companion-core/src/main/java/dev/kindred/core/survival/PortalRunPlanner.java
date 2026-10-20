@@ -9,8 +9,8 @@ import java.util.Objects;
  * own items and observations and names the next material step; the adapter turns a step into one bounded,
  * admitted skill and may skip steps it cannot act on yet (for example hunting with no animal in sight).
  *
- * <p>Route: logs, wooden pickaxe, cobblestone, stone pickaxe and sword, furnace, seven iron (iron pickaxe,
- * bucket, flint and steel), a water bucket, three diamonds and a diamond pickaxe, ten obsidian made by pouring
+ * <p>Route: logs, wooden pickaxe, cobblestone, stone pickaxe and sword, furnace, fifteen iron (iron pickaxe,
+ * bucket, chestplate, flint and steel), a water bucket, three diamonds and a diamond pickaxe, ten obsidian made by pouring
  * water onto lava sources and mining them, flint from gravel, then a ten-obsidian frame with cobblestone
  * corners, lit with the owned flint and steel.
  */
@@ -135,6 +135,8 @@ public final class PortalRunPlanner {
         }
         if (s.pickaxeTier() < 3) return craftAtTable(s, "iron_pickaxe", 0, 2, Stage.IRON);
         if (s.emptyBuckets() + s.waterBuckets() == 0) return craftAtTable(s, "bucket", 0, 0, Stage.IRON);
+        // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
+        if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, "iron_chestplate", 0, 0, Stage.IRON);
 
         // Diamonds for a pickaxe that can mine obsidian.
         if (s.pickaxeTier() < 4) {
@@ -164,11 +166,12 @@ public final class PortalRunPlanner {
         return Step.of(Action.IGNITE_PORTAL, Stage.PORTAL, "Light the portal with flint and steel");
     }
 
-    /** Iron still needed for whatever iron items are missing: pickaxe 3, bucket 3, flint and steel 1. */
+    /** Iron still needed for whatever iron items are missing: pickaxe 3, bucket 3, chestplate 8, flint and steel 1. */
     static int ironShortfall(PortalRunSnapshot s) {
         int wanted = 0;
         if (s.pickaxeTier() < 3) wanted += 3;
         if (s.emptyBuckets() + s.waterBuckets() == 0) wanted += 3;
+        if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
         if (s.flintAndSteel() == 0) wanted += 1;
         return wanted;
     }

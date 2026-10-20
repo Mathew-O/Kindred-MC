@@ -2272,6 +2272,19 @@ final class PlayerRuntime {
         return new ExpeditionObservation(x, y, z, dim, timeOfDay, thundering, raining, health, maxHealth, foodCount, foodLevel, occupied, 36, hasWeapon);
     }
 
+    private static java.util.Optional<NativeTaskCandidate> equipCandidate(Entry entry, NativePlayerBody body,
+                                                                         dev.kindred.core.TaskPreferences.Priority priority, double need) {
+        for (int slot = 0; slot < 36; slot++) {
+            if (body.equipmentDestination(slot).isPresent()) {
+                UUID taskId = UUID.nameUUIDFromBytes(("equip:" + entry.data.id() + ":" + slot).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, priority, need,
+                        new dev.kindred.core.TaskPreferences.Affinities(0.5, 0.0, 0.0, 0.0), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                return java.util.Optional.of(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(slot))));
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
     private List<NativeTaskCandidate> evaluateScheduledRoutineCandidates(Entry entry, NativePlayerBody body) {
         var candidates = new java.util.ArrayList<NativeTaskCandidate>();
         var player = body.entity();
@@ -2310,6 +2323,8 @@ final class PlayerRuntime {
 
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) {
             candidates.addAll(campaignCandidates(entry, body));
+            // Armor the goal earned is put on before the next goal step, not carried.
+            equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 75.0).ifPresent(candidates::add);
             return candidates;
         }
 
@@ -2923,15 +2938,7 @@ final class PlayerRuntime {
         }
 
         // 3. Unequipped armor / shield (ROUTINE)
-        for (int slot = 0; slot < 36; slot++) {
-            if (body.equipmentDestination(slot).isPresent()) {
-                UUID taskId = UUID.nameUUIDFromBytes(("equip:" + entry.data.id() + ":" + slot).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.ROUTINE, 55.0,
-                        new dev.kindred.core.TaskPreferences.Affinities(0.5, 0.0, 0.0, 0.0), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-                candidates.add(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(slot))));
-                break;
-            }
-        }
+        equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.ROUTINE, 55.0).ifPresent(candidates::add);
 
         // 4. Bounded wait when injured and hunger full (ROUTINE)
         if (player.getHealth() < player.getMaxHealth() && !player.canConsume(false)) {
@@ -3151,7 +3158,8 @@ final class PlayerRuntime {
         admission.release(entry.data.id());
         entry.currentTaskId = null;
         body.stopInputs();
-        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks());
+        boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
+        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks(), killedByMob);
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
         KindredMod.LOGGER.info("{} died at {}: {}", entry.data.displayName(), deathPos.toShortString(),
                 player.getDamageTracker().getDeathMessage().getString());
@@ -3233,7 +3241,7 @@ final class PlayerRuntime {
         // Bounded danger observation while busy: interrupt through SkillRunner/ActionArbiter cancellation barrier
         // A goal task never keeps the player busy while a mob it could fight is attacking it.
         if (usable && busy && entry.campaign != null && entry.activeCampaignTask != null
-                && PortalRunCampaign.shouldStopForAFight(body.entity(), entry.activeCampaignTask)) {
+                && entry.campaign.shouldStopForAFight(body.entity(), entry.activeCampaignTask)) {
             entry.campaignFightInterrupt = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort("A hostile mob is attacking; fight back first");
