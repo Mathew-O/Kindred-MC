@@ -319,6 +319,14 @@ final class PortalRunCampaign {
                 return task;
             }
         }
+        // Nothing can be placed, dug or reached from standing water (a tunnel that flooded): wade out to dry ground.
+        if (player.isTouchingWater()) {
+            var dry = new NativeNavigator(player.getServerWorld()).nearestDryStand(player.getBlockPos(), 16, 4);
+            if (dry.isPresent() && !blocked(dry.get())) {
+                progress = stageLabel(stage) + ": get out of the water";
+                return Optional.of(go(dry.get(), 0.8, false, "Get out of the water"));
+            }
+        }
         progress = stageLabel(stage) + ": waiting for a feasible step";
         return Optional.empty();
     }
