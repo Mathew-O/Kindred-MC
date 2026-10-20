@@ -201,7 +201,13 @@ final class NativeCastAction extends NativeRecordedAction {
             }
             case LAVA -> {
                 if (!world.getBlockState(target).isOf(Blocks.OBSIDIAN)) {
-                    if (++waits > SETTLE_TICKS) settle("The lava did not harden", false);
+                    if (++waits <= SETTLE_TICKS) return waiting();
+                    // Still holding the lava: the pour never happened, so take the water back and leave no trace.
+                    if (ItemMoves.count(body.entity().getInventory(), Items.LAVA_BUCKET) == count(Items.LAVA_BUCKET)) {
+                        takeWaterBack("The lava could not be poured");
+                    } else {
+                        settle("The lava did not harden; the target holds " + world.getBlockState(target), false);
+                    }
                     return waiting();
                 }
                 takeWaterBack(null);

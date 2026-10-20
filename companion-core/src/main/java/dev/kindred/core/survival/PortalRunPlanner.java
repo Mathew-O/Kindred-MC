@@ -25,6 +25,10 @@ public final class PortalRunPlanner {
     public static final int PORTAL_CORNERS = 4;
     /** Cobblestone kept for tools, a furnace, portal corners and a few placement blocks. */
     public static final int COBBLE_TARGET = 24;
+    /** Planks in a shield, with one iron ingot. */
+    public static final int SHIELD_PLANKS = 6;
+    /** Trees this close are worth a detour for a shield's wood; farther ones are not. */
+    static final int SHIELD_TREE_RANGE = 24;
     public static final int DIAMONDS_NEEDED = 3;
     /** Food items to carry before work takes the player away from animals. */
     public static final int FOOD_STOCK = 3;
@@ -154,6 +158,11 @@ public final class PortalRunPlanner {
             if (s.logs() > 0) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
         }
+        // Planks for a shield, taken while trees are in sight: arrows kill more players in caves than anything else.
+        if (s.shields() == 0 && s.pickaxeTier() < 3 && s.woodUnits() < SHIELD_PLANKS
+                && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= SHIELD_TREE_RANGE) {
+            return new Step(Action.GATHER_LOGS, "", 2, Stage.STONE, "Gather logs for a shield");
+        }
         // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast.
         if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4)) {
             return new Step(Action.GATHER_STONE, "", COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
@@ -167,7 +176,9 @@ public final class PortalRunPlanner {
         }
         if (s.rawIron() > 0) {
             if (s.furnaceSmelting()) return Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron");
-            if (s.coal() == 0 && s.woodUnits() < (s.rawIron() * 2 + 2) / 3) {
+            // Wood kept for a shield is not fuel.
+            int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0);
+            if (s.coal() == 0 && spareWood < (s.rawIron() * 2 + 2) / 3) {
                 return new Step(Action.MINE_COAL, "", 1, Stage.IRON, "Find fuel to smelt iron");
             }
             if (!s.furnaceNearby() && s.furnaces() == 0) {
@@ -177,6 +188,8 @@ public final class PortalRunPlanner {
             return new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron");
         }
         if (s.pickaxeTier() < 3) return craftAtTable(s, "iron_pickaxe", 0, 2, Stage.IRON);
+        // A shield from the first spare ingot, if the wood kept for it is still in hand; no trip up for more.
+        if (s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS) return craftAtTable(s, "shield", SHIELD_PLANKS, 0, Stage.IRON);
         if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, "bucket", 0, 0, Stage.IRON);
         // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
         if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, "iron_chestplate", 0, 0, Stage.IRON);
@@ -237,7 +250,7 @@ public final class PortalRunPlanner {
 
     /**
      * Iron still needed for whatever iron items are missing: pickaxe 3, three per bucket still wanted, chestplate 8,
-     * flint and steel 1.
+     * flint and steel 1, and a shield's 1 when the wood for it is in hand.
      */
     static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame) {
         int wanted = 0;
@@ -245,6 +258,7 @@ public final class PortalRunPlanner {
         wanted += Math.max(0, bucketsWanted(frame) - s.emptyBuckets() - s.waterBuckets()) * 3;
         if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
         if (s.flintAndSteel() == 0) wanted += 1;
+        if (s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS) wanted += 1; // Only with the wood for it in hand.
         return wanted;
     }
 

@@ -932,6 +932,10 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_attack", args);
     }
 
+    int nativeFight(ServerCommandSource source, UUID id, UUID targetId, int slot) {
+        return nativeTask(source, id, "native_fight", Map.of("target", targetId.toString(), "slot", String.valueOf(slot)));
+    }
+
     int nativeBlock(ServerCommandSource source, UUID id, int ticks) {
         return nativeTask(source, id, "native_block", Map.of("ticks", String.valueOf(ticks)));
     }
@@ -1272,7 +1276,7 @@ final class PlayerRuntime {
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_fight".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
-                        || intent == NativePlayerBody.Intent.MOVE))
+                        || intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.BLOCK))
                     || ("native_block".equals(entry.skillId) && intent == NativePlayerBody.Intent.BLOCK)
                     || ("native_till".equals(entry.skillId) && (intent == NativePlayerBody.Intent.TILL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_plant".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLANT || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -3040,6 +3044,9 @@ final class PlayerRuntime {
         if (task != null && entry.campaignFightInterrupt) {
             entry.campaignFightInterrupt = false;
             entry.campaign.taskInterrupted(task);
+        } else if (task != null && state != SkillRunner.State.COMPLETED
+                && entry.runner.reason().orElse("").startsWith("Break preconditions changed before dispatch")) {
+            entry.campaign.taskRefusedForNow(task, server.getTicks()); // The player was still moving; nothing happened.
         } else if (task != null) {
             boolean completed = state == SkillRunner.State.COMPLETED;
             if (completed && "native_place".equals(task.skill()) && entry.nativeBody != null) {

@@ -5,9 +5,11 @@ import dev.kindred.core.ActionLease;
 import dev.kindred.core.ActionRecord;
 import dev.kindred.core.Checkpoint;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
@@ -25,7 +27,8 @@ import java.util.function.Supplier;
  * a fight may have on owned items are weapon and armor wear (or the weapon breaking) and drops picked up on the way.
  * The chase never steps into lava, fire or a drop deeper than the navigator allows; when that leaves no way to the
  * target, the player backs away from the edge before giving up. A creeper is fought hit and run, backing off while
- * the cooldown recovers, and any creeper that starts to hiss nearby is run from.
+ * the cooldown recovers, and any creeper that starts to hiss nearby is run from, or faced behind a raised shield when
+ * the player has one in its off hand. A shooter is closed in on behind that shield, lowered for each swing.
  */
 final class NativeFightAction extends NativeRecordedAction {
     static final int MAX_TICKS = 300;
@@ -110,7 +113,13 @@ final class NativeFightAction extends NativeRecordedAction {
         var navigator = new NativeNavigator(player.getServerWorld());
         CreeperEntity hissing = hissingCreeper(player);
         boolean moved;
-        if (hissing != null) {
+        boolean shield = player.getOffHandStack().isOf(Items.SHIELD);
+        if (hissing != null && shield) {
+            // A raised shield facing the blast stops it, as players do; running would turn the shield away.
+            float toward = (float) Math.toDegrees(Math.atan2(-(hissing.getX() - player.getX()), hissing.getZ() - player.getZ()));
+            moved = body.move(issuedLease, 0, 0, false, false, toward);
+            guard(true);
+        } else if (hissing != null) {
             moved = flee(navigator, hissing);
         } else if (target instanceof CreeperEntity && !ready && distance < 4.0) {
             // Hit and run: out of its reach while the swing recovers, so it never gets close enough to light.
@@ -118,6 +127,8 @@ final class NativeFightAction extends NativeRecordedAction {
         } else if (distance > STRIKE_RANGE || !visible) {
             if (navigator.safeHeading(player, yaw)) {
                 unsafe = 0;
+                // Closing in on a shooter with a shield up, as players do: arrows stop at the shield, not the player.
+                guard(target instanceof RangedAttackMob && visible);
                 boolean climb = player.isOnGround() && (player.horizontalCollision || target.getY() > player.getY() + 0.6 && Math.hypot(dx, dz) < 1.5);
                 moved = body.move(issuedLease, 1.0f, 0, climb || player.isTouchingWater(), false, yaw);
             } else {
@@ -128,10 +139,21 @@ final class NativeFightAction extends NativeRecordedAction {
             }
         } else {
             moved = body.move(issuedLease, 0, 0, false, false, yaw);
-            if (moved && ready && body.attack(issuedLease, targetId, slot)) hits++;
+            if (moved && ready) {
+                guard(false); // The shield comes down for the swing.
+                if (body.attack(issuedLease, targetId, slot)) hits++;
+            }
         }
         if (!moved) settle("Movement authority denied", false);
         return Step.running(Map.of("hits", String.valueOf(hits), "distance", String.format("%.1f", distance)), true);
+    }
+
+    /** Raise or lower an off-hand shield, if the player has one; a no-op otherwise. */
+    private void guard(boolean up) {
+        var player = body.entity();
+        boolean raised = player.isUsingItem() && player.getActiveItem().isOf(Items.SHIELD);
+        if (up == raised || up && !player.getOffHandStack().isOf(Items.SHIELD)) return;
+        body.block(issuedLease, up);
     }
 
     /** The nearest creeper within flee range whose fuse is burning. */
@@ -182,7 +204,8 @@ final class NativeFightAction extends NativeRecordedAction {
 
     @Override boolean permits(NativePlayerBody.Intent intent, BlockPos requested) {
         if (halted || admission == null || admission.phase() != ActionAdmission.Phase.ISSUED || !fighting || result != null) return false;
-        return intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT;
+        return intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
+                || intent == NativePlayerBody.Intent.BLOCK;
     }
     @Override boolean uncertain() { return unknown; }
     @Override ActionRecord snapshot() { return admission == null ? null : admission.snapshot(); }

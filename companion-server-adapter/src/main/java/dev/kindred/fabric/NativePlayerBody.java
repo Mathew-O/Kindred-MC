@@ -1506,9 +1506,11 @@ final class NativePlayerBody implements BodyAdapter {
             haltControls();
             controls = null;
         }
-        player.applyInput(forward, sideways);
+        // As a client does: an item in use (a raised shield, food being eaten) slows walking to a fifth, and no sprint.
+        float pace = player.isUsingItem() ? 0.2f : 1.0f;
+        player.applyInput(forward * pace, sideways * pace);
         player.setJumping(jump);
-        player.setSprinting(sprint && player.getHungerManager().getFoodLevel() > 6);
+        player.setSprinting(sprint && !player.isUsingItem() && player.getHungerManager().getFoodLevel() > 6);
     }
 
     private void afterTick() {

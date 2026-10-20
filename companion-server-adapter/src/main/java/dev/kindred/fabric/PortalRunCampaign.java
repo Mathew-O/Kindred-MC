@@ -607,7 +607,7 @@ final class PortalRunCampaign {
         var player = body.entity();
         var inventory = player.getInventory();
         int logs = 0, planks = 0, sticks = 0, cobble = 0, coal = 0, rawIron = 0, iron = 0, diamonds = 0, flint = 0, gravel = 0,
-                obsidian = 0, buckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, food = 0, pick = 0, sword = 0, chest = 0;
+                obsidian = 0, buckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, food = 0, pick = 0, sword = 0, chest = 0, shields = 0;
         for (ItemStack worn : player.getArmorItems()) {
             if (!worn.isEmpty() && Registries.ITEM.getId(worn.getItem()).getPath().endsWith("_chestplate")) chest = Math.max(chest, tier(worn.getItem()));
         }
@@ -632,6 +632,7 @@ final class PortalRunCampaign {
             else if (item == Items.FLINT_AND_STEEL) fns += n;
             else if (item == Items.CRAFTING_TABLE) tables += n;
             else if (item == Items.FURNACE) furnaces += n;
+            else if (item == Items.SHIELD) shields += n; // The inventory's last slot is the off hand.
             if (stack.contains(DataComponentTypes.FOOD) && safeFood(stack)) food += n;
             pick = Math.max(pick, stack.isIn(ItemTags.PICKAXES) ? tier(item) : 0);
             sword = Math.max(sword, stack.isIn(ItemTags.SWORDS) ? tier(item) : 0);
@@ -658,7 +659,7 @@ final class PortalRunCampaign {
         boolean framed = portalSite != null && portalComplete(player.getServerWorld(), portalSite);
         boolean lit = portalSite != null && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, water,
-                fns, tables, furnaces, food, pick, sword, chest, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
+                fns, tables, furnaces, food, pick, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
                 player.getHungerManager().getFoodLevel(), framed, lit);
     }
 
@@ -1441,9 +1442,8 @@ final class PortalRunCampaign {
                 if (cell.equals(site.stand()) || cell.equals(site.stand().up())) continue;
                 if (world.getBlockState(cell).isReplaceable() && world.getFluidState(cell).isEmpty()) continue;
                 if (!world.getFluidState(cell).isEmpty()) continue; // Water left from casting drains away by itself.
-                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-                portalSite = null;
-                return Optional.empty();
+                Optional<Task> clear = clearOrApproach(body, site, cell, label);
+                if (clear.isPresent() || portalSite == null) return clear;
             }
         }
         for (int up = 0; up <= 4; up++) {
@@ -1455,9 +1455,8 @@ final class PortalRunCampaign {
                 boolean wanted = frame ? (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) : state.isAir();
                 if (wanted) continue;
                 if (!state.isReplaceable() && !state.isOf(Blocks.OBSIDIAN)) {
-                    if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-                    portalSite = null;
-                    return Optional.empty();
+                    Optional<Task> clear = clearOrApproach(body, site, cell, label);
+                    if (clear.isPresent() || portalSite == null) return clear;
                 }
             }
         }
@@ -1534,6 +1533,20 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Break {@code cell} if it can be broken from here, walk to the site's stand if it is only out of reach, and
+     * otherwise give the site up ({@code portalSite} becomes null).
+     */
+    private Optional<Task> clearOrApproach(NativePlayerBody body, PortalSite site, BlockPos cell, String label) {
+        var player = body.entity();
+        if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+        if (!player.getBlockPos().equals(site.stand()) && eyeDistance(player, cell) > REACH) {
+            return Optional.of(go(site.stand(), 0.3, false, label + ": stand in front of the frame site"));
+        }
+        portalSite = null;
+        return Optional.empty();
+    }
+
     private boolean clearPortalSiteNeeded(ServerWorld world, PortalSite site) {
         for (int up = 0; up <= 4; up++) for (int across = 0; across <= 3; across++) {
             BlockPos cell = site.front(across, up);
@@ -1547,7 +1560,8 @@ final class PortalRunCampaign {
 
     /** Do {@code then} from where the player stands if {@code cell} is in reach, else step along the front row to a spot that is. */
     private Optional<Task> within(NativePlayerBody body, PortalSite site, int across, BlockPos cell, java.util.function.Supplier<Optional<Task>> then) {
-        return eyeDistance(body.entity(), cell) <= CAST_REACH ? then.get() : stepCloser(body, site, across, cell);
+        Optional<Task> now = eyeDistance(body.entity(), cell) <= CAST_REACH + 0.3 ? then.get() : Optional.<Task>empty();
+        return now.isPresent() ? now : stepCloser(body, site, across, cell);
     }
 
     /** A step to another spot on the front row (or the stand) from which {@code cell} is in reach. */
@@ -1704,7 +1718,9 @@ final class PortalRunCampaign {
             foe = creeper.getUuid(); // A fight that fails leaves it alone for a while, as with any foe.
             foeUntil = lastTick;
             Task strike = strike(player, creeper, "Fight creeper");
-            if (strike.args().containsKey("slot") && player.getHealth() >= 10) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+            // A shield in the off hand stops the blast, so a shielded player takes a creeper on with less health to spare.
+            float nerve = player.getOffHandStack().isOf(Items.SHIELD) ? 6 : 10;
+            if (strike.args().containsKey("slot") && player.getHealth() >= nerve) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
             if (lastTick >= runFailedUntil) return Optional.of(runFrom(player, creeper));
             // Nowhere to run (a pit, a dead end): wall it off, and failing that, knock it back with whatever is in hand.
             Optional<Task> wall = cover(body, creeper);
@@ -1796,7 +1812,7 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        if (blocked(cell) || eyeDistance(player, cell) > 4.4) return Optional.empty();
+        if (blocked(cell) || eyeDistance(player, cell) > 5.0) return Optional.empty();
         var inventory = player.getInventory();
         int slot = -1;
         for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
@@ -1806,6 +1822,9 @@ final class PortalRunCampaign {
             BlockPos support = cell.offset(side.getOpposite());
             if (support.equals(feet) || support.equals(feet.up())) continue;
             if (world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue; // Nothing to place against.
+            // Reach is to the face clicked, as for a player: the top of the block below can be in reach when the cell's centre is not.
+            Vec3d face = Vec3d.ofCenter(support).add(side.getOffsetX() * 0.5, side.getOffsetY() * 0.5, side.getOffsetZ() * 0.5);
+            if (player.getEyePos().distanceTo(face) > 4.5) continue;
             return Optional.of(new Task("native_place", coords(cell, Map.of("side", side.asString(), "slot", String.valueOf(slot))), label));
         }
         return Optional.empty();
@@ -1882,6 +1901,17 @@ final class PortalRunCampaign {
     static boolean creeperTask(Task task) {
         return task != null && (task.label().equals("Fight creeper") || task.label().equals("Run from creeper")
                 || task.label().equals("Take cover from creeper"));
+    }
+
+    /**
+     * A task that did nothing because things moved under it (the player still finishing a walk, say) is not an
+     * unreachable target: try it again, but set it aside after three such refusals in a row.
+     */
+    void taskRefusedForNow(Task task, long tick) {
+        if (repeatFailures.merge(task, 1, Integer::sum) >= 3) {
+            repeatFailures.remove(task);
+            setAside.put(task, tick + 1200);
+        }
     }
 
     /** Work stopped for a fight is not a failed target; plan again without counting it. */

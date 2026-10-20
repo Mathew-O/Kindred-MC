@@ -141,6 +141,103 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A skeleton in a dark, walled plot: in one recorded fight the player closes in with its shield raised, as players
+     * do, so arrows stop at the shield, then lowers it to strike and kills the skeleton.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void fightClosesInOnASkeletonBehindItsShield(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.SkeletonEntity[] skeleton = new net.minecraft.entity.mob.SkeletonEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    // A walled, roofed plot: dark, so the skeleton does not burn, and closed, so neither leaves it.
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 6; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Shieldbearer");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
+                    player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
+                    // In the corner farthest from the player, with the bow a skeleton spawns with.
+                    BlockPos feet = player.getBlockPos();
+                    BlockPos a = context.getAbsolutePos(new BlockPos(1, 2, 1)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
+                    BlockPos corner = feet.getSquaredDistance(a) > feet.getSquaredDistance(b) ? new BlockPos(1, 2, 1) : new BlockPos(6, 2, 6);
+                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, net.minecraft.util.math.Vec3d.ofBottomCenter(corner));
+                    skeleton[0].equipStack(net.minecraft.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+                    skeleton[0].setTarget(player);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeFight(f.source, f.id, skeleton[0].getUuid(), 0) == 1, "Fight requested");
+                })
+                .createAndAdd(() -> context.assertTrue(skeleton[0].isAlive() && f.player().isBlocking()
+                        && f.runtime.nativeActivityStatus(Actor.console(), f.id).work().startsWith("Running native_fight"), "Its shield is up while it closes in"))
+                .createAndAdd(() -> context.assertFalse(skeleton[0].isAlive(), "The skeleton was fought and killed"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getOffHandStack().isOf(Items.SHIELD), "Alive, shield still in hand: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A creeper the goal is fighting lights its fuse close by: with a shield in its off hand the player turns to face
+     * it with the shield up instead of running, and the raised shield takes the blast.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalFacesAHissingCreeperBehindItsShield(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.CreeperEntity[] creeper = new net.minecraft.entity.mob.CreeperEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 6; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Braced");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
+                    player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
+                    creeper[0] = context.spawnMob(net.minecraft.entity.EntityType.CREEPER, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    creeper[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    context.assertTrue("native_fight".equals(bot.task()) && bot.goalProgress().contains("Fight creeper")
+                            && f.player().distanceTo(creeper[0]) < 4, "The goal fights the creeper up close");
+                    creeper[0].ignite(); // Its fuse is lit before the sword can finish it.
+                })
+                .createAndAdd(() -> context.assertFalse(creeper[0].isAlive(), "The creeper went off"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 14, "The raised shield took the blast: health " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The last stage of the goal: holding ten obsidian, four cobblestone and its own flint and steel, the player
      * chooses a site, places the 4×5 frame block by block with cobblestone corners, and lights it.
      */
@@ -807,7 +904,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         if (state.isOf(Blocks.OBSIDIAN) && pos.getY() >= feet[0].getY()) frame++;
                     }
                     context.assertTrue(portal == 6 && frame >= 10, "A cast frame stands lit: " + portal + " portal blocks, " + frame
-                            + " obsidian; " + f.runtime.nativeActivityStatus(Actor.console(), f.id));
+                            + " obsidian; " + f.runtime.nativeActivityStatus(Actor.console(), f.id) + "; at " + f.player().getBlockPos()
+                            + " from " + feet[0] + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
                 .createAndAdd(() -> {
                     var player = f.player();

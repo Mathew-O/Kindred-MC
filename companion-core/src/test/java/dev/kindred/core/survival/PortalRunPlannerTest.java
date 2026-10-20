@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PortalRunPlannerTest {
@@ -14,12 +15,12 @@ class PortalRunPlannerTest {
     /** Mutable stand-in for a player's inventory that applies each step's vanilla outcome. */
     private static final class Sim {
         int logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, water, fns,
-                tables, furnaces, food = 5, pick, sword, chest, furnaceInput, furnaceOutput, foodLevel = 20;
+                tables, furnaces, food = 5, pick, sword, chest, shields, furnaceInput, furnaceOutput, foodLevel = 20;
         boolean tableNearby, furnaceNearby, framed, lit;
 
         PortalRunSnapshot snapshot() {
             return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
-                    flint, gravel, obsidian, buckets, water, fns, tables, furnaces, food, pick, sword, chest,
+                    flint, gravel, obsidian, buckets, water, fns, tables, furnaces, food, pick, sword, chest, shields,
                     tableNearby, furnaceNearby, furnaceInput > 0, furnaceOutput, foodLevel, framed, lit);
         }
 
@@ -65,6 +66,7 @@ class PortalRunPlannerTest {
                 case "iron_chestplate" -> { needIron(8); chest = 3; }
                 case "diamond_pickaxe" -> { assertTrue(diamonds >= 3 && sticks >= 2 && tableNearby); diamonds -= 3; sticks -= 2; pick = 4; }
                 case "flint_and_steel" -> { assertTrue(flint > 0 && iron > 0); flint--; iron--; fns++; }
+                case "shield" -> { need(6, 0, 0); needIron(1); shields++; }
                 default -> throw new AssertionError("Unexpected craft " + item);
             }
         }
@@ -179,7 +181,7 @@ class PortalRunPlannerTest {
     /** Iron work done: iron pickaxe, one bucket, chestplate, flint and steel, table at hand. */
     private static Sim ironDone() {
         Sim sim = new Sim();
-        sim.pick = 3; sim.sword = 2; sim.chest = 3; sim.buckets = 1; sim.fns = 1; sim.cobble = 24; sim.sticks = 4;
+        sim.pick = 3; sim.sword = 2; sim.chest = 3; sim.shields = 1; sim.buckets = 1; sim.fns = 1; sim.cobble = 24; sim.sticks = 4;
         sim.tableNearby = true; sim.furnaceNearby = true;
         return sim;
     }
@@ -241,13 +243,38 @@ class PortalRunPlannerTest {
     @Test
     void castingKeepsNoSticksForADiamondPickaxe() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.tableNearby = true;
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true;
         assertEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
                 "the classic route keeps two more sticks for the diamond pickaxe");
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(),
                 "casting needs only the iron pickaxe's two, so it goes on to iron");
         assertEquals(2, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
         assertEquals(4, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN));
+    }
+
+    @Test
+    void aShieldIsMadeFromWoodKeptNearTheTreesRightAfterTheIronPickaxe() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 4; sim.tableNearby = true;
+        var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 12), WorldFacts.ordinary().methods());
+        var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
+        assertEquals(Action.GATHER_LOGS, step.action(), "wood for a shield before going down for iron, while trees are in sight");
+        assertTrue(step.why().contains("shield"));
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
+                "no tree in sight: no detour for a shield");
+        sim.logs = 2;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), trees).getLast().action());
+        assertEquals(PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN), 3 + 3 + 8 + 1 + 1,
+                "with the wood in hand, one more iron for the shield");
+
+        sim.pick = 3; sim.iron = 13; sim.logs = 0; sim.planks = 6; // Bucket 3, chestplate 8, flint and steel 1, shield 1.
+        var craft = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast();
+        assertEquals(Action.CRAFT, craft.action());
+        assertEquals("shield", craft.item(), "a shield right after the pickaxe, before the bucket and chestplate");
+
+        sim.planks = 0;
+        assertNotEquals("shield", PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().item(),
+                "without the kept wood there is no trip back up for a shield");
     }
 
     @Test
