@@ -205,8 +205,9 @@ final class NativeHarvestAction extends NativeRecordedAction {
             double dx = next.getX() - player.getX();
             double dz = next.getZ() - player.getZ();
             var ahead = net.minecraft.util.math.BlockPos.ofFloored(player.getX() + Math.signum(dx) * 0.6, player.getY(), player.getZ() + Math.signum(dz) * 0.6);
-            if (dx * dx + dz * dz > 0.36 && world.getFluidState(ahead).isEmpty()) {
-                body.move(lease.get(), 0.6f, 0, false, false, (float) Math.toDegrees(Math.atan2(-dx, dz)));
+            float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            if (dx * dx + dz * dz > 0.36 && world.getFluidState(ahead).isEmpty() && new NativeNavigator(world).safeHeading(player, yaw)) {
+                body.move(lease.get(), 0.6f, 0, false, false, yaw);
             } else {
                 body.stopInputs();
             }
