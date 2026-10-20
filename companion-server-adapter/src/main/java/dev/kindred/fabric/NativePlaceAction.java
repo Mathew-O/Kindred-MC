@@ -70,8 +70,6 @@ final class NativePlaceAction extends NativeRecordedAction {
         this.side = side != null ? side : Direction.UP;
         this.slot = slot;
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Placement needs an owned hotbar slot 0..8");
-        var s = setup.get();
-        if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
     }
 
     @Override
@@ -117,8 +115,7 @@ final class NativePlaceAction extends NativeRecordedAction {
 
             var point = new WorkSetup.BlockPoint(placedPos.getX(), placedPos.getY(), placedPos.getZ());
             var resource = Registries.BLOCK.getId(blockItem.getBlock()).toString();
-            var decision = EditPolicy.evaluate(setup.get(), EditPolicy.Kind.PLACE,
-                    dimensionKey, point, resource, policy.get());
+            var decision = NativeEdits.decide(player, setup.get(), EditPolicy.Kind.PLACE, placedPos, resource, policy.get());
             if (!decision.allowed()) {
                 return Step.blocked(decision.reason(), true);
             }
@@ -217,10 +214,9 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (currentSlotStack.isEmpty() || !ItemStack.areItemsAndComponentsEqual(currentSlotStack, expectedStack)) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
-        var point = new WorkSetup.BlockPoint(placedPos.getX(), placedPos.getY(), placedPos.getZ());
+        if ((currentSetup == null ? 0 : currentSetup.revision()) != setupRevision) return false;
         var resource = Registries.BLOCK.getId(blockItem.getBlock()).toString();
-        var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, resource, policy.get());
+        var decision = NativeEdits.decide(player, currentSetup, EditPolicy.Kind.PLACE, placedPos, resource, policy.get());
         if (!decision.allowed()) return false;
 
         if (claim == null || !claims.holdsAll(claim, System.currentTimeMillis())) return false;

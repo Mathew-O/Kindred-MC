@@ -44,6 +44,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     private final BlockState state;
     private final String resource, claimKey;
     private final boolean collect;
+    private final boolean guarded;
     private final int toolSlot;
     private final int hotbarSlot;
     private final long priorReceipt;
@@ -60,14 +61,15 @@ final class NativeBreakAction extends NativeRecordedAction {
     private CompletableFuture<ActionRecord> flush;
 
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
-                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect) {
+                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
+                      boolean guarded) {
         this.body = body; this.lease = lease; this.policy = policy; this.claims = claims; this.writer = writer;
-        this.dispatch = dispatch; this.target = target.toImmutable(); this.collect = collect;
+        this.dispatch = dispatch; this.target = target.toImmutable(); this.collect = collect; this.guarded = guarded;
         var player = body.entity();
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) throw new IllegalArgumentException("Break target is unloaded");
         state = world.getBlockState(target);
-        String denial = RoamingEdits.breakDenial(player, target, policy.get());
+        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded);
         if (denial != null) throw new IllegalArgumentException(denial);
         body.faceBlock(target);
         if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
@@ -112,7 +114,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     private boolean intact() { return body.entity().getWorld().isChunkLoaded(target) && body.entity().getWorld().getBlockState(target) == state; }
     private boolean ownsClaim() { return claim != null && claims.holdsAll(claim, System.currentTimeMillis()); }
     private boolean eligible() {
-        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get()) == null;
+        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded) == null;
     }
     private boolean receipt() {
         return body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)

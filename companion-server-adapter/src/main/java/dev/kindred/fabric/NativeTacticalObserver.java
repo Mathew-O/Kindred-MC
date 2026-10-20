@@ -81,7 +81,10 @@ public final class NativeTacticalObserver {
         world.collectEntitiesByType(
                 TypeFilter.instanceOf(LivingEntity.class),
                 player.getBoundingBox().expand(16.0),
-                e -> e != player && e.isAlive() && !(e instanceof PlayerEntity),
+                // Threats only: monsters, or any mob currently targeting this player. Grazing animals are not danger.
+                e -> e != player && e.isAlive() && !(e instanceof PlayerEntity)
+                        && (e instanceof net.minecraft.entity.mob.Monster
+                        || e instanceof net.minecraft.entity.mob.MobEntity hunter && hunter.getTarget() == player),
                 nearbyLiving,
                 16
         );

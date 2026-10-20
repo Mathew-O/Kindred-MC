@@ -87,7 +87,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -95,7 +95,7 @@ final class NativePlayerBody implements BodyAdapter {
         boolean permits(ActionLease lease, Intent intent, BlockPos target);
     }
 
-    private final NativePlayer player;
+    private NativePlayer player; // A vanilla respawn replaces the entity, as it does for every player.
     private final Companion identity;
     private final MutationGate gate;
     private ActionArbiter arbiter;
@@ -116,6 +116,8 @@ final class NativePlayerBody implements BodyAdapter {
     private long foodUses;
     private boolean portalTravelAuthorized = false;
     private Runnable tickHook = () -> { };
+    private Runnable deathHook = () -> { };
+    private boolean respawning;
 
     /** Optional per-tick cap wired from {@link PlayerRuntime#MAX_BLOCK_CHECKS_PER_TICK}. */
     @FunctionalInterface
@@ -199,6 +201,37 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     void onTick(Runnable hook) { requireThread(); tickHook = Objects.requireNonNull(hook); }
+    /** Runs when the body dies, before vanilla drops its inventory, so in-flight work settles against real contents. */
+    void onDeath(Runnable hook) { requireThread(); deathHook = Objects.requireNonNull(hook); }
+
+    /**
+     * Vanilla respawn of this dead, still-registered body: the same identity at its spawn point with whatever
+     * vanilla keeps (an empty inventory unless keepInventory is on). Nothing is restored or recreated here.
+     */
+    void respawn() {
+        requireThread();
+        if (!connected()) throw new IllegalStateException("Only a registered native body can respawn");
+        if (player.isAlive()) throw new IllegalStateException("The native body is alive");
+        if (controls != null && arbiter != null) arbiter.cancel(controls);
+        haltControls();
+        controls = null;
+        NativePlayer dead = player;
+        var handler = dead.networkHandler;
+        ServerPlayerEntity fresh;
+        respawning = true;
+        try {
+            fresh = dead.server.getPlayerManager().respawnPlayer(dead, false, net.minecraft.entity.Entity.RemovalReason.KILLED);
+        } finally {
+            respawning = false;
+        }
+        if (!(fresh instanceof NativePlayer next)) throw new IllegalStateException("Respawn did not produce the native body");
+        handler.player = next; // What a client's respawn packet handler does with the returned entity.
+        player = next;
+        next.setCustomName(Text.literal(identity.displayName()));
+        next.setCustomNameVisible(true);
+        next.changeGameMode(GameMode.SURVIVAL);
+        haltControls();
+    }
     void stopInputs() { requireThread(); haltControls(); }
 
     UUID saveNow() {
@@ -1314,6 +1347,23 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /**
+     * Looks at {@code aim} and uses the item in {@code hotbarSlot} as a player would (vanilla raycasts along the
+     * look direction). Used for buckets, whose fill or pour target is wherever that ray lands.
+     */
+    boolean useItemToward(ActionLease lease, int hotbarSlot, Vec3d aim, BlockPos target) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8) return false;
+        return execute(lease, Intent.BUCKET, target, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            Vec3d delta = aim.subtract(player.getEyePos());
+            double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+            player.setYaw((float) Math.toDegrees(Math.atan2(-delta.x, delta.z)));
+            player.setPitch((float) Math.toDegrees(-Math.atan2(delta.y, horizontal)));
+            player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
     boolean miningEligible(BlockPos target) { requireThread(); return player.isAlive() && canMine(target); }
 
     /** Whether survival mining of {@code target} is still in progress (not aborted or finished). */
@@ -1470,6 +1520,7 @@ final class NativePlayerBody implements BodyAdapter {
         }
 
         @Override public void tick() {
+            if (this != player) return; // A dead entity replaced by respawn no longer drives the body.
             beforeTick();
             if (isRemoved()) return;
             super.tick();
@@ -1484,6 +1535,22 @@ final class NativePlayerBody implements BodyAdapter {
         }
 
         @Override protected int getPermissionLevel() { return 0; }
+
+        @Override public void onDeath(net.minecraft.entity.damage.DamageSource damageSource) {
+            if (this == player) {
+                haltControls();
+                deathHook.run();
+            }
+            super.onDeath(damageSource);
+        }
+
+        @Override public ServerPlayerEntity kindred$respawned(ServerWorld world) {
+            requireThread();
+            if (!respawning || this != player) throw new IllegalStateException("A native body respawns only through its own body");
+            NativePlayer next = new NativePlayer(world, getGameProfile());
+            next.preparedState = Optional.empty();
+            return next;
+        }
 
         private void recordBreak(BlockPos position, BlockState previousState) {
             recordMiningBreak(position, previousState);

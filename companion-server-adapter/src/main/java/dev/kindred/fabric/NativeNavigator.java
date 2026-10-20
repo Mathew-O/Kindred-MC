@@ -144,6 +144,33 @@ final class NativeNavigator {
         return moves;
     }
 
+    /**
+     * Nearest dry place to stand around {@code from}, searched in growing square rings so the first ring with a
+     * match gives the closest shore. Used to leave deep water before breath runs out.
+     */
+    java.util.Optional<BlockPos> nearestDryStand(BlockPos from, int radius, int vertical) {
+        for (int ring = 1; ring <= radius; ring++) {
+            BlockPos best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (int dx = -ring; dx <= ring; dx++) {
+                for (int dz = -ring; dz <= ring; dz++) {
+                    if (Math.abs(dx) != ring && Math.abs(dz) != ring) continue;
+                    for (int dy = -vertical; dy <= vertical; dy++) {
+                        BlockPos feet = from.add(dx, dy, dz);
+                        if (!standable(feet) || !state(feet).getFluidState().isEmpty() || !state(feet.down()).getFluidState().isEmpty()) continue;
+                        double distance = feet.getSquaredDistance(from);
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            best = feet;
+                        }
+                    }
+                }
+            }
+            if (best != null) return java.util.Optional.of(best.toImmutable());
+        }
+        return java.util.Optional.empty();
+    }
+
     /** Feet and head positions are both free of collision and hazards. */
     boolean clear(BlockPos feet) {
         return passable(feet) && passable(feet.up());

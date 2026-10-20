@@ -55,11 +55,9 @@ final class NativeGoToSkill implements SkillBody {
         var navigator = new NativeNavigator(player.getServerWorld());
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
-        if (found.nodes().size() < 2 && !goalReached(start)) {
-            path = null;
-            return false;
-        }
-        if (!found.complete() && !partial) {
+        if (found.nodes().size() < 2 && !goalReached(start) || !found.complete() && !partial) {
+            KindredMod.LOGGER.debug("No route from {} toward {} (expanded {}, standing {})", start.toShortString(),
+                    target.toShortString(), found.expanded(), navigator.standable(start));
             path = null;
             return false;
         }

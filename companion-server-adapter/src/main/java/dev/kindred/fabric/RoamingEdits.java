@@ -20,6 +20,14 @@ final class RoamingEdits {
 
     /** Null when this edit is allowed; otherwise why not. */
     static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
+        return breakDenial(player, pos, policy, false);
+    }
+
+    /**
+     * {@code waterGuarded} permits mining obsidian beside lava when a water source touches it, which is how
+     * obsidian is made: any lava that flows into the gap meets that water and hardens instead of spreading.
+     */
+    static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded) {
         String common = common(player, pos, policy);
         if (common != null) return common;
         var world = player.getServerWorld();
@@ -30,11 +38,21 @@ final class RoamingEdits {
         if (state.isOf(Blocks.SPAWNER) || state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL_FRAME)) return "Protected structure block";
         BlockPos support = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
         if (pos.equals(support)) return "Would remove the block the player stands on";
+        boolean guarded = waterGuarded && state.isOf(Blocks.OBSIDIAN) && waterSourceBeside(player, pos);
         for (Direction direction : Direction.values()) {
             BlockPos near = pos.offset(direction);
-            if (world.isChunkLoaded(near) && world.getFluidState(near).isIn(FluidTags.LAVA)) return "Breaking it would release lava";
+            if (!guarded && world.isChunkLoaded(near) && world.getFluidState(near).isIn(FluidTags.LAVA)) return "Breaking it would release lava";
         }
         return null;
+    }
+
+    private static boolean waterSourceBeside(ServerPlayerEntity player, BlockPos pos) {
+        var world = player.getServerWorld();
+        for (Direction direction : Direction.Type.HORIZONTAL) {
+            var fluid = world.getFluidState(pos.offset(direction));
+            if (fluid.isIn(FluidTags.WATER) && fluid.isStill()) return true;
+        }
+        return false;
     }
 
     static String placeDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
@@ -43,6 +61,10 @@ final class RoamingEdits {
         var state = player.getServerWorld().getBlockState(pos);
         if (!state.isReplaceable()) return "The destination is occupied";
         return null;
+    }
+
+    static String workstationDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
+        return common(player, pos, policy);
     }
 
     private static String common(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {

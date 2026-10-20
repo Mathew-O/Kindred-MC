@@ -38,6 +38,35 @@ public final class PlayerCommands {
                     + "suspend [UUID]; recover [UUID]; remove [UUID]; journal [UUID]. Autonomous survival awaits qualification."), false);
             return 1;
         });
+        root.then(CommandManager.literal("goal").then(CommandManager.argument("goal", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("nether"); builder.suggest("none"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    UUID id = runtime.defaultBotId();
+                    if (id == null) {
+                        context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+                        return 0;
+                    }
+                    return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            if (id == null) return 0;
+                            return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
+                        }))));
+        root.then(CommandManager.literal("edits").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setWorldEdits(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
         root.then(CommandManager.literal("gui").executes(context -> {
             PlayerRuntime runtime = KindredMod.runtime();
             if (runtime == null) return unavailable(context.getSource());
@@ -715,6 +744,13 @@ public final class PlayerCommands {
             }
         }
         return builder.buildFuture();
+    }
+
+    private static dev.kindred.core.survival.SurvivalGoal goal(String raw) {
+        return switch (raw.toLowerCase(java.util.Locale.ROOT)) {
+            case "nether", "portal", "nether_portal" -> dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
+            default -> dev.kindred.core.survival.SurvivalGoal.NONE;
+        };
     }
 
     private static UUID resolveBotTarget(CommandContext<ServerCommandSource> context, String argName, PlayerRuntime runtime) {

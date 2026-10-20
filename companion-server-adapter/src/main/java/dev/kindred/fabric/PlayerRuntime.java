@@ -701,6 +701,7 @@ final class PlayerRuntime {
                 entry.nativeBody = body;
                 entry.runner = new SkillRunner(entry.arbiter, PlayerRuntime::nanos);
                 body.onTick(() -> beforeNativeTick(entry, body));
+                body.onDeath(() -> onNativeDeath(entry, body));
                 body.connect(state, !fresh);
                 entry.data = entry.arbiter.snapshot();
                 if (fresh) establishNative(source, entry, body, body.saveNow());
@@ -1118,7 +1119,13 @@ final class PlayerRuntime {
                 task = new NativeBreakAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
-                        Boolean.parseBoolean(arguments.getOrDefault("collect", "true")));
+                        Boolean.parseBoolean(arguments.getOrDefault("collect", "true")),
+                        Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")));
+            } else if (skill.equals("native_bucket")) {
+                task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
+                        nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        "pour".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR : NativeBucketAction.Mode.FILL);
             } else if (skill.equals("native_toss")) {
                 task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")),
@@ -1238,6 +1245,7 @@ final class PlayerRuntime {
                         || "native_goto".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
+                    || ("native_bucket".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.BUCKET))
                     || ("native_equip".equals(entry.skillId) && intent == NativePlayerBody.Intent.EQUIP)
                     || ("native_mine".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gather".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
@@ -1273,6 +1281,11 @@ final class PlayerRuntime {
         boolean onHazard = groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS)
                 || groundState.isOf(Blocks.LAVA);
         return inHazard || onHazard || player.isOnFire();
+    }
+
+    /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
+    static boolean inDeepWater(ServerPlayerEntity player) {
+        return player.isSubmergedInWater() || player.isTouchingWater() && !player.isOnGround();
     }
 
     static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos) {
@@ -1810,6 +1823,20 @@ final class PlayerRuntime {
             }
         }
 
+        // 0a. Deep water: a player that stops swimming sinks, so head for the nearest dry ground while breath lasts.
+        if (candidates.isEmpty() && inDeepWater(player)) {
+            var shore = new NativeNavigator(world).nearestDryStand(feetPos, 16, 4);
+            if (shore.isPresent()) {
+                BlockPos dry = shore.get();
+                UUID taskId = UUID.nameUUIDFromBytes(("water_escape:" + entry.data.id() + ":" + dry.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 97.0,
+                        dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                entry.waterEscapeTaskId = taskId;
+                candidates.add(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(dry.getX()),
+                        "y", String.valueOf(dry.getY()), "z", String.valueOf(dry.getZ()), "range", "0.8", "partial", "true")));
+            }
+        }
+
         // 0b. Creeper explosion emergency retreat (URGENT 98.0)
         if (entry.lastTacticalObservation != null) {
             for (var mob : entry.lastTacticalObservation.observedMobs()) {
@@ -2275,6 +2302,11 @@ final class PlayerRuntime {
         }
 
         if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            return candidates;
+        }
+
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) {
+            candidates.addAll(campaignCandidates(entry, body));
             return candidates;
         }
 
@@ -2932,6 +2964,55 @@ final class PlayerRuntime {
         return candidates;
     }
 
+    /** The standing goal's next concrete step, as one ordinary candidate; survival needs still outrank it. */
+    private List<NativeTaskCandidate> campaignCandidates(Entry entry, NativePlayerBody body) {
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        var task = entry.campaign.next(body, edits, server.getTicks());
+        entry.goalProgress = entry.campaign.progress();
+        if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
+            entry.goalAnnounced = true;
+            var pos = body.entity().getBlockPos();
+            server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I built and lit a Nether portal near "
+                    + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "!"), false);
+            entry.goalProgress = "Done: the Nether portal is built and lit";
+        }
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            var at = body.entity().getBlockPos();
+            KindredMod.LOGGER.info("{} goal at {} {} {}: {}", entry.data.displayName(), at.getX(), at.getY(), at.getZ(), entry.goalProgress);
+        }
+        if (task.isEmpty()) return List.of();
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("campaign:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.campaignTasks.clear();
+        entry.campaignTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    private void campaignTaskFinished(Entry entry, SkillRunner.State state) {
+        if (entry.campaign == null) return;
+        var task = entry.activeCampaignTask;
+        entry.activeCampaignTask = null;
+        if (task != null) {
+            boolean completed = state == SkillRunner.State.COMPLETED;
+            if (completed && "native_place".equals(task.skill()) && entry.nativeBody != null) {
+                BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
+                        Integer.parseInt(task.args().get("z")));
+                var block = entry.nativeBody.entity().getServerWorld().getBlockState(placed);
+                if (block.isOf(Blocks.CRAFTING_TABLE) || block.isOf(Blocks.FURNACE)) {
+                    entry.campaign.placedWorkstation(placed);
+                    entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
+                }
+            }
+            entry.campaign.taskFinished(task, completed, server.getTicks());
+        }
+        entry.routineRefreshPending = true;
+        entry.cachedRoutineCandidates = List.of();
+    }
+
     private List<NativeTaskCandidate> evaluateNativeCandidates(Entry entry, NativePlayerBody body) {
         bindBodyBlockScanBudget(body);
         var list = new java.util.ArrayList<NativeTaskCandidate>();
@@ -3043,12 +3124,63 @@ final class PlayerRuntime {
         return Optional.empty();
     }
 
+    /**
+     * Runs as the body dies, before vanilla drops its inventory: in-flight work stops through the shared barrier and
+     * its durable record settles against the contents it actually changed. The drops stay where vanilla put them.
+     */
+    private void onNativeDeath(Entry entry, NativePlayerBody body) {
+        if (entry.nativeBody != body || entry.awaitingRespawn) return;
+        var player = body.entity();
+        entry.awaitingRespawn = true;
+        BlockPos deathPos = player.getBlockPos().toImmutable();
+        teamCoordinator.handlePlayerDeath(entry.data.id());
+        entry.hazardInterrupted = false;
+        if (entry.runner != null && runnerBusy(entry)) {
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort("The player died");
+            observeRunner(entry);
+        }
+        closeNativeAction(entry);
+        if (entry.activity != null) entry.activity.stop();
+        admission.release(entry.data.id());
+        entry.currentTaskId = null;
+        body.stopInputs();
+        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks());
+        entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
+        KindredMod.LOGGER.info("{} died at {}: {}", entry.data.displayName(), deathPos.toShortString(),
+                player.getDamageTracker().getDeathMessage().getString());
+    }
+
+    /**
+     * Vanilla respawn once the dead body has lain for its last tick (vanilla removes it at twenty), about as long
+     * as a person takes to press respawn. The world tolerates the swap mid-iteration, as it does portal travel.
+     */
+    private void respawnNative(Entry entry, NativePlayerBody body) {
+        entry.awaitingRespawn = false;
+        if (!body.connected() || body.entity().isAlive() || entry.reconciliationBlocked) return;
+        try {
+            body.respawn();
+        } catch (RuntimeException failure) {
+            nativeFailure(server.getCommandSource(), entry, "Native respawn failed", failure);
+            return;
+        }
+        entry.routineRefreshPending = true;
+        entry.cachedRoutineCandidates = List.of();
+        entry.cachedCraftingTablePos = null;
+        entry.cachedFurnacePos = null;
+        entry.lastTacticalObservation = null;
+        entry.blocker = "Respawned after dying.";
+        KindredMod.LOGGER.info("{} respawned at {}", entry.data.displayName(), body.entity().getBlockPos().toShortString());
+        persistNativeSaveReceipt(entry);
+    }
+
     private void beforeNativeTick(Entry entry, NativePlayerBody body) {
         if (entry.nativeBody != body) { body.stopInputs(); return; }
         if (!body.connected()) { detachNative(entry, "Native connection closed; explicit reconnect is required."); return; }
         if (body.entity() != null && !body.entity().isAlive()) {
-            teamCoordinator.handlePlayerDeath(entry.data.id());
-            halt(entry, Actor.console(), "Native player died; explicit respawn/recovery required.");
+            onNativeDeath(entry, body);
+            body.stopInputs();
+            if (entry.awaitingRespawn && body.entity().deathTime >= 19) respawnNative(entry, body);
             return;
         }
 
@@ -3072,6 +3204,10 @@ final class PlayerRuntime {
 
         if (usable && body.entity() != null) {
             refreshTacticalObservation(entry, server.getTicks());
+            if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE) {
+                if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.observe(body.entity());
+            }
         }
 
         if (usable && entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
@@ -3089,7 +3225,8 @@ final class PlayerRuntime {
         }
 
         // Bounded danger observation while busy: interrupt through SkillRunner/ActionArbiter cancellation barrier
-        if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat) && !"native_retreat".equals(entry.skillId)) {
+        boolean escapingWater = entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId) && !creeperThreat;
+        if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat) && !"native_retreat".equals(entry.skillId) && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort("Hazard/threat detected: urgent retreat required");
@@ -3185,7 +3322,13 @@ final class PlayerRuntime {
                         }
                     }
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments());
+                    entry.activeCampaignTask = res == 1 ? entry.campaignTasks.get(chosen.id()) : null;
                     if (res != 1) {
+                        if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
+                            entry.campaign.taskFinished(entry.campaignTasks.get(chosen.id()), false, server.getTicks());
+                            entry.routineRefreshPending = true;
+                            entry.cachedRoutineCandidates = List.of();
+                        }
                         entry.currentTaskId = null;
                         if (optShared.isPresent()) {
                             teamCoordinator.revokeTask(tId, "Dispatch failed");
@@ -3703,8 +3846,10 @@ final class PlayerRuntime {
         UUID finishedTaskId = entry.currentTaskId;
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED)) {
-            KindredMod.LOGGER.info("{} {} {}{}", entry.data.displayName(), entry.skillId, state,
-                    entry.runner.reason().map(r -> ": " + r).orElse(""));
+            KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
+                    entry.runner.reason().map(r -> ": " + r).orElse(""),
+                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]" : "");
+            campaignTaskFinished(entry, state);
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED || state == SkillRunner.State.PAUSED)) {
@@ -4946,6 +5091,8 @@ final class PlayerRuntime {
         private NativePlayerBody nativeBody;
         private StoredNativePlayer nativeState;
         private UUID currentTaskId;
+        private UUID waterEscapeTaskId;
+        private boolean awaitingRespawn;
         private boolean nativePending;
         private ConnectionToken pendingConnection;
         private LedgerCheckState ledgerState = LedgerCheckState.PENDING;
@@ -5060,6 +5207,11 @@ final class PlayerRuntime {
         long manualHoldUntilTick = Long.MIN_VALUE;
         dev.kindred.core.survival.SurvivalGoal goal = dev.kindred.core.survival.SurvivalGoal.NONE;
         String goalProgress = "";
+        PortalRunCampaign campaign;
+        final Map<UUID, PortalRunCampaign.Task> campaignTasks = new HashMap<>();
+        PortalRunCampaign.Task activeCampaignTask;
+        boolean goalAnnounced;
+        String loggedGoalProgress = "";
         boolean foodTaskAuthorized = false;
         boolean shelterProtectionAuthorized = false;
         final MilestoneGraph progressionGraph = MilestoneGraph.canonical();
