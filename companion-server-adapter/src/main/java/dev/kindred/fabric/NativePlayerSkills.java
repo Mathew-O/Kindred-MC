@@ -86,6 +86,8 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
             case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
+            case "native_fight" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
             case "native_bucket" -> new SkillDescriptor(id, Set.of("x", "y", "z", "mode"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");

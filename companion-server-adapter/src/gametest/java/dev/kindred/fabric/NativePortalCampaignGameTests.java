@@ -16,6 +16,45 @@ import net.minecraft.util.math.BlockPos;
 public final class NativePortalCampaignGameTests implements FabricGameTest {
 
     /**
+     * A husk comes after the player while it works on the goal: the work stops and the player fights it to the end
+     * in one recorded fight, chasing and striking with its own sword.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalStopsToFightAMobThatIsAfterThePlayer(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.HuskEntity[] husk = new net.minecraft.entity.mob.HuskEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 3; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    f.runtime.createNative(f.source, "Duelist");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    f.player().getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    f.player().getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
+                    husk[0] = context.spawnMob(net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    husk[0].setTarget(f.player());
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertFalse(husk[0].isAlive(), "The husk was fought and killed"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "The player survived");
+                    var sword = f.player().getInventory().getStack(0);
+                    context.assertTrue(sword.isOf(Items.IRON_SWORD) && sword.getDamage() > 0, "Its own sword did the work: " + sword);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The last stage of the goal: holding ten obsidian, four cobblestone and its own flint and steel, the player
      * chooses a site, places the 4×5 frame block by block with cobblestone corners, and lights it.
      */

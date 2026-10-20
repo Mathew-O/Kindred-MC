@@ -71,6 +71,8 @@ final class PortalRunCampaign {
     private BlockPos lastFeet = BlockPos.ORIGIN;
     private final Map<Long, Integer> failures = new HashMap<>();
     private final Map<Long, Integer> approaches = new HashMap<>();
+    private final Map<Task, Integer> repeatFailures = new HashMap<>();
+    private final Map<Task, Long> setAside = new HashMap<>();
     private Direction digDirection = Direction.NORTH;
     private Direction exploreHeading;
     private int exploreFailures;
@@ -129,7 +131,13 @@ final class PortalRunCampaign {
             BlockPos reached = position(task.args());
             if (reached != null) approaches.merge(reached.asLong(), 1, Integer::sum);
         }
+        if (task != null && completed) repeatFailures.remove(task);
         if (completed || task == null) return;
+        // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
+        if (repeatFailures.merge(task, 1, Integer::sum) >= 3) {
+            repeatFailures.remove(task);
+            setAside.put(task, tick + 1200);
+        }
         BlockPos pos = position(task.args());
         // An unreachable trunk or ore column usually stays unreachable; skip its neighbours too.
         if (pos != null) avoid(pos, "native_goto".equals(task.skill()) && task.label().startsWith("Walk to"), tick);
@@ -140,7 +148,7 @@ final class PortalRunCampaign {
         if (task.label().startsWith("Recover")) dropSite = null;
         if (task.label().startsWith("Cut through")) exploreStalls = 0; // That way is closed too; walk and look again.
         // A foe in a hole or across a ravine cannot be reached; leave it be for a while rather than try forever.
-        if (task.label().startsWith("Close in") && foe != null) {
+        if ((task.label().startsWith("Close in") || task.label().startsWith("Fight")) && foe != null) {
             ignoredFoes.put(foe, tick + 600);
             foe = null;
         }
@@ -170,10 +178,8 @@ final class PortalRunCampaign {
     private void avoid(BlockPos pos, boolean column, long tick) {
         int count = failures.merge(pos.asLong(), 1, Integer::sum);
         long until = tick + (2400L << Math.min(count - 1, 5));
-        if (!column) {
-            blockedUntil.merge(pos.asLong(), until, Math::max);
-            return;
-        }
+        blockedUntil.merge(pos.asLong(), until, Math::max); // The exact target, whatever kind it was.
+        if (!column) return;
         for (int dy = -6; dy <= 6; dy++) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
             long key = pos.add(dx, dy, dz).asLong();
             unreachableUntil.merge(key, until, Math::max);
@@ -248,6 +254,7 @@ final class PortalRunCampaign {
         }
         for (PortalRunPlanner.Step step : steps) {
             Optional<Task> task = realize(step, snapshot, body, policy);
+            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
             if (task.isPresent()) {
                 progress = stageLabel(stage) + ": " + step.why() + " - " + task.get().label();
                 return task;
@@ -371,7 +378,7 @@ final class PortalRunCampaign {
         var kind = block == Blocks.CRAFTING_TABLE ? WorldKnowledge.Kind.CRAFTING_TABLE : WorldKnowledge.Kind.FURNACE;
         BlockPos feet = player.getBlockPos();
         return knowledge.nearest(player.getServerWorld(), kind, feet, p -> p.getSquaredDistance(feet) <= radius * radius
-                && ownWorkstations.contains(p.asLong()) && !blocked(p));
+                && ownWorkstations.contains(p.asLong()) && !blocked(p) && !unreachable(p));
     }
 
     // ------------------------------------------------------------------ steps
@@ -1096,8 +1103,8 @@ final class PortalRunCampaign {
         foe = nearest.getUuid();
         foeUntil = lastTick + 100;
         String name = Registries.ENTITY_TYPE.getId(nearest.getType()).getPath();
-        if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) return Optional.of(strike(player, nearest, "Fight " + name));
-        return Optional.of(go(nearest.getBlockPos(), 2.0, true, "Close in on " + name));
+        Task strike = strike(player, nearest, "Fight " + name);
+        return Optional.of(new Task("native_fight", strike.args(), strike.label()));
     }
 
     /** Too hurt to fight: put distance between the player and whatever is after it. */

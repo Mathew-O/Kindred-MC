@@ -1078,6 +1078,9 @@ final class PlayerRuntime {
                 int target = Integer.parseInt(arguments.get("target"));
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
                 task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, source, target);
+            } else if (skill.equals("native_fight")) {
+                task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
             } else if (skill.equals("native_attack")) {
                 UUID targetId = UUID.fromString(arguments.get("target"));
                 Integer slot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : null;
@@ -1254,6 +1257,8 @@ final class PlayerRuntime {
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_fight".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
+                        || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_block".equals(entry.skillId) && intent == NativePlayerBody.Intent.BLOCK)
                     || ("native_till".equals(entry.skillId) && (intent == NativePlayerBody.Intent.TILL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_plant".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLANT || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -1997,7 +2002,10 @@ final class PlayerRuntime {
                             "target", String.valueOf(targetHotbar))));
                 } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.NORMAL_STRIKE)
                         || seq.containsStep(dev.kindred.core.tactics.ActionStep.CRITICAL_STRIKE)) {
-                    if (targetId != null) {
+                    // Only a strike that can land now: an out-of-reach strike fails dispatch and, being urgent, would win
+                    // again every tick and starve every other task, including closing the distance.
+                    if (targetId != null && world.getEntity(targetId) instanceof net.minecraft.entity.LivingEntity living
+                            && player.squaredDistanceTo(living) <= 16.0 && player.canSee(living)) {
                         double need = option.outcome().primaryObjective() == dev.kindred.core.tactics.TacticalObjective.RESOLVE_IMMEDIATE_SERIOUS_HARM
                                 ? 96.0 : 90.0;
                         int weaponSlot = weapon != null && weapon.slot() >= 0 && weapon.slot() < 9 ? weapon.slot() : player.getInventory().selectedSlot;
