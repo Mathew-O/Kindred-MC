@@ -837,6 +837,9 @@ final class PortalRunCampaign {
      */
     private Optional<Task> cave(NativePlayerBody body, String what, int targetY) {
         var world = body.entity().getServerWorld();
+        // Not before there is a shield to raise: open caves are where skeletons end most early lives (live runs
+        // 39 to 51), so the first iron comes from its own tunnels, which a cave they break into is walled off from.
+        if (!shielded(body.entity())) return Optional.empty();
         BlockPos feet = lastFeet;
         BlockPos anchor = home == null ? feet : home;
         int gapNow = Math.abs(feet.getY() - targetY);
@@ -2072,6 +2075,10 @@ final class PortalRunCampaign {
         boolean shield = player.getOffHandStack().isOf(Items.SHIELD);
         CreeperEntity creeper = creeperAfter(player);
         if (creeper != null && !shield) return creeper;
+        // A provoked enderman out-hits anything short of an iron sword, and cannot follow into a two-high passage.
+        var enderman = player.getServerWorld().getEntitiesByClass(EndermanEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                mob -> mob.isAlive() && mob.getTarget() == player).stream().findFirst();
+        if (enderman.isPresent() && swordTier(player) < 3) return enderman.get();
         var hunters = player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(12, 6, 12),
                 mob -> mob.isAlive() && mob.getTarget() == player);
         if (hunters.isEmpty()) return null;
@@ -2166,6 +2173,22 @@ final class PortalRunCampaign {
     /** Work stopped for a fight is not a failed target; plan again without counting it. */
     void taskInterrupted(Task task) {
         progress = "Interrupted: " + (task == null ? "work" : task.label());
+    }
+
+    /** A shield in the off hand or carried. */
+    private static boolean shielded(ServerPlayerEntity player) {
+        return player.getOffHandStack().isOf(Items.SHIELD) || ItemMoves.count(player.getInventory(), Items.SHIELD) > 0;
+    }
+
+    /** The best sword carried, on the tier scale (0 none, 2 stone, 3 iron). */
+    private static int swordTier(ServerPlayerEntity player) {
+        int best = 0;
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (stack.isIn(ItemTags.SWORDS)) best = Math.max(best, tier(stack.getItem()));
+        }
+        return best;
     }
 
     /** A sword or an axe in the hotbar, as {@link #strike} would use. */

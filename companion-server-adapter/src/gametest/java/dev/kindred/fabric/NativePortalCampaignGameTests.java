@@ -408,6 +408,71 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * The tunnel dead end again, with an enderman in the cave that is after the player and only a stone sword to
+     * meet it with: the goal walls itself into its two-high passage, where the enderman cannot follow, instead of
+     * fighting it, as in live run 51.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalHolesUpFromAProvokedEnderman(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.EndermanEntity[] enderman = new net.minecraft.entity.mob.EndermanEntity[1];
+        BlockPos[] way = new BlockPos[2];
+        int[] settle = {0};
+        boolean[] chased = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Stared"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 4; y++) {
+                        boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
+                                || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 3);
+                        world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    way[0] = p.add(0, 0, 1);
+                    way[1] = p.add(0, 1, 1);
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.STONE_SWORD));
+                    player.getInventory().setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    player.getInventory().setStack(3, new ItemStack(Items.BREAD, 5));
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settles"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = f.player();
+                    BlockPos p = way[0].north();
+                    enderman[0] = net.minecraft.entity.EntityType.ENDERMAN.create(world);
+                    enderman[0].refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 3.5, 180, 0);
+                    enderman[0].setPersistent();
+                    world.spawnEntity(enderman[0]);
+                    enderman[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    chased[0] |= "native_fight".equals(bot.task()) && f.player().squaredDistanceTo(enderman[0]) > 3.5 * 3.5;
+                    var world = context.getWorld();
+                    context.assertTrue(!world.getBlockState(way[0]).isAir() && !world.getBlockState(way[1]).isAir(),
+                            "It walled itself into the passage: " + bot.goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertFalse(chased[0], "It did not go after the enderman");
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 10, "Alive behind its wall: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                    enderman[0].discard();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Nothing in hand, as just after a respawn, and a zombie after it a few blocks off: the player keeps away rather
      * than start a fist fight it would lose.
      */
@@ -997,8 +1062,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
-     * A dark L-shaped cave passage with iron ore out of sight around the corner. At the iron stage the goal lights
-     * the dark with a torch crafted from its own coal and a spare stick, walks to the part of the cave it can see,
+     * A dark L-shaped cave passage with iron ore out of sight around the corner. At the iron stage, with a shield in
+     * hand, the goal lights the dark with a torch crafted from its own coal and a spare stick, walks to the part of the cave it can see,
      * spots the ore from the corner, and mines it, rather than digging a tunnel from where it stood.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1200)
@@ -1045,6 +1110,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(4, new ItemStack(Items.STICK, 9));
                     inventory.setStack(5, new ItemStack(Items.COAL, 4));
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.offHand.set(0, new ItemStack(Items.SHIELD)); // Caves are explored only with a shield to raise.
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) >= 1,
@@ -1059,6 +1125,54 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                             "One coal and one spare stick became torches: coal " + ItemMoves.count(inventory, Items.COAL)
                                     + ", sticks " + ItemMoves.count(inventory, Items.STICK));
                     context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * The same kind of dark cave opening ahead, but no shield yet: the goal does not go exploring it for iron, as
+     * open caves are where skeletons ended most early lives; it digs its own way instead.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalLeavesCavesAloneUntilItHasAShield(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] explored = {false};
+        int[] settle = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Unshielded"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Solid stone around the player with a dark chamber opening in front of it.
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) for (int y = -1; y <= 3; y++) {
+                        boolean air = x == 0 && z == 0 && (y == 0 || y == 1) || Math.abs(x) <= 2 && z >= 1 && z <= 3 && y >= 0 && y <= 2;
+                        world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(5, new ItemStack(Items.CRAFTING_TABLE));
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settles"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    explored[0] |= progress.contains("Explore the cave");
+                    context.assertTrue(progress.contains("Branch mine") || progress.contains("Dig down"),
+                            "It digs its own way for iron: " + progress);
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(explored[0], "It did not go exploring the cave without a shield");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();
