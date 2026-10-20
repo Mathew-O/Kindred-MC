@@ -3,6 +3,7 @@ package dev.kindred.fabric;
 import dev.kindred.core.EditPolicy;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
+import dev.kindred.core.survival.WorldFacts;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
@@ -372,8 +373,9 @@ final class PortalRunCampaign {
         }
         PortalRunSnapshot snapshot = snapshot(body);
         lastSnapshot = snapshot;
-        stage = PortalRunPlanner.stage(snapshot);
-        var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot));
+        WorldFacts facts = facts(player);
+        stage = PortalRunPlanner.stage(snapshot, facts);
+        var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
         if (snapshot.emptyBuckets() > 0 && snapshot.waterBuckets() == 0 && obsidianSite == null
                 && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, player.getBlockPos(), p -> !blocked(p) && p.getSquaredDistance(player.getBlockPos()) < 64 * 64).isPresent()) {
@@ -714,7 +716,37 @@ final class PortalRunCampaign {
             case GATHER_FLINT -> flint(body);
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
+            case CAST_PORTAL -> Optional.empty(); // Not offered until casting can be carried out (F-25c5 slice b).
         };
+    }
+
+    /** Methods the campaign can carry out; the planner never chooses one outside this set. */
+    private static final Set<WorldFacts.Method> METHODS = java.util.EnumSet.of(WorldFacts.Method.MINE_OBSIDIAN);
+    private static final Map<WorldFacts.Source, WorldKnowledge.Kind> SOURCES = Map.of(
+            WorldFacts.Source.TREE, WorldKnowledge.Kind.LOG, WorldFacts.Source.STONE, WorldKnowledge.Kind.STONE,
+            WorldFacts.Source.COAL_ORE, WorldKnowledge.Kind.COAL_ORE, WorldFacts.Source.IRON_ORE, WorldKnowledge.Kind.IRON_ORE,
+            WorldFacts.Source.DIAMOND_ORE, WorldKnowledge.Kind.DIAMOND_ORE, WorldFacts.Source.LAVA, WorldKnowledge.Kind.LAVA,
+            WorldFacts.Source.WATER, WorldKnowledge.Kind.WATER, WorldFacts.Source.GRAVEL, WorldKnowledge.Kind.GRAVEL,
+            WorldFacts.Source.CAVE, WorldKnowledge.Kind.CAVE);
+    private WorldFacts facts;
+    private long factsTick = Long.MIN_VALUE;
+
+    /**
+     * What the planner may choose from: the nearest source of each kind the player has seen (not set aside), and
+     * the methods available. Rebuilt once a second, so the plan follows the world as the player learns it.
+     */
+    private WorldFacts facts(ServerPlayerEntity player) {
+        if (facts != null && lastTick - factsTick < 20) return facts;
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var nearest = new java.util.EnumMap<WorldFacts.Source, Integer>(WorldFacts.Source.class);
+        for (var source : SOURCES.entrySet()) {
+            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p))
+                    .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
+        }
+        facts = new WorldFacts(nearest, METHODS);
+        factsTick = lastTick;
+        return facts;
     }
 
     /** Underground, sight lines are shorter and every walk is through the dark: ore within two dozen blocks. */

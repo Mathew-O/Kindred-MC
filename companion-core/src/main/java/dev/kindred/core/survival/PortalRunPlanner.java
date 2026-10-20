@@ -13,6 +13,12 @@ import java.util.Objects;
  * bucket, chestplate, flint and steel), a water bucket, three diamonds and a diamond pickaxe, ten obsidian made by pouring
  * water onto lava sources and mining them, flint from gravel, then a ten-obsidian frame with cobblestone
  * corners, lit with the owned flint and steel.
+ *
+ * <p>That route is the cheapest in an ordinary world, not the only one. Where {@link WorldFacts} offers more than
+ * one method for a sub-goal, the planner picks the cheapest from the player's items and what it has seen; the
+ * adapter passes fresh facts on every pass, so the plan changes as soon as the world does. The first alternative
+ * is the frame itself: obsidian mined with a diamond pickaxe, or cast in place from lava and water with a second
+ * bucket and no diamonds at all.
  */
 public final class PortalRunPlanner {
     public static final int PORTAL_OBSIDIAN = 10;
@@ -28,7 +34,9 @@ public final class PortalRunPlanner {
     public enum Action {
         DONE, COLLECT_SMELTED, HUNT, GATHER_LOGS, CRAFT, PLACE_TABLE, PLACE_FURNACE, GATHER_STONE,
         MINE_COAL, MINE_IRON, SMELT, AWAIT_SMELT, FILL_WATER, MINE_DIAMOND, MAKE_OBSIDIAN, GATHER_FLINT,
-        BUILD_PORTAL, IGNITE_PORTAL
+        BUILD_PORTAL, IGNITE_PORTAL,
+        /** Cast the frame in place: lava poured into each frame cell and hardened with water. */
+        CAST_PORTAL
     }
 
     /**
@@ -50,9 +58,15 @@ public final class PortalRunPlanner {
 
     private PortalRunPlanner() { }
 
-    /** Steps in priority order: opportunistic upkeep first, then the single next material step of the route. */
+    /** {@link #plan(PortalRunSnapshot, WorldFacts)} in an ordinary world with nothing observed yet. */
     public static List<Step> plan(PortalRunSnapshot s) {
+        return plan(s, WorldFacts.ordinary());
+    }
+
+    /** Steps in priority order: opportunistic upkeep first, then the single next material step of the route. */
+    public static List<Step> plan(PortalRunSnapshot s, WorldFacts facts) {
         Objects.requireNonNull(s);
+        Objects.requireNonNull(facts);
         var steps = new ArrayList<Step>();
         if (s.portalLit()) {
             steps.add(Step.of(Action.DONE, Stage.DONE, "The Nether portal is built and lit"));
@@ -62,27 +76,56 @@ public final class PortalRunPlanner {
             steps.add(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect smelted items from the furnace"));
         }
         if (s.edibleFood() == 0 && s.foodLevel() <= 14) {
-            steps.add(new Step(Action.HUNT, "", 1, stage(s), "Out of food; hunt an animal in sight"));
+            steps.add(new Step(Action.HUNT, "", 1, stage(s, facts), "Out of food; hunt an animal in sight"));
         } else if (s.edibleFood() < FOOD_STOCK) {
             // There are no animals deep underground: take a little food while some are in sight.
-            steps.add(new Step(Action.HUNT, "", FOOD_STOCK - s.edibleFood(), stage(s), "Stock some food while animals are around"));
+            steps.add(new Step(Action.HUNT, "", FOOD_STOCK - s.edibleFood(), stage(s, facts), "Stock some food while animals are around"));
         }
-        steps.add(primary(s));
+        steps.add(primary(s, facts));
         return steps;
     }
 
     public static Stage stage(PortalRunSnapshot s) {
+        return stage(s, WorldFacts.ordinary());
+    }
+
+    public static Stage stage(PortalRunSnapshot s, WorldFacts facts) {
         if (s.portalLit()) return Stage.DONE;
         if (s.portalFramed() || s.obsidian() >= PORTAL_OBSIDIAN && s.flintAndSteel() > 0) return Stage.PORTAL;
         if (s.pickaxeTier() <= 0) return Stage.WOOD;
         if (s.pickaxeTier() == 1) return Stage.STONE;
-        if (s.pickaxeTier() == 2 || ironShortfall(s) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
-        if (s.pickaxeTier() == 3) return Stage.DIAMOND;
+        WorldFacts.Method frame = frameMethod(s, facts);
+        if (s.pickaxeTier() == 2 || ironShortfall(s, frame) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
+        if (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() == 3) return Stage.DIAMOND;
         if (s.obsidian() < PORTAL_OBSIDIAN) return Stage.OBSIDIAN;
         return Stage.FLINT;
     }
 
-    private static Step primary(PortalRunSnapshot s) {
+    /**
+     * How the frame's obsidian will be got: the cheaper available method, in rough units of work. Mining needs a
+     * diamond pickaxe (free once owned, cheap with diamonds in hand or in sight, a long search otherwise); casting
+     * needs a second bucket, three more iron. Each obsidian costs about the same either way, a trip to the lava.
+     */
+    public static WorldFacts.Method frameMethod(PortalRunSnapshot s, WorldFacts facts) {
+        boolean mine = facts.can(WorldFacts.Method.MINE_OBSIDIAN), cast = facts.can(WorldFacts.Method.CAST_OBSIDIAN);
+        if (!cast) return WorldFacts.Method.MINE_OBSIDIAN;
+        if (!mine) return WorldFacts.Method.CAST_OBSIDIAN;
+        return castCost(s) < mineCost(s, facts) ? WorldFacts.Method.CAST_OBSIDIAN : WorldFacts.Method.MINE_OBSIDIAN;
+    }
+
+    private static double mineCost(PortalRunSnapshot s, WorldFacts facts) {
+        if (s.pickaxeTier() >= 4) return 0;
+        int missing = Math.max(0, DIAMONDS_NEEDED - s.diamonds());
+        return 2 + missing * (facts.knows(WorldFacts.Source.DIAMOND_ORE) ? 2.0 : 8.0);
+    }
+
+    private static double castCost(PortalRunSnapshot s) {
+        int buckets = s.emptyBuckets() + s.waterBuckets();
+        return 2 + Math.max(0, 2 - buckets) * 3.0;
+    }
+
+    private static Step primary(PortalRunSnapshot s, WorldFacts facts) {
+        WorldFacts.Method frame = frameMethod(s, facts);
         // Wood: a crafting table and a wooden pickaxe, with logs to spare for sticks and fuel.
         if (s.pickaxeTier() <= 0) {
             // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone.
@@ -117,7 +160,7 @@ public final class PortalRunPlanner {
         }
 
         // Iron: pickaxe, bucket and flint and steel, smelted in an owned furnace.
-        int ironWanted = ironShortfall(s);
+        int ironWanted = ironShortfall(s, frame);
         int ironHave = s.ironIngots() + s.rawIron();
         if (ironHave < ironWanted) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
@@ -134,16 +177,22 @@ public final class PortalRunPlanner {
             return new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron");
         }
         if (s.pickaxeTier() < 3) return craftAtTable(s, "iron_pickaxe", 0, 2, Stage.IRON);
-        if (s.emptyBuckets() + s.waterBuckets() == 0) return craftAtTable(s, "bucket", 0, 0, Stage.IRON);
+        if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, "bucket", 0, 0, Stage.IRON);
         // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
         if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, "iron_chestplate", 0, 0, Stage.IRON);
 
-        // Diamonds for a pickaxe that can mine obsidian.
-        if (s.pickaxeTier() < 4) {
+        // Diamonds for a pickaxe that can mine obsidian, unless the frame is cast instead.
+        if (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4) {
             if (s.diamonds() < DIAMONDS_NEEDED) {
                 return new Step(Action.MINE_DIAMOND, "", DIAMONDS_NEEDED - s.diamonds(), Stage.DIAMOND, "Strip-mine for diamonds (" + s.diamonds() + "/3)");
             }
             return craftAtTable(s, "diamond_pickaxe", 0, 2, Stage.DIAMOND);
+        }
+
+        // Cast: the frame hardens in place from lava poured into it and water poured over it.
+        if (frame == WorldFacts.Method.CAST_OBSIDIAN && !s.portalFramed() && s.obsidian() < PORTAL_OBSIDIAN) {
+            if (s.waterBuckets() == 0) return Step.of(Action.FILL_WATER, Stage.OBSIDIAN, "Fill a bucket with water");
+            return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
         }
 
         // Obsidian: water poured onto still lava, then mined with the diamond pickaxe.
@@ -166,11 +215,19 @@ public final class PortalRunPlanner {
         return Step.of(Action.IGNITE_PORTAL, Stage.PORTAL, "Light the portal with flint and steel");
     }
 
-    /** Iron still needed for whatever iron items are missing: pickaxe 3, bucket 3, chestplate 8, flint and steel 1. */
-    static int ironShortfall(PortalRunSnapshot s) {
+    /** Buckets the route needs: one for water when mining obsidian, a second for lava when casting it. */
+    static int bucketsWanted(WorldFacts.Method frame) {
+        return frame == WorldFacts.Method.CAST_OBSIDIAN ? 2 : 1;
+    }
+
+    /**
+     * Iron still needed for whatever iron items are missing: pickaxe 3, three per bucket still wanted, chestplate 8,
+     * flint and steel 1.
+     */
+    static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame) {
         int wanted = 0;
         if (s.pickaxeTier() < 3) wanted += 3;
-        if (s.emptyBuckets() + s.waterBuckets() == 0) wanted += 3;
+        wanted += Math.max(0, bucketsWanted(frame) - s.emptyBuckets() - s.waterBuckets()) * 3;
         if (s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
         if (s.flintAndSteel() == 0) wanted += 1;
         return wanted;

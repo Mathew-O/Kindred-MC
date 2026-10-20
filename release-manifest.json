@@ -175,7 +175,7 @@
   "autonomousWorkEnabled": false,
   "liveAcceptanceGatesPassed": [],
   "automatedValidation": {
-    "junitTestsPassed": 336,
+    "junitTestsPassed": 341,
     "nativeGameTestsPassed": 197,
     "nativeGameTestConsecutivePasses": 2,
     "latestRegressionEvidence": "docs/validation.md",

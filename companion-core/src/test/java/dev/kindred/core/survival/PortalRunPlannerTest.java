@@ -45,6 +45,7 @@ class PortalRunPlannerTest {
                 case GATHER_FLINT -> flint++;
                 case BUILD_PORTAL -> { assertTrue(obsidian >= 10 && cobble >= 4); obsidian -= 10; cobble -= 4; framed = true; }
                 case IGNITE_PORTAL -> { assertTrue(fns > 0 && framed); lit = true; }
+                case CAST_PORTAL -> { assertTrue(buckets + water >= 2 && water > 0, "casting needs water and a second bucket for lava"); framed = true; }
                 case CRAFT -> craft(step.item());
                 default -> throw new AssertionError("Unexpected step " + step);
             }
@@ -149,5 +150,83 @@ class PortalRunPlannerTest {
         var steps = PortalRunPlanner.plan(sim.snapshot());
         assertEquals(Action.COLLECT_SMELTED, steps.get(0).action());
         assertEquals(Action.HUNT, steps.get(1).action());
+    }
+
+    /** Both frame methods available, nothing seen yet. */
+    private static final WorldFacts BOTH = new WorldFacts(java.util.Map.of(),
+            java.util.Set.of(WorldFacts.Method.MINE_OBSIDIAN, WorldFacts.Method.CAST_OBSIDIAN));
+
+    @Test
+    void withCastingAvailableTheRouteSkipsDiamondsAndCastsTheFrame() {
+        Sim sim = new Sim();
+        List<Action> seen = new ArrayList<>();
+        for (int i = 0; i < 400; i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).stream()
+                    .filter(candidate -> candidate.action() != Action.HUNT).findFirst().orElseThrow();
+            if (step.action() == Action.DONE) {
+                assertTrue(sim.lit);
+                assertTrue(seen.contains(Action.CAST_PORTAL), "the frame was cast");
+                assertTrue(!seen.contains(Action.MINE_DIAMOND) && !seen.contains(Action.MAKE_OBSIDIAN), "no diamonds, nothing mined");
+                assertEquals(2, sim.buckets + sim.water, "a second bucket for the lava");
+                return;
+            }
+            seen.add(step.action());
+            sim.apply(step);
+        }
+        throw new AssertionError("Planner did not reach a lit portal: " + seen.subList(Math.max(0, seen.size() - 20), seen.size()));
+    }
+
+    /** Iron work done: iron pickaxe, one bucket, chestplate, flint and steel, table at hand. */
+    private static Sim ironDone() {
+        Sim sim = new Sim();
+        sim.pick = 3; sim.sword = 2; sim.chest = 3; sim.buckets = 1; sim.fns = 1; sim.cobble = 24; sim.sticks = 4;
+        sim.tableNearby = true; sim.furnaceNearby = true;
+        return sim;
+    }
+
+    @Test
+    void theFrameMethodFollowsWhatThePlayerHasAndKnows() {
+        Sim sim = ironDone();
+        assertEquals(WorldFacts.Method.MINE_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), WorldFacts.ordinary()),
+                "only the classic route when casting is not available");
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH),
+                "a second bucket is cheaper than a diamond search");
+        assertEquals(PortalRunPlanner.Stage.IRON, PortalRunPlanner.stage(sim.snapshot(), BOTH), "three more iron for that bucket");
+
+        sim.diamonds = 3;
+        assertEquals(WorldFacts.Method.MINE_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH),
+                "with the diamonds in hand the pickaxe is cheaper than another bucket");
+        sim.diamonds = 0;
+        sim.pick = 4;
+        assertEquals(WorldFacts.Method.MINE_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH), "a diamond pickaxe already owned");
+    }
+
+    @Test
+    void theChoiceChangesAsSoonAsTheWorldDoes() {
+        Sim sim = ironDone();
+        sim.diamonds = 2;
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH),
+                "one more diamond somewhere unseen is a long search");
+        var seenDiamond = new WorldFacts(java.util.Map.of(WorldFacts.Source.DIAMOND_ORE, 9), BOTH.methods());
+        assertEquals(WorldFacts.Method.MINE_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), seenDiamond),
+                "diamond ore in sight makes the third diamond cheap");
+        assertEquals(Action.MINE_DIAMOND, PortalRunPlanner.plan(sim.snapshot(), seenDiamond).getLast().action());
+    }
+
+    @Test
+    void castingWithTwoBucketsGoesStraightToTheFrameAfterIron() {
+        Sim sim = ironDone();
+        sim.buckets = 2;
+        assertEquals(PortalRunPlanner.Stage.OBSIDIAN, PortalRunPlanner.stage(sim.snapshot(), BOTH), "no diamond stage when casting");
+        assertEquals(Action.FILL_WATER, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action());
+        sim.buckets = 1;
+        sim.water = 1;
+        assertEquals(Action.CAST_PORTAL, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action());
+    }
+
+    @Test
+    void factsRejectNegativeDistances() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new WorldFacts(java.util.Map.of(WorldFacts.Source.LAVA, -1), java.util.Set.of()));
     }
 }
