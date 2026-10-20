@@ -1995,7 +1995,11 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         var open = openings(world, feet);
+        // A mob on foot already within reach is past any wall: fight it where the player stands.
+        boolean pressed = player.hurtTime > 0 || world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(2.5, 1, 2.5),
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)).size() > 0;
         net.minecraft.entity.LivingEntity danger = outmatchedBy(player);
+        if (danger != null && pressed && !(danger instanceof CreeperEntity)) return Optional.empty();
         if (danger != null) {
             markDanger(danger.getBlockPos(), lastTick + CAVE_DANGER_TICKS);
             if (holedUpSince < 0) holedUpSince = lastTick;
@@ -2014,6 +2018,7 @@ final class PortalRunCampaign {
         }
         if (player.isOnGround() && open.size() <= 3 && world.getFluidState(feet).isEmpty()) snug = feet.toImmutable();
         if (holedUpSince >= 0) {
+            if (pressed) return Optional.empty(); // Something got in: fight back rather than wait.
             if (player.getHealth() >= 18 || lastTick - holedUpSince > 2400) {
                 holedUpSince = -1;
                 return Optional.empty();

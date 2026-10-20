@@ -304,6 +304,65 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Hurt enough to want to wall itself in, but a zombie is already in the tunnel beside it: no wall can help, so
+     * the player fights it where it stands instead of turning its back to place blocks.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalFightsAMobAlreadyInTheTunnelRatherThanWallingOff(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        BlockPos[] mouth = new BlockPos[1];
+        int[] settle = {0};
+        boolean[] walled = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Cornered"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    mouth[0] = p;
+                    for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
+                        boolean air = (x == 0 && z >= 0 && z <= 2 && (y == 0 || y == 1))
+                                || (Math.abs(x) <= 2 && z >= 3 && z <= 4 && y >= 0 && y <= 2);
+                        world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    player.setHealth(10); // Below the line at which it would wall itself in.
+                    player.getHungerManager().setFoodLevel(10);
+                    player.getHungerManager().setSaturationLevel(0);
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settles"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = mouth[0];
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    zombie[0].refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 1.5, 180, 0); // The very next cell.
+                    zombie[0].setPersistent();
+                    world.spawnEntity(zombie[0]);
+                    zombie[0].setTarget(f.player());
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    walled[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Hole up: seal");
+                    context.assertFalse(zombie[0].isAlive(), "The zombie in the tunnel was fought and killed");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive: " + f.player().getHealth());
+                    context.assertFalse(walled[0], "It did not turn to wall off a tunnel the zombie was already in");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The same tunnel mouth with a zombie in the cave beyond: the player holds the passage and lets the zombie come
      * to it, as players do, instead of chasing it out into the open cave, and kills it there.
      */
