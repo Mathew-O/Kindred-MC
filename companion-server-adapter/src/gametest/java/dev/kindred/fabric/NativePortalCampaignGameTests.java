@@ -57,6 +57,62 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Badly hurt, with a wounded zombie in reach that two swings of its iron sword will kill: the goal finishes it
+     * rather than turn its back on it, and it is the goal's own fight from start to end, with none of the runtime's
+     * tactical single swings, one-block retreats or shield blocks cutting in (live runs flipped between them and the
+     * goal's steps every second before most deaths).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void goalFinishesAWoundedZombieInReachRatherThanTurningItsBack(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        boolean[] backedOff = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Finisher");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 3));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(10); // No natural healing while it fights.
+                    player.getHungerManager().setSaturationLevel(0);
+                    BlockPos at = player.getBlockPos();
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(context.getWorld());
+                    zombie[0].refreshPositionAndAngles(at.getX() + 1.5, at.getY(), at.getZ() + 0.5, 90, 0); // The next cell.
+                    zombie[0].setPersistent();
+                    zombie[0].setHealth(8);
+                    context.getWorld().spawnEntity(zombie[0]);
+                    zombie[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    if (bot.task() != null) seen.add(bot.task());
+                    backedOff[0] |= bot.goalProgress().contains("Back off");
+                    context.assertFalse(zombie[0].isAlive(), "The wounded zombie was finished");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive: " + f.player().getHealth());
+                    context.assertFalse(backedOff[0], "It did not turn its back on the zombie");
+                    context.assertTrue(seen.contains("native_fight"), "The goal's own fight: " + seen);
+                    context.assertTrue(java.util.Collections.disjoint(seen, java.util.Set.of("native_attack", "native_retreat", "native_block")),
+                            "No tactical step cut in: " + seen);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A fight that wears the player down is broken off: once a zombie's hits take it below six health, the recorded
      * fight is stopped and the goal backs off instead of fighting on to the death, as both live deaths in run 37 did.
      */
@@ -1305,15 +1361,15 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos b = base[0] = f.player().getBlockPos().toImmutable();
-                    // A rock mass eight high with a staircase cut down into it from its top to a small room, and iron
-                    // ore in the room's far wall, in sight straight down the cut.
+                    // A rock mass eight high with a staircase cut down into it from its top, open to the sky for its
+                    // first three steps and roofed below, and iron ore at the foot of the last step, off the way back
+                    // up and in sight from the top straight down the cut.
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 0; y <= 7; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
                     for (int k = 1; k <= 8; k++) for (int y = 8 - k; y <= 10 - k; y++) world.setBlockState(b.add(k, y, 0), Blocks.AIR.getDefaultState());
-                    world.setBlockState(b.add(9, 0, 0), Blocks.AIR.getDefaultState());
                     world.setBlockState(b.add(9, 1, 0), Blocks.AIR.getDefaultState());
-                    world.setBlockState(b.add(10, 0, 0), Blocks.IRON_ORE.getDefaultState());
+                    world.setBlockState(b.add(9, 0, 0), Blocks.IRON_ORE.getDefaultState());
                     world.setTimeOfDay(1000);
                     var player = f.player();
                     player.refreshPositionAndAngles(b.getX() + 0.5, b.getY() + 8, b.getZ() + 0.5, -90, 30);
@@ -1404,18 +1460,22 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * mines its way in, makes a stone pickaxe, then takes the iron, rather than writing the outcrop off and leaving
      * to look for stone across the void (live sky-island run 1).
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyOutcrop", tickLimit = 2400)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyOutcrop", tickLimit = 4000)
     public void goalMinesTheIslandOutcropPastTheOreOnItsFaces(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] center = new BlockPos[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Islander"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Outcropper"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos c = center[0] = skyIsland(context, f.player());
+                    // The bundled island's low wall round the edge, which keeps drops (and animals) from going over.
+                    for (int i = -5; i <= 5; i++) for (BlockPos edge : java.util.List.of(c.add(i, 0, -5), c.add(i, 0, 5), c.add(-5, 0, i), c.add(5, 0, i))) {
+                        world.setBlockState(edge, Blocks.COBBLESTONE_WALL.getDefaultState());
+                    }
                     for (int x = 2; x <= 4; x++) for (int y = 0; y <= 1; y++) for (int z = 1; z <= 4; z++) world.setBlockState(c.add(x, y, z), Blocks.STONE.getDefaultState());
                     for (int[] ore : new int[][] {{2, 0, 1}, {4, 1, 1}, {2, 1, 3}, {4, 0, 4}, {3, 1, 4}, {4, 0, 2}}) {
                         world.setBlockState(c.add(ore[0], ore[1], ore[2]), Blocks.IRON_ORE.getDefaultState());

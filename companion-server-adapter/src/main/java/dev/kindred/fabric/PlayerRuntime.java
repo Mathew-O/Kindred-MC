@@ -1995,7 +1995,9 @@ final class PlayerRuntime {
             }
         }
 
-        // 3. Tactical combat choices from TacticalPriorityPolicy
+        // 3. Tactical combat choices from TacticalPriorityPolicy. While a goal runs, its campaign is the one controller
+        // of a fight (strike, back off, cover, hole up); only a weapon swap is still offered from here.
+        boolean goalOwnsCombat = entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
         if (entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()
                 && entry.lastTacticalDecision != null && entry.lastTacticalDecision.hasViableOption()) {
             var bestOpt = entry.lastTacticalDecision.bestOption();
@@ -2019,6 +2021,8 @@ final class PlayerRuntime {
                     candidates.add(new NativeTaskCandidate(candidate, "native_swap", Map.of(
                             "source", String.valueOf(weapon.slot()),
                             "target", String.valueOf(targetHotbar))));
+                } else if (goalOwnsCombat) {
+                    // The goal's own fight, back-off or cover is under way or about to be chosen.
                 } else if (seq.containsStep(dev.kindred.core.tactics.ActionStep.NORMAL_STRIKE)
                         || seq.containsStep(dev.kindred.core.tactics.ActionStep.CRITICAL_STRIKE)) {
                     // Only a strike that can land now: an out-of-reach strike fails dispatch and, being urgent, would win
@@ -3031,7 +3035,7 @@ final class PlayerRuntime {
                 .getBytes(StandardCharsets.UTF_8));
         entry.campaignTasks.clear();
         entry.campaignTasks.put(id, t);
-        boolean urgent = PortalRunCampaign.urgentTask(t);
+        boolean urgent = PortalRunCampaign.urgentTask(t) || PortalRunCampaign.combatTask(t);
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id,
                 urgent ? dev.kindred.core.TaskPreferences.Priority.URGENT : dev.kindred.core.TaskPreferences.Priority.PROJECT, urgent ? 99.0 : 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));

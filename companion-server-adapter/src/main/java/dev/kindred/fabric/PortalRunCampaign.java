@@ -1541,7 +1541,7 @@ final class PortalRunCampaign {
                 if (world.getBlockState(spot.down()).getCollisionShape(world, spot.down()).isEmpty()) continue;
                 if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
-                if (!ground && !surrounded(world, spot.down())) continue;
+                if (!ground && besideTheVoid(world, spot)) continue;
                 return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(slot))), label));
             }
         }
@@ -1556,13 +1556,15 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
-    /** Solid ground on all four sides of {@code floor}. */
-    private static boolean surrounded(ServerWorld world, BlockPos floor) {
+    /** Beside a column with nothing in it for four blocks down from {@code spot}'s level: an island's edge over the void. */
+    private static boolean besideTheVoid(ServerWorld world, BlockPos spot) {
         for (Direction direction : Direction.Type.HORIZONTAL) {
-            BlockPos side = floor.offset(direction);
-            if (world.getBlockState(side).getCollisionShape(world, side).isEmpty()) return false;
+            BlockPos side = spot.offset(direction);
+            boolean caught = false;
+            for (int down = 0; down <= 4 && !caught; down++) caught = !passable(world, side.down(down));
+            if (!caught) return true;
         }
-        return true;
+        return false;
     }
 
     private Task swapToHotbar(NativePlayerBody body, int slot, String label) {
@@ -2098,6 +2100,16 @@ final class PortalRunCampaign {
             Optional<Task> wall = cover(body, creeper);
             return wall.isPresent() ? wall : Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
+        // Badly hurt with a mob on foot in reach that two swings will kill: finish it. Turning away from it is
+        // worse: a zombie keeps pace with a player walking off and strikes its back (the tunnel fixture's zombie
+        // killed a player with an iron sword that turned to back off at five health).
+        HostileEntity last = player.getHealth() < 6 ? finishable(player) : null;
+        if (last != null) {
+            foe = last.getUuid();
+            foeUntil = lastTick + 100;
+            Task strike = strike(player, last, "Fight " + Registries.ENTITY_TYPE.getId(last.getType()).getPath());
+            return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+        }
         if (player.getHealth() < 6) return backOff(player);
         // Outnumbered and already hurt: do not take them on one by one in the dark; get some distance first.
         if (player.getHealth() < 14 && hunters(player) >= 3) return backOff(player);
@@ -2149,7 +2161,9 @@ final class PortalRunCampaign {
         if (away.lengthSquared() < 1.0E-4) return Optional.empty();
         away = away.normalize().multiply(10);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
-        return Optional.of(go(target, 3, true, "Back off from " + Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath()));
+        // At a sprint: walking, a zombie keeps pace and strikes the player's back all the way.
+        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")),
+                "Back off from " + Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath()));
     }
 
     /**
@@ -2709,10 +2723,22 @@ final class PortalRunCampaign {
             // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:
             // running from its blast is worse than taking it on the shield.
             boolean shielded = running.label().equals("Fight creeper") && player.getOffHandStack().isOf(Items.SHIELD);
-            return player.getHealth() < 6 && !shielded ? "Badly hurt; break off the fight" : null;
+            return player.getHealth() < 6 && !shielded && finishable(player) == null ? "Badly hurt; break off the fight" : null;
         }
         return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;
+    }
+
+    /**
+     * The goal's own combat: while a goal runs it is the one controller of a fight, so these outrank the runtime's
+     * tactical strikes and one-block retreats, which used to cut in between its steps (live runs flipped between
+     * fighting, backing off and holing up every second before most deaths).
+     */
+    static boolean combatTask(Task task) {
+        if (task == null) return false;
+        String label = task.label();
+        return label.startsWith("Fight") || label.startsWith("Close in") || label.startsWith("Back off") || label.startsWith("Take cover")
+                || label.startsWith("Run from") || label.startsWith("Hold the passage");
     }
 
     /** Goal work that outranks everything else: a creeper's escape, and digging out of a block the head is stuck in. */
@@ -2763,6 +2789,22 @@ final class PortalRunCampaign {
         return best;
     }
 
+    /** Damage of one full swing with the best sword on the tier scale (a fist with none). */
+    private static float swordDamage(int tier) {
+        return switch (tier) { case 0 -> 1; case 1 -> 4; case 2 -> 5; case 3 -> 6; case 4 -> 7; default -> 8; };
+    }
+
+    /** The nearest mob on foot after the player, within reach, that two full swings of its best sword will kill. */
+    private static HostileEntity finishable(ServerPlayerEntity player) {
+        if (!armed(player)) return null;
+        float damage = swordDamage(swordTier(player)) * 0.9f; // Allowing for a little armour.
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3, 1.5, 3),
+                        mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0
+                                && player.canSee(mob) && mob.getHealth() <= 2 * damage)
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
     /** A sword or an axe in the hotbar, as {@link #strike} would use. */
     private static boolean armed(ServerPlayerEntity player) {
         for (int s = 0; s < 9; s++) {
@@ -2787,8 +2829,10 @@ final class PortalRunCampaign {
         return new Task("native_attack", Map.copyOf(args), label);
     }
 
-    /** Route items that a break left lying, say carried off by water, are worth walking a few blocks for. */
-    /** Drops worth walking back for: scarce finds, and its own workstations (a table left behind cost run 57 its way on). */
+    /**
+     * Drops worth walking back for: route items a break left lying (say carried off by water), and its own
+     * workstations (a table left behind cost run 57 its way on).
+     */
     private static final Set<Item> KEEP = Set.of(Items.OBSIDIAN, Items.DIAMOND, Items.RAW_IRON, Items.FLINT, Items.CRAFTING_TABLE, Items.FURNACE);
 
     private Optional<Task> pickUpLoose(ServerPlayerEntity player) {
@@ -2807,7 +2851,7 @@ final class PortalRunCampaign {
                     drop -> KEEP.contains(drop.getStack().getItem()) && !blocked(drop.getBlockPos()));
             for (ItemEntity drop : settling) {
                 long since = dropWaits.computeIfAbsent(drop.getUuid(), id -> lastTick);
-                if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the water to clear off the drop"));
+                if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the drop to settle"));
             }
             return Optional.empty();
         }
