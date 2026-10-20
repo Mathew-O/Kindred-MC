@@ -59,6 +59,8 @@ final class NativeBreakAction extends NativeRecordedAction {
     private int collectTicks;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
+    private net.minecraft.util.math.Vec3d anchor;
+    private boolean holding;
 
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
@@ -76,7 +78,7 @@ final class NativeBreakAction extends NativeRecordedAction {
         resource = Registries.BLOCK.getId(state.getBlock()).toString();
         toolSlot = bestTool(body, state);
         if (toolSlot == -2) throw new IllegalArgumentException("No owned tool can harvest " + resource);
-        hotbarSlot = toolSlot >= 0 && toolSlot < 9 ? toolSlot : toolSlot < 0 ? player.getInventory().selectedSlot : swapDestination(body);
+        hotbarSlot = toolSlot >= 0 && toolSlot < 9 ? toolSlot : toolSlot < 0 ? bareHandSlot(body) : swapDestination(body);
         priorReceipt = body.miningReceipt().map(NativePlayerBody.MiningReceipt::sequence).orElse(0L);
         claimKey = "block:" + worldId + ":" + world.getRegistryKey().getValue() + ":" + target.toShortString();
     }
@@ -102,6 +104,32 @@ final class NativeBreakAction extends NativeRecordedAction {
             }
         }
         return required && best < 0 ? -2 : best;
+    }
+
+    /**
+     * Hotbar slot to dig with when no owned tool helps: an empty hand, else something that takes no wear, so a
+     * pickaxe is not worn down on dirt the bare hand breaks just as fast.
+     */
+    private static int bareHandSlot(NativePlayerBody body) {
+        var inventory = body.entity().getInventory();
+        if (!inventory.getStack(inventory.selectedSlot).isDamageable()) return inventory.selectedSlot;
+        for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) return slot;
+        for (int slot = 0; slot < 9; slot++) if (!inventory.getStack(slot).isDamageable()) return slot;
+        return inventory.selectedSlot;
+    }
+
+    /**
+     * Keep the spot mining started from, as a player taps the keys against a water current. Drifting away can take
+     * the block out of sight and end the break.
+     */
+    private void holdPosition() {
+        var player = body.entity();
+        double dx = anchor.x - player.getX(), dz = anchor.z - player.getZ();
+        boolean drifted = dx * dx + dz * dz > 0.15 * 0.15;
+        if (!drifted && !holding) return;
+        holding = drifted;
+        float yaw = drifted ? (float) Math.toDegrees(Math.atan2(-dx, dz)) : player.getYaw();
+        body.move(issuedLease, drifted ? 0.5f : 0f, 0, false, false, yaw);
     }
 
     private static int swapDestination(NativePlayerBody body) {
@@ -168,6 +196,7 @@ final class NativeBreakAction extends NativeRecordedAction {
                     return waiting();
                 }
                 phase = Phase.MINING;
+                anchor = player.getPos();
                 body.faceBlock(target);
                 boolean started = body.selectHotbar(issuedLease, hotbarSlot) && body.mine(issuedLease, target);
                 if (!started) settle("Native break controls denied", false);
@@ -194,6 +223,7 @@ final class NativeBreakAction extends NativeRecordedAction {
                     return waiting();
                 }
                 if (!ownsClaim()) settle("Block claim expired", false);
+                else holdPosition();
                 return Step.running(Map.of("phase", phase.name(), "durableAction", phase(), "ticks", String.valueOf(player.age)), false);
             }
             case COLLECTING -> {
@@ -253,7 +283,7 @@ final class NativeBreakAction extends NativeRecordedAction {
             case SELECT_SLOT -> phase == Phase.MINING;
             case MINE -> phase == Phase.MINING && target.equals(requested) && eligible()
                     && body.entity().getInventory().selectedSlot == hotbarSlot;
-            case MOVE -> phase == Phase.COLLECTING;
+            case MOVE -> phase == Phase.COLLECTING || phase == Phase.MINING;
             default -> false;
         };
     }

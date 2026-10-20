@@ -19,8 +19,9 @@ public final class PortalRunPlanner {
     public static final int PORTAL_CORNERS = 4;
     /** Cobblestone kept for tools, a furnace, portal corners and a few placement blocks. */
     public static final int COBBLE_TARGET = 24;
-    public static final int LOG_TARGET = 7;
     public static final int DIAMONDS_NEEDED = 3;
+    /** Food items to carry before work takes the player away from animals. */
+    public static final int FOOD_STOCK = 3;
 
     public enum Stage { WOOD, STONE, IRON, DIAMOND, OBSIDIAN, FLINT, PORTAL, DONE }
 
@@ -62,6 +63,9 @@ public final class PortalRunPlanner {
         }
         if (s.edibleFood() == 0 && s.foodLevel() <= 14) {
             steps.add(new Step(Action.HUNT, "", 1, stage(s), "Out of food; hunt an animal in sight"));
+        } else if (s.edibleFood() < FOOD_STOCK) {
+            // There are no animals deep underground: take a little food while some are in sight.
+            steps.add(new Step(Action.HUNT, "", FOOD_STOCK - s.edibleFood(), stage(s), "Stock some food while animals are around"));
         }
         steps.add(primary(s));
         return steps;
@@ -81,9 +85,15 @@ public final class PortalRunPlanner {
     private static Step primary(PortalRunSnapshot s) {
         // Wood: a crafting table and a wooden pickaxe, with logs to spare for sticks and fuel.
         if (s.pickaxeTier() <= 0) {
-            if (s.woodUnits() < 12) return new Step(Action.GATHER_LOGS, "", LOG_TARGET - s.logs(), Stage.WOOD, "Gather logs for a table and a wooden pickaxe");
-            Step tool = craftAtTable(s, "wooden_pickaxe", 3, 2, Stage.WOOD);
-            return tool;
+            // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone.
+            if (s.cobble() >= 3) return craftAtTable(s, "stone_pickaxe", 0, 2, Stage.WOOD);
+            boolean haveTable = s.tableNearby() || s.craftingTables() > 0;
+            int woodWanted = haveTable ? 6 : 12;
+            if (s.woodUnits() < woodWanted) {
+                return new Step(Action.GATHER_LOGS, "", Math.max(1, (woodWanted - s.woodUnits() + 3) / 4), Stage.WOOD,
+                        haveTable ? "Gather logs for a wooden pickaxe" : "Gather logs for a table and a wooden pickaxe");
+            }
+            return craftAtTable(s, "wooden_pickaxe", 3, 2, Stage.WOOD);
         }
         // Stone: cobblestone for a stone pickaxe, sword, furnace and portal corners.
         if (s.pickaxeTier() == 1) {
@@ -94,6 +104,13 @@ public final class PortalRunPlanner {
         }
         if (s.swordTier() < 2 && s.cobble() >= 2) {
             return craftAtTable(s, "stone_sword", 0, 1, Stage.STONE);
+        }
+        // Sticks for the iron and diamond pickaxes, made while trees are still near: there are none deep below.
+        int sticksWanted = (s.pickaxeTier() < 3 ? 2 : 0) + (s.pickaxeTier() < 4 ? 2 : 0);
+        if (s.sticks() < sticksWanted) {
+            if (s.planks() >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
+            if (s.logs() > 0) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
+            return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
         }
         if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < 4) {
             return new Step(Action.GATHER_STONE, "", COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");

@@ -8,6 +8,8 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.entity.passive.PassiveEntity;
@@ -49,20 +51,35 @@ final class PortalRunCampaign {
     record Task(String skill, Map<String, String> args, String label) { }
 
     private static final double REACH = 4.3;
-    private static final int IRON_TOP = 56, IRON_TARGET = 16, IRON_BOTTOM = -24;
+    private static final int IRON_TOP = 56, IRON_TARGET = 32, IRON_BOTTOM = -24;
+    /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
+    private static final int EXPLORE_RADIUS = 192;
+    private static final java.util.EnumSet<PortalRunPlanner.Action> TRAVEL = java.util.EnumSet.of(
+            PortalRunPlanner.Action.GATHER_LOGS, PortalRunPlanner.Action.GATHER_STONE, PortalRunPlanner.Action.MINE_COAL,
+            PortalRunPlanner.Action.MINE_IRON, PortalRunPlanner.Action.MINE_DIAMOND, PortalRunPlanner.Action.MAKE_OBSIDIAN,
+            PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT);
     private static final int DIAMOND_TOP = -52, DIAMOND_TARGET = -58;
 
     private final WorldKnowledge knowledge = new WorldKnowledge();
     private final Set<Long> ownWorkstations = new HashSet<>();
     private final Map<Long, Long> blockedUntil = new HashMap<>();
+    /** Targets the player could not walk to; consulted when choosing what to gather, never when digging. */
+    private final Map<Long, Long> unreachableUntil = new HashMap<>();
+    /** Where the player stood when each unreachable target failed: it stays unreachable from around there. */
+    private final Map<Long, BlockPos> unreachableFrom = new HashMap<>();
+    private BlockPos lastFeet = BlockPos.ORIGIN;
     private final Map<Long, Integer> failures = new HashMap<>();
     private final Map<Long, Integer> approaches = new HashMap<>();
     private Direction digDirection = Direction.NORTH;
     private Direction exploreHeading;
     private int exploreFailures;
     private ObsidianSite obsidianSite;
+    private int pourWaits;
     private PortalSite portalSite;
     private BlockPos dropSite;
+    private java.util.UUID foe;
+    private long foeUntil;
+    private BlockPos home;
     private long dropSiteUntil;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
@@ -92,6 +109,14 @@ final class PortalRunCampaign {
         if (task != null && task.label().startsWith("Recover") && dropSite != null && completed) {
             dropSiteUntil = Math.min(dropSiteUntil, tick + 600); // One more look around, then move on.
         }
+        if (task != null && completed && "native_bucket".equals(task.skill()) && "pour".equals(task.args().get("mode"))) {
+            BlockPos poured = position(task.args());
+            if (poured != null) knowledge.remember(WorldKnowledge.Kind.WATER, poured); // It knows where it poured.
+        }
+        if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Walk to")) {
+            BlockPos reached = position(task.args());
+            if (reached != null) approaches.merge(reached.asLong(), 1, Integer::sum);
+        }
         if (completed || task == null) return;
         BlockPos pos = position(task.args());
         // An unreachable trunk or ore column usually stays unreachable; skip its neighbours too.
@@ -101,7 +126,7 @@ final class PortalRunCampaign {
             exploreHeading = null;
         }
         if (task.label().startsWith("Recover")) dropSite = null;
-        if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel")) digDirection = digDirection.rotateYClockwise();
+        if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel") || task.label().startsWith("Climb")) digDirection = digDirection.rotateYClockwise();
         if (task.label().startsWith("Obsidian")) obsidianSite = null;
         if (task.label().startsWith("Portal") && "native_goto".equals(task.skill())) portalSite = null;
     }
@@ -130,8 +155,18 @@ final class PortalRunCampaign {
             return;
         }
         for (int dy = -6; dy <= 6; dy++) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-            blockedUntil.merge(pos.add(dx, dy, dz).asLong(), until, Math::max);
+            long key = pos.add(dx, dy, dz).asLong();
+            unreachableUntil.merge(key, until, Math::max);
+            unreachableFrom.put(key, lastFeet);
         }
+    }
+
+    /** Skipped until its back-off ends and the player has moved well away from where the walk failed. */
+    private boolean unreachable(BlockPos pos) {
+        Long until = unreachableUntil.get(pos.asLong());
+        if (until == null) return false;
+        BlockPos from = unreachableFrom.get(pos.asLong());
+        return until > lastTick || from != null && from.getSquaredDistance(lastFeet) < 8 * 8;
     }
 
     private boolean blocked(BlockPos pos) {
@@ -152,15 +187,35 @@ final class PortalRunCampaign {
 
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
+        lastFeet = body.entity().getBlockPos().toImmutable();
         this.policy = policy;
         ServerPlayerEntity player = body.entity();
         PortalRunSnapshot snapshot = snapshot(body);
         stage = PortalRunPlanner.stage(snapshot);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
-        if (snapshot.emptyBuckets() > 0 && snapshot.waterBuckets() == 0
-                && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, player.getBlockPos(), p -> !blocked(p) && p.getSquaredDistance(player.getBlockPos()) < 24 * 24).isPresent()) {
+        if (snapshot.emptyBuckets() > 0 && snapshot.waterBuckets() == 0 && obsidianSite == null
+                && knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, player.getBlockPos(), p -> !blocked(p) && p.getSquaredDistance(player.getBlockPos()) < 64 * 64).isPresent()) {
             steps.addFirst(new PortalRunPlanner.Step(PortalRunPlanner.Action.FILL_WATER, "", 1, stage, "Fill a bucket with water while it is close"));
+        }
+        if (home == null) home = player.getBlockPos().toImmutable();
+        Optional<Task> defense = defend(player);
+        if (defense.isPresent()) {
+            progress = stageLabel(stage) + ": fight back - " + defense.get().label();
+            return defense;
+        }
+        // Hurt with nothing after it: heal before going on (food in hand is eaten by the survival tasks).
+        if (player.getHealth() < 10 && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
+            progress = stageLabel(stage) + ": heal before going on";
+            return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+        }
+        // Leaving to gather: take the table and an emptied furnace along, as a player would.
+        if (TRAVEL.contains(steps.getLast().action())) {
+            Optional<Task> pickup = pickUpWorkstation(body, snapshot);
+            if (pickup.isPresent()) {
+                progress = stageLabel(stage) + ": take workstations along - " + pickup.get().label();
+                return pickup;
+            }
         }
         Optional<Task> recover = recoverDrops(player, tick);
         if (recover.isPresent()) {
@@ -175,6 +230,23 @@ final class PortalRunCampaign {
             }
         }
         progress = stageLabel(stage) + ": waiting for a feasible step";
+        return Optional.empty();
+    }
+
+    private Optional<Task> pickUpWorkstation(NativePlayerBody body, PortalRunSnapshot s) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (s.craftingTables() == 0) {
+            var table = nearestWorkstation(player, Blocks.CRAFTING_TABLE, 6);
+            if (table.isPresent() && breakableNow(body, table.get())) return Optional.of(breakAt(table.get(), "Pick up the crafting table"));
+        }
+        if (s.furnaces() == 0 && ItemMoves.count(player.getInventory(), Items.RAW_IRON) == 0) {
+            var furnace = nearestWorkstation(player, Blocks.FURNACE, 6);
+            if (furnace.isPresent() && world.getBlockEntity(furnace.get()) instanceof AbstractFurnaceBlockEntity block && block.isEmpty()
+                    && breakableNow(body, furnace.get())) {
+                return Optional.of(breakAt(furnace.get(), "Pick up the furnace"));
+            }
+        }
         return Optional.empty();
     }
 
@@ -240,6 +312,11 @@ final class PortalRunCampaign {
             if (furnace.getStack(0).isOf(Items.RAW_IRON)) rawIron += furnace.getStack(0).getCount();
             if (furnace.getStack(2).isOf(Items.IRON_INGOT)) iron += furnace.getStack(2).getCount();
         }
+        // Obsidian already set into the frame still counts toward the ten.
+        if (portalSite != null) {
+            obsidian += frameObsidian(player.getServerWorld(), portalSite);
+            cobble += frameCorners(player.getServerWorld(), portalSite); // Placed corners count toward the four too.
+        }
         boolean framed = portalSite != null && portalComplete(player.getServerWorld(), portalSite);
         boolean lit = portalSite != null && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, water,
@@ -278,8 +355,10 @@ final class PortalRunCampaign {
             case COLLECT_SMELTED -> nearestWorkstation(player, Blocks.FURNACE, 16).flatMap(f -> atWorkstation(player, f,
                     new Task("native_smelt", coords(f, Map.of("action", "extract")), "Take smelted iron")));
             case HUNT -> hunt(player);
-            case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs").or(() -> explore(player, "logs"));
-            case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 12, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"));
+            case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
+                    .or(() -> underground(player) ? climb(body, "Climb toward the surface for logs") : explore(player, "logs"));
+            // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
+            case GATHER_STONE -> gather(body, WorldKnowledge.Kind.STONE, 6, "stone").or(() -> digDown(body, player.getBlockY() - 6, "Dig for stone"));
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, 32, "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
                     .or(() -> tunnel(body, "Tunnel for coal"));
             case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, 40, "iron ore").or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, IRON_BOTTOM, "iron"));
@@ -291,8 +370,12 @@ final class PortalRunCampaign {
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
             case SMELT -> smelt(body);
             case AWAIT_SMELT -> Optional.of(new Task("native_wait", Map.of("seconds", "3"), "Wait by the furnace"));
-            case FILL_WATER -> fillWater(body).or(() -> explore(player, "water"));
-            case MAKE_OBSIDIAN -> obsidian(body).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, -63, "lava"));
+            // Water just poured for obsidian guards the mining: mine what it hardened before taking it back.
+            case FILL_WATER -> (obsidianSite != null
+                    ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
+                    .or(() -> fillWater(body)).or(() -> search(body, "water"));
+            case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
+                    .or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, -63, "lava"));
             case GATHER_FLINT -> flint(body);
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
@@ -316,15 +399,27 @@ final class PortalRunCampaign {
         return new Task("native_break", coords(pos, Map.of()), label);
     }
 
+    /**
+     * A break whose drops wait on the ground: cells opened for a passage are walked through next anyway, and
+     * chasing each drop would carry the player off the staircase or out of its working spot.
+     */
+    private static Task clearAt(BlockPos pos, String label) {
+        return new Task("native_break", coords(pos, Map.of("collect", "false")), label);
+    }
+
     private static double eyeDistance(ServerPlayerEntity player, BlockPos pos) {
         return player.getEyePos().distanceTo(Vec3d.ofCenter(pos));
     }
 
     /** A block this player could break right now from where it stands. */
     private boolean breakableNow(NativePlayerBody body, BlockPos pos) {
+        return breakableNow(body, pos, false);
+    }
+
+    private boolean breakableNow(NativePlayerBody body, BlockPos pos, boolean guarded) {
         var player = body.entity();
         if (eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
-        if (RoamingEdits.breakDenial(player, pos, policy, false) != null) return false;
+        if (RoamingEdits.breakDenial(player, pos, policy, guarded) != null) return false;
         return NativeBreakAction.bestTool(body, player.getServerWorld().getBlockState(pos)) != -2;
     }
 
@@ -344,26 +439,64 @@ final class PortalRunCampaign {
      * is skipped along with its column.
      */
     private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what) {
+        return gather(body, kind, radius, what, false);
+    }
+
+    private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded) {
         var player = body.entity();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
-        Predicate<BlockPos> usable = p -> !blocked(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+        Predicate<BlockPos> usable = p -> !blocked(p) && !unreachable(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
                 && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
-                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + 4);
+                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + 4 && reachableFromGround(player.getServerWorld(), p));
         for (int candidate = 0; candidate < 4; candidate++) {
             var target = knowledge.nearest(player.getServerWorld(), kind, feet, usable);
             if (target.isEmpty()) return Optional.empty();
             BlockPos pos = target.get();
-            if (breakableNow(body, pos)) return Optional.of(breakAt(pos, "Mine " + what + " at " + pos.toShortString()));
+            if (breakableNow(body, pos, guarded)) {
+                return Optional.of(new Task("native_break", coords(pos, Map.of("guarded", String.valueOf(guarded))),
+                        "Mine " + what + " at " + pos.toShortString()));
+            }
             var cover = obstruction(body, pos);
             if (cover.isPresent()) return Optional.of(breakAt(cover.get(), "Clear the way to " + what + " at " + pos.toShortString()));
-            if (approaches.merge(pos.asLong(), 1, Integer::sum) <= 2) {
+            // Plans are re-evaluated often; only finished walks count as approaches.
+            if (approaches.getOrDefault(pos.asLong(), 0) < 2) {
                 return Optional.of(go(pos, 3.5, false, "Walk to " + what + " at " + pos.toShortString()));
             }
             approaches.remove(pos.asLong());
             avoid(pos, true, lastTick);
         }
         return Optional.empty();
+    }
+
+    /**
+     * A log a player standing beside its trunk can reach: the trunk stands on solid ground no more than four
+     * blocks below it. Logs left hanging after the trunk below was cut would need a pillar, so they are skipped.
+     */
+    private static boolean reachableFromGround(ServerWorld world, BlockPos log) {
+        BlockPos below = log.down();
+        for (int depth = 1; depth <= 4; depth++, below = below.down()) {
+            BlockState state = world.getBlockState(below);
+            if (state.isIn(BlockTags.LOGS)) continue;
+            return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES);
+        }
+        return false;
+    }
+
+    /**
+     * Obsidian that water and lava just made, still touching one of them, as opposed to somebody's build (or this
+     * player's own portal frame), which is never mined for material.
+     */
+    private boolean madeFromLava(ServerWorld world, BlockPos pos) {
+        if (portalSite != null) {
+            for (int up = 0; up <= 4; up++) for (int across = 0; across <= 3; across++) if (portalSite.at(across, up).equals(pos)) return false;
+        }
+        for (Direction direction : Direction.values()) {
+            var fluid = world.getFluidState(pos.offset(direction));
+            if (fluid.isIn(FluidTags.LAVA) || direction != Direction.DOWN && fluid.isIn(FluidTags.WATER)) return true;
+        }
+        return false;
     }
 
     /** The first block between the player's eyes and an in-reach target, when the player could break it now. */
@@ -379,23 +512,48 @@ final class PortalRunCampaign {
         return Optional.of(first);
     }
 
-    /** Head toward unexplored ground along a steady heading, turning when a heading keeps failing. */
+    /** Underground, search by tunnelling along the current level; on the surface, walk out and look. */
+    private Optional<Task> search(NativePlayerBody body, String what) {
+        var player = body.entity();
+        if (underground(player)) return tunnel(body, "Tunnel for " + what).or(() -> explore(player, what));
+        return explore(player, what).or(() -> tunnel(body, "Tunnel for " + what));
+    }
+
+    private static boolean underground(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 8;
+    }
+
+    /**
+     * Head toward unexplored ground along a steady heading, turning when a heading keeps failing, would leave
+     * the area around home, or ends on open water.
+     */
     private Optional<Task> explore(ServerPlayerEntity player, String what) {
         var world = player.getServerWorld();
         if (exploreHeading == null) {
             Direction[] headings = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
             exploreHeading = headings[Math.floorMod(exploreFailures + (int) (player.getUuid().getLeastSignificantBits() & 3), 4)];
         }
-        BlockPos ahead = player.getBlockPos().offset(exploreHeading, 28);
-        if (!world.isChunkLoaded(ahead)) ahead = player.getBlockPos().offset(exploreHeading, 12);
-        int surface = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ahead.getX(), ahead.getZ());
-        BlockPos target = new BlockPos(ahead.getX(), player.getBlockY() > surface - 8 ? surface : player.getBlockY(), ahead.getZ());
-        return Optional.of(go(target, 3, true, "Explore " + exploreHeading.asString() + " for " + what));
+        BlockPos anchor = home == null ? player.getBlockPos() : home;
+        for (int turn = 0; turn < 4; turn++, exploreHeading = exploreHeading.rotateYClockwise()) {
+            BlockPos ahead = player.getBlockPos().offset(exploreHeading, 28);
+            if (!world.isChunkLoaded(ahead)) ahead = player.getBlockPos().offset(exploreHeading, 12);
+            if (!world.isChunkLoaded(ahead)) continue;
+            if (Math.hypot(ahead.getX() - anchor.getX(), ahead.getZ() - anchor.getZ()) > EXPLORE_RADIUS) continue;
+            int surface = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ahead.getX(), ahead.getZ());
+            boolean onSurface = player.getBlockY() > surface - 8;
+            if (onSurface && !world.getFluidState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())).isEmpty()) continue;
+            BlockPos target = new BlockPos(ahead.getX(), onSurface ? surface : player.getBlockY(), ahead.getZ());
+            if (blocked(target) || unreachable(target)) continue;
+            return Optional.of(go(target, 3, true, "Explore " + exploreHeading.asString() + " for " + what));
+        }
+        return Optional.empty();
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, int bottom, String what) {
         int y = body.entity().getBlockY();
-        if (y > top) return digDown(body, target, "Dig down toward " + what);
+        if (y > Math.min(top, target + 3)) return digDown(body, target, "Dig down toward " + what);
         if (y < bottom) return Optional.empty();
         return tunnel(body, "Tunnel for " + what);
     }
@@ -417,17 +575,42 @@ final class PortalRunCampaign {
             for (BlockPos cell : clear) {
                 if (passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
-                if (breakableNow(body, cell)) return Optional.of(breakAt(cell, label + ": clear " + cell.toShortString()));
+                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 refused = true;
                 break;
             }
             if (!refused) {
+                // Never step into a drop deeper than the navigator allows; turn away from a pit instead.
                 BlockPos landing = step;
-                while (passable(world, landing.down()) && landing.getY() > step.getY() - 3) landing = landing.down();
+                while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
                 if (!passable(world, landing.down()) && !liquidNear(world, landing)) {
                     return Optional.of(go(landing, 0.4, false, label + ": step down"));
                 }
             }
+            digDirection = digDirection.rotateYClockwise();
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * A staircase one step up along {@code digDirection}: clear the head room above, then the two cells over the
+     * block ahead, and step up onto it. The way out when the job needs the surface.
+     */
+    private Optional<Task> climb(NativePlayerBody body, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        for (int turn = 0; turn < 4; turn++) {
+            BlockPos step = feet.offset(digDirection);
+            BlockPos landing = step.up();
+            boolean refused = passable(world, step); // Nothing to climb onto this way.
+            for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
+                if (refused || passable(world, cell)) continue;
+                if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
+                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                refused = true;
+            }
+            if (!refused) return Optional.of(go(landing, 0.4, false, label + ": step up"));
             digDirection = digDirection.rotateYClockwise();
         }
         return Optional.empty();
@@ -444,7 +627,7 @@ final class PortalRunCampaign {
             for (BlockPos cell : List.of(ahead.up(), ahead)) {
                 if (passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell)) { refused = true; break; }
-                if (breakableNow(body, cell)) return Optional.of(breakAt(cell, label + ": clear " + cell.toShortString()));
+                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 refused = true;
                 break;
             }
@@ -464,12 +647,13 @@ final class PortalRunCampaign {
         return state.getCollisionShape(world, pos).isEmpty() && !state.getFluidState().isIn(FluidTags.LAVA);
     }
 
+    /** Lava on any side, or water above or beside, which would pour into the opening. */
     private static boolean liquidNear(ServerWorld world, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             var fluid = world.getFluidState(pos.offset(direction));
-            if (fluid.isIn(FluidTags.LAVA)) return true;
+            if (fluid.isIn(FluidTags.LAVA) || direction != Direction.DOWN && fluid.isIn(FluidTags.WATER)) return true;
         }
-        return world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getFluidState(pos.up()).isIn(FluidTags.WATER);
+        return world.getFluidState(pos).isIn(FluidTags.LAVA);
     }
 
     // ------------------------------------------------------------------ crafting and smelting
@@ -523,14 +707,18 @@ final class PortalRunCampaign {
             for (BlockPos spot : List.of(feet.offset(direction), feet.offset(direction, 2))) {
                 if (!world.getBlockState(spot).isReplaceable() || !world.getFluidState(spot).isEmpty()) continue;
                 if (world.getBlockState(spot.down()).getCollisionShape(world, spot.down()).isEmpty()) continue;
-                if (!world.getBlockState(spot.up()).isReplaceable()) continue;
                 if (eyeDistance(player, spot) > 4.4 || blocked(spot)) continue;
                 return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(slot))), label));
             }
         }
-        // Make room: clear the block in front so the next attempt has a spot.
-        BlockPos ahead = feet.offset(player.getHorizontalFacing());
-        if (!passable(world, ahead) && breakableNow(body, ahead)) return Optional.of(breakAt(ahead, "Clear space for a workstation"));
+        // Make room: carve a pocket into a side wall at foot level, keeping the way along a tunnel or staircase open.
+        List<Direction> sides = List.of(digDirection.rotateYClockwise(), digDirection.rotateYCounterclockwise(), digDirection.getOpposite(), digDirection);
+        for (Direction direction : sides) {
+            BlockPos wall = feet.offset(direction);
+            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall)) continue;
+            if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
+            if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
+        }
         return Optional.empty();
     }
 
@@ -569,10 +757,10 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && p.getSquaredDistance(feet) < 48 * 48);
+        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && p.getSquaredDistance(feet) < 64 * 64);
         if (source.isEmpty()) return Optional.empty();
         BlockPos water = source.get();
-        if (eyeDistance(player, water) <= 4.0 && !player.isTouchingWater()) {
+        if (eyeDistance(player, water) <= 4.0) {
             return Optional.of(new Task("native_bucket", coords(water, Map.of("mode", "fill")), "Fill a bucket at " + water.toShortString()));
         }
         return Optional.of(go(water, 2.5, false, "Walk to water at " + water.toShortString()));
@@ -582,17 +770,30 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         if (obsidianSite != null && !siteStillUseful(world, obsidianSite)) obsidianSite = null;
-        if (obsidianSite == null) obsidianSite = findObsidianSite(player).orElse(null);
+        if (obsidianSite == null) {
+            obsidianSite = findObsidianSite(player).orElse(null);
+            pourWaits = 0;
+        }
         if (obsidianSite == null) return Optional.empty();
         ObsidianSite site = obsidianSite;
         BlockPos feet = player.getBlockPos();
-        if (!feet.equals(site.stand())) return Optional.of(go(site.stand(), 0.3, false, "Obsidian: stand beside lava at " + site.lava().toShortString()));
+        boolean hardened = world.getBlockState(site.lava()).isOf(Blocks.OBSIDIAN);
+        // Flowing water nudges a player on the far shore; from the poured cell the obsidian is close and in plain view.
+        if (hardened && !feet.equals(site.water())) return Optional.of(go(site.water(), 0.3, false, "Obsidian: step onto the shore"));
+        if (!hardened && !feet.equals(site.stand())) {
+            return Optional.of(go(site.stand(), 0.3, false, "Obsidian: stand beside lava at " + site.lava().toShortString()));
+        }
         boolean lavaStill = world.getFluidState(site.lava()).isIn(FluidTags.LAVA);
         boolean waterPlaced = world.getFluidState(site.water()).isIn(FluidTags.WATER);
         if (lavaStill && !waterPlaced) {
             return Optional.of(new Task("native_bucket", coords(site.water(), Map.of("mode", "pour")), "Obsidian: pour water beside lava"));
         }
-        if (world.getBlockState(site.lava()).isOf(Blocks.OBSIDIAN)) {
+        // Poured water takes a few ticks to run over the lava; give it a moment before giving up on the site.
+        if (lavaStill && waterPlaced && pourWaits < 3) {
+            pourWaits++;
+            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Obsidian: let the water reach the lava"));
+        }
+        if (hardened) {
             return Optional.of(new Task("native_break", coords(site.lava(), Map.of("guarded", "true")), "Obsidian: mine " + site.lava().toShortString()));
         }
         if (waterPlaced && world.getFluidState(site.water()).isStill()) {
@@ -630,6 +831,21 @@ final class PortalRunCampaign {
                     best = new ObsidianSite(lava.toImmutable(), water.toImmutable(), stand.toImmutable());
                 }
             }
+            // A pool recessed below its shore, the usual cave case: pour onto the shore beside the open cell above
+            // the lava, and the water runs out over the pool, hardening every source it covers.
+            BlockPos above = lava.up();
+            if (!navigator.clear(above) || !world.getFluidState(above).isEmpty()) continue;
+            for (Direction d : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
+                BlockPos water = above.offset(d);
+                BlockPos stand = water.offset(d);
+                if (!navigator.standable(water) || !world.getFluidState(water.down()).isEmpty()) continue;
+                if (!navigator.standable(stand) || lavaAdjacent(world, stand) || lavaAdjacent(world, water)) continue;
+                double distance = stand.getSquaredDistance(feet) + 4; // Prefer the one-source method when both exist.
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = new ObsidianSite(lava.toImmutable(), water.toImmutable(), stand.toImmutable());
+                }
+            }
         }
         return Optional.ofNullable(best);
     }
@@ -660,8 +876,7 @@ final class PortalRunCampaign {
             if (world.getBlockState(spot).isOf(Blocks.GRAVEL) && breakableNow(body, spot)) return Optional.of(breakAt(spot, "Dig gravel for flint"));
         }
         if (gravelSlot >= 0) return placeItem(body, Items.GRAVEL, "Set down gravel to dig for flint");
-        return gather(body, WorldKnowledge.Kind.GRAVEL, 48, "gravel").or(() -> tunnel(body, "Tunnel for gravel"))
-                .or(() -> explore(player, "gravel"));
+        return gather(body, WorldKnowledge.Kind.GRAVEL, 48, "gravel").or(() -> search(body, "gravel"));
     }
 
     // ------------------------------------------------------------------ portal
@@ -679,7 +894,7 @@ final class PortalRunCampaign {
                 BlockPos cell = site.front(across, up);
                 if (cell.equals(site.stand()) || cell.equals(site.stand().up())) continue;
                 if (world.getBlockState(cell).isReplaceable() && world.getFluidState(cell).isEmpty()) continue;
-                if (breakableNow(body, cell)) return Optional.of(breakAt(cell, "Portal: clear " + cell.toShortString()));
+                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, "Portal: clear " + cell.toShortString()));
                 portalSite = null;
                 return Optional.empty();
             }
@@ -694,7 +909,7 @@ final class PortalRunCampaign {
                 boolean wanted = frame ? (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) : state.isAir();
                 if (wanted) continue;
                 if (!state.isReplaceable() && !state.isOf(Blocks.OBSIDIAN)) {
-                    if (breakableNow(body, cell)) return Optional.of(breakAt(cell, "Portal: clear " + cell.toShortString()));
+                    if (breakableNow(body, cell)) return Optional.of(clearAt(cell, "Portal: clear " + cell.toShortString()));
                     portalSite = null;
                     return Optional.empty();
                 }
@@ -770,6 +985,26 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    private static int frameObsidian(ServerWorld world, PortalSite site) {
+        int placed = 0;
+        for (int up = 0; up <= 4; up++) {
+            for (int across = 0; across <= 3; across++) {
+                boolean frame = across == 0 || across == 3 || up == 0 || up == 4;
+                boolean corner = (across == 0 || across == 3) && (up == 0 || up == 4);
+                if (frame && !corner && world.getBlockState(site.at(across, up)).isOf(Blocks.OBSIDIAN)) placed++;
+            }
+        }
+        return placed;
+    }
+
+    private static int frameCorners(ServerWorld world, PortalSite site) {
+        int placed = 0;
+        for (int[] corner : new int[][]{{0, 0}, {3, 0}, {0, 4}, {3, 4}}) {
+            if (!world.getBlockState(site.at(corner[0], corner[1])).isReplaceable()) placed++;
+        }
+        return placed;
+    }
+
     private static boolean portalComplete(ServerWorld world, PortalSite site) {
         for (int up = 0; up <= 4; up++) {
             for (int across = 0; across <= 3; across++) {
@@ -792,32 +1027,103 @@ final class PortalRunCampaign {
         return Optional.of(new Task("native_ignite_portal", coords(base, Map.of("slot", String.valueOf(slot))), "Portal: light it"));
     }
 
+    // ------------------------------------------------------------------ defense
+
+    /**
+     * A hostile mob that is after this player and in sight is dealt with before work continues: close in and
+     * strike, as a player with a weapon would rather than keep mining while a skeleton shoots. Creepers are left
+     * to the runtime's retreat, and a badly hurt player leaves it to the tactical retreat too.
+     */
+    private Optional<Task> defend(ServerPlayerEntity player) {
+        if (player.getHealth() < 6) return backOff(player);
+        var threats = threats(player);
+        HostileEntity nearest = threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        if (nearest == null) nearest = rememberedFoe(player);
+        if (nearest == null) return Optional.empty();
+        // A skeleton that steps behind cover is still out there: keep after it for a few seconds.
+        foe = nearest.getUuid();
+        foeUntil = lastTick + 100;
+        String name = Registries.ENTITY_TYPE.getId(nearest.getType()).getPath();
+        if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) return Optional.of(strike(player, nearest, "Fight " + name));
+        return Optional.of(go(nearest.getBlockPos(), 2.0, true, "Close in on " + name));
+    }
+
+    /** Too hurt to fight: put distance between the player and whatever is after it. */
+    private Optional<Task> backOff(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        var hunters = world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                mob -> mob.isAlive() && mob.getTarget() == player);
+        if (hunters.isEmpty()) return Optional.empty();
+        Vec3d away = Vec3d.ZERO;
+        for (HostileEntity mob : hunters) away = away.add(player.getPos().subtract(mob.getPos()).normalize());
+        if (away.lengthSquared() < 1.0E-4) return Optional.empty();
+        away = away.normalize().multiply(10);
+        BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
+        return Optional.of(go(target, 3, true, "Back off from " + Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath()));
+    }
+
+    private HostileEntity rememberedFoe(ServerPlayerEntity player) {
+        if (foe == null || lastTick > foeUntil || player.getHealth() < 6) return null;
+        if (player.getServerWorld().getEntity(foe) instanceof HostileEntity mob && mob.isAlive() && mob.getTarget() == player
+                && player.squaredDistanceTo(mob) < 24 * 24) {
+            return mob;
+        }
+        foe = null;
+        return null;
+    }
+
+    private static List<HostileEntity> threats(ServerPlayerEntity player) {
+        if (player.getHealth() < 6) return List.of();
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity) && player.canSee(mob));
+    }
+
+    /** Work in progress should stop for a fight: a hostile in sight is after the player and the task is not the fight. */
+    static boolean shouldStopForAFight(ServerPlayerEntity player, Task running) {
+        if (running == null || running.label().startsWith("Fight") || running.label().startsWith("Close in")
+                || running.label().startsWith("Back off")) return false;
+        return !threats(player).isEmpty();
+    }
+
+    /** Work stopped for a fight is not a failed target; plan again without counting it. */
+    void taskInterrupted(Task task) {
+        progress = "Interrupted: " + (task == null ? "work" : task.label());
+    }
+
+    private static Task strike(ServerPlayerEntity player, net.minecraft.entity.LivingEntity target, String label) {
+        int weapon = -1;
+        float best = 0;
+        for (int s = 0; s < 9; s++) {
+            var stack = player.getInventory().getStack(s);
+            if (!stack.isIn(ItemTags.SWORDS) && !stack.isIn(ItemTags.AXES)) continue;
+            float score = tier(stack.getItem()) + (stack.isIn(ItemTags.SWORDS) ? 0.5f : 0);
+            if (score > best) { best = score; weapon = s; }
+        }
+        var args = new LinkedHashMap<String, String>();
+        args.put("target", target.getUuid().toString());
+        if (weapon >= 0) args.put("slot", String.valueOf(weapon));
+        return new Task("native_attack", Map.copyOf(args), label);
+    }
+
     // ------------------------------------------------------------------ food
 
     private Optional<Task> hunt(ServerPlayerEntity player) {
         var world = player.getServerWorld();
         Box area = player.getBoundingBox().expand(24, 8, 24);
         var drops = world.getEntitiesByClass(ItemEntity.class, area.contract(16, 4, 16),
-                drop -> drop.getStack().contains(DataComponentTypes.FOOD) && safeFood(drop.getStack()) && player.canSee(drop));
+                drop -> drop.getStack().contains(DataComponentTypes.FOOD) && safeFood(drop.getStack()) && player.canSee(drop)
+                        && !blocked(drop.getBlockPos()));
         if (!drops.isEmpty()) {
             ItemEntity drop = drops.getFirst();
             return Optional.of(go(drop.getBlockPos(), 0.6, false, "Pick up food"));
         }
-        var animals = world.getEntitiesByClass(PassiveEntity.class, area, animal -> animal.isAlive() && !animal.isBaby()
+        var animals = world.getEntitiesByClass(PassiveEntity.class, area, animal -> animal.isAlive() && !animal.isBaby() && !blocked(animal.getBlockPos())
                 && (animal instanceof CowEntity || animal instanceof PigEntity || animal instanceof SheepEntity
                 || animal instanceof ChickenEntity || animal instanceof RabbitEntity) && player.canSee(animal));
         if (animals.isEmpty()) return Optional.empty();
         PassiveEntity nearest = animals.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
-        if (player.squaredDistanceTo(nearest) <= 9.0) {
-            int weapon = -1;
-            for (int s = 0; s < 9; s++) {
-                var stack = player.getInventory().getStack(s);
-                if (stack.isIn(ItemTags.SWORDS) || stack.isIn(ItemTags.AXES)) { weapon = s; break; }
-            }
-            var args = new LinkedHashMap<String, String>();
-            args.put("target", nearest.getUuid().toString());
-            if (weapon >= 0) args.put("slot", String.valueOf(weapon));
-            return Optional.of(new Task("native_attack", Map.copyOf(args), "Hunt " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath()));
+        if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) {
+            return Optional.of(strike(player, nearest, "Hunt " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath()));
         }
         return Optional.of(go(nearest.getBlockPos(), 2.0, false, "Approach " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath()));
     }

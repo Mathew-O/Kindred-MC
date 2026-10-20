@@ -1464,7 +1464,15 @@ final class NativePlayerBody implements BodyAdapter {
                 || (player.isUsingItem() && !gate.permits(controls, Intent.EAT, null) && !gate.permits(controls, Intent.BLOCK, null))
                 || (miningTarget != null && (!gate.permits(controls, Intent.MINE, miningTarget)
                     || !canMine(miningTarget) || player.getWorld().getBlockState(miningTarget) != miningState))) {
-            if (controls != null && arbiter != null) arbiter.cancel(controls);
+            if (controls != null && arbiter != null) {
+                if (current(controls)) KindredMod.LOGGER.debug("{} controls revoked: move={} use={} mineGate={} canMine={} sameState={}",
+                        identity.displayName(),
+                        (forward != 0 || sideways != 0 || jump || sprint) && !gate.permits(controls, Intent.MOVE, null),
+                        player.isUsingItem(), miningTarget != null && gate.permits(controls, Intent.MINE, miningTarget),
+                        miningTarget != null && canMine(miningTarget),
+                        miningTarget != null && player.getWorld().getBlockState(miningTarget) == miningState);
+                arbiter.cancel(controls);
+            }
             haltControls();
             controls = null;
         }

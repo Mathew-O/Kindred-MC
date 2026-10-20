@@ -151,7 +151,9 @@ final class WorldKnowledge {
                 if (state.isAir()) return true;
                 continue;
             }
-            // A face under water is not a face a walking player can work from.
+            // A face under water is not a face a walking player can work from, except obsidian, which forms
+            // under the water poured to make it.
+            if (!state.getFluidState().isEmpty() && kind == Kind.OBSIDIAN && state.getFluidState().isIn(FluidTags.WATER)) return true;
             if (state.getFluidState().isEmpty() && (state.isAir() || !state.isOpaqueFullCube(world, near))) return true;
         }
         return false;

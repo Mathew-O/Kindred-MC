@@ -1285,7 +1285,9 @@ final class PlayerRuntime {
 
     /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
     static boolean inDeepWater(ServerPlayerEntity player) {
-        return player.isSubmergedInWater() || player.isTouchingWater() && !player.isOnGround();
+        if (player.isSubmergedInWater()) return true;
+        var below = player.getBlockPos().down();
+        return player.isTouchingWater() && !player.isOnGround() && player.getServerWorld().getFluidState(below).isIn(FluidTags.WATER);
     }
 
     static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos) {
@@ -1824,7 +1826,8 @@ final class PlayerRuntime {
         }
 
         // 0a. Deep water: a player that stops swimming sinks, so head for the nearest dry ground while breath lasts.
-        if (candidates.isEmpty() && inDeepWater(player)) {
+        boolean shortOfBreath = player.getAir() < player.getMaxAir() / 2;
+        if (candidates.isEmpty() && inDeepWater(player) && (server.getTicks() >= entry.waterEscapeRetryTick || shortOfBreath)) {
             var shore = new NativeNavigator(world).nearestDryStand(feetPos, 16, 4);
             if (shore.isPresent()) {
                 BlockPos dry = shore.get();
@@ -2996,7 +2999,10 @@ final class PlayerRuntime {
         if (entry.campaign == null) return;
         var task = entry.activeCampaignTask;
         entry.activeCampaignTask = null;
-        if (task != null) {
+        if (task != null && entry.campaignFightInterrupt) {
+            entry.campaignFightInterrupt = false;
+            entry.campaign.taskInterrupted(task);
+        } else if (task != null) {
             boolean completed = state == SkillRunner.State.COMPLETED;
             if (completed && "native_place".equals(task.skill()) && entry.nativeBody != null) {
                 BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
@@ -3225,6 +3231,17 @@ final class PlayerRuntime {
         }
 
         // Bounded danger observation while busy: interrupt through SkillRunner/ActionArbiter cancellation barrier
+        // A goal task never keeps the player busy while a mob it could fight is attacking it.
+        if (usable && busy && entry.campaign != null && entry.activeCampaignTask != null
+                && PortalRunCampaign.shouldStopForAFight(body.entity(), entry.activeCampaignTask)) {
+            entry.campaignFightInterrupt = true;
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort("A hostile mob is attacking; fight back first");
+            body.stopInputs();
+            observeRunner(entry);
+            busy = runnerBusy(entry);
+        }
+
         boolean escapingWater = entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId) && !creeperThreat;
         if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat) && !"native_retreat".equals(entry.skillId) && !escapingWater) {
             entry.hazardInterrupted = true;
@@ -3325,6 +3342,8 @@ final class PlayerRuntime {
                     entry.activeCampaignTask = res == 1 ? entry.campaignTasks.get(chosen.id()) : null;
                     if (res != 1) {
                         if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
+                            KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(),
+                                    entry.blocker, entry.campaignTasks.get(chosen.id()).label());
                             entry.campaign.taskFinished(entry.campaignTasks.get(chosen.id()), false, server.getTicks());
                             entry.routineRefreshPending = true;
                             entry.cachedRoutineCandidates = List.of();
@@ -3844,6 +3863,15 @@ final class PlayerRuntime {
             return;
         }
         UUID finishedTaskId = entry.currentTaskId;
+        if (state == SkillRunner.State.CANCELLED && entry.runner.reason().filter(r -> r.startsWith("authority lost")).isPresent()) {
+            var snapshot = entry.arbiter.snapshot();
+            KindredMod.LOGGER.debug("{} {} lost authority: lifecycle={} stop={} intent={} task={} lease={}", entry.data.displayName(),
+                    entry.skillId, snapshot.lifecycle(), snapshot.stopLatched(), snapshot.intentRevision(), snapshot.taskRevision(),
+                    entry.runner.lease().map(l -> l.intentRevision() + "/" + l.taskRevision()).orElse("none"));
+        }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.waterEscapeTaskId)) {
+            entry.waterEscapeRetryTick = server.getTicks() + 200; // That shore is out of reach; try again in a while.
+        }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED)) {
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
@@ -5092,7 +5120,9 @@ final class PlayerRuntime {
         private StoredNativePlayer nativeState;
         private UUID currentTaskId;
         private UUID waterEscapeTaskId;
+        private long waterEscapeRetryTick;
         private boolean awaitingRespawn;
+        private boolean campaignFightInterrupt;
         private boolean nativePending;
         private ConnectionToken pendingConnection;
         private LedgerCheckState ledgerState = LedgerCheckState.PENDING;

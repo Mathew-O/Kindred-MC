@@ -46,7 +46,8 @@
       "dev.kindred.fabric.NativeExpeditionGameTests",
       "dev.kindred.fabric.NativeNetherGameTests",
       "dev.kindred.fabric.NativeNavigationGameTests",
-      "dev.kindred.fabric.NativeRespawnGameTests"
+      "dev.kindred.fabric.NativeRespawnGameTests",
+      "dev.kindred.fabric.NativePortalCampaignGameTests"
     ]
   },
   "depends": {

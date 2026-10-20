@@ -105,6 +105,40 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void aWornOutPickaxeWithCobblestoneAtHandGoesStraightBackToStone() {
+        Sim sim = new Sim();
+        sim.cobble = 5;
+        sim.sticks = 2;
+        sim.tables = 1;
+        var step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.PLACE_TABLE, step.action(), "the carried table comes out first");
+        sim.apply(step);
+        step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.CRAFT, step.action());
+        assertEquals("stone_pickaxe", step.item(), "no detour through logs and a wooden pickaxe");
+    }
+
+    @Test
+    void withATableAlreadyOwnedAWoodenPickaxeNeedsFewerLogs() {
+        Sim sim = new Sim();
+        sim.logs = 2; // Eight planks' worth: enough for a pickaxe and sticks, not for a table as well.
+        sim.tableNearby = true;
+        var step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.CRAFT, step.action());
+        assertEquals("planks", step.item());
+    }
+
+    @Test
+    void aShortFoodStockAsksForAHuntWithoutDisplacingTheRoute() {
+        Sim sim = new Sim();
+        sim.food = 1;
+        var steps = PortalRunPlanner.plan(sim.snapshot());
+        assertEquals(Action.HUNT, steps.getFirst().action());
+        assertEquals(2, steps.getFirst().count());
+        assertEquals(Action.GATHER_LOGS, steps.getLast().action(), "the route step is still offered when no animal is in sight");
+    }
+
+    @Test
     void hungerWithoutFoodPutsHuntingFirstAndSmeltedOutputIsCollected() {
         Sim sim = new Sim();
         sim.food = 0;

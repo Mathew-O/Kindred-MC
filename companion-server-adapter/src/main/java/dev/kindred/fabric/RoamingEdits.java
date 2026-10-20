@@ -24,8 +24,9 @@ final class RoamingEdits {
     }
 
     /**
-     * {@code waterGuarded} permits mining obsidian beside lava when a water source touches it, which is how
-     * obsidian is made: any lava that flows into the gap meets that water and hardens instead of spreading.
+     * {@code waterGuarded} permits mining obsidian beside lava when water will refill the gap, which is how
+     * obsidian is made: water above it (still or flowing), or a still source beside it, pours into the hole,
+     * and any lava it touches hardens instead of spreading.
      */
     static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded) {
         String common = common(player, pos, policy);
@@ -38,7 +39,7 @@ final class RoamingEdits {
         if (state.isOf(Blocks.SPAWNER) || state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL_FRAME)) return "Protected structure block";
         BlockPos support = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
         if (pos.equals(support)) return "Would remove the block the player stands on";
-        boolean guarded = waterGuarded && state.isOf(Blocks.OBSIDIAN) && waterSourceBeside(player, pos);
+        boolean guarded = waterGuarded && state.isOf(Blocks.OBSIDIAN) && waterGuards(player, pos);
         for (Direction direction : Direction.values()) {
             BlockPos near = pos.offset(direction);
             if (!guarded && world.isChunkLoaded(near) && world.getFluidState(near).isIn(FluidTags.LAVA)) return "Breaking it would release lava";
@@ -46,8 +47,9 @@ final class RoamingEdits {
         return null;
     }
 
-    private static boolean waterSourceBeside(ServerPlayerEntity player, BlockPos pos) {
+    private static boolean waterGuards(ServerPlayerEntity player, BlockPos pos) {
         var world = player.getServerWorld();
+        if (world.getFluidState(pos.up()).isIn(FluidTags.WATER)) return true;
         for (Direction direction : Direction.Type.HORIZONTAL) {
             var fluid = world.getFluidState(pos.offset(direction));
             if (fluid.isIn(FluidTags.WATER) && fluid.isStill()) return true;
