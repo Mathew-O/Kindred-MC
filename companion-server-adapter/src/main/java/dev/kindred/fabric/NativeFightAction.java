@@ -5,6 +5,7 @@ import dev.kindred.core.ActionLease;
 import dev.kindred.core.ActionRecord;
 import dev.kindred.core.Checkpoint;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
@@ -22,10 +23,15 @@ import java.util.function.Supplier;
  * the attack cooldown allow, until it dies, gets away or the bounded time runs out. One continuous action, as a
  * player fights, rather than a walk and a single swing per task while a skeleton keeps shooting. The only effects
  * a fight may have on owned items are weapon and armor wear (or the weapon breaking) and drops picked up on the way.
+ * The chase never steps into lava, fire or a drop deeper than the navigator allows. A creeper is fought hit and
+ * run, backing off while the cooldown recovers, and any creeper that starts to hiss nearby is run from.
  */
 final class NativeFightAction extends NativeRecordedAction {
     static final int MAX_TICKS = 300;
     private static final double STRIKE_RANGE = 2.8;
+    /** A hissing creeper this close is run from; it stops its fuse once the player is beyond seven blocks. */
+    private static final double CREEPER_FLEE = 7.5;
+    private static final int UNSAFE_TICKS = 40;
 
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -37,7 +43,7 @@ final class NativeFightAction extends NativeRecordedAction {
     private ActionAdmission admission;
     private InventoryEvidence before;
     private boolean halted, unknown, fighting;
-    private int ticks, unseen, hits;
+    private int ticks, unseen, hits, unsafe;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
@@ -99,16 +105,79 @@ final class NativeFightAction extends NativeRecordedAction {
         double dx = target.getX() - player.getX(), dz = target.getZ() - player.getZ();
         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
         double distance = player.distanceTo(target);
+        boolean ready = player.getAttackCooldownProgress(0.5f) >= 0.9f;
+        var navigator = new NativeNavigator(player.getServerWorld());
+        CreeperEntity hissing = hissingCreeper(player);
         boolean moved;
-        if (distance > STRIKE_RANGE || !visible) {
-            boolean climb = player.isOnGround() && (player.horizontalCollision || target.getY() > player.getY() + 0.6 && Math.hypot(dx, dz) < 1.5);
-            moved = body.move(issuedLease, 1.0f, 0, climb || player.isTouchingWater(), false, yaw);
+        if (hissing != null) {
+            moved = flee(navigator, hissing);
+        } else if (target instanceof CreeperEntity && !ready && distance < 4.0) {
+            // Hit and run: out of its reach while the swing recovers, so it never gets close enough to light.
+            moved = flee(navigator, target);
+        } else if (distance > STRIKE_RANGE || !visible) {
+            if (safeStep(navigator, yaw)) {
+                unsafe = 0;
+                boolean climb = player.isOnGround() && (player.horizontalCollision || target.getY() > player.getY() + 0.6 && Math.hypot(dx, dz) < 1.5);
+                moved = body.move(issuedLease, 1.0f, 0, climb || player.isTouchingWater(), false, yaw);
+            } else {
+                moved = body.move(issuedLease, 0, 0, false, false, yaw);
+                if (++unsafe > UNSAFE_TICKS) { settle("The way to the target is unsafe", false); return waiting(); }
+            }
         } else {
             moved = body.move(issuedLease, 0, 0, false, false, yaw);
-            if (moved && player.getAttackCooldownProgress(0.5f) >= 0.9f && body.attack(issuedLease, targetId, slot)) hits++;
+            if (moved && ready && body.attack(issuedLease, targetId, slot)) hits++;
         }
         if (!moved) settle("Movement authority denied", false);
         return Step.running(Map.of("hits", String.valueOf(hits), "distance", String.format("%.1f", distance)), true);
+    }
+
+    /** The nearest creeper within flee range whose fuse is burning. */
+    private static CreeperEntity hissingCreeper(net.minecraft.server.network.ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(CreeperEntity.class, player.getBoundingBox().expand(CREEPER_FLEE),
+                        creeper -> creeper.isAlive() && creeper.getFuseSpeed() > 0 && player.distanceTo(creeper) < CREEPER_FLEE)
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** Sprint away from {@code threat} along the safest heading near straight away from it; stand if none is safe. */
+    private boolean flee(NativeNavigator navigator, net.minecraft.entity.Entity threat) {
+        var player = body.entity();
+        float away = (float) Math.toDegrees(Math.atan2(-(player.getX() - threat.getX()), player.getZ() - threat.getZ()));
+        for (float turn : new float[]{0, 35, -35, 70, -70, 105, -105}) {
+            float yaw = away + turn;
+            if (!safeStep(navigator, yaw)) continue;
+            return body.move(issuedLease, 1.0f, 0, player.isOnGround() && player.horizontalCollision || player.isTouchingWater(), true, yaw);
+        }
+        return body.move(issuedLease, 0, 0, false, false, away);
+    }
+
+    /**
+     * The block the body is about to enter along {@code yaw} is one it may walk into: standable or swimmable,
+     * a one-block step up, or a drop no deeper than the navigator allows, and never lava or fire.
+     */
+    private boolean safeStep(NativeNavigator navigator, float yaw) {
+        var player = body.entity();
+        double radians = Math.toRadians(yaw);
+        double sx = -Math.sin(radians), sz = Math.cos(radians);
+        BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        for (double reach : new double[]{0.6, 1.1}) {
+            BlockPos ahead = BlockPos.ofFloored(player.getX() + sx * reach, player.getY() + 0.2, player.getZ() + sz * reach);
+            if (ahead.getX() == feet.getX() && ahead.getZ() == feet.getZ()) continue;
+            if (!safeCell(navigator, ahead)) return false;
+        }
+        return true;
+    }
+
+    private static boolean safeCell(NativeNavigator navigator, BlockPos ahead) {
+        if (navigator.hazard(ahead) || navigator.hazard(ahead.down())) return false;
+        if (navigator.standable(ahead) || navigator.swimmable(ahead)) return true;
+        if (!navigator.clear(ahead)) return !navigator.hazard(ahead.up()); // A wall or a step up: collision, not a fall.
+        for (int k = 1; k <= NativeNavigator.MAX_SAFE_DROP; k++) {
+            BlockPos landing = ahead.down(k);
+            if (navigator.swimmable(landing)) return true;
+            if (!navigator.passable(landing)) return false; // Lava below is not passable either.
+            if (navigator.standable(landing)) return true;
+        }
+        return false;
     }
 
     /** Lost nothing but weapon or armor wear (a worn-out weapon may break); anything gained was picked up. */

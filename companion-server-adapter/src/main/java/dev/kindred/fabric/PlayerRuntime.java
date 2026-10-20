@@ -3015,7 +3015,9 @@ final class PlayerRuntime {
                 .getBytes(StandardCharsets.UTF_8));
         entry.campaignTasks.clear();
         entry.campaignTasks.put(id, t);
-        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+        boolean creeper = PortalRunCampaign.creeperTask(t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id,
+                creeper ? dev.kindred.core.TaskPreferences.Priority.URGENT : dev.kindred.core.TaskPreferences.Priority.PROJECT, creeper ? 99.0 : 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
@@ -3269,7 +3271,9 @@ final class PlayerRuntime {
         }
 
         boolean escapingWater = entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId) && !creeperThreat;
-        if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat) && !"native_retreat".equals(entry.skillId) && !escapingWater) {
+        // A goal's creeper fight runs from a hissing creeper by itself, and its sprint away is already the escape.
+        boolean handlingCreeper = PortalRunCampaign.creeperTask(entry.activeCampaignTask);
+        if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat && !handlingCreeper) && !"native_retreat".equals(entry.skillId) && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort("Hazard/threat detected: urgent retreat required");

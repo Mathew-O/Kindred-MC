@@ -131,6 +131,11 @@ final class PortalRunCampaign {
             BlockPos reached = position(task.args());
             if (reached != null) approaches.merge(reached.asLong(), 1, Integer::sum);
         }
+        if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Pick up ")
+                && !task.label().equals("Pick up food") && position(task.args()) != null) {
+            BlockPos at = position(task.args()); // A drop that keeps drifting off is let go after a few tries.
+            if (approaches.merge(at.asLong(), 1, Integer::sum) >= 3) blockedUntil.put(at.asLong(), tick + 1200);
+        }
         if (task != null && completed) repeatFailures.remove(task);
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
@@ -262,6 +267,12 @@ final class PortalRunCampaign {
             }
         }
         if (night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS) {
+            // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
+            Optional<Task> seal = underground(player) && player.isOnGround() ? seal(body) : Optional.empty();
+            if (seal.isPresent()) {
+                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                return seal;
+            }
             progress = stageLabel(stage) + ": wait for daylight before going up for logs";
             return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
         }
@@ -269,6 +280,11 @@ final class PortalRunCampaign {
         if (recover.isPresent()) {
             progress = stageLabel(stage) + ": pick up what was dropped at death - " + recover.get().label();
             return recover;
+        }
+        Optional<Task> loose = pickUpLoose(player);
+        if (loose.isPresent()) {
+            progress = stageLabel(stage) + ": " + loose.get().label();
+            return loose;
         }
         for (PortalRunPlanner.Step step : steps) {
             if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
@@ -1154,6 +1170,15 @@ final class PortalRunCampaign {
      */
     private Optional<Task> defend(ServerPlayerEntity player) {
         if (player.getHealth() < 6) return backOff(player);
+        CreeperEntity creeper = creeperAfter(player);
+        if (creeper != null) {
+            // Armed and healthy: hit and run, which keeps it from getting close enough to light. Otherwise get away.
+            foe = creeper.getUuid(); // A fight that fails leaves it alone for a while, as with any foe.
+            foeUntil = lastTick;
+            Task strike = strike(player, creeper, "Fight creeper");
+            if (strike.args().containsKey("slot") && player.getHealth() >= 10) return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+            return Optional.of(runFrom(player, creeper));
+        }
         var threats = threats(player);
         HostileEntity nearest = threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
@@ -1180,10 +1205,69 @@ final class PortalRunCampaign {
         return Optional.of(go(target, 3, true, "Back off from " + Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath()));
     }
 
+    /**
+     * A creeper close by that is after the player or already hissing. One that could not be fought is left alone
+     * for a while unless it comes within five blocks.
+     */
+    private CreeperEntity creeperAfter(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(CreeperEntity.class, player.getBoundingBox().expand(8, 4, 8),
+                        creeper -> creeper.isAlive() && (creeper.getTarget() == player || creeper.getFuseSpeed() > 0) && player.canSee(creeper)
+                                && (ignoredFoes.getOrDefault(creeper.getUuid(), Long.MIN_VALUE) < lastTick || player.squaredDistanceTo(creeper) < 5 * 5))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** Sprint a dozen blocks straight away from a creeper; beyond seven its fuse goes out. */
+    private static Task runFrom(ServerPlayerEntity player, CreeperEntity creeper) {
+        Vec3d away = player.getPos().subtract(creeper.getPos()).multiply(1, 0, 1);
+        if (away.lengthSquared() < 1.0E-4) away = player.getRotationVector().multiply(-1, 0, -1);
+        away = away.normalize().multiply(12);
+        BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
+        return new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Run from creeper");
+    }
+
+    /**
+     * Fill the few openings around where the player waits out the night with an owned stone or dirt block, so
+     * nothing walks or shoots in. A spot with more openings than a staircase or tunnel leaves is a cave and is left.
+     */
+    private Optional<Task> seal(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var open = new java.util.ArrayList<BlockPos>();
+        for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
+            for (BlockPos cell : List.of(feet.offset(direction), feet.up().offset(direction))) if (opening(world, cell)) open.add(cell);
+        }
+        if (opening(world, feet.up(2))) open.add(feet.up(2));
+        if (open.isEmpty() || open.size() > 4) return Optional.empty();
+        var inventory = player.getInventory();
+        int slot = -1;
+        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block to seal the shelter"));
+        for (BlockPos cell : open) {
+            if (blocked(cell) || eyeDistance(player, cell) > 4.4) continue;
+            for (Direction side : Direction.values()) {
+                BlockPos support = cell.offset(side.getOpposite());
+                if (support.equals(feet) || support.equals(feet.up())) continue;
+                if (world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue; // Nothing to place against.
+                return Optional.of(new Task("native_place", coords(cell, Map.of("side", side.asString(), "slot", String.valueOf(slot))),
+                        "Seal the shelter at " + cell.toShortString()));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean opening(ServerWorld world, BlockPos cell) {
+        return passable(world, cell) && world.getFluidState(cell).isEmpty() && world.getBlockState(cell).isReplaceable();
+    }
+
+    private static final Set<Item> SEALING = Set.of(Items.DIRT, Items.COBBLESTONE, Items.COBBLED_DEEPSLATE, Items.STONE,
+            Items.ANDESITE, Items.DIORITE, Items.GRANITE, Items.TUFF, Items.COARSE_DIRT, Items.NETHERRACK);
+
     private HostileEntity rememberedFoe(ServerPlayerEntity player) {
         if (foe == null || lastTick > foeUntil || player.getHealth() < 6 || ignoredFoes.getOrDefault(foe, Long.MIN_VALUE) >= lastTick) return null;
         if (player.getServerWorld().getEntity(foe) instanceof HostileEntity mob && mob.isAlive() && mob.getTarget() == player
-                && !(mob instanceof EndermanEntity)
+                && !(mob instanceof EndermanEntity) && !(mob instanceof CreeperEntity)
                 && player.squaredDistanceTo(mob) < 24 * 24) {
             return mob;
         }
@@ -1203,8 +1287,13 @@ final class PortalRunCampaign {
     /** Work in progress should stop for a fight: a hostile in sight is after the player and the task is not the fight. */
     boolean shouldStopForAFight(ServerPlayerEntity player, Task running) {
         if (running == null || running.label().startsWith("Fight") || running.label().startsWith("Close in")
-                || running.label().startsWith("Back off")) return false;
-        return !threats(player).isEmpty();
+                || running.label().startsWith("Back off") || running.label().startsWith("Run from")) return false;
+        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null;
+    }
+
+    /** Creeper work outranks the runtime's one-block retreat: its own hit and run or sprint away is the better escape. */
+    static boolean creeperTask(Task task) {
+        return task != null && (task.label().equals("Fight creeper") || task.label().equals("Run from creeper"));
     }
 
     /** Work stopped for a fight is not a failed target; plan again without counting it. */
@@ -1225,6 +1314,20 @@ final class PortalRunCampaign {
         args.put("target", target.getUuid().toString());
         if (weapon >= 0) args.put("slot", String.valueOf(weapon));
         return new Task("native_attack", Map.copyOf(args), label);
+    }
+
+    /** Route items that a break left lying, say carried off by water, are worth walking a few blocks for. */
+    private static final Set<Item> KEEP = Set.of(Items.OBSIDIAN, Items.DIAMOND, Items.RAW_IRON, Items.FLINT);
+
+    private Optional<Task> pickUpLoose(ServerPlayerEntity player) {
+        // A drop in flowing water, such as the water poured for obsidian, waits until the water is taken back.
+        var world = player.getServerWorld();
+        var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(8, 3, 8),
+                drop -> KEEP.contains(drop.getStack().getItem()) && player.canSee(drop) && !blocked(drop.getBlockPos())
+                        && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
+        if (drops.isEmpty()) return Optional.empty();
+        ItemEntity nearest = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        return Optional.of(go(nearest.getBlockPos(), 0.6, false, "Pick up " + Registries.ITEM.getId(nearest.getStack().getItem()).getPath().replace('_', ' ')));
     }
 
     // ------------------------------------------------------------------ food

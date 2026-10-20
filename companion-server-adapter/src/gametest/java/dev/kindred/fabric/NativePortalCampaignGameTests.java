@@ -11,6 +11,7 @@ import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
 /** The Nether-portal goal driving real native skills through the runtime: no grants, no repositioning. */
 public final class NativePortalCampaignGameTests implements FabricGameTest {
@@ -155,6 +156,127 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         if (f.player().getInventory().getStack(s).isOf(Items.DIAMOND_PICKAXE)) pickDamage = f.player().getInventory().getStack(s).getDamage();
                     }
                     context.assertTrue(pickDamage >= 1, "Vanilla wear from mining: " + pickDamage);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A husk out of reach beyond a lava moat: the goal starts a fight with it, but the chase stops at the edge
+     * instead of walking into the lava, and the fight ends as unsafe. The husk is too far for a strike across.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 700)
+    public void goalFightStopsAtLavaRatherThanChasingIntoIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.HuskEntity[] husk = new net.minecraft.entity.mob.HuskEntity[1];
+        boolean[] burned = new boolean[1];
+        double[] closest = {Double.MAX_VALUE};
+        Runnable watch = () -> {
+            var player = f.player();
+            if (player == null || husk[0] == null) return;
+            burned[0] |= player.isInLava() || player.isOnFire() || !player.isAlive();
+            closest[0] = Math.min(closest[0], Math.hypot(player.getX() - husk[0].getX(), player.getZ() - husk[0].getZ()));
+        };
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 3; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    // A moat two blocks wide around the far corner, where the husk stands.
+                    for (int x = 1; x <= 6; x++) for (int z = 1; z <= 6; z++) {
+                        if (x < 4 && z < 4 || x == 6 && z == 6) continue;
+                        context.setBlockState(x, 0, z, Blocks.STONE);
+                        context.setBlockState(x, 1, z, Blocks.LAVA);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Wary");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    f.player().getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    f.player().getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
+                    husk[0] = context.spawnMob(net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
+                    husk[0].setTarget(f.player());
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    watch.run();
+                    context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Fight husk"), "The goal took up the fight");
+                })
+                .createAndAdd(() -> {
+                    watch.run();
+                    context.assertFalse(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Fight husk"), "The fight ended");
+                })
+                .createAndAdd(() -> {
+                    f.runtime.stop();
+                    context.assertFalse(burned[0], "The player never stepped into the lava");
+                    // Standing anywhere on the island keeps at least 3.6 blocks to the husk; a step onto the lava would not.
+                    context.assertTrue(closest[0] >= 3.6, "It stopped at the edge: " + closest[0]);
+                    context.assertTrue(husk[0].isAlive(), "The husk stayed out of reach");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Night in a pit open to the sky with an empty inventory, as after a respawn: the goal digs one staircase step
+     * into the hill around it, whichever way it faces, and once under cover seals both openings with the dirt the
+     * dig gave it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightShelter", tickLimit = 900)
+    public void goalDigsInAndSealsTheShelterAtNight(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        Runnable night = () -> context.getWorld().setTimeOfDay(14000);
+        BlockPos[] pit = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) for (int y = -1; y <= 1; y++) context.setBlockState(x, y, z, Blocks.DIRT);
+                    night.run();
+                    f.runtime.createNative(f.source, "Burrow");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // The hill rises around wherever the player stood up: a pit three deep, open to the sky. Absolute
+                    // positions throughout, since a rotated test's relative positions do not round-trip.
+                    pit[0] = f.player().getBlockPos().toImmutable();
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) for (int y = 2; y <= 4; y++) {
+                        BlockPos cell = context.getAbsolutePos(new BlockPos(x, y, z));
+                        if (cell.getX() == pit[0].getX() && cell.getZ() == pit[0].getZ()) continue;
+                        context.getWorld().setBlockState(cell, Blocks.DIRT.getDefaultState());
+                    }
+                    night.run();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    night.run();
+                    var world = context.getWorld();
+                    BlockPos feet = f.player().getBlockPos();
+                    context.assertTrue(feet.getY() == pit[0].getY() - 1 && feet.getManhattanDistance(pit[0].down()) == 1, "One step into the hill: " + feet);
+                    context.assertTrue(world.getBlockState(pit[0]).isOf(Blocks.DIRT) && world.getBlockState(feet.up(2)).isOf(Blocks.DIRT),
+                            "Both openings were sealed");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos feet = f.player().getBlockPos();
+                    var around = new java.util.ArrayList<>(java.util.List.of(feet.down(), feet.up(2)));
+                    for (Direction side : Direction.Type.HORIZONTAL) {
+                        around.add(feet.offset(side));
+                        around.add(feet.up().offset(side));
+                    }
+                    for (BlockPos cell : around) {
+                        context.assertTrue(world.getBlockState(cell).isSolidBlock(world, cell), "Enclosed: " + cell);
+                    }
+                    context.assertTrue(f.player().isAlive() && f.player().getHealth() >= 20, "Unhurt");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();
