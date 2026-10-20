@@ -176,10 +176,10 @@
   "liveAcceptanceGatesPassed": [],
   "automatedValidation": {
     "junitTestsPassed": 336,
-    "nativeGameTestsPassed": 192,
+    "nativeGameTestsPassed": 193,
     "nativeGameTestConsecutivePasses": 2,
     "latestRegressionEvidence": "docs/validation.md",
-    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 190/190, then 191/191 with the break-pickup shaft fixture and 192/192 twice with the caving fixture, including the death/respawn fixture and five Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player; a fight chase that stops at lava; a sealed night shelter). Full build passed with 336 JUnit results. Native fixtures and development live runs only; no live gate passed.",
+    "nativeGameTestsScope": "2026-10-20, Linux x64 OpenJDK 21: two consecutive runs passed 190/190, then 191/191 with the break-pickup shaft fixture 192/192 twice with the caving fixture and 193/193 twice with the cold-furnace fixture, including the death/respawn fixture and five Nether-portal goal fixtures (obsidian from lava; frame and ignition; fighting a mob that is after the player; a fight chase that stops at lava; a sealed night shelter). Full build passed with 336 JUnit results. Native fixtures and development live runs only; no live gate passed.",
     "evidence": "docs/validation.md"
   },
   "supportExclusions": [

@@ -440,7 +440,9 @@ final class PortalRunCampaign {
         boolean furnaceSmelting = false;
         int furnaceOutput = 0;
         if (furnacePos.isPresent() && player.getServerWorld().getBlockEntity(furnacePos.get()) instanceof AbstractFurnaceBlockEntity furnace) {
-            furnaceSmelting = !furnace.getStack(0).isEmpty();
+            // Smelting only while it burns or has fuel waiting; input left in a cold, empty furnace needs fuel.
+            boolean lit = player.getServerWorld().getBlockState(furnacePos.get()).get(net.minecraft.block.AbstractFurnaceBlock.LIT);
+            furnaceSmelting = !furnace.getStack(0).isEmpty() && (lit || !furnace.getStack(1).isEmpty());
             furnaceOutput = furnace.getStack(2).getCount();
             if (furnace.getStack(0).isOf(Items.RAW_IRON)) rawIron += furnace.getStack(0).getCount();
             if (furnace.getStack(2).isOf(Items.IRON_INGOT)) iron += furnace.getStack(2).getCount();
@@ -583,7 +585,9 @@ final class PortalRunCampaign {
             // Fuel for smelting and the sticks kept for the iron and diamond pickaxes come first.
             int coal = ItemMoves.count(inventory, Items.COAL) + ItemMoves.count(inventory, Items.CHARCOAL);
             int keptSticks = (snapshot.pickaxeTier() < 3 ? 2 : 0) + (snapshot.pickaxeTier() < 4 ? 2 : 0);
-            if (coal < 2) return Optional.empty();
+            // About fifteen iron to smelt through the iron stage: two coal stay for the furnace until then.
+            int keptCoal = stage.ordinal() <= PortalRunPlanner.Stage.IRON.ordinal() ? 2 : 0;
+            if (coal <= keptCoal) return Optional.empty();
             if (snapshot.sticks() > keptSticks) return craft(body, "torch");
             return snapshot.planks() >= 2 ? craft(body, "stick") : Optional.empty();
         }
@@ -977,9 +981,16 @@ final class PortalRunCampaign {
                 if (score > fuelScore) { fuelScore = score; fuel = s; }
             }
         }
-        if (input < 0) return Optional.empty();
         var args = new LinkedHashMap<String, String>();
         args.put("action", "load");
+        if (input < 0) {
+            // The raw iron is already in the furnace and it ran out of fuel: add fuel only.
+            boolean waiting = player.getServerWorld().getBlockEntity(furnace.get()) instanceof AbstractFurnaceBlockEntity block
+                    && block.getStack(0).isOf(Items.RAW_IRON) && block.getStack(1).isEmpty();
+            if (!waiting || fuel < 0) return Optional.empty();
+            args.put("fuel_slot", String.valueOf(fuel));
+            return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Add fuel to the furnace"));
+        }
         args.put("input_slot", String.valueOf(input));
         if (fuel >= 0) args.put("fuel_slot", String.valueOf(fuel));
         return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Load raw iron and fuel"));

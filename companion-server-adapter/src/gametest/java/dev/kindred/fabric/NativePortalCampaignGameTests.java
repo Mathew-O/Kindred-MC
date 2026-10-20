@@ -354,6 +354,68 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * One coal smelts eight of fourteen raw iron and the furnace goes cold with six still in it. The goal does not
+     * wait by a cold furnace: when it next has coal, it goes back and adds it as fuel, and the rest is smelted.
+     * Obsidian walls keep its search for coal inside the plot.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 6000)
+    public void goalRefuelsAFurnaceThatWentColdWithIronStillInIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] furnace = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.OBSIDIAN);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Stoker");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(5, new ItemStack(Items.RAW_IRON, 14));
+                    inventory.setStack(6, new ItemStack(Items.IRON_INGOT));
+                    inventory.setStack(7, new ItemStack(Items.COAL));
+                    inventory.setStack(8, new ItemStack(Items.FURNACE));
+                    inventory.setStack(9, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    furnace[0] = BlockPos.streamOutwards(f.player().getBlockPos(), 6, 3, 6)
+                            .filter(pos -> context.getWorld().getBlockState(pos).isOf(Blocks.FURNACE)).findFirst().map(BlockPos::toImmutable).orElse(null);
+                    context.assertTrue(furnace[0] != null, "It placed its own furnace");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var block = (net.minecraft.block.entity.AbstractFurnaceBlockEntity) world.getBlockEntity(furnace[0]);
+                    boolean lit = world.getBlockState(furnace[0]).get(net.minecraft.block.AbstractFurnaceBlock.LIT);
+                    context.assertTrue(block.getStack(0).isOf(Items.RAW_IRON) && block.getStack(0).getCount() == 6 && block.getStack(1).isEmpty() && !lit,
+                            "The one coal ran out with six raw iron left: " + block.getStack(0) + ", fuel " + block.getStack(1) + ", lit " + lit);
+                    // The coal it would have found next.
+                    f.player().getInventory().insertStack(new ItemStack(Items.COAL));
+                })
+                .createAndAdd(() -> {
+                    var block = (net.minecraft.block.entity.AbstractFurnaceBlockEntity) context.getWorld().getBlockEntity(furnace[0]);
+                    context.assertTrue(block.getStack(0).isEmpty() && ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) == 0,
+                            "It went back, added the coal, and the rest was smelted: input " + block.getStack(0));
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.COAL) == 0, "Its coal became the fuel");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A roof over the fixture: the goal treats it as underground, so a night set by another test changes nothing here. */
     private static void roof(TestContext context) {
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
