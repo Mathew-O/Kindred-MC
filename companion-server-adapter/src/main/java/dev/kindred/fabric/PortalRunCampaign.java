@@ -515,7 +515,10 @@ final class PortalRunCampaign {
                     .or(() -> search(body, "stone"));
             // Ore in view first, then caves it has seen, which show far more ore than a tunnel; digging comes last.
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
-                    .or(() -> cave(body, "coal", COAL_TARGET)).or(this::lookAround).or(() -> tunnel(body, "Tunnel for coal"));
+                    .or(() -> cave(body, "coal", COAL_TARGET)).or(this::lookAround)
+                    // Coal is scarce deep down: climb toward where it is common before tunnelling for it.
+                    .or(() -> player.getBlockY() < COAL_TARGET - 12 ? climb(body, "Climb toward coal") : Optional.<Task>empty())
+                    .or(() -> tunnel(body, "Tunnel for coal"));
             case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore")
                     .or(() -> cave(body, "iron", IRON_TARGET)).or(this::lookAround).or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
             case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
