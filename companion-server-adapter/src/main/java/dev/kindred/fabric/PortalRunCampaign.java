@@ -973,8 +973,14 @@ final class PortalRunCampaign {
             return snapshot.planks() >= 2 ? craft(body, "stick") : Optional.empty();
         }
         if (torch >= 9) return Optional.of(swapToHotbar(body, torch, "Ready a torch"));
+        // Never in the cell ahead, whose floor the next step digs away (live run 56 placed 28 torches that way, each
+        // dropping off as the staircase went on); in a one-wide staircase, on the step behind and above.
+        var spots = new java.util.ArrayList<BlockPos>();
         for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
-            BlockPos spot = feet.offset(direction);
+            if (direction != digDirection) spots.add(feet.offset(direction));
+        }
+        spots.add(feet.up().offset(digDirection.getOpposite()));
+        for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
@@ -1401,7 +1407,9 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
-            for (BlockPos spot : List.of(feet.offset(direction), feet.offset(direction, 2))) {
+            // Beside the player, two off, or on a step above (the step behind in a one-wide staircase, where there is
+            // no floor beside it and nothing to carve room with once the pickaxe is gone, as in live run 56).
+            for (BlockPos spot : List.of(feet.offset(direction), feet.offset(direction, 2), feet.up().offset(direction))) {
                 if (!world.getBlockState(spot).isReplaceable() || !world.getFluidState(spot).isEmpty()) continue;
                 if (world.getBlockState(spot.down()).getCollisionShape(world, spot.down()).isEmpty()) continue;
                 if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
