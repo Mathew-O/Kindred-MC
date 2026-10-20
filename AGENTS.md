@@ -1,6 +1,6 @@
 # Kindred MC — autonomous AI players
 
-Build three persistent AI players that earn a cooperative survival playthrough from empty inventory through the Ender Dragon. They have their own goals, needs and team commitments. Humans may cooperate or administer the world. Follow/help/wait are tasks, not the agent's identity.
+Build three persistent AI players that earn a cooperative survival playthrough from empty inventory through the Ender Dragon. They have their own goals, needs and team commitments. Humans may cooperate or administer the world. Follow/help/wait are tasks, not the agent's identity. The same players play four core modes (Co-op Survival, Manhunt, Speedrun, Builder) on one runtime; see MODE-01..04 in the contract and M-00..M-05 in the tracker.
 
 Read [the player contract](minecraft_player_spec.md), [architecture](docs/player-architecture.md), [canonical tracker](docs/feature-spec.md), [validation](docs/validation.md) and [manifest](release-manifest.json). Current user instructions prevail. The companion product is retired: do not reconstruct its roadmap from old evidence, class names, SQL fields or command aliases.
 
@@ -22,6 +22,7 @@ Read [the player contract](minecraft_player_spec.md), [architecture](docs/player
 - Local code handles routine survival, navigation, recipes, task choice and recovery. Optional Claude/OpenAI APIs belong in `companion-model`; no Jev or mandatory hosted orchestration. No per-tick inference or generated executable code.
 - Team assignments and reserved stock drive cooperation; speech describes verified knowledge/commitments. Personality uses existing bounded weights, not jobs or permissions. Reuse `SocialBrain` and listener limits.
 - Earn all progress: no free gear, copied usable items, teleport shortcuts, hidden-resource omniscience or invented achievements. Dragon completion is a production objective; execute only qualified encounters under server policy.
+- Mode rules: an item is handed out only by an announced rule identical for humans and AIs (D6); attacks on humans only inside a match they joined (D7); free blocks only in Builder. Schematics are bundled or user-supplied with license and attribution kept, never bulk-scraped (D8).
 - Preserve audience consent/privacy, grounded correctable memory and peer-specific relationships. Rapport never grants control or justifies revenge. Rich social features enrich capable players, not replace survival engineering.
 - Unqualified autonomy/survival/travel remains disabled. Policy tests do not authorize native gameplay.
 

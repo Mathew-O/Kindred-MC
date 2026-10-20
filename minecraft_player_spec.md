@@ -1,13 +1,19 @@
 # Kindred MC AI-player product contract
 Version 2.0 · 15 October 2026
 
-Three persistent autonomous AI players must earn a cooperative survival playthrough from empty inventory through the Ender Dragon. Humans can join, request help or administer the server. This replaces the companion product. Completion lives exclusively in [the tracker](docs/feature-spec.md).
+Three persistent autonomous AI players must earn a cooperative survival playthrough from empty inventory through the Ender Dragon. Humans can join, request help or administer the server. The same players take part in the four game modes below. This replaces the companion product. Completion lives exclusively in [the tracker](docs/feature-spec.md).
 
 ## Product
 PLY-01 AI identity, personality, observations, personal goals and team commitments are independent of administrative creator/controller access. Follow/help/wait are tasks; no Companion/Independent product selector.
 PLY-02 Autonomy is normal under server policy and qualified capabilities. Human logout does not inherently cancel goals. Stop, suspension, activity limits and unavailable skills still block execution. Preserve legacy restrictions until migration.
 PLY-03 First integrated milestone: one AI earns tools, food, shelter and iron, survives a night and resumes after restart without instructions for every step. Next: three sharing work/resources. Production acceptance is the multi-seed team playthrough.
 PLY-04 Authenticity requires ordinary mining/tool timing, durability, hunger/saturation, recipes/fuel, damage, inventory/equipment, death/drop/recovery and dimension travel. No free gear, copied usable items, teleport progress or undiscovered-resource/structure queries.
+
+## Game modes
+MODE-01 Four core modes share one player runtime: Co-op Survival, Manhunt, Speedrun and Builder (creative). A mode sets rules, roles and win conditions; it never creates a second body controller, skill runner or permission path. The earned survival playthrough (PLY-03, QUAL-03) stays the production objective and the base of the survival modes.
+MODE-02 Co-op Survival paces progress to the humans: no running ahead of the group's milestones, readiness for a boss without starting one, and bases, farms, enchanting and schematic builds from earned blocks. Speedrun plays a random seed any% glitchless with techniques the speedrunning community accepts. Manhunt pairs runners and hunters among humans and AI players, including AI against AI. Builder runs timed creative build battles on a random theme in a generated arena with minigame-server presentation; free blocks exist in Builder only.
+MODE-03 A mode may hand out an item only when the rule is announced and identical for human and AI participants, such as the hunters' tracking compass (D6). An AI player attacks a human only inside a match that human joined (D7); outside matches player attacks stay refused.
+MODE-04 Schematics are bundled with the mod when their licenses allow it or supplied by users as files or single links, used within each site's terms and the creator's license with attribution kept; no bulk scraping (D8). Survival builds compute a bill of materials and gather or craft every block.
 
 ## Platform and authority
 SYS-01 Retain manifest-pinned Java 21/Fabric/Minecraft, server authority and ordinary-client support. Client enhancements and inference are optional. Reuse native mechanics; do not build a new client engine.

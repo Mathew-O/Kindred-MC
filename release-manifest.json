@@ -8,7 +8,10 @@
     "D2": "Fabric on Minecraft Java 1.21.1; selected as initial bounded target",
     "D3": "Optional Claude/OpenAI APIs with operator-supplied keys; disabled by default. Provider transport/runtime integration not implemented. No Jev or mandatory hosted orchestration.",
     "D4": "Autonomous block edits are off by default; a missing edits.properties means off. An operator may record the roaming-edit policy with /aiplayer edits on: survival breaking and placing where the player itself may edit, never containers or block entities other than its own empty furnace, never spawn-protected blocks, never a lava-releasing break.",
-    "D5": "Unattended progression requires qualified player mechanics, activity admission and recovery."
+    "D5": "Unattended progression requires qualified player mechanics, activity admission and recovery.",
+    "D6": "A game mode may hand out an item only by an announced rule identical for human and AI participants (Manhunt tracking compass). No other exception to earned progress in survival modes. Not implemented.",
+    "D7": "AI players attack humans only inside a match the human joined; otherwise player attacks stay refused. Not implemented.",
+    "D8": "Schematics are bundled when their licenses allow or supplied by users as files or single links, with license and attribution kept; no bulk scraping. Not implemented."
   },
   "minecraft": "1.21.1",
   "integration": "Fabric",

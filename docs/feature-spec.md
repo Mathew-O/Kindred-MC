@@ -11,7 +11,7 @@ First qualify the native player body (F-25b), then integrate local survival/reci
 Compatibility names, save fields and old command aliases are not instructions to rebuild the old concept. Historical checked foundations establish only their dated bounded evidence; none proves current player-body mechanics or a full release.
 
 ## Game modes (direction recorded 2026-10-20)
-The owner set four core modes. Each is a parent feature below (M-01..M-04) on a shared mode and match framework (M-00) and schematic library (M-05). Until the proposed decisions D6–D8 are confirmed, the player contract and AGENTS.md still describe the cooperative survival product; revise them in the same change that confirms the decisions.
+The owner set four core modes. Each is a parent feature below (M-01..M-04) on a shared mode and match framework (M-00) and schematic library (M-05). The player contract (MODE-01..04) and AGENTS.md describe them; the earned survival playthrough (E-40) stays the production objective and the foundation the survival modes are built on.
 - **Co-op Survival (M-01):** progress at the human's natural pace; never seek out a boss fight, but be ready when the human is; bases, farms, enchanting, and builds planned from schematics with every block earned.
 - **Manhunt (M-02):** runner or hunter, between humans and AI players, including two or more AIs; the hunter gets iron-level gear and then hunts, going further only when it is opportune; the runner speedruns while evading.
 - **Speedrun (M-03):** random seed; any% glitchless with the techniques the speedrunning community accepts.
@@ -19,10 +19,10 @@ The owner set four core modes. Each is a parent feature below (M-01..M-04) on a 
 
 Recommended order: finish the survival core (F-25c4, then E-07 combat and caves, E-15 portal travel); then build M-00; M-04 can proceed in parallel because creative play does not depend on survival. After that come M-03, M-02 (built on the M-03 runner plus PvP), and the remainder of M-01 (schematic builds, enchanting, farms).
 
-Proposed decisions (not yet confirmed):
-- **D6:** A mode rule may hand out an item only when it is announced and identical for human and AI participants, such as Manhunt's tracking compass. Survival modes have no other exception to earned progress.
+Decisions confirmed by the owner on 2026-10-20 (next focus: the survival core):
+- **D6:** A mode rule may hand out an item only when it is announced and identical for human and AI participants, such as Manhunt's tracking compass for every hunter. Survival modes have no other exception to earned progress.
 - **D7:** An AI player attacks a human only inside a match that human joined; outside matches, player attacks stay refused.
-- **D8:** Schematics come from files the owner or operator supplies, or from single links they provide, used within each site's terms and the creator's license, with attribution kept. No bulk scraping.
+- **D8:** Kindred ships a small library of bundled schematics whose licenses allow it, and users may supply their own: files they provide, or single links they give, used within each site's terms and the creator's license, with attribution kept. No bulk scraping.
 
 ## Work protocol
 Claim an open ID before implementation. Preserve IDs; add explicit children. Put a LIVE EDIT marker first while editing contracts; remove it when finished. Check all acceptance criteria before marking done, with date/evidence and affected user docs in the same change. Reopen invalid evidence; keep blocked work open. Native outcomes require native evidence; live scenarios require real clients/runs. Use [the evidence template](evidence/README.md). Update the manifest only with supported capabilities/qualified gates.
@@ -372,4 +372,4 @@ Depends on F-25c4, E-15, Nether and End skills, E-39. A random seed, with no see
 Depends on M-00, E-29 and M-05; optionally F-19 for theme interpretation. A generated arena with a lobby, protected plots, and spectator and voting paths. Each round has a random theme announced with a title, a timed build in creative mode (blocks are free in this mode only), voting by human and AI players, then results with a podium and fireworks. AI builders turn the theme into a structured build plan, using the local design grammar, reference schematics from M-05, and optionally the model as planner through companion-model (data plans only, no generated code), then place it block by block within the time limit. Acceptance: complete 1v1 rounds against a human and between AIs, with ordinary-client presentation.
 
 ### M-05 — Schematic library
-Depends on E-08. Import Sponge `.schem`, Litematica `.litematic` and vanilla structure `.nbt` files that the owner or operator supplies (D8). Store the source link, creator and license with each import. Compute a bill of materials and a buildable placement order (supports first, gravity blocks last), and report blocks that survival cannot obtain. Acceptance: pure parser and ordering tests; a native fixture that builds a small imported structure from owned blocks.
+Depends on E-08. Import Sponge `.schem`, Litematica `.litematic` and vanilla structure `.nbt` files, bundled with the mod or supplied by users (D8). Store the source link, creator and license with each import. Compute a bill of materials and a buildable placement order (supports first, gravity blocks last), and report blocks that survival cannot obtain. Acceptance: pure parser and ordering tests; a native fixture that builds a small imported structure from owned blocks.
