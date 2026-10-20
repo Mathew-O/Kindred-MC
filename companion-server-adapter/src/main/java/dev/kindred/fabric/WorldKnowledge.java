@@ -72,12 +72,12 @@ final class WorldKnowledge {
 
     /**
      * A place a player could stand in a cave: two blocks of air over a stone floor, out of daylight (sky light
-     * at most 7, so overhangs at a cave mouth count and open ground does not).
+     * at most 7, so overhangs at a cave mouth count and open ground does not), or a ravine floor well below sea level.
      */
     static boolean caveFloor(ServerWorld world, BlockPos feet) {
         if (!world.getBlockState(feet).isAir() || !world.getBlockState(feet.up()).isAir()) return false;
         if (classify(world.getBlockState(feet.down())) != Kind.STONE) return false;
-        return world.getLightLevel(net.minecraft.world.LightType.SKY, feet) <= 7;
+        return world.getLightLevel(net.minecraft.world.LightType.SKY, feet) <= 7 || feet.getY() < world.getSeaLevel() - 10;
     }
 
     private static long cell(BlockPos pos) {
