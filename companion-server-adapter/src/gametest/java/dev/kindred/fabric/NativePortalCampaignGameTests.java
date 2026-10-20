@@ -238,6 +238,64 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A tunnel breaks into a small dark cave with a creeper in it, and the player has only stone tools and no shield:
+     * it walls off the way in where it stands, as players do, instead of fighting or running across the cave, and
+     * waits behind the wall unhurt.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalWallsOffACaveItIsNoMatchFor(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.CreeperEntity[] creeper = new net.minecraft.entity.mob.CreeperEntity[1];
+        BlockPos[] way = new BlockPos[2];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Cautious"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute positions around where the player stood up: solid stone with the dead end of a tunnel
+                    // where it stands, one cell of passage south, and a dark three-deep cave beyond.
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
+                        boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
+                                || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 2);
+                        world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
+                    }
+                    way[0] = p.add(0, 0, 1);
+                    way[1] = p.add(0, 1, 1);
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.STONE_SWORD));
+                    player.getInventory().setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    player.getInventory().setStack(3, new ItemStack(Items.BREAD, 5));
+                    creeper[0] = net.minecraft.entity.EntityType.CREEPER.create(world);
+                    creeper[0].refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 4.5, 180, 0);
+                    creeper[0].setPersistent();
+                    world.spawnEntity(creeper[0]);
+                    creeper[0].setTarget(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(!world.getBlockState(way[0]).isAir() && !world.getBlockState(way[1]).isAir(),
+                            "It walled off the way into the cave: " + world.getBlockState(way[0]) + " " + world.getBlockState(way[1])
+                                    + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18, "Unhurt behind its wall: " + player.getHealth());
+                    context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Hole up")
+                            || !creeper[0].isAlive() || creeper[0].getTarget() != player, "Waiting behind the wall while the creeper is after it");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Badly hurt, with a shield, and a creeper already hissing three blocks away: running would not get clear in
      * time, so the goal faces it behind the shield, and the player lives through the blast.
      */

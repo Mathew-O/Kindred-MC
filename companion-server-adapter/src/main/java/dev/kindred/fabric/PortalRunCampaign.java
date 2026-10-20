@@ -167,6 +167,9 @@ final class PortalRunCampaign {
                 blockedUntil.merge(near.asLong(), tick + 1200, Math::max);
             }
         }
+        if (task != null && completed && task.label().startsWith("Hole up: seal") && position(task.args()) != null) {
+            blockedUntil.merge(position(task.args()).asLong(), tick + CAVE_DANGER_TICKS, Math::max); // Leave the wall standing.
+        }
         if (task != null && completed) repeatFailures.remove(task);
         if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
             castFailedFrom = null;
@@ -223,23 +226,35 @@ final class PortalRunCampaign {
         boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
         dropSite = burned || killedByMob ? null : pos.toImmutable();
         dropSiteUntil = tick + 5_000;
-        if (killedByMob) {
-            if (deathZones.size() >= 8) deathZones.removeFirst();
-            deathZones.add(new DeathZone(pos.toImmutable(), tick + DANGER_TICKS));
-        }
+        if (killedByMob) markDanger(pos, tick + DANGER_TICKS);
     }
 
-    /** Where mobs killed the player: for a day it does not go back to caves or ore there, as a player would not. */
-    private record DeathZone(BlockPos center, long until) { }
-    private final java.util.ArrayList<DeathZone> deathZones = new java.util.ArrayList<>();
+    /**
+     * Where mobs killed the player (for a day) or outmatched it underground (for a few minutes): it does not go back
+     * to caves or ore there meanwhile, as a player would not.
+     */
+    private record DangerZone(BlockPos center, long until) { }
+    private final java.util.ArrayList<DangerZone> dangerZones = new java.util.ArrayList<>();
     private static final int DANGER_RADIUS = 12;
     private static final long DANGER_TICKS = 24_000;
+    private static final long CAVE_DANGER_TICKS = 6_000;
 
     private boolean dangerous(BlockPos pos) {
-        for (DeathZone zone : deathZones) {
+        for (DangerZone zone : dangerZones) {
             if (zone.until() > lastTick && zone.center().getSquaredDistance(pos) < DANGER_RADIUS * DANGER_RADIUS) return true;
         }
         return false;
+    }
+
+    private void markDanger(BlockPos pos, long until) {
+        for (int i = 0; i < dangerZones.size(); i++) {
+            DangerZone zone = dangerZones.get(i);
+            if (zone.center().getSquaredDistance(pos) >= 6 * 6) continue;
+            if (zone.until() < until) dangerZones.set(i, new DangerZone(zone.center(), until)); // The same place: extend it.
+            return;
+        }
+        if (dangerZones.size() >= 8) dangerZones.removeFirst();
+        dangerZones.add(new DangerZone(pos.toImmutable(), until));
     }
 
     /**
@@ -343,7 +358,7 @@ final class PortalRunCampaign {
         return label.equals("Wait for daylight") || label.equals("Rest to heal") || label.startsWith("Fight")
                 || label.startsWith("Take cover") || label.startsWith("Run from") || label.startsWith("Back off")
                 || label.startsWith("Close in") || label.startsWith("Seal the shelter") || label.startsWith("Dig in")
-                || label.startsWith("Place a torch") || label.startsWith("Get out of the water");
+                || label.startsWith("Place a torch") || label.startsWith("Get out of the water") || label.startsWith("Hole up");
     }
 
     /** A new stage, or a new best in a counter the route needs. */
@@ -439,6 +454,11 @@ final class PortalRunCampaign {
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
+        }
+        Optional<Task> hole = holeUp(body);
+        if (hole.isPresent()) {
+            progress = stageLabel(stage) + ": outmatched - " + hole.get().label();
+            return hole;
         }
         Optional<Task> defense = defend(body);
         if (defense.isPresent()) {
@@ -1914,19 +1934,96 @@ final class PortalRunCampaign {
      */
     private Optional<Task> seal(NativePlayerBody body) {
         var player = body.entity();
-        var world = player.getServerWorld();
-        BlockPos feet = player.getBlockPos();
-        var open = new java.util.ArrayList<BlockPos>();
-        for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
-            for (BlockPos cell : List.of(feet.offset(direction), feet.up().offset(direction))) if (opening(world, cell)) open.add(cell);
-        }
-        if (opening(world, feet.up(2))) open.add(feet.up(2));
+        var open = openings(player.getServerWorld(), player.getBlockPos());
         if (open.isEmpty() || open.size() > 4) return Optional.empty();
         for (BlockPos cell : open) {
             Optional<Task> place = placeBlock(body, cell, "Seal the shelter at " + cell.toShortString());
             if (place.isPresent()) return place;
         }
         return Optional.empty();
+    }
+
+    /** Open cells beside the player's feet and head, and above its head: the ways in to where it stands. */
+    private static List<BlockPos> openings(ServerWorld world, BlockPos feet) {
+        var open = new java.util.ArrayList<BlockPos>();
+        for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
+            for (BlockPos cell : List.of(feet.offset(direction), feet.up().offset(direction))) if (opening(world, cell)) open.add(cell);
+        }
+        if (opening(world, feet.up(2))) open.add(feet.up(2));
+        return open;
+    }
+
+    // ------------------------------------------------------------------ holing up
+
+    /** The last spot underground with few ways in (a staircase step, a tunnel), where the player can wall itself in. */
+    private BlockPos snug;
+    /** Since when the player has been walled in to recover; negative when it is not. */
+    private long holedUpSince = -1;
+
+    /**
+     * Underground and outmatched for its gear (a creeper or a shooter without a shield, several mobs after it, low
+     * health), the player does what players do when a dig breaks into a busy cave: it walls off the ways in where it
+     * stands if that is a passage, or backs into the staircase it came down and walls itself in there. Then it waits
+     * behind its blocks until healed, with the cave marked dangerous for a few minutes and the wall left standing,
+     * so the dig goes on somewhere else.
+     */
+    private Optional<Task> holeUp(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (!underground(player)) {
+            holedUpSince = -1;
+            return Optional.empty();
+        }
+        var open = openings(world, feet);
+        net.minecraft.entity.LivingEntity danger = outmatchedBy(player);
+        if (danger != null) {
+            markDanger(danger.getBlockPos(), lastTick + CAVE_DANGER_TICKS);
+            if (holedUpSince < 0) holedUpSince = lastTick;
+            if (open.size() <= 4) {
+                open.sort(java.util.Comparator.comparingDouble(cell -> cell.getSquaredDistance(danger.getBlockPos())));
+                for (BlockPos cell : open) {
+                    Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
+                    if (place.isPresent()) return place;
+                }
+                if (open.isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "2"), "Hole up: wait behind the wall"));
+            }
+            if (snug != null && !snug.equals(feet) && snug.getSquaredDistance(feet) <= 16 * 16 && !blocked(snug)) {
+                return Optional.of(go(snug, 0.3, true, "Hole up: back into the passage"));
+            }
+            return Optional.empty(); // Nowhere to hole up: fight, run or back off as before.
+        }
+        if (player.isOnGround() && open.size() <= 3 && world.getFluidState(feet).isEmpty()) snug = feet.toImmutable();
+        if (holedUpSince >= 0) {
+            if (player.getHealth() >= 18 || lastTick - holedUpSince > 2400) {
+                holedUpSince = -1;
+                return Optional.empty();
+            }
+            if (open.size() <= 4) {
+                for (BlockPos cell : open) {
+                    Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
+                    if (place.isPresent()) return place;
+                }
+            }
+            return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Hole up: recover behind the wall"));
+        }
+        return Optional.empty();
+    }
+
+    /** The mob the player is no match for down here with what it has, or null. */
+    private net.minecraft.entity.LivingEntity outmatchedBy(ServerPlayerEntity player) {
+        boolean shield = player.getOffHandStack().isOf(Items.SHIELD);
+        CreeperEntity creeper = creeperAfter(player);
+        if (creeper != null && !shield) return creeper;
+        var hunters = player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(12, 6, 12),
+                mob -> mob.isAlive() && mob.getTarget() == player);
+        if (hunters.isEmpty()) return null;
+        HostileEntity shooter = shooter(player);
+        if (shooter != null && !shield && (hunters.size() >= 2 || player.getHealth() < 16)) return shooter;
+        if (hunters.size() >= 2 && !shield || player.getHealth() < (shield ? 8 : 12)) {
+            return hunters.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        }
+        return null;
     }
 
     private static boolean opening(ServerWorld world, BlockPos cell) {
@@ -1960,7 +2057,7 @@ final class PortalRunCampaign {
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
-                || running.label().startsWith("Take cover")) return null;
+                || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")) return null;
         if (running.label().startsWith("Fight") || running.label().startsWith("Close in")) {
             // Worn down mid-fight: break it off, as a player does, so backing off or taking cover can take over.
             // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:
@@ -1974,7 +2071,7 @@ final class PortalRunCampaign {
 
     /** Goal work that outranks everything else: a creeper's escape, and digging out of a block the head is stuck in. */
     static boolean urgentTask(Task task) {
-        return creeperTask(task) || task != null && task.label().startsWith("Dig out of");
+        return creeperTask(task) || task != null && (task.label().startsWith("Dig out of") || task.label().startsWith("Hole up"));
     }
 
     /** Creeper work outranks the runtime's one-block retreat: its own hit and run or sprint away is the better escape. */

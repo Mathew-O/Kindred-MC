@@ -3290,9 +3290,9 @@ final class PlayerRuntime {
         }
 
         boolean escapingWater = entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId) && !creeperThreat;
-        // A goal's creeper work, and any recorded fight, deals with a hissing creeper by itself (behind a raised
-        // shield, or by sprinting away): cutting it short for a one-block retreat would only cost the time it needs.
-        boolean handlingCreeper = PortalRunCampaign.creeperTask(entry.activeCampaignTask) || "native_fight".equals(entry.skillId);
+        // A goal's creeper work or walling-in, and any recorded fight, deals with a hissing creeper by itself (a wall,
+        // a raised shield, or a sprint away): cutting it short for a one-block retreat would only cost the time it needs.
+        boolean handlingCreeper = PortalRunCampaign.urgentTask(entry.activeCampaignTask) || "native_fight".equals(entry.skillId);
         if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat && !handlingCreeper) && !"native_retreat".equals(entry.skillId) && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
