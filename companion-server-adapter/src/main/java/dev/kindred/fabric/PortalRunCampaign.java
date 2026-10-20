@@ -257,7 +257,7 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
         }
-        Optional<Task> defense = defend(player);
+        Optional<Task> defense = defend(body);
         if (defense.isPresent()) {
             progress = stageLabel(stage) + ": fight back - " + defense.get().label();
             return defense;
@@ -1279,7 +1279,15 @@ final class PortalRunCampaign {
      * strike, as a player with a weapon would rather than keep mining while a skeleton shoots. Creepers are left
      * to the runtime's retreat, and a badly hurt player leaves it to the tactical retreat too.
      */
-    private Optional<Task> defend(ServerPlayerEntity player) {
+    private Optional<Task> defend(NativePlayerBody body) {
+        var player = body.entity();
+        // A shooter with a clear line of fire that cannot be fought now (too hurt, or out of reach last time): get
+        // out of its line of fire behind an owned block, as a player ducks behind cover.
+        HostileEntity shooter = shooter(player);
+        if (shooter != null && (player.getHealth() < 6 || ignoredFoes.getOrDefault(shooter.getUuid(), Long.MIN_VALUE) >= lastTick)) {
+            Optional<Task> cover = cover(body, shooter);
+            if (cover.isPresent()) return cover;
+        }
         if (player.getHealth() < 6) return backOff(player);
         CreeperEntity creeper = creeperAfter(player);
         if (creeper != null) {
@@ -1336,6 +1344,53 @@ final class PortalRunCampaign {
         return new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Run from creeper");
     }
 
+    /** The nearest skeleton-like shooter after the player with a clear line of fire to it. */
+    private static HostileEntity shooter(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(20, 10, 20),
+                        mob -> mob.isAlive() && mob.getTarget() == player && mob instanceof net.minecraft.entity.ai.RangedAttackMob && player.canSee(mob))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** Block the first open cell beside the player's head or feet along the line of fire from {@code shooter}. */
+    private Optional<Task> cover(NativePlayerBody body, HostileEntity shooter) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        Vec3d eye = player.getEyePos();
+        Vec3d toward = shooter.getEyePos().subtract(eye).normalize();
+        for (double d = 0.5; d <= 1.75; d += 0.25) {
+            BlockPos cell = BlockPos.ofFloored(eye.add(toward.multiply(d)));
+            if (cell.equals(feet) || cell.equals(feet.up())) continue;
+            if (!opening(world, cell)) return Optional.empty(); // Something already stands in the way.
+            String label = "Take cover from " + Registries.ENTITY_TYPE.getId(shooter.getType()).getPath();
+            Optional<Task> place = placeBlock(body, cell, label);
+            // Nothing to set it against in the open: build up from the block below it first.
+            if (place.isEmpty() && !cell.down().equals(feet) && opening(world, cell.down())) place = placeBlock(body, cell.down(), label);
+            return place;
+        }
+        return Optional.empty();
+    }
+
+    /** One owned stone or dirt block into {@code cell}, against any solid face that is not the player's own space. */
+    private Optional<Task> placeBlock(NativePlayerBody body, BlockPos cell, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (blocked(cell) || eyeDistance(player, cell) > 4.4) return Optional.empty();
+        var inventory = player.getInventory();
+        int slot = -1;
+        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        for (Direction side : Direction.values()) {
+            BlockPos support = cell.offset(side.getOpposite());
+            if (support.equals(feet) || support.equals(feet.up())) continue;
+            if (world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue; // Nothing to place against.
+            return Optional.of(new Task("native_place", coords(cell, Map.of("side", side.asString(), "slot", String.valueOf(slot))), label));
+        }
+        return Optional.empty();
+    }
+
     /**
      * Fill the few openings around where the player waits out the night with an owned stone or dirt block, so
      * nothing walks or shoots in. A spot with more openings than a staircase or tunnel leaves is a cave and is left.
@@ -1350,20 +1405,9 @@ final class PortalRunCampaign {
         }
         if (opening(world, feet.up(2))) open.add(feet.up(2));
         if (open.isEmpty() || open.size() > 4) return Optional.empty();
-        var inventory = player.getInventory();
-        int slot = -1;
-        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
-        if (slot < 0) return Optional.empty();
-        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block to seal the shelter"));
         for (BlockPos cell : open) {
-            if (blocked(cell) || eyeDistance(player, cell) > 4.4) continue;
-            for (Direction side : Direction.values()) {
-                BlockPos support = cell.offset(side.getOpposite());
-                if (support.equals(feet) || support.equals(feet.up())) continue;
-                if (world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue; // Nothing to place against.
-                return Optional.of(new Task("native_place", coords(cell, Map.of("side", side.asString(), "slot", String.valueOf(slot))),
-                        "Seal the shelter at " + cell.toShortString()));
-            }
+            Optional<Task> place = placeBlock(body, cell, "Seal the shelter at " + cell.toShortString());
+            if (place.isPresent()) return place;
         }
         return Optional.empty();
     }
@@ -1392,13 +1436,14 @@ final class PortalRunCampaign {
                 mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity) && player.canSee(mob)
                         // An enderman is not chased (it out-teleports and out-hits early gear); it is struck when it comes close.
                         && !(mob instanceof EndermanEntity && player.squaredDistanceTo(mob) > 3.5 * 3.5)
-                        && ignoredFoes.getOrDefault(mob.getUuid(), Long.MIN_VALUE) < lastTick);
+                        && (ignoredFoes.getOrDefault(mob.getUuid(), Long.MIN_VALUE) < lastTick || player.squaredDistanceTo(mob) < 4 * 4));
     }
 
     /** Work in progress should stop for a fight: a hostile in sight is after the player and the task is not the fight. */
     boolean shouldStopForAFight(ServerPlayerEntity player, Task running) {
         if (running == null || running.label().startsWith("Fight") || running.label().startsWith("Close in")
-                || running.label().startsWith("Back off") || running.label().startsWith("Run from")) return false;
+                || running.label().startsWith("Back off") || running.label().startsWith("Run from")
+                || running.label().startsWith("Take cover")) return false;
         return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null;
     }
 

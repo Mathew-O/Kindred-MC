@@ -227,6 +227,56 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A skeleton shooting across a lava moat it cannot be reached over: the fight stops at the edge, and the
+     * player then takes cover behind its own cobblestone, building up from the floor until the skeleton has no
+     * line of fire, instead of going on with its work under fire.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1200)
+    public void goalTakesCoverFromASkeletonItCannotReach(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.SkeletonEntity[] skeleton = new net.minecraft.entity.mob.SkeletonEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 3; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    for (int x = 1; x <= 6; x++) for (int z = 1; z <= 6; z++) {
+                        if (x < 4 && z < 4 || x == 6 && z == 6) continue;
+                        context.setBlockState(x, 0, z, Blocks.STONE);
+                        context.setBlockState(x, 1, z, Blocks.LAVA);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Ducker");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.IRON_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
+                    skeleton[0].setTarget(f.player());
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Take cover from skeleton"),
+                        "Took cover once the fight could not reach it"))
+                .createAndAdd(() -> context.assertFalse(f.player().canSee(skeleton[0]), "No line of fire left"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && !player.isInLava(), "Alive and out of the lava");
+                    context.assertTrue(ItemMoves.count(player.getInventory(), Items.COBBLESTONE) < 16, "The cover is its own cobblestone");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Night in a pit open to the sky with an empty inventory, as after a respawn: the goal digs one staircase step
      * into the hill around it, whichever way it faces, and once under cover seals both openings with the dirt the
      * dig gave it.
