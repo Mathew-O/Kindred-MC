@@ -4,6 +4,11 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-10d (movement as a player moves), on top of `7cbe228`.
+  - The new long-walk fixture failed against the old movement in a stress run: 166 to 170 ticks, no jumps, turns of up to 67 degrees a tick, six to eight reversals. The first version of the change jumped but swung round in the air (up to 180 degrees) and dropped its sprint, with 13 to 15 reversals; a per-tick trace showed why. With the fix: 112 to 114 ticks, seven jumps, at most 8.1 degrees a tick, one or two reversals.
+  - The first full suite failed `goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe` once. Its course reaches into the Recoverer fixture's plot, whose setup can fill the pit's ore with stone. It now runs in a batch of its own.
+  - `runGametest` then passed 238/238 twice. `./gradlew build` passed: 384 JUnit, three skips.
+  - JAR SHA-256: `e9bbb0a9eb4734bdc54da6728b6f8091970f1c78a56216ff01e4c7b54d003ed7`.
 - F-19d (the strategist from any provider), on top of `24709f3`: `./gradlew build` passed with 384 JUnit and three skips, among them 9 new model-module tests (the provider choice, and the OpenAI-compatible transport against a local fake server). The opt-in Claude live tests passed after the refactor. The release jar carries the model module but neither Gson (Minecraft's own is used) nor the Anthropic SDK. No native code path changed beyond how the bridge builds its strategist; the native suite is run with the next change.
 - Out of a pit by pillaring, the stick reserve from a farther tree, and charcoal (F-25c4, F-25c5), on top of `e555b95`, with no live server running.
   - New fixtures failed before their fixes: the pit 3 of 3. The charcoal and stick-reserve checks are new behaviour.

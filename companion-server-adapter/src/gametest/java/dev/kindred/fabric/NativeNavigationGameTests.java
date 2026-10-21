@@ -95,6 +95,74 @@ public final class NativeNavigationGameTests implements FabricGameTest {
     }
 
     /**
+     * Movement as a player moves (F-10d): a floating course 36 blocks long with a wall across most of it, walked from
+     * one end to the other. Sampled every tick: it sprints and sprint-jumps along the open stretches, rounds the wall
+     * without zigzagging from block to block, never turns more than 20 degrees in a tick, and gets there faster than
+     * a plain sprint. Before F-10d the same walk took 166 to 170 ticks with no jumps, turns of up to 67 degrees a
+     * tick and six to eight reversals; with it, 113 to 114 ticks, seven jumps, at most 7.3 degrees and one reversal.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "playerLikeWalk", tickLimit = 600)
+    public void aLongWalkSprintsJumpsAndTurnsSmoothly(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        BlockPos[] origin = new BlockPos[1];
+        int[] ticks = new int[1], jumps = new int[1], reversals = new int[1];
+        float[] maxTurn = new float[1], lastYaw = new float[1], lastDelta = new float[1];
+        boolean[] wasOnGround = new boolean[] {true};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Strider"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    for (int x = 0; x <= 35; x++) for (int z = -6; z <= 6; z++) {
+                        world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 4; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (int x = 16; x <= 18; x++) for (int z = -6; z <= 2; z++) for (int y = 0; y <= 1; y++) {
+                        world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 1.5, o.getY(), o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the course"))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    lastYaw[0] = f.player().getYaw();
+                    context.assertTrue(f.runtime.nativeGoto(f.source, f.id, origin[0].add(34, 0, 0), 0.8) == 1, "Route requested");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    ticks[0]++;
+                    float delta = net.minecraft.util.math.MathHelper.wrapDegrees(player.getYaw() - lastYaw[0]);
+                    lastYaw[0] = player.getYaw();
+                    maxTurn[0] = Math.max(maxTurn[0], Math.abs(delta));
+                    if (Math.abs(delta) > 3 && Math.abs(lastDelta[0]) > 3 && Math.signum(delta) != Math.signum(lastDelta[0])) reversals[0]++;
+                    if (Math.abs(delta) > 3) lastDelta[0] = delta;
+                    if (wasOnGround[0] && !player.isOnGround() && player.getVelocity().y > 0.2) jumps[0]++;
+                    wasOnGround[0] = player.isOnGround();
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_goto"),
+                            "Arrives: " + activity + " at " + player.getPos());
+                })
+                .createAndAdd(() -> {
+                    double seconds = ticks[0] / 20.0, metres = 38; // The way round the wall is about 38 blocks.
+                    String summary = ticks[0] + " ticks, " + jumps[0] + " jumps, max turn " + maxTurn[0] + " deg a tick, " + reversals[0] + " reversals";
+                    KindredMod.LOGGER.info("Strider walk: {}", summary);
+                    context.assertTrue(f.player().getBlockPos().getSquaredDistance(origin[0].add(34, 0, 0)) <= 4, "At the far end: " + f.player().getBlockPos());
+                    context.assertTrue(metres / seconds > 5.8, "Faster than a plain sprint (5.6 blocks a second): " + summary);
+                    context.assertTrue(jumps[0] >= 4, "Sprint-jumps along the open stretches: " + summary);
+                    context.assertTrue(maxTurn[0] <= 20f, "Turns ease rather than snap: " + summary);
+                    context.assertTrue(reversals[0] <= 3, "No zigzag from block centre to block centre: " + summary);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A break longer than one paid slice, at real time (F-11c): obsidian takes 188 ticks with a diamond pickaxe, 9.4
      * seconds at 20 ticks a second. The test server runs as fast as its ticks allow, so the fixture holds it to 20 a
      * second while it waits, as a live server runs. Before renewal the five-second slice lapsed partway, the skill

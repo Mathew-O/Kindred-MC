@@ -408,7 +408,36 @@ final class NativePlayerBody implements BodyAdapter {
             this.jump = jump;
             this.sprint = sprint;
             player.setYaw(yaw);
+            player.setHeadYaw(yaw);
         });
+    }
+
+    /**
+     * As {@link #move} for walking, turning as a player turns rather than snapping: the yaw closes half the remaining
+     * angle each tick (at least six degrees, at most 45), the pitch eases toward where the player looks along its way,
+     * and the head turns with the body, so a route's corners are rounded and the view never jerks.
+     */
+    boolean walk(ActionLease lease, float forward, float sideways, boolean jump, boolean sprint, float yaw, float pitch) {
+        requireThread();
+        if (!Float.isFinite(forward) || !Float.isFinite(sideways) || !Float.isFinite(yaw) || !Float.isFinite(pitch)
+                || Math.abs(forward) > 1 || Math.abs(sideways) > 1) throw new IllegalArgumentException("Invalid movement input");
+        return execute(lease, Intent.MOVE, null, () -> {
+            this.forward = forward;
+            this.sideways = sideways;
+            this.jump = jump;
+            this.sprint = sprint;
+            float turn = net.minecraft.util.math.MathHelper.wrapDegrees(yaw - player.getYaw());
+            float step = Math.min(Math.abs(turn), Math.min(45f, Math.max(6f, Math.abs(turn) * 0.5f)));
+            player.setYaw(player.getYaw() + Math.signum(turn) * step);
+            float tilt = pitch - player.getPitch();
+            player.setPitch(player.getPitch() + Math.clamp(tilt * 0.35f, -10f, 10f));
+            player.setHeadYaw(player.getYaw());
+        });
+    }
+
+    /** How many degrees the yaw still has to turn to face {@code yaw}. */
+    float turnLeft(float yaw) {
+        return Math.abs(net.minecraft.util.math.MathHelper.wrapDegrees(yaw - player.getYaw()));
     }
 
     boolean selectHotbar(ActionLease lease, int slot) {

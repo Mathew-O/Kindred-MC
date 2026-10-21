@@ -1871,9 +1871,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * as its pickaxe breaks, and the way it came is a two-block step up it cannot walk. Before, the walk back up
      * completed at once without moving and was asked for again until the no-progress rule moved the player on three
      * minutes later (the staircase fixture's failure while its foot lay open). Now a walk back that ends where it
-     * started is set aside, and the player climbs out, clearing a step by hand.
+     * started is set aside, and the player climbs out, clearing a step by hand. The course runs ten blocks east, into
+     * the next plot, so it has a batch of its own: a neighbour's setup once filled its ore and pit with stone.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 2400)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "pitfall", tickLimit = 2400)
     public void goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] base = new BlockPos[1];
