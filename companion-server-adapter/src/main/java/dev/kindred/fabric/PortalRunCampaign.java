@@ -240,6 +240,17 @@ final class PortalRunCampaign {
     /** The queue as the player's memory holds it, or as the End leg settled it. */
     void queue(TaskQueue kept) { queue = java.util.Objects.requireNonNull(kept); }
 
+    /** The queue in play for both goals: the tasks ahead assessed each pass, chunks taken on the way, gates. */
+    private final FollowUps followUps = new FollowUps(this);
+
+    FollowUps followUps() { return followUps; }
+
+    /** The tasks ahead of the goal before its portal is lit: the portal itself, and for the End goal all the rest. */
+    private java.util.Set<dev.kindred.core.guide.Objective> portalAhead() {
+        return endGoal() ? java.util.EnumSet.allOf(dev.kindred.core.guide.Objective.class)
+                : java.util.EnumSet.of(dev.kindred.core.guide.Objective.NETHER_PORTAL, dev.kindred.core.guide.Objective.SURVIVAL);
+    }
+
     /** Items the queue still wants: never dropped to make room, and walked back for when they drop nearby. */
     private Set<Item> wanted = Set.of();
 
@@ -298,7 +309,7 @@ final class PortalRunCampaign {
         out.append("Deaths so far: ").append(deathCount).append(". No-progress spells: ").append(stuckSpells).append(".\n");
         out.append("Stance in force: ").append(stance()).append(", focus ").append(focus()).append(".\n");
         out.append("Habits kept in this world: ").append(habits.isEmpty() ? "none" : habits.toString()).append(".\n");
-        if (goal == SurvivalGoal.STRONGHOLD) out.append("Queue: ").append(stronghold.queueReport(player)).append('\n');
+        out.append("Queue: ").append(followUps.describe(player)).append('\n');
         if (!events.isEmpty()) {
             out.append("Recent events, oldest first:\n");
             for (String e : events) out.append("- ").append(e).append('\n');
@@ -320,8 +331,21 @@ final class PortalRunCampaign {
 
     /** Which goal this campaign serves: the portal alone, or on from it to the End portal. */
     void pursue(SurvivalGoal goal) {
-        this.goal = goal == SurvivalGoal.STRONGHOLD ? goal : SurvivalGoal.NETHER_PORTAL;
+        this.goal = goal == SurvivalGoal.STRONGHOLD || goal == SurvivalGoal.DRAGON ? goal : SurvivalGoal.NETHER_PORTAL;
     }
+
+    /** On past the portal toward the End: to its portal, or on to beat the dragon. */
+    boolean endGoal() {
+        return goal == SurvivalGoal.STRONGHOLD || goal == SurvivalGoal.DRAGON;
+    }
+
+    /** Whether the server allows the dragon fight now (E-39a): without it, the dragon goal stops at the End portal. */
+    private boolean dragonAllowed;
+
+    void dragonAllowed(boolean allowed) { dragonAllowed = allowed; }
+
+    /** Into the End and on to the dragon: the goal asks for it and the server allows it. */
+    boolean dragonFight() { return goal == SurvivalGoal.DRAGON && dragonAllowed; }
 
     SurvivalGoal goal() { return goal; }
 
@@ -607,7 +631,7 @@ final class PortalRunCampaign {
         boolean active = planned.isEmpty() || !passive(planned.get());
         // On the way to the End the leg keeps its own headway (its headings turn when they stop gaining ground): the
         // portal's watchdog counts only the portal's materials, which never change out there.
-        if (goal == SurvivalGoal.STRONGHOLD && stronghold.active(body.entity())) {
+        if (endGoal() && stronghold.active(body.entity())) {
             stuckClock = 0;
             relocate = null;
             active = false;
@@ -748,7 +772,7 @@ final class PortalRunCampaign {
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences()));
         // On the way to the End the portal's plan has nothing left to say, in the Nether least of all: none of the
         // upkeep below that follows its steps (workstations carried along, waiting for daylight to cut logs) applies.
-        boolean legActive = goal == SurvivalGoal.STRONGHOLD && stronghold.active(player);
+        boolean legActive = endGoal() && stronghold.active(player);
         legLabel = legActive && stronghold.stage() != null ? "End: " + StrongholdLeg.label(stronghold.stage()) : null;
         if (legActive) {
             steps.clear();
@@ -937,6 +961,14 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": " + loose.get().label();
             return loose;
         }
+        // What the tasks ahead need, taken as the chance comes on the way (F-25c7): a short detour before the route's step.
+        if (!legActive && !night) {
+            Optional<Task> followUp = followUps.onTheWay(body, snapshot, policy, portalAhead());
+            if (followUp.isPresent() && setAside.getOrDefault(followUp.get(), Long.MIN_VALUE) <= tick) {
+                progress = stageLabel(stage) + ": on the way, for what comes later - " + followUp.get().label();
+                return followUp;
+            }
+        }
         // Past the lit portal, toward the End portal: the leg's own steps instead of the portal's.
         if (legActive) {
             Optional<Task> leg = stronghold.next(body, snapshot, policy);
@@ -998,7 +1030,7 @@ final class PortalRunCampaign {
         if (!PlayerRuntime.inDeepWater(player)) return Optional.empty();
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
         // staged End run was turned back to the shore on every pass across a bay).
-        if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && goal == SurvivalGoal.STRONGHOLD
+        if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && endGoal()
                 && stronghold.crossing()) return Optional.empty();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();

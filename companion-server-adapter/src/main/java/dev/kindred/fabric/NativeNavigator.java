@@ -231,6 +231,28 @@ final class NativeNavigator {
         return true;
     }
 
+    /**
+     * Whether a push along {@code yaw} for up to {@code reach} blocks (a hit's knockback) would leave the body on safe
+     * ground: no hazard, lava or drop beyond what is safe on the way, or a wall that stops it first.
+     */
+    boolean safeKnockback(net.minecraft.entity.Entity body, float yaw, double reach) {
+        return safeKnockback(body.getX(), body.getY(), body.getZ(), yaw, reach);
+    }
+
+    /** As {@link #safeKnockback(net.minecraft.entity.Entity, float, double)}, for a body standing at x, y, z. */
+    boolean safeKnockback(double x, double y, double z, float yaw, double reach) {
+        double radians = Math.toRadians(yaw);
+        double sx = -Math.sin(radians), sz = Math.cos(radians);
+        BlockPos feet = BlockPos.ofFloored(x, y + 0.2, z);
+        for (double r = 0.6; r <= reach + 0.01; r += 0.5) {
+            BlockPos ahead = BlockPos.ofFloored(x + sx * r, y + 0.2, z + sz * r);
+            if (ahead.getX() == feet.getX() && ahead.getZ() == feet.getZ()) continue;
+            if (!clear(ahead)) return !hazard(ahead.up()); // A wall stops the push.
+            if (!safeToEnter(ahead)) return false;
+        }
+        return true;
+    }
+
     private boolean safeToEnter(BlockPos ahead) {
         if (hazard(ahead) || hazard(ahead.down())) return false;
         if (standable(ahead) || swimmable(ahead)) return true;
@@ -342,7 +364,22 @@ final class NativeNavigator {
         }
         BlockPos below = feet.down(2);
         if (loaded(below) && state(below).getFluidState().isIn(FluidTags.LAVA)) cost += 10;
+        // Through a portal only to go through it: a walk to it still ends there, and every other walk goes round (a
+        // fixture's player, digging stone beside its lit portal, walked over the frame and on into the Nether).
+        if (portal(feet)) cost += PORTAL_COST;
         return cost;
+    }
+
+    /** What a step through a portal cell costs a route not going through it. */
+    static final double PORTAL_COST = 500;
+
+    /** A portal's own block at the feet or the head: a step there takes the player to another dimension. */
+    boolean portal(BlockPos feet) {
+        return loaded(feet) && (portalBlock(state(feet)) || loaded(feet.up()) && portalBlock(state(feet.up())));
+    }
+
+    private static boolean portalBlock(BlockState state) {
+        return state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL) || state.isOf(Blocks.END_GATEWAY);
     }
 
     boolean loaded(BlockPos pos) {

@@ -110,4 +110,80 @@ public final class NativeBoatGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    private static void forceSea(net.minecraft.server.world.ServerWorld world, BlockPos o, boolean forced) {
+        for (int x = o.getX() - 32; x <= o.getX() + 64; x += 16) for (int z = o.getZ() - 32; z <= o.getZ() + 32; z += 16) {
+            world.setChunkForced(x >> 4, z >> 4, forced);
+        }
+    }
+
+    /**
+     * Under the surface of open sea with a boat, the End goal travelling on toward the stronghold across it (staged run
+     * 13: a restart left the player in deep water, where it tried to put its boat in from below the surface and sank
+     * while it tried). It swims up first, then puts the boat in and rows on, and never drowns.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "boatFromTheDeep", tickLimit = 1200)
+    public void underTheSeaWithABoatItSurfacesBeforePuttingTheBoatIn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] origin = new BlockPos[1];
+        String[] labels = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Diver"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(24).toImmutable();
+                    forceSea(world, o, true);
+                    // Open sea, five deep, with no shore within twenty blocks of the player.
+                    for (int x = -24; x <= 56; x++) for (int z = -24; z <= 24; z++) {
+                        world.setBlockState(o.add(x, -6, z), Blocks.STONE.getDefaultState());
+                        for (int y = -5; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.WATER.getDefaultState());
+                        for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() - 4, o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.OAK_BOAT));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(2, new ItemStack(Items.ENDER_EYE, 10));
+                    inventory.setStack(3, new ItemStack(Items.STONE_SWORD));
+                    // Where its eyes' flights crossed, far off across the sea, and the portal it came by, as a restart recalls them.
+                    var memory = new PlayerMemoryStore.Memory();
+                    memory.stronghold = new double[] {o.getX() + 400.5, o.getZ() + 0.5};
+                    memory.overworldPortal = new PlayerMemoryStore.Place("minecraft:overworld", o.getX() - 300, o.getY(), o.getZ());
+                    try {
+                        var folder = f.directory.resolve("memory");
+                        java.nio.file.Files.createDirectories(folder);
+                        java.nio.file.Files.writeString(folder.resolve(f.id + ".json"), new com.google.gson.Gson().toJson(memory));
+                    } catch (java.io.IOException failed) {
+                        throw new AssertionError("Memory fixture could not be written", failed);
+                    }
+                    world.setTimeOfDay(1000);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (!labels[0].contains(progress)) labels[0] += progress + " | ";
+                    context.assertTrue(player.isAlive(), "Drowned: " + labels[0]);
+                    context.assertTrue(player.getVehicle() instanceof BoatEntity && player.getX() > origin[0].getX() + 8,
+                            "Afloat and rowing on: " + player.getPos() + " - " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    KindredMod.LOGGER.info("Diver: afloat at {}, health {}, air {}; steps: {}", player.getPos(), player.getHealth(), player.getAir(), labels[0]);
+                    context.assertTrue(player.getInventory().count(Items.OAK_BOAT) == 0, "Its one boat is on the water, none conjured");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    forceSea(context.getWorld(), origin[0], false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

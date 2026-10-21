@@ -5,6 +5,8 @@ import java.util.Optional;
 
 /** What a need is for: the larger tasks a player prepares for ahead of time. */
 public enum Objective {
+    /** The Nether portal earned from an empty inventory: the portal goal's own route plans its materials. */
+    NETHER_PORTAL("the Nether portal"),
     /** Through the portal for blaze rods and ender pearls, and back. */
     NETHER_TRIP("the Nether trip"),
     /** Eyes of ender thrown and followed, and the stronghold dug down to. */

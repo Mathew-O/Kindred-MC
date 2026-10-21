@@ -66,7 +66,10 @@ class StrongholdRunPlannerTest {
                 .map(StrongholdRunPlanner.Step::item).toList();
         assertEquals(List.of("iron_sword", "shield", "iron_helmet", "stone_pickaxe"), crafts,
                 "nine iron: a sword, a shield, a helmet, in that order; and a spare pickaxe");
-        assertTrue(actions(s).containsAll(List.of(Action.HUNT, Action.SEEK_FOOD, Action.GATHER_STONE)));
+        // Food and blocks are the Nether trip's needs in the queue, gathered at its gate.
+        var followUps = StrongholdRunPlanner.plan(s).stream().filter(step -> step.action() == Action.FOLLOW_UP).toList();
+        assertEquals(List.of("BLOCKS", "FOOD"), followUps.stream().map(StrongholdRunPlanner.Step::item).toList());
+        assertEquals("Gather 9 food for the Nether trip", followUps.getLast().why());
         var ready = justLit().ready().build();
         assertEquals(Stage.NETHER, StrongholdRunPlanner.stage(ready));
         assertEquals(List.of(Action.ENTER_PORTAL), actions(ready));
@@ -163,7 +166,8 @@ class StrongholdRunPlannerTest {
     }
 
     private static Provisions endFight(Map<Need, Integer> held, Set<Need> atHand, boolean due) {
-        return new Provisions(TaskQueue.EMPTY.chunks(Set.of(Objective.END_FIGHT), held), atHand, held, due);
+        var chunks = TaskQueue.EMPTY.chunks(Set.of(Objective.END_FIGHT), held);
+        return new Provisions(chunks, due && !chunks.isEmpty() ? Map.of(Objective.END_FIGHT, chunks) : Map.of(), atHand, held);
     }
 
     @Test
@@ -195,5 +199,25 @@ class StrongholdRunPlannerTest {
         assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there, endFight(all, Set.of(), true)));
         assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there, endFight(Map.of(), Set.of(), false)));
         assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there), "with nothing queued, as before");
+    }
+
+    @Test
+    void whatTheStrategistQueuesForTheNetherTripIsDueBeforeGoingThrough() {
+        var ready = justLit().ready().build();
+        var held = Map.of(Need.FOOD, 12, Need.BLOCKS, 48);
+        var queue = TaskQueue.EMPTY.advise(List.of(new dev.kindred.core.guide.Want(Need.SHIELD, 1, Objective.NETHER_TRIP, "ghasts")));
+        var trip = queue.chunks(Set.of(Objective.NETHER_TRIP), held);
+        var provisions = new Provisions(trip, Map.of(Objective.NETHER_TRIP, trip), Set.of(), held);
+        assertEquals(Stage.PREPARE, StrongholdRunPlanner.stage(ready, provisions), "a shield queued for the trip holds it back");
+        assertTrue(StrongholdRunPlanner.plan(ready, provisions).stream().anyMatch(step -> step.item().equals("SHIELD")));
+        // The gathering stalled (nothing gated): through it goes.
+        assertEquals(Stage.NETHER, StrongholdRunPlanner.stage(ready, new Provisions(trip, Map.of(), Set.of(), held)));
+    }
+
+    @Test
+    void theGuidesNetherTripNeedsAreThePlannersOwn() {
+        var needs = dev.kindred.core.guide.MinecraftGuide.requirements(Objective.NETHER_TRIP);
+        assertTrue(needs.contains(new dev.kindred.core.guide.MinecraftGuide.Requirement(Need.FOOD, StrongholdRunPlanner.PREP_FOOD, "the Nether has little to eat")));
+        assertEquals(StrongholdRunPlanner.PREP_BLOCKS, needs.stream().filter(r -> r.need() == Need.BLOCKS).findFirst().orElseThrow().count());
     }
 }

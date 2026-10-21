@@ -153,7 +153,12 @@ final class NativeFightAction extends NativeRecordedAction {
             boolean jumping = jumps(player, target);
             boolean airborne = !player.isOnGround();
             boolean jump = jumping && !airborne && player.getAttackCooldownProgress(0.5f) >= JUMP_AT;
-            moved = body.move(issuedLease, 0, 0, jump, false, yaw);
+            // With an edge behind (lava, a drop), a hit would knock the player over it: a player sidesteps round the mob
+            // until the ground behind is safe, still facing it (a hoglin threw the staged End run into a fortress's lava).
+            int[] step = player.isOnGround() && !navigator.safeKnockback(player, yaw + 180, knockback(target))
+                    ? offTheEdge(navigator, target, yaw) : new int[]{0, 0};
+            boolean stepping = step[0] != 0 || step[1] != 0;
+            moved = body.move(issuedLease, step[0], step[1], jump && !stepping, false, yaw);
             boolean falling = airborne && player.getVelocity().y < 0 && player.fallDistance > 0;
             if (moved && ready && (!jumping || falling)) {
                 guard(false); // The shield comes down for the swing.
@@ -182,6 +187,34 @@ final class NativeFightAction extends NativeRecordedAction {
         return player.getAttackCooldownProgress(0.5f) > 0.9f && player.fallDistance > 0 && !player.isOnGround() && !player.isClimbing()
                 && !player.isTouchingWater() && !player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS)
                 && !player.hasVehicle() && !player.isSprinting();
+    }
+
+    /** How far a hit from {@code target} can push the player: the heavy hitters toss it well back. */
+    private static double knockback(LivingEntity target) {
+        return target instanceof net.minecraft.entity.mob.HoglinEntity || target instanceof net.minecraft.entity.mob.ZoglinEntity
+                || target instanceof net.minecraft.entity.mob.RavagerEntity || target instanceof net.minecraft.entity.passive.IronGolemEntity
+                || target instanceof net.minecraft.entity.mob.PiglinBruteEntity ? 3.6 : 1.6;
+    }
+
+    /**
+     * The step (forward, sideways) off an edge the player stands with its back to, still facing the mob along
+     * {@code yaw}: round it forward and to a side, or straight to a side, the first that is safe to walk and leaves safe
+     * ground behind a hit from where it lands; else the first that is safe to walk; else none.
+     */
+    private int[] offTheEdge(NativeNavigator navigator, LivingEntity target, float yaw) {
+        var player = body.entity();
+        int[][] steps = {{1, 1}, {1, -1}, {0, 1}, {0, -1}};
+        int[] walkable = {0, 0};
+        for (int[] step : steps) {
+            float heading = yaw - (step[0] != 0 ? 45 : 90) * step[1];
+            if (!navigator.safeHeading(player, heading)) continue;
+            if (walkable[0] == 0 && walkable[1] == 0) walkable = step;
+            double radians = Math.toRadians(heading);
+            double x = player.getX() - Math.sin(radians), z = player.getZ() + Math.cos(radians);
+            float away = (float) Math.toDegrees(Math.atan2(-(x - target.getX()), z - target.getZ()));
+            if (navigator.safeKnockback(x, player.getY(), z, away, knockback(target))) return step;
+        }
+        return walkable;
     }
 
     /** Raise or lower an off-hand shield, if the player has one; a no-op otherwise. */

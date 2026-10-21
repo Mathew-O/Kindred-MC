@@ -200,4 +200,69 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Before its portal is lit, the End goal still takes the chance when it comes (the queue for every task): fed and
+     * with nothing to fear, it hunts the chickens in sight for the End fight's feathers before going on with the
+     * portal's own route.
+     */
+    // Its own batch: in the same one, the other tests' lit portals stand within sight, and a portal seen is one it uses.
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "followUpsOnTheWay", tickLimit = 1600)
+    public void beforeItsPortalTheEndGoalTakesFeathersOnTheWay(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        List<ChickenEntity> chickens = new ArrayList<>();
+        String[] seen = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wayside"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    forceChunks(world, context.getAbsolutePos(BlockPos.ORIGIN), true);
+                    // Batches reuse the same ground, and an earlier batch's lit portals stand outside this test's bounds:
+                    // a portal in sight is one the End goal goes on from, so none may be left about.
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (BlockPos b : BlockPos.iterate(o.add(-48, -16, -48), o.add(56, 16, 56))) {
+                        if (world.getBlockState(b).isOf(Blocks.NETHER_PORTAL)) world.setBlockState(b, Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE);
+                    }
+                    yard(context);
+                    for (int i = 0; i < 3; i++) {
+                        var chicken = EntityType.CHICKEN.create(world);
+                        BlockPos at = context.getAbsolutePos(new BlockPos(6 + i, 2, 10));
+                        chicken.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                        chicken.setPersistent();
+                        world.spawnEntity(chicken);
+                        chickens.add(chicken);
+                    }
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    BlockPos stand = context.getAbsolutePos(new BlockPos(2, 2, 8));
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 180, 0);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 10));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (progress.contains("on the way, for what comes later")) seen[0] = progress;
+                    context.assertFalse(progress.startsWith("End:"), "No portal to go on from: still the portal's own route - " + progress);
+                    long killed = chickens.stream().filter(chicken -> !chicken.isAlive()).count();
+                    context.assertTrue(killed == chickens.size(), "The chickens hunted on the way: " + killed + " - " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    KindredMod.LOGGER.info("Wayside: feathers {}, raw chicken {}, seen '{}'", count(player, Items.FEATHER), count(player, Items.CHICKEN), seen[0]);
+                    context.assertTrue(seen[0].contains("chicken for feathers"), "For the End fight's feathers, before the portal: " + seen[0]);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    forceChunks(context.getWorld(), context.getAbsolutePos(BlockPos.ORIGIN), false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

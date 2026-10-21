@@ -173,6 +173,11 @@ final class PlayerRuntime {
     private CompletableFuture<Void> shutdown = CompletableFuture.completedFuture(null);
     private final CompanionSocials socials;
     private EditPolicy.ServerPolicy edits = EditPolicy.ServerPolicy.deferredD4();
+    /**
+     * Whether the server allows an AI player to fight the Ender Dragon (E-39a): off until an operator turns it on, as
+     * the dragon fight is an encounter a server may want to keep for its people.
+     */
+    private boolean dragonFight;
     private final AdmissionBoard admission = AdmissionBoard.serverTarget(10);
     private final ClaimRegistry claims = new ClaimRegistry();
     ClaimRegistry claims() { return claims; }
@@ -344,6 +349,20 @@ final class PlayerRuntime {
     private static long now() { return System.nanoTime() / 1_000_000; }
     private static long nanos() { return System.nanoTime(); }
 
+    /** The operator's dragon fight setting in edits.properties ({@code dragonFight}); off when absent or unreadable. */
+    private static boolean readDragonFight(Path directory) {
+        try {
+            java.nio.file.Path file = directory.resolve("edits.properties");
+            if (!java.nio.file.Files.exists(file)) return false;
+            java.util.Properties properties = new java.util.Properties();
+            try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            return Boolean.parseBoolean(properties.getProperty("dragonFight", "false"));
+        } catch (Exception failure) {
+            KindredMod.LOGGER.error("Kindred dragon fight setting could not be read; the fight stays off", failure);
+            return false;
+        }
+    }
+
     private static EditPolicy.ServerPolicy readEdits(Path directory) {
         try {
             java.nio.file.Path file = directory.resolve("edits.properties");
@@ -370,7 +389,7 @@ final class PlayerRuntime {
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
-        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory)))
+        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readDragonFight(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
                         .thenCompose(database -> database.list().thenCompose(records -> {
                             Set<UUID> logicalIds = records.stream().map(r -> r.companion().id()).collect(java.util.stream.Collectors.toSet());
@@ -380,7 +399,7 @@ final class PlayerRuntime {
                                                     database.nativePlayers().thenCompose(nativePlayers ->
                                                             startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
                                                                     database.modes(logicalIds).thenApply(modes ->
-                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), database, records,
+                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), database, records,
                                                                                     profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes)
                                                                     )
                                                             )
@@ -460,6 +479,7 @@ final class PlayerRuntime {
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
+                    dragonFight = loaded.dragonFight();
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
                     store.listProjects().whenComplete((loadedProjects, err) -> {
@@ -1172,6 +1192,10 @@ final class PlayerRuntime {
             } else if (skill.equals("native_throw_eye")) {
                 task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
+            } else if (skill.equals("native_fill_frame")) {
+                task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")),
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
             } else if (skill.equals("native_boat")) {
                 var mode = NativeBoatAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
                 BlockPos water = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
@@ -1377,7 +1401,7 @@ final class PlayerRuntime {
                 && java.util.Objects.equals(entry.lease, lease) && entry.arbiter.isCurrent(lease)
                 && (("native_eat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.EAT || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
-                        || "native_goto".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                        || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
                     || (("native_bucket".equals(entry.skillId) || "native_cast".equals(entry.skillId))
@@ -1390,6 +1414,7 @@ final class PlayerRuntime {
                     || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_fill_frame".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FRAME || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_boat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.ATTACK))
                     || ("native_row".equals(entry.skillId) && intent == NativePlayerBody.Intent.MOVE)
@@ -2486,7 +2511,8 @@ final class PlayerRuntime {
             return candidates;
         }
 
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD) {
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
+                || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
             candidates.addAll(campaignCandidates(entry, body));
             // Armor the goal earned is put on before the next goal step, not carried.
             equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 75.0).ifPresent(candidates::add);
@@ -3174,7 +3200,9 @@ final class PlayerRuntime {
         keepMemory(entry);
         entry.campaign.pursue(entry.goal);
         // Through its own portal only while it is after the End portal: the operator's goal is what allows the trip.
-        body.setPortalTravelAuthorized(entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD);
+        body.setPortalTravelAuthorized(entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
+                || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight);
+        entry.campaign.dragonAllowed(dragonFight);
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server));
@@ -3187,7 +3215,8 @@ final class PlayerRuntime {
             entry.goalProgress = "Done: the Nether portal is built and lit";
         }
         var endPortal = entry.campaign.stronghold().endPortal();
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD && endPortal.isPresent() && !entry.endPortalAnnounced) {
+        if ((entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON)
+                && endPortal.isPresent() && !entry.endPortalAnnounced) {
             entry.endPortalAnnounced = true;
             var at = endPortal.get();
             server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I found the End portal near "
@@ -5261,8 +5290,8 @@ final class PlayerRuntime {
         } catch (IOException failure) { throw new CompletionException(failure); }
     }
 
-    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits) { }
-    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
+    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight) { }
+    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
                                   java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
                                   java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
                                   StartupLedgerSnapshot ledgerSnapshot,
@@ -5277,6 +5306,10 @@ final class PlayerRuntime {
 
     void setEditsForTest(EditPolicy.ServerPolicy policy) {
         this.edits = policy;
+    }
+
+    void setDragonFightForTest(boolean allowed) {
+        this.dragonFight = allowed;
     }
 
     ActionLease leaseForTest(UUID id) {
@@ -5938,8 +5971,7 @@ final class PlayerRuntime {
         EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
         edits = next; // Revocation applies to the next mutation check immediately.
         Path file = metadataDirectory.resolve("edits.properties");
-        String content = "# Kindred server edit policy (decision D4). autonomousEdits lets AI players break and place blocks.\n"
-                + "autonomousEdits=" + enabled + "\nprotectionKnown=true\n";
+        String content = policyFile(enabled, dragonFight);
         CompletableFuture.runAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
@@ -5958,6 +5990,40 @@ final class PlayerRuntime {
         return 1;
     }
 
+    private static String policyFile(boolean edits, boolean dragon) {
+        return "# Kindred server edit policy (decision D4). autonomousEdits lets AI players break and place blocks;\n"
+                + "# dragonFight lets them fight the Ender Dragon.\n"
+                + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\n";
+    }
+
+    boolean dragonFightAllowed() { return dragonFight; }
+
+    /** Records whether AI players may fight the Ender Dragon (E-39a), in edits.properties; operators only. */
+    int setDragonFight(ServerCommandSource source, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change whether AI players fight the dragon.");
+        dragonFight = allowed;
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = policyFile(edits.autonomousEditsEnabled(), allowed);
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> server.execute(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred dragon fight setting could not be saved", failure);
+                reject(source, "The setting applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        feedback(source, allowed ? "The dragon fight is on: an AI player with the goal may go into the End and fight the Ender Dragon."
+                : "The dragon fight is off: AI players stop at the End portal.");
+        return 1;
+    }
+
     /** Sets a standing goal and starts autonomous work toward it. */
     int startGoal(ServerCommandSource source, UUID id, dev.kindred.core.survival.SurvivalGoal goal) {
         requireThread();
@@ -5967,6 +6033,9 @@ final class PlayerRuntime {
         }
         if (goal != dev.kindred.core.survival.SurvivalGoal.NONE && !worldEditsEnabled()) {
             return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
+        }
+        if (goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && !dragonFight) {
+            return reject(source, "The dragon fight is off on this server; an operator must turn it on first (/kindred dragonfight on).");
         }
         entry.goal = goal;
         entry.goalProgress = goal == dev.kindred.core.survival.SurvivalGoal.NONE ? "" : "Starting: " + goal.label();

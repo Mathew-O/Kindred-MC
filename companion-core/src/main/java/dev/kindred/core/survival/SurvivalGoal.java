@@ -13,7 +13,12 @@ public enum SurvivalGoal {
      * On from a lit Nether portal to the End portal: blaze rods and ender pearls from the Nether, eyes of ender, and
      * the stronghold found by following them. Earns the portal first if it has none.
      */
-    STRONGHOLD("Find the End portal");
+    STRONGHOLD("Find the End portal"),
+    /**
+     * Beat the game: on from the End portal into the End, the End crystals destroyed and the Ender Dragon killed, then
+     * home through the exit portal. Earns everything before it first. Only where the server's policy allows the fight.
+     */
+    DRAGON("Beat the Ender Dragon");
 
     private final String label;
 

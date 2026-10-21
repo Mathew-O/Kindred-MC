@@ -39,7 +39,7 @@ public final class PlayerCommands {
             return 1;
         });
         root.then(CommandManager.literal("goal").then(CommandManager.argument("goal", StringArgumentType.word())
-                .suggests((context, builder) -> { builder.suggest("nether"); builder.suggest("end"); builder.suggest("none"); return builder.buildFuture(); })
+                .suggests((context, builder) -> { builder.suggest("nether"); builder.suggest("end"); builder.suggest("dragon"); builder.suggest("none"); return builder.buildFuture(); })
                 .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
                     if (runtime == null) return unavailable(context.getSource());
@@ -99,6 +99,14 @@ public final class PlayerCommands {
                     if (runtime == null) return unavailable(context.getSource());
                     String raw = StringArgumentType.getString(context, "enabled");
                     return runtime.setWorldEdits(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
+        root.then(CommandManager.literal("dragonfight").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setDragonFight(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                 })));
         root.then(CommandManager.literal("gui").executes(context -> {
             PlayerRuntime runtime = KindredMod.runtime();
@@ -783,6 +791,7 @@ public final class PlayerCommands {
         return switch (raw.toLowerCase(java.util.Locale.ROOT)) {
             case "nether", "portal", "nether_portal" -> dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
             case "end", "stronghold", "end_portal" -> dev.kindred.core.survival.SurvivalGoal.STRONGHOLD;
+            case "dragon", "ender_dragon", "beat", "beat_the_game" -> dev.kindred.core.survival.SurvivalGoal.DRAGON;
             default -> dev.kindred.core.survival.SurvivalGoal.NONE;
         };
     }

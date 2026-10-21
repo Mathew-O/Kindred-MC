@@ -407,7 +407,7 @@ final class NativeGoToSkill implements SkillBody {
             // leaves the body clipping it (F-10g's hallway: one block put down, the body caught on its corner).
             for (double ox = -MARGIN; ox <= MARGIN + 0.01; ox += 2 * MARGIN) for (double oz = -MARGIN; oz <= MARGIN + 0.01; oz += 2 * MARGIN) {
                 BlockPos cell = BlockPos.ofFloored(x + ox, y, z + oz);
-                if (!navigator.standable(cell) || navigator.hazard(cell)) return false;
+                if (!navigator.standable(cell) || navigator.hazard(cell) || navigator.portal(cell)) return false;
                 if (headRoom && !navigator.passable(cell.up(2))) return false;
             }
         }

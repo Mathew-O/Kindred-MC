@@ -46,6 +46,9 @@ public final class MinecraftGuide {
             Need.BOW, "three string and three sticks at a crafting table"));
 
     private static final Map<Objective, List<Requirement>> REQUIREMENTS = new EnumMap<>(Map.of(
+            Objective.NETHER_TRIP, List.of(
+                    new Requirement(Need.FOOD, 12, "the Nether has little to eat"),
+                    new Requirement(Need.BLOCKS, 48, "to bridge lava and wall off")),
             Objective.END_FIGHT, List.of(
                     new Requirement(Need.BOW, 1, "to shoot the End crystals off their pillars; they heal the dragon"),
                     new Requirement(Need.ARROWS, 32, "a few for each of the ten crystals, and for the dragon in flight"),

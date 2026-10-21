@@ -2,6 +2,8 @@ package dev.kindred.core.survival;
 
 import dev.kindred.core.guide.Need;
 import dev.kindred.core.guide.NeedsAssessment;
+import dev.kindred.core.guide.Objective;
+import dev.kindred.core.guide.TaskQueue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +22,11 @@ import java.util.Set;
  * two to spare, so a pearl hunt that has stalled with six in hand moves on and takes more pearls from endermen met on
  * the way. Nothing here enters the End.
  *
- * <p>What the End fight will need (a bow and arrows for the crystals, blocks, a water bucket, food) is known from the
- * start: the follow-up queue's chunks ({@link Provisions}) are done as the chance comes along the way (a chicken in
- * sight while feathers are wanted, string and sticks in hand for the bow), and whatever is still missing is gathered
- * at the stronghold before going down to it, unless that has stalled.
+ * <p>What each task ahead needs comes from the follow-up queue ({@link Provisions}): the Nether trip's food and blocks,
+ * the End fight's bow and arrows, blocks, water bucket and food, and whatever the strategist added for any of them.
+ * Chunks the player can get at now are done along the way (a chicken in sight while feathers are wanted, string and
+ * sticks in hand for the bow); what a task still lacks is gathered at its gate, before it begins: the Nether trip's
+ * before going through, the End fight's before going down to the stronghold, unless that has stalled.
  */
 public final class StrongholdRunPlanner {
     /** Rods for twelve eyes: each rod makes two blaze powder. */
@@ -32,9 +35,9 @@ public final class StrongholdRunPlanner {
     public static final int PEARLS_TARGET = 12;
     /** Eyes enough to find the stronghold and its portal room: two throws to cross, the rest for breaks and the room. */
     public static final int EYES_MIN = 6;
-    /** Food carried through the portal: the Nether has little to eat. */
+    /** Food carried through the portal: the Nether has little to eat (the Nether trip's requirement in the guide). */
     public static final int PREP_FOOD = 12;
-    /** Blocks carried for bridging lava, pillaring and walling off. */
+    /** Blocks carried for bridging lava, pillaring and walling off (the same). */
     public static final int PREP_BLOCKS = 48;
     /** Planks in a boat. */
     public static final int BOAT_PLANKS = 5;
@@ -70,18 +73,35 @@ public final class StrongholdRunPlanner {
     }
 
     /**
-     * What the objectives ahead still need, from the follow-up queue: the chunks of work left, those the player can get
-     * at now ({@code atHand}: a chicken in sight while feathers are wanted, planks for sticks), what it holds of each
-     * need, and whether all of it is due now (before the stronghold, until the descent begins or the gathering has
-     * stalled).
+     * What the objectives ahead still need, from the follow-up queue: the chunks of work left for all of them, those the
+     * player can get at now ({@code atHand}: a chicken in sight while feathers are wanted, planks for sticks), what it
+     * holds of each need, and for each task whose gate it stands at, what that task alone still lacks and is due now
+     * ({@code gated}: empty once the gathering there has stalled or the task has begun).
      */
-    public record Provisions(List<NeedsAssessment.Chunk> chunks, Set<Need> atHand, Map<Need, Integer> held, boolean due) {
-        public static final Provisions NONE = new Provisions(List.of(), Set.of(), Map.of(), false);
+    public record Provisions(List<NeedsAssessment.Chunk> chunks, Map<Objective, List<NeedsAssessment.Chunk>> gated,
+                             Set<Need> atHand, Map<Need, Integer> held) {
+        public static final Provisions NONE = new Provisions(List.of(), Map.of(), Set.of(), Map.of());
 
         public Provisions {
             chunks = List.copyOf(chunks);
+            gated = Map.copyOf(gated);
             atHand = Set.copyOf(atHand);
             held = Map.copyOf(held);
+        }
+
+        /**
+         * What the snapshot alone shows: the Nether trip's food and blocks against what it carries, due, and nothing else
+         * queued. The plan without a queue, as it was before the queue.
+         */
+        public static Provisions of(StrongholdRunSnapshot s) {
+            var held = Map.of(Need.FOOD, s.edibleFood(), Need.BLOCKS, s.blocks(), Need.SHIELD, s.shields());
+            var trip = TaskQueue.EMPTY.chunks(Set.of(Objective.NETHER_TRIP), held);
+            return new Provisions(List.of(), trip.isEmpty() ? Map.of() : Map.of(Objective.NETHER_TRIP, trip), Set.of(), held);
+        }
+
+        /** The task still lacks something it is due to have before it begins. */
+        public boolean due(Objective objective) {
+            return !gated.getOrDefault(objective, List.of()).isEmpty();
         }
 
         /** A chunk the player can do now, on the way: one it can get at, or a craft whose inputs it holds. */
@@ -114,14 +134,18 @@ public final class StrongholdRunPlanner {
 
     private StrongholdRunPlanner() { }
 
-    /** {@link #stage(StrongholdRunSnapshot)}, with the End fight's needs gathered before going down when they are due. */
-    public static Stage stage(StrongholdRunSnapshot s, Provisions provisions) {
-        Stage stage = stage(s);
-        return stage == Stage.DESCEND && provisions.due() && !provisions.chunks().isEmpty() ? Stage.PROVISION : stage;
+    /** The stage, with the Nether trip's needs from the snapshot alone ({@link Provisions#of}). */
+    public static Stage stage(StrongholdRunSnapshot s) {
+        return stage(s, Provisions.of(s));
     }
 
-    public static Stage stage(StrongholdRunSnapshot s) {
+    /**
+     * The stage: ready to go through once the Nether trip has what it is due (and a spare pickaxe, a sword and the way
+     * there), and at the stronghold, the End fight's needs gathered before going down while they are due.
+     */
+    public static Stage stage(StrongholdRunSnapshot s, Provisions provisions) {
         Objects.requireNonNull(s);
+        Objects.requireNonNull(provisions);
         if (s.portalRoomSeen()) return Stage.DONE;
         if (s.dimension() == StrongholdRunSnapshot.Dimension.NETHER) {
             if (rodsShort(s)) return s.fortressSeen() ? Stage.BLAZE_RODS : Stage.FORTRESS;
@@ -132,17 +156,17 @@ public final class StrongholdRunPlanner {
         // that breaks in flight never sends it back to the Nether while it can still find the place.
         boolean searching = s.throwsRecorded() > 0 || s.strongholdEstimate() || s.strongholdSeen();
         int needed = !searching ? EYES_MIN : s.strongholdEstimate() || s.strongholdSeen() ? 0 : Math.max(1, 2 - s.throwsRecorded());
-        if (s.eyesPossible() < needed) return prepared(s) ? Stage.NETHER : Stage.PREPARE;
+        if (s.eyesPossible() < needed) return prepared(s, provisions) ? Stage.NETHER : Stage.PREPARE;
         if (s.eyes() < s.eyesPossible()) return Stage.EYES;
         if (!s.strongholdEstimate()) return Stage.LOCATE;
         if (!s.nearEstimate() && !s.strongholdSeen()) return Stage.TRAVEL;
-        if (!s.strongholdSeen()) return Stage.DESCEND;
+        if (!s.strongholdSeen()) return provisions.due(Objective.END_FIGHT) ? Stage.PROVISION : Stage.DESCEND;
         return Stage.PORTAL_ROOM;
     }
 
-    /** {@link #plan(StrongholdRunSnapshot, Provisions)} with nothing queued. */
+    /** {@link #plan(StrongholdRunSnapshot, Provisions)} with nothing queued but what the snapshot shows. */
     public static List<Step> plan(StrongholdRunSnapshot s) {
-        return plan(s, Provisions.NONE);
+        return plan(s, Provisions.of(s));
     }
 
     /**
@@ -172,7 +196,10 @@ public final class StrongholdRunPlanner {
         // The queue's chunks the chance has come for: a detour of a few seconds, not a stop to the route.
         for (var chunk : provisions.chunks()) if (provisions.now(chunk)) steps.add(Step.followUp(chunk, stage));
         switch (stage) {
-            case PREPARE -> prepare(s, steps);
+            case PREPARE -> {
+                prepare(s, steps);
+                gate(provisions, Objective.NETHER_TRIP, stage, steps);
+            }
             case NETHER -> steps.add(Step.of(Action.ENTER_PORTAL, stage, "Through the portal to the Nether"));
             case FORTRESS -> steps.add(Step.of(Action.FIND_FORTRESS, stage, "Find a Nether fortress for blazes"));
             case BLAZE_RODS -> steps.add(new Step(Action.SEEK_BLAZE, "", RODS_TARGET - s.blazeRods(), stage, "Look for blazes about the fortress"));
@@ -187,9 +214,7 @@ public final class StrongholdRunPlanner {
             case LOCATE -> steps.add(Step.of(Action.THROW_EYE, stage, s.throwsRecorded() == 0
                     ? "Throw an eye of ender and watch where it goes" : "Throw another from well to the side, to cross the first"));
             case TRAVEL -> steps.add(Step.of(Action.TRAVEL_TO_STRONGHOLD, stage, "Head for where the eyes' flights cross"));
-            case PROVISION -> {
-                for (var chunk : provisions.chunks()) if (!provisions.now(chunk)) steps.add(Step.followUp(chunk, stage));
-            }
+            case PROVISION -> gate(provisions, Objective.END_FIGHT, stage, steps);
             case DESCEND -> steps.add(Step.of(Action.DIG_TO_STRONGHOLD, stage, "Dig down to the stronghold"));
             case PORTAL_ROOM -> steps.add(Step.of(Action.FIND_PORTAL_ROOM, stage, "Find the portal room"));
             default -> { }
@@ -208,9 +233,17 @@ public final class StrongholdRunPlanner {
         return s.enderPearls() + s.eyes() >= PEARLS_TARGET || s.pearlHuntStalled() && s.eyesPossible() >= EYES_MIN;
     }
 
-    /** Ready to go through: food, blocks, a spare pickaxe, a stone sword or better, and the way there. */
-    static boolean prepared(StrongholdRunSnapshot s) {
-        return s.portalKnown() && s.edibleFood() >= PREP_FOOD && s.blocks() >= PREP_BLOCKS && s.pickaxes() >= 2 && s.swordTier() >= 2;
+    /** Ready to go through: the way there, a spare pickaxe, a stone sword or better, and nothing the trip is due. */
+    static boolean prepared(StrongholdRunSnapshot s, Provisions provisions) {
+        return s.portalKnown() && s.pickaxes() >= 2 && s.swordTier() >= 2 && !provisions.due(Objective.NETHER_TRIP);
+    }
+
+    /** What the task at its gate still lacks, each chunk a step, after those already taken as the chance came. */
+    private static void gate(Provisions provisions, Objective objective, Stage stage, List<Step> steps) {
+        for (var chunk : provisions.gated().getOrDefault(objective, List.of())) {
+            Step step = Step.followUp(chunk, stage);
+            if (steps.stream().noneMatch(s -> s.action() == Action.FOLLOW_UP && s.item().equals(step.item()))) steps.add(step);
+        }
     }
 
     private static void prepare(StrongholdRunSnapshot s, List<Step> steps) {
@@ -230,13 +263,9 @@ public final class StrongholdRunPlanner {
             iron -= 5;
         }
         if (s.armorPieces() < 3 && iron >= 4) steps.add(Step.craft("iron_boots", 1, stage, "Iron boots"));
-        if (s.edibleFood() < PREP_FOOD) {
-            steps.add(new Step(Action.HUNT, "", PREP_FOOD - s.edibleFood(), stage, "Stock food for the Nether"));
-            steps.add(new Step(Action.SEEK_FOOD, "", PREP_FOOD - s.edibleFood(), stage, "Look for animals to stock food"));
-        }
+        // Food and blocks for the trip are the Nether trip's own needs in the queue, gathered at this gate.
         if (s.pickaxes() < 2) steps.add(Step.craft("stone_pickaxe", 1, stage, "A spare pickaxe"));
         if (s.swordTier() < 2) steps.add(Step.craft("stone_sword", 1, stage, "A sword"));
-        if (s.blocks() < PREP_BLOCKS) steps.add(new Step(Action.GATHER_STONE, "", PREP_BLOCKS - s.blocks(), stage, "Blocks for bridging and walling off"));
         // A boat, from wood it carries, for the water on the way to the stronghold: swimming an ocean is slow, and its
         // drowned are deadly (the staged End runs drowned twice mid-ocean). Not a reason to stay: going through does
         // not wait for it.

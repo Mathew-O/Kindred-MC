@@ -88,7 +88,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1425,6 +1425,26 @@ final class NativePlayerBody implements BodyAdapter {
             player.setPitch(-15f);
             player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
             player.clearActiveItem();
+        });
+    }
+
+    /**
+     * Puts the eye of ender in {@code hotbarSlot} into the End portal frame block at {@code frame}, as a player clicks
+     * its top face within reach. Vanilla sets the eye, spends the item and opens the portal when the ring is full.
+     */
+    boolean fillFrame(ActionLease lease, int hotbarSlot, BlockPos frame) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8) return false;
+        var world = player.getServerWorld();
+        var state = world.getBlockState(frame);
+        if (!state.isOf(net.minecraft.block.Blocks.END_PORTAL_FRAME) || state.get(net.minecraft.block.EndPortalFrameBlock.EYE)) return false;
+        Vec3d top = new Vec3d(frame.getX() + 0.5, frame.getY() + 0.8125, frame.getZ() + 0.5);
+        if (player.getEyePos().squaredDistanceTo(top) > 4.5 * 4.5) return false;
+        return execute(lease, Intent.FRAME, frame, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            face(top);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(top, Direction.UP, frame, false));
         });
     }
 

@@ -44,7 +44,7 @@ public final class StrategistPrompt {
             left. Using the guide below, add to the queue (up to three) only what a task ahead will need that the queue \
             lacks or asks too little of, for a reason the report or the guide gives: a shield after deaths to \
             skeletons or before the Nether, more food after hungry nights, more arrows after many misses. The End \
-            fight's own needs are queued already. Leave the queue empty when nothing is missing; never queue what the \
+            fight's and the Nether trip's own needs are queued already. Leave the queue empty when nothing is missing; never queue what the \
             player already holds enough of.
 
             # Guide
@@ -77,6 +77,6 @@ public final class StrategistPrompt {
             + "or an empty list. The player gathers and crafts them itself, when the chance comes and before the task.";
     public static final String QUEUE_NEED = "What is needed: BOW, ARROWS, SHIELD, WATER_BUCKET, STRING, FEATHERS, FLINT, STICKS, BLOCKS or FOOD.";
     public static final String QUEUE_COUNT = "How many to have in hand, at least.";
-    public static final String QUEUE_FOR = "The task it is for: NETHER_TRIP, STRONGHOLD, END_FIGHT or SURVIVAL.";
+    public static final String QUEUE_FOR = "The task it is for: NETHER_PORTAL, NETHER_TRIP, STRONGHOLD, END_FIGHT or SURVIVAL.";
     public static final String QUEUE_WHY = "Why, in a few words, from the report or the guide.";
 }
