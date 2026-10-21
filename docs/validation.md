@@ -4,6 +4,7 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- The recovery check for casts (sky-island run 7), on top of `3c1c73f`: `runGametest` passed 230/230 twice, with the new fixture, while live run 63 ran on the same machine (load average about 3). `./gradlew build` passed: 367 JUnit, two skips. JAR SHA-256: `40bfa055131af88344327f9b95b335a5944e01526f1a483228149faa2f884223`.
 - F-19c (habits and a focus from the strategist), tested on top of `a077a04` with no live server running.
   - `./gradlew build` passed: 367 JUnit results, with zero failures and two skips. The skips are the paid live model tests; run once by hand, both passed, the new one returning focus `FOOD` and habit `MORE_FOOD` for a report with two hunger deaths.
   - `:companion-server-adapter:runGametest` passed 229/229 in two consecutive runs on the final tree, including the three new fixtures.

@@ -2227,6 +2227,59 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A cast from below into a cell four up and one across, standing right up against the frame, as for the top of a
+     * frame on sky-island run 7: once the lava hardens, every line from the player's eyes to the water above it runs
+     * through the new obsidian, so the water could not be taken back. The cast is refused before anything is poured,
+     * and nothing changes.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
+    public void castIsRefusedWhereTheWaterCouldNotBeTakenBack(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] target = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Highcaster"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos feet = f.player().getBlockPos().toImmutable();
+                    // The top row of a frame standing one block in front: the cell four up, a frame block already
+                    // beside it, the mould behind it and behind the water cell, and the frame's inside open below.
+                    target[0] = feet.south().up(4);
+                    world.setBlockState(target[0], Blocks.AIR.getDefaultState());
+                    world.setBlockState(target[0].up(), Blocks.AIR.getDefaultState());
+                    world.setBlockState(target[0].west(), Blocks.OBSIDIAN.getDefaultState());
+                    world.setBlockState(target[0].south(), Blocks.STONE.getDefaultState());
+                    world.setBlockState(target[0].up().south(), Blocks.STONE.getDefaultState());
+                    // Right up against the frame, where stepping closer had left the player on the island.
+                    f.player().refreshPositionAndAngles(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.85, 0, -60);
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.LAVA_BUCKET));
+                    inventory.setStack(1, new ItemStack(Items.WATER_BUCKET));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> {
+                    // Asked again until the resume has settled; then the answer is the cast's own.
+                    int cast = f.runtime.nativeCast(f.source, f.id, target[0]);
+                    var refusal = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(cast == 0 && refusal.work().contains("could not be taken back"), "The cast is refused for the water: " + cast + " " + refusal);
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(world.getBlockState(target[0]).isAir() && world.getBlockState(target[0].up()).isAir(), "Nothing poured");
+                    context.assertTrue(ItemMoves.count(inventory, Items.LAVA_BUCKET) == 1 && ItemMoves.count(inventory, Items.WATER_BUCKET) == 1,
+                            "Both buckets as they were");
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertFalse(activity.work().contains("reconciliation"), "Not blocked: " + activity);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The one-block cast with a leaf block beside the cell the water goes in, on the side tried first, as on sky-island
      * run 5: a bucket clicked on leaves waterlogs them instead of pouring beside them, so the cast pours against a
      * solid face that is not waterloggable, and the leaves stay dry.

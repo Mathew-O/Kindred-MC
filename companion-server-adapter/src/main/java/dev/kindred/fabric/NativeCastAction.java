@@ -14,6 +14,7 @@ import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -77,6 +78,9 @@ final class NativeCastAction extends NativeRecordedAction {
             throw new IllegalArgumentException("Casting needs an owned lava bucket and water bucket");
         }
         if (aimAt(water).isEmpty() || aimAt(target).isEmpty()) throw new IllegalArgumentException("No reachable face to pour against");
+        // From below, every line to the water may run through the target once it has hardened (the top of a frame on
+        // sky-island run 7): then the water could not be taken back, so nothing is poured from here.
+        if (!recoverable()) throw new IllegalArgumentException("The water could not be taken back from here once the obsidian hardens");
         String dimension = world.getRegistryKey().getValue().toString();
         claimKeys = List.of("block:" + worldId + ":" + dimension + ":" + target.toShortString(),
                 "block:" + worldId + ":" + dimension + ":" + water.toShortString());
@@ -103,6 +107,24 @@ final class NativeCastAction extends NativeRecordedAction {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Whether a bucket could reach the water cell from where the player stands once the target below it is solid: a
+     * line from the eyes into the cell, within reach, that meets no block on the way and does not cross the target.
+     */
+    private boolean recoverable() {
+        var player = body.entity();
+        Vec3d eye = player.getEyePos();
+        Box cast = new Box(target);
+        for (double dx : SPREAD) for (double dy : SPREAD) for (double dz : SPREAD) {
+            Vec3d point = Vec3d.ofCenter(water).add(dx, dy, dz);
+            if (eye.distanceTo(point) > player.getBlockInteractionRange() - 0.05 || cast.raycast(eye, point).isPresent()) continue;
+            var hit = player.getServerWorld().raycast(new RaycastContext(eye, point, RaycastContext.ShapeType.OUTLINE,
+                    RaycastContext.FluidHandling.NONE, player));
+            if (hit.getType() == HitResult.Type.MISS) return true;
+        }
+        return false;
     }
 
     /** Aim point inside the poured water source that a bucket reaches without passing through the cast block. */
@@ -176,7 +198,8 @@ final class NativeCastAction extends NativeRecordedAction {
             boolean ready = claims.holdsAll(claim, System.currentTimeMillis()) && world.getBlockState(target).isAir()
                     && world.getBlockState(water).isAir() && RoamingEdits.placeDenial(body.entity(), target, policy.get()) == null;
             Optional<Vec3d> aim = aimAt(water);
-            if (!ready || aim.isEmpty()) {
+            // Checked again where the player now stands: a walk just finished may have carried it on a little.
+            if (!ready || aim.isEmpty() || !recoverable()) {
                 result = Step.blocked("The cast site changed before casting; nothing happened", true);
                 flush = admission.close();
                 return waiting();
