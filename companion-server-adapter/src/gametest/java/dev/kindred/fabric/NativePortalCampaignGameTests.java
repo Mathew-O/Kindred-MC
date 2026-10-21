@@ -1464,6 +1464,42 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Advised wood first with four logs in hand and no tree in sight, as on sky-island run 11 once its one tree was cut:
+     * the focus only cuts trees it can see, so the route goes on and makes a table and a wooden pickaxe from what it
+     * has, rather than exploring for more logs while the logs it holds wait (F-19c).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 600)
+    public void woodFirstWithNoTreeInSightLetsTheRouteGoOn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Woodless"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    f.player().getInventory().setStack(0, new ItemStack(Items.OAK_LOG, 4));
+                    f.player().getInventory().setStack(1, new ItemStack(Items.BREAD, 6));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", java.util.List.of(),
+                            "", "Stalled for logs", java.util.List.of(), "WOOD", null, null).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.WOODEN_PICKAXE) >= 1,
+                            "A wooden pickaxe from the logs in hand: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A player's memory of a world keeps the habits its notes teach across a save and a load (F-19c): a habit stays
      * with its first note, and a retired habit leaves its note as a plain note.
      */

@@ -1093,8 +1093,12 @@ final class PortalRunCampaign {
             case COLLECT_SMELTED -> nearestWorkstation(player, Blocks.FURNACE, 16).flatMap(f -> atWorkstation(player, f,
                     new Task("native_smelt", coords(f, Map.of("action", "extract")), "Take smelted iron")));
             case HUNT -> hunt(player);
-            // Advised food first and none in sight: out to the surface by day, then walk out and look.
-            case SEEK_FOOD -> underground(player) ? wayUp(body, "Climb out to look for animals") : explore(body, "animals");
+            // Advised food first and none in sight: out to the surface by day, then walk out and look. Not over the void:
+            // an island's animals are the ones on it.
+            case SEEK_FOOD -> !groundBelow(player) ? Optional.<Task>empty()
+                    : underground(player) ? wayUp(body, "Climb out to look for animals") : explore(body, "animals");
+            // Advised wood first: a tree in sight, and nothing more; looking for one is the route's own step.
+            case CUT_TREES -> gather(body, WorldKnowledge.Kind.LOG, 32, "logs");
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
                     .or(() -> underground(player) ? wayUp(body, "Climb toward the surface for logs")
                             // Not when already there: that walk ends where it starts, over and over.

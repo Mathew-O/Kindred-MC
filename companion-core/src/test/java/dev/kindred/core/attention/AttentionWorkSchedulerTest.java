@@ -30,13 +30,13 @@ class AttentionWorkSchedulerTest {
 
         // First 3 selections must be from 3 distinct players (round-robin)
         var t1 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t1, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t1, tickStart));
 
         var t2 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t2, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t2, tickStart));
 
         var t3 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t3, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t3, tickStart));
 
         // All 3 players served
         var served = java.util.Set.of(t1.playerId(), t2.playerId(), t3.playerId());
@@ -44,7 +44,7 @@ class AttentionWorkSchedulerTest {
 
         // Next turns also round-robin
         var t4 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t4, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t4, tickStart));
         assertEquals(t1.playerId(), t4.playerId(), "Turn must cycle back to first player");
     }
 
@@ -64,7 +64,8 @@ class AttentionWorkSchedulerTest {
         var diag = scheduler.diagnostics();
         assertEquals(20L, diag.invalidationsByKind().get(WorkKind.ROUTINE_GOALS));
 
-        scheduler.beginTick(tick, System.nanoTime());
+        long now = System.nanoTime(); // One clock reading: a slow machine must not spend the tick's soft time budget.
+        scheduler.beginTick(tick, now);
         WorkToken token = null;
         while (true) {
             var opt = scheduler.selectNext();
@@ -74,7 +75,7 @@ class AttentionWorkSchedulerTest {
                 token = t;
                 break;
             }
-            assertTrue(scheduler.tryStart(t, System.nanoTime()));
+            assertTrue(scheduler.tryStart(t, now));
         }
 
         assertNotNull(token, "ROUTINE_GOALS must be scheduled");
@@ -82,7 +83,7 @@ class AttentionWorkSchedulerTest {
         assertEquals(20L, token.invalidationRevision(), "Invalidation revision must reflect the latest storm count");
 
         // Exactly one slice issued, not 20!
-        assertTrue(scheduler.tryStart(token, System.nanoTime()));
+        assertTrue(scheduler.tryStart(token, now));
     }
 
     @Test

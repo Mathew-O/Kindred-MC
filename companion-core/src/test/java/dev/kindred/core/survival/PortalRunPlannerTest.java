@@ -550,7 +550,9 @@ class PortalRunPlannerTest {
     void woodFirstGathersLogsUntilThereIsWoodToSpare() {
         Sim sim = ironWork();
         var steps = PortalRunPlanner.plan(sim.snapshot(), TREES, focus(PlanPreferences.Focus.WOOD));
-        assertEquals(Action.GATHER_LOGS, steps.getFirst().action());
+        assertEquals(Action.CUT_TREES, steps.getFirst().action());
+        assertTrue(PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), focus(PlanPreferences.Focus.WOOD)).stream()
+                .noneMatch(step -> step.action() == Action.CUT_TREES), "no tree known: nothing to cut first, and no search ahead of the route");
         assertTrue(steps.getFirst().why().contains("Wood first"));
         sim.logs = 5; // Twenty planks more: past the four kept for a spare table and the sixteen the focus wants.
         assertTrue(PortalRunPlanner.plan(sim.snapshot(), TREES, focus(PlanPreferences.Focus.WOOD)).stream()

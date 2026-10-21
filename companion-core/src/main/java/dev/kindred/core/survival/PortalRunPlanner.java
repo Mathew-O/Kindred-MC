@@ -80,7 +80,9 @@ public final class PortalRunPlanner {
         /** Break leaves left after the logs for the saplings they drop. */
         GATHER_SAPLINGS,
         /** Go and look for animals to hunt (out to the surface by day), when food comes first and none is in sight. */
-        SEEK_FOOD
+        SEEK_FOOD,
+        /** Cut a tree in sight, when wood comes first; never a search for one, which is the route's own business. */
+        CUT_TREES
     }
 
     /**
@@ -136,12 +138,12 @@ public final class PortalRunPlanner {
             steps.add(new Step(Action.HUNT, "", wanted, stage(s, facts), "Food first, as advised: hunt an animal in sight"));
             steps.add(new Step(Action.SEEK_FOOD, "", wanted, stage(s, facts), "Food first, as advised: look for animals"));
         }
-        // Wood first: logs until there is wood to spare beyond what is kept for a shield and a spare table. Where trees
-        // grow only from saplings it is cut when one stands; waiting by the saplings is the route's own call.
+        // Wood first: logs from a tree in sight until there is wood to spare beyond what is kept for a shield and a spare
+        // table. Only a tree it knows of: a search would come before the route's every step and starve it (sky-island
+        // run 11 cut its one tree, then explored for more over the void with four logs in hand and no table made).
         int woodWanted = woodKept(s, facts) + PlanPreferences.FOCUS_WOOD - s.woodUnits();
-        boolean treesToCut = !facts.can(WorldFacts.Method.REPLANT) || facts.knows(WorldFacts.Source.TREE);
-        if (prefs.focus() == PlanPreferences.Focus.WOOD && woodWanted > 0 && treesToCut) {
-            steps.add(new Step(Action.GATHER_LOGS, "", (woodWanted + 3) / 4, stage(s, facts), "Wood first, as advised"));
+        if (prefs.focus() == PlanPreferences.Focus.WOOD && woodWanted > 0 && facts.knows(WorldFacts.Source.TREE)) {
+            steps.add(new Step(Action.CUT_TREES, "", (woodWanted + 3) / 4, stage(s, facts), "Wood first, as advised"));
         }
         if (s.furnaceNearby() && s.furnaceOutput() > 0) {
             steps.add(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect smelted items from the furnace"));

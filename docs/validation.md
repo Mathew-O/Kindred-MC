@@ -4,8 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Wood first limited to trees in sight (sky-island run 11), on top of `349c270`, with live run 65 and sky-island run 11 playing in real time on the same machine.
+  - `runGametest` passed 233/233 twice, with the new fixture.
+  - `./gradlew build` first failed one JUnit test, `AttentionWorkSchedulerTest.dirtyEventStormCoalescesAndRetainsDueAge`. Like its neighbour fixed earlier, it read the wall clock separately for the tick start and for each start attempt, and on the loaded machine the tick's soft time budget ran out in between. That test and one other in the class that asserted starts with fresh clock readings now use one reading each; the scheduler is unchanged. Rerun: 367 JUnit passed, three skips.
+  - JAR SHA-256: `b92339982654fc7014f14bd91a1236014f252503ba2f48363f7de819566f6d38`.
 - Jump crits, the room-for-a-workstation fix and the real-time strategist, on top of `383a932`, with no live server running.
-  - `runGametest` passed 232/232 in two consecutive runs on the final tree, including the new crit fixture.
+  - `runGametest` passed 232/232 in two consecutive runs, including the new crit fixture. A log line for each fight's hits and crits was added after them and checked with the campaign class (46/46).
   - Before the room fix, one suite run failed the island-outcrop fixture, as it had once earlier today. A stress run of that fixture, ten copies in separate batches, failed 1 of 10 before the fix and passed 20/20 in two runs after.
   - `./gradlew build` passed: 367 JUnit, three skips, which are the opt-in live model tests (the pace benchmark among them, run by hand, see [F-19b](evidence/F-19b.md)).
   - JAR SHA-256: `234c52bfca89053340eea4d5c8af0a372c8c21d2d9856cac3583217aa68823a1`.
