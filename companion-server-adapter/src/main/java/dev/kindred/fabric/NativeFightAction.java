@@ -38,6 +38,11 @@ final class NativeFightAction extends NativeRecordedAction {
     private static final int UNSAFE_TICKS = 40;
     /** How long the shield stays up after a shooter stops drawing: long enough for the arrow to arrive. */
     private static final int SHOT_GUARD_TICKS = 12;
+    /**
+     * How far the swing has recovered when the player jumps for a critical hit: with about a dozen ticks in the air, it
+     * lands the swing just past the top of the jump, when the cooldown is full and the player is falling.
+     */
+    private static final float JUMP_AT = 0.5f;
 
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -49,7 +54,7 @@ final class NativeFightAction extends NativeRecordedAction {
     private ActionAdmission admission;
     private InventoryEvidence before;
     private boolean halted, unknown, fighting;
-    private int ticks, unseen, hits, unsafe, guardTicks;
+    private int ticks, unseen, hits, crits, unsafe, guardTicks;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
@@ -142,14 +147,41 @@ final class NativeFightAction extends NativeRecordedAction {
                 if (++unsafe > UNSAFE_TICKS) { settle("The way to the target is unsafe", false); return waiting(); }
             }
         } else {
-            moved = body.move(issuedLease, 0, 0, false, false, yaw);
-            if (moved && ready) {
+            // In reach, a player jumps as the swing recovers and strikes on the way down: a falling hit is a critical one,
+            // half as much again (an iron sword's kill on a zombie takes three of those, not four). A creeper keeps to hit
+            // and run, and in water or on a ladder a jump is no fall.
+            boolean jumping = jumps(player, target);
+            boolean airborne = !player.isOnGround();
+            boolean jump = jumping && !airborne && player.getAttackCooldownProgress(0.5f) >= JUMP_AT;
+            moved = body.move(issuedLease, 0, 0, jump, false, yaw);
+            boolean falling = airborne && player.getVelocity().y < 0 && player.fallDistance > 0;
+            if (moved && ready && (!jumping || falling)) {
                 guard(false); // The shield comes down for the swing.
-                if (body.attack(issuedLease, targetId, slot)) hits++;
+                boolean critical = critical(player);
+                if (body.attack(issuedLease, targetId, slot)) {
+                    hits++;
+                    if (critical) crits++;
+                }
             }
         }
         if (!moved) settle("Movement authority denied", false);
         return Step.running(Map.of("hits", String.valueOf(hits), "distance", String.format("%.1f", distance)), true);
+    }
+
+    /**
+     * Whether to jump for critical hits on {@code target}: not a creeper (hit and run keeps it from lighting), and only
+     * where a jump is a fall (not in water or lava, on a ladder or vine, or blinded).
+     */
+    private static boolean jumps(net.minecraft.server.network.ServerPlayerEntity player, LivingEntity target) {
+        return !(target instanceof CreeperEntity) && !player.isTouchingWater() && !player.isInLava() && !player.isClimbing()
+                && !player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS) && !player.hasVehicle();
+    }
+
+    /** Vanilla's test for a critical hit, as the swing about to be made will meet it: falling, swing recovered, not sprinting. */
+    private static boolean critical(net.minecraft.server.network.ServerPlayerEntity player) {
+        return player.getAttackCooldownProgress(0.5f) > 0.9f && player.fallDistance > 0 && !player.isOnGround() && !player.isClimbing()
+                && !player.isTouchingWater() && !player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS)
+                && !player.hasVehicle() && !player.isSprinting();
     }
 
     /** Raise or lower an off-hand shield, if the player has one; a no-op otherwise. */
@@ -195,9 +227,10 @@ final class NativeFightAction extends NativeRecordedAction {
 
     private void settle(String reason, boolean won) {
         body.stopInputs();
+        if (hits > 0) KindredMod.LOGGER.info("{} fight: {} hits, {} critical - {}", body.entity().getName().getString(), hits, crits, reason);
         var after = InventoryEvidence.capture(body);
         if (conserved(after)) {
-            admission.verify(after.description() + "; hits=" + hits, reason);
+            admission.verify(after.description() + "; hits=" + hits + "; crits=" + crits, reason);
             result = won ? Step.completed(Map.of("hits", String.valueOf(hits), "outcome", reason)) : Step.blocked(reason, true);
         } else {
             unknown = true;

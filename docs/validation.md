@@ -4,6 +4,11 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Jump crits, the room-for-a-workstation fix and the real-time strategist, on top of `383a932`, with no live server running.
+  - `runGametest` passed 232/232 in two consecutive runs on the final tree, including the new crit fixture.
+  - Before the room fix, one suite run failed the island-outcrop fixture, as it had once earlier today. A stress run of that fixture, ten copies in separate batches, failed 1 of 10 before the fix and passed 20/20 in two runs after.
+  - `./gradlew build` passed: 367 JUnit, three skips, which are the opt-in live model tests (the pace benchmark among them, run by hand, see [F-19b](evidence/F-19b.md)).
+  - JAR SHA-256: `234c52bfca89053340eea4d5c8af0a372c8c21d2d9856cac3583217aa68823a1`.
 - The morning climb out of an island pit (sky-island run 8), on top of `4f2de8d`: `runGametest` passed 231/231 twice with the new fixture, while live run 63 and the sky server ran (load average about 2.4). `./gradlew build` passed: 367 JUnit, two skips. JAR SHA-256: `8ba5672f7c2d3a9cfbf3376272932e106503b393a059f3ecffc84f867ed5210f`.
 - The recovery check for casts (sky-island run 7), on top of `3c1c73f`: `runGametest` passed 230/230 twice, with the new fixture, while live run 63 ran on the same machine (load average about 3). `./gradlew build` passed: 367 JUnit, two skips. JAR SHA-256: `40bfa055131af88344327f9b95b335a5944e01526f1a483228149faa2f884223`.
 - F-19c (habits and a focus from the strategist), tested on top of `a077a04` with no live server running.

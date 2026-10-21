@@ -291,6 +291,50 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A recorded fight against a zombie in reach, under a roof with room to jump: the player jumps as its swing
+     * recovers and strikes on the way down, as players do, so its hits are critical ones (half as much again). An
+     * iron sword's ordinary hits take four to kill a zombie; critical ones take three.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)
+    public void fightLandsCriticalHitsByJumping(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Critter");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    BlockPos at = player.getBlockPos();
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(context.getWorld());
+                    zombie[0].refreshPositionAndAngles(at.getX() + 2.5, at.getY(), at.getZ() + 0.5, 90, 0);
+                    zombie[0].setPersistent();
+                    zombie[0].setAiDisabled(true); // It stands there: the fight is the player's swings alone.
+                    context.getWorld().spawnEntity(zombie[0]);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeFight(f.source, f.id, zombie[0].getUuid(), 0) == 1, "Fight requested"))
+                .createAndAdd(() -> context.assertFalse(zombie[0].isAlive(), "The zombie was killed"))
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_fight") && record.state() == ActionRecord.State.VERIFIED,
+                            "A verified fight: " + record);
+                    var evidence = java.util.regex.Pattern.compile("hits=(\\d+); crits=(\\d+)").matcher(record.afterEvidence());
+                    context.assertTrue(evidence.find(), "Hits and crits recorded: " + record.afterEvidence());
+                    int hits = Integer.parseInt(evidence.group(1)), crits = Integer.parseInt(evidence.group(2));
+                    context.assertTrue(crits >= 2 && hits <= 3, "Critical hits by jumping: " + hits + " hits, " + crits + " critical");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A creeper the goal is fighting lights its fuse close by: with a shield in its off hand the player turns to face
      * it with the shield up instead of running, and the raised shield takes the blast.
      */

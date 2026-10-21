@@ -137,7 +137,10 @@ final class PortalRunCampaign {
     static final long ADVICE_TICKS = 6_000;
     private final java.util.ArrayDeque<String> events = new java.util.ArrayDeque<>();
     private final java.util.ArrayDeque<Death> deathsSeen = new java.util.ArrayDeque<>();
-    private int deathCount, stuckSpells;
+    private int deathCount, stuckSpells, eventCount;
+    private Boolean reportedNight;
+    private float reportedHealth = 20;
+    private java.util.UUID reportedFoe;
     private PortalRunPlanner.Stage loggedStage;
     private StrategyAdvice advice;
     private long adviceUntil;
@@ -148,8 +151,37 @@ final class PortalRunCampaign {
 
     /** Something worth telling the strategist, in game seconds; the last sixteen are kept. */
     private void event(String text) {
+        event(text, true);
+    }
+
+    /** As {@link #event(String)}; {@code news} false for what the strategist need not be asked about again. */
+    private void event(String text, boolean news) {
         if (events.size() >= 16) events.removeFirst();
         events.addLast("at " + lastTick / 20 + "s: " + text);
+        if (news) eventCount++;
+    }
+
+    /** How many events the player has reported: a strategist that follows play asks again when this moves on. */
+    int eventCount() { return eventCount; }
+
+    /**
+     * Report what is happening as it happens, for a strategist that follows play: a fight with a new foe, a heavy hit
+     * since the last report, nightfall and daybreak.
+     */
+    private void noteHappenings(ServerPlayerEntity player) {
+        boolean dark = player.getServerWorld().isNight() && player.getServerWorld().getDimension().hasSkyLight();
+        if (reportedNight != null && dark != reportedNight) event(dark ? "night fell" : "day broke");
+        reportedNight = dark;
+        float health = player.getHealth();
+        if (health <= reportedHealth - 6) {
+            var source = player.getRecentDamageSource();
+            String by = source == null ? "" : source.getAttacker() != null
+                    ? " by a " + Registries.ENTITY_TYPE.getId(source.getAttacker().getType()).getPath() : " by " + source.getName();
+            event("hurt to " + Math.round(health) + "/20" + by);
+            reportedHealth = health;
+        } else if (health > reportedHealth) {
+            reportedHealth = health; // Healed: the next heavy hit counts from here.
+        }
     }
 
     int deaths() { return deathCount; }
@@ -166,13 +198,19 @@ final class PortalRunCampaign {
      * too, and a habit its note teaches kept from now on (or one it retires dropped).
      */
     void advise(StrategyAdvice advice, long tick) {
+        advise(advice, tick, ADVICE_TICKS);
+    }
+
+    /** As {@link #advise(StrategyAdvice, long)}, holding for {@code holdTicks} of game time. */
+    void advise(StrategyAdvice advice, long tick, long holdTicks) {
         this.advice = advice;
-        adviceUntil = tick + ADVICE_TICKS;
+        adviceUntil = tick + holdTicks;
         for (StrategyAdvice.Place place : advice.avoid()) markDanger(new BlockPos(place.x(), place.y(), place.z()), tick + DANGER_TICKS / 4);
         if (advice.habit() != PlanPreferences.Habit.NONE) habits.add(advice.habit());
         habits.remove(advice.retire());
+        // The strategist's own answer is not news to it.
         event("strategist advised " + advice.stance() + (advice.focus() == PlanPreferences.Focus.NONE ? "" : ", " + advice.focus() + " first")
-                + (advice.reason().isEmpty() ? "" : ": " + advice.reason()));
+                + (advice.reason().isEmpty() ? "" : ": " + advice.reason()), false);
     }
 
     /** The habits kept in this world, as the player's memory holds them. */
@@ -633,6 +671,7 @@ final class PortalRunCampaign {
             if (loggedStage != null) event("stage " + stageLabel(loggedStage) + " -> " + stageLabel(stage));
             loggedStage = stage;
         }
+        noteHappenings(player);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences()));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
         // Not with a bucket that holds lava, nor while a generator is being built: its own water is not to be taken.
@@ -682,7 +721,14 @@ final class PortalRunCampaign {
         }
         if (defense.isPresent()) {
             String label = defense.get().label();
-            if (label.startsWith("Fight") || label.startsWith("Close in")) fightHeldUntil = lastTick + FIGHT_HOLD;
+            if (label.startsWith("Fight") || label.startsWith("Close in")) {
+                fightHeldUntil = lastTick + FIGHT_HOLD;
+                if (foe != null && !foe.equals(reportedFoe)) {
+                    reportedFoe = foe;
+                    event(label.toLowerCase(java.util.Locale.ROOT) + " at " + lastFeet.toShortString().replace(",", "") + ", health "
+                            + Math.round(player.getHealth()) + "/20");
+                }
+            }
             else if (label.startsWith("Back off") || label.startsWith("Take cover") || label.startsWith("Run from")) {
                 retreatHeldUntil = Math.max(retreatHeldUntil, lastTick + RETREAT_HOLD);
             }
@@ -1819,16 +1865,21 @@ final class PortalRunCampaign {
             if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
             if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
         }
-        // Nowhere here (on top of a half-mined outcrop, say): step over to the nearest open floor that will take it.
-        BlockPos room = null;
+        // Nowhere here (on top of a half-mined outcrop, say): step over to the nearest open floor that will take it, and
+        // stand right beside it, where it is one of the spots tried above. A walk to within a couple of blocks of it
+        // could end where it already stood, with the spot off to one side and still out of the ones tried (the island
+        // outcrop fixture failed about one run in ten that way).
         for (BlockPos cell : BlockPos.iterateOutwards(feet, 5, 2, 5)) {
             if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
             var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
             if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)) continue;
-            room = cell.toImmutable();
-            break;
+            for (Direction side : Direction.Type.HORIZONTAL) {
+                BlockPos stand = cell.offset(side);
+                if (stand.equals(feet) || !standable(world, stand) || blocked(stand) || unreachable(stand) || !ground && besideTheVoid(world, stand)) continue;
+                return Optional.of(go(stand.toImmutable(), 0.5, false, "Walk to room for a workstation"));
+            }
         }
-        return room == null ? Optional.empty() : Optional.of(go(room, 2.5, true, "Walk to room for a workstation"));
+        return Optional.empty();
     }
 
     /** Beside a column with nothing in it for four blocks down from {@code spot}'s level: an island's edge over the void. */

@@ -27,15 +27,33 @@ import java.util.UUID;
  * without it.
  */
 final class StrategistBridge implements AutoCloseable {
-    static final long MIN_GAP_MS = 20_000, STUCK_GAP_MS = 120_000, PERIOD_MS = 300_000;
     static final int PLAYER_PER_MINUTE = 6, GLOBAL_PER_MINUTE = 12;
-    static final long DEFAULT_PLAYER_DAILY_TOKENS = 50_000, DEFAULT_DAILY_TOKENS = 100_000;
+
+    /**
+     * How closely the strategist follows play ({@code KINDRED_STRATEGIST_PACE}). Steady asks on the big changes and
+     * otherwise every few minutes, within the contract's default daily budgets. Real time asks as often as the
+     * planning lane's rate allows (every ten seconds per player at most), also whenever the goal reports something new
+     * (a fight, a heavy hit, nightfall), and its advice lapses after a minute of game time unless renewed; its default
+     * budgets are sized for hours of continuous play (about two thousand tokens a question, most of them cached).
+     */
+    enum Pace {
+        STEADY(20_000, 120_000, 300_000, false, PortalRunCampaign.ADVICE_TICKS, 50_000, 100_000),
+        REALTIME(10_000, 30_000, 60_000, true, 1_200, 5_000_000, 10_000_000);
+
+        final long minGapMs, stuckGapMs, periodMs, adviceTicks, playerDailyTokens, dailyTokens;
+        final boolean onEvents;
+
+        Pace(long minGapMs, long stuckGapMs, long periodMs, boolean onEvents, long adviceTicks, long playerDailyTokens, long dailyTokens) {
+            this.minGapMs = minGapMs; this.stuckGapMs = stuckGapMs; this.periodMs = periodMs; this.onEvents = onEvents;
+            this.adviceTicks = adviceTicks; this.playerDailyTokens = playerDailyTokens; this.dailyTokens = dailyTokens;
+        }
+    }
 
     private static final class State {
         ModelContextStore.PlayerContext context;
         boolean loading, inFlight;
         long lastAt, tokensToday;
-        int deaths = -1, stuck = -1, deathsRecorded;
+        int deaths = -1, stuck = -1, deathsRecorded, events = -1;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
         String progress = "";
         PortalRunCampaign campaign, taught;
@@ -44,15 +62,17 @@ final class StrategistBridge implements AutoCloseable {
 
     private final ClaudeStrategist strategist;
     private final ModelContextStore store;
+    private final Pace pace;
     private final long playerDailyTokens, dailyTokens;
     private final Map<UUID, State> states = new HashMap<>();
     private final ArrayDeque<Long> recent = new ArrayDeque<>();
     private long dayStartMs = System.currentTimeMillis(), tokensToday;
     private boolean budgetLogged;
 
-    private StrategistBridge(ClaudeStrategist strategist, ModelContextStore store, long playerDailyTokens, long dailyTokens) {
+    private StrategistBridge(ClaudeStrategist strategist, ModelContextStore store, Pace pace, long playerDailyTokens, long dailyTokens) {
         this.strategist = strategist;
         this.store = store;
+        this.pace = pace;
         this.playerDailyTokens = playerDailyTokens;
         this.dailyTokens = dailyTokens;
     }
@@ -80,11 +100,12 @@ final class StrategistBridge implements AutoCloseable {
             KindredMod.LOGGER.warn("KINDRED_STRATEGIST is on but ANTHROPIC_API_KEY is not set; playing without a strategist");
             return Optional.empty();
         }
-        long playerDaily = tokensSetting("KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS", DEFAULT_PLAYER_DAILY_TOKENS);
-        long daily = tokensSetting("KINDRED_STRATEGIST_DAILY_TOKENS", DEFAULT_DAILY_TOKENS);
-        KindredMod.LOGGER.info("Kindred strategist on: model {}, daily token budgets {} a player and {} in all",
-                strategist.get().model(), playerDaily, daily);
-        return Optional.of(new StrategistBridge(strategist.get(), new ModelContextStore(worldKindredFolder), playerDaily, daily));
+        Pace pace = "realtime".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_STRATEGIST_PACE")).trim()) ? Pace.REALTIME : Pace.STEADY;
+        long playerDaily = tokensSetting("KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS", pace.playerDailyTokens);
+        long daily = tokensSetting("KINDRED_STRATEGIST_DAILY_TOKENS", pace.dailyTokens);
+        KindredMod.LOGGER.info("Kindred strategist on: model {} ({}), pace {}, daily token budgets {} a player and {} in all",
+                strategist.get().model(), strategist.get().pace(), pace.name().toLowerCase(java.util.Locale.ROOT), playerDaily, daily);
+        return Optional.of(new StrategistBridge(strategist.get(), new ModelContextStore(worldKindredFolder), pace, playerDaily, daily));
     }
 
     /** Called on the game thread after a goal's step was chosen; cheap when nothing changed. */
@@ -121,11 +142,12 @@ final class StrategistBridge implements AutoCloseable {
         }
         if (state.inFlight) return;
         long now = System.currentTimeMillis();
-        // A spell with no progress repeats every few seconds while the player is stuck: one question about it in two minutes.
+        // A spell with no progress repeats every few seconds while the player is stuck: one question about it now and then.
         boolean changed = state.lastAt == 0 || campaign.deaths() != state.deaths || campaign.stage() != state.stage
-                || campaign.stuckSpells() != state.stuck && now - state.lastAt > STUCK_GAP_MS
-                || now - state.lastAt > PERIOD_MS && !campaign.progress().equals(state.progress);
-        if (!changed || now - state.lastAt < MIN_GAP_MS) return;
+                || campaign.stuckSpells() != state.stuck && now - state.lastAt > pace.stuckGapMs
+                || pace.onEvents && campaign.eventCount() != state.events
+                || now - state.lastAt > pace.periodMs && !campaign.progress().equals(state.progress);
+        if (!changed || now - state.lastAt < pace.minGapMs) return;
         String report = campaign.strategyReport(player, name, state.context.noteTexts());
         long reserved = ClaudeStrategist.reservation(report);
         if (!admit(now, state, reserved)) {
@@ -140,6 +162,7 @@ final class StrategistBridge implements AutoCloseable {
         state.stuck = campaign.stuckSpells();
         state.stage = campaign.stage();
         state.progress = campaign.progress();
+        state.events = campaign.eventCount();
         PortalRunCampaign asked = campaign;
         strategist.advise(report, reported).whenComplete((outcome, failure) -> server.execute(() -> {
             state.inFlight = false;
@@ -158,7 +181,7 @@ final class StrategistBridge implements AutoCloseable {
             if (outcome.advice().isPresent() && state.campaign == asked) {
                 StrategyAdvice advice = outcome.advice().get();
                 long tick = server.getTicks();
-                asked.advise(advice, tick);
+                asked.advise(advice, tick, pace.adviceTicks);
                 state.context.addAdvice(tick, advice.stance().name() + (advice.focus() == PlanPreferences.Focus.NONE ? "" : ", focus " + advice.focus()),
                         advice.reason());
                 // The note is the lesson; a habit it carries is kept in this world from now on, and one retired is not.
@@ -167,9 +190,10 @@ final class StrategistBridge implements AutoCloseable {
                 state.context.retire(advice.retire());
                 var after = state.context.habits();
                 asked.habits(after);
-                KindredMod.LOGGER.info("{} strategist: {}{} ({} in, {} out tokens) - {}{}", name, advice.stance(),
+                KindredMod.LOGGER.info("{} strategist: {}{} ({} in, {} cached, {} out tokens, {} ms) - {}{}", name, advice.stance(),
                         advice.focus() == PlanPreferences.Focus.NONE ? "" : ", focus " + advice.focus(), outcome.inputTokens(),
-                        outcome.outputTokens(), advice.reason(), advice.avoid().isEmpty() ? "" : "; avoid " + advice.avoid());
+                        outcome.cachedTokens(), outcome.outputTokens(), outcome.millis(), advice.reason(),
+                        advice.avoid().isEmpty() ? "" : "; avoid " + advice.avoid());
                 if (!after.equals(before)) {
                     KindredMod.LOGGER.info("{} strategist: habits in this world now {} - {}", name, after, advice.note());
                 }

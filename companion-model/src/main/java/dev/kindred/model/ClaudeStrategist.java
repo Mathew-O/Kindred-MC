@@ -4,8 +4,13 @@ import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.errors.AnthropicServiceException;
 import com.anthropic.errors.RateLimitException;
+import com.anthropic.models.messages.CacheControlEphemeral;
 import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.OutputConfig;
 import com.anthropic.models.messages.StructuredMessageCreateParams;
+import com.anthropic.models.messages.StructuredOutputConfig;
+import com.anthropic.models.messages.TextBlockParam;
+import com.anthropic.models.messages.ThinkingConfigDisabled;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.StrategyAdvice;
@@ -54,9 +59,14 @@ public final class ClaudeStrategist implements AutoCloseable {
 
     public record Spot(int x, int y, int z) { }
 
-    /** What a consultation came to: advice if the reply was usable, the tokens it cost, and why it failed if it did. */
-    public record Outcome(Optional<StrategyAdvice> advice, long inputTokens, long outputTokens, Optional<String> failure) {
-        static Outcome failed(String why) { return new Outcome(Optional.empty(), 0, 0, Optional.of(why)); }
+    /**
+     * What a consultation came to: advice if the reply was usable, the tokens it cost (all input, of which
+     * {@code cachedTokens} were read from the prompt cache, and output), how long the request took, and why it failed
+     * if it did.
+     */
+    public record Outcome(Optional<StrategyAdvice> advice, long inputTokens, long cachedTokens, long outputTokens, long millis,
+                          Optional<String> failure) {
+        static Outcome failed(String why, long millis) { return new Outcome(Optional.empty(), 0, 0, 0, millis, Optional.of(why)); }
     }
 
     static final String SYSTEM = """
@@ -86,11 +96,16 @@ public final class ClaudeStrategist implements AutoCloseable {
 
     private final AnthropicClient client;
     private final String model;
+    /** How hard the model thinks: null for its own default. */
+    private final OutputConfig.Effort effort;
+    private final boolean thinking;
     private final ExecutorService executor;
 
-    ClaudeStrategist(AnthropicClient client, String model) {
+    ClaudeStrategist(AnthropicClient client, String model, OutputConfig.Effort effort, boolean thinking) {
         this.client = Objects.requireNonNull(client);
         this.model = Objects.requireNonNull(model);
+        this.effort = effort;
+        this.thinking = thinking;
         this.executor = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "kindred-strategist");
             thread.setDaemon(true);
@@ -98,8 +113,21 @@ public final class ClaudeStrategist implements AutoCloseable {
         });
     }
 
-    /** A strategist when {@code ANTHROPIC_API_KEY} is set, else nothing (the game plays on without one). */
+    /**
+     * A strategist when {@code ANTHROPIC_API_KEY} is set, else nothing (the game plays on without one). By default
+     * at low effort and without thinking first: measured on the same report, that answers in about two seconds every
+     * time, against three to four at the model's own default, with the same advice.
+     */
     public static Optional<ClaudeStrategist> fromEnvironment(String model) {
+        String effort = System.getenv("KINDRED_STRATEGIST_EFFORT"), thinking = System.getenv("KINDRED_STRATEGIST_THINKING");
+        return fromEnvironment(model, effort == null ? "low" : effort, thinking == null ? "off" : thinking);
+    }
+
+    /**
+     * As {@link #fromEnvironment(String)}, with the effort ({@code low}, {@code medium}, {@code high}; blank for the
+     * model's default) and whether the model thinks first ({@code off} turns it off) given.
+     */
+    public static Optional<ClaudeStrategist> fromEnvironment(String model, String effort, String thinking) {
         String key = System.getenv("ANTHROPIC_API_KEY");
         if (key == null || key.isBlank()) return Optional.empty();
         AnthropicClient client = AnthropicOkHttpClient.builder()
@@ -107,10 +135,15 @@ public final class ClaudeStrategist implements AutoCloseable {
                 .timeout(DEADLINE)
                 .maxRetries(0) // A failed consultation is not repeated; the next event asks afresh.
                 .build();
-        return Optional.of(new ClaudeStrategist(client, model == null || model.isBlank() ? DEFAULT_MODEL : model));
+        OutputConfig.Effort level = effort == null || effort.isBlank() ? null : OutputConfig.Effort.of(effort.trim().toLowerCase(java.util.Locale.ROOT));
+        return Optional.of(new ClaudeStrategist(client, model == null || model.isBlank() ? DEFAULT_MODEL : model, level,
+                !"off".equalsIgnoreCase(thinking == null ? "" : thinking.trim())));
     }
 
     public String model() { return model; }
+
+    /** The effort and thinking settings, for the log. */
+    public String pace() { return "effort " + (effort == null ? "default" : effort.toString()) + ", thinking " + (thinking ? "on" : "off"); }
 
     /**
      * Tokens to reserve before asking about {@code report}: a conservative count of the input (three characters
@@ -128,34 +161,40 @@ public final class ClaudeStrategist implements AutoCloseable {
     }
 
     private Outcome call(String report, List<StrategyAdvice.Place> reported) {
-        StructuredMessageCreateParams<Reply> params = MessageCreateParams.builder()
+        var builder = MessageCreateParams.builder()
                 .model(model)
                 .maxTokens(MAX_OUTPUT_TOKENS)
-                .system(SYSTEM)
-                .outputConfig(Reply.class)
-                .addUserMessage(report)
-                .build();
+                // The instructions are the same every time: cached, they are read back faster and for a tenth of the price.
+                .systemOfTextBlockParams(List.of(TextBlockParam.builder().text(SYSTEM).cacheControl(CacheControlEphemeral.builder().build()).build()))
+                .outputConfig(StructuredOutputConfig.<Reply>builder().format(Reply.class).effort(Optional.ofNullable(effort)).build())
+                .addUserMessage(report);
+        if (!thinking) builder.thinking(ThinkingConfigDisabled.builder().build());
+        StructuredMessageCreateParams<Reply> params = builder.build();
+        long started = System.nanoTime();
         try {
             var message = client.messages().create(params);
-            long in = message.usage().inputTokens(), out = message.usage().outputTokens();
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            var usage = message.usage();
+            long cached = usage.cacheReadInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
             String stop = message.stopReason().map(Object::toString).orElse("none");
             if (!stop.equalsIgnoreCase("end_turn")) {
-                return new Outcome(Optional.empty(), in, out, Optional.of("stopped: " + stop));
+                return new Outcome(Optional.empty(), in, cached, out, millis, Optional.of("stopped: " + stop));
             }
             Optional<Reply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
-            if (reply.isEmpty()) return new Outcome(Optional.empty(), in, out, Optional.of("no reply text"));
+            if (reply.isEmpty()) return new Outcome(Optional.empty(), in, cached, out, millis, Optional.of("no reply text"));
             Reply r = reply.get();
             var places = r.avoid() == null ? List.<StrategyAdvice.Place>of()
                     : r.avoid().stream().filter(Objects::nonNull).map(s -> new StrategyAdvice.Place(s.x(), s.y(), s.z())).toList();
             var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported,
                     name(r.focus()), name(r.habit()), name(r.retire()));
-            return new Outcome(advice, in, out, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
+            return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
         } catch (RateLimitException limited) {
-            return Outcome.failed("rate limited");
+            return Outcome.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
         } catch (AnthropicServiceException service) {
-            return Outcome.failed("service error " + service.statusCode());
+            return Outcome.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
         } catch (RuntimeException other) {
-            return Outcome.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()));
+            return Outcome.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
         }
     }
 

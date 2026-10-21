@@ -65,4 +65,37 @@ class ClaudeStrategistLiveTest {
             assertTrue(outcome.advice().get().focus() == dev.kindred.core.survival.PlanPreferences.Focus.FOOD, "hungry with none carried: food first");
         }
     }
+
+    /** Latency of each pace on the same report, run only with {@code KINDRED_LIVE_MODEL_BENCH}: three calls each. */
+    @Test
+    void paceBenchmark() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_BENCH") != null, "pace benchmark not requested");
+        String report = """
+                Player Kindred, overworld, day 3, daytime (time 2000).
+                Position 40 64 80, on the surface.
+                Health 9/20, food 3/20, food items carried 0.
+                Stage: Iron. Doing: Iron: Mine iron ore (4/15) - Branch mine for iron.
+                Gear: pickaxe tier 2 (2 carried), sword tier 2, a shield, no armour.
+                Deaths so far: 2. No-progress spells: 1.
+                Stance in force: PRESS_ON, focus NONE.
+                Habits kept in this world: none.
+                Recent events, oldest first:
+                - at 900s: died at 35 22 87: Kindred starved to death while below ground (stage Iron)
+                - at 1800s: climbed out hurt and out of food
+                - at 2100s: died at 38 19 90: Kindred was slain by Zombie (stage Iron), with no food left
+                Your notes from earlier in this world:
+                - Ran out of food deep in the branch mine""";
+        String[][] paces = {{"", "on"}, {"low", "on"}, {"low", "off"}};
+        for (String[] pace : paces) {
+            var strategist = ClaudeStrategist.fromEnvironment(null, pace[0], pace[1]);
+            Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+            try (var s = strategist.get()) {
+                for (int i = 0; i < 4; i++) {
+                    var outcome = s.advise(report, List.of(new StrategyAdvice.Place(35, 22, 87), new StrategyAdvice.Place(38, 19, 90))).get(90, TimeUnit.SECONDS);
+                    System.out.println("pace " + s.pace() + ": " + outcome.millis() + " ms, " + outcome.inputTokens() + " in (" + outcome.cachedTokens() + " cached), " + outcome.outputTokens() + " out, "
+                            + outcome.advice().map(a -> a.stance() + " " + a.focus() + " " + a.habit()).orElse("no advice: " + outcome.failure()));
+                }
+            }
+        }
+    }
 }
