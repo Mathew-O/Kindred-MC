@@ -7,6 +7,7 @@ import dev.kindred.core.Checkpoint;
 import dev.kindred.core.ClaimRegistry;
 import dev.kindred.core.EditPolicy;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.FluidFillable;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.registry.tag.FluidTags;
@@ -88,6 +89,8 @@ final class NativeCastAction extends NativeRecordedAction {
             BlockPos support = cell.offset(toward.getOpposite());
             if (support.equals(water) && cell.equals(target)) continue; // The water cell is not a face to pour against.
             if (!world.isChunkLoaded(support) || world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue;
+            // A water bucket clicked on leaves, a slab or a fence waterlogs it instead of pouring beside it (sky-island run 5).
+            if (cell.equals(water) && world.getBlockState(support).getBlock() instanceof FluidFillable) continue;
             Vec3d face = Vec3d.ofCenter(support).add(toward.getOffsetX() * 0.5, toward.getOffsetY() * 0.5, toward.getOffsetZ() * 0.5);
             Vec3d inside = face.subtract(toward.getOffsetX() * 0.02, toward.getOffsetY() * 0.02, toward.getOffsetZ() * 0.02);
             for (double u : SPREAD) for (double v : SPREAD) {

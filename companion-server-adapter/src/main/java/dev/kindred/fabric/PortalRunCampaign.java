@@ -289,8 +289,11 @@ final class PortalRunCampaign {
         // A lava fill refused from where the player stood is first tried again from closer up; the source is set
         // aside only when that fails too, or a pool would run out of sources it will use.
         boolean firstRefusedFill = task.label().startsWith("Cast: fill") && pos != null && fillRefusals.merge(pos.asLong(), 1, Integer::sum) < 2;
-        // An unreachable trunk or ore column usually stays unreachable; skip its neighbours too.
-        if (pos != null && !firstRefusedFill) avoid(pos, "native_goto".equals(task.skill()) && task.label().startsWith("Walk to"), tick);
+        // An unreachable trunk or ore column usually stays unreachable; skip its neighbours too. A pool with no route to
+        // it from here has no route to the next cell of it either: live run 61, below a lake, tried 1,200 of its cells.
+        boolean walk = "native_goto".equals(task.skill()) && task.label().startsWith("Walk to");
+        boolean pool = walk && (task.label().startsWith("Walk to water") || task.label().startsWith("Walk to lava"));
+        if (pos != null && !firstRefusedFill) avoid(pos, walk, pool, tick);
         if ("native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploreFailures++;
             exploreHeading = null;
@@ -392,11 +395,17 @@ final class PortalRunCampaign {
      * cannot make the player cycle through the same few unreachable targets.
      */
     private void avoid(BlockPos pos, boolean column, long tick) {
+        avoid(pos, column, false, tick);
+    }
+
+    /** As above; {@code pool} skips the part of a pool around it too (six blocks each way, two up and down). */
+    private void avoid(BlockPos pos, boolean column, boolean pool, long tick) {
         int count = failures.merge(pos.asLong(), 1, Integer::sum);
         long until = tick + (2400L << Math.min(count - 1, 5));
         blockedUntil.merge(pos.asLong(), until, Math::max); // The exact target, whatever kind it was.
         if (!column) return;
-        for (int dy = -6; dy <= 6; dy++) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+        int across = pool ? 6 : 1, up = pool ? 2 : 6;
+        for (int dy = -up; dy <= up; dy++) for (int dx = -across; dx <= across; dx++) for (int dz = -across; dz <= across; dz++) {
             long key = pos.add(dx, dy, dz).asLong();
             unreachableUntil.merge(key, until, Math::max);
             unreachableFrom.put(key, lastFeet);

@@ -15,17 +15,18 @@ import java.util.UUID;
 
 /**
  * Consults the optional model strategist for AI players with a standing goal (F-19b). Never per tick: only when
- * something changed that a player would stop and think about (the goal starting, a new stage, a death, a spell with
- * no progress) and otherwise at most every five minutes. Within the planning lane's bounds (AI-05): one request in
- * flight per player and one at a time in all, at most six a minute per player and twelve in all, and daily token
- * budgets per player and in all (50,000 and 100,000 unless the operator sets others), reserved before each request
- * for its largest possible size and settled to what it used; a failure with no usage keeps its reservation. Requests
- * go out off the game thread; the advice comes back to it and is applied only if the same goal is still running.
- * Each player's memory in this world (notes, deaths, advice, cost) lives in its context file. Off unless
- * {@code KINDRED_STRATEGIST=on} and {@code ANTHROPIC_API_KEY} are set; the game plays the same without it.
+ * something changed that a player would stop and think about (the goal starting, a new stage, a death, and at most
+ * every two minutes a spell with no progress) and otherwise at most every five minutes. Within the planning lane's
+ * bounds (AI-05): one request in flight per player and one at a time in all, at most six a minute per player and
+ * twelve in all, and daily token budgets per player and in all (50,000 and 100,000 unless the operator sets others),
+ * reserved before each request for its largest possible size and settled to what it used; a failure with no usage
+ * keeps its reservation. Requests go out off the game thread; the advice comes back to it and is applied only if the
+ * same goal is still running. Each player's memory in this world (notes, deaths, advice, cost) lives in its context
+ * file. Off unless {@code KINDRED_STRATEGIST=on} and {@code ANTHROPIC_API_KEY} are set; the game plays the same
+ * without it.
  */
 final class StrategistBridge implements AutoCloseable {
-    static final long MIN_GAP_MS = 20_000, PERIOD_MS = 300_000;
+    static final long MIN_GAP_MS = 20_000, STUCK_GAP_MS = 120_000, PERIOD_MS = 300_000;
     static final int PLAYER_PER_MINUTE = 6, GLOBAL_PER_MINUTE = 12;
     static final long DEFAULT_PLAYER_DAILY_TOKENS = 50_000, DEFAULT_DAILY_TOKENS = 100_000;
 
@@ -114,8 +115,10 @@ final class StrategistBridge implements AutoCloseable {
         }
         if (state.inFlight) return;
         long now = System.currentTimeMillis();
-        boolean changed = state.lastAt == 0 || campaign.deaths() != state.deaths || campaign.stuckSpells() != state.stuck
-                || campaign.stage() != state.stage || now - state.lastAt > PERIOD_MS && !campaign.progress().equals(state.progress);
+        // A spell with no progress repeats every few seconds while the player is stuck: one question about it in two minutes.
+        boolean changed = state.lastAt == 0 || campaign.deaths() != state.deaths || campaign.stage() != state.stage
+                || campaign.stuckSpells() != state.stuck && now - state.lastAt > STUCK_GAP_MS
+                || now - state.lastAt > PERIOD_MS && !campaign.progress().equals(state.progress);
         if (!changed || now - state.lastAt < MIN_GAP_MS) return;
         String report = campaign.strategyReport(player, name, state.context.noteTexts());
         long reserved = ClaudeStrategist.reservation(report);

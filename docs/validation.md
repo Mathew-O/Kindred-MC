@@ -4,6 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Pool skip, leaves pour and coalesced strategist questions, tested on top of `45c40c0`.
+  - `:companion-server-adapter:runGametest` passed 226/226 in two consecutive runs. The new cast fixture (water poured beside leaves rather than into them) failed before the fix with the uncertain outcome of sky-island run 5.
+  - `./gradlew build` passed: 357 JUnit results, with one skip.
+  - The strategist trigger change (a no-progress spell asks at most every two minutes) came after those runs; fixtures never switch the strategist on.
+  - On the final tree, three suite runs made while two live servers sprinted on the same four cores (load average about 4) each had one or two timing failures, each time in different fixtures: the gather pause and resume, the break-pickup shaft, the finisher and the island outcrop.
+  - With the live servers stopped, the final tree passed 226/226 twice in a row, and `./gradlew build` passed again (357 JUnit, one skip).
 - F-19b (optional Claude strategist), tested as an uncommitted tree on top of `ffbb4c4`.
   - `./gradlew build` passed (37 tasks): 357 JUnit results passed, with zero failures and one skip. The skip is the live model test, which runs only with `KINDRED_LIVE_MODEL_TEST` and a key. Run once by hand, it returned validated advice for 1139 input and 591 output tokens.
   - `:companion-testkit:run` passed.

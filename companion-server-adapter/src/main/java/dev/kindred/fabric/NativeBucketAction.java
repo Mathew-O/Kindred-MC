@@ -6,6 +6,7 @@ import dev.kindred.core.ActionRecord;
 import dev.kindred.core.Checkpoint;
 import dev.kindred.core.ClaimRegistry;
 import dev.kindred.core.EditPolicy;
+import net.minecraft.block.FluidFillable;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -114,6 +115,8 @@ final class NativeBucketAction extends NativeRecordedAction {
         for (Direction toward : List.of(Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN)) {
             BlockPos support = target.offset(toward.getOpposite());
             if (!world.isChunkLoaded(support) || world.getBlockState(support).getCollisionShape(world, support).isEmpty()) continue;
+            // Water clicked on a waterloggable block (leaves, a slab, a fence) goes into it, not beside it.
+            if (mode == Mode.POUR && world.getBlockState(support).getBlock() instanceof FluidFillable) continue;
             Vec3d face = Vec3d.ofCenter(support).add(toward.getOffsetX() * 0.5, toward.getOffsetY() * 0.5, toward.getOffsetZ() * 0.5);
             Vec3d inside = face.subtract(toward.getOffsetX() * 0.02, toward.getOffsetY() * 0.02, toward.getOffsetZ() * 0.02);
             if (rayLands(support, toward, inside)) return Optional.of(inside);
