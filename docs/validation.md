@@ -1,9 +1,17 @@
 # AI-player development validation
 
-## Current regression — 20 October 2026
+## Current regression — 21 October 2026
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Logs at the top of a cut trunk (sky-island run 12), on top of `468e1e7`, with live run 66 and sky-island run 12 playing in real time on the same machine (load average about 2.6).
+  - The new fixture failed 3 of 3 in a stress run before the fix, and passed 3 of 3 after it; the campaign class then passed 48/48.
+  - The first full suite after it failed two fixtures, 232/234. Two more runs each failed one, `goalWalksBackUpTheWayItCameWhenItsPickaxeBreaksBelow`.
+    - That fixture built its rock mass past the edge of the fixture's stone floor. There the plot is open two blocks down, and the foot of its staircase rested on whatever a neighbouring fixture had left. With the new batch the layout moved, the cell was open, the iron drop fell through, and the player followed it into a gap under its own route.
+    - The fixture now lays a floor of its own under the mass; the goal is unchanged. It also showed that with no pickaxe, a walk back that cannot start (a two-block step) completes at once without moving and is asked for again until the no-progress rule moves the player on. That is left open.
+    - The other failure, once in three runs, was `goalMakesObsidianFromLavaWithPouredWaterAndRecoversTheWater`: its five-second obsidian break was cancelled ("Stopped or unavailable") at the moment it would have completed. It passed in every run before and since; not explained.
+  - After the fixture fix, `runGametest` passed 234/234 twice. `./gradlew build` passed: 367 JUnit, three skips.
+  - JAR SHA-256: `82a8f2500ae8f932f90daa9a3b14a7e4bb424cece268281947cb09bedb7207b8`.
 - Wood first limited to trees in sight (sky-island run 11), on top of `349c270`, with live run 65 and sky-island run 11 playing in real time on the same machine.
   - `runGametest` passed 233/233 twice, with the new fixture.
   - `./gradlew build` first failed one JUnit test, `AttentionWorkSchedulerTest.dirtyEventStormCoalescesAndRetainsDueAge`. Like its neighbour fixed earlier, it read the wall clock separately for the tick start and for each start attempt, and on the loaded machine the tick's soft time budget ran out in between. That test and one other in the class that asserted starts with fresh clock readings now use one reading each; the scheduler is unchanged. Rerun: 367 JUnit passed, three skips.

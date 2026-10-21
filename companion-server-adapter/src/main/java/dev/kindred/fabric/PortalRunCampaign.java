@@ -55,6 +55,8 @@ final class PortalRunCampaign {
     record Task(String skill, Map<String, String> args, String label) { }
 
     private static final double REACH = 4.3;
+    /** Standing where a cut trunk stood, a player reaches the log this many blocks over its feet (eye 1.62, reach 4.3). */
+    private static final int TRUNK_REACH = 5;
     /** Iron is most common around Y=16; coal in caves well above deepslate, which has very little. */
     private static final int IRON_TOP = 56, IRON_TARGET = 16, COAL_TARGET = 48;
     /** Branch mining: legs this long, side steps this wide (two solid blocks between legs, each wall seen). */
@@ -1193,8 +1195,11 @@ final class PortalRunCampaign {
         for (var source : SOURCES.entrySet()) {
             // Trees count only from up among them: from below ground, getting back up to them is a trip, not a detour.
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
-            // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight.
-            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p))
+            // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight, and
+            // nor are logs left hanging out of reach (sky-island run 12 explored the void for nine minutes for those).
+            boolean tree = source.getKey() == WorldFacts.Source.TREE;
+            knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
+                            && (!tree || trunkFoot(world, p).isPresent()))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         // A generator counts from the moment its water is in: the lava that finishes it is already in hand.
@@ -1403,7 +1408,7 @@ final class PortalRunCampaign {
         Predicate<BlockPos> usable = p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
                 && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
-                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + 4 && reachableFromGround(player.getServerWorld(), p));
+                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
         for (int candidate = 0; candidate < 4; candidate++) {
             var target = knowledge.nearest(player.getServerWorld(), kind, feet, usable);
             if (target.isEmpty()) return Optional.empty();
@@ -1418,6 +1423,12 @@ final class PortalRunCampaign {
             // a view of it (ore it cannot harvest yet in the way) closes in square beside it the second time.
             int tries = approaches.getOrDefault(pos.asLong(), 0);
             if (tries < 2) {
+                // A log high over a cut trunk is further from any feet than a walk's reach: walk to where the trunk stood.
+                var world = player.getServerWorld();
+                BlockPos foot = kind == WorldKnowledge.Kind.LOG ? trunkFoot(world, pos).orElse(pos) : pos;
+                if (pos.getY() - foot.getY() > 3 && world.getBlockState(foot).getCollisionShape(world, foot).isEmpty()) {
+                    return Optional.of(go(foot, tries == 0 ? 1.5 : 0.0, false, "Walk under the " + what + " at " + pos.toShortString()));
+                }
                 double range = tries == 0 ? 3.5 : pos.getY() > feet.getY() ? 1.5 : 1.0;
                 return Optional.of(go(pos, range, false, "Walk to " + what + " at " + pos.toShortString()));
             }
@@ -1428,19 +1439,20 @@ final class PortalRunCampaign {
     }
 
     /**
-     * A log a player standing beside its trunk can reach: solid ground no more than four blocks below it, through
-     * the trunk or the cells where its lower logs were cut. Logs held up by leaves, or hanging higher, would need a
-     * pillar, so they are skipped.
+     * Where a player stands to chop {@code log}: on solid ground under its trunk, at most {@link #TRUNK_REACH} blocks
+     * below it, through the trunk or the cells where its lower logs were cut. Nothing for logs held up by leaves, or
+     * hanging higher, which would need a pillar. Planning and gathering both use it, so a log the player would not go
+     * for is never a tree in sight either.
      */
-    private static boolean reachableFromGround(ServerWorld world, BlockPos log) {
+    private static Optional<BlockPos> trunkFoot(ServerWorld world, BlockPos log) {
         BlockPos below = log.down();
-        for (int depth = 1; depth <= 4; depth++, below = below.down()) {
+        for (int depth = 1; depth <= TRUNK_REACH + 1; depth++, below = below.down()) {
             BlockState state = world.getBlockState(below);
             // The rest of a trunk whose bottom logs were cut is still chopped from the ground beneath it.
             if (state.isIn(BlockTags.LOGS) || state.isAir()) continue;
-            return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES);
+            return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES) ? Optional.of(below.up()) : Optional.empty();
         }
-        return false;
+        return Optional.empty();
     }
 
     /**

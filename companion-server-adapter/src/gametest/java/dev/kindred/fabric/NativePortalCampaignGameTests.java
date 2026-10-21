@@ -1804,7 +1804,9 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // A rock mass eight high with a staircase cut down into it from its top, open to the sky for its
                     // first three steps and roofed below, and iron ore at the foot of the last step, off the way back
                     // up and in sight from the top straight down the cut.
-                    for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 0; y <= 7; y++) {
+                    // It stands on ground of its own: past the fixture's floor the plot is open below, and the foot of
+                    // the staircase rested on whatever the neighbouring fixtures left there.
+                    for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = -1; y <= 7; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
                     for (int k = 1; k <= 8; k++) for (int y = 8 - k; y <= 10 - k; y++) world.setBlockState(b.add(k, y, 0), Blocks.AIR.getDefaultState());
@@ -2087,6 +2089,47 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     boolean planted = BlockPos.streamOutwards(f.player().getBlockPos(), 6, 2, 6).anyMatch(pos -> world.getBlockState(pos).isOf(Blocks.OAK_SAPLING));
                     context.assertTrue(left == 0 || planted && left < leaves.size(), "It broke the leaves until a sapling dropped, and planted it: "
                             + left + " left, planted " + planted + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A sky island's one tree with its lower logs cut and the top two left hanging, four and five blocks over the
+     * feet of a player on the grass, as sky-island run 12 left it. A player standing where the trunk was reaches both.
+     * Before, the goal counted them as a tree in sight but would not go for logs that high, and explored over the
+     * void for nine minutes.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyTrunkTop", tickLimit = 1200)
+    public void goalCutsTheLogsLeftAtTheTopOfACutTrunk(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] logs = new BlockPos[2];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Topper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = skyIsland(context, f.player());
+                    logs[0] = p.add(3, 4, 1);
+                    logs[1] = p.add(3, 5, 1);
+                    for (BlockPos log : logs) world.setBlockState(log, Blocks.OAK_LOG.getDefaultState());
+                    f.player().getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    long left = java.util.Arrays.stream(logs).filter(log -> world.getBlockState(log).isIn(net.minecraft.registry.tag.BlockTags.LOGS)).count();
+                    context.assertTrue(left == 0, "It cut both logs from where the trunk stood: " + left + " left - "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
                 .createAndAdd(() -> {
                     context.assertTrue(f.player().isAlive(), "Alive");
