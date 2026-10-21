@@ -1,5 +1,6 @@
 package dev.kindred.fabric;
 
+import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.StrategyAdvice;
 import dev.kindred.model.ClaudeStrategist;
 import net.minecraft.server.MinecraftServer;
@@ -37,7 +38,7 @@ final class StrategistBridge implements AutoCloseable {
         int deaths = -1, stuck = -1, deathsRecorded;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
         String progress = "";
-        PortalRunCampaign campaign;
+        PortalRunCampaign campaign, taught;
         final ArrayDeque<Long> recent = new ArrayDeque<>();
     }
 
@@ -105,6 +106,11 @@ final class StrategistBridge implements AutoCloseable {
             }
             return;
         }
+        // The habits this player keeps in this world go to each goal it starts, before anything is asked.
+        if (state.taught != campaign) {
+            campaign.habits(state.context.habits());
+            state.taught = campaign;
+        }
         // Deaths go into this world's memory as they happen, whether or not a consultation follows.
         if (campaign.deaths() > state.deathsRecorded) {
             state.deathsRecorded = campaign.deaths();
@@ -151,11 +157,22 @@ final class StrategistBridge implements AutoCloseable {
             state.context.outputTokens += outcome.outputTokens();
             if (outcome.advice().isPresent() && state.campaign == asked) {
                 StrategyAdvice advice = outcome.advice().get();
-                asked.advise(advice, server.getTicks());
-                state.context.addAdvice(server.getTicks(), advice.stance().name(), advice.reason());
-                state.context.addNote(server.getTicks(), advice.note());
-                KindredMod.LOGGER.info("{} strategist: {} ({} in, {} out tokens) - {}{}", name, advice.stance(), outcome.inputTokens(),
+                long tick = server.getTicks();
+                asked.advise(advice, tick);
+                state.context.addAdvice(tick, advice.stance().name() + (advice.focus() == PlanPreferences.Focus.NONE ? "" : ", focus " + advice.focus()),
+                        advice.reason());
+                // The note is the lesson; a habit it carries is kept in this world from now on, and one retired is not.
+                var before = state.context.habits();
+                state.context.addNote(tick, advice.note(), advice.habit());
+                state.context.retire(advice.retire());
+                var after = state.context.habits();
+                asked.habits(after);
+                KindredMod.LOGGER.info("{} strategist: {}{} ({} in, {} out tokens) - {}{}", name, advice.stance(),
+                        advice.focus() == PlanPreferences.Focus.NONE ? "" : ", focus " + advice.focus(), outcome.inputTokens(),
                         outcome.outputTokens(), advice.reason(), advice.avoid().isEmpty() ? "" : "; avoid " + advice.avoid());
+                if (!after.equals(before)) {
+                    KindredMod.LOGGER.info("{} strategist: habits in this world now {} - {}", name, after, advice.note());
+                }
             } else {
                 KindredMod.LOGGER.info("{} strategist: no advice ({}){}", name, outcome.failure().orElse("goal changed meanwhile"),
                         state.campaign == asked ? "" : "; discarded");

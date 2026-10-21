@@ -2,6 +2,7 @@ package dev.kindred.fabric;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import dev.kindred.core.survival.PlanPreferences;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -19,7 +23,8 @@ import java.util.concurrent.Executors;
 /**
  * The strategist's memory for each AI player in each world (F-19b): one small JSON file per player in the world's
  * {@code kindred/model-context} folder, holding its notes, its deaths, the advice it was given and what the
- * consultations cost. Each world keeps its own, so a player remembers this world's caves, not another's. Reads and
+ * consultations cost. A note may carry a habit the player keeps in this world (F-19c); the habits are read from the
+ * notes, so removing a note from the file, or the file, removes its habit too. Each world keeps its own, so a player remembers this world's caves, not another's. Reads and
  * writes run on their own thread, never the game's; a write replaces the file whole, so a crash leaves the last
  * complete one. It holds only the player's own game events and the model's notes about them, nothing from people.
  */
@@ -35,12 +40,61 @@ final class ModelContextStore implements AutoCloseable {
         List<AdviceRecord> advice = new ArrayList<>();
         long consultations, inputTokens, outputTokens;
 
-        List<String> noteTexts() { return notes.stream().map(note -> note.text).toList(); }
+        /** The notes as the report shows them, each with the habit it carries. */
+        List<String> noteTexts() {
+            return notes.stream().map(note -> habitOf(note) == PlanPreferences.Habit.NONE ? note.text : "[habit " + habitOf(note) + "] " + note.text).toList();
+        }
+
+        /** The habits kept in this world: those the notes carry. */
+        Set<PlanPreferences.Habit> habits() {
+            var habits = EnumSet.noneOf(PlanPreferences.Habit.class);
+            for (Note note : notes) habits.add(habitOf(note));
+            habits.remove(PlanPreferences.Habit.NONE);
+            return habits;
+        }
 
         void addNote(long tick, String text) {
-            if (text == null || text.isBlank() || notes.stream().anyMatch(note -> note.text.equalsIgnoreCase(text))) return;
-            notes.add(new Note(tick, text));
-            while (notes.size() > MAX_NOTES) notes.removeFirst();
+            addNote(tick, text, PlanPreferences.Habit.NONE);
+        }
+
+        /**
+         * Keep a note, and the habit it teaches. A habit already kept stays with its first note; past
+         * {@link PlanPreferences#MAX_HABITS} the oldest habit's note is kept as a plain note.
+         */
+        void addNote(long tick, String text, PlanPreferences.Habit habit) {
+            if (text == null || text.isBlank()) return;
+            boolean kept = habit == PlanPreferences.Habit.NONE || habits().contains(habit);
+            int same = -1;
+            for (int i = 0; i < notes.size() && same < 0; i++) if (notes.get(i).text.equalsIgnoreCase(text)) same = i;
+            if (same >= 0 && kept) return;
+            if (same >= 0) notes.set(same, new Note(notes.get(same).tick, notes.get(same).text, habit.name())); // The lesson, now kept.
+            else notes.add(new Note(tick, text, kept ? null : habit.name()));
+            while (habits().size() > PlanPreferences.MAX_HABITS) {
+                for (int i = 0; i < notes.size(); i++) {
+                    if (habitOf(notes.get(i)) != PlanPreferences.Habit.NONE) {
+                        notes.set(i, new Note(notes.get(i).tick, notes.get(i).text, null));
+                        break;
+                    }
+                }
+            }
+            // Old plain notes go first; a note that carries a habit goes only when there are too many of those.
+            while (notes.size() > MAX_NOTES) {
+                int plain = -1;
+                for (int i = 0; i < notes.size() && plain < 0; i++) if (habitOf(notes.get(i)) == PlanPreferences.Habit.NONE) plain = i;
+                notes.remove(plain >= 0 ? plain : 0);
+            }
+        }
+
+        /** Stop keeping {@code habit}: its notes stay, as plain notes. */
+        boolean retire(PlanPreferences.Habit habit) {
+            boolean changed = false;
+            for (int i = 0; i < notes.size(); i++) {
+                if (habit != PlanPreferences.Habit.NONE && habitOf(notes.get(i)) == habit) {
+                    notes.set(i, new Note(notes.get(i).tick, notes.get(i).text, null));
+                    changed = true;
+                }
+            }
+            return changed;
         }
 
         void addDeath(long tick, int x, int y, int z, String cause, String stage) {
@@ -54,7 +108,17 @@ final class ModelContextStore implements AutoCloseable {
         }
     }
 
-    record Note(long tick, String text) { }
+    /** A note, and the habit it teaches by name (absent in files from before habits). */
+    record Note(long tick, String text, String habit) { }
+
+    static PlanPreferences.Habit habitOf(Note note) {
+        if (note.habit() == null) return PlanPreferences.Habit.NONE;
+        try {
+            return PlanPreferences.Habit.valueOf(note.habit().trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException unknown) { // Edited by hand, or from a later version: no habit.
+            return PlanPreferences.Habit.NONE;
+        }
+    }
     record DeathRecord(long tick, int x, int y, int z, String cause, String stage) { }
     record AdviceRecord(long tick, String stance, String reason) { }
 

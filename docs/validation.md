@@ -4,6 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-19c (habits and a focus from the strategist), tested on top of `a077a04` with no live server running.
+  - `./gradlew build` passed: 367 JUnit results, with zero failures and two skips. The skips are the paid live model tests; run once by hand, both passed, the new one returning focus `FOOD` and habit `MORE_FOOD` for a report with two hunger deaths.
+  - `:companion-server-adapter:runGametest` passed 229/229 in two consecutive runs on the final tree, including the three new fixtures.
+  - Before the finisher change, one suite run failed `goalFinishesAWoundedZombieInReachRatherThanTurningItsBack` (see [F-19c](evidence/F-19c.md)). That fixture alone passed 12/12 in a stress run both with and without the change.
+  - `:companion-testkit:run` passed.
+  - JAR SHA-256: `3122034dd6574a470b83e5b8a30ebdad17cdce671532e0ecec6bf080b4cf69cc`.
 - Pool skip, leaves pour and coalesced strategist questions, tested on top of `45c40c0`.
   - `:companion-server-adapter:runGametest` passed 226/226 in two consecutive runs. The new cast fixture (water poured beside leaves rather than into them) failed before the fix with the uncertain outcome of sky-island run 5.
   - `./gradlew build` passed: 357 JUnit results, with one skip.

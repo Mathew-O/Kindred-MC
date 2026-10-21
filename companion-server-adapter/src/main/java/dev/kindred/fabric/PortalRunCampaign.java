@@ -1,6 +1,7 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.EditPolicy;
+import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
 import dev.kindred.core.survival.StrategyAdvice;
@@ -140,6 +141,10 @@ final class PortalRunCampaign {
     private PortalRunPlanner.Stage loggedStage;
     private StrategyAdvice advice;
     private long adviceUntil;
+    /** Habits this player keeps in this world (F-19c), from its notes. */
+    private final java.util.EnumSet<PlanPreferences.Habit> habits = java.util.EnumSet.noneOf(PlanPreferences.Habit.class);
+    /** Game time from which a player that learned to shelter early digs in: the last of the afternoon. */
+    static final long DUSK = 11_500;
 
     /** Something worth telling the strategist, in game seconds; the last sixteen are kept. */
     private void event(String text) {
@@ -156,12 +161,35 @@ final class PortalRunCampaign {
         return advice != null && lastTick < adviceUntil ? advice.stance() : StrategyAdvice.Stance.PRESS_ON;
     }
 
-    /** Take a strategist's advice: a stance for a while, and the places it names marked as danger for a while too. */
+    /**
+     * Take a strategist's advice: a stance and a focus for a while, the places it names marked as danger for a while
+     * too, and a habit its note teaches kept from now on (or one it retires dropped).
+     */
     void advise(StrategyAdvice advice, long tick) {
         this.advice = advice;
         adviceUntil = tick + ADVICE_TICKS;
         for (StrategyAdvice.Place place : advice.avoid()) markDanger(new BlockPos(place.x(), place.y(), place.z()), tick + DANGER_TICKS / 4);
-        event("strategist advised " + advice.stance() + (advice.reason().isEmpty() ? "" : ": " + advice.reason()));
+        if (advice.habit() != PlanPreferences.Habit.NONE) habits.add(advice.habit());
+        habits.remove(advice.retire());
+        event("strategist advised " + advice.stance() + (advice.focus() == PlanPreferences.Focus.NONE ? "" : ", " + advice.focus() + " first")
+                + (advice.reason().isEmpty() ? "" : ": " + advice.reason()));
+    }
+
+    /** The habits kept in this world, as the player's memory holds them. */
+    void habits(java.util.Set<PlanPreferences.Habit> kept) {
+        habits.clear();
+        habits.addAll(kept);
+        habits.remove(PlanPreferences.Habit.NONE);
+    }
+
+    /** The focus in force: the strategist's while its advice holds. */
+    PlanPreferences.Focus focus() {
+        return advice != null && lastTick < adviceUntil ? advice.focus() : PlanPreferences.Focus.NONE;
+    }
+
+    /** What the planner keeps to beyond the route: the habits, and the focus in force. */
+    PlanPreferences preferences() {
+        return new PlanPreferences(habits, focus());
     }
 
     /** Places the player itself has reported: where it died, and the danger zones it marked. */
@@ -198,7 +226,8 @@ final class PortalRunCampaign {
                     .append(s.diamonds()).append(" diamonds, ").append(s.obsidian()).append(" obsidian.\n");
         }
         out.append("Deaths so far: ").append(deathCount).append(". No-progress spells: ").append(stuckSpells).append(".\n");
-        out.append("Stance in force: ").append(stance()).append(".\n");
+        out.append("Stance in force: ").append(stance()).append(", focus ").append(focus()).append(".\n");
+        out.append("Habits kept in this world: ").append(habits.isEmpty() ? "none" : habits.toString()).append(".\n");
         if (!events.isEmpty()) {
             out.append("Recent events, oldest first:\n");
             for (String e : events) out.append("- ").append(e).append('\n');
@@ -604,7 +633,7 @@ final class PortalRunCampaign {
             if (loggedStage != null) event("stage " + stageLabel(loggedStage) + " -> " + stageLabel(stage));
             loggedStage = stage;
         }
-        var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts));
+        var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences()));
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
         // Not with a bucket that holds lava, nor while a generator is being built: its own water is not to be taken.
         // Close means close: a lake far overhead is a climb, not a detour (live run 53 tried one from 27 blocks below
@@ -686,7 +715,7 @@ final class PortalRunCampaign {
         }
         // Up and healed: the advice is done with; the rest of its time is spent playing safe, not climbing out again.
         if (recovering && !underground(player) && player.getHealth() >= 18) {
-            advice = new StrategyAdvice(StrategyAdvice.Stance.PLAY_SAFE, advice.avoid(), advice.note(), advice.reason());
+            advice = advice.withStance(StrategyAdvice.Stance.PLAY_SAFE);
             event("recovered on the surface; playing safe for the rest of the advice");
         }
         // Underground in the dark: light it, so nothing spawns beside the player while it works.
@@ -703,8 +732,11 @@ final class PortalRunCampaign {
                 return pickup;
             }
         }
-        // Nights on the surface belong to skeletons: get below ground, and leave surface jobs for daylight.
-        boolean night = player.getServerWorld().isNight() && player.getServerWorld().getDimension().hasSkyLight();
+        // Nights on the surface belong to skeletons: get below ground, and leave surface jobs for daylight. A player that
+        // learned to shelter early counts the last of the afternoon as night already.
+        var here = player.getServerWorld();
+        boolean night = here.getDimension().hasSkyLight() && (here.isNight()
+                || habits.contains(PlanPreferences.Habit.SHELTER_EARLY) && here.getTimeOfDay() % 24_000 >= DUSK && here.getTimeOfDay() % 24_000 < 13_000);
         if (night && !sheltered(player)) {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
@@ -754,6 +786,7 @@ final class PortalRunCampaign {
         }
         for (PortalRunPlanner.Step step : steps) {
             if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
+            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) continue; // Looking about for animals is daylight work.
             Optional<Task> task = realize(step, snapshot, body, policy);
             if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
             if (task.isPresent()) {
@@ -1005,6 +1038,8 @@ final class PortalRunCampaign {
             case COLLECT_SMELTED -> nearestWorkstation(player, Blocks.FURNACE, 16).flatMap(f -> atWorkstation(player, f,
                     new Task("native_smelt", coords(f, Map.of("action", "extract")), "Take smelted iron")));
             case HUNT -> hunt(player);
+            // Advised food first and none in sight: out to the surface by day, then walk out and look.
+            case SEEK_FOOD -> underground(player) ? wayUp(body, "Climb out to look for animals") : explore(body, "animals");
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
                     .or(() -> underground(player) ? wayUp(body, "Climb toward the surface for logs")
                             // Not when already there: that walk ends where it starts, over and over.
@@ -1132,7 +1167,9 @@ final class PortalRunCampaign {
         boolean shield = shielded(body.entity());
         if (!shield && !quietAround(world, lastFeet)) return Optional.empty();
         // Not hurt, either: players heal before going into a cave, not after. Nor while advised to play safe.
-        if (body.entity().getHealth() < 14 || stance() == StrategyAdvice.Stance.PLAY_SAFE) return Optional.empty();
+        if (body.entity().getHealth() < 14 || stance() == StrategyAdvice.Stance.PLAY_SAFE || habits.contains(PlanPreferences.Habit.NO_CAVES)) {
+            return Optional.empty();
+        }
         BlockPos feet = lastFeet;
         BlockPos anchor = home == null ? feet : home;
         int gapNow = Math.abs(feet.getY() - targetY);
@@ -2332,7 +2369,8 @@ final class PortalRunCampaign {
         // Badly hurt with a mob on foot in reach that two swings will kill: finish it. Turning away from it is
         // worse: a zombie keeps pace with a player walking off and strikes its back (the tunnel fixture's zombie
         // killed a player with an iron sword that turned to back off at five health).
-        HostileEntity last = player.getHealth() < 6 ? finishable(player) : null;
+        // A foe the last swing knocked a few steps back is still the fight, as the running fight itself counts it.
+        HostileEntity last = player.getHealth() < 6 ? finishable(player, foe != null && lastTick < foeUntil ? 5.0 : 3.0) : null;
         if (last != null) {
             foe = last.getUuid();
             foeUntil = lastTick + 100;

@@ -2,6 +2,7 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.Actor;
 import dev.kindred.core.ActionRecord;
+import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.SurvivalGoal;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.block.Blocks;
@@ -1300,6 +1301,156 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * The cave the goal explores for its iron in the fixture above, with no mob about, pressing on, but having learned
+     * in this world to leave caves alone (F-19c, a habit its strategist's note taught): it digs its own way instead.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalKeepsAHabitOfLeavingCavesAlone(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] explored = {false};
+        int[] settle = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Habitual"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
+                    Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
+                        world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
+                    }
+                    var passage = new java.util.ArrayList<BlockPos>();
+                    for (int i = 0; i <= 2; i++) passage.add(p.offset(alongX, i));
+                    for (int i = 1; i <= 2; i++) passage.add(p.offset(alongX, 2).offset(alongZ, i));
+                    for (BlockPos cell : passage) {
+                        world.setBlockState(cell, Blocks.AIR.getDefaultState());
+                        world.setBlockState(cell.up(), Blocks.AIR.getDefaultState());
+                    }
+                    world.setBlockState(p.offset(alongX, 2).offset(alongZ, 3), Blocks.IRON_ORE.getDefaultState());
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settling"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 19));
+                    inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(5, new ItemStack(Items.COAL, 4));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", java.util.List.of(),
+                            "Both lives here ended in the caves under spawn; dig my own way", "", java.util.List.of(), null, "NO_CAVES", null).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    explored[0] |= progress.contains("Explore the cave");
+                    context.assertTrue(progress.contains("Branch mine") || progress.contains("Dig down"),
+                            "It digs its own way for iron: " + progress);
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(explored[0], "It kept to its habit and left the cave alone");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Stocked as usual for the work below (six bread) at the iron stage, a cow in sight: the route alone goes on to
+     * iron, but advised food first (F-19c) the player hunts the cow before anything else.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 700)
+    public void goalHuntsFirstWhenAdvisedFoodFirst(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] advised = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Forager"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    world.setTimeOfDay(1000);
+                    var cow = net.minecraft.entity.EntityType.COW.create(world);
+                    cow.refreshPositionAndAngles(p.getX() + 3.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    cow.setPersistent();
+                    cow.setAiDisabled(true);
+                    world.spawnEntity(cow);
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 6));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 19));
+                    inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(40, new ItemStack(Items.SHIELD));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", java.util.List.of(),
+                            "", "Six bread will not last the work below", java.util.List.of(), "FOOD", null, null).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    advised[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Food first");
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.BEEF) >= 1,
+                            "It hunted the cow: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(advised[0], "Food came first, as advised");
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A player's memory of a world keeps the habits its notes teach across a save and a load (F-19c): a habit stays
+     * with its first note, and a retired habit leaves its note as a plain note.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 100)
+    public void memoryKeepsHabitsWithTheirNotesAcrossASave(TestContext context) {
+        var folder = context.getWorld().getServer().getSavePath(net.minecraft.util.WorldSavePath.ROOT)
+                .resolve("kindred-context-fixture-" + java.util.UUID.randomUUID());
+        try (var store = new ModelContextStore(folder)) {
+            var id = java.util.UUID.randomUUID();
+            var memory = new ModelContextStore.PlayerContext();
+            memory.addNote(1, "Caves under spawn killed me twice", PlanPreferences.Habit.NO_CAVES);
+            memory.addNote(2, "Ran out of food below", PlanPreferences.Habit.MORE_FOOD);
+            memory.addNote(3, "Ran out of food below again", PlanPreferences.Habit.MORE_FOOD);
+            memory.addNote(4, "A plain lesson");
+            context.assertTrue(memory.habits().size() == 2, "Two habits: " + memory.habits());
+            context.assertTrue(memory.noteTexts().stream().filter(text -> text.startsWith("[habit MORE_FOOD]")).count() == 1,
+                    "A habit stays with its first note: " + memory.noteTexts());
+            memory.addNote(5, "Dug in too late twice", PlanPreferences.Habit.SHELTER_EARLY);
+            memory.addNote(6, "Pickaxe wore out with none spare", PlanPreferences.Habit.SPARE_PICKAXE);
+            context.assertTrue(memory.habits().size() == 4, "Four habits: " + memory.habits());
+            memory.retire(PlanPreferences.Habit.NO_CAVES);
+            context.assertFalse(memory.habits().contains(PlanPreferences.Habit.NO_CAVES), "Retired");
+            context.assertTrue(memory.noteTexts().contains("Caves under spawn killed me twice"), "Its note kept, plain: " + memory.noteTexts());
+            store.save(id, memory);
+            var loaded = store.load(id, "Rememberer").get(5, java.util.concurrent.TimeUnit.SECONDS);
+            context.assertTrue(loaded.habits().equals(memory.habits()) && loaded.notes.size() == memory.notes.size(),
+                    "The habits come back from the file: " + loaded.habits() + " " + loaded.noteTexts());
+        } catch (Exception failed) {
+            throw new AssertionError("Memory round trip failed: " + failed, failed);
+        }
+        context.complete();
     }
 
     /**

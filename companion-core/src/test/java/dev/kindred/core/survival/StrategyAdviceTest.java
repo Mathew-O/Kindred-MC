@@ -47,4 +47,36 @@ class StrategyAdviceTest {
         assertEquals(StrategyAdvice.MAX_TEXT, advice.reason().length());
         assertTrue(advice.avoid().isEmpty());
     }
+
+    @Test
+    void aFocusAndAHabitWithItsNoteAreKept() {
+        var advice = StrategyAdvice.validated("PRESS_ON", List.of(), "Two lives ended hungry below; carry more food", "Out of food again",
+                REPORTED, "food", "MORE_FOOD", "no_caves").orElseThrow();
+        assertEquals(PlanPreferences.Focus.FOOD, advice.focus());
+        assertEquals(PlanPreferences.Habit.MORE_FOOD, advice.habit());
+        assertEquals(PlanPreferences.Habit.NO_CAVES, advice.retire());
+    }
+
+    @Test
+    void aHabitNeedsANoteSayingWhy() {
+        var advice = StrategyAdvice.validated("PRESS_ON", List.of(), "  ", "", REPORTED, "NONE", "NO_CAVES", null).orElseThrow();
+        assertEquals(PlanPreferences.Habit.NONE, advice.habit(), "a habit with no note behind it is not learned");
+    }
+
+    @Test
+    void anUnknownFocusOrHabitIsNone() {
+        var advice = StrategyAdvice.validated("PLAY_SAFE", List.of(), "note", "", REPORTED, "diamonds_now", "teleport", "everything").orElseThrow();
+        assertEquals(PlanPreferences.Focus.NONE, advice.focus());
+        assertEquals(PlanPreferences.Habit.NONE, advice.habit());
+        assertEquals(PlanPreferences.Habit.NONE, advice.retire());
+    }
+
+    @Test
+    void anotherStanceKeepsTheRest() {
+        var advice = StrategyAdvice.validated("SURFACE_AND_RECOVER", List.of(new Place(35, 32, 87)), "note", "why", REPORTED, "WOOD", null, null)
+                .orElseThrow().withStance(Stance.PLAY_SAFE);
+        assertEquals(Stance.PLAY_SAFE, advice.stance());
+        assertEquals(PlanPreferences.Focus.WOOD, advice.focus());
+        assertEquals(1, advice.avoid().size());
+    }
 }

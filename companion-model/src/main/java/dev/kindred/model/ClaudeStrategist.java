@@ -7,6 +7,7 @@ import com.anthropic.errors.RateLimitException;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.StructuredMessageCreateParams;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.StrategyAdvice;
 
 import java.time.Duration;
@@ -40,7 +41,16 @@ public final class ClaudeStrategist implements AutoCloseable {
             @JsonPropertyDescription("A short note worth remembering in this world (a lesson, a place, a habit), or an empty string.")
             String note,
             @JsonPropertyDescription("Up to three places to keep away from for a while. Only places near deaths or danger zones in the report.")
-            List<Spot> avoid) { }
+            List<Spot> avoid,
+            @JsonPropertyDescription("What to do first for the next few minutes: FOOD hunts and looks for animals until well stocked; "
+                    + "WOOD gathers logs until there is wood to spare; NONE leaves the order to the route.")
+            PlanPreferences.Focus focus,
+            @JsonPropertyDescription("A lasting habit the note teaches, kept in this world from now on, or NONE: MORE_FOOD carries more food; "
+                    + "SPARE_PICKAXE packs a second spare pickaxe for the work below; NO_CAVES digs its own way rather than explore caves; "
+                    + "SHELTER_EARLY digs in at dusk. Only with a note saying why.")
+            PlanPreferences.Habit habit,
+            @JsonPropertyDescription("A habit kept in this world (listed in the report) that is no longer worth keeping, or NONE.")
+            PlanPreferences.Habit retire) { }
 
     public record Spot(int x, int y, int z) { }
 
@@ -52,16 +62,27 @@ public final class ClaudeStrategist implements AutoCloseable {
     static final String SYSTEM = """
             You advise an autonomous Minecraft survival player that is earning a Nether portal from an empty inventory \
             with no cheats. Its own code plays every moment: movement, mining, crafting, fighting and recovery. You do \
-            not control it. You choose how careful it should be for the next few minutes, from what it reports.
+            not control it. From what it reports, you choose how careful it should be and what it should see to first \
+            for the next few minutes, and you keep its lessons for this world.
 
             Choose one stance:
             - PRESS_ON: things are going well; let it carry on.
             - PLAY_SAFE: it keeps dying or getting into fights it loses; it should stay out of caves and back off sooner.
             - SURFACE_AND_RECOVER: it is hurt, hungry or cornered below ground; it should get to the surface and heal first.
 
+            Choose a focus: FOOD when it is low on food or carries little and animals may be about; WOOD when it keeps \
+            stalling for want of logs, sticks, a table or fuel; otherwise NONE. A focus only reorders its ordinary \
+            jobs; fighting, shelter and healing still come first.
+
+            Your note is the player's memory of this world, and the report lists the notes it keeps. When the report \
+            shows the same problem more than once (deaths in caves, nights, running out of food or of pickaxes), \
+            write a note with the lesson and set the habit that acts on it, so the player keeps it in every later \
+            life here. Set a habit only for a repeated problem, never one it already keeps, and retire a kept habit \
+            only when the report shows it is getting in the way.
+
             You may name up to three places to keep away from, but only places close to deaths or danger zones in the \
-            report. Never invent positions, resources or events. Keep the note to one practical lesson worth keeping \
-            for this world, and the reason to one sentence. Prefer PRESS_ON unless the report shows a real problem.""";
+            report. Never invent positions, resources or events. Keep the note to one practical lesson and the reason \
+            to one sentence. Prefer PRESS_ON and no focus unless the report shows a real problem.""";
 
     private final AnthropicClient client;
     private final String model;
@@ -126,7 +147,8 @@ public final class ClaudeStrategist implements AutoCloseable {
             Reply r = reply.get();
             var places = r.avoid() == null ? List.<StrategyAdvice.Place>of()
                     : r.avoid().stream().filter(Objects::nonNull).map(s -> new StrategyAdvice.Place(s.x(), s.y(), s.z())).toList();
-            var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported);
+            var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported,
+                    name(r.focus()), name(r.habit()), name(r.retire()));
             return new Outcome(advice, in, out, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
         } catch (RateLimitException limited) {
             return Outcome.failed("rate limited");
@@ -136,6 +158,8 @@ public final class ClaudeStrategist implements AutoCloseable {
             return Outcome.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()));
         }
     }
+
+    private static String name(Enum<?> value) { return value == null ? null : value.name(); }
 
     @Override
     public void close() {

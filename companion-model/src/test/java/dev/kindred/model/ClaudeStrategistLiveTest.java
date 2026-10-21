@@ -36,4 +36,33 @@ class ClaudeStrategistLiveTest {
             assertTrue(outcome.advice().get().stance() != StrategyAdvice.Stance.PRESS_ON, "a hurt, hungry player that keeps dying should not press on");
         }
     }
+
+    @Test
+    void repeatedHungerBringsAFoodFocusAndAHabit() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");
+        var strategist = ClaudeStrategist.fromEnvironment(null);
+        Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+        try (var s = strategist.get()) {
+            String report = """
+                    Player Kindred, overworld, day 3, daytime (time 2000).
+                    Position 40 64 80, on the surface.
+                    Health 9/20, food 3/20, food items carried 0.
+                    Stage: Iron. Doing: Iron: Mine iron ore (4/15) - Branch mine for iron.
+                    Gear: pickaxe tier 2 (2 carried), sword tier 2, a shield, no armour.
+                    Deaths so far: 2. No-progress spells: 1.
+                    Stance in force: PRESS_ON, focus NONE.
+                    Habits kept in this world: none.
+                    Recent events, oldest first:
+                    - at 900s: died at 35 22 87: Kindred starved to death while below ground (stage Iron)
+                    - at 1800s: climbed out hurt and out of food
+                    - at 2100s: died at 38 19 90: Kindred was slain by Zombie (stage Iron), with no food left
+                    Your notes from earlier in this world:
+                    - Ran out of food deep in the branch mine""";
+            var outcome = s.advise(report, List.of(new StrategyAdvice.Place(35, 22, 87), new StrategyAdvice.Place(38, 19, 90)))
+                    .get(90, TimeUnit.SECONDS);
+            System.out.println("strategist outcome: " + outcome);
+            assertTrue(outcome.advice().isPresent(), "advice: " + outcome.failure());
+            assertTrue(outcome.advice().get().focus() == dev.kindred.core.survival.PlanPreferences.Focus.FOOD, "hungry with none carried: food first");
+        }
+    }
 }

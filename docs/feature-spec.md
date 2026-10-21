@@ -116,6 +116,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] F-19 — Bounded model chat/planning gateway and strict proposal validation.
 - [x] F-19a — Optional model module and event-driven reasoning admission foundation. Completed 2026-10-15; [evidence](evidence/F-19a.md). Provider integration remains F-19.
 - [ ] F-19b — Optional Claude strategist for goals, with a context file per player per world. In progress; [evidence](evidence/F-19b.md).
+- [ ] F-19c — The strategist's say in task choice: habits its notes teach, kept per world, and a short focus on what comes next. In progress; [evidence](evidence/F-19c.md).
 - [ ] F-20 — Correctable preferences and provenance-backed social memory.
 - [ ] F-21 — Verified player activity journal.
 - [ ] F-22 — Operator configuration, diagnostics, performance and installation evidence.
@@ -348,6 +349,9 @@ Depends on F-19a and F-25c4. A provider transport in companion-model (the offici
 | E-29/30/31 | Functional design generation, durable uniqueness and native finished-build qualification; [contract](architectural-design.md). |
 | E-32/33/34 | World-safe mannerisms, checkpointed attention and bounded social feedback; [contract](mannerisms-and-autonomy.md). |
 | E-36/37/38 | Provenance naming, actual native taming and honest pet life/loss; [contract](naming-and-pets.md). |
+
+### F-19c — The strategist's say in task choice
+Depends on F-19b. The strategist's reply also names a focus from a fixed set (food first, wood first, none) for the same five minutes as its stance, and its note may carry a habit from a fixed set (more food carried, a second spare pickaxe for the work below, no caves, shelter at dusk) or retire one. The vocabulary is `PlanPreferences` in core, which the planner and the goal read; nothing else changes task choice. A focus puts the route's own ordinary jobs first while they still have work to do (hunting, and looking for animals by day when none is in sight; logs where a tree stands) and ends when the player is well stocked. A habit changes how much is packed or which way ore is sought (dig its own way, not caves) or when night begins, never the route; fights, shelter and healing always come first. A habit needs a note saying why; it is kept with that note in the player's memory for that world (at most four), handed to each goal it starts there, survives deaths and restarts, and goes when the note or file is removed or the strategist retires it. Accept with pure planner and validation tests, native fixtures for a focus and a habit, a memory round trip, a live consultation that sets them from a repeated problem, and live runs in which a learned habit changes play.
 
 ### E-39 — Team End expedition and Dragon skills
 Depends on F-25b/c, E-04/07/11/14/15/16/17. Earn Eyes of Ender, discover the stronghold through observations, prepare portal/gear/food and traverse the End with qualified Dragon tactics. Verify readiness, permission, member authority, stop, death/recovery, restart and exact item conservation. No unqualified encounters are silently enabled.

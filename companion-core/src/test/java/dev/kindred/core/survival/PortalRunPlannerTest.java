@@ -511,4 +511,76 @@ class PortalRunPlannerTest {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new WorldFacts(java.util.Map.of(WorldFacts.Source.LAVA, -1), java.util.Set.of()));
     }
+
+    /** Iron stage below ground, stocked as usual (six food), a table at hand, trees in sight. */
+    private static Sim ironWork() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 20; sim.shields = 1; sim.tableNearby = true;
+        sim.food = 6; sim.planks = 4;
+        return sim;
+    }
+
+    private static final WorldFacts TREES = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
+
+    private static PlanPreferences focus(PlanPreferences.Focus focus) { return new PlanPreferences(java.util.Set.of(), focus); }
+
+    private static PlanPreferences habit(PlanPreferences.Habit habit) { return new PlanPreferences(java.util.Set.of(habit), PlanPreferences.Focus.NONE); }
+
+    @Test
+    void foodFirstPutsTheHuntAndTheSearchForAnimalsAheadOfTheRoute() {
+        Sim sim = ironWork();
+        assertTrue(PortalRunPlanner.plan(sim.snapshot(), TREES).stream().noneMatch(step -> step.action() == Action.HUNT),
+                "stocked as usual, the route goes on to iron");
+        var steps = PortalRunPlanner.plan(sim.snapshot(), TREES, focus(PlanPreferences.Focus.FOOD));
+        assertEquals(Action.HUNT, steps.get(0).action());
+        assertEquals(Action.SEEK_FOOD, steps.get(1).action());
+        assertEquals(PortalRunPlanner.FOOD_STOCK + 3 + PlanPreferences.FOCUS_FOOD - 6, steps.get(0).count(), "three more than the trip's stock");
+        assertEquals(Action.MINE_IRON, steps.getLast().action(), "the route's own step stays last");
+    }
+
+    @Test
+    void foodFirstEndsOnceWellStocked() {
+        Sim sim = ironWork();
+        sim.food = PortalRunPlanner.FOOD_STOCK + 3 + PlanPreferences.FOCUS_FOOD;
+        assertTrue(PortalRunPlanner.plan(sim.snapshot(), TREES, focus(PlanPreferences.Focus.FOOD)).stream()
+                .noneMatch(step -> step.action() == Action.HUNT || step.action() == Action.SEEK_FOOD));
+    }
+
+    @Test
+    void woodFirstGathersLogsUntilThereIsWoodToSpare() {
+        Sim sim = ironWork();
+        var steps = PortalRunPlanner.plan(sim.snapshot(), TREES, focus(PlanPreferences.Focus.WOOD));
+        assertEquals(Action.GATHER_LOGS, steps.getFirst().action());
+        assertTrue(steps.getFirst().why().contains("Wood first"));
+        sim.logs = 5; // Twenty planks more: past the four kept for a spare table and the sixteen the focus wants.
+        assertTrue(PortalRunPlanner.plan(sim.snapshot(), TREES, focus(PlanPreferences.Focus.WOOD)).stream()
+                .noneMatch(step -> step.why().contains("Wood first")));
+    }
+
+    @Test
+    void woodFirstLeavesSaplingWaitsToTheRouteOnASkyIsland() {
+        Sim sim = skyIsland();
+        sim.treeLogs = 0;
+        sim.planted = 1;
+        assertTrue(PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts(), focus(PlanPreferences.Focus.WOOD)).stream()
+                .noneMatch(step -> step.why().contains("Wood first")), "no tree standing: nothing to cut first");
+    }
+
+    @Test
+    void aPlayerThatLearnedToCarryMoreFoodStocksThreeMore() {
+        Sim sim = ironWork();
+        var steps = PortalRunPlanner.plan(sim.snapshot(), TREES, habit(PlanPreferences.Habit.MORE_FOOD));
+        assertEquals(Action.HUNT, steps.getFirst().action());
+        assertEquals(PlanPreferences.EXTRA_FOOD, steps.getFirst().count());
+    }
+
+    @Test
+    void aPlayerThatLearnedOneSpareIsNotEnoughPacksTwo() {
+        Sim sim = ironWork();
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), TREES).getLast().action(), "one spare packed already");
+        var step = PortalRunPlanner.plan(sim.snapshot(), TREES, habit(PlanPreferences.Habit.SPARE_PICKAXE)).getLast();
+        assertEquals("stone_pickaxe", step.item(), "a second spare");
+        sim.apply(step);
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), TREES, habit(PlanPreferences.Habit.SPARE_PICKAXE)).getLast().action());
+    }
 }

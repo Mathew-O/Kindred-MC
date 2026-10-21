@@ -7,18 +7,24 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Advice for an AI player's standing goal from an optional model strategist (F-19b): a stance the local route keeps
- * for a while, places to keep away from, and a note for the player's own memory. Advice is never an order: the
- * planner and the body's rules still decide every step, and the advice only shifts how careful they are. Places
- * must lie near something the player itself reported (a death, a danger zone), so a model cannot point the player
- * at hidden resources or anywhere it has not been. Pure and immutable.
+ * Advice for an AI player's standing goal from an optional model strategist (F-19b, F-19c): a stance the local route
+ * keeps for a while, places to keep away from, a focus on what to do next, and a note for the player's own memory,
+ * which may carry a habit the player keeps in that world from then on (or retire one it kept). Advice is never an
+ * order: the planner and the body's rules still decide every step, and the advice only shifts how careful they are
+ * and which of the route's ordinary jobs comes first ({@link PlanPreferences}). Places must lie near something the
+ * player itself reported (a death, a danger zone), so a model cannot point the player at hidden resources or
+ * anywhere it has not been, and a habit needs a note saying why. Pure and immutable.
  *
  * @param stance how careful the route is for a while
  * @param avoid  places to keep away from, at most {@link #MAX_AVOID}
  * @param note   a short note the player keeps in its memory for this world, possibly empty
  * @param reason why, in a sentence, for the log and the memory
+ * @param focus  what to do first for a while, where the route allows
+ * @param habit  a lasting lesson the note carries, or {@code NONE}
+ * @param retire a habit kept in this world that is no longer worth keeping, or {@code NONE}
  */
-public record StrategyAdvice(Stance stance, List<Place> avoid, String note, String reason) {
+public record StrategyAdvice(Stance stance, List<Place> avoid, String note, String reason,
+                             PlanPreferences.Focus focus, PlanPreferences.Habit habit, PlanPreferences.Habit retire) {
     /** How careful the route is. */
     public enum Stance {
         /** Carry on with the route as the local planner sees fit. */
@@ -46,20 +52,35 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
         avoid = List.copyOf(avoid);
         note = Objects.requireNonNull(note);
         reason = Objects.requireNonNull(reason);
+        Objects.requireNonNull(focus);
+        Objects.requireNonNull(habit);
+        Objects.requireNonNull(retire);
+    }
+
+    /** Advice with a stance only: no focus, no habit. */
+    public StrategyAdvice(Stance stance, List<Place> avoid, String note, String reason) {
+        this(stance, avoid, note, reason, PlanPreferences.Focus.NONE, PlanPreferences.Habit.NONE, PlanPreferences.Habit.NONE);
+    }
+
+    /** The same advice under another stance. */
+    public StrategyAdvice withStance(Stance other) {
+        return new StrategyAdvice(other, avoid, note, reason, focus, habit, retire);
+    }
+
+    /** {@link #validated(String, List, String, String, List, String, String, String)} with no focus or habit. */
+    public static Optional<StrategyAdvice> validated(String stance, List<Place> avoid, String note, String reason, List<Place> reported) {
+        return validated(stance, avoid, note, reason, reported, null, null, null);
     }
 
     /**
      * Advice from a model's raw reply, or nothing when the reply does not name a known stance. Places not near any
-     * of {@code reported} are dropped, and text is trimmed to {@link #MAX_TEXT} plain characters.
+     * of {@code reported} are dropped, and text is trimmed to {@link #MAX_TEXT} plain characters. An unknown focus or
+     * habit counts as none; so does a habit without a note to say why.
      */
-    public static Optional<StrategyAdvice> validated(String stance, List<Place> avoid, String note, String reason, List<Place> reported) {
-        if (stance == null) return Optional.empty();
-        Stance parsed;
-        try {
-            parsed = Stance.valueOf(stance.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException unknown) {
-            return Optional.empty();
-        }
+    public static Optional<StrategyAdvice> validated(String stance, List<Place> avoid, String note, String reason, List<Place> reported,
+                                                     String focus, String habit, String retire) {
+        Optional<Stance> parsed = parse(Stance.class, stance);
+        if (parsed.isEmpty()) return Optional.empty();
         var kept = new ArrayList<Place>();
         if (avoid != null) {
             for (Place place : avoid) {
@@ -67,7 +88,20 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
                 if (reported.stream().anyMatch(known -> known.distanceTo(place) <= REPORTED_RADIUS)) kept.add(place);
             }
         }
-        return Optional.of(new StrategyAdvice(parsed, kept, plain(note), plain(reason)));
+        String plainNote = plain(note);
+        var learned = plainNote.isEmpty() ? PlanPreferences.Habit.NONE : parse(PlanPreferences.Habit.class, habit).orElse(PlanPreferences.Habit.NONE);
+        return Optional.of(new StrategyAdvice(parsed.get(), kept, plainNote, plain(reason),
+                parse(PlanPreferences.Focus.class, focus).orElse(PlanPreferences.Focus.NONE), learned,
+                parse(PlanPreferences.Habit.class, retire).orElse(PlanPreferences.Habit.NONE)));
+    }
+
+    private static <E extends Enum<E>> Optional<E> parse(Class<E> type, String name) {
+        if (name == null) return Optional.empty();
+        try {
+            return Optional.of(Enum.valueOf(type, name.trim().toUpperCase(Locale.ROOT)));
+        } catch (IllegalArgumentException unknown) {
+            return Optional.empty();
+        }
     }
 
     /** Printable text on one line, at most {@link #MAX_TEXT} characters. */

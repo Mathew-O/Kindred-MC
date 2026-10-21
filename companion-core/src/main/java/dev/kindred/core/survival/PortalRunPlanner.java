@@ -78,7 +78,9 @@ public final class PortalRunPlanner {
         /** Wait by planted saplings for one to grow into a tree. */
         AWAIT_TREE,
         /** Break leaves left after the logs for the saplings they drop. */
-        GATHER_SAPLINGS
+        GATHER_SAPLINGS,
+        /** Go and look for animals to hunt (out to the surface by day), when food comes first and none is in sight. */
+        SEEK_FOOD
     }
 
     /**
@@ -105,24 +107,48 @@ public final class PortalRunPlanner {
         return plan(s, WorldFacts.ordinary());
     }
 
-    /** Steps in priority order: opportunistic upkeep first, then the single next material step of the route. */
+    /** {@link #plan(PortalRunSnapshot, WorldFacts, PlanPreferences)} with no habits and no focus. */
     public static List<Step> plan(PortalRunSnapshot s, WorldFacts facts) {
+        return plan(s, facts, PlanPreferences.NONE);
+    }
+
+    /**
+     * Steps in priority order: a focus the player was given first, where it still has work to do; then opportunistic
+     * upkeep; then the single next material step of the route. Habits change how much is packed, never the route.
+     */
+    public static List<Step> plan(PortalRunSnapshot s, WorldFacts facts, PlanPreferences prefs) {
         Objects.requireNonNull(s);
         Objects.requireNonNull(facts);
+        Objects.requireNonNull(prefs);
         var steps = new ArrayList<Step>();
         if (s.portalLit()) {
             steps.add(Step.of(Action.DONE, Stage.DONE, "The Nether portal is built and lit"));
             return steps;
         }
+        // There are no animals deep underground: take some food while some are in sight, more before the work below,
+        // where fights go on longer than the food did in live run 58, and more again where it learned it needs it.
+        int foodStock = FOOD_STOCK + (belowGroundWork(s, facts, frameMethod(s, facts)) ? BELOW_FOOD : 0)
+                + (prefs.has(PlanPreferences.Habit.MORE_FOOD) ? PlanPreferences.EXTRA_FOOD : 0);
+        // Food first: hunt what is in sight, else go and look for animals, until well stocked.
+        boolean foodFirst = prefs.focus() == PlanPreferences.Focus.FOOD && s.edibleFood() < foodStock + PlanPreferences.FOCUS_FOOD;
+        if (foodFirst) {
+            int wanted = foodStock + PlanPreferences.FOCUS_FOOD - s.edibleFood();
+            steps.add(new Step(Action.HUNT, "", wanted, stage(s, facts), "Food first, as advised: hunt an animal in sight"));
+            steps.add(new Step(Action.SEEK_FOOD, "", wanted, stage(s, facts), "Food first, as advised: look for animals"));
+        }
+        // Wood first: logs until there is wood to spare beyond what is kept for a shield and a spare table. Where trees
+        // grow only from saplings it is cut when one stands; waiting by the saplings is the route's own call.
+        int woodWanted = woodKept(s, facts) + PlanPreferences.FOCUS_WOOD - s.woodUnits();
+        boolean treesToCut = !facts.can(WorldFacts.Method.REPLANT) || facts.knows(WorldFacts.Source.TREE);
+        if (prefs.focus() == PlanPreferences.Focus.WOOD && woodWanted > 0 && treesToCut) {
+            steps.add(new Step(Action.GATHER_LOGS, "", (woodWanted + 3) / 4, stage(s, facts), "Wood first, as advised"));
+        }
         if (s.furnaceNearby() && s.furnaceOutput() > 0) {
             steps.add(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect smelted items from the furnace"));
         }
-        // There are no animals deep underground: take some food while some are in sight, more before the work below,
-        // where fights go on longer than the food did in live run 58.
-        int foodStock = FOOD_STOCK + (belowGroundWork(s, facts, frameMethod(s, facts)) ? BELOW_FOOD : 0);
-        if (s.edibleFood() == 0 && s.foodLevel() <= 14) {
+        if (!foodFirst && s.edibleFood() == 0 && s.foodLevel() <= 14) {
             steps.add(new Step(Action.HUNT, "", 1, stage(s, facts), "Out of food; hunt an animal in sight"));
-        } else if (s.edibleFood() < foodStock) {
+        } else if (!foodFirst && s.edibleFood() < foodStock) {
             steps.add(new Step(Action.HUNT, "", foodStock - s.edibleFood(), stage(s, facts), "Stock some food while animals are around"));
         }
         // Where trees do not come back by themselves, every tree cut is replanted, as sky-island players do: saplings
@@ -135,7 +161,7 @@ public final class PortalRunPlanner {
                 steps.add(Step.of(Action.GATHER_SAPLINGS, stage(s, facts), "Break the leaves left behind for saplings"));
             }
         }
-        steps.add(primary(s, facts));
+        steps.add(primary(s, facts, prefs));
         return steps;
     }
 
@@ -178,7 +204,7 @@ public final class PortalRunPlanner {
         return 2 + Math.max(0, 2 - buckets) * 3.0;
     }
 
-    private static Step primary(PortalRunSnapshot s, WorldFacts facts) {
+    private static Step primary(PortalRunSnapshot s, WorldFacts facts, PlanPreferences prefs) {
         WorldFacts.Method frame = frameMethod(s, facts);
         // Wood: a crafting table and a wooden pickaxe, with logs to spare for sticks and fuel.
         if (s.pickaxeTier() <= 0) {
@@ -226,7 +252,9 @@ public final class PortalRunPlanner {
         }
 
         // A spare pickaxe, made while it is cheap: one wearing out halfway up a climb never leaves the player with none.
-        if (below && s.pickaxes() < 2 && s.cobble() >= 3) {
+        // Two spares where it learned that one is not enough.
+        int pickaxesPacked = prefs.has(PlanPreferences.Habit.SPARE_PICKAXE) ? 3 : 2;
+        if (below && s.pickaxes() < pickaxesPacked && s.cobble() >= 3) {
             return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE, "Craft a spare stone pickaxe for the work below");
         }
 
