@@ -50,6 +50,8 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofMinutes(3), Duration.ofSeconds(15), 2);
             case "native_craft" -> new SkillDescriptor(id, Set.of("recipe"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_pillar" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(), Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side"),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

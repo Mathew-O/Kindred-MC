@@ -32,6 +32,13 @@ public final class PortalRunPlanner {
     /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
     static final int TREE_RANGE = 24;
     /**
+     * Before the work below, a tree this close is worth the walk for the stick reserve: live run 68 went down a cave
+     * by spawn with two sticks, the nearest tree forty blocks off, and climbed fifty-five blocks for logs from Y=19.
+     */
+    static final int TREE_PACK_RANGE = 64;
+    /** Smelts still ahead for which a log is better made into charcoal than burnt as planks. */
+    static final int CHARCOAL_SMELTS = 4;
+    /**
      * Sticks kept beyond the pickaxes still to make: four replacements for ones that wear out, a log's worth.
      * Staircases and branch mines wear out a stone pickaxe every few minutes; live run 49 used three before its sixth
      * iron and was left at Y=19 with cobblestone, a table and no sticks, and run 53 used five before its third.
@@ -236,7 +243,8 @@ public final class PortalRunPlanner {
         boolean below = belowGroundWork(s, facts, frame);
         int tableWood = below ? SPARE_TABLE_PLANKS : 0;
         int spareWood = s.woodUnits() - (s.shields() == 0 ? SHIELD_PLANKS : 0) - tableWood;
-        if (s.sticks() < sticksReserved(s, frame, caves(facts)) && (treesNear || spareWood >= 2)) {
+        boolean treeForPacking = below && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_PACK_RANGE;
+        if (s.sticks() < sticksReserved(s, frame, caves(facts)) && (treesNear || treeForPacking || spareWood >= 2)) {
             if (s.planks() >= 2 && spareWood >= 2) return Step.craft("stick", Stage.STONE, "Craft spare sticks for later pickaxes");
             if (s.logs() > 0 && spareWood >= 2) return Step.craft("planks", Stage.STONE, "Craft planks for spare sticks");
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for spare sticks");
@@ -280,6 +288,17 @@ public final class PortalRunPlanner {
         }
         if (s.rawIron() > 0) {
             if (s.furnaceSmelting()) return Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron");
+            // Where wood is grown and no coal is known, a spare log smelted with a plank becomes charcoal, which burns
+            // for eight items where the log's four planks burn for six; worth it with several smelts still ahead.
+            int smeltsAhead = s.rawIron() + Math.max(0, ironWanted - ironHave);
+            if (s.coal() == 0 && facts.can(WorldFacts.Method.REPLANT) && !facts.knows(WorldFacts.Source.COAL_ORE)
+                    && smeltsAhead >= CHARCOAL_SMELTS && s.logs() >= 1 && s.planks() >= 1 && spareWood >= 5) {
+                if (!s.furnaceNearby() && s.furnaces() == 0) {
+                    if (s.cobble() < 8) return stone(s, facts, 8 - s.cobble(), Stage.IRON, "Mine cobblestone for a furnace");
+                    return craftAtTable(s, facts, "furnace", 0, 0, Stage.IRON);
+                }
+                return new Step(Action.SMELT, "log", 1, Stage.IRON, "Make charcoal to smelt with");
+            }
             // Wood kept for a shield is not fuel.
             int fuelWood = (s.rawIron() * 2 + 2) / 3;
             if (s.coal() == 0 && spareWood < fuelWood) {

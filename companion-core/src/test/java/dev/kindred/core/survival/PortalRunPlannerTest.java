@@ -20,11 +20,13 @@ class PortalRunPlannerTest {
         /** A sky island: no ground to dig, logs only from standing trees, which grow only from planted saplings. */
         boolean sky, generator;
         int treeLogs, leaves, planted, stoneLeft;
+        /** Logs smelting into charcoal, and charcoal waiting in the furnace (counted as coal, as the goal counts it). */
+        int charcoalIn, charcoalOut;
 
         PortalRunSnapshot snapshot() {
-            return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
+            return new PortalRunSnapshot(logs, planks, sticks, cobble, coal + charcoalOut, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
                     flint, gravel, obsidian, buckets, lava, water, fns, tables, furnaces, saplings, food, pick, Math.max(pickaxes, pick >= 2 ? 1 : 0), sword, chest, shields,
-                    tableNearby, furnaceNearby, furnaceInput > 0, furnaceOutput, foodLevel, framed, lit);
+                    tableNearby, furnaceNearby, furnaceInput + charcoalIn > 0, furnaceOutput + charcoalOut, foodLevel, framed, lit);
         }
 
         /** What a player on the sky island sees: its tree while it stands, leaves, its saplings and generator, the ore islands. */
@@ -69,13 +71,18 @@ class PortalRunPlannerTest {
                 case PLACE_TABLE -> { tables--; tableNearby = true; }
                 case SMELT -> {
                     if (!furnaceNearby) { assertTrue(furnaces > 0); furnaces--; furnaceNearby = true; return; }
+                    if ("log".equals(step.item())) { // A log in, a plank for its fuel.
+                        assertTrue(logs >= 1 && planks >= 1, "a log to smelt and a plank to smelt it with");
+                        logs--; planks--; charcoalIn++;
+                        return;
+                    }
                     int fuelItems = coal > 0 ? 1 : (rawIron * 2 + 2) / 3;
                     if (coal > 0) coal--; else planks -= Math.min(planks, fuelItems);
                     furnaceInput += rawIron;
                     rawIron = 0;
                 }
-                case AWAIT_SMELT -> { furnaceOutput += furnaceInput; furnaceInput = 0; }
-                case COLLECT_SMELTED -> { iron += furnaceOutput; furnaceOutput = 0; }
+                case AWAIT_SMELT -> { furnaceOutput += furnaceInput; furnaceInput = 0; charcoalOut += charcoalIn; charcoalIn = 0; }
+                case COLLECT_SMELTED -> { iron += furnaceOutput; furnaceOutput = 0; coal += charcoalOut; charcoalOut = 0; }
                 case FILL_WATER -> { assertTrue(buckets - lava > 0, "an empty bucket"); buckets--; water++; }
                 case MAKE_OBSIDIAN -> { assertTrue(pick >= 4 && water > 0); obsidian++; }
                 case GATHER_FLINT -> flint++;
@@ -232,6 +239,30 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void whereWoodIsGrownAndThereIsNoCoalASpareLogBecomesCharcoal() {
+        // Sky-island run 13 smelted all its iron with wood and waited by saplings for most of the iron stage.
+        Sim sim = skyIsland();
+        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 20; sim.sticks = 8; sim.shields = 1; sim.tableNearby = true;
+        sim.furnaceNearby = true; sim.rawIron = 7; sim.logs = 2; sim.planks = 3; sim.generator = true;
+        sim.buckets = 0; sim.lava = 0; sim.water = 0; // The iron for both buckets and the flint and steel, mined: seven smelts ahead.
+        var step = PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts()).getLast();
+        assertEquals(Action.SMELT, step.action());
+        assertEquals("log", step.item(), "charcoal first: " + step);
+        sim.apply(step);
+        assertEquals(Action.AWAIT_SMELT, PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts()).getLast().action());
+        sim.apply(PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts()).getLast());
+        assertEquals(Action.COLLECT_SMELTED, PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts()).getFirst().action());
+        sim.apply(PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts()).getFirst());
+        var iron = PortalRunPlanner.plan(sim.snapshot(), sim.skyFacts()).getLast();
+        assertEquals("raw_iron", iron.item(), "then the iron, on the charcoal: " + iron);
+        // Where coal is known, or with too little iron left to smelt, no charcoal.
+        Sim near = new Sim();
+        near.pick = 2; near.pickaxes = 2; near.sword = 2; near.cobble = 24; near.sticks = 20; near.shields = 1; near.tableNearby = true;
+        near.furnaceNearby = true; near.rawIron = 2; near.logs = 2; near.planks = 3;
+        assertNotEquals("log", PortalRunPlanner.plan(near.snapshot(), WorldFacts.ordinary()).getLast().item(), "an ordinary world digs coal");
+    }
+
+    @Test
     void aLimitedIslandWithoutStarterBucketsGetsItsIronBeforeItsStoneRunsOut() {
         // Sixteen stone blocks and no starter chest: the stockpile waits until iron has made the buckets for a generator.
         Sim sim = skyIsland();
@@ -360,6 +391,23 @@ class PortalRunPlannerTest {
         Sim sky = skyIsland();
         sky.pick = 2; sky.pickaxes = 1; sky.sword = 2; sky.cobble = 24; sky.sticks = 12; sky.shields = 1; sky.tableNearby = true;
         assertNotEquals("stone_pickaxe", PortalRunPlanner.plan(sky.snapshot(), sky.skyFacts()).getLast().item());
+    }
+
+    @Test
+    void theStickReserveIsPackedFromATreeFurtherOffBeforeTheWorkBelow() {
+        // Live run 68 went into a cave by spawn with few sticks and no wood, the nearest tree forty blocks off, and at
+        // Y=19 had none left: it climbed fifty-five blocks for logs and wore out its pickaxes on the way.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 2; sim.shields = 1; sim.tableNearby = true; sim.planks = 4;
+        var farTree = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 40), WorldFacts.ordinary().methods());
+        assertEquals("Gather a log for spare sticks", PortalRunPlanner.plan(sim.snapshot(), farTree).getLast().why(),
+                "forty blocks to a tree beats a climb back up from the iron");
+        var tooFar = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 100), WorldFacts.ordinary().methods());
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), tooFar).getLast().action(), "but not a long trek for one");
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action(),
+                "below ground, with no tree known, the iron comes first as before");
+        sim.sticks = PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN);
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), farTree).getLast().action(), "packed: on to the iron");
     }
 
     @Test

@@ -4,6 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Out of a pit by pillaring, the stick reserve from a farther tree, and charcoal (F-25c4, F-25c5), on top of `e555b95`, with no live server running.
+  - New fixtures failed before their fixes: the pit 3 of 3. The charcoal and stick-reserve checks are new behaviour.
+  - The first two suites after the pillar crashed the test server: an uncertain pillar step (a drop picked up mid-jump failed the exact inventory check) made the runtime take the body away, and the recover fixture then read a missing player. Fixed by counting pickups, as the fight action does; the recover fixture then passed 2 of 2 alone.
+  - `goalPunchesItsWayUpWithNoPickaxeLeft` now checks that the cobblestone never grows rather than staying at 24, since the pillar spends some.
+  - `runGametest` passed 237/237 twice. `./gradlew build` passed: 375 JUnit, three skips.
+  - JAR SHA-256: `d8996f8ac7cfd595b1fc31ff0ac128e40a81357c9b2c2dc9460ee969d45d3f80`.
 - One note per lesson, and notes only from the report (live run 66), on top of `6a5ba9b`, with run 66 and sky-island run 13 playing on the same machine.
   - The memory fixture now also keeps run 66's reworded lesson once.
   - `runGametest` passed 235/235 twice. `./gradlew build` passed: 373 JUnit, three skips.

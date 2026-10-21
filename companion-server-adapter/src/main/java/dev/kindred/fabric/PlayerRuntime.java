@@ -1069,6 +1069,11 @@ final class PlayerRuntime {
             } else if (skill.equals("native_craft")) {
                 task = new NativeCraftAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         arguments.get("recipe"), entry.cachedCraftingTablePos);
+            } else if (skill.equals("native_pillar")) {
+                task = new NativePillarAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_place")) {
                 task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
@@ -1278,6 +1283,8 @@ final class PlayerRuntime {
                     || ("native_gather".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_craft".equals(entry.skillId) && intent == NativePlayerBody.Intent.CRAFT)
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
+                        || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -3974,7 +3981,7 @@ final class PlayerRuntime {
                 if (finishedTaskId != null) {
                     teamCoordinator.completeTask(TaskId.of(finishedTaskId), entry.data.id(), entry.blocker);
                 }
-                if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
                     entry.cachedCraftingTablePos = null;
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);

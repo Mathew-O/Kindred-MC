@@ -115,6 +115,10 @@ final class PortalRunCampaign {
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
+    // A walk back along its trail that ended where it began (a step up it cannot walk): retracing waits a while.
+    private BlockPos retraceFrom;
+    private boolean retraceDone;
+    private long retraceStalledUntil;
     private EditPolicy.ServerPolicy policy = EditPolicy.ServerPolicy.deferredD4();
 
     /** Lava source L to convert, the air cell W to pour water into, and the stand cell S beyond it. */
@@ -303,6 +307,10 @@ final class PortalRunCampaign {
         if (task != null && completed && task.label().startsWith("Cut through") && task.label().endsWith("advance") && ++cutAdvances >= 4) {
             exploreStalls = 0; // A few blocks on: try walking again.
             cutAdvances = 0;
+        }
+        if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
+            retraceDone = true;
+            retraceFrom = lastFeet; // Where it stood when the walk was chosen.
         }
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploredFrom = lastFeet; // Compared with where the player stands at the next plan.
@@ -1051,6 +1059,7 @@ final class PortalRunCampaign {
             furnaceOutput = furnace.getStack(2).getCount();
             if (furnace.getStack(0).isOf(Items.RAW_IRON)) rawIron += furnace.getStack(0).getCount();
             if (furnace.getStack(2).isOf(Items.IRON_INGOT)) iron += furnace.getStack(2).getCount();
+            if (furnace.getStack(2).isOf(Items.CHARCOAL)) coal += furnace.getStack(2).getCount(); // As the planner counts it.
         }
         // Obsidian already set into the frame still counts toward the ten.
         if (portalSite != null) {
@@ -1133,7 +1142,7 @@ final class PortalRunCampaign {
             case CRAFT -> craft(body, step.item());
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
-            case SMELT -> smelt(body);
+            case SMELT -> "log".equals(step.item()) ? charcoal(body) : smelt(body);
             case AWAIT_SMELT -> Optional.of(new Task("native_wait", Map.of("seconds", "3"), "Wait by the furnace"));
             // Water just poured for obsidian guards the mining: mine what it hardened before taking it back.
             case FILL_WATER -> (obsidianSite != null
@@ -1621,7 +1630,10 @@ final class PortalRunCampaign {
         boolean pickaxe = false;
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.size() && !pickaxe; slot++) pickaxe = inventory.getStack(slot).isIn(ItemTags.PICKAXES);
-        if (!pickaxe) return retrace(body, label).or(() -> climb(body, label));
+        // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
+        // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
+        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
+        if (boxedIn(player.getServerWorld(), player.getBlockPos())) return climb(body, label).or(() -> pillarOut(body, label));
         int surface = player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ());
         int depth = Math.max(1, surface - player.getBlockY());
         // A step of the way back costs about a third of a staircase step (three blocks dug per block climbed).
@@ -1679,6 +1691,15 @@ final class PortalRunCampaign {
      */
     private Optional<Task> retrace(NativePlayerBody body, String label) {
         var world = body.entity().getServerWorld();
+        // A walk back that cannot start completes at once without moving; asked for again it only loops (the
+        // staircase fixture, its foot open, stood in a pit for three minutes). Another way out gets half a minute.
+        if (retraceDone) {
+            retraceDone = false;
+            if (retraceFrom != null && retraceFrom.getManhattanDistance(lastFeet) <= 1) retraceStalledUntil = lastTick + 600;
+        }
+        // Only while it is still there: once it has climbed up or moved away, the way it came is worth a try again.
+        if (lastTick < retraceStalledUntil && retraceFrom != null && retraceFrom.getManhattanDistance(lastFeet) <= 1
+                && lastFeet.getY() <= retraceFrom.getY()) return Optional.empty();
         if (trail.size() < 2) return Optional.empty();
         int index = nearestOnTrail();
         var cells = new java.util.ArrayList<>(trail);
@@ -1697,6 +1718,34 @@ final class PortalRunCampaign {
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
+    }
+
+    /**
+     * Out of a hole it can neither walk nor step out of, as a player gets out: a block of its own placed under its
+     * feet at the top of a jump, and again until it can walk on. Only with head room to jump into and a filler block
+     * to spare; quicker than punching a staircase by hand.
+     */
+    private Optional<Task> pillarOut(NativePlayerBody body, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (!player.isOnGround() || !boxedIn(world, feet) || !passable(world, feet.up(2))) return Optional.empty();
+        var inventory = player.getInventory();
+        int slot = -1;
+        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up"));
+    }
+
+    /** No side to walk out of or step up onto. */
+    private static boolean boxedIn(ServerWorld world, BlockPos feet) {
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            BlockPos next = feet.offset(side);
+            if (passable(world, next) && passable(world, next.up())) return false;
+            if (passable(world, next.up()) && passable(world, next.up(2)) && passable(world, feet.up(2))) return false;
+        }
+        return true;
     }
 
     /**
@@ -1943,6 +1992,30 @@ final class PortalRunCampaign {
         args.put("input_slot", String.valueOf(input));
         if (fuel >= 0) args.put("fuel_slot", String.valueOf(fuel));
         return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Load raw iron and fuel"));
+    }
+
+    /** One log into the furnace with one plank to burn it: charcoal for the iron where there is no coal (F-25c5c). */
+    private Optional<Task> charcoal(NativePlayerBody body) {
+        var player = body.entity();
+        var furnace = nearestWorkstation(player, Blocks.FURNACE, 16);
+        if (furnace.isEmpty()) return placeItem(body, Items.FURNACE, "Place a furnace");
+        if (player.getServerWorld().getBlockEntity(furnace.get()) instanceof AbstractFurnaceBlockEntity block && !block.getStack(0).isEmpty()) {
+            return Optional.empty(); // Something is smelting already.
+        }
+        var inventory = player.getInventory();
+        int input = -1, fuel = -1;
+        for (int s = 0; s < 36; s++) {
+            ItemStack stack = inventory.getStack(s);
+            if (input < 0 && stack.isIn(ItemTags.LOGS_THAT_BURN)) input = s;
+            if (fuel < 0 && stack.isIn(ItemTags.PLANKS)) fuel = s;
+        }
+        if (input < 0 || fuel < 0) return Optional.empty();
+        var args = new LinkedHashMap<String, String>();
+        args.put("action", "load");
+        args.put("input_slot", String.valueOf(input));
+        args.put("fuel_slot", String.valueOf(fuel));
+        args.put("count", "1");
+        return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Make charcoal: a log and a plank into the furnace"));
     }
 
     // ------------------------------------------------------------------ water, obsidian, flint
