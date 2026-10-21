@@ -51,6 +51,20 @@ final class NativeNavigator {
 
     ServerWorld world() { return world; }
 
+    /** A mob to keep clear of: where it is, how it senses, and whether it can see the player now. */
+    record Danger(net.minecraft.util.math.Vec3d at, dev.kindred.core.tactics.MobSenses.Profile profile, boolean seen) { }
+
+    /** Extra cost per block, beside a mob, of a route that would rather not be noticed. */
+    static final double DANGER_WEIGHT = 10;
+    private List<Danger> dangers = List.of();
+
+    /** Routes priced to keep out of these mobs' notice: dearer the nearer they pass (F-10g). */
+    NativeNavigator avoiding(List<Danger> dangers) {
+        this.dangers = List.copyOf(dangers);
+        terrain.clear();
+        return this;
+    }
+
     /** With a larger {@code maxDrop}, routes may include one deliberate fall that costs some health. */
     NativeNavigator(ServerWorld world, int maxDrop) {
         this.world = world;
@@ -308,6 +322,15 @@ final class NativeNavigator {
     }
 
     private double computeTerrainCost(BlockPos feet) {
+        double unease = 0;
+        for (Danger danger : dangers) {
+            double distance = Math.sqrt(danger.at().squaredDistanceTo(feet.getX() + 0.5, feet.getY() + 0.5, feet.getZ() + 0.5));
+            unease += dev.kindred.core.tactics.MobSenses.unease(danger.profile(), distance, danger.seen());
+        }
+        return DANGER_WEIGHT * unease + groundCost(feet);
+    }
+
+    private double groundCost(BlockPos feet) {
         // Swimming costs more than walking, and swimming with the head under far more: a route across water keeps to
         // the surface, where there is air, rather than the bottom (the staged End run drowned crossing an ocean bed).
         double cost = !swimmable(feet) ? 1.0 : state(feet.up()).getFluidState().isIn(FluidTags.WATER) ? 9.0 : 3.0;

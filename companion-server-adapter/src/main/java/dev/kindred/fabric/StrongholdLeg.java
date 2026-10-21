@@ -98,6 +98,7 @@ final class StrongholdLeg {
     /** Chunk columns it has explored through in this dimension: a heading back over them is a poor one. */
     private final Set<Long> explored = new HashSet<>();
     private StrongholdRunPlanner.Stage stage;
+    private StrongholdRunSnapshot lastSnapshot;
     private String progress = "";
     private BlockPos endPortal;
     private boolean arrived, pinned;
@@ -323,6 +324,7 @@ final class StrongholdLeg {
         var player = body.entity();
         observe(player);
         var s = snapshot(player, p);
+        lastSnapshot = s;
         stage = StrongholdRunPlanner.stage(s);
         for (var step : StrongholdRunPlanner.plan(s)) {
             Optional<PortalRunCampaign.Task> task = realize(step, s, p, body, policy);
@@ -392,6 +394,20 @@ final class StrongholdLeg {
         return Optional.of(new PortalRunCampaign.Task("native_fight", strike.args(), strike.label()));
     }
 
+    /**
+     * The mobs it means to fight on its walks, which wary routes need not keep clear of: blazes while it is short of
+     * rods, endermen while it is short of pearls (endermen only fight when looked at, but a route need not avoid one
+     * it wants). Every other hostile mob a walk gives a wide berth where the ground allows.
+     */
+    private String wanted() {
+        if (lastSnapshot == null) return "";
+        var kinds = new ArrayList<String>();
+        if (StrongholdRunPlanner.stage(lastSnapshot).ordinal() <= StrongholdRunPlanner.Stage.BLAZE_RODS.ordinal()
+                && 2 * lastSnapshot.blazeRods() + lastSnapshot.blazePowder() + lastSnapshot.eyes() < StrongholdRunPlanner.PEARLS_TARGET) kinds.add("blaze");
+        if (lastSnapshot.enderPearls() + lastSnapshot.eyes() < StrongholdRunPlanner.PEARLS_TARGET) kinds.add("enderman");
+        return String.join(",", kinds);
+    }
+
     /** By the fortress's spawner, where blazes keep coming; otherwise along the fortress for one. */
     private Optional<PortalRunCampaign.Task> seekBlaze(NativePlayerBody body) {
         var player = body.entity();
@@ -413,7 +429,7 @@ final class StrongholdLeg {
                 b -> !visited.contains(cell(b)) && !campaign.blocked(b) && !campaign.unreachable(b) && world.getBlockState(b.up()).isAir());
         if (on.isPresent()) {
             visited.add(cell(on.get()));
-            return Optional.of(PortalRunCampaign.go(on.get().up(), 2, true, "Walk along the fortress for blazes"));
+            return Optional.of(PortalRunCampaign.goWary(on.get().up(), 2, true, "Walk along the fortress for blazes", wanted()));
         }
         // By the fortress with no brick walk left from here (it stands below, across lava): a way made onto it.
         var onto = campaign.knowledge().nearest(world, WorldKnowledge.Kind.NETHER_BRICK, feet,
@@ -456,7 +472,7 @@ final class StrongholdLeg {
         fortressWalkFrom = -1;
         if (!stalled && !campaign.unreachable(fortress)) {
             fortressWalkFrom = off;
-            return Optional.of(PortalRunCampaign.go(fortress, 3, true, "Walk to the fortress"));
+            return Optional.of(PortalRunCampaign.goWary(fortress, 3, true, "Walk to the fortress", wanted()));
         }
         BlockPos target = fortress;
         return campaign.buildRoute(body, target, pos -> pos.getSquaredDistance(target) <= 5 * 5, false, "Make a way to the fortress")
@@ -546,7 +562,7 @@ final class StrongholdLeg {
                     BlockPos stand = column.up(dy * sign);
                     if (!navigator.standable(stand) || navigator.hazard(stand.down()) || campaign.blocked(stand) || campaign.unreachable(stand)) continue;
                     lastWalkFrom = feet;
-                    return Optional.of(PortalRunCampaign.go(stand, 2, true, "Explore " + heading.asString() + " for " + what));
+                    return Optional.of(PortalRunCampaign.goWary(stand, 2, true, "Explore " + heading.asString() + " for " + what, wanted()));
                 }
             }
         }
@@ -710,7 +726,7 @@ final class StrongholdLeg {
                 if (!world.isChunkLoaded(column)) continue;
                 BlockPos end = new BlockPos(tx, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, tx, tz), tz);
                 if (campaign.blocked(end) || campaign.unreachable(end)) continue;
-                return Optional.of(PortalRunCampaign.go(end, 4, true, label));
+                return Optional.of(PortalRunCampaign.goWary(end, 4, true, label, wanted()));
             }
             if (step >= distance) break;
         }

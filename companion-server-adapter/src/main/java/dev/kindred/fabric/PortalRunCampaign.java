@@ -1468,6 +1468,12 @@ final class PortalRunCampaign {
         return new Task("native_goto", coords(target, Map.of("range", String.valueOf(range), "partial", String.valueOf(partial))), label);
     }
 
+    /** As {@link #go}, keeping out of the notice of hostile mobs other than the {@code engage} kinds (F-10g). */
+    static Task goWary(BlockPos target, double range, boolean partial, String label, String engage) {
+        return new Task("native_goto", coords(target, Map.of("range", String.valueOf(range), "partial", String.valueOf(partial),
+                "avoid", "true", "engage", engage)), label);
+    }
+
     private static Task breakAt(BlockPos pos, String label) {
         return new Task("native_break", coords(pos, Map.of()), label);
     }

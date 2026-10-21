@@ -4,6 +4,11 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-10g (routes that change on the move, in progress), on top of `b3ae08d`.
+  - New native fixtures: `aPillarDroppedInTheHallwayIsRunRoundWithoutStopping`, `twoThirdsOfTheHallwayBlockedAheadIsSlippedThroughWithoutStopping`, `aWitherSkeletonBesideTheWayIsGivenAWideBerth` and its control `walkingStraightPastAWitherSkeletonIsNoticed`. New JUnit: `MobSensesTest` (4).
+  - Before the change the hallway fixtures stopped 42 and 35 ticks against the obstacle; after, none.
+  - `runGametest` passed 249/249 twice. `./gradlew build` passed: 406 JUnit results, three skipped.
+  - JAR SHA-256: `3045bcb96aae0f1bfedc0e81eb28696a75851afa361977c10365224a30537ed6`.
 - F-10f (boats, in progress) and F-25c6's memory across restarts, on top of `b1c42bf`.
   - New: `aBoatIsLaunchedRowedAcrossAndTakenBackOnTheFarShore` (native) and `itMakesABoatFromWoodItCarriesButDoesNotWaitForOne` (JUnit).
   - `runGametest` passed 245/245 twice. `./gradlew build` passed: 402 JUnit results, three skipped.

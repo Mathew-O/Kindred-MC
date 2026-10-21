@@ -24,6 +24,14 @@ import java.util.function.Supplier;
 final class NativeGoToSkill implements SkillBody {
     private static final int MAX_REPLANS = 4;
     private static final int STUCK_TICKS = 40;
+    /**
+     * Waypoints ahead checked every tick, re-plans allowed for what changed ahead, and ticks between them. A block put
+     * down in the way is seen coming and the route bends round it at a run (F-10g); before, the player walked into it
+     * and stood two seconds against it before re-planning.
+     */
+    private static final int WATCH_AHEAD = 10, MAX_REROUTES = 40, REROUTE_GAP = 3;
+    /** Half the body's width (0.3) and a little room, for straight runs past corners. */
+    private static final double MARGIN = 0.42;
     /** How many waypoints ahead a straight run may reach. */
     private static final int LOOK_AHEAD = 6;
     /** Straight, clear blocks ahead for a sprint-jump (one carries three to four blocks). */
@@ -44,14 +52,34 @@ final class NativeGoToSkill implements SkillBody {
     private int index;
     /** A sprint-jump is in the air; it is held to its landing, as a player commits to one. */
     private boolean leapt;
-    private int replans;
+    private int replans, reroutes, lastReroute = -REROUTE_GAP;
+    /** Something ahead has changed and the route is to be planned again on landing. */
+    private boolean rerouteDue;
     private int ticksSinceProgress;
     private double bestDistance = Double.MAX_VALUE;
     private int ticks;
+    /** Mob kinds it means to fight, when it keeps clear of the rest; null when it minds no mobs. */
+    private final java.util.Set<String> engage;
+    /** Where each mob it kept clear of stood when the route was planned. */
+    private final java.util.Map<java.util.UUID, Vec3d> planned = new java.util.HashMap<>();
+    /** How far the route looks for mobs, how often it looks again, and how far one moves before the route is redone. */
+    private static final double MOB_WATCH = 40, MOB_MOVED = 3;
+    private static final int MOB_CHECK = 10;
 
     /** With {@code sprint}, straight stretches are run at sprint speed, as a player gets away from a creeper. */
     NativeGoToSkill(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos target, double range, boolean partial, int maxNodes,
                     boolean sprint, int maxDrop) {
+        this(body, lease, target, range, partial, maxNodes, sprint, maxDrop, null);
+    }
+
+    /**
+     * With {@code engage} not null, the route keeps out of the notice of hostile mobs about (F-10g), all but the
+     * kinds named there, which the player means to fight: a wither skeleton passed at more than its sixteen blocks
+     * where a way round allows, rather than walked up to. The route is planned again as they move.
+     */
+    NativeGoToSkill(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos target, double range, boolean partial, int maxNodes,
+                    boolean sprint, int maxDrop, java.util.Set<String> engage) {
+        this.engage = engage == null ? null : java.util.Set.copyOf(engage);
         this.sprint = sprint;
         this.maxDrop = maxDrop;
         this.body = body;
@@ -72,6 +100,7 @@ final class NativeGoToSkill implements SkillBody {
     private boolean plan() {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop);
+        if (engage != null) navigator.avoiding(dangers());
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
         if (found.nodes().size() < 2 && !goalReached(start) || !found.complete() && !partial) {
@@ -114,7 +143,7 @@ final class NativeGoToSkill implements SkillBody {
         }
         if (nearest != index && onLevel(pos, path.get(nearest))) index = nearest;
         // Advance past waypoints already reached, including when momentum carries the body beyond one.
-        while (index < path.size() - 1 && reached(pos, path.get(index))) index++;
+        while (index < path.size() - 1 && (reached(pos, path.get(index)) || passed(pos, index))) index++;
         if (index < path.size() - 1 && reached(pos, path.get(index + 1))) index++;
         BlockPos next = path.get(index);
         if (index == path.size() - 1 && reached(pos, next)) {
@@ -144,12 +173,79 @@ final class NativeGoToSkill implements SkillBody {
             }
             next = path.get(index);
         }
+        // Ahead of it, the way has changed (a block put down in it, a hole opened, lava come in), or the mobs it keeps
+        // clear of have moved: a new route from here while still on the move, as a player steers round what it sees
+        // coming. Mid-jump, on landing.
+        if (rerouteDue || blockedAhead(navigator) || engage != null && ticks % MOB_CHECK == 0 && mobsMoved()) {
+            rerouteDue = true;
+            boolean footing = player.isOnGround() || player.isTouchingWater();
+            if (footing && ticks - lastReroute >= REROUTE_GAP && reroutes < MAX_REROUTES) {
+                reroutes++;
+                lastReroute = ticks;
+                rerouteDue = false;
+                if (!plan() && !replan()) {
+                    body.stopInputs();
+                    return Step.blocked("Route to " + target.toShortString() + " is blocked ahead", true);
+                }
+                next = path.get(index);
+            }
+        }
         if (!steer(next, pos)) {
             body.stopInputs();
             return Step.blocked("Movement authority denied", true);
         }
         return Step.running(Map.of("remaining", String.valueOf(Math.round(Math.sqrt(feet.getSquaredDistance(target)))),
                 "waypoint", String.valueOf(index)), true);
+    }
+
+    /**
+     * The hostile mobs about that it does not mean to fight, as dangers to keep clear of: how far each notices a player,
+     * from vanilla's own ranges (MobSenses), and whether it can see this one now. A piglin counts as hostile while the
+     * player wears no gold.
+     */
+    private List<NativeNavigator.Danger> dangers() {
+        var player = body.entity();
+        planned.clear();
+        var dangers = new java.util.ArrayList<NativeNavigator.Danger>();
+        boolean gold = false;
+        for (var armor : player.getArmorItems()) gold |= armor.getItem() instanceof net.minecraft.item.ArmorItem piece
+                && piece.getMaterial().matchesKey(net.minecraft.item.ArmorMaterials.GOLD.getKey().orElseThrow());
+        for (var mob : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class,
+                player.getBoundingBox().expand(MOB_WATCH, 16, MOB_WATCH), m -> m.isAlive() && m instanceof net.minecraft.entity.mob.Monster)) {
+            String id = net.minecraft.registry.Registries.ENTITY_TYPE.getId(mob.getType()).getPath();
+            if (engage.contains(id)) continue;
+            var profile = dev.kindred.core.tactics.MobSenses.of(id, true);
+            if (id.equals("piglin") && !gold) {
+                profile = new dev.kindred.core.tactics.MobSenses.Profile(profile.range(), profile.sight(),
+                        dev.kindred.core.tactics.MobSenses.Temper.HOSTILE, profile.ranged(), profile.outpaces());
+            }
+            if (profile.temper() != dev.kindred.core.tactics.MobSenses.Temper.HOSTILE) continue;
+            dangers.add(new NativeNavigator.Danger(mob.getPos().add(0, 0.5, 0), profile, mob.canSee(player)));
+            planned.put(mob.getUuid(), mob.getPos());
+        }
+        return dangers;
+    }
+
+    /** A mob it keeps clear of has moved a few blocks since the route was planned, or a new one has come within range. */
+    private boolean mobsMoved() {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        for (var entry : planned.entrySet()) {
+            var mob = world.getEntity(entry.getKey());
+            if (mob == null || !mob.isAlive() || mob.getPos().squaredDistanceTo(entry.getValue()) > MOB_MOVED * MOB_MOVED) return true;
+        }
+        return world.getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(24, 8, 24),
+                m -> m.isAlive() && m instanceof net.minecraft.entity.mob.Monster && !planned.containsKey(m.getUuid())
+                        && !engage.contains(net.minecraft.registry.Registries.ENTITY_TYPE.getId(m.getType()).getPath())).size() > 0;
+    }
+
+    /** One of the next few waypoints can no longer be stood on, or has turned hazardous, since the route was planned. */
+    private boolean blockedAhead(NativeNavigator navigator) {
+        for (int k = index; k <= Math.min(path.size() - 1, index + WATCH_AHEAD); k++) {
+            BlockPos node = path.get(k);
+            if (!navigator.standable(node) && !navigator.swimmable(node) || navigator.hazard(node) || navigator.hazard(node.up())) return true;
+        }
+        return false;
     }
 
     private boolean replan() {
@@ -176,6 +272,22 @@ final class NativeGoToSkill implements SkillBody {
         return true;
     }
 
+    /**
+     * In the air, the body is already beyond waypoint {@code k} on its way to the next, on the same level and near the
+     * line between them: passed, though mid-jump above it, where {@link #reached} does not count it. Without this a waypoint flown
+     * over stayed the one to make for, and the body swung back toward it in the air (F-10g's hallway, 45 degrees in a tick).
+     */
+    private boolean passed(Vec3d pos, int k) {
+        BlockPos node = path.get(k), following = path.get(k + 1);
+        if (body.entity().isOnGround() || node.getY() != following.getY() || !onLevel(pos, node)) return false;
+        double ax = node.getX() + 0.5, az = node.getZ() + 0.5;
+        double bx = following.getX() + 0.5 - ax, bz = following.getZ() + 0.5 - az;
+        double px = pos.x - ax, pz = pos.z - az;
+        double length = Math.hypot(bx, bz);
+        double along = (px * bx + pz * bz) / length, across = Math.abs(px * bz - pz * bx) / length;
+        return along > 0 && along < length && across < 0.8;
+    }
+
     private static boolean reached(Vec3d pos, BlockPos node) {
         double dx = node.getX() + 0.5 - pos.x;
         double dz = node.getZ() + 0.5 - pos.z;
@@ -198,8 +310,21 @@ final class NativeGoToSkill implements SkillBody {
                 aim = candidate;
             }
         }
-        double dx = aim.getX() + 0.5 - pos.x;
-        double dz = aim.getZ() + 0.5 - pos.z;
+        // With no long straight run in sight, a point a little way along the route rather than the next block's centre,
+        // as a player steers along a way rather than from block to block: no sharp swing to a waypoint a lane over and
+        // barely ahead (F-10g's hallway snapped 45 degrees in a tick past a block put in its way).
+        Vec3d aimAt = centre(aim);
+        if (level && flat(pos, aim) < PURSUIT) {
+            for (double ahead : new double[] {PURSUIT, PURSUIT - 1}) {
+                Vec3d carrot = alongRoute(pos, ahead);
+                if (carrot != null && straight(navigator, pos, carrot, false)) {
+                    aimAt = carrot;
+                    break;
+                }
+            }
+        }
+        double dx = aimAt.x - pos.x;
+        double dz = aimAt.z - pos.z;
         double horizontal = Math.hypot(dx, dz);
         float yaw = horizontal < 1e-3 ? player.getYaw() : (float) Math.toDegrees(Math.atan2(-dx, dz));
         float turn = body.turnLeft(yaw);
@@ -227,19 +352,60 @@ final class NativeGoToSkill implements SkillBody {
         return body.walk(lease.get(), forward, 0, jump, sprinting, yaw, pitch);
     }
 
+    /** How far along the route the steering looks when no long straight run is in sight. */
+    private static final double PURSUIT = 2.5;
+
+    /**
+     * The point {@code ahead} blocks along the route from {@code pos}, through the next waypoint and on, keeping to
+     * the next waypoint's level; null when the route changes level or ends first.
+     */
+    private Vec3d alongRoute(Vec3d pos, double ahead) {
+        int y = path.get(index).getY();
+        Vec3d b = centre(path.get(index));
+        // Where the body is along the route: its foot on the segment from the waypoint before to the next one.
+        Vec3d a = index > 0 && path.get(index - 1).getY() == y ? centre(path.get(index - 1)) : new Vec3d(pos.x, y, pos.z);
+        Vec3d ab = b.subtract(a);
+        double lengthSquared = ab.x * ab.x + ab.z * ab.z;
+        double t = lengthSquared < 1e-6 ? 1 : Math.clamp(((pos.x - a.x) * ab.x + (pos.z - a.z) * ab.z) / lengthSquared, 0, 1);
+        Vec3d from = a.add(ab.multiply(t));
+        double left = ahead;
+        for (int k = index; k < path.size(); k++) {
+            BlockPos node = path.get(k);
+            if (node.getY() != y) return null;
+            Vec3d to = centre(node);
+            double length = Math.hypot(to.x - from.x, to.z - from.z);
+            if (length >= left) return from.add(to.subtract(from).multiply(left / length));
+            left -= length;
+            from = to;
+        }
+        return null;
+    }
+
+    private static Vec3d centre(BlockPos node) {
+        return new Vec3d(node.getX() + 0.5, node.getY(), node.getZ() + 0.5);
+    }
+
+    private static boolean straight(NativeNavigator navigator, Vec3d pos, Vec3d to, boolean headRoom) {
+        return straight(navigator, pos, to.x, to.z, (int) Math.floor(to.y + 0.01), headRoom);
+    }
+
     /**
      * The body can go straight from {@code pos} to the centre of {@code to} on the same level: standable ground with
      * nothing in the way all along the line, for the body's whole width, and with {@code headRoom} a third block free
      * overhead for a jump.
      */
     private static boolean straight(NativeNavigator navigator, Vec3d pos, BlockPos to, boolean headRoom) {
-        double tx = to.getX() + 0.5, tz = to.getZ() + 0.5;
+        return straight(navigator, pos, to.getX() + 0.5, to.getZ() + 0.5, to.getY(), headRoom);
+    }
+
+    private static boolean straight(NativeNavigator navigator, Vec3d pos, double tx, double tz, int y, boolean headRoom) {
         double length = Math.hypot(tx - pos.x, tz - pos.z);
-        int y = to.getY();
         int steps = Math.max(1, (int) Math.ceil(length / 0.25));
         for (int i = 0; i <= steps; i++) {
             double x = pos.x + (tx - pos.x) * i / steps, z = pos.z + (tz - pos.z) * i / steps;
-            for (double ox = -0.3; ox <= 0.31; ox += 0.6) for (double oz = -0.3; oz <= 0.31; oz += 0.6) {
+            // Half the body's width and a margin: an eased turn lags its aim, so a line that only just clears a corner
+            // leaves the body clipping it (F-10g's hallway: one block put down, the body caught on its corner).
+            for (double ox = -MARGIN; ox <= MARGIN + 0.01; ox += 2 * MARGIN) for (double oz = -MARGIN; oz <= MARGIN + 0.01; oz += 2 * MARGIN) {
                 BlockPos cell = BlockPos.ofFloored(x + ox, y, z + oz);
                 if (!navigator.standable(cell) || navigator.hazard(cell)) return false;
                 if (headRoom && !navigator.passable(cell.up(2))) return false;

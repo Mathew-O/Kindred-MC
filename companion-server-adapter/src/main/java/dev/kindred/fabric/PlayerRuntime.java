@@ -919,6 +919,12 @@ final class PlayerRuntime {
                 "z", String.valueOf(target.getZ()), "range", String.valueOf(range)));
     }
 
+    /** As {@link #nativeGoto}, keeping out of the notice of hostile mobs other than the {@code engage} kinds. */
+    int nativeGotoAvoiding(ServerCommandSource source, UUID id, BlockPos target, double range, String engage) {
+        return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", String.valueOf(range), "avoid", "true", "engage", engage));
+    }
+
     int nativeBreak(ServerCommandSource source, UUID id, BlockPos target) {
         return nativeTask(source, id, "native_break", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
                 "z", String.valueOf(target.getZ())));

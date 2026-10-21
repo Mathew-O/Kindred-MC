@@ -50,7 +50,8 @@
       "dev.kindred.fabric.NativePortalCampaignGameTests",
       "dev.kindred.fabric.NativeSkinGameTests",
       "dev.kindred.fabric.NativeStrongholdGameTests",
-      "dev.kindred.fabric.NativeBoatGameTests"
+      "dev.kindred.fabric.NativeBoatGameTests",
+      "dev.kindred.fabric.NativeDynamicPathGameTests"
     ]
   },
   "depends": {
