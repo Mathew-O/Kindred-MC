@@ -1,0 +1,157 @@
+package dev.kindred.model;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.sun.net.httpserver.HttpServer;
+import dev.kindred.core.survival.PlanPreferences;
+import dev.kindred.core.survival.StrategyAdvice;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/** The OpenAI-compatible strategist against a local fake server: no network, no keys, no cost. */
+class OpenAiCompatibleStrategistTest {
+    private HttpServer server;
+    private final List<String> bodies = new ArrayList<>();
+    private final List<String> auth = new ArrayList<>();
+    private final Queue<int[]> statuses = new ArrayDeque<>();
+    private final Queue<String> replies = new ArrayDeque<>();
+
+    private OpenAiCompatibleStrategist start(StrategistProvider.Provider provider, String key) throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            bodies.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            auth.add(exchange.getRequestHeaders().getFirst("Authorization"));
+            int status = statuses.isEmpty() ? 200 : statuses.remove()[0];
+            byte[] out = (replies.isEmpty() ? "{}" : replies.remove()).getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(status, out.length);
+            exchange.getResponseBody().write(out);
+            exchange.close();
+        });
+        server.start();
+        String base = "http://127.0.0.1:" + server.getAddress().getPort() + "/v1";
+        var choice = new StrategistProvider.Choice(provider, key, "test-model", base);
+        return new OpenAiCompatibleStrategist(choice, HttpClient.newBuilder().build());
+    }
+
+    @AfterEach
+    void stop() {
+        if (server != null) server.stop(0);
+    }
+
+    private static String completion(String content, String finish) {
+        var message = new JsonObject();
+        message.addProperty("role", "assistant");
+        message.addProperty("content", content);
+        var choice = new JsonObject();
+        choice.add("message", message);
+        choice.addProperty("finish_reason", finish);
+        var choices = new com.google.gson.JsonArray();
+        choices.add(choice);
+        var usage = JsonParser.parseString("{\"prompt_tokens\":1900,\"completion_tokens\":90,\"prompt_tokens_details\":{\"cached_tokens\":1536}}");
+        var body = new JsonObject();
+        body.add("choices", choices);
+        body.add("usage", usage);
+        return body.toString();
+    }
+
+    private static final String ADVICE = "{\"stance\":\"SURFACE_AND_RECOVER\",\"reason\":\"Hungry below ground.\",\"note\":\"Carry food down.\","
+            + "\"avoid\":[{\"x\":35,\"y\":32,\"z\":87},{\"x\":900,\"y\":0,\"z\":900}],\"focus\":\"FOOD\",\"habit\":\"MORE_FOOD\",\"retire\":\"NONE\"}";
+    private static final List<StrategyAdvice.Place> REPORTED = List.of(new StrategyAdvice.Place(36, 32, 86));
+
+    @Test
+    void aReplyInTheSchemaBecomesValidatedAdviceWithItsTokens() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion(ADVICE, "stop"));
+            var outcome = strategist.advise("Player hungry at Y 20.", REPORTED).get(10, TimeUnit.SECONDS);
+            var advice = outcome.advice().orElseThrow(() -> new AssertionError(outcome.failure()));
+            assertEquals(StrategyAdvice.Stance.SURFACE_AND_RECOVER, advice.stance());
+            assertEquals(PlanPreferences.Focus.FOOD, advice.focus());
+            assertEquals(PlanPreferences.Habit.MORE_FOOD, advice.habit());
+            assertEquals(List.of(new StrategyAdvice.Place(35, 32, 87)), advice.avoid(), "the unreported place is dropped");
+            assertEquals(1900, outcome.inputTokens());
+            assertEquals(1536, outcome.cachedTokens());
+            assertEquals(90, outcome.outputTokens());
+            assertEquals("Bearer sk-test", auth.getFirst());
+            var body = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals("test-model", body.get("model").getAsString());
+            assertEquals(1000, body.get("max_completion_tokens").getAsInt(), "OpenAI's own name for the cap");
+            var format = body.getAsJsonObject("response_format");
+            assertEquals("json_schema", format.get("type").getAsString());
+            var schema = format.getAsJsonObject("json_schema");
+            assertTrue(schema.get("strict").getAsBoolean());
+            var required = schema.getAsJsonObject("schema").getAsJsonArray("required");
+            for (String field : List.of("stance", "reason", "note", "avoid", "focus", "habit", "retire")) {
+                assertTrue(required.toString().contains("\"" + field + "\""), field);
+            }
+            var messages = body.getAsJsonArray("messages");
+            assertEquals("system", messages.get(0).getAsJsonObject().get("role").getAsString());
+            assertEquals("Player hungry at Y 20.", messages.get(1).getAsJsonObject().get("content").getAsString());
+        }
+    }
+
+    @Test
+    void aSchemaTheProviderRefusesIsAskedOnceMoreInJsonMode() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.GROQ, "gsk_test")) {
+            statuses.add(new int[] {400});
+            replies.add("{\"error\":{\"message\":\"response_format json_schema is not supported for this model\"}}");
+            replies.add(completion("```json\n" + ADVICE + "\n```", "stop"));
+            var outcome = strategist.advise("Report.", REPORTED).get(10, TimeUnit.SECONDS);
+            assertTrue(outcome.advice().isPresent(), "JSON mode, fenced reply read: " + outcome.failure());
+            assertEquals(2, bodies.size(), "one repair, no more");
+            var second = JsonParser.parseString(bodies.get(1)).getAsJsonObject();
+            assertEquals("json_object", second.getAsJsonObject("response_format").get("type").getAsString());
+            assertTrue(second.getAsJsonArray("messages").get(0).getAsJsonObject().get("content").getAsString().contains("\"stance\""),
+                    "the fields described in the instructions instead");
+            assertTrue(second.has("max_tokens"), "the others' name for the cap");
+        }
+    }
+
+    @Test
+    void failuresAreReportedNotRetried() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            statuses.add(new int[] {429});
+            replies.add("{}");
+            assertEquals("rate limited", strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).failure().orElse(""));
+            statuses.add(new int[] {500});
+            replies.add("{}");
+            assertEquals("service error 500", strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).failure().orElse(""));
+            replies.add(completion(ADVICE, "length"));
+            assertEquals("stopped: length", strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).failure().orElse(""));
+            replies.add(completion("{\"stance\":\"ATTACK_EVERYTHING\"}", "stop"));
+            var odd = strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS);
+            assertEquals("unusable reply", odd.failure().orElse(""));
+            assertEquals(1900, odd.inputTokens(), "a used request is still counted");
+            replies.add(completion("not json", "stop"));
+            assertEquals("unreadable reply", strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).failure().orElse(""));
+            assertEquals(5, bodies.size());
+        }
+    }
+
+    @Test
+    void aLocalServerNeedsNoKeyAndDeepSeekUsesJsonMode() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.COMPATIBLE, null)) {
+            replies.add(completion(ADVICE, "stop"));
+            assertTrue(strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).advice().isPresent());
+            assertNull(auth.getFirst(), "no Authorization header without a key");
+        }
+        stop();
+        bodies.clear();
+        try (var strategist = start(StrategistProvider.Provider.DEEPSEEK, "sk-d")) {
+            replies.add(completion(ADVICE, "stop"));
+            assertTrue(strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).advice().isPresent());
+            assertEquals("json_object", JsonParser.parseString(bodies.getFirst()).getAsJsonObject()
+                    .getAsJsonObject("response_format").get("type").getAsString());
+        }
+    }
+}

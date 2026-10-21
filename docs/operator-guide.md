@@ -23,18 +23,33 @@ The Nether goal is a local plan, not a script. Like a player it pillars up out o
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 
-### Optional: a Claude strategist for the goal (F-19b)
-The goal plays the same without any model. For development runs a Claude model can be consulted as a strategist: it reads the player's own short report (stage, gear, health, recent deaths and their causes, danger zones, its notes) and picks how careful the player should be for the next five minutes: press on, play safe (no caving, backing off sooner) or surface and recover (climb out to daylight and heal first, then play safe). It may also name up to three places near the player's deaths or danger zones to avoid for a while. It never moves the player, gives items, writes code or decides the goal is done; every moment is still the local plan. It is asked only when something changed (the goal starting, a new stage, a death, a spell with no progress at most every two minutes, and otherwise every five minutes while progress changes), never per tick, off the game thread, and a slow or failed reply changes nothing. Switch it on with environment variables in the server's environment:
+### Optional: a model strategist for the goal (F-19b, F-19d)
+The goal plays the same without any model. For development runs a model can be consulted as a strategist: it reads the player's own short report (stage, gear, health, recent deaths and their causes, danger zones, its notes) and picks how careful the player should be for the next five minutes: press on, play safe (no caving, backing off sooner) or surface and recover (climb out to daylight and heal first, then play safe). It may also name up to three places near the player's deaths or danger zones to avoid for a while. It never moves the player, gives items, writes code or decides the goal is done; every moment is still the local plan. It is asked only when something changed (the goal starting, a new stage, a death, a spell with no progress at most every two minutes, and otherwise every five minutes while progress changes), never per tick, off the game thread, and a slow or failed reply changes nothing. Switch it on with environment variables in the server's environment:
 ```text
 KINDRED_STRATEGIST=on                          required; anything else leaves it off
-ANTHROPIC_API_KEY=<your key>                   required; read from the environment only, never stored or logged
-KINDRED_STRATEGIST_MODEL=<model id>            optional; default Claude Haiku 5.5 (claude-haiku-5-5)
+<provider>_API_KEY=<your key>                  one provider's key (see below) or KINDRED_STRATEGIST_API_KEY; read from the environment only, never stored or logged
+KINDRED_STRATEGIST_PROVIDER=<name>             optional: anthropic, openai, gemini, groq, mistral, deepseek, xai, openrouter, openai-compatible
+KINDRED_STRATEGIST_BASE_URL=<url>              optional; another address for an OpenAI-compatible provider, or a local server
+KINDRED_STRATEGIST_MODEL=<model id>            optional; the provider's default below
 KINDRED_STRATEGIST_PACE=steady|realtime        optional; default steady (see below)
 KINDRED_STRATEGIST_DAILY_TOKENS=<tokens>       optional; daily budget for all players (steady 100000, realtime 10000000)
 KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS=<n>     optional; daily budget per player (steady 50000, realtime 5000000)
 KINDRED_STRATEGIST_EFFORT=low|medium|high      optional; default low
 KINDRED_STRATEGIST_THINKING=off|on             optional; default off
 ```
+
+Any of these providers can serve it, each with a small, fast default model (F-19d):
+```text
+ANTHROPIC_API_KEY     Claude Haiku 5.5 (claude-haiku-5-5), through the official Anthropic SDK
+OPENAI_API_KEY        gpt-4o-mini
+GEMINI_API_KEY        gemini-3.5-flash-lite (GOOGLE_API_KEY also works)
+GROQ_API_KEY          openai/gpt-oss-20b
+MISTRAL_API_KEY       mistral-small-latest
+DEEPSEEK_API_KEY      deepseek-chat
+XAI_API_KEY           no default: name the model with KINDRED_STRATEGIST_MODEL
+OPENROUTER_API_KEY    openai/gpt-4o-mini
+```
+Model line-ups change often: check the provider's current list, and set `KINDRED_STRATEGIST_MODEL` if a default has been retired. With several keys set, the first in this list is used unless `KINDRED_STRATEGIST_PROVIDER` names one. A single `KINDRED_STRATEGIST_API_KEY` also works; its provider is recognised by the key's prefix (`sk-ant-`, `sk-or-`, `gsk_`, `xai-`, `AIza`, then `sk-` for OpenAI), and a Mistral or DeepSeek key needs the provider named. Any other server speaking OpenAI's chat completions, such as a local Ollama or LM Studio, needs only `KINDRED_STRATEGIST_BASE_URL` and `KINDRED_STRATEGIST_MODEL`, and no key. All but Anthropic go through the JDK's HTTP client and the Gson the server already carries, so they also work from the release jar. The reply is asked for with a strict JSON schema (JSON mode for DeepSeek, or once more in JSON mode when a provider refuses the schema) and validated in core exactly as Claude's is.
 The pace sets how closely it follows play. Steady asks on the big changes (the goal starting, a death, a new stage) and otherwise every few minutes, within the contract's default budgets. Real time asks as often as the planning lane allows (every ten seconds per player at most), and also whenever something new happens: a fight with a new foe, a hit that costs six health or more, nightfall or daybreak. Its advice lapses after a minute of game time unless renewed. Answers come back in about two seconds: requests go at low effort without thinking first, with the instructions cached. Measured on one report, that was about 1.9 seconds every time, against 2.8 to 4.0 at the model's own default, with the same advice. A question costs about $0.00013 with the instructions cached, so real time at the full rate is about five cents an hour per player.
 
 It also has a say in what comes next (F-19c). A reply may set a focus for the same five minutes: food first (hunt, and by day go out and look for animals when none is in sight, until well stocked) or wood first (logs while a tree stands). A reply's note may also teach a habit the player keeps in that world from then on: carry three more food, pack a second spare pickaxe for the work below, dig its own way rather than explore caves, or dig in for the night at dusk. A habit needs a note saying why, at most four are kept, and the strategist can retire one. A focus or a habit only reorders or resizes the route's ordinary jobs; fights, shelter and healing still come first. The habits live with their notes in the memory file below (shown as `"habit": "MORE_FOOD"` on a note). Delete the note, or the file, to make the player drop a habit; each goal the player starts in that world gets the habits it has learned there.

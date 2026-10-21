@@ -2,7 +2,8 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.StrategyAdvice;
-import dev.kindred.model.ClaudeStrategist;
+import dev.kindred.model.Strategist;
+import dev.kindred.model.Strategists;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -60,7 +61,7 @@ final class StrategistBridge implements AutoCloseable {
         final ArrayDeque<Long> recent = new ArrayDeque<>();
     }
 
-    private final ClaudeStrategist strategist;
+    private final Strategist strategist;
     private final ModelContextStore store;
     private final Pace pace;
     private final long playerDailyTokens, dailyTokens;
@@ -69,7 +70,7 @@ final class StrategistBridge implements AutoCloseable {
     private long dayStartMs = System.currentTimeMillis(), tokensToday;
     private boolean budgetLogged;
 
-    private StrategistBridge(ClaudeStrategist strategist, ModelContextStore store, Pace pace, long playerDailyTokens, long dailyTokens) {
+    private StrategistBridge(Strategist strategist, ModelContextStore store, Pace pace, long playerDailyTokens, long dailyTokens) {
         this.strategist = strategist;
         this.store = store;
         this.pace = pace;
@@ -86,25 +87,34 @@ final class StrategistBridge implements AutoCloseable {
         }
     }
 
-    /** A bridge when the strategist is switched on and a key is available, else nothing. */
+    /**
+     * A bridge when the strategist is switched on and a provider is set up (F-19d: Anthropic, OpenAI, Gemini, Groq,
+     * Mistral, DeepSeek, xAI, OpenRouter or any OpenAI-compatible server), else nothing.
+     */
     static Optional<StrategistBridge> fromEnvironment(Path worldKindredFolder) {
         if (!"on".equalsIgnoreCase(System.getenv("KINDRED_STRATEGIST"))) return Optional.empty();
-        Optional<ClaudeStrategist> strategist;
+        Optional<Strategist> strategist;
         try {
-            strategist = ClaudeStrategist.fromEnvironment(System.getenv("KINDRED_STRATEGIST_MODEL"));
-        } catch (LinkageError missing) { // The release jar does not carry the SDK yet; development runs do.
-            KindredMod.LOGGER.warn("KINDRED_STRATEGIST is on but the Anthropic SDK is not installed; playing without a strategist");
+            var built = Strategists.fromEnvironment(System.getenv());
+            if (built.problem().isPresent()) {
+                KindredMod.LOGGER.warn("KINDRED_STRATEGIST is on but {}; playing without a strategist", built.problem().get());
+                return Optional.empty();
+            }
+            strategist = built.strategist();
+        } catch (LinkageError missing) { // The release jar does not carry the Anthropic SDK; development runs do.
+            KindredMod.LOGGER.warn("KINDRED_STRATEGIST is on with Anthropic but its SDK is not installed; playing without a strategist "
+                    + "(the other providers need nothing more)");
             return Optional.empty();
         }
         if (strategist.isEmpty()) {
-            KindredMod.LOGGER.warn("KINDRED_STRATEGIST is on but ANTHROPIC_API_KEY is not set; playing without a strategist");
+            KindredMod.LOGGER.warn("KINDRED_STRATEGIST is on but no provider's API key is set; playing without a strategist");
             return Optional.empty();
         }
         Pace pace = "realtime".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_STRATEGIST_PACE")).trim()) ? Pace.REALTIME : Pace.STEADY;
         long playerDaily = tokensSetting("KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS", pace.playerDailyTokens);
         long daily = tokensSetting("KINDRED_STRATEGIST_DAILY_TOKENS", pace.dailyTokens);
-        KindredMod.LOGGER.info("Kindred strategist on: model {} ({}), pace {}, daily token budgets {} a player and {} in all",
-                strategist.get().model(), strategist.get().pace(), pace.name().toLowerCase(java.util.Locale.ROOT), playerDaily, daily);
+        KindredMod.LOGGER.info("Kindred strategist on: {} model {} ({}), pace {}, daily token budgets {} a player and {} in all",
+                strategist.get().provider(), strategist.get().model(), strategist.get().pace(), pace.name().toLowerCase(java.util.Locale.ROOT), playerDaily, daily);
         return Optional.of(new StrategistBridge(strategist.get(), new ModelContextStore(worldKindredFolder), pace, playerDaily, daily));
     }
 
@@ -149,7 +159,7 @@ final class StrategistBridge implements AutoCloseable {
                 || now - state.lastAt > pace.periodMs && !campaign.progress().equals(state.progress);
         if (!changed || now - state.lastAt < pace.minGapMs) return;
         String report = campaign.strategyReport(player, name, state.context.noteTexts());
-        long reserved = ClaudeStrategist.reservation(report);
+        long reserved = Strategist.reservation(report);
         if (!admit(now, state, reserved)) {
             state.lastAt = now; // Not again before the gap is over.
             return;
