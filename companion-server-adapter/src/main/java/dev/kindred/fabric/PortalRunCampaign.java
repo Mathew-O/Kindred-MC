@@ -706,6 +706,12 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": stuck in a wall - " + trapped.get().label();
             return trapped;
         }
+        // In deep water nothing else matters until it can breathe and stand.
+        Optional<Task> air = surface(player);
+        if (air.isPresent()) {
+            progress = stageLabel(stage) + ": " + air.get().label();
+            return air;
+        }
         Optional<Task> room = makeRoom(player);
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
@@ -885,6 +891,40 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + ": waiting for a feasible step";
         return Optional.empty();
+    }
+
+    /**
+     * Swimming or sunk: up to air and dry ground before anything else. Short of breath with the surface straight
+     * above, it swims up first; otherwise it heads for the nearest dry ground within reach, through the water if it
+     * must. Live run 69 drowned twice holed up in a flooded passage, sinking while it waited behind its wall, and each
+     * wait was cut short by the runtime's drowning check without anything taking it up.
+     */
+    private Optional<Task> surface(ServerPlayerEntity player) {
+        if (!PlayerRuntime.inDeepWater(player)) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        BlockPos above = null;
+        for (int dy = 1; dy <= 16; dy++) {
+            BlockPos cell = feet.up(dy);
+            var state = world.getBlockState(cell);
+            if (state.getFluidState().isIn(net.minecraft.registry.tag.FluidTags.WATER)) continue;
+            if (state.getCollisionShape(world, cell).isEmpty() && state.getFluidState().isEmpty()) above = cell.down();
+            break;
+        }
+        // Head under and breath short: straight up first. With the head out, breath comes back by itself.
+        boolean shortOfBreath = player.isSubmergedInWater() && player.getAir() < player.getMaxAir() / 2;
+        if (shortOfBreath && above != null && !above.equals(feet)) return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
+        var dry = new NativeNavigator(world).nearestReachableDryStand(feet, 4000, 16);
+        if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
+        if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
+            return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
+        }
+        return Optional.empty();
+    }
+
+    /** A goal task taking the player up out of deep water, which the runtime's drowning check leaves to finish. */
+    static boolean surfacing(Task task) {
+        return task != null && task.label().startsWith("Get out of the water");
     }
 
     /**
@@ -3186,6 +3226,11 @@ final class PortalRunCampaign {
     /** Why the running goal task should stop, or null: a hostile after the player while other work runs, or a fight that has worn the player down. */
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
+        // Sinking or swimming in a task that will not take it out of the water (a wait, a seal, a fight): up for air first.
+        if (running != null && !surfacing(running) && PlayerRuntime.inDeepWater(player)
+                && (player.getAir() < player.getMaxAir() * 2 / 3 || !running.skill().equals("native_goto"))) {
+            return "In deep water; up for air first";
+        }
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
                 || running.label().startsWith("Hold the passage")) return null;

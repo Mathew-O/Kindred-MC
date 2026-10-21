@@ -1862,8 +1862,10 @@ final class PlayerRuntime {
         }
 
         // 0a. Deep water: a player that stops swimming sinks, so head for the nearest dry ground while breath lasts.
+        // A running goal does this itself, choosing a way out it can reach (straight up for air when short of breath).
         boolean shortOfBreath = player.getAir() < player.getMaxAir() / 2;
-        if (candidates.isEmpty() && inDeepWater(player) && (server.getTicks() >= entry.waterEscapeRetryTick || shortOfBreath)) {
+        boolean goalSurfaces = entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
+        if (candidates.isEmpty() && !goalSurfaces && inDeepWater(player) && (server.getTicks() >= entry.waterEscapeRetryTick || shortOfBreath)) {
             var shore = new NativeNavigator(world).nearestDryStand(feetPos, 16, 4);
             if (shore.isPresent()) {
                 BlockPos dry = shore.get();
@@ -3320,7 +3322,8 @@ final class PlayerRuntime {
             busy = runnerBusy(entry);
         }
 
-        boolean escapingWater = entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId) && !creeperThreat;
+        boolean escapingWater = !creeperThreat && (entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId)
+                || PortalRunCampaign.surfacing(entry.activeCampaignTask) && !body.entity().isInLava() && !body.entity().isOnFire());
         // A goal's creeper work or walling-in, and any recorded fight, deals with a hissing creeper by itself (a wall,
         // a raised shield, or a sprint away): cutting it short for a one-block retreat would only cost the time it needs.
         boolean handlingCreeper = PortalRunCampaign.urgentTask(entry.activeCampaignTask) || "native_fight".equals(entry.skillId);

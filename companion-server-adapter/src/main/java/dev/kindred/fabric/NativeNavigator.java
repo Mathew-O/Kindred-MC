@@ -179,6 +179,16 @@ final class NativeNavigator {
     }
 
     /**
+     * The nearest dry ground the body can actually get to from {@code from}, swimming if it must: the search follows
+     * routes, so dry ground behind a ceiling or across a wall, however close, is passed over.
+     */
+    java.util.Optional<BlockPos> nearestReachableDryStand(BlockPos from, int maxNodes, int maxHorizontalRadius) {
+        Path path = find(from, from, feet -> standable(feet) && state(feet).getFluidState().isEmpty()
+                && state(feet.down()).getFluidState().isEmpty(), maxNodes, maxHorizontalRadius);
+        return path.complete() && !path.nodes().isEmpty() ? java.util.Optional.of(path.nodes().getLast()) : java.util.Optional.empty();
+    }
+
+    /**
      * The block a body moving along {@code yaw} is about to enter is one it may walk into: standable or swimmable,
      * a wall or one-block step up, or a drop no deeper than {@link #MAX_SAFE_DROP}, and never lava or fire.
      * Direct steering (a fight chase, walking onto a drop) checks this where it does not follow a planned route.

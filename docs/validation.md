@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Out of flooded workings (F-25c4, live runs 60 and 69), on top of `3fe5110`, with live run 69 playing from its own worktree.
+  - The new fixture drowned 3 of 3 in a stress run with the change set aside; with it, it passed 3 of 3.
+  - On the way, the trace showed two more causes:
+    - the runtime's own water escape kept choosing dry ground it could not reach and blocked the goal;
+    - the nearest dry ground by distance was on top of the rock.
+  - `runGametest` passed 240/240 twice. `./gradlew build` passed: 387 JUnit, three skips.
+  - JAR SHA-256: `37b236404c8b6075fd953c48db926a47b5e39aa7d868b01b8246dc2c362b88fa`.
 - E-10b (skin selector from a skins folder), on top of `47ae8d8`, with live run 69 playing from its own worktree on the same machine.
   - `SkinFilesTest` (3) passed. The new native fixture passed 2 of 2 alone in a stress run. In it a 64x128 image is refused with its reason in the log.
   - `runGametest` passed 239/239 twice. `./gradlew build` passed: 387 JUnit, three skips.

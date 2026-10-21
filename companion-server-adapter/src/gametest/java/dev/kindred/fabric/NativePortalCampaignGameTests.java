@@ -1935,6 +1935,65 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * At the bottom of a flooded shaft nine blocks deep, short of breath, as live run 69 twice ended up holed up in a
+     * flooded passage: the goal swims up and out onto dry ground before anything else, and the runtime's drowning
+     * check lets it. Before, each wait it chose there was cut short by that check and the player sank and drowned.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "flooded", tickLimit = 800)
+    public void goalSwimsUpOutOfAFloodedShaftBeforeAnythingElse(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] base = new BlockPos[1];
+        float[] lowestHealth = {20};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Diver"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos b = base[0] = f.player().getBlockPos().up(12).toImmutable();
+                    for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) for (int y = -11; y <= 4; y++) {
+                        world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
+                    }
+                    // A dry room at the top, and the shaft below it full of still water.
+                    for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) for (int y = 0; y <= 2; y++) {
+                        world.setBlockState(b.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (int y = -10; y <= -1; y++) world.setBlockState(b.add(0, y, 0), Blocks.WATER.getDefaultState());
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(b.getX() + 0.5, b.getY() - 10, b.getZ() + 0.5, 0, 0);
+                    player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                    player.setAir(100); // A third of a breath left: the runtime's drowning check is already firing.
+                    var inventory = player.getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(5, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    lowestHealth[0] = Math.min(lowestHealth[0], player.getHealth());
+                    context.assertTrue(player.isAlive(), "Alive");
+                    context.assertTrue(!player.isTouchingWater() && player.isOnGround() && player.getBlockY() >= base[0].getY(),
+                            "Out of the shaft onto dry ground: " + player.getBlockPos().toShortString() + " air " + player.getAir()
+                                    + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(lowestHealth[0] >= 18, "Barely or never short of air on the way: lowest health " + lowestHealth[0]);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Sealed in rock with no pickaxe left and no wood, as live run 57 ended up after its last stone pickaxe broke on
      * the way up: the goal punches its way up toward the surface by hand, slowly, rather than standing there.
      */
