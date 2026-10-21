@@ -156,11 +156,14 @@ final class KindredPanelScreen extends Screen {
             addDrawableChild(more);
 
             addDrawableChild(ButtonWidget.builder(Text.literal(connected ? "Disconnect" : "Connect"),
-                    b -> act(connected ? "disconnect" : "connect", id, "")).dimensions(detailX, rowC, detailWidth * 3 / 10, 20).build());
+                    b -> act(connected ? "disconnect" : "connect", id, "")).dimensions(detailX, rowC, detailWidth / 4, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Skin..."), b -> {
+                if (client != null) client.setScreen(new KindredSkinScreen(this, id, str(bot, "name"), bodyId(bot), str(bot, "skin"), str(state, "skinsFolder")));
+            }).dimensions(detailX + detailWidth / 4 + gap, rowC, detailWidth / 5, 20).build());
         }
-        int editsX = detailX + detailWidth * 3 / 10 + gap;
+        int editsX = detailX + detailWidth / 4 + detailWidth / 5 + 2 * gap;
         int closeWidth = detailWidth / 4;
-        var edits = ButtonWidget.builder(Text.literal("World edits: " + (bool(state, "worldEdits") ? "ON" : "OFF")),
+        var edits = ButtonWidget.builder(Text.literal("Edits: " + (bool(state, "worldEdits") ? "ON" : "OFF")),
                 b -> act("edits", "", String.valueOf(!bool(state, "worldEdits"))))
                 .dimensions(editsX, rowC, detailX + detailWidth - closeWidth - gap - editsX, 20).build();
         edits.active = operator;
@@ -188,9 +191,14 @@ final class KindredPanelScreen extends Screen {
         for (JsonElement element : state.has("roster") ? state.getAsJsonArray("roster") : new com.google.gson.JsonArray()) {
             String name = str(element.getAsJsonObject(), "name");
             int headY = rowY + 2;
-            CanonicalRosterSkins.forDisplayName(name).ifPresent(skin ->
-                    PlayerSkinDrawer.draw(context, Identifier.of("kindred", skin.clientAssetPath()), left + 6, headY, 16));
             JsonObject bot = botNamed(name);
+            var chosen = bot == null ? null : KindredClientSkins.forBody(bodyId(bot));
+            if (chosen != null) {
+                PlayerSkinDrawer.draw(context, chosen.texture(), left + 6, headY, 16);
+            } else {
+                CanonicalRosterSkins.forDisplayName(name).ifPresent(skin ->
+                        PlayerSkinDrawer.draw(context, Identifier.of("kindred", skin.clientAssetPath()), left + 6, headY, 16));
+            }
             if (bot != null) {
                 int dot = !bool(bot, "connected") ? MUTED : bool(bot, "stopped") ? WARN : GOOD;
                 context.fill(rosterButtonX + rosterButtonWidth + 2, rowY + 8, rosterButtonX + rosterButtonWidth + 6, rowY + 12, dot);
@@ -296,6 +304,11 @@ final class KindredPanelScreen extends Screen {
     private JsonObject botNamed(String name) {
         for (JsonObject bot : bots()) if (str(bot, "name").equalsIgnoreCase(name)) return bot;
         return null;
+    }
+
+    private static java.util.UUID bodyId(JsonObject bot) {
+        try { return java.util.UUID.fromString(str(bot, "bodyId")); }
+        catch (IllegalArgumentException missing) { return null; }
     }
 
     private static String playstyleLabel(String raw) {

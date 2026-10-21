@@ -18,7 +18,7 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * Optional client enhancements: the AI player panel on a key (K by default), bundled roster skins for native
- * bodies, and the legacy mob renderer. Servers work with vanilla clients; these only add presentation.
+ * bodies and skins chosen from the server's skins folder, and the legacy mob renderer. Servers work with vanilla clients; these only add presentation.
  */
 public final class KindredClient implements ClientModInitializer {
     private static KeyBinding openPanel;
@@ -41,6 +41,12 @@ public final class KindredClient implements ClientModInitializer {
                 }
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(KindredSkinPayloads.Binding.ID, (payload, context) ->
+                KindredClientSkins.bind(payload.body(), payload.key(), payload.slim(), payload.png()));
+        ClientPlayNetworking.registerGlobalReceiver(KindredSkinPayloads.CatalogEntry.ID, (payload, context) ->
+                KindredClientSkins.addToCatalog(payload.key(), payload.slim(), payload.png(), payload.total()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                client.execute(KindredClientSkins::reset));
         ClientPlayNetworking.registerGlobalReceiver(KindredPanelPayloads.State.ID, (payload, context) -> {
             var client = context.client();
             if (client.currentScreen instanceof KindredPanelScreen screen) {

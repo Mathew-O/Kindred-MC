@@ -59,6 +59,39 @@ public final class PlayerCommands {
                             if (id == null) return 0;
                             return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
                         }))));
+        root.then(CommandManager.literal("skin")
+                .then(CommandManager.literal("list").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    var source = context.getSource();
+                    KindredSkins.list(source.getServer(), message -> source.sendFeedback(() -> Text.literal(message), false));
+                    return 1;
+                }))
+                .then(CommandManager.argument("skin", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            builder.suggest(dev.kindred.core.SkinFiles.DEFAULT_KEY);
+                            KindredSkins.keys().forEach(builder::suggest);
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = runtime.defaultBotId();
+                            if (id == null) {
+                                context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+                                return 0;
+                            }
+                            return runtime.setSkin(context.getSource(), id, StringArgumentType.getString(context, "skin"));
+                        })
+                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> {
+                                    PlayerRuntime runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID id = resolveBotTarget(context, "target", runtime);
+                                    if (id == null) return 0;
+                                    return runtime.setSkin(context.getSource(), id, StringArgumentType.getString(context, "skin"));
+                                }))));
         root.then(CommandManager.literal("edits").then(CommandManager.argument("enabled", StringArgumentType.word())
                 .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
                 .executes(context -> {

@@ -69,6 +69,9 @@ final class KindredPanelService {
                 }
             }
             case "edits" -> runtime.setWorldEdits(source, Boolean.parseBoolean(argument));
+            case "skin" -> {
+                if (id != null) runtime.setSkin(source, id, argument);
+            }
             default -> feedback.append("Unknown panel action.");
         }
         // Lifecycle changes complete asynchronously; send the immediate outcome, and the client refreshes.
@@ -92,6 +95,7 @@ final class KindredPanelService {
             root.addProperty("ready", true);
             root.addProperty("operator", operator);
             root.addProperty("worldEdits", runtime.worldEditsEnabled());
+            root.addProperty("skinsFolder", "config/kindred/skins");
             JsonArray roster = new JsonArray();
             for (var preset : CanonicalRoster.TRIO) {
                 JsonObject slot = new JsonObject();
@@ -116,6 +120,8 @@ final class KindredPanelService {
                 json.addProperty("goalProgress", bot.goalProgress());
                 json.addProperty("status", bot.status());
                 json.addProperty("task", bot.task() == null ? "" : bot.task());
+                if (bot.bodyId() != null) json.addProperty("bodyId", bot.bodyId().toString());
+                json.addProperty("skin", bot.skin());
                 json.addProperty("health", bot.health());
                 json.addProperty("food", bot.food());
                 json.addProperty("dimension", bot.dimension());

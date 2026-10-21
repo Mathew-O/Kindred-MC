@@ -8,15 +8,27 @@ Use the pinned Java 21/Fabric stack and server JAR. Ordinary clients remain the 
 Use /aiplayer for command help; /companion redirects to the same tree. Creation, status, follow/stay/stop/resume, setup, movement, gather/deposit fixtures, personality and journal retain their existing restrictions. Commands do not imply planned skills are enabled.
 
 ## Quick start: the K panel and the Nether-portal goal
-Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Vesp) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect and the server's World edits switch. Operator-only buttons need permission level 2. Commands behind the buttons:
+Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Vesp) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
 ```text
 /aiplayer roster spawn Kindred       spawn a roster player beside you
 /aiplayer edits on|off               server-wide switch for AI block breaking and placing (default off)
 /aiplayer goal nether [bot]          earn a lit Nether portal from what the player owns
 /aiplayer goal none [bot]            stop pursuing the goal
+/aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
+/aiplayer skin list                  the skins on offer
 /aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
 /aiplayer native break <x y z> [bot] one recorded survival break with the best owned tool
 ```
+**Skins.** Put Minecraft skin PNGs in `config/kindred/skins` on the server (the folder and a read-me appear on first start; in single player it is your own game folder):
+- Files are 64×64, or the old 64×32, at most 64 KiB, up to 64 of them.
+- The file name is the skin's name: `Red Knight.png` is chosen as `red_knight`.
+- End a name in `_slim` or `_wide` to set the arm model; otherwise it is worked out from the image.
+- In game, press K, select an AI player and press Skin... to see each skin from the front, and click one to put it on. The first card brings back the player's own skin.
+- Players with the Kindred client see it at once; vanilla clients keep the default skin, as they accept only Mojang-signed textures.
+- Choices are kept in `config/kindred/skin-choices.properties`.
+- Files that are not usable skins are named in the server log with the reason.
+- After adding files, press Reload in the selector.
+
 World edits stay off until an operator turns them on; a fresh world has no `edits.properties`, which means off (decision D4). With edits on and no assigned work area, the player follows the roaming policy: it may break and place where a survival player could, never containers or block entities other than its own empty furnace, never in spawn protection, never the block under its own feet, and never a break that would let lava out (obsidian guarded by water is the one exception).
 
 Every walk moves as a player does (F-10d): straight across open ground to the furthest point it can reach in a line, sprinting when its food allows (7 or more) and sprint-jumping along clear straight stretches (10 or more, as a sprint-jump costs twice the hunger), turning smoothly with its head, slowing for sharp turns, steps and drops, and easing to a walk near where it is going.

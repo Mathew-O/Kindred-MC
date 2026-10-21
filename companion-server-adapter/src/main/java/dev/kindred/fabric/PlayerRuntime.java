@@ -5731,7 +5731,8 @@ final class PlayerRuntime {
 
     record PanelBot(UUID id, String name, boolean connected, String phase, boolean stopped, boolean busy,
                     String playstyle, String collaboration, dev.kindred.core.survival.SurvivalGoal goal, String status,
-                    String goalProgress, float health, int food, BlockPos position, String dimension, String task) { }
+                    String goalProgress, float health, int food, BlockPos position, String dimension, String task,
+                    UUID bodyId, String skin) { }
 
     /** Native players this actor may control, as plain values for the panel. */
     List<PanelBot> panelBots(Actor actor) {
@@ -5750,7 +5751,7 @@ final class PlayerRuntime {
                     player != null ? player.getHealth() : 0f, player != null ? player.getHungerManager().getFoodLevel() : 0,
                     player != null ? player.getBlockPos().toImmutable() : null,
                     player != null ? player.getServerWorld().getRegistryKey().getValue().getPath() : entry.data.dimension(),
-                    busy ? entry.skillId : ""));
+                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId())));
         }
         bots.sort(java.util.Comparator.comparing(PanelBot::name, String.CASE_INSENSITIVE_ORDER));
         return bots;
@@ -5919,6 +5920,24 @@ final class PlayerRuntime {
         entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(profile);
         String name = entry.data.displayName();
         source.sendFeedback(() -> Text.literal(name + " playstyle: " + profile), false);
+        return 1;
+    }
+
+    /**
+     * Dresses an AI player in a skin from the skins folder, or its own again for {@code default}. Only an operator
+     * or the player's controller may, as for its other settings; the skin is presentation only.
+     */
+    int setSkin(ServerCommandSource source, UUID botId, String key) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        Entry entry = botId != null ? entries.get(botId) : null;
+        if (entry == null || entry.nativeState == null || entry.data.entityId() == null) {
+            return reject(source, "No native AI player found for a skin change.");
+        }
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change its skin.");
+        KindredSkins.choose(server, entry.data.entityId(), entry.data.displayName(), key,
+                message -> source.sendFeedback(() -> Text.literal(message), false),
+                message -> source.sendError(Text.literal(message)));
         return 1;
     }
 
