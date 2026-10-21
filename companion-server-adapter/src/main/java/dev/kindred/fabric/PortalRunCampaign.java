@@ -756,6 +756,15 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": wait for daylight in the shelter";
             return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
         }
+        // Morning on an island: out of the night's pit first. Nothing is built or found from inside it, and the layer
+        // it stands on there has the void under it (sky-island run 8 waited ten minutes in one).
+        if (!night && !groundBelow(player) && inPit(player)) {
+            Optional<Task> out = climb(body, "Climb out of the night shelter");
+            if (out.isPresent()) {
+                progress = stageLabel(stage) + ": morning - " + out.get().label();
+                return out;
+            }
+        }
         // On an island the saplings its tree's leaves drop are picked up at night too: a night outlasts a drop.
         if (night && !groundBelow(player)) {
             Optional<Task> loose = pickUpLoose(player);
@@ -2548,6 +2557,18 @@ final class PortalRunCampaign {
         return true;
     }
 
+    /** In a hole it cannot step out of: the ground two or more above its feet on at least three sides. */
+    private static boolean inPit(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        int walls = 0;
+        for (Direction direction : Direction.Type.HORIZONTAL) {
+            BlockPos side = feet.offset(direction);
+            if (world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, side.getX(), side.getZ()) >= feet.getY() + 2) walls++;
+        }
+        return walls >= 3;
+    }
+
     /** Over the void, the island's edge is never dug: its wall and outer blocks are all that keep the player on it. */
     private boolean islandEdge(ServerPlayerEntity player, BlockPos cell) {
         return !groundBelow(player) && besideTheVoid(player.getServerWorld(), cell);
@@ -2710,14 +2731,17 @@ final class PortalRunCampaign {
         return Optional.of(go(lava, 2.5, false, "Walk to lava at " + lava.toShortString()));
     }
 
-    /** The nearest place within six blocks where a generator fits, in the layer the player stands on. */
+    /**
+     * The nearest place within six blocks where a generator fits, in the layer the player stands on or, standing in a
+     * step cut one below the ground (as on the way out of a night's pit), the layer at its feet.
+     */
     private Optional<Generator> generatorSite(ServerPlayerEntity player) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         Generator best = null;
         double bestDistance = Double.MAX_VALUE;
-        for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
-            BlockPos origin = feet.add(dx, -1, dz);
+        for (int layer = -1; layer <= 0; layer++) for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
+            BlockPos origin = feet.add(dx, layer, dz);
             for (Direction along : Direction.Type.HORIZONTAL) {
                 for (Direction side : List.of(along.rotateYClockwise(), along.rotateYCounterclockwise())) {
                     Generator g = generatorAt(world, origin, along, side);

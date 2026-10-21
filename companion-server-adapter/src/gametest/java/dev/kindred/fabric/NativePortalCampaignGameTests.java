@@ -1640,6 +1640,66 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Morning on a sky island, the player still in the sealed pit it waited out the night in, two deep, standing on
+     * the island's bottom layer, as on sky-island run 8, with both buckets filled for a generator. Nothing fits in
+     * that layer with the void under it, and from inside the pit nothing else was in reach, so run 8 waited there
+     * for ten minutes. In daylight the player climbs out first, then gets on with the generator.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "skyPit", tickLimit = 2400)
+    public void goalClimbsOutOfItsNightPitInTheMorningOnAnIsland(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] surface = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Earlyriser"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = surface[0] = skyIsland(context, f.player());
+                    // The night's pit: two cells dug out, the way in sealed with dirt over its head.
+                    BlockPos pit = p.add(-2, 0, 2);
+                    world.setBlockState(pit.down(), Blocks.AIR.getDefaultState());
+                    world.setBlockState(pit.down(2), Blocks.AIR.getDefaultState());
+                    world.setBlockState(pit, Blocks.DIRT.getDefaultState());
+                    var player = f.player();
+                    player.refreshPositionAndAngles(pit.getX() + 0.5, pit.getY() - 2, pit.getZ() + 0.5, 0, 0);
+                    var inventory = player.getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.WOODEN_PICKAXE));
+                    inventory.setStack(2, new ItemStack(Items.LAVA_BUCKET));
+                    inventory.setStack(3, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(4, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(5, new ItemStack(Items.BEEF, 4));
+                    inventory.setStack(6, new ItemStack(Items.OAK_PLANKS, 3));
+                    inventory.setStack(7, new ItemStack(Items.STICK, 11));
+                    inventory.setStack(8, new ItemStack(Items.COBBLESTONE, 3));
+                    inventory.setStack(9, new ItemStack(Items.IRON_INGOT));
+                    inventory.setStack(10, new ItemStack(Items.FLINT));
+                    inventory.setStack(40, new ItemStack(Items.SHIELD));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.player().getBlockY() >= surface[0].getY() - 1,
+                            "Out of the pit: " + f.player().getBlockPos().toShortString() + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Generator"),
+                            "On with the generator: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Live run 57's dead end, reached the ordinary way: the player walks down an open staircase into rock after iron,
      * and its pickaxe, one block from worn out, breaks on the first thing it digs down there. With no pickaxe and no
      * wood, it walks back up the way it came for logs, breaking nothing on the way.
