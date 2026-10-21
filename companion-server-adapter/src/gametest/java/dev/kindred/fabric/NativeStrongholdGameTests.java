@@ -31,7 +31,7 @@ public final class NativeStrongholdGameTests implements FabricGameTest {
     }
 
     /** A lit 4x5 portal on a stone floor, its interior along X at z = 3 above y = 2, as the plot's own. */
-    private static BlockPos litPortal(TestContext context) {
+    static BlockPos litPortal(TestContext context) {
         var world = context.getWorld();
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
             world.setBlockState(context.getAbsolutePos(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());

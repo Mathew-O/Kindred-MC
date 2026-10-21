@@ -66,6 +66,41 @@ class ClaudeStrategistLiveTest {
         }
     }
 
+    @Test
+    void deathsToSkeletonsBeforeTheNetherQueueAFollowUpTheQueueLacks() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");
+        var strategist = ClaudeStrategist.fromEnvironment(null);
+        Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+        try (var s = strategist.get()) {
+            String report = """
+                    Player Kindred, overworld, day 9, daytime (time 3000).
+                    Position 412 70 -980, on the surface.
+                    Health 14/20, food 17/20, food items carried 9.
+                    Stage: Prepare (End). Doing: End: Prepare: Stock food for the Nether - Approach cow.
+                    Gear: pickaxe tier 3 (2 carried), sword tier 3, no shield, no armour.
+                    Materials: 20 planks' worth of wood, 2 sticks, 30 cobblestone, 4 coal, 0 raw iron, 3 iron ingots, 1 buckets, 0 diamonds, 0 obsidian.
+                    Deaths so far: 2. No-progress spells: 0.
+                    Stance in force: PRESS_ON, focus NONE.
+                    Habits kept in this world: none.
+                    Queue: Wanted for what is ahead: bow 1 of 1 (the End fight: to shoot the End crystals off their pillars; they heal the dragon); \
+                    arrow 12 of 32 (the End fight: a few for each of the ten crystals, and for the dragon in flight); block 30 of 64 (the End fight: \
+                    to pillar up to the two caged crystals and wall off endermen); water bucket 0 of 1 (the End fight: to break a fall from a pillar; \
+                    endermen keep out of water); food 9 of 16 (the End fight: there is nothing to eat in the End). Still to do: gather water bucket 1, \
+                    gather feathers 5, gather flint 5, gather blocks 34, gather food 7, craft sticks 4, craft arrows 20.
+                    Recent events, oldest first:
+                    - at 600s: died at 400 60 -990: Kindred was shot by Skeleton (stage Prepare)
+                    - at 1500s: died at 420 58 -1002: Kindred was shot by Skeleton (stage Prepare)
+                    - at 2000s: outmatched by a skeleton at 415 62 -995""";
+            var outcome = s.advise(report, List.of(new StrategyAdvice.Place(400, 60, -990), new StrategyAdvice.Place(420, 58, -1002)))
+                    .get(90, TimeUnit.SECONDS);
+            System.out.println("strategist outcome: " + outcome);
+            assertTrue(outcome.advice().isPresent(), "advice: " + outcome.failure());
+            var queue = outcome.advice().get().queue();
+            assertTrue(!queue.isEmpty(), "two deaths to skeletons and no shield before the Nether: something to queue");
+            assertTrue(queue.stream().noneMatch(w -> w.need() == dev.kindred.core.guide.Need.BOW), "never what it already holds: " + queue);
+        }
+    }
+
     /** Latency of each pace on the same report, run only with {@code KINDRED_LIVE_MODEL_BENCH}: three calls each. */
     @Test
     void paceBenchmark() throws Exception {

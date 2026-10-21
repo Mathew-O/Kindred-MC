@@ -1501,7 +1501,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
 
     /**
      * A player's memory of a world keeps the habits its notes teach across a save and a load (F-19c): a habit stays
-     * with its first note, and a retired habit leaves its note as a plain note.
+     * with its first note, and a retired habit leaves its note as a plain note. The strategist's queued follow-ups
+     * (F-19e) are kept the same way.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 100)
     public void memoryKeepsHabitsWithTheirNotesAcrossASave(TestContext context) {
@@ -1527,6 +1528,15 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
             var loaded = store.load(id, "Rememberer").get(5, java.util.concurrent.TimeUnit.SECONDS);
             context.assertTrue(loaded.habits().equals(memory.habits()) && loaded.notes.size() == memory.notes.size(),
                     "The habits come back from the file: " + loaded.habits() + " " + loaded.noteTexts());
+            // The strategist's follow-ups (F-19e) come back from the file too; one edited into something unknown does not.
+            var queued = dev.kindred.core.guide.TaskQueue.EMPTY.advise(java.util.List.of(
+                    new dev.kindred.core.guide.Want(dev.kindred.core.guide.Need.SHIELD, 1, dev.kindred.core.guide.Objective.NETHER_TRIP, "skeleton arrows"),
+                    new dev.kindred.core.guide.Want(dev.kindred.core.guide.Need.ARROWS, 48, dev.kindred.core.guide.Objective.END_FIGHT, "misses")));
+            loaded.queue(queued);
+            loaded.queue.add(new ModelContextStore.QueuedRecord("ELYTRA", 1, "END_FIGHT", "edited by hand"));
+            store.save(id, loaded);
+            var again = store.load(id, "Rememberer").get(5, java.util.concurrent.TimeUnit.SECONDS);
+            context.assertTrue(again.taskQueue().equals(queued), "The queue comes back from the file: " + again.taskQueue());
             // Live run 66 at the real-time pace wrote one lesson twenty ways: it is kept once, in its first wording,
             // and moves up as the newest; a different lesson is kept beside it.
             var reworded = new ModelContextStore.PlayerContext();

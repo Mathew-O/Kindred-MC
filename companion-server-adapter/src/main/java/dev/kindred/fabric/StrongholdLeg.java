@@ -1,6 +1,10 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.EditPolicy;
+import dev.kindred.core.guide.Need;
+import dev.kindred.core.guide.NeedsAssessment;
+import dev.kindred.core.guide.Objective;
+import dev.kindred.core.guide.TaskQueue;
 import dev.kindred.core.survival.EyeFlights;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
@@ -10,6 +14,9 @@ import net.minecraft.block.Blocks;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.BlazeEntity;
 import net.minecraft.entity.mob.EndermanEntity;
+import net.minecraft.entity.mob.SpiderEntity;
+import net.minecraft.entity.passive.ChickenEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
@@ -21,6 +28,8 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -99,6 +108,17 @@ final class StrongholdLeg {
     private final Set<Long> explored = new HashSet<>();
     private StrongholdRunPlanner.Stage stage;
     private StrongholdRunSnapshot lastSnapshot;
+    /** The follow-up queue's chunks this pass (F-25c7), and how gathering them before the descent is going. */
+    private StrongholdRunPlanner.Provisions provisions = StrongholdRunPlanner.Provisions.NONE;
+    private long provisionSince = -1;
+    private int provisionLeft;
+    /** Gathering for the End fight at the stronghold is over: the descent began, or it went too long without progress. */
+    private boolean provisionOver;
+    /** Half a day of game time without a chunk of it getting smaller: a night for spiders to come out included. */
+    static final long PROVISION_STALL_TICKS = 12_000;
+    /** Nothing of it can be done from here at all for this long: none of the sources is in reach, so down it goes. */
+    static final long PROVISION_IDLE_TICKS = 600;
+    private long provisionIdleSince = -1;
     private String progress = "";
     private BlockPos endPortal;
     private boolean arrived, pinned;
@@ -325,12 +345,27 @@ final class StrongholdLeg {
         observe(player);
         var s = snapshot(player, p);
         lastSnapshot = s;
-        stage = StrongholdRunPlanner.stage(s);
-        for (var step : StrongholdRunPlanner.plan(s)) {
+        provisions = provisions(player, p, s);
+        stage = StrongholdRunPlanner.stage(s, provisions);
+        if (stage == StrongholdRunPlanner.Stage.DESCEND && !provisionOver) {
+            provisionOver = true;
+            if (!provisions.chunks().isEmpty()) KindredMod.LOGGER.info("{} goes down to the stronghold without: {}", player.getName().getString(),
+                    String.join(", ", provisions.chunks().stream().map(c -> c.count() + " " + c.need().words(c.count())).toList()));
+        }
+        for (var step : StrongholdRunPlanner.plan(s, provisions)) {
             Optional<PortalRunCampaign.Task> task = realize(step, s, p, body, policy);
             if (task.isPresent()) {
                 progress = "End: " + label(stage) + ": " + step.why() + " - " + task.get().label();
+                provisionIdleSince = -1;
                 return task;
+            }
+        }
+        if (stage == StrongholdRunPlanner.Stage.PROVISION) {
+            long now = campaign.lastTick();
+            if (provisionIdleSince < 0) provisionIdleSince = now;
+            else if (now - provisionIdleSince > PROVISION_IDLE_TICKS) {
+                provisionOver = true;
+                KindredMod.LOGGER.info("{}: nothing more for the End fight to be had here; going down to the stronghold", player.getName().getString());
             }
         }
         progress = stage == StrongholdRunPlanner.Stage.DONE ? "End: found the End portal" : "End: " + label(stage) + ": waiting for a feasible step";
@@ -361,6 +396,7 @@ final class StrongholdLeg {
             case TRAVEL_TO_STRONGHOLD -> travel(body);
             case DIG_TO_STRONGHOLD -> descend(body);
             case FIND_PORTAL_ROOM -> findRoom(body);
+            case FOLLOW_UP -> followUp(step, s, p, body, policy);
         };
     }
 
@@ -405,7 +441,174 @@ final class StrongholdLeg {
         if (StrongholdRunPlanner.stage(lastSnapshot).ordinal() <= StrongholdRunPlanner.Stage.BLAZE_RODS.ordinal()
                 && 2 * lastSnapshot.blazeRods() + lastSnapshot.blazePowder() + lastSnapshot.eyes() < StrongholdRunPlanner.PEARLS_TARGET) kinds.add("blaze");
         if (lastSnapshot.enderPearls() + lastSnapshot.eyes() < StrongholdRunPlanner.PEARLS_TARGET) kinds.add("enderman");
+        if (provisions.chunks().stream().anyMatch(c -> c.need() == Need.STRING)) kinds.add("spider");
         return String.join(",", kinds);
+    }
+
+    // ------------------------------------------------------------------ follow-ups (F-25c7)
+
+    /** The objectives still ahead at this point of the trip. */
+    static Set<Objective> ahead(StrongholdRunSnapshot s) {
+        var ahead = EnumSet.of(Objective.END_FIGHT, Objective.SURVIVAL);
+        var base = StrongholdRunPlanner.stage(s);
+        if (base.ordinal() <= StrongholdRunPlanner.Stage.RETURN.ordinal()) ahead.add(Objective.NETHER_TRIP);
+        if (base != StrongholdRunPlanner.Stage.DONE) ahead.add(Objective.STRONGHOLD);
+        return ahead;
+    }
+
+    /** What the player holds of each need, counted from its own inventory. */
+    static Map<Need, Integer> held(ServerPlayerEntity player, PortalRunSnapshot p, StrongholdRunSnapshot s) {
+        var held = new EnumMap<Need, Integer>(Need.class);
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            Need need = stack.isOf(Items.BOW) ? Need.BOW
+                    : stack.isOf(Items.ARROW) || stack.isOf(Items.SPECTRAL_ARROW) || stack.isOf(Items.TIPPED_ARROW) ? Need.ARROWS
+                    : stack.isOf(Items.WATER_BUCKET) ? Need.WATER_BUCKET
+                    : stack.isOf(Items.STRING) ? Need.STRING
+                    : stack.isOf(Items.FEATHER) ? Need.FEATHERS
+                    : stack.isOf(Items.FLINT) ? Need.FLINT
+                    : stack.isOf(Items.STICK) ? Need.STICKS : null;
+            if (need != null) held.merge(need, stack.getCount(), Integer::sum);
+        }
+        held.put(Need.SHIELD, p.shields());
+        held.put(Need.BLOCKS, s.blocks());
+        held.put(Need.FOOD, p.edibleFood());
+        return held;
+    }
+
+    /** The items a need's chunks gather, kept rather than dropped and walked back for. */
+    private static Set<Item> items(List<NeedsAssessment.Chunk> chunks) {
+        var items = new HashSet<Item>();
+        for (var chunk : chunks) {
+            switch (chunk.need()) {
+                case STRING -> items.add(Items.STRING);
+                case FEATHERS -> items.add(Items.FEATHER);
+                case FLINT -> items.add(Items.FLINT);
+                case ARROWS -> items.add(Items.ARROW);
+                case BOW -> items.add(Items.BOW);
+                default -> { }
+            }
+        }
+        return items;
+    }
+
+    /**
+     * The follow-up queue for this pass: the strategist's wants settled against what the player holds, the objectives
+     * ahead broken into chunks, those it can get at now, and whether all of it is due: before going down to the
+     * stronghold, until the descent begins or the gathering has stalled.
+     */
+    private StrongholdRunPlanner.Provisions provisions(ServerPlayerEntity player, PortalRunSnapshot p, StrongholdRunSnapshot s) {
+        var held = held(player, p, s);
+        var ahead = ahead(s);
+        TaskQueue queue = campaign.queue().settle(held, ahead);
+        campaign.queue(queue);
+        var chunks = queue.chunks(ahead, held);
+        campaign.wanted(items(chunks));
+        int left = chunks.stream().mapToInt(NeedsAssessment.Chunk::count).sum();
+        long now = campaign.lastTick();
+        if (StrongholdRunPlanner.stage(s) != StrongholdRunPlanner.Stage.DESCEND) provisionSince = -1;
+        else if (provisionSince < 0 || left < provisionLeft) {
+            provisionSince = now;
+            provisionLeft = left;
+        } else if (!provisionOver && now - provisionSince > PROVISION_STALL_TICKS) {
+            provisionOver = true;
+            KindredMod.LOGGER.info("{}: gathering for the End fight has stalled; going down to the stronghold", player.getName().getString());
+        }
+        return new StrongholdRunPlanner.Provisions(chunks, atHand(player, s, chunks), held, !provisionOver);
+    }
+
+    /**
+     * The chunks the player can get at now, on the way: a chicken in sight while feathers are wanted, a spider it can
+     * take on or a cobweb seen while string is, gravel close by while flint is, wood for sticks, iron and wood for a
+     * shield, an empty bucket by water. Nothing from a boat or outside the Overworld but crafting.
+     */
+    private Set<Need> atHand(ServerPlayerEntity player, StrongholdRunSnapshot s, List<NeedsAssessment.Chunk> chunks) {
+        var at = EnumSet.noneOf(Need.class);
+        boolean ashore = overworld(player) && !inBoat(player);
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        for (var chunk : chunks) {
+            switch (chunk.need()) {
+                case FEATHERS -> {
+                    if (ashore && !world.getEntitiesByClass(ChickenEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                            chicken -> chicken.isAlive() && !chicken.isBaby() && player.canSee(chicken)).isEmpty()) at.add(Need.FEATHERS);
+                }
+                case STRING -> {
+                    boolean spider = s.swordTier() >= 2 && player.getHealth() >= 14 && visibleMob(player, SpiderEntity.class, 16) != null;
+                    boolean web = s.swordTier() >= 1 && campaign.knowledge().nearest(world, WorldKnowledge.Kind.COBWEB, feet,
+                            b -> b.getSquaredDistance(feet) <= 16 * 16 && world.getBlockState(b).isOf(Blocks.COBWEB)).isPresent();
+                    if (ashore && (spider || web)) at.add(Need.STRING);
+                }
+                case FLINT -> {
+                    boolean gravel = campaign.knowledge().nearest(world, WorldKnowledge.Kind.GRAVEL, feet,
+                            b -> b.getSquaredDistance(feet) <= 12 * 12 && world.getBlockState(b).isOf(Blocks.GRAVEL)).isPresent();
+                    if (ashore && (gravel || player.getInventory().count(Items.GRAVEL) > 0)) at.add(Need.FLINT);
+                }
+                case STICKS -> {
+                    // Not from the wood a boat still wants: the water on the way comes first.
+                    int keep = s.boats() == 0 ? StrongholdRunPlanner.BOAT_PLANKS : 0;
+                    if ((s.planks() >= 2 || s.logs() > 0) && s.planks() + 4 * s.logs() >= keep + 2) at.add(Need.STICKS);
+                }
+                case SHIELD -> { if (s.ironIngots() >= 1 && s.planks() + 4 * s.logs() >= 6) at.add(Need.SHIELD); }
+                case WATER_BUCKET -> {
+                    if (ashore && player.getInventory().count(Items.BUCKET) > 0 && campaign.knowledge().nearest(world, WorldKnowledge.Kind.WATER, feet,
+                            b -> b.getSquaredDistance(feet) <= 16 * 16).isPresent()) at.add(Need.WATER_BUCKET);
+                }
+                default -> { }
+            }
+        }
+        return at;
+    }
+
+    /** One chunk of the follow-up queue, as an ordinary recorded skill; searching only when it is due. */
+    private Optional<PortalRunCampaign.Task> followUp(StrongholdRunPlanner.Step step, StrongholdRunSnapshot s, PortalRunSnapshot p,
+                                                      NativePlayerBody body, EditPolicy.ServerPolicy policy) {
+        var player = body.entity();
+        boolean due = step.stage() == StrongholdRunPlanner.Stage.PROVISION;
+        boolean ashore = overworld(player) && !inBoat(player);
+        Need need = Need.valueOf(step.item());
+        return switch (need) {
+            // A table is set down or made only for a craft whose inputs are in hand.
+            case BOW, ARROWS -> !craftable(need) ? Optional.empty() : craftAtTable(body, need == Need.BOW ? "bow" : "arrow");
+            case SHIELD -> s.ironIngots() >= 1 && s.planks() + 4 * s.logs() >= 6 ? craftAtTable(body, "shield") : Optional.empty();
+            case STICKS -> s.planks() >= 2 ? campaign.craft(body, "stick") : s.logs() > 0 ? campaign.craft(body, "planks") : Optional.empty();
+            case FEATHERS -> !ashore ? Optional.empty() : campaign.huntFor(player, ChickenEntity.class, "chicken for feathers")
+                    .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, "", step, p, body, policy) : Optional.empty());
+            case STRING -> !ashore ? Optional.empty()
+                    : (s.swordTier() >= 2 && player.getHealth() >= 14 ? fight(player, SpiderEntity.class, 16, "Fight spider for string") : Optional.<PortalRunCampaign.Task>empty())
+                    .or(() -> s.swordTier() >= 1 ? campaign.gather(body, WorldKnowledge.Kind.COBWEB, due ? 48 : 16, "cobweb") : Optional.empty());
+            case FLINT -> ashore ? campaign.flint(body) : Optional.empty();
+            case BLOCKS -> ashore ? shared(PortalRunPlanner.Action.GATHER_STONE, "", step, p, body, policy) : Optional.empty();
+            case FOOD -> ashore ? shared(PortalRunPlanner.Action.HUNT, "", step, p, body, policy)
+                    .or(() -> shared(PortalRunPlanner.Action.SEEK_FOOD, "", step, p, body, policy)) : Optional.empty();
+            case WATER_BUCKET -> !ashore ? Optional.empty() : player.getInventory().count(Items.BUCKET) > 0
+                    ? shared(PortalRunPlanner.Action.FILL_WATER, "", step, p, body, policy)
+                    : s.ironIngots() >= 3 ? craftAtTable(body, "bucket") : Optional.empty();
+        };
+    }
+
+    /** One craft of {@code need} can be made from the needs held now. */
+    private boolean craftable(Need need) {
+        var recipe = dev.kindred.core.guide.MinecraftGuide.recipe(need).orElseThrow();
+        for (var input : recipe.inputs().entrySet()) if (provisions.held().getOrDefault(input.getKey(), 0) < input.getValue()) return false;
+        return true;
+    }
+
+    /** Craft at a crafting table: one close by, else one it carries set down, else one made from four planks. */
+    private Optional<PortalRunCampaign.Task> craftAtTable(NativePlayerBody body, String item) {
+        Optional<PortalRunCampaign.Task> made = campaign.craft(body, item);
+        if (made.isPresent() || campaign.tableNear(body)) return made;
+        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body);
+        return campaign.craft(body, "crafting_table");
+    }
+
+    /** The queue in words for the strategist, as it stood on the last pass. */
+    String queueReport(ServerPlayerEntity player) {
+        PortalRunSnapshot p = campaign.lastSnapshot();
+        if (lastSnapshot == null || p == null) return "not assessed yet.";
+        return campaign.queue().describe(ahead(lastSnapshot), held(player, p, lastSnapshot));
     }
 
     /** By the fortress's spawner, where blazes keep coming; otherwise along the fortress for one. */

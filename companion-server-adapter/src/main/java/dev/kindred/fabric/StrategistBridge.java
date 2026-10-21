@@ -22,7 +22,8 @@ import java.util.UUID;
  * bounds (AI-05): one request in flight per player and one at a time in all, at most six a minute per player and
  * twelve in all, and daily token budgets per player and in all (50,000 and 100,000 unless the operator sets others),
  * reserved before each request for its largest possible size and settled to what it used; a failure with no usage
- * keeps its reservation. Requests go out off the game thread; the advice comes back to it and is applied only if the
+ * keeps its reservation; input read back from the provider's prompt cache counts for a tenth, as it is billed, since
+ * the instructions and the Minecraft guide (F-19e) are the same on every request. Requests go out off the game thread; the advice comes back to it and is applied only if the
  * same goal is still running. Each player's memory in this world (notes, deaths, advice, cost) lives in its context
  * file. Off unless {@code KINDRED_STRATEGIST=on} and {@code ANTHROPIC_API_KEY} are set; the game plays the same
  * without it.
@@ -58,6 +59,7 @@ final class StrategistBridge implements AutoCloseable {
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
         String progress = "";
         PortalRunCampaign campaign, taught;
+        dev.kindred.core.guide.TaskQueue queued;
         final ArrayDeque<Long> recent = new ArrayDeque<>();
     }
 
@@ -140,7 +142,15 @@ final class StrategistBridge implements AutoCloseable {
         // The habits this player keeps in this world go to each goal it starts, before anything is asked.
         if (state.taught != campaign) {
             campaign.habits(state.context.habits());
+            campaign.queue(state.context.taskQueue());
+            state.queued = campaign.queue();
             state.taught = campaign;
+        }
+        // The queue as the goal settled it (follow-ups met, or their task behind the player) goes back into memory.
+        if (!campaign.queue().equals(state.queued)) {
+            state.queued = campaign.queue();
+            state.context.queue(state.queued);
+            store.save(id, state.context);
         }
         // Deaths go into this world's memory as they happen, whether or not a consultation follows.
         if (campaign.deaths() > state.deathsRecorded) {
@@ -180,7 +190,7 @@ final class StrategistBridge implements AutoCloseable {
                 KindredMod.LOGGER.warn("{} strategist: consultation failed: {}", name, String.valueOf(failure));
                 return;
             }
-            long used = outcome.inputTokens() + outcome.outputTokens();
+            long used = outcome.inputTokens() - outcome.cachedTokens() + (outcome.cachedTokens() + 9) / 10 + outcome.outputTokens();
             if (used > 0) { // Settle the reservation to what was used; without usage it stands.
                 tokensToday = Math.max(0, tokensToday + used - reserved);
                 state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
@@ -200,10 +210,13 @@ final class StrategistBridge implements AutoCloseable {
                 state.context.retire(advice.retire());
                 var after = state.context.habits();
                 asked.habits(after);
+                state.queued = asked.queue();
+                state.context.queue(state.queued);
                 KindredMod.LOGGER.info("{} strategist: {}{} ({} in, {} cached, {} out tokens, {} ms) - {}{}", name, advice.stance(),
                         advice.focus() == PlanPreferences.Focus.NONE ? "" : ", focus " + advice.focus(), outcome.inputTokens(),
                         outcome.cachedTokens(), outcome.outputTokens(), outcome.millis(), advice.reason(),
                         advice.avoid().isEmpty() ? "" : "; avoid " + advice.avoid());
+                if (!advice.queue().isEmpty()) KindredMod.LOGGER.info("{} strategist: queued {}", name, advice.queue());
                 if (!after.equals(before)) {
                     KindredMod.LOGGER.info("{} strategist: habits in this world now {} - {}", name, after, advice.note());
                 }

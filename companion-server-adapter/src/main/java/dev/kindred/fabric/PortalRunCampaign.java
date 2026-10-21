@@ -1,6 +1,7 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.EditPolicy;
+import dev.kindred.core.guide.TaskQueue;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
@@ -219,10 +220,30 @@ final class PortalRunCampaign {
         for (StrategyAdvice.Place place : advice.avoid()) markDanger(new BlockPos(place.x(), place.y(), place.z()), tick + DANGER_TICKS / 4);
         if (advice.habit() != PlanPreferences.Habit.NONE) habits.add(advice.habit());
         habits.remove(advice.retire());
+        if (!advice.queue().isEmpty()) queue = queue.advise(advice.queue());
         // The strategist's own answer is not news to it.
         event("strategist advised " + advice.stance() + (advice.focus() == PlanPreferences.Focus.NONE ? "" : ", " + advice.focus() + " first")
-                + (advice.reason().isEmpty() ? "" : ": " + advice.reason()), false);
+                + (advice.reason().isEmpty() ? "" : ": " + advice.reason())
+                + (advice.queue().isEmpty() ? "" : "; queued " + String.join(", ", advice.queue().stream()
+                        .map(w -> w.count() + " " + w.need().words(w.count())).toList())), false);
     }
+
+    /**
+     * The follow-up queue (F-19e, F-25c7): what the strategist added for the tasks ahead, kept until met or until
+     * its task is behind the player. The objectives' own requirements are assessed afresh on each pass and are not
+     * kept here.
+     */
+    private TaskQueue queue = TaskQueue.EMPTY;
+
+    TaskQueue queue() { return queue; }
+
+    /** The queue as the player's memory holds it, or as the End leg settled it. */
+    void queue(TaskQueue kept) { queue = java.util.Objects.requireNonNull(kept); }
+
+    /** Items the queue still wants: never dropped to make room, and walked back for when they drop nearby. */
+    private Set<Item> wanted = Set.of();
+
+    void wanted(Set<Item> items) { wanted = Set.copyOf(items); }
 
     /** The habits kept in this world, as the player's memory holds them. */
     void habits(java.util.Set<PlanPreferences.Habit> kept) {
@@ -277,6 +298,7 @@ final class PortalRunCampaign {
         out.append("Deaths so far: ").append(deathCount).append(". No-progress spells: ").append(stuckSpells).append(".\n");
         out.append("Stance in force: ").append(stance()).append(", focus ").append(focus()).append(".\n");
         out.append("Habits kept in this world: ").append(habits.isEmpty() ? "none" : habits.toString()).append(".\n");
+        if (goal == SurvivalGoal.STRONGHOLD) out.append("Queue: ").append(stronghold.queueReport(player)).append('\n');
         if (!events.isEmpty()) {
             out.append("Recent events, oldest first:\n");
             for (String e : events) out.append("- ").append(e).append('\n');
@@ -556,6 +578,9 @@ final class PortalRunCampaign {
     private double relocateBest;
     private boolean relocateDig;
     private PortalRunSnapshot lastSnapshot;
+
+    /** What the player had on the last planning pass. */
+    PortalRunSnapshot lastSnapshot() { return lastSnapshot; }
     private final Map<String, Integer> best = new HashMap<>();
     private final Set<Long> seenCells = new HashSet<>();
 
@@ -1080,7 +1105,7 @@ final class PortalRunCampaign {
         for (int s = 0; s < 36; s++) {
             ItemStack stack = inventory.getStack(s);
             if (stack.isEmpty()) continue;
-            int surplus = JUNK.contains(stack.getItem()) ? stack.getCount()
+            int surplus = JUNK.contains(stack.getItem()) && !wanted.contains(stack.getItem()) ? stack.getCount()
                     : stoneLike(stack) ? Math.min(stack.getCount(), stoneTotal - 64)
                     : stack.isOf(Items.GRAVEL) ? Math.min(stack.getCount(), gravelTotal - 8) : 0;
             if (surplus > bestCount) { bestCount = surplus; bestSlot = s; }
@@ -1221,6 +1246,16 @@ final class PortalRunCampaign {
         if (id.startsWith("stone_")) return 2;
         if (id.startsWith("wooden_") || id.startsWith("golden_")) return 1;
         return 0;
+    }
+
+    /** A crafting table to work at: one of its own within 16 blocks, or any within reach. */
+    boolean tableNear(NativePlayerBody body) {
+        return nearestWorkstation(body.entity(), Blocks.CRAFTING_TABLE, 16).isPresent() || body.findNearbyBlock(Blocks.CRAFTING_TABLE, 4.5).isPresent();
+    }
+
+    /** Set down a crafting table it carries. */
+    Optional<Task> placeTable(NativePlayerBody body) {
+        return placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
     }
 
     private Optional<BlockPos> nearestWorkstation(ServerPlayerEntity player, net.minecraft.block.Block block, int radius) {
@@ -2400,7 +2435,7 @@ final class PortalRunCampaign {
         return false;
     }
 
-    private Optional<Task> flint(NativePlayerBody body) {
+    Optional<Task> flint(NativePlayerBody body) {
         var player = body.entity();
         var inventory = player.getInventory();
         int gravelSlot = -1;
@@ -3588,8 +3623,8 @@ final class PortalRunCampaign {
      * leaves drop as they decay are the island's only wood to come (sky-island run 2 cut its one tree, picked up none
      * and was left with no wood at all).
      */
-    private static boolean keep(ItemStack stack, boolean saplings) {
-        return KEEP.contains(stack.getItem()) || saplings && stack.isIn(ItemTags.SAPLINGS);
+    private boolean keep(ItemStack stack, boolean saplings) {
+        return KEEP.contains(stack.getItem()) || wanted.contains(stack.getItem()) || saplings && stack.isIn(ItemTags.SAPLINGS);
     }
 
     private Optional<Task> pickUpLoose(ServerPlayerEntity player) {
@@ -3621,6 +3656,17 @@ final class PortalRunCampaign {
     private final Map<java.util.UUID, Long> dropWaits = new HashMap<>();
 
     // ------------------------------------------------------------------ food
+
+    /** Hunt the nearest adult animal of {@code kind} in sight (chickens for their feathers), picking up what it drops. */
+    Optional<Task> huntFor(ServerPlayerEntity player, Class<? extends PassiveEntity> kind, String what) {
+        var world = player.getServerWorld();
+        var animals = world.getEntitiesByClass(kind, player.getBoundingBox().expand(24, 8, 24),
+                animal -> animal.isAlive() && !animal.isBaby() && !blocked(animal.getBlockPos()) && player.canSee(animal));
+        if (animals.isEmpty()) return Optional.empty();
+        PassiveEntity nearest = animals.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) return Optional.of(strike(player, nearest, "Hunt " + what));
+        return Optional.of(go(nearest.getBlockPos(), 2.0, false, "Approach " + what));
+    }
 
     private Optional<Task> hunt(ServerPlayerEntity player) {
         var world = player.getServerWorld();

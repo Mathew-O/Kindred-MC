@@ -4,6 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-25c7 (what a larger task needs, assessed ahead and queued) and F-19e (the strategist's Minecraft guide and follow-ups), both in progress, on top of `a8d8b03`.
+  - New JUnit: `NeedsAssessmentTest` (4), `TaskQueueTest` (5), two `StrongholdRunPlannerTest` cases, a `StrategyAdviceTest` case, two `OpenAiCompatibleStrategistTest` cases.
+  - New native fixtures: `theEndFightsBowAndArrowsAreMadeOnTheWayFromWhatItGathers` and `whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold`. The memory round trip now covers the strategist's queue too.
+  - Live consultations (opt-in `ClaudeStrategistLiveTest`, three requests to the Anthropic API): each reply valid, with follow-ups queued that fit the report and nothing it already held.
+  - `runGametest` passed 251/251 twice. `./gradlew build` passed: 421 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `0a8c250834101bbe5919589aaecf22e0a77a8f111326f352fac72e27743c55bb`.
 - F-10g (routes that change on the move, in progress), on top of `b3ae08d`.
   - New native fixtures: `aPillarDroppedInTheHallwayIsRunRoundWithoutStopping`, `twoThirdsOfTheHallwayBlockedAheadIsSlippedThroughWithoutStopping`, `aWitherSkeletonBesideTheWayIsGivenAWideBerth` and its control `walkingStraightPastAWitherSkeletonIsNoticed`. New JUnit: `MobSensesTest` (4).
   - Before the change the hallway fixtures stopped 42 and 35 ticks against the obstacle; after, none.

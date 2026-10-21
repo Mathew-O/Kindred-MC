@@ -158,6 +158,26 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         properties.add("focus", enumField(StrategistPrompt.FOCUS, PlanPreferences.Focus.values()));
         properties.add("habit", enumField(StrategistPrompt.HABIT, PlanPreferences.Habit.values()));
         properties.add("retire", enumField(StrategistPrompt.RETIRE, PlanPreferences.Habit.values()));
+        var follow = new JsonObject();
+        follow.addProperty("type", "object");
+        follow.addProperty("additionalProperties", false);
+        var fields = new JsonObject();
+        fields.add("need", enumField(StrategistPrompt.QUEUE_NEED, dev.kindred.core.guide.Need.values()));
+        var count = new JsonObject();
+        count.addProperty("type", "integer");
+        count.addProperty("description", StrategistPrompt.QUEUE_COUNT);
+        fields.add("count", count);
+        fields.add("task", enumField(StrategistPrompt.QUEUE_FOR, dev.kindred.core.guide.Objective.values()));
+        fields.add("why", stringField(StrategistPrompt.QUEUE_WHY));
+        var needed = new JsonArray();
+        for (String name : fields.keySet()) needed.add(name);
+        follow.add("properties", fields);
+        follow.add("required", needed);
+        var queue = new JsonObject();
+        queue.addProperty("type", "array");
+        queue.addProperty("description", StrategistPrompt.QUEUE);
+        queue.add("items", follow);
+        properties.add("queue", queue);
         var all = new JsonArray();
         for (String name : properties.keySet()) all.add(name);
         var schema = new JsonObject();
@@ -191,7 +211,9 @@ public final class OpenAiCompatibleStrategist implements Strategist {
                 + "\"avoid\" (a list of {\"x\":..,\"y\":..,\"z\":..}; " + StrategistPrompt.AVOID + "), "
                 + "\"focus\" (NONE, FOOD or WOOD; " + StrategistPrompt.FOCUS + "), "
                 + "\"habit\" (NONE, MORE_FOOD, SPARE_PICKAXE, NO_CAVES or SHELTER_EARLY; " + StrategistPrompt.HABIT + "), "
-                + "\"retire\" (as habit; " + StrategistPrompt.RETIRE + ").";
+                + "\"retire\" (as habit; " + StrategistPrompt.RETIRE + "), "
+                + "\"queue\" (a list of {\"need\":..,\"count\":..,\"task\":..,\"why\":..}; " + StrategistPrompt.QUEUE + " need: "
+                + StrategistPrompt.QUEUE_NEED + " count: " + StrategistPrompt.QUEUE_COUNT + " task: " + StrategistPrompt.QUEUE_FOR + ").";
     }
 
     /** The completion's reply, validated in core, and its token counts. */
@@ -231,8 +253,17 @@ public final class OpenAiCompatibleStrategist implements Strategist {
                 }
             }
         }
+        var queue = new ArrayList<dev.kindred.core.guide.Want>();
+        if (reply.has("queue") && reply.get("queue").isJsonArray()) {
+            for (JsonElement entry : reply.getAsJsonArray("queue")) {
+                if (!entry.isJsonObject()) continue;
+                var o = entry.getAsJsonObject();
+                long count = number(o, "count");
+                dev.kindred.core.guide.Want.parse(text(o, "need"), count, text(o, "task"), text(o, "why")).ifPresent(queue::add);
+            }
+        }
         var advice = StrategyAdvice.validated(text(reply, "stance"), places, text(reply, "note"), text(reply, "reason"), reported,
-                text(reply, "focus"), text(reply, "habit"), text(reply, "retire"));
+                text(reply, "focus"), text(reply, "habit"), text(reply, "retire"), queue);
         return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
     }
 

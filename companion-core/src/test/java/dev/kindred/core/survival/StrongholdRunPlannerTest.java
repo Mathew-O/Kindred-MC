@@ -1,11 +1,17 @@
 package dev.kindred.core.survival;
 
+import dev.kindred.core.guide.Need;
+import dev.kindred.core.guide.Objective;
+import dev.kindred.core.guide.TaskQueue;
 import dev.kindred.core.survival.StrongholdRunPlanner.Action;
+import dev.kindred.core.survival.StrongholdRunPlanner.Provisions;
 import dev.kindred.core.survival.StrongholdRunPlanner.Stage;
 import dev.kindred.core.survival.StrongholdRunSnapshot.Dimension;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -154,5 +160,40 @@ class StrongholdRunPlannerTest {
         assertEquals(List.of(Action.THROW_EYE), actions(justLit().eyes(12).food(0, 20).build()), "a full stomach can wait");
         assertFalse(actions(justLit().ready().in(Dimension.NETHER).food(0, 10).build()).contains(Action.HUNT),
                 "nothing to hunt in the Nether");
+    }
+
+    private static Provisions endFight(Map<Need, Integer> held, Set<Need> atHand, boolean due) {
+        return new Provisions(TaskQueue.EMPTY.chunks(Set.of(Objective.END_FIGHT), held), atHand, held, due);
+    }
+
+    @Test
+    void theEndFightsNeedsAreTakenAsTheChanceComesWithoutStoppingTheRoute() {
+        var travelling = justLit().eyes(10).throwsRecorded(2).estimate().build();
+        // Nothing at hand: the route goes on.
+        assertEquals(List.of(Action.TRAVEL_TO_STRONGHOLD), StrongholdRunPlanner.plan(travelling, endFight(Map.of(), Set.of(), false))
+                .stream().map(StrongholdRunPlanner.Step::action).toList());
+        // A chicken in sight while feathers are wanted: a short detour first, then the route.
+        var steps = StrongholdRunPlanner.plan(travelling, endFight(Map.of(), Set.of(Need.FEATHERS), false));
+        assertEquals(Action.FOLLOW_UP, steps.getFirst().action());
+        assertEquals("FEATHERS", steps.getFirst().item());
+        assertEquals("Gather 8 feathers for the End fight", steps.getFirst().why());
+        assertEquals(Action.TRAVEL_TO_STRONGHOLD, steps.getLast().action());
+        // String and sticks in hand: the bow is made on the way.
+        var bow = StrongholdRunPlanner.plan(travelling, endFight(Map.of(Need.STRING, 3, Need.STICKS, 3), Set.of(), false));
+        assertEquals("BOW", bow.getFirst().item());
+    }
+
+    @Test
+    void whatIsStillMissingIsGatheredBeforeGoingDownToTheStronghold() {
+        var there = justLit().eyes(10).throwsRecorded(2).estimate().near().build();
+        assertEquals(Stage.PROVISION, StrongholdRunPlanner.stage(there, endFight(Map.of(), Set.of(), true)));
+        var steps = StrongholdRunPlanner.plan(there, endFight(Map.of(), Set.of(), true));
+        assertTrue(steps.stream().allMatch(step -> step.action() == Action.FOLLOW_UP));
+        assertEquals("STRING", steps.stream().filter(step -> step.item().equals("STRING")).findFirst().orElseThrow().item());
+        // All in hand, or no longer due (the gathering stalled, or the descent has begun): down it goes.
+        var all = Map.of(Need.BOW, 1, Need.ARROWS, 32, Need.BLOCKS, 64, Need.WATER_BUCKET, 1, Need.FOOD, 16);
+        assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there, endFight(all, Set.of(), true)));
+        assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there, endFight(Map.of(), Set.of(), false)));
+        assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there), "with nothing queued, as before");
     }
 }

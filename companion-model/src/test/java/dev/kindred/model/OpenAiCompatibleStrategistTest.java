@@ -91,11 +91,12 @@ class OpenAiCompatibleStrategistTest {
             var schema = format.getAsJsonObject("json_schema");
             assertTrue(schema.get("strict").getAsBoolean());
             var required = schema.getAsJsonObject("schema").getAsJsonArray("required");
-            for (String field : List.of("stance", "reason", "note", "avoid", "focus", "habit", "retire")) {
+            for (String field : List.of("stance", "reason", "note", "avoid", "focus", "habit", "retire", "queue")) {
                 assertTrue(required.toString().contains("\"" + field + "\""), field);
             }
             var messages = body.getAsJsonArray("messages");
             assertEquals("system", messages.get(0).getAsJsonObject().get("role").getAsString());
+            assertTrue(messages.get(0).getAsJsonObject().get("content").getAsString().contains("# Minecraft survival guide"), "the guide goes with the instructions");
             assertEquals("Player hungry at Y 20.", messages.get(1).getAsJsonObject().get("content").getAsString());
         }
     }
@@ -153,5 +154,35 @@ class OpenAiCompatibleStrategistTest {
             assertEquals("json_object", JsonParser.parseString(bodies.getFirst()).getAsJsonObject()
                     .getAsJsonObject("response_format").get("type").getAsString());
         }
+    }
+
+    @Test
+    void followUpsInTheReplyAreParsedFromTheFixedSetsAndTheRestDropped() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            String reply = "{\"stance\":\"PRESS_ON\",\"reason\":\"Skeletons twice.\",\"note\":\"\",\"avoid\":[],\"focus\":\"NONE\","
+                    + "\"habit\":\"NONE\",\"retire\":\"NONE\",\"queue\":[{\"need\":\"SHIELD\",\"count\":1,\"task\":\"NETHER_TRIP\",\"why\":\"arrows\"},"
+                    + "{\"need\":\"ELYTRA\",\"count\":1,\"task\":\"END_FIGHT\",\"why\":\"\"},"
+                    + "{\"need\":\"ARROWS\",\"count\":900,\"task\":\"END_FIGHT\",\"why\":\"misses\"}]}";
+            replies.add(completion(reply, "stop"));
+            var outcome = strategist.advise("Two deaths to skeletons.", REPORTED).get(10, TimeUnit.SECONDS);
+            var queue = outcome.advice().orElseThrow(() -> new AssertionError(outcome.failure())).queue();
+            assertEquals(List.of("SHIELD", "ARROWS"), queue.stream().map(w -> w.need().name()).toList(), "an elytra is no need the player can act on");
+            assertEquals(64, queue.getLast().count(), "held to the cap");
+        }
+    }
+
+    @Test
+    void theGuideCoversEveryNeedAndTaskTheQueueNames() {
+        for (var need : dev.kindred.core.guide.Need.values()) {
+            assertTrue(StrategistPrompt.GUIDE.contains(need.name()), need.name());
+        }
+        for (var task : dev.kindred.core.guide.Objective.values()) {
+            assertTrue(StrategistPrompt.GUIDE.contains(task.name()), task.name());
+        }
+        // What the planner asks for the End fight is what the guide tells the model.
+        for (var requirement : dev.kindred.core.guide.MinecraftGuide.requirements(dev.kindred.core.guide.Objective.END_FIGHT)) {
+            assertTrue(StrategistPrompt.GUIDE.contains(requirement.count() + " ") , requirement.toString());
+        }
+        assertTrue(StrategistPrompt.SYSTEM.endsWith(StrategistPrompt.GUIDE));
     }
 }

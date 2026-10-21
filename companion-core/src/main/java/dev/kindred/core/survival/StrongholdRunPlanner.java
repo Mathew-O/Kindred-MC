@@ -1,8 +1,13 @@
 package dev.kindred.core.survival;
 
+import dev.kindred.core.guide.Need;
+import dev.kindred.core.guide.NeedsAssessment;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Local, deterministic plan from a lit Nether portal to the End portal, the way players do it: stock up, go through,
@@ -14,6 +19,11 @@ import java.util.Objects;
  * <p>Twelve eyes can fill any portal frame; six are enough to find the stronghold and its portal room with a throw or
  * two to spare, so a pearl hunt that has stalled with six in hand moves on and takes more pearls from endermen met on
  * the way. Nothing here enters the End.
+ *
+ * <p>What the End fight will need (a bow and arrows for the crystals, blocks, a water bucket, food) is known from the
+ * start: the follow-up queue's chunks ({@link Provisions}) are done as the chance comes along the way (a chicken in
+ * sight while feathers are wanted, string and sticks in hand for the bow), and whatever is still missing is gathered
+ * at the stronghold before going down to it, unless that has stalled.
  */
 public final class StrongholdRunPlanner {
     /** Rods for twelve eyes: each rod makes two blaze powder. */
@@ -29,7 +39,7 @@ public final class StrongholdRunPlanner {
     /** Planks in a boat. */
     public static final int BOAT_PLANKS = 5;
 
-    public enum Stage { PREPARE, NETHER, FORTRESS, BLAZE_RODS, PEARLS, RETURN, EYES, LOCATE, TRAVEL, DESCEND, PORTAL_ROOM, DONE }
+    public enum Stage { PREPARE, NETHER, FORTRESS, BLAZE_RODS, PEARLS, RETURN, EYES, LOCATE, TRAVEL, PROVISION, DESCEND, PORTAL_ROOM, DONE }
 
     public enum Action {
         DONE,
@@ -54,7 +64,30 @@ public final class StrongholdRunPlanner {
         /** Dig down there until the stronghold's stone bricks show. */
         DIG_TO_STRONGHOLD,
         /** Explore the stronghold for the portal room, throwing an eye when the way is unclear. */
-        FIND_PORTAL_ROOM
+        FIND_PORTAL_ROOM,
+        /** One chunk of the follow-up queue: gather or craft {@link Step#count()} of the need named by {@link Step#item()}. */
+        FOLLOW_UP
+    }
+
+    /**
+     * What the objectives ahead still need, from the follow-up queue: the chunks of work left, those the player can get
+     * at now ({@code atHand}: a chicken in sight while feathers are wanted, planks for sticks), what it holds of each
+     * need, and whether all of it is due now (before the stronghold, until the descent begins or the gathering has
+     * stalled).
+     */
+    public record Provisions(List<NeedsAssessment.Chunk> chunks, Set<Need> atHand, Map<Need, Integer> held, boolean due) {
+        public static final Provisions NONE = new Provisions(List.of(), Set.of(), Map.of(), false);
+
+        public Provisions {
+            chunks = List.copyOf(chunks);
+            atHand = Set.copyOf(atHand);
+            held = Map.copyOf(held);
+        }
+
+        /** A chunk the player can do now, on the way: one it can get at, or a craft whose inputs it holds. */
+        public boolean now(NeedsAssessment.Chunk chunk) {
+            return atHand.contains(chunk.need()) || NeedsAssessment.ready(chunk, held);
+        }
     }
 
     /**
@@ -71,9 +104,21 @@ public final class StrongholdRunPlanner {
 
         static Step of(Action action, Stage stage, String why) { return new Step(action, "", 0, stage, why); }
         static Step craft(String item, int count, Stage stage, String why) { return new Step(Action.CRAFT, item, count, stage, why); }
+
+        static Step followUp(NeedsAssessment.Chunk chunk, Stage stage) {
+            String verb = chunk.kind() == NeedsAssessment.Kind.GATHER ? "Gather " : "Craft ";
+            return new Step(Action.FOLLOW_UP, chunk.need().name(), chunk.count(), stage,
+                    verb + chunk.count() + " " + chunk.need().words(chunk.count()) + " for " + chunk.objective().words());
+        }
     }
 
     private StrongholdRunPlanner() { }
+
+    /** {@link #stage(StrongholdRunSnapshot)}, with the End fight's needs gathered before going down when they are due. */
+    public static Stage stage(StrongholdRunSnapshot s, Provisions provisions) {
+        Stage stage = stage(s);
+        return stage == Stage.DESCEND && provisions.due() && !provisions.chunks().isEmpty() ? Stage.PROVISION : stage;
+    }
 
     public static Stage stage(StrongholdRunSnapshot s) {
         Objects.requireNonNull(s);
@@ -95,14 +140,20 @@ public final class StrongholdRunPlanner {
         return Stage.PORTAL_ROOM;
     }
 
+    /** {@link #plan(StrongholdRunSnapshot, Provisions)} with nothing queued. */
+    public static List<Step> plan(StrongholdRunSnapshot s) {
+        return plan(s, Provisions.NONE);
+    }
+
     /**
      * Steps in priority order: food when out of it, an enderman in sight while pearls are short, a blaze in sight in
-     * the Nether while rods are short, then the stage's own steps.
+     * the Nether while rods are short, follow-ups the player can do now on the way, then the stage's own steps.
      */
-    public static List<Step> plan(StrongholdRunSnapshot s) {
+    public static List<Step> plan(StrongholdRunSnapshot s, Provisions provisions) {
         Objects.requireNonNull(s);
+        Objects.requireNonNull(provisions);
         var steps = new ArrayList<Step>();
-        Stage stage = stage(s);
+        Stage stage = stage(s, provisions);
         if (stage == Stage.DONE) {
             steps.add(Step.of(Action.DONE, Stage.DONE, "Found the End portal"));
             return steps;
@@ -118,6 +169,8 @@ public final class StrongholdRunPlanner {
         if (nether && s.blazeSeen() && rodsShort(s) && s.swordTier() >= 2) {
             steps.add(Step.of(Action.FIGHT_BLAZE, stage, "A blaze in sight: its rod"));
         }
+        // The queue's chunks the chance has come for: a detour of a few seconds, not a stop to the route.
+        for (var chunk : provisions.chunks()) if (provisions.now(chunk)) steps.add(Step.followUp(chunk, stage));
         switch (stage) {
             case PREPARE -> prepare(s, steps);
             case NETHER -> steps.add(Step.of(Action.ENTER_PORTAL, stage, "Through the portal to the Nether"));
@@ -134,6 +187,9 @@ public final class StrongholdRunPlanner {
             case LOCATE -> steps.add(Step.of(Action.THROW_EYE, stage, s.throwsRecorded() == 0
                     ? "Throw an eye of ender and watch where it goes" : "Throw another from well to the side, to cross the first"));
             case TRAVEL -> steps.add(Step.of(Action.TRAVEL_TO_STRONGHOLD, stage, "Head for where the eyes' flights cross"));
+            case PROVISION -> {
+                for (var chunk : provisions.chunks()) if (!provisions.now(chunk)) steps.add(Step.followUp(chunk, stage));
+            }
             case DESCEND -> steps.add(Step.of(Action.DIG_TO_STRONGHOLD, stage, "Dig down to the stronghold"));
             case PORTAL_ROOM -> steps.add(Step.of(Action.FIND_PORTAL_ROOM, stage, "Find the portal room"));
             default -> { }

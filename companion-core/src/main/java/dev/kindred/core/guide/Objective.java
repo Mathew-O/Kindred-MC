@@ -1,0 +1,32 @@
+package dev.kindred.core.guide;
+
+import java.util.Locale;
+import java.util.Optional;
+
+/** What a need is for: the larger tasks a player prepares for ahead of time. */
+public enum Objective {
+    /** Through the portal for blaze rods and ender pearls, and back. */
+    NETHER_TRIP("the Nether trip"),
+    /** Eyes of ender thrown and followed, and the stronghold dug down to. */
+    STRONGHOLD("the stronghold"),
+    /** The Ender Dragon, and the End crystals that heal it. */
+    END_FIGHT("the End fight"),
+    /** Staying alive on the way: nights, mobs, hunger. */
+    SURVIVAL("staying alive");
+
+    private final String words;
+
+    Objective(String words) { this.words = words; }
+
+    /** How the report puts it ("the End fight"). */
+    public String words() { return words; }
+
+    public static Optional<Objective> parse(String name) {
+        if (name == null) return Optional.empty();
+        try {
+            return Optional.of(valueOf(name.trim().toUpperCase(Locale.ROOT).replace(' ', '_')));
+        } catch (IllegalArgumentException unknown) {
+            return Optional.empty();
+        }
+    }
+}

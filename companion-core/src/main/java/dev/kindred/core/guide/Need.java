@@ -1,0 +1,53 @@
+package dev.kindred.core.guide;
+
+import java.util.Locale;
+import java.util.Optional;
+
+/**
+ * Things a player can find itself short of for what it means to do later, from a fixed set. Each is one the local
+ * planner knows how to gather or craft from what it finds, so a need queued by the planner or by the optional
+ * strategist is always one the player can act on. Declared so that what is crafted comes before what it is crafted
+ * from ({@link NeedsAssessment} relies on it).
+ */
+public enum Need {
+    BOW("bow", 1),
+    ARROWS("arrow", 64),
+    SHIELD("shield", 1),
+    WATER_BUCKET("water bucket", 1),
+    STRING("string", 16),
+    FEATHERS("feather", 16),
+    FLINT("flint", 16),
+    STICKS("stick", 32),
+    BLOCKS("block", 128),
+    FOOD("food", 32);
+
+    private final String word;
+    private final int cap;
+
+    Need(String word, int cap) {
+        this.word = word;
+        this.cap = cap;
+    }
+
+    /** What the report and the log call it ("arrow", "water bucket"). */
+    public String word() { return word; }
+
+    /** What the report calls {@code count} of it ("8 feathers", "3 string"). */
+    public String words(int count) {
+        if (count == 1 || this == STRING || this == FLINT || this == FOOD) return word;
+        return word + "s";
+    }
+
+    /** The most of it a queue may ask for. */
+    public int cap() { return cap; }
+
+    /** A need by its name in any case ("arrows", " BOW "), or nothing for one not in the set. */
+    public static Optional<Need> parse(String name) {
+        if (name == null) return Optional.empty();
+        try {
+            return Optional.of(valueOf(name.trim().toUpperCase(Locale.ROOT).replace(' ', '_')));
+        } catch (IllegalArgumentException unknown) {
+            return Optional.empty();
+        }
+    }
+}

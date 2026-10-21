@@ -12,6 +12,9 @@ import com.anthropic.models.messages.StructuredOutputConfig;
 import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.ThinkingConfigDisabled;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import dev.kindred.core.guide.Need;
+import dev.kindred.core.guide.Objective;
+import dev.kindred.core.guide.Want;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.StrategyAdvice;
 
@@ -39,12 +42,17 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription(StrategistPrompt.AVOID) List<Spot> avoid,
             @JsonPropertyDescription(StrategistPrompt.FOCUS) PlanPreferences.Focus focus,
             @JsonPropertyDescription(StrategistPrompt.HABIT) PlanPreferences.Habit habit,
-            @JsonPropertyDescription(StrategistPrompt.RETIRE) PlanPreferences.Habit retire) { }
+            @JsonPropertyDescription(StrategistPrompt.RETIRE) PlanPreferences.Habit retire,
+            @JsonPropertyDescription(StrategistPrompt.QUEUE) List<FollowUp> queue) { }
 
     public record Spot(int x, int y, int z) { }
 
-
-
+    /** A follow-up for the player's queue (F-19e). */
+    public record FollowUp(
+            @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) Need need,
+            @JsonPropertyDescription(StrategistPrompt.QUEUE_COUNT) int count,
+            @JsonPropertyDescription(StrategistPrompt.QUEUE_FOR) Objective task,
+            @JsonPropertyDescription(StrategistPrompt.QUEUE_WHY) String why) { }
 
     private final AnthropicClient client;
     private final String model;
@@ -136,8 +144,10 @@ public final class ClaudeStrategist implements Strategist {
             Reply r = reply.get();
             var places = r.avoid() == null ? List.<StrategyAdvice.Place>of()
                     : r.avoid().stream().filter(Objects::nonNull).map(s -> new StrategyAdvice.Place(s.x(), s.y(), s.z())).toList();
+            var queue = r.queue() == null ? List.<Want>of() : r.queue().stream().filter(Objects::nonNull)
+                    .flatMap(f -> Want.parse(name(f.need()), f.count(), name(f.task()), f.why()).stream()).toList();
             var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported,
-                    name(r.focus()), name(r.habit()), name(r.retire()));
+                    name(r.focus()), name(r.habit()), name(r.retire()), queue);
             return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
         } catch (RateLimitException limited) {
             return Outcome.failed("rate limited", (System.nanoTime() - started) / 1_000_000);

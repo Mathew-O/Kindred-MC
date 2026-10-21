@@ -79,4 +79,19 @@ class StrategyAdviceTest {
         assertEquals(PlanPreferences.Focus.WOOD, advice.focus());
         assertEquals(1, advice.avoid().size());
     }
+
+    @Test
+    void followUpsForTheQueueAreKeptOneANeedAndThreeAtMost() {
+        var wants = java.util.stream.Stream.of(
+                        dev.kindred.core.guide.Want.parse("BOW", 1, "END_FIGHT", "crystals"),
+                        dev.kindred.core.guide.Want.parse("BOW", 1, "END_FIGHT", "again"),
+                        dev.kindred.core.guide.Want.parse("ARROWS", 48, "END_FIGHT", ""),
+                        dev.kindred.core.guide.Want.parse("SHIELD", 1, "NETHER_TRIP", "ghasts"),
+                        dev.kindred.core.guide.Want.parse("FOOD", 20, "SURVIVAL", ""))
+                .flatMap(java.util.Optional::stream).toList();
+        var advice = StrategyAdvice.validated("PRESS_ON", List.of(), "", "", REPORTED, "NONE", "NONE", "NONE", wants).orElseThrow();
+        assertEquals(List.of("BOW", "ARROWS", "SHIELD"), advice.queue().stream().map(w -> w.need().name()).toList());
+        assertEquals("crystals", advice.queue().getFirst().why(), "the first want for a need is the one kept");
+        assertTrue(StrategyAdvice.validated("PRESS_ON", List.of(), "", "", REPORTED).orElseThrow().queue().isEmpty());
+    }
 }
