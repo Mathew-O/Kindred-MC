@@ -146,7 +146,7 @@ final class NativeNavigator {
             BlockPos up = from.up();
             if (clear(up) && (swimmable(up) || standable(up))) moves.add(new Move(up, 2.0));
             BlockPos down = from.down();
-            if (loaded(down) && swimmable(down) && clear(down)) moves.add(new Move(down, 2.5));
+            if (loaded(down) && swimmable(down) && clear(down)) moves.add(new Move(down, 6.0));
         }
         return moves;
     }
@@ -274,7 +274,9 @@ final class NativeNavigator {
 
     /** Extra cost near lava and for wading, so routes keep a margin from danger. */
     private double terrainCost(BlockPos feet) {
-        double cost = swimmable(feet) ? 3.0 : 1.0;
+        // Swimming costs more than walking, and swimming with the head under far more: a route across water keeps to
+        // the surface, where there is air, rather than the bottom (the staged End run drowned crossing an ocean bed).
+        double cost = !swimmable(feet) ? 1.0 : state(feet.up()).getFluidState().isIn(FluidTags.WATER) ? 9.0 : 3.0;
         for (Direction direction : Direction.values()) {
             BlockPos near = feet.offset(direction);
             if (loaded(near) && state(near).getFluidState().isIn(FluidTags.LAVA)) cost += 20;

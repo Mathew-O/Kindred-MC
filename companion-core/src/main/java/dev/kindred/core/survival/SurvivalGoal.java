@@ -8,7 +8,12 @@ public enum SurvivalGoal {
     /** No standing objective; the player only reacts to needs and explicit requests. */
     NONE("No goal"),
     /** Earn the materials for a Nether portal from an empty inventory, then build and light it. */
-    NETHER_PORTAL("Build a Nether portal");
+    NETHER_PORTAL("Build a Nether portal"),
+    /**
+     * On from a lit Nether portal to the End portal: blaze rods and ender pearls from the Nether, eyes of ender, and
+     * the stronghold found by following them. Earns the portal first if it has none.
+     */
+    STRONGHOLD("Find the End portal");
 
     private final String label;
 

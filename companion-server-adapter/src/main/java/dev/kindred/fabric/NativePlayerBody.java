@@ -87,7 +87,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1404,6 +1404,24 @@ final class NativePlayerBody implements BodyAdapter {
             player.setYaw((float) Math.toDegrees(Math.atan2(-delta.x, delta.z)));
             player.setPitch((float) Math.toDegrees(-Math.atan2(delta.y, horizontal)));
             player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Throws the item in {@code hotbarSlot} the way a player does (an eye of ender, here): looks a little above the
+     * horizon along {@code yaw} and uses it. Vanilla decides what it does; an eye with no stronghold to fly to is
+     * kept, as for any player.
+     */
+    boolean throwHeld(ActionLease lease, int hotbarSlot, float yaw) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || !Float.isFinite(yaw)) return false;
+        return execute(lease, Intent.THROW, null, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            player.setYaw(yaw);
+            player.setHeadYaw(yaw);
+            player.setPitch(-15f);
+            player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+            player.clearActiveItem();
         });
     }
 

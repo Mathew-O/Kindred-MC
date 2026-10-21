@@ -57,6 +57,12 @@ public final class ActionArbiter {
         return companion;
     }
 
+    /** The body has crossed into another dimension: the record follows it, with no change of authority. */
+    public void relocate(String dimension) {
+        requireThread();
+        companion = companion.withDimension(dimension);
+    }
+
     public UUID sessionEpoch() {
         return sessionEpoch;
     }

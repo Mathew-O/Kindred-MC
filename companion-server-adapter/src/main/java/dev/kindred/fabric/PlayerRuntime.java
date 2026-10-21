@@ -228,6 +228,10 @@ final class PlayerRuntime {
             return;
         }
         entry.data = entry.data.withDimension(currentDim);
+        // The arbiter holds the record that persist() writes: it must cross too, or every write sets the old dimension
+        // back and the crossing is seen again, with another save each time (three saves for one crossing here, and in
+        // the staged End run receipts that collided and blocked the player in the Nether).
+        if (entry.arbiter != null) entry.arbiter.relocate(currentDim);
         if (entry.setup != null && !currentDim.equals(entry.setup.dimension())) {
             entry.setup = new dev.kindred.core.WorkSetup(entry.setup.companionId(), currentDim, entry.setup.home(),
                     entry.setup.area(), entry.setup.storage(), entry.setup.patch(), entry.setup.revision());
@@ -285,7 +289,10 @@ final class PlayerRuntime {
                 nativeFailure(server.getCommandSource(), entry, "Native save receipt could not be recorded", failure);
                 return;
             }
-            entry.nativeState = established;
+            // Receipts are written in order, and each later one already counted on this one's revision: a reply that
+            // arrives after a later receipt was issued must not wind the revision back (crossing a portal right after
+            // other recorded work blocked the staged End run's player this way).
+            if (entry.nativeState == null || established.revision() >= entry.nativeState.revision()) entry.nativeState = established;
         }));
     }
 
@@ -985,6 +992,18 @@ final class PlayerRuntime {
                 "slot", String.valueOf(hotbarSlot)));
     }
 
+    /** One recorded eye-of-ender throw from {@code hotbarSlot}, facing {@code yaw}; the goal throws its own the same way. */
+    int nativeThrowEye(ServerCommandSource source, UUID id, int hotbarSlot, float yaw) {
+        return nativeTask(source, id, "native_throw_eye", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw)));
+    }
+
+    /** What the native player's last skill reported (an eye's flight, a block's position), for fixtures. */
+    Map<String, String> nativeLastResult(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.runner == null ? Map.of() : entry.runner.lastProgress();
+    }
+
     int nativeProgression(ServerCommandSource source, UUID requestedId) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
@@ -1074,6 +1093,9 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_throw_eye")) {
+                task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
             } else if (skill.equals("native_place")) {
                 task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
@@ -1285,6 +1307,7 @@ final class PlayerRuntime {
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.MOVE))
+                    || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -1303,6 +1326,11 @@ final class PlayerRuntime {
     }
 
     static boolean isHazardousSituation(ServerPlayerEntity player) {
+        return isHazardousSituation(player, true);
+    }
+
+    /** As {@link #isHazardousSituation(ServerPlayerEntity)}, counting being alight only when {@code burning} says so. */
+    static boolean isHazardousSituation(ServerPlayerEntity player, boolean burning) {
         var world = player.getServerWorld();
         BlockPos feetPos = player.getBlockPos();
         BlockPos groundPos = feetPos.down();
@@ -1316,7 +1344,7 @@ final class PlayerRuntime {
                 || player.isInLava() || drowning;
         boolean onHazard = groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS)
                 || groundState.isOf(Blocks.LAVA);
-        return inHazard || onHazard || player.isOnFire();
+        return inHazard || onHazard || burning && player.isOnFire();
     }
 
     /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
@@ -2373,7 +2401,7 @@ final class PlayerRuntime {
             return candidates;
         }
 
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) {
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD) {
             candidates.addAll(campaignCandidates(entry, body));
             // Armor the goal earned is put on before the next goal step, not carried.
             equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 75.0).ifPresent(candidates::add);
@@ -3029,6 +3057,9 @@ final class PlayerRuntime {
     /** The standing goal's next concrete step, as one ordinary candidate; survival needs still outrank it. */
     private List<NativeTaskCandidate> campaignCandidates(Entry entry, NativePlayerBody body) {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.pursue(entry.goal);
+        // Through its own portal only while it is after the End portal: the operator's goal is what allows the trip.
+        body.setPortalTravelAuthorized(entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD);
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server));
@@ -3039,6 +3070,13 @@ final class PlayerRuntime {
             server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I built and lit a Nether portal near "
                     + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "!"), false);
             entry.goalProgress = "Done: the Nether portal is built and lit";
+        }
+        var endPortal = entry.campaign.stronghold().endPortal();
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD && endPortal.isPresent() && !entry.endPortalAnnounced) {
+            entry.endPortalAnnounced = true;
+            var at = endPortal.get();
+            server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I found the End portal near "
+                    + at.getX() + ", " + at.getY() + ", " + at.getZ() + "!"), false);
         }
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
             entry.loggedGoalProgress = entry.goalProgress;
@@ -3070,6 +3108,7 @@ final class PlayerRuntime {
             entry.campaign.taskRefusedForNow(task, server.getTicks()); // The player was still moving; nothing happened.
         } else if (task != null) {
             boolean completed = state == SkillRunner.State.COMPLETED;
+            if (completed && "native_throw_eye".equals(task.skill())) entry.campaign.stronghold().eyeFlown(entry.runner.lastProgress());
             if (completed && "native_place".equals(task.skill()) && entry.nativeBody != null) {
                 BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
                         Integer.parseInt(task.args().get("z")));
@@ -3327,7 +3366,11 @@ final class PlayerRuntime {
         // A goal's creeper work or walling-in, and any recorded fight, deals with a hissing creeper by itself (a wall,
         // a raised shield, or a sprint away): cutting it short for a one-block retreat would only cost the time it needs.
         boolean handlingCreeper = PortalRunCampaign.urgentTask(entry.activeCampaignTask) || "native_fight".equals(entry.skillId);
-        if (usable && busy && (isHazardousSituation(body.entity()) || creeperThreat && !handlingCreeper) && !"native_retreat".equals(entry.skillId) && !escapingWater) {
+        // Burning from a blaze's fireball is no reason to drop the fight with it; standing in fire or lava still is.
+        boolean burningInFight = "native_fight".equals(entry.skillId) && body.entity().isOnFire() && !body.entity().isInLava()
+                && !isHazardousSituation(body.entity(), false);
+        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper)
+                && !"native_retreat".equals(entry.skillId) && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort("Hazard/threat detected: urgent retreat required");
@@ -5210,6 +5253,7 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         private boolean awaitingRespawn;
         private boolean campaignFightInterrupt;
+        private boolean endPortalAnnounced;
         private UUID tacticalRetreatTaskId;
         private long lastTacticalRetreatTick = Long.MIN_VALUE / 2;
         private UUID barricadeTaskId;

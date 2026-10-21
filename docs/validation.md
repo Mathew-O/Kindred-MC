@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-25c6 (on from the lit portal to the End portal, in progress), on top of `f69d6dd`.
+  - New: `StrongholdRunPlannerTest` (7) and `EyeFlightsTest` (4) pass. Two native fixtures, the portal crossing and a recorded throw, each passed alone in stress runs.
+  - The crossing fixture with a debug count showed three dimension transits for one crossing before the fix and one after.
+  - Staged development runs (a portal lit by command, kit handed over) on a second dev server, seed 8675309, are recorded in the evidence; they are not earned progress.
+  - `runGametest` passed 242/242 twice. `./gradlew build` passed: 398 JUnit, three skips.
+  - JAR SHA-256: `641f00c1302bd2c6bf76b116d96b7fb542f4839be4e17dc31b1274893816782c`.
+- F-10d's live run: run 69 on `47ae8d8` (seed 8675309, sprinted, about 75 minutes) completed about 4,000 walks with no fall deaths.
 - Out of flooded workings (F-25c4, live runs 60 and 69), on top of `3fe5110`, with live run 69 playing from its own worktree.
   - The new fixture drowned 3 of 3 in a stress run with the change set aside; with it, it passed 3 of 3.
   - On the way, the trace showed two more causes:

@@ -39,7 +39,7 @@ public final class PlayerCommands {
             return 1;
         });
         root.then(CommandManager.literal("goal").then(CommandManager.argument("goal", StringArgumentType.word())
-                .suggests((context, builder) -> { builder.suggest("nether"); builder.suggest("none"); return builder.buildFuture(); })
+                .suggests((context, builder) -> { builder.suggest("nether"); builder.suggest("end"); builder.suggest("none"); return builder.buildFuture(); })
                 .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
                     if (runtime == null) return unavailable(context.getSource());
@@ -782,6 +782,7 @@ public final class PlayerCommands {
     private static dev.kindred.core.survival.SurvivalGoal goal(String raw) {
         return switch (raw.toLowerCase(java.util.Locale.ROOT)) {
             case "nether", "portal", "nether_portal" -> dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
+            case "end", "stronghold", "end_portal" -> dev.kindred.core.survival.SurvivalGoal.STRONGHOLD;
             default -> dev.kindred.core.survival.SurvivalGoal.NONE;
         };
     }

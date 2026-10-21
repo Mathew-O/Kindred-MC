@@ -30,7 +30,21 @@ import java.util.function.Predicate;
  * has seen (a dim, two-high space over stone) is remembered as places to explore, one per 4×4×4 block cell.
  */
 final class WorldKnowledge {
-    enum Kind { LOG, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, GRAVEL, WATER, LAVA, CRAFTING_TABLE, FURNACE, OBSIDIAN, CAVE, LEAVES }
+    enum Kind {
+        LOG, STONE, COAL_ORE, IRON_ORE, DIAMOND_ORE, GRAVEL, WATER, LAVA, CRAFTING_TABLE, FURNACE, OBSIDIAN, CAVE, LEAVES,
+        /** A Nether fortress's bricks, fences or stairs. */
+        NETHER_BRICK,
+        /** A mob spawner (in a fortress, the blazes'). */
+        SPAWNER,
+        /** Warped nylium: a warped forest, where endermen gather. */
+        WARPED,
+        /** A lit portal's own block. */
+        PORTAL,
+        /** A stronghold's stone bricks (plain, mossy or cracked). */
+        STONE_BRICK,
+        /** An End portal frame. */
+        END_PORTAL_FRAME
+    }
 
     static final int HORIZONTAL_RADIUS = 32;
     static final int VERTICAL_RADIUS = 24;
@@ -60,6 +74,12 @@ final class WorldKnowledge {
         if (state.isOf(Blocks.CRAFTING_TABLE)) return Kind.CRAFTING_TABLE;
         if (state.isOf(Blocks.FURNACE)) return Kind.FURNACE;
         if (state.isOf(Blocks.OBSIDIAN)) return Kind.OBSIDIAN;
+        if (state.isOf(Blocks.NETHER_BRICKS) || state.isOf(Blocks.NETHER_BRICK_FENCE) || state.isOf(Blocks.NETHER_BRICK_STAIRS)) return Kind.NETHER_BRICK;
+        if (state.isOf(Blocks.SPAWNER)) return Kind.SPAWNER;
+        if (state.isOf(Blocks.WARPED_NYLIUM)) return Kind.WARPED;
+        if (state.isOf(Blocks.NETHER_PORTAL)) return Kind.PORTAL;
+        if (state.isOf(Blocks.STONE_BRICKS) || state.isOf(Blocks.MOSSY_STONE_BRICKS) || state.isOf(Blocks.CRACKED_STONE_BRICKS)) return Kind.STONE_BRICK;
+        if (state.isOf(Blocks.END_PORTAL_FRAME)) return Kind.END_PORTAL_FRAME;
         var fluid = state.getFluidState();
         if (fluid.isStill() && fluid.isIn(FluidTags.WATER) && state.isOf(Blocks.WATER)) return Kind.WATER;
         if (fluid.isStill() && fluid.isIn(FluidTags.LAVA)) return Kind.LAVA;
@@ -68,7 +88,8 @@ final class WorldKnowledge {
 
     private static boolean needsSight(Kind kind) {
         return kind == Kind.COAL_ORE || kind == Kind.IRON_ORE || kind == Kind.DIAMOND_ORE || kind == Kind.WATER || kind == Kind.LAVA
-                || kind == Kind.CAVE;
+                || kind == Kind.CAVE || kind == Kind.SPAWNER || kind == Kind.STONE_BRICK || kind == Kind.END_PORTAL_FRAME
+                || kind == Kind.NETHER_BRICK;
     }
 
     /**

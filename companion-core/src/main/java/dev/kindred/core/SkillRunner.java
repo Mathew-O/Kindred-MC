@@ -42,6 +42,8 @@ public final class SkillRunner {
 
     public State state() { return state; }
     public Optional<String> reason() { return Optional.ofNullable(reason); }
+    /** What the skill last reported: on completion, its result (an eye's flight, a block's position). */
+    public Map<String, String> lastProgress() { return lastProgress; }
     public Optional<Checkpoint> checkpoint() { return Optional.ofNullable(lastCheckpoint); }
     public Optional<ActionLease> lease() { return Optional.ofNullable(lease); }
     public SkillBody body() { return body; }

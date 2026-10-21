@@ -5,6 +5,7 @@ import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
 import dev.kindred.core.survival.StrategyAdvice;
+import dev.kindred.core.survival.SurvivalGoal;
 import dev.kindred.core.survival.WorldFacts;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -90,6 +91,10 @@ final class PortalRunCampaign {
     private ObsidianSite obsidianSite;
     private int pourWaits;
     private PortalSite portalSite;
+    private SurvivalGoal goal = SurvivalGoal.NETHER_PORTAL;
+    /** The progress line's stage name while the leg past the portal runs; null for the portal's own. */
+    private String legLabel;
+    private final StrongholdLeg stronghold = new StrongholdLeg(this);
     private BlockPos dropSite;
     private java.util.UUID foe;
     private final Map<java.util.UUID, Long> ignoredFoes = new HashMap<>();
@@ -291,6 +296,26 @@ final class PortalRunCampaign {
     }
     WorldKnowledge knowledge() { return knowledge; }
 
+    /** Which goal this campaign serves: the portal alone, or on from it to the End portal. */
+    void pursue(SurvivalGoal goal) {
+        this.goal = goal == SurvivalGoal.STRONGHOLD ? goal : SurvivalGoal.NETHER_PORTAL;
+    }
+
+    SurvivalGoal goal() { return goal; }
+
+    /** The leg past the portal, for the runtime's announcements and the eye throws' results. */
+    StrongholdLeg stronghold() { return stronghold; }
+
+    /** A portal block of the player's own lit portal, when it stands in the Overworld and is lit. */
+    Optional<BlockPos> litPortal(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        if (portalSite == null || world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        BlockPos inside = portalSite.at(1, 1);
+        return world.isChunkLoaded(inside) && world.getBlockState(inside).isOf(Blocks.NETHER_PORTAL) ? Optional.of(inside) : Optional.empty();
+    }
+
+    long lastTick() { return lastTick; }
+
     /** Bounded perception each tick; cheap enough to run while other work proceeds. */
     void observe(ServerPlayerEntity player) {
         knowledge.scan(player);
@@ -490,14 +515,14 @@ final class PortalRunCampaign {
     }
 
     /** Skipped until its back-off ends and the player has moved well away from where the walk failed. */
-    private boolean unreachable(BlockPos pos) {
+    boolean unreachable(BlockPos pos) {
         Long until = unreachableUntil.get(pos.asLong());
         if (until == null) return false;
         BlockPos from = unreachableFrom.get(pos.asLong());
         return until > lastTick || from != null && from.getSquaredDistance(lastFeet) < 8 * 8;
     }
 
-    private boolean blocked(BlockPos pos) {
+    boolean blocked(BlockPos pos) {
         Long until = blockedUntil.get(pos.asLong());
         return until != null && until > lastTick;
     }
@@ -549,6 +574,13 @@ final class PortalRunCampaign {
             stuckClock = 0;
         }
         boolean active = planned.isEmpty() || !passive(planned.get());
+        // On the way to the End the leg keeps its own headway (its headings turn when they stop gaining ground): the
+        // portal's watchdog counts only the portal's materials, which never change out there.
+        if (goal == SurvivalGoal.STRONGHOLD && stronghold.active(body.entity())) {
+            stuckClock = 0;
+            relocate = null;
+            active = false;
+        }
         if (active) {
             if (relocate == null && stuckClock > STUCK_TICKS) startRelocating(groundBelow(body.entity()));
             Optional<Task> away = relocateStep(body);
@@ -683,6 +715,14 @@ final class PortalRunCampaign {
         }
         noteHappenings(player);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences()));
+        // On the way to the End the portal's plan has nothing left to say, in the Nether least of all: none of the
+        // upkeep below that follows its steps (workstations carried along, waiting for daylight to cut logs) applies.
+        boolean legActive = goal == SurvivalGoal.STRONGHOLD && stronghold.active(player);
+        legLabel = legActive && stronghold.stage() != null ? "End: " + StrongholdLeg.label(stronghold.stage()) : null;
+        if (legActive) {
+            steps.clear();
+            steps.add(new PortalRunPlanner.Step(PortalRunPlanner.Action.DONE, "", 0, PortalRunPlanner.Stage.DONE, "On toward the End portal"));
+        }
         // Opportunistic upkeep the plan does not order: water while a source is close, a sword before going deep.
         // Not with a bucket that holds lava, nor while a generator is being built: its own water is not to be taken.
         // Close means close: a lake far overhead is a climb, not a detour (live run 53 tried one from 27 blocks below
@@ -855,6 +895,19 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": " + loose.get().label();
             return loose;
         }
+        // Past the lit portal, toward the End portal: the leg's own steps instead of the portal's.
+        if (legActive) {
+            Optional<Task> leg = stronghold.next(body, snapshot, policy);
+            if (leg.isPresent() && setAside.getOrDefault(leg.get(), Long.MIN_VALUE) <= tick) {
+                progress = stronghold.progress();
+                return leg;
+            }
+            if (leg.isEmpty() && stronghold.stage() == dev.kindred.core.survival.StrongholdRunPlanner.Stage.DONE) {
+                progress = stronghold.progress();
+                return Optional.empty();
+            }
+            steps.clear(); // Nothing from the portal's plan: on to the fallbacks below.
+        }
         for (PortalRunPlanner.Step step : steps) {
             if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
             if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) continue; // Looking about for animals is daylight work.
@@ -901,6 +954,10 @@ final class PortalRunCampaign {
      */
     private Optional<Task> surface(ServerPlayerEntity player) {
         if (!PlayerRuntime.inDeepWater(player)) return Optional.empty();
+        // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
+        // staged End run was turned back to the shore on every pass across a bay).
+        if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && goal == SurvivalGoal.STRONGHOLD
+                && stronghold.crossing()) return Optional.empty();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos above = null;
@@ -1040,7 +1097,9 @@ final class PortalRunCampaign {
         return Optional.of(go(nearest.getBlockPos(), 0.8, true, "Recover dropped items near " + dropSite.toShortString()));
     }
 
-    private static String stageLabel(PortalRunPlanner.Stage stage) {
+    private String stageLabel(PortalRunPlanner.Stage stage) {
+        // On the way to the End, every line names the leg's stage, not the portal's.
+        if (legLabel != null) return legLabel;
         String name = stage.name().toLowerCase(java.util.Locale.ROOT);
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
@@ -1101,13 +1160,15 @@ final class PortalRunCampaign {
             if (furnace.getStack(2).isOf(Items.IRON_INGOT)) iron += furnace.getStack(2).getCount();
             if (furnace.getStack(2).isOf(Items.CHARCOAL)) coal += furnace.getStack(2).getCount(); // As the planner counts it.
         }
-        // Obsidian already set into the frame still counts toward the ten.
-        if (portalSite != null) {
+        // Obsidian already set into the frame still counts toward the ten. The site is in the Overworld: from another
+        // dimension the same coordinates are somewhere else entirely.
+        boolean siteHere = portalSite != null && player.getServerWorld().getRegistryKey() == net.minecraft.world.World.OVERWORLD;
+        if (siteHere) {
             obsidian += frameObsidian(player.getServerWorld(), portalSite);
             cobble += frameCorners(player.getServerWorld(), portalSite); // Placed corners count toward the four too.
         }
-        boolean framed = portalSite != null && portalComplete(player.getServerWorld(), portalSite);
-        boolean lit = portalSite != null && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
+        boolean framed = siteHere && portalComplete(player.getServerWorld(), portalSite);
+        boolean lit = siteHere && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, lavaBuckets,
                 water, fns, tables, furnaces, saplings, food, pick, pickaxes, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
                 player.getHungerManager().getFoodLevel(), framed, lit);
@@ -1137,7 +1198,7 @@ final class PortalRunCampaign {
 
     // ------------------------------------------------------------------ steps
 
-    private Optional<Task> realize(PortalRunPlanner.Step step, PortalRunSnapshot s, NativePlayerBody body, EditPolicy.ServerPolicy policy) {
+    Optional<Task> realize(PortalRunPlanner.Step step, PortalRunSnapshot s, NativePlayerBody body, EditPolicy.ServerPolicy policy) {
         var player = body.entity();
         return switch (step.action()) {
             case DONE -> Optional.empty();
@@ -1369,7 +1430,7 @@ final class PortalRunCampaign {
         return Map.copyOf(args);
     }
 
-    private static Task go(BlockPos target, double range, boolean partial, String label) {
+    static Task go(BlockPos target, double range, boolean partial, String label) {
         return new Task("native_goto", coords(target, Map.of("range", String.valueOf(range), "partial", String.valueOf(partial))), label);
     }
 
@@ -1446,7 +1507,7 @@ final class PortalRunCampaign {
      * (leaves around a trunk, a dirt lip over an ore). A target that stays out of reach after two approaches
      * is skipped along with its column.
      */
-    private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what) {
+    Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what) {
         return gather(body, kind, radius, what, false);
     }
 
@@ -1560,6 +1621,8 @@ final class PortalRunCampaign {
 
     private static boolean underground(ServerPlayerEntity player) {
         var world = player.getServerWorld();
+        // The Nether has a roof everywhere and no surface to climb to: none of the Overworld's below-ground rules apply.
+        if (!world.getDimension().hasSkyLight()) return false;
         BlockPos feet = player.getBlockPos();
         // Below the ground surface (leaves do not count as cover) with no open sky: a shaft or a cave, not a forest floor.
         return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 2;
@@ -1607,7 +1670,7 @@ final class PortalRunCampaign {
      * Staircase one step down along {@code digDirection}: clear head, feet and step-down cells ahead, then step.
      * Every break is still a separate recorded action with the lava and support checks.
      */
-    private Optional<Task> digDown(NativePlayerBody body, int targetY, String label) {
+    Optional<Task> digDown(NativePlayerBody body, int targetY, String label) {
         var player = body.entity();
         if (player.getBlockY() <= targetY) return tunnel(body, label);
         var world = player.getServerWorld();
@@ -1792,7 +1855,7 @@ final class PortalRunCampaign {
      * A staircase one step up along {@code digDirection}: clear the head room above, then the two cells over the
      * block ahead, and step up onto it. The way out when the job needs the surface.
      */
-    private Optional<Task> climb(NativePlayerBody body, String label) {
+    Optional<Task> climb(NativePlayerBody body, String label) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -1817,7 +1880,13 @@ final class PortalRunCampaign {
     }
 
     /** A two-high tunnel forward along {@code digDirection}; walls it exposes are scanned for ores. */
-    private Optional<Task> tunnel(NativePlayerBody body, String label) {
+    /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
+    Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
+        digDirection = heading;
+        return tunnel(body, label);
+    }
+
+    Optional<Task> tunnel(NativePlayerBody body, String label) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -1891,7 +1960,7 @@ final class PortalRunCampaign {
 
     // ------------------------------------------------------------------ crafting and smelting
 
-    private Optional<Task> craft(NativePlayerBody body, String item) {
+    Optional<Task> craft(NativePlayerBody body, String item) {
         String recipe = item.equals("planks") ? planksRecipe(body) : item;
         if (recipe == null) return Optional.empty();
         if (body.planCraft2x2(recipe).isPresent()) return Optional.of(new Task("native_craft", Map.of("recipe", recipe), "Craft " + recipe.replace('_', ' ')));
@@ -1998,7 +2067,7 @@ final class PortalRunCampaign {
         return false;
     }
 
-    private Task swapToHotbar(NativePlayerBody body, int slot, String label) {
+    Task swapToHotbar(NativePlayerBody body, int slot, String label) {
         var inventory = body.entity().getInventory();
         int target = 8;
         for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { target = s; break; }
@@ -2387,13 +2456,13 @@ final class PortalRunCampaign {
         return null;
     }
 
-    private static int hotbarSlot(NativePlayerBody body, Item item) {
+    static int hotbarSlot(NativePlayerBody body, Item item) {
         var inventory = body.entity().getInventory();
         for (int s = 0; s < 9; s++) if (inventory.getStack(s).isOf(item)) return s;
         return -1;
     }
 
-    private static int slotOf(NativePlayerBody body, Item item) {
+    static int slotOf(NativePlayerBody body, Item item) {
         var inventory = body.entity().getInventory();
         for (int s = 0; s < 36; s++) if (inventory.getStack(s).isOf(item)) return s;
         return -1;
@@ -3335,7 +3404,7 @@ final class PortalRunCampaign {
         return false;
     }
 
-    private static Task strike(ServerPlayerEntity player, net.minecraft.entity.LivingEntity target, String label) {
+    static Task strike(ServerPlayerEntity player, net.minecraft.entity.LivingEntity target, String label) {
         int weapon = -1;
         float best = 0;
         for (int s = 0; s < 9; s++) {
