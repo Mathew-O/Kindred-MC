@@ -1527,6 +1527,17 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
             var loaded = store.load(id, "Rememberer").get(5, java.util.concurrent.TimeUnit.SECONDS);
             context.assertTrue(loaded.habits().equals(memory.habits()) && loaded.notes.size() == memory.notes.size(),
                     "The habits come back from the file: " + loaded.habits() + " " + loaded.noteTexts());
+            // Live run 66 at the real-time pace wrote one lesson twenty ways: it is kept once, in its first wording,
+            // and moves up as the newest; a different lesson is kept beside it.
+            var reworded = new ModelContextStore.PlayerContext();
+            String first = "Hurt at 4/20 with no food below ground keeps repeating; climb to the surface, eat and heal before any tunnelling, and avoid the danger zones while hurt.";
+            reworded.addNote(1, first);
+            reworded.addNote(2, "Dig in before dusk: two nights on the surface cost lives here.", PlanPreferences.Habit.SHELTER_EARLY);
+            reworded.addNote(3, "Hurt and hungry below ground keeps repeating; surface, eat and heal before any tunnelling, and stay clear of the danger zones while hurt.");
+            reworded.addNote(4, "Hurt and hungry below ground keeps repeating; surface to eat and heal before any tunnelling, and stay clear of the danger zones while hurt.");
+            context.assertTrue(reworded.notes.size() == 2 && reworded.notes.get(1).text().equals(first) && reworded.notes.get(1).tick() == 4
+                    && reworded.habits().equals(java.util.Set.of(PlanPreferences.Habit.SHELTER_EARLY)),
+                    "One lesson kept once, in its first wording, as the newest: " + reworded.noteTexts());
         } catch (Exception failed) {
             throw new AssertionError("Memory round trip failed: " + failed, failed);
         }

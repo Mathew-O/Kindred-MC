@@ -43,7 +43,7 @@ public final class ClaudeStrategist implements AutoCloseable {
             StrategyAdvice.Stance stance,
             @JsonPropertyDescription("One sentence: why, from the reported events.")
             String reason,
-            @JsonPropertyDescription("A short note worth remembering in this world (a lesson, a place, a habit), or an empty string.")
+            @JsonPropertyDescription("A new lesson for this world's notes, or an empty string when the notes already hold it.")
             String note,
             @JsonPropertyDescription("Up to three places to keep away from for a while. Only places near deaths or danger zones in the report.")
             List<Spot> avoid,
@@ -88,7 +88,9 @@ public final class ClaudeStrategist implements AutoCloseable {
             shows the same problem more than once (deaths in caves, nights, running out of food or of pickaxes), \
             write a note with the lesson and set the habit that acts on it, so the player keeps it in every later \
             life here. Set a habit only for a repeated problem, never one it already keeps, and retire a kept habit \
-            only when the report shows it is getting in the way.
+            only when the report shows it is getting in the way. Leave the note empty unless it holds a lesson the \
+            notes do not hold yet, and state in it only what the report shows: never a death, place or event it does \
+            not list.
 
             You may name up to three places to keep away from, but only places close to deaths or danger zones in the \
             report. Never invent positions, resources or events. Keep the note to one practical lesson and the reason \

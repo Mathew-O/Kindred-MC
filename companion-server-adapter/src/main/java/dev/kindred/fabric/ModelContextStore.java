@@ -59,16 +59,22 @@ final class ModelContextStore implements AutoCloseable {
 
         /**
          * Keep a note, and the habit it teaches. A habit already kept stays with its first note; past
-         * {@link PlanPreferences#MAX_HABITS} the oldest habit's note is kept as a plain note.
+         * {@link PlanPreferences#MAX_HABITS} the oldest habit's note is kept as a plain note. A lesson already in
+         * the notes, however it is worded ({@link #sameLesson}), is not kept twice: its first wording moves up to
+         * the newest, so a lesson learned again outlasts one learned once (at the real-time pace live run 66 filled
+         * all twenty notes with one lesson).
          */
         void addNote(long tick, String text, PlanPreferences.Habit habit) {
             if (text == null || text.isBlank()) return;
             boolean kept = habit == PlanPreferences.Habit.NONE || habits().contains(habit);
             int same = -1;
-            for (int i = 0; i < notes.size() && same < 0; i++) if (notes.get(i).text.equalsIgnoreCase(text)) same = i;
-            if (same >= 0 && kept) return;
-            if (same >= 0) notes.set(same, new Note(notes.get(same).tick, notes.get(same).text, habit.name())); // The lesson, now kept.
-            else notes.add(new Note(tick, text, kept ? null : habit.name()));
+            for (int i = 0; i < notes.size() && same < 0; i++) if (sameLesson(notes.get(i).text, text)) same = i;
+            Note first = same >= 0 ? notes.get(same) : null;
+            // A habit learned now joins its lesson's first note, unless that note already teaches another.
+            if (first != null && (kept || habitOf(first) == PlanPreferences.Habit.NONE)) {
+                notes.remove(same);
+                notes.add(new Note(tick, first.text, kept ? first.habit : habit.name()));
+            } else notes.add(new Note(tick, text, kept ? null : habit.name()));
             while (habits().size() > PlanPreferences.MAX_HABITS) {
                 for (int i = 0; i < notes.size(); i++) {
                     if (habitOf(notes.get(i)) != PlanPreferences.Habit.NONE) {
@@ -83,6 +89,25 @@ final class ModelContextStore implements AutoCloseable {
                 for (int i = 0; i < notes.size() && plain < 0; i++) if (habitOf(notes.get(i)) == PlanPreferences.Habit.NONE) plain = i;
                 notes.remove(plain >= 0 ? plain : 0);
             }
+        }
+
+        /**
+         * Two notes hold the same lesson when at least half of all their words of four letters or more are shared
+         * (Jaccard similarity 0.5): the same advice reworded, but not a different lesson about the same trouble.
+         */
+        static boolean sameLesson(String a, String b) {
+            if (a.equalsIgnoreCase(b)) return true;
+            Set<String> wa = lessonWords(a), wb = lessonWords(b);
+            if (wa.isEmpty() || wb.isEmpty()) return false;
+            int shared = 0;
+            for (String word : wa) if (wb.contains(word)) shared++;
+            return 2 * shared >= wa.size() + wb.size() - shared;
+        }
+
+        private static Set<String> lessonWords(String text) {
+            var words = new java.util.HashSet<String>();
+            for (String word : text.toLowerCase(Locale.ROOT).split("[^a-z]+")) if (word.length() >= 4) words.add(word);
+            return words;
         }
 
         /** Stop keeping {@code habit}: its notes stay, as plain notes. */

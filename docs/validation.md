@@ -4,6 +4,11 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- One note per lesson, and notes only from the report (live run 66), on top of `6a5ba9b`, with run 66 and sky-island run 13 playing on the same machine.
+  - The memory fixture now also keeps run 66's reworded lesson once.
+  - `runGametest` passed 235/235 twice. `./gradlew build` passed: 373 JUnit, three skips.
+  - The two opt-in live model tests, run by hand with the new instructions, passed.
+  - JAR SHA-256: `6d5e4c91bc7fe4a9bf76daa1b6944de5353887d4dccf3b675ed88c5956b2b5e9`.
 - F-11c, renewal of a running native skill's paid slice, on top of `21b8dbf`, with live run 66 and sky-island run 13 playing on the same machine.
   - The new native fixture, obsidian broken with a diamond pickaxe with the test server held to 20 ticks a second, failed 2 of 2 in a stress run with the runtime change set aside ("Cancelled: Stopped or unavailable" after one slice). It passed 2 of 2 with it.
   - `runGametest` passed 235/235 twice.
