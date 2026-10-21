@@ -95,6 +95,53 @@ public final class NativeNavigationGameTests implements FabricGameTest {
     }
 
     /**
+     * A break longer than one paid slice, at real time (F-11c): obsidian takes 188 ticks with a diamond pickaxe, 9.4
+     * seconds at 20 ticks a second. The test server runs as fast as its ticks allow, so the fixture holds it to 20 a
+     * second while it waits, as a live server runs. Before renewal the five-second slice lapsed partway, the skill
+     * was halted and the block was left whole (live run 66 lost 85 walks this way).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "realTimeBreak", tickLimit = 800)
+    public void aBreakLongerThanOnePaidSliceCompletesAtRealTime(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos obsidian = context.getAbsolutePos(new BlockPos(5, 2, 3));
+        long[] started = new long[1];
+        long[] lastTick = new long[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Slicer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setBlockState(obsidian, Blocks.OBSIDIAN.getDefaultState());
+                    f.player().getInventory().setStack(15, new ItemStack(Items.DIAMOND_PICKAXE));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    started[0] = lastTick[0] = System.nanoTime();
+                    context.assertTrue(f.runtime.nativeBreak(f.source, f.id, obsidian) == 1, "Obsidian break requested");
+                })
+                .createAndAdd(() -> {
+                    // No faster than a live server: each tick takes at least 50 ms of wall-clock time.
+                    long wait = 50_000_000L - (System.nanoTime() - lastTick[0]);
+                    if (wait > 0) java.util.concurrent.locks.LockSupport.parkNanos(wait);
+                    lastTick[0] = System.nanoTime();
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_break"),
+                            "Break completes: " + activity);
+                })
+                .createAndAdd(() -> {
+                    double seconds = (System.nanoTime() - started[0]) / 1e9;
+                    context.assertTrue(seconds > 6, "It ran past one five-second slice: " + seconds + " s");
+                    context.assertTrue(context.getWorld().getBlockState(obsidian).isAir(), "The obsidian was broken");
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 1, "Its own obsidian was picked up");
+                    var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(action != null && action.kind().equals("native_break") && action.state() == ActionRecord.State.VERIFIED,
+                            "Durable ledger records a verified break");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A block over a five-deep shaft: its drop falls to the bottom, and the pickup does not walk over the edge
      * after it. The break still completes and is recorded; the drop stays where it fell.
      */

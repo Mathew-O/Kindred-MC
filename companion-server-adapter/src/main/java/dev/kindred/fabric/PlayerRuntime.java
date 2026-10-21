@@ -185,6 +185,8 @@ final class PlayerRuntime {
     static final int MAX_BLOCK_CHECKS_PER_TICK = 128;
     /** How long a direct native command keeps autonomous task selection from replacing its outcome. */
     static final int MANUAL_COMMAND_HOLD_TICKS = 200;
+    /** A running native skill's paid slice is renewed when this little of it is left (F-11c). */
+    static final java.time.Duration RENEW_AHEAD = java.time.Duration.ofMillis(1500);
     private int blocksScannedThisTick = 0;
     private long totalBlockChecksMonotonic = 0;
 
@@ -3259,6 +3261,17 @@ final class PlayerRuntime {
         boolean usable = running && ready && !entry.metadataFault && !entry.reconciliationBlocked
                 && !entry.nativePending && entry.nativeState.phase() == StoredNativePlayer.Phase.ESTABLISHED;
         boolean busy = entry.runner != null && runnerBusy(entry);
+        // A skill that runs on past its five-second slice (a long walk, obsidian, stone by hand) has the slice renewed
+        // shortly before it lapses, while it is still admitted: the same cap, window and durable acknowledgement as
+        // any slice. Without a renewal the permit lapses and the skill is halted, as before (F-11c).
+        if (usable && busy && entry.runner.state() == SkillRunner.State.RUNNING && entry.activity != null
+                && entry.activity.phase() == PaidActivitySession.Phase.ACTIVE && !entry.activity.renewing()
+                && entry.activity.remaining().compareTo(RENEW_AHEAD) < 0
+                && !entry.snapshot().stopLatched() && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR
+                && !entry.arbiter.cancellationPending() && !entry.hazardInterrupted
+                && entry.nativeBody != null && entry.nativeBody.connected()) {
+            entry.activity.renew(entry.activity.snapshot().period().endExclusive());
+        }
         if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
             nativeActivityFailure(entry, "Activity settlement is uncertain");
