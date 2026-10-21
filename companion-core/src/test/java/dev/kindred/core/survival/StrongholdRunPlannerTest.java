@@ -19,7 +19,7 @@ class StrongholdRunPlannerTest {
         Dimension dimension = Dimension.OVERWORLD;
         boolean portalKnown = true, fortressSeen, blazeSeen, endermanSeen, stalled, estimate, near, strongholdSeen, roomSeen;
         int food = 3, foodLevel = 20, sword = 2, pickaxe = 2, pickaxes = 1, armor = 1, shields = 0, blocks = 10, iron = 0;
-        int rods, powder, pearls, eyes, throwsRecorded, filled;
+        int rods, powder, pearls, eyes, throwsRecorded, filled, boats, planks, logs;
 
         Builder in(Dimension d) { dimension = d; return this; }
         Builder food(int n, int level) { food = n; foodLevel = level; return this; }
@@ -38,11 +38,13 @@ class StrongholdRunPlannerTest {
         Builder stronghold() { strongholdSeen = true; return this; }
         Builder room() { roomSeen = true; return this; }
         Builder ready() { food = 12; blocks = 48; pickaxes = 2; return this; }
+        Builder wood(int planks, int logs) { this.planks = planks; this.logs = logs; return this; }
+        Builder boat() { boats = 1; return this; }
 
         StrongholdRunSnapshot build() {
             return new StrongholdRunSnapshot(dimension, portalKnown, food, foodLevel, sword, pickaxe, pickaxes, armor, shields, blocks, iron,
                     rods, powder, pearls, eyes, fortressSeen, blazeSeen, endermanSeen, stalled, throwsRecorded, estimate, near,
-                    strongholdSeen, roomSeen, filled);
+                    strongholdSeen, roomSeen, filled, boats, planks, logs);
         }
     }
 
@@ -62,6 +64,23 @@ class StrongholdRunPlannerTest {
         var ready = justLit().ready().build();
         assertEquals(Stage.NETHER, StrongholdRunPlanner.stage(ready));
         assertEquals(List.of(Action.ENTER_PORTAL), actions(ready));
+    }
+
+    @Test
+    void itMakesABoatFromWoodItCarriesButDoesNotWaitForOne() {
+        var planks = justLit().wood(6, 0).build();
+        assertTrue(StrongholdRunPlanner.plan(planks).stream().anyMatch(step -> step.action() == Action.CRAFT && step.item().equals("boat")),
+                "five planks or more: a boat");
+        var logs = justLit().wood(1, 1).build();
+        assertTrue(StrongholdRunPlanner.plan(logs).stream().anyMatch(step -> step.action() == Action.CRAFT && step.item().equals("planks")),
+                "a log and a plank make five planks: planks first");
+        var bare = justLit().wood(2, 0).build();
+        assertTrue(StrongholdRunPlanner.plan(bare).stream().noneMatch(step -> step.item().equals("boat") || step.item().equals("planks")),
+                "too little wood: no boat");
+        var has = justLit().wood(10, 4).boat().build();
+        assertTrue(StrongholdRunPlanner.plan(has).stream().noneMatch(step -> step.item().equals("boat")), "one boat is enough");
+        // Ready otherwise, with wood and no boat: through the portal all the same.
+        assertEquals(Stage.NETHER, StrongholdRunPlanner.stage(justLit().ready().wood(8, 0).build()));
     }
 
     @Test

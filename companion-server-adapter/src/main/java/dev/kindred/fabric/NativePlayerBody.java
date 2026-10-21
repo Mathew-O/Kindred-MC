@@ -7,6 +7,7 @@ import dev.kindred.core.BodyAdapter;
 import dev.kindred.core.Companion;
 import dev.kindred.core.logistics.ChestOrganizationPolicy;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.item.Item;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.network.ClientConnection;
@@ -87,7 +88,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -104,6 +105,8 @@ final class NativePlayerBody implements BodyAdapter {
     private float sideways;
     private boolean jump;
     private boolean sprint;
+    /** Paddle inputs while in a boat, set on the boat each tick as a client sets them. */
+    private boolean rowForward, rowLeft, rowRight;
     private BlockPos miningTarget;
     private BlockState miningState;
     private float miningProgress;
@@ -1425,6 +1428,93 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /** The boat the body sits in, if it is in one. */
+    Optional<BoatEntity> boat() {
+        requireThread();
+        return player.getVehicle() instanceof BoatEntity boat ? Optional.of(boat) : Optional.empty();
+    }
+
+    /**
+     * Puts the boat in {@code hotbarSlot} on the water at {@code water}, as a player does: looking at the water's surface
+     * and using the item, which places it where the look meets the water. Vanilla spends the item.
+     */
+    boolean launchBoat(ActionLease lease, int hotbarSlot, BlockPos water) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || player.hasVehicle()) return false;
+        Vec3d surface = new Vec3d(water.getX() + 0.5, water.getY() + 0.9, water.getZ() + 0.5);
+        if (player.getEyePos().distanceTo(surface) > 4.0) return false;
+        return execute(lease, Intent.BOAT, water, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            face(surface);
+            player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
+    /** Into {@code boat}, as a player clicks on one within reach. */
+    boolean board(ActionLease lease, BoatEntity boat) {
+        requireThread();
+        // Reach as the server allows a player's click on an entity: to its box, within interaction range.
+        if (boat == null || !boat.isAlive() || player.hasVehicle() || !player.canInteractWithEntity(boat, 0)) return false;
+        boolean[] boarded = {false};
+        boolean done = execute(lease, Intent.BOAT, boat.getBlockPos(), () -> {
+            face(boat.getPos());
+            boarded[0] = player.interact(boat, Hand.MAIN_HAND).isAccepted() && player.getVehicle() == boat;
+        });
+        return done && boarded[0];
+    }
+
+    /** The paddles: forward and either way, held until changed or halted. Looks where the boat heads. */
+    boolean row(ActionLease lease, boolean ahead, boolean left, boolean right) {
+        requireThread();
+        if (!(player.getVehicle() instanceof BoatEntity boat)) return false;
+        return execute(lease, Intent.MOVE, null, () -> {
+            rowForward = ahead;
+            rowLeft = left;
+            rowRight = right;
+            boat.setInputs(left, right, ahead, false);
+            player.setYaw(boat.getYaw());
+            player.setHeadYaw(boat.getYaw());
+            player.setPitch(10f);
+        });
+    }
+
+    /**
+     * Out of the boat, as a player sneaks to get out, looking along {@code yaw}: vanilla sets a rider down on the side
+     * it faces when there is dry ground there, beside the boat on its next tick.
+     */
+    boolean leaveBoat(ActionLease lease, float yaw) {
+        requireThread();
+        if (!(player.getVehicle() instanceof BoatEntity boat) || !Float.isFinite(yaw)) return false;
+        return execute(lease, Intent.BOAT, boat.getBlockPos(), () -> {
+            rowForward = rowLeft = rowRight = false;
+            boat.setInputs(false, false, false, false);
+            player.setYaw(yaw);
+            player.setHeadYaw(yaw);
+            player.setSneaking(true);
+        });
+    }
+
+    /** One hit on an empty boat within reach, as a player breaks one to take it back. */
+    boolean strikeBoat(ActionLease lease, BoatEntity boat) {
+        requireThread();
+        if (boat == null || !boat.isAlive() || boat.hasPassengers() || player.hasVehicle() || !player.canInteractWithEntity(boat, 0)) return false;
+        return execute(lease, Intent.ATTACK, boat.getBlockPos(), () -> {
+            face(boat.getPos().add(0, 0.3, 0));
+            player.attack(boat);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    private void face(Vec3d at) {
+        Vec3d eye = player.getEyePos();
+        double dx = at.x - eye.x, dy = at.y - eye.y, dz = at.z - eye.z;
+        float yaw = (float) (Math.toDegrees(Math.atan2(-dx, dz)));
+        float pitch = (float) (-Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz))));
+        player.setYaw(yaw);
+        player.setHeadYaw(yaw);
+        player.setPitch(pitch);
+    }
+
     boolean miningEligible(BlockPos target) { requireThread(); return player.isAlive() && canMine(target); }
 
     /** Whether survival mining of {@code target} is still in progress (not aborted or finished). */
@@ -1559,7 +1649,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (arbiter != null) arbiter.tick();
         tickHook.run();
         if (!current(controls)
-                || ((forward != 0 || sideways != 0 || jump || sprint) && !gate.permits(controls, Intent.MOVE, null))
+                || ((forward != 0 || sideways != 0 || jump || sprint || rowForward || rowLeft || rowRight) && !gate.permits(controls, Intent.MOVE, null))
                 || (player.isUsingItem() && !gate.permits(controls, Intent.EAT, null) && !gate.permits(controls, Intent.BLOCK, null))
                 || (miningTarget != null && (!gate.permits(controls, Intent.MINE, miningTarget)
                     || !canMine(miningTarget) || player.getWorld().getBlockState(miningTarget) != miningState))) {
@@ -1580,6 +1670,7 @@ final class NativePlayerBody implements BodyAdapter {
         player.applyInput(forward * pace, sideways * pace);
         player.setJumping(jump);
         player.setSprinting(sprint && !player.isUsingItem() && player.getHungerManager().getFoodLevel() > 6);
+        if (player.getVehicle() instanceof BoatEntity boat) boat.setInputs(rowLeft, rowRight, rowForward, false);
     }
 
     private void afterTick() {
@@ -1598,6 +1689,8 @@ final class NativePlayerBody implements BodyAdapter {
     private void haltControls() {
         forward = sideways = 0;
         jump = sprint = false;
+        rowForward = rowLeft = rowRight = false;
+        if (player.getVehicle() instanceof BoatEntity boat) boat.setInputs(false, false, false, false);
         player.applyInput(0, 0);
         player.setJumping(false);
         player.setSprinting(false);

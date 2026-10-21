@@ -155,6 +155,8 @@ final class PlayerRuntime {
     private final Path metadataDirectory;
     /** The optional model strategist for goals (F-19b), when switched on and a key is set. */
     private final Optional<StrategistBridge> strategist;
+    /** What each player has learnt about this world, kept across restarts. */
+    private final PlayerMemoryStore memories;
     private final NativePlayerSaves.Reader nativeSaveReader;
     private final java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator;
     private final StartupLedgerReader startupLedgerReader;
@@ -319,6 +321,7 @@ final class PlayerRuntime {
         this.server = server;
         this.metadataDirectory = metadataDirectory;
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
+        this.memories = new PlayerMemoryStore(metadataDirectory);
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
@@ -1042,6 +1045,23 @@ final class PlayerRuntime {
         return nativeTask(source, id, task.get().skill(), task.get().args());
     }
 
+    /** One recorded boat step ({@code launch} from {@code hotbarSlot} onto {@code water}, {@code board} or {@code land}), as the goal takes it. */
+    int nativeBoat(ServerCommandSource source, UUID id, String mode, int hotbarSlot, BlockPos water) {
+        var args = new java.util.HashMap<String, String>(Map.of("mode", mode));
+        if (hotbarSlot >= 0) args.put("slot", String.valueOf(hotbarSlot));
+        if (water != null) {
+            args.put("x", String.valueOf(water.getX()));
+            args.put("y", String.valueOf(water.getY()));
+            args.put("z", String.valueOf(water.getZ()));
+        }
+        return nativeTask(source, id, "native_boat", args);
+    }
+
+    /** Rows the boat the native player is in toward {@code x}, {@code z} for at most {@code seconds}. */
+    int nativeRow(ServerCommandSource source, UUID id, double x, double z, int seconds) {
+        return nativeTask(source, id, "native_row", Map.of("x", String.valueOf(x), "z", String.valueOf(z), "seconds", String.valueOf(seconds)));
+    }
+
     /** One recorded eye-of-ender throw from {@code hotbarSlot}, facing {@code yaw}; the goal throws its own the same way. */
     int nativeThrowEye(ServerCommandSource source, UUID id, int hotbarSlot, float yaw) {
         return nativeTask(source, id, "native_throw_eye", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw)));
@@ -1146,6 +1166,12 @@ final class PlayerRuntime {
             } else if (skill.equals("native_throw_eye")) {
                 task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
+            } else if (skill.equals("native_boat")) {
+                var mode = NativeBoatAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
+                BlockPos water = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
+                        Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
+                task = new NativeBoatAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), water);
             } else if (skill.equals("native_place")) {
                 task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
@@ -1358,6 +1384,9 @@ final class PlayerRuntime {
                     || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_boat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
+                        || intent == NativePlayerBody.Intent.ATTACK))
+                    || ("native_row".equals(entry.skillId) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -3105,8 +3134,38 @@ final class PlayerRuntime {
     }
 
     /** The standing goal's next concrete step, as one ordinary candidate; survival needs still outrank it. */
+    /**
+     * The player's memory of this world: read once for each campaign and recalled into it, then written whenever it
+     * learns something worth keeping. Reads and writes are off the game thread.
+     */
+    private void keepMemory(Entry entry) {
+        var campaign = entry.campaign;
+        UUID id = entry.data.id();
+        if (entry.memoryCampaign != campaign) {
+            entry.memoryCampaign = campaign;
+            entry.memorySaved = -1;
+            entry.memoryLoaded = false;
+            String name = entry.data.displayName();
+            memories.load(id, name).whenComplete((memory, failure) -> server.execute(() -> {
+                if (!running || entries.get(id) != entry || entry.memoryCampaign != campaign) return;
+                if (memory != null) campaign.stronghold().recall(memory);
+                entry.memoryLoaded = true;
+                entry.memorySaved = campaign.stronghold().memoryRevision();
+            }));
+            return;
+        }
+        if (entry.memoryLoaded && campaign.stronghold().memoryRevision() != entry.memorySaved) {
+            entry.memorySaved = campaign.stronghold().memoryRevision();
+            var memory = new PlayerMemoryStore.Memory();
+            memory.player = entry.data.displayName();
+            memory.id = id.toString();
+            memories.save(id, campaign.stronghold().remember(memory));
+        }
+    }
+
     private List<NativeTaskCandidate> campaignCandidates(Entry entry, NativePlayerBody body) {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        keepMemory(entry);
         entry.campaign.pursue(entry.goal);
         // Through its own portal only while it is after the End portal: the operator's goal is what allows the trip.
         body.setPortalTravelAuthorized(entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD);
@@ -3159,6 +3218,8 @@ final class PlayerRuntime {
         } else if (task != null) {
             boolean completed = state == SkillRunner.State.COMPLETED;
             if (completed && "native_throw_eye".equals(task.skill())) entry.campaign.stronghold().eyeFlown(entry.runner.lastProgress());
+            if (completed && "native_row".equals(task.skill())) entry.campaign.stronghold().rowed(entry.runner.lastProgress());
+            if (completed && "native_boat".equals(task.skill())) entry.campaign.stronghold().boatStep(task.args().get("mode"), entry.runner.lastProgress());
             if (completed && "native_place".equals(task.skill()) && entry.nativeBody != null) {
                 BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
                         Integer.parseInt(task.args().get("z")));
@@ -5074,6 +5135,7 @@ final class PlayerRuntime {
         }
         running = false;
         strategist.ifPresent(StrategistBridge::close);
+        memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
                 .toArray(CompletableFuture[]::new)).handle((ignored, failure) -> null);
@@ -5293,6 +5355,10 @@ final class PlayerRuntime {
 
     private final class Entry implements ChoreSkills.Gate {
         private Companion data;
+        /** The campaign whose memory was read, whether the read is in, and the leg's revision last written. */
+        private PortalRunCampaign memoryCampaign;
+        private boolean memoryLoaded;
+        private int memorySaved = -1;
         private final dev.kindred.core.PlayerDecisionLoop mind;
         private String mindStatus = "Awaiting local decision";
         private CompanionEntity body;

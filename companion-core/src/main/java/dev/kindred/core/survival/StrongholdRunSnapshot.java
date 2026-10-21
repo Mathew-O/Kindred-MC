@@ -32,6 +32,9 @@ package dev.kindred.core.survival;
  * @param strongholdSeen    stone bricks of the stronghold seen
  * @param portalRoomSeen    an End portal frame seen
  * @param framesFilled      End portal frame blocks seen holding an eye
+ * @param boats             boats carried, for crossing water
+ * @param planks            planks carried
+ * @param logs              logs carried (four planks each)
  */
 public record StrongholdRunSnapshot(
         Dimension dimension, boolean portalKnown, int edibleFood, int foodLevel,
@@ -39,7 +42,7 @@ public record StrongholdRunSnapshot(
         int blazeRods, int blazePowder, int enderPearls, int eyes,
         boolean fortressSeen, boolean blazeSeen, boolean endermanSeen, boolean pearlHuntStalled,
         int throwsRecorded, boolean strongholdEstimate, boolean nearEstimate, boolean strongholdSeen,
-        boolean portalRoomSeen, int framesFilled) {
+        boolean portalRoomSeen, int framesFilled, int boats, int planks, int logs) {
 
     public enum Dimension { OVERWORLD, NETHER, END }
 

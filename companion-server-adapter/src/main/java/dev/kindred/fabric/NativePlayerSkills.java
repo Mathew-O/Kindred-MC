@@ -54,6 +54,10 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_throw_eye" -> new SkillDescriptor(id, Set.of("slot", "yaw"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
+            case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
+                    Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
+            case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(125), Duration.ofSeconds(10), 0);
             case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side"),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -116,6 +120,10 @@ final class NativePlayerSkills {
                     Boolean.parseBoolean(arguments.getOrDefault("sprint", "false")),
                     Integer.parseInt(arguments.getOrDefault("drop", String.valueOf(NativeNavigator.MAX_SAFE_DROP))));
         }
+        if (id.equals("native_row")) {
+            return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),
+                    Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")));
+        }
         if (id.equals("native_walk")) return new Walk(body, lease, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
         if (id.equals("native_traverse")) {
             return new Traverse(body, lease, habits, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
@@ -155,6 +163,7 @@ final class NativePlayerSkills {
                 || (task instanceof Walk walk && intent == NativePlayerBody.Intent.MOVE && walk.safe())
                 || (task instanceof Traverse trav && intent == NativePlayerBody.Intent.MOVE && trav.safe())
                 || (task instanceof NativeGoToSkill && intent == NativePlayerBody.Intent.MOVE)
+                || (task instanceof NativeRowSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)

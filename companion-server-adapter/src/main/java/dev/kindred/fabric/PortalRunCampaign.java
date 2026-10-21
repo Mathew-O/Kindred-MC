@@ -758,6 +758,17 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": " + air.get().label();
             return air;
         }
+        // Afloat in its boat: the crossing goes on, and nothing on land is done from it (a night shelter dug from a
+        // boat, a fight chased off its seat). Out at sea a boat is beyond the reach of most of the night's mobs.
+        if (body.boat().isPresent()) {
+            if (legActive) {
+                Optional<Task> crossing = stronghold.afloat(body);
+                progress = stronghold.progress();
+                return crossing;
+            }
+            progress = stageLabel(stage) + ": out of the boat";
+            return Optional.of(new Task("native_boat", Map.of("mode", "land"), "Out of the boat and take it back"));
+        }
         Optional<Task> room = makeRoom(player);
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
@@ -986,8 +997,13 @@ final class PortalRunCampaign {
     }
 
     /** A goal task taking the player up out of deep water, which the runtime's drowning check leaves to finish. */
+    /**
+     * A task that takes the player out of the water, or settles a boat: swimming up or ashore, into a boat, or out of
+     * one at a shore and the boat broken to take back (staged End run 10's launch from the water was cancelled as a task
+     * that would not take it out).
+     */
     static boolean surfacing(Task task) {
-        return task != null && task.label().startsWith("Get out of the water");
+        return task != null && (task.label().startsWith("Get out of the water") || "native_boat".equals(task.skill()));
     }
 
     /**
@@ -2077,7 +2093,7 @@ final class PortalRunCampaign {
     // ------------------------------------------------------------------ crafting and smelting
 
     Optional<Task> craft(NativePlayerBody body, String item) {
-        String recipe = item.equals("planks") ? planksRecipe(body) : item;
+        String recipe = item.equals("planks") ? planksRecipe(body) : item.equals("boat") ? boatRecipe(body) : item;
         if (recipe == null) return Optional.empty();
         if (body.planCraft2x2(recipe).isPresent()) return Optional.of(new Task("native_craft", Map.of("recipe", recipe), "Craft " + recipe.replace('_', ' ')));
         var player = body.entity();
@@ -2093,6 +2109,23 @@ final class PortalRunCampaign {
             return Optional.of(new Task("native_craft", Map.of("recipe", recipe), "Craft " + recipe.replace('_', ' ')));
         }
         return Optional.of(go(table.get(), 2.5, false, "Walk to the crafting table"));
+    }
+
+    /** A boat of the wood it carries five planks of (bamboo makes a raft; Nether wood makes none). */
+    private static String boatRecipe(NativePlayerBody body) {
+        var inventory = body.entity().getInventory();
+        Map<Item, Integer> planks = new HashMap<>();
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (stack.isIn(ItemTags.PLANKS)) planks.merge(stack.getItem(), stack.getCount(), Integer::sum);
+        }
+        for (var entry : planks.entrySet()) {
+            if (entry.getValue() < 5) continue;
+            String wood = Registries.ITEM.getId(entry.getKey()).getPath().replace("_planks", "");
+            String boat = wood.equals("bamboo") ? "bamboo_raft" : wood + "_boat";
+            if (Registries.ITEM.containsId(net.minecraft.util.Identifier.ofVanilla(boat))) return boat;
+        }
+        return null;
     }
 
     private static String planksRecipe(NativePlayerBody body) {
@@ -3419,6 +3452,9 @@ final class PortalRunCampaign {
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
                 || running.label().startsWith("Hold the passage")) return null;
+        // Rowing outruns what swims after it: a drowned is left behind, not fought from the seat (staged run 12's row
+        // was cancelled every tick for one, and the boat drifted).
+        if ("native_row".equals(running.skill()) || "native_boat".equals(running.skill())) return null;
         if (running.label().startsWith("Fight") || running.label().startsWith("Close in")) {
             // Worn down mid-fight: break it off, as a player does, so backing off or taking cover can take over.
             // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:

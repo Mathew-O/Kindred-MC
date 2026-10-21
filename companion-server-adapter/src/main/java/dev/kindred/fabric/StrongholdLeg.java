@@ -159,6 +159,7 @@ final class StrongholdLeg {
         if (overworld(player) && player.isOnGround() && !player.isTouchingWater() && world.getFluidState(feet.down()).isEmpty()) {
             lastDryLand = feet.toImmutable();
         }
+        var known = java.util.Arrays.asList(overworldPortal, netherPortal, fortress, endPortal);
         if (overworld(player)) {
             if (overworldPortal == null) overworldPortal = campaign.litPortal(player).or(() -> seenPortal(player)).orElse(null);
             if (arrived) portalAt(world, feet).ifPresent(p -> overworldPortal = p);
@@ -170,6 +171,53 @@ final class StrongholdLeg {
         if (endPortal == null && overworld(player)) {
             campaign.knowledge().nearest(world, WorldKnowledge.Kind.END_PORTAL_FRAME, feet, p -> true).ifPresent(p -> endPortal = p);
         }
+        if (!known.equals(java.util.Arrays.asList(overworldPortal, netherPortal, fortress, endPortal))) memoryRevision++;
+    }
+
+    // ------------------------------------------------------------------ what outlasts a restart
+
+    /** Bumped whenever the leg learns something worth keeping. */
+    private int memoryRevision;
+
+    int memoryRevision() { return memoryRevision; }
+
+    /** What the leg knows, to be kept in the player's memory of this world. */
+    PlayerMemoryStore.Memory remember(PlayerMemoryStore.Memory into) {
+        into.overworldPortal = place("minecraft:overworld", overworldPortal);
+        into.netherPortal = place("minecraft:the_nether", netherPortal);
+        into.fortress = place("minecraft:the_nether", fortress);
+        into.endPortal = place("minecraft:overworld", endPortal);
+        into.flights = new ArrayList<>(flights.stream().map(f -> new PlayerMemoryStore.Flight(f.x(), f.z(), f.dx(), f.dz())).toList());
+        into.stronghold = estimate == null ? null : estimate.clone();
+        into.pinned = pinned;
+        return into;
+    }
+
+    /** What the player remembers of this world from before a restart; what it has learnt since stands. */
+    void recall(PlayerMemoryStore.Memory memory) {
+        if (overworldPortal == null) overworldPortal = pos(memory.overworldPortal);
+        if (netherPortal == null) netherPortal = pos(memory.netherPortal);
+        if (fortress == null) fortress = pos(memory.fortress);
+        if (endPortal == null) endPortal = pos(memory.endPortal);
+        if (flights.isEmpty() && memory.flights != null) {
+            for (var f : memory.flights) flights.add(new EyeFlights.Flight(f.x(), f.z(), f.dx(), f.dz()));
+        }
+        if (estimate == null && memory.stronghold != null && memory.stronghold.length == 2) {
+            estimate = memory.stronghold.clone();
+            pinned = memory.pinned;
+        }
+        if (fortress != null || estimate != null) {
+            KindredMod.LOGGER.info("Remembered: portals {} / {}, fortress {}, {} eye flights, stronghold {}{}", overworldPortal, netherPortal, fortress,
+                    flights.size(), estimate == null ? "unknown" : Math.round(estimate[0]) + " " + Math.round(estimate[1]), pinned ? " (pinned)" : "");
+        }
+    }
+
+    private static PlayerMemoryStore.Place place(String dimension, BlockPos pos) {
+        return pos == null ? null : new PlayerMemoryStore.Place(dimension, pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    private static BlockPos pos(PlayerMemoryStore.Place place) {
+        return place == null ? null : new BlockPos(place.x(), place.y(), place.z());
     }
 
     /**
@@ -208,7 +256,7 @@ final class StrongholdLeg {
     }
 
     StrongholdRunSnapshot snapshot(ServerPlayerEntity player, PortalRunSnapshot p) {
-        int rods = 0, powder = 0, pearls = 0, eyes = 0, blocks = 0, armor = 0;
+        int rods = 0, powder = 0, pearls = 0, eyes = 0, blocks = 0, armor = 0, boats = 0, planks = 0, logs = 0;
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.size(); slot++) {
             ItemStack stack = inventory.getStack(slot);
@@ -220,6 +268,9 @@ final class StrongholdLeg {
             else if (stack.isOf(Items.ENDER_EYE)) eyes += n;
             else if (stack.isOf(Items.COBBLESTONE) || stack.isOf(Items.COBBLED_DEEPSLATE) || stack.isOf(Items.NETHERRACK)) blocks += n;
             else if (armorPiece(stack)) armor++; // Worn (the inventory's armor slots) or carried.
+            else if (stack.getItem() instanceof net.minecraft.item.BoatItem) boats += n;
+            else if (stack.isIn(net.minecraft.registry.tag.ItemTags.PLANKS)) planks += n;
+            else if (stack.isIn(net.minecraft.registry.tag.ItemTags.LOGS)) logs += n;
         }
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -246,7 +297,12 @@ final class StrongholdLeg {
                 p.edibleFood(), p.foodLevel(), p.swordTier(), p.pickaxeTier(), p.pickaxes(), armor, p.shields(), blocks, p.ironIngots(),
                 rods, powder, pearls, eyes, inNether && fortress != null, inNether && visibleMob(player, BlazeEntity.class, 32) != null,
                 visibleMob(player, EndermanEntity.class, 24) != null, stalled, flights.size(), estimate != null, near, strongholdSeen,
-                endPortal != null, 0);
+                endPortal != null, 0, boats + (inBoat(player) ? 1 : 0), planks, logs);
+    }
+
+    /** In a boat now: it has one, on the water. */
+    private static boolean inBoat(ServerPlayerEntity player) {
+        return player.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity;
     }
 
     private static boolean armorPiece(ItemStack stack) {
@@ -594,19 +650,22 @@ final class StrongholdLeg {
     /** A thrown eye's flight, as the throw reported it; two flights far enough apart give the crossing. */
     void eyeFlown(Map<String, String> result) {
         try {
-            if (!result.containsKey("dx")) return; // Not seen to fly: nothing learnt.
-            // Thrown close by, an eye flies straight to the stronghold's spot and no further: its stopping place is it.
-            double flown = Math.hypot(Double.parseDouble(result.get("dx")), Double.parseDouble(result.get("dz")));
+            // Thrown close by, an eye flies straight to the stronghold's spot and no further: its stopping place is it,
+            // even when that is right where it was thrown from.
+            double flown = result.containsKey("dx") ? Math.hypot(Double.parseDouble(result.get("dx")), Double.parseDouble(result.get("dz"))) : 0;
             if (arrived && estimate != null && flown < 11.5 && result.containsKey("toX")) {
                 estimate = new double[] {Double.parseDouble(result.get("toX")), Double.parseDouble(result.get("toZ"))};
                 pinned = true;
+                memoryRevision++;
                 KindredMod.LOGGER.info("Stronghold pinned at {} {} by an eye thrown close by", Math.round(estimate[0]), Math.round(estimate[1]));
                 return;
             }
+            if (!result.containsKey("dx")) return; // Not seen to fly any way: nothing learnt.
             var flight = new EyeFlights.Flight(Double.parseDouble(result.get("fromX")), Double.parseDouble(result.get("fromZ")),
                     Double.parseDouble(result.get("dx")), Double.parseDouble(result.get("dz")));
             flights.add(flight);
             if (flights.size() > 4) flights.removeFirst();
+            memoryRevision++;
             KindredMod.LOGGER.info("Eye of ender flew {} from {} {}", Math.round(flight.yaw()), Math.round(flight.x()), Math.round(flight.z()));
             for (int i = flights.size() - 2; i >= 0 && estimate == null; i--) {
                 var crossing = EyeFlights.crossing(flights.get(i), flight);
@@ -640,6 +699,8 @@ final class StrongholdLeg {
         var world = player.getServerWorld();
         double dx = x - player.getX(), dz = z - player.getZ(), distance = Math.hypot(dx, dz);
         if (distance < 2) return Optional.empty();
+        Optional<PortalRunCampaign.Task> byBoat = byBoat(body, x, z, label);
+        if (byBoat.isPresent()) return byBoat;
         double ux = dx / distance, uz = dz / distance;
         for (double leg : new double[] {LEG, 48, 24}) {
             double step = Math.min(distance, leg);
@@ -657,6 +718,211 @@ final class StrongholdLeg {
         BlockPos ahead = BlockPos.ofFloored(px + ux * Math.min(distance, 24), player.getY(), pz + uz * Math.min(distance, 24));
         return campaign.buildRoute(body, ahead, pos -> (pos.getX() + 0.5 - px) * ux + (pos.getZ() + 0.5 - pz) * uz >= want, false,
                 label + ": make a way");
+    }
+
+    // ------------------------------------------------------------------ water, by boat (F-10f)
+
+    /** Where the boat is being rowed to, and what for; set when it takes to the water. */
+    private double[] rowTarget;
+    private String rowLabel = "";
+    /** How the last row ended ("shore", "arrived", "far"), from its result. */
+    private String lastRowEnd;
+    /** Where the boat dropped when it was broken on landing, to be picked up again, and the tries at it. */
+    private BlockPos boatDrop;
+    private int boatPickups;
+
+    /** A row has ended: how, from its result. */
+    void rowed(Map<String, String> result) {
+        lastRowEnd = result.get("ended");
+    }
+
+    /** A boat step has ended: on landing, where the broken boat's item lies. */
+    void boatStep(String mode, Map<String, String> result) {
+        if ("launch".equals(mode) || "board".equals(mode)) lastRowEnd = null;
+        if (!"land".equals(mode)) return;
+        rowTarget = null;
+        lastRowEnd = null;
+        try {
+            boatDrop = result.containsKey("dropX") ? new BlockPos(Integer.parseInt(result.get("dropX")), Integer.parseInt(result.get("dropY")),
+                    Integer.parseInt(result.get("dropZ"))) : null;
+            boatPickups = 0;
+        } catch (NumberFormatException unreadable) {
+            boatDrop = null;
+        }
+    }
+
+    /**
+     * Afloat: row on toward where it was going; at a shore (land under the bow, or aground), or with nowhere left to
+     * row to, out of the boat, which is broken to take it back. Nothing on land is done from a boat.
+     */
+    Optional<PortalRunCampaign.Task> afloat(NativePlayerBody body) {
+        var player = body.entity();
+        // Over the stronghold's spot at sea: pin it with an eye from the boat, as on land.
+        if (estimate != null && !pinned && Math.hypot(estimate[0] - player.getX(), estimate[1] - player.getZ()) < NEAR
+                && player.getInventory().count(Items.ENDER_EYE) > 0) {
+            arrived = true;
+            Optional<PortalRunCampaign.Task> look = throwEye(body);
+            if (look.isPresent()) {
+                progress = "End: " + label(stage) + ": at the spot, at sea - " + look.get().label();
+                return look;
+            }
+        }
+        boolean ashore = "shore".equals(lastRowEnd);
+        boolean there = rowTarget == null || Math.hypot(rowTarget[0] - player.getX(), rowTarget[1] - player.getZ()) < 8 || "arrived".equals(lastRowEnd);
+        if (there && !ashore) {
+            // Where it was going, but at sea (staged run 10 got out over the ocean stronghold and swam): on to the
+            // nearest dry land it can reach by water, and out there.
+            var dry = nearestLand(player.getServerWorld(), player.getBlockPos(), LAND_SIGHT)
+                    .or(() -> Optional.ofNullable(lastDryLand)); // Else back to the last dry ground it stood on.
+            KindredMod.LOGGER.info("{} is where it was rowing to, at sea at {}; land to make for: {}", player.getName().getString(),
+                    player.getBlockPos().toShortString(), dry.map(BlockPos::toShortString).orElse("none in sight"));
+            if (dry.isPresent() && dry.get().getSquaredDistance(player.getBlockPos()) > 3 * 3) {
+                rowTarget = new double[] {dry.get().getX() + 0.5, dry.get().getZ() + 0.5};
+                rowLabel = "To the nearest dry land";
+                lastRowEnd = null;
+                there = false;
+            }
+        }
+        if (ashore || there) {
+            progress = "End: " + label(stage) + ": " + (ashore ? "a shore" : "across") + " - Out of the boat and take it back";
+            return Optional.of(new PortalRunCampaign.Task("native_boat", Map.of("mode", "land"), "Out of the boat and take it back"));
+        }
+        progress = "End: " + label(stage) + ": by boat - " + rowLabel;
+        return Optional.of(new PortalRunCampaign.Task("native_row", Map.of("x", String.format(Locale.ROOT, "%.1f", rowTarget[0]),
+                "z", String.format(Locale.ROOT, "%.1f", rowTarget[1]), "range", "6", "seconds", "20"), "Row: " + rowLabel));
+    }
+
+    /**
+     * Over open water by boat, as players cross it: where most of the next thirty blocks toward the place are water,
+     * a boat it carries goes onto the water within reach and it gets in, or it walks to the water's edge first. The
+     * boat broken on landing is picked up again before going on. With no boat it swims, as before.
+     */
+    private Optional<PortalRunCampaign.Task> byBoat(NativePlayerBody body, double x, double z, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!overworld(player) || player.hasVehicle()) return Optional.empty();
+        if (boatDrop != null) {
+            var drop = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(boatDrop).expand(6),
+                    item -> item.isAlive() && item.getStack().getItem() instanceof net.minecraft.item.BoatItem).stream().findFirst();
+            if (drop.isPresent() && boatPickups++ < 4) {
+                return Optional.of(PortalRunCampaign.go(drop.get().getBlockPos(), 0.6, true, "Pick up the boat"));
+            }
+            boatDrop = null;
+        }
+        double dx = x - player.getX(), dz = z - player.getZ(), distance = Math.hypot(dx, dz);
+        if (distance < 24) return Optional.empty();
+        double ux = dx / distance, uz = dz / distance;
+        // An empty boat on the water close by (its own, left by a restart or a landing that went wrong): back into it.
+        var empty = world.getEntitiesByClass(net.minecraft.entity.vehicle.BoatEntity.class, player.getBoundingBox().expand(8, 3, 8),
+                boat -> boat.isAlive() && !boat.hasPassengers()).stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo));
+        if (empty.isPresent()) {
+            rowTarget = new double[] {x, z};
+            rowLabel = label;
+            lastRowEnd = null;
+            if (player.canInteractWithEntity(empty.get(), 0)) {
+                return Optional.of(new PortalRunCampaign.Task("native_boat", Map.of("mode", "board"), "Back into the boat"));
+            }
+            return Optional.of(PortalRunCampaign.go(empty.get().getBlockPos(), 1.5, true, "Swim to the boat"));
+        }
+        if (!waterAhead(world, player, ux, uz)) return Optional.empty();
+        int slot = -1;
+        var inventory = player.getInventory();
+        for (int s = 0; s < 36 && slot < 0; s++) if (inventory.getStack(s).getItem() instanceof net.minecraft.item.BoatItem) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(campaign.swapToHotbar(body, slot, "Ready the boat"));
+        BlockPos spot = launchSpot(world, player, ux, uz);
+        if (spot == null) {
+            BlockPos edge = firstWater(world, player, ux, uz);
+            if (edge == null) return Optional.empty();
+            // At the edge already, with no room for a boat within reach (staged run 10 walked to the edge over and over):
+            // a few blocks out into the water, where it is open all round, as a player wades out to put a boat in.
+            if (edge.getSquaredDistance(player.getBlockPos()) <= 3 * 3) {
+                BlockPos out = surfaceWater(world, (int) Math.floor(edge.getX() + 0.5 + ux * 3), (int) Math.floor(edge.getZ() + 0.5 + uz * 3));
+                if (out != null) return Optional.of(PortalRunCampaign.go(out, 0.8, true, "Wade out to put the boat in"));
+            }
+            return Optional.of(PortalRunCampaign.go(edge, 2.5, true, "To the water's edge for the boat"));
+        }
+        rowTarget = new double[] {x, z};
+        rowLabel = label;
+        lastRowEnd = null;
+        return Optional.of(new PortalRunCampaign.Task("native_boat", Map.of("mode", "launch", "slot", String.valueOf(slot),
+                "x", String.valueOf(spot.getX()), "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ())), "Into the boat to cross the water"));
+    }
+
+    /** How far out over water it looks round for land. */
+    private static final int LAND_SIGHT = 160;
+
+    /**
+     * The nearest land in sight from the water to dig down from, as a player looks round for a shore: the nearest
+     * column, out to {@code radius} blocks over loaded ground, whose top is solid ground with no water or lava within
+     * two blocks of it or under it (a rock or a ruin poking out of the sea will not do: staged run 13 got out onto
+     * one and could dig nowhere). Read from the heightmap, ring by ring.
+     */
+    static Optional<BlockPos> nearestLand(ServerWorld world, BlockPos from, int radius) {
+        for (int r = 3; r <= radius; r += 3) {
+            BlockPos best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (int dx = -r; dx <= r; dx += 3) for (int dz = -r; dz <= r; dz += 3) {
+                if (Math.abs(dx) != r && Math.abs(dz) != r) continue; // The ring only.
+                int x = from.getX() + dx, z = from.getZ() + dz;
+                if (!world.isChunkLoaded(new BlockPos(x, 0, z))) continue;
+                BlockPos top = new BlockPos(x, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z);
+                if (!world.getFluidState(top).isEmpty() || world.getBlockState(top).getCollisionShape(world, top).isEmpty()) continue;
+                if (wetAround(world, top.up())) continue;
+                double distance = top.getSquaredDistance(from);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = top.up();
+                }
+            }
+            if (best != null) return Optional.of(best);
+        }
+        return Optional.empty();
+    }
+
+    /** The top of the column at {@code x}, {@code z} is water: the surface of a lake or the sea. */
+    private static BlockPos surfaceWater(ServerWorld world, int x, int z) {
+        if (!world.isChunkLoaded(new BlockPos(x, 0, z))) return null;
+        BlockPos top = new BlockPos(x, world.getTopY(Heightmap.Type.MOTION_BLOCKING, x, z) - 1, z);
+        return world.getFluidState(top).isIn(net.minecraft.registry.tag.FluidTags.WATER) && world.getBlockState(top.up()).isAir() ? top : null;
+    }
+
+    /** Most of the next thirty blocks along the way are open water. */
+    private static boolean waterAhead(ServerWorld world, ServerPlayerEntity player, double ux, double uz) {
+        int wet = 0;
+        for (int d = 3; d <= 30; d += 3) {
+            if (surfaceWater(world, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d)) != null) wet++;
+        }
+        return wet >= 7;
+    }
+
+    /** The first open water along the way, within thirty blocks. */
+    private static BlockPos firstWater(ServerWorld world, ServerPlayerEntity player, double ux, double uz) {
+        for (int d = 1; d <= 30; d++) {
+            BlockPos water = surfaceWater(world, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d));
+            if (water != null) return water;
+        }
+        return null;
+    }
+
+    /**
+     * Water within reach along the way with room for a boat: open water all round it at the surface, so the boat
+     * fits (vanilla refuses a boat that would touch the shore), and the surface close enough to the eyes.
+     */
+    private static BlockPos launchSpot(ServerWorld world, ServerPlayerEntity player, double ux, double uz) {
+        var eye = player.getEyePos();
+        for (double d = 1.5; d <= 3.75; d += 0.25) {
+            BlockPos water = surfaceWater(world, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d));
+            if (water == null || eye.distanceTo(net.minecraft.util.math.Vec3d.ofCenter(water).add(0, 0.4, 0)) > 4.0) continue;
+            boolean room = true;
+            for (int dx = -1; dx <= 1 && room; dx++) for (int dz = -1; dz <= 1 && room; dz++) {
+                BlockPos at = water.add(dx, 0, dz);
+                room = world.getFluidState(at).isIn(net.minecraft.registry.tag.FluidTags.WATER)
+                        && world.getBlockState(at.up()).getCollisionShape(world, at.up()).isEmpty();
+            }
+            if (room) return water;
+        }
+        return null;
     }
 
     /**
@@ -680,8 +946,10 @@ final class StrongholdLeg {
         boolean over = Math.abs(dx) <= 2 && Math.abs(dz) <= 2;
         if (feet.getY() > DIG_TO) {
             if (PlayerRuntime.inDeepWater(player) || !world.getFluidState(feet).isEmpty()) {
-                // Out at sea: the nearest dry land it can swim to, else the last it stood on on the way out.
-                var shore = new NativeNavigator(world).nearestReachableDryStand(feet, 20_000, 96)
+                // Out at sea: the nearest dry land it can swim to, else the nearest it can see, else the last it stood
+                // on on the way out (staged run 12 found none to swim to and rowed 1,100 blocks back to that).
+                var shore = nearestLand(world, feet, LAND_SIGHT)
+                        .or(() -> new NativeNavigator(world).nearestReachableDryStand(feet, 20_000, 96))
                         .or(() -> Optional.ofNullable(lastDryLand));
                 if (shore.isEmpty()) return Optional.empty();
                 BlockPos dry = shore.get();

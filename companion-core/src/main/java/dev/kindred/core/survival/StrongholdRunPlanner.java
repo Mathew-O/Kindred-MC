@@ -26,6 +26,8 @@ public final class StrongholdRunPlanner {
     public static final int PREP_FOOD = 12;
     /** Blocks carried for bridging lava, pillaring and walling off. */
     public static final int PREP_BLOCKS = 48;
+    /** Planks in a boat. */
+    public static final int BOAT_PLANKS = 5;
 
     public enum Stage { PREPARE, NETHER, FORTRESS, BLAZE_RODS, PEARLS, RETURN, EYES, LOCATE, TRAVEL, DESCEND, PORTAL_ROOM, DONE }
 
@@ -179,5 +181,12 @@ public final class StrongholdRunPlanner {
         if (s.pickaxes() < 2) steps.add(Step.craft("stone_pickaxe", 1, stage, "A spare pickaxe"));
         if (s.swordTier() < 2) steps.add(Step.craft("stone_sword", 1, stage, "A sword"));
         if (s.blocks() < PREP_BLOCKS) steps.add(new Step(Action.GATHER_STONE, "", PREP_BLOCKS - s.blocks(), stage, "Blocks for bridging and walling off"));
+        // A boat, from wood it carries, for the water on the way to the stronghold: swimming an ocean is slow, and its
+        // drowned are deadly (the staged End runs drowned twice mid-ocean). Not a reason to stay: going through does
+        // not wait for it.
+        if (s.boats() == 0) {
+            if (s.planks() >= BOAT_PLANKS) steps.add(Step.craft("boat", 1, stage, "A boat for crossing water"));
+            else if (s.planks() + 4 * s.logs() >= BOAT_PLANKS) steps.add(Step.craft("planks", 1, stage, "Planks for a boat"));
+        }
     }
 }

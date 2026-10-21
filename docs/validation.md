@@ -4,6 +4,11 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-10f (boats, in progress) and F-25c6's memory across restarts, on top of `b1c42bf`.
+  - New: `aBoatIsLaunchedRowedAcrossAndTakenBackOnTheFarShore` (native) and `itMakesABoatFromWoodItCarriesButDoesNotWaitForOne` (JUnit).
+  - `runGametest` passed 245/245 twice. `./gradlew build` passed: 402 JUnit results, three skipped.
+  - Staged development runs 10 to 13 on seed 8675309 (gear and a boat handed over) are recorded in the evidence; they are not earned progress.
+  - JAR SHA-256: `ae1126ccf3c55a070ec6d42d40da1e7538d381b332edabc1ba2cc3700e229bb7`.
 - F-10e (routes that build and dig, in progress) with F-25c6's Nether exploration and its restart fix, on top of `8732b36`.
   - New native fixtures: `aRouteBridgesAGapAndDigsThroughAWall` (passed twice alone in a stress run) and `aBodySavedInAnUnloadedChunkReconnectsAfterARestart` (blocked for reconciliation with the fix set aside; passes with it).
   - The first suite run failed the route fixture once: another fixture's course left a way round its wall. With a wider clearing, `runGametest` passed 244/244 twice, and twice more on the final source.

@@ -127,25 +127,35 @@ final class NativeThrowEyeAction extends NativeRecordedAction {
     private Step settle(Vec3d end, String reason) {
         var after = InventoryEvidence.capture(body);
         int spent = spent(after);
-        if (spent == 0 && conserved(after, 0)) {
+        // Seen: an eye left the hand and was watched. Thrown close by, an eye flies straight to the spot and drops there,
+        // and may be picked straight back up (staged runs 12 and 13, from a boat): the flight still counts, nothing spent.
+        boolean seen = eye != null && end != null && origin != null;
+        if (spent == 0 && conserved(after, 0) && !seen) {
             result = Step.blocked(reason != null ? reason : "The eye was not thrown", true);
             admission.noEffect(before.description() + "; nothing owned lost", result.reason());
             return waiting();
         }
-        if (spent != 1 || !conserved(after, 1)) {
+        if (spent > 1 || spent < 0 || !conserved(after, 1)) {
             unknown = true;
             result = Step.blocked("Throw conservation check failed; reconcile", true);
             admission.uncertain(result.reason());
             return waiting();
         }
-        double dx = end == null ? 0 : end.x - origin.x, dz = end == null ? 0 : end.z - origin.z;
-        if (Math.hypot(dx, dz) < MIN_FLIGHT) {
-            result = Step.completed(Map.of("fromX", fmt(origin.x), "fromZ", fmt(origin.z), "heading", "unseen"));
-        } else {
-            result = Step.completed(Map.of("fromX", fmt(origin.x), "fromZ", fmt(origin.z), "dx", fmt(dx), "dz", fmt(dz),
-                    "toX", fmt(end.x), "toY", fmt(end.y), "toZ", fmt(end.z)));
-        }
-        admission.verify(after.description() + "; " + result.progress(), "Native eye throw verified");
+        var progress = new java.util.HashMap<String, String>(Map.of("fromX", fmt(origin.x), "fromZ", fmt(origin.z)));
+        if (seen) {
+            double dx = end.x - origin.x, dz = end.z - origin.z;
+            // A flight too short for a heading still shows where it stopped: right here, when thrown on the spot.
+            if (Math.hypot(dx, dz) >= MIN_FLIGHT) {
+                progress.put("dx", fmt(dx));
+                progress.put("dz", fmt(dz));
+            } else progress.put("heading", "unseen");
+            progress.put("toX", fmt(end.x));
+            progress.put("toY", fmt(end.y));
+            progress.put("toZ", fmt(end.z));
+        } else progress.put("heading", "unseen");
+        if (spent == 0) progress.put("pickedUp", "true");
+        result = Step.completed(Map.copyOf(progress));
+        admission.verify(after.description() + "; " + (spent == 0 ? "thrown and picked up again; " : "") + result.progress(), "Native eye throw verified");
         return waiting();
     }
 
