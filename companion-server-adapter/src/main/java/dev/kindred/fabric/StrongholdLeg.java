@@ -56,16 +56,60 @@ final class StrongholdLeg {
     /** Exploring: where the heading was taken, the furthest gained along it, and passes since it last gained. */
     private BlockPos exploreFrom;
     private double exploreBest;
-    private int exploreIdle;
-    /** Passes without headway before a heading is given up. */
-    private static final int EXPLORE_PATIENCE = 12;
+    private long exploreSince;
+    /**
+     * Exploring by made ways: passes left before walking to stands again, and where it began; passes left in which a
+     * made way must change something; passes without headway; where the last walk to a stand set out from. Counted in
+     * passes as well as time: at a sprinted server's pace a timed spell ran out within two passes, and the explorer
+     * flipped between walking and making a way in one spot (staged run 9).
+     */
+    private int makePasses, editOnlyPasses, stallPasses;
+    private BlockPos makeFrom, lastWalkFrom;
+    private static final int MAKE_PASSES = 16, STALL_PASSES = 24;
+    /** Sight lines per pass, and how far they reach. */
+    private static final int FAR_RAYS = 24;
+    private static final double FAR_SIGHT = 128;
+    private int farSweep;
+    /** Game time without headway (as well as {@link #STALL_PASSES} passes) before a heading is given up. */
+    private static final long EXPLORE_PATIENCE = 800;
+
+    /**
+     * A leg task has ended: a failed walk while exploring turns to making a way or cutting through for a while, and a
+     * failed walk along a made way leaves only ways that change something for a while.
+     */
+    void taskFinished(PortalRunCampaign.Task task, boolean completed, long tick) {
+        if (completed || !task.skill().equals("native_goto")) return;
+        if (task.label().startsWith("Explore ")) startMaking(null);
+        if (task.label().startsWith("Make a way ")) editOnlyPasses = MAKE_PASSES;
+    }
+
+    private void startMaking(BlockPos from) {
+        if (makePasses == 0) makeFrom = from;
+        makePasses = MAKE_PASSES;
+        lastWalkFrom = null;
+    }
+
+    private double along(BlockPos from, BlockPos to) {
+        return (to.getX() - from.getX()) * heading.getOffsetX() + (to.getZ() - from.getZ()) * heading.getOffsetZ();
+    }
     private final Set<Long> visited = new HashSet<>();
+    /** How far off the fortress was when the last walk there set out, or -1. */
+    private double fortressWalkFrom = -1;
+    /** Chunk columns it has explored through in this dimension: a heading back over them is a poor one. */
+    private final Set<Long> explored = new HashSet<>();
     private StrongholdRunPlanner.Stage stage;
     private String progress = "";
     private BlockPos endPortal;
     private boolean arrived, pinned;
+    /** The last dry ground it stood on in the Overworld: where to dig down from when the place is out at sea. */
+    private BlockPos lastDryLand;
     /** Deep enough to be in or below most strongholds' upper parts, and still above the deepest. */
     static final int DIG_TO = 8;
+    /**
+     * Exploring the Nether stays above this: the lava sea's surface is at 31, and fortresses stand well above it. Below,
+     * every way on is lava; live staged run 5 tunnelled down to 32 and spent its time there.
+     */
+    static final int NETHER_FLOOR = 40;
 
     StrongholdLeg(PortalRunCampaign campaign) {
         this.campaign = campaign;
@@ -111,15 +155,47 @@ final class StrongholdLeg {
         BlockPos feet = player.getBlockPos();
         boolean arrived = !here.equals(dimension);
         dimension = here;
+        if (arrived) explored.clear(); // Another dimension's coordinates.
+        if (overworld(player) && player.isOnGround() && !player.isTouchingWater() && world.getFluidState(feet.down()).isEmpty()) {
+            lastDryLand = feet.toImmutable();
+        }
         if (overworld(player)) {
             if (overworldPortal == null) overworldPortal = campaign.litPortal(player).or(() -> seenPortal(player)).orElse(null);
             if (arrived) portalAt(world, feet).ifPresent(p -> overworldPortal = p);
         } else if (nether(player)) {
             if (arrived) netherPortal = portalAt(world, feet).orElse(feet.toImmutable());
             if (fortress == null) campaign.knowledge().nearest(world, WorldKnowledge.Kind.NETHER_BRICK, feet, p -> true).ifPresent(p -> fortress = p);
+            if (fortress == null) lookFar(player);
         }
         if (endPortal == null && overworld(player)) {
             campaign.knowledge().nearest(world, WorldKnowledge.Kind.END_PORTAL_FRAME, feet, p -> true).ifPresent(p -> endPortal = p);
+        }
+    }
+
+    /**
+     * A look round across the Nether, further than the knowledge sweep reaches: a fortress's dark bricks stand out
+     * from a long way off, as players spot one across a lava sea. A fan of sight lines out to {@link #FAR_SIGHT} blocks,
+     * a different part of the circle each pass; only what such a line meets first counts, and never past loaded ground.
+     */
+    private void lookFar(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        var eye = player.getEyePos();
+        for (int i = 0; i < FAR_RAYS; i++) {
+            double yaw = Math.toRadians((farSweep++ * 137.5) % 360), pitch = Math.toRadians(((farSweep * 53) % 50) - 25);
+            var end = eye.add(-Math.sin(yaw) * Math.cos(pitch) * FAR_SIGHT, -Math.sin(pitch) * FAR_SIGHT, Math.cos(yaw) * Math.cos(pitch) * FAR_SIGHT);
+            if (!world.isChunkLoaded(BlockPos.ofFloored(end))) continue;
+            var hit = world.raycast(new net.minecraft.world.RaycastContext(eye, end, net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
+                    net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+            if (hit.getType() != net.minecraft.util.hit.HitResult.Type.BLOCK) continue;
+            BlockPos at = hit.getBlockPos();
+            var kind = WorldKnowledge.classify(world.getBlockState(at));
+            if (kind == WorldKnowledge.Kind.NETHER_BRICK) {
+                campaign.knowledge().remember(kind, at);
+                fortress = at.toImmutable();
+                KindredMod.LOGGER.info("{} sees a fortress at {}", player.getName().getString(), at.toShortString());
+                return;
+            }
+            if (kind == WorldKnowledge.Kind.WARPED) campaign.knowledge().remember(kind, at);
         }
     }
 
@@ -218,14 +294,13 @@ final class StrongholdLeg {
             case GATHER_STONE -> overworld(player) ? shared(PortalRunPlanner.Action.GATHER_STONE, "", step, p, body, policy) : Optional.empty();
             case CRAFT -> campaign.craft(body, step.item());
             case ENTER_PORTAL -> enterPortal(player);
-            case FIND_FORTRESS -> fortress != null && fortress.getSquaredDistance(player.getBlockPos()) > 6 * 6
-                    ? Optional.of(PortalRunCampaign.go(fortress, 3, true, "Walk to the fortress")) : explore(body, "a fortress");
+            case FIND_FORTRESS -> fortress != null && fortress.getSquaredDistance(player.getBlockPos()) > 6 * 6 ? toFortress(body) : explore(body, "a fortress");
             case FIGHT_BLAZE -> fight(player, BlazeEntity.class, 32, "Fight blaze");
             case SEEK_BLAZE -> seekBlaze(body);
             case FIGHT_ENDERMAN -> fight(player, EndermanEntity.class, 24, "Fight enderman");
             case SEEK_ENDERMAN -> seekEnderman(body);
             case THROW_EYE -> throwEye(body);
-            case TRAVEL_TO_STRONGHOLD -> travel(player);
+            case TRAVEL_TO_STRONGHOLD -> travel(body);
             case DIG_TO_STRONGHOLD -> descend(body);
             case FIND_PORTAL_ROOM -> findRoom(body);
         };
@@ -266,6 +341,8 @@ final class StrongholdLeg {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        // A fortress seen from afar (staged run 9 saw one 125 blocks off): there first, before looking about it.
+        if (fortress != null && fortress.getSquaredDistance(feet) > 24 * 24) return toFortress(body);
         var spawner = campaign.knowledge().nearest(world, WorldKnowledge.Kind.SPAWNER, feet,
                 b -> world.getBlockState(b).isOf(Blocks.SPAWNER) && !campaign.unreachable(b));
         if (spawner.isPresent()) {
@@ -281,6 +358,15 @@ final class StrongholdLeg {
         if (on.isPresent()) {
             visited.add(cell(on.get()));
             return Optional.of(PortalRunCampaign.go(on.get().up(), 2, true, "Walk along the fortress for blazes"));
+        }
+        // By the fortress with no brick walk left from here (it stands below, across lava): a way made onto it.
+        var onto = campaign.knowledge().nearest(world, WorldKnowledge.Kind.NETHER_BRICK, feet,
+                b -> world.getBlockState(b.up()).isAir() && world.getBlockState(b.up(2)).isAir() && !campaign.blocked(b.up()));
+        if (onto.isPresent() && onto.get().up().getSquaredDistance(feet) > 3 * 3) {
+            BlockPos stand = onto.get().up();
+            Optional<PortalRunCampaign.Task> made = campaign.buildRoute(body, stand, pos -> pos.getSquaredDistance(stand) <= 2 * 2, false,
+                    "Make a way onto the fortress");
+            if (made.isPresent()) return made;
         }
         return explore(body, "blazes");
     }
@@ -302,29 +388,98 @@ final class StrongholdLeg {
     }
 
     /**
+     * To the fortress once seen: walking, and where the walk fails (across lava, up a cliff), the way a player would
+     * make, bridging and pillaring with its own blocks and digging through.
+     */
+    private Optional<PortalRunCampaign.Task> toFortress(NativePlayerBody body) {
+        BlockPos feet = body.entity().getBlockPos();
+        double off = Math.sqrt(fortress.getSquaredDistance(feet));
+        // A walk there that got no closer (a partial route ending where it began; staged run 9 walked there 293 times
+        // from one spot) is given up for a made way.
+        boolean stalled = fortressWalkFrom >= 0 && off > fortressWalkFrom - 2;
+        fortressWalkFrom = -1;
+        if (!stalled && !campaign.unreachable(fortress)) {
+            fortressWalkFrom = off;
+            return Optional.of(PortalRunCampaign.go(fortress, 3, true, "Walk to the fortress"));
+        }
+        BlockPos target = fortress;
+        return campaign.buildRoute(body, target, pos -> pos.getSquaredDistance(target) <= 5 * 5, false, "Make a way to the fortress")
+                .or(() -> {
+                    // No way planned from here: explore on toward it.
+                    int dx = target.getX() - feet.getX(), dz = target.getZ() - feet.getZ();
+                    Direction toward = Math.abs(dx) >= Math.abs(dz) ? (dx >= 0 ? Direction.EAST : Direction.WEST) : (dz >= 0 ? Direction.SOUTH : Direction.NORTH);
+                    if (heading != toward) {
+                        heading = toward;
+                        exploreFrom = null;
+                    }
+                    return explore(body, "a fortress");
+                });
+    }
+
+    /**
      * Onward across the Nether along one heading, as players do to find a fortress: to standing ground a couple of
-     * dozen blocks on along it, a little up or down as the ground goes, and cutting through netherrack where there is
-     * none. The heading turns only once it has stopped gaining ground for a while, never back and forth.
+     * dozen blocks on along it, a little up or down as the ground goes. Where a walk on fails it makes a way, digging,
+     * bridging or pillaring by cost, and only then cuts straight through the netherrack. It keeps above the lava sea.
+     * The heading turns only once it has stopped gaining ground for a while, never back and forth.
      */
     private Optional<PortalRunCampaign.Task> explore(NativePlayerBody body, String what) {
+        return explore(body, what, 0, java.util.EnumSet.noneOf(Direction.class));
+    }
+
+    /** {@code tried}: the headings this pass has given up on, and the way straight back from the first. */
+    private Optional<PortalRunCampaign.Task> explore(NativePlayerBody body, String what, int turns, Set<Direction> tried) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         if (heading == null || exploreFrom == null) {
-            if (heading == null) heading = Direction.fromHorizontal(Math.floorMod((int) player.getUuid().getMostSignificantBits(), 4));
+            if (heading == null) heading = openest(player, Set.of());
             exploreFrom = feet;
             exploreBest = 0;
-            exploreIdle = 0;
+            exploreSince = campaign.lastTick();
         }
-        double gained = (feet.getX() - exploreFrom.getX()) * heading.getOffsetX() + (feet.getZ() - exploreFrom.getZ()) * heading.getOffsetZ();
+        long now = campaign.lastTick();
+        explored.add(net.minecraft.util.math.ChunkPos.toLong(feet.getX() >> 4, feet.getZ() >> 4));
+        if (turns == 0 && editOnlyPasses > 0) editOnlyPasses--;
+        double gained = along(exploreFrom, feet);
         if (gained > exploreBest + 1) {
             exploreBest = gained;
-            exploreIdle = 0;
-        } else if (++exploreIdle > EXPLORE_PATIENCE) {
-            heading = heading.rotateYClockwise();
+            exploreSince = now;
+            stallPasses = 0;
+        } else if (turns == 0 && ++stallPasses > STALL_PASSES && now - exploreSince > EXPLORE_PATIENCE) {
+            heading = openest(player, Set.of(heading, heading.getOpposite()));
             exploreFrom = feet;
             exploreBest = 0;
-            exploreIdle = 0;
+            exploreSince = now;
+            stallPasses = 0;
+            makePasses = 0;
+        }
+        // A walk to a stand that got nowhere (a partial route that ended where it began) counts as a failed one.
+        if (lastWalkFrom != null && turns == 0) {
+            if (along(lastWalkFrom, feet) < 2) startMaking(feet);
+            lastWalkFrom = null;
+        }
+        // Above the lava sea, unless a fortress it is after stands lower (bricks reach down to the lava's level).
+        int floor = !nether(player) ? Integer.MIN_VALUE : fortress != null ? Math.min(NETHER_FLOOR, fortress.getY() - 2) : NETHER_FLOOR;
+        // Down by the lava sea: up first, by the cheapest way there is.
+        // Routes are planned on the first heading of a pass only: each plan is some milliseconds of the server's tick.
+        if (feet.getY() < floor && turns == 0) {
+            BlockPos up = feet.offset(heading, 12).withY(floor + 8);
+            Optional<PortalRunCampaign.Task> climb = campaign.buildRoute(body, up, pos -> pos.getY() >= floor, false,
+                    "Climb above the lava sea for " + what);
+            if (climb.isPresent()) return climb;
+        }
+        // A walk that failed on this heading (the Nether's cliffs, ledges and lava): make a way on, else cut straight
+        // on through the netherrack, as players tunnel, until it has made a dozen blocks' headway; then walk again.
+        if (makePasses > 0) {
+            if (makeFrom == null) makeFrom = feet;
+            if (along(makeFrom, feet) >= 12) makePasses = 0;
+            else {
+                if (turns == 0) makePasses--;
+                Optional<PortalRunCampaign.Task> made = turns > 0 ? Optional.empty() : makeWay(body, floor, what);
+                if (made.isPresent()) return made;
+                Optional<PortalRunCampaign.Task> cut = campaign.tunnelStraight(body, heading, floor, "Cut through " + heading.asString() + " for " + what);
+                if (cut.isPresent()) return cut;
+            }
         }
         var navigator = new NativeNavigator(world);
         for (int ahead : new int[] {24, 16, 10}) {
@@ -334,11 +489,80 @@ final class StrongholdLeg {
                 for (int sign : dy == 0 ? new int[] {1} : new int[] {1, -1}) {
                     BlockPos stand = column.up(dy * sign);
                     if (!navigator.standable(stand) || navigator.hazard(stand.down()) || campaign.blocked(stand) || campaign.unreachable(stand)) continue;
+                    lastWalkFrom = feet;
                     return Optional.of(PortalRunCampaign.go(stand, 2, true, "Explore " + heading.asString() + " for " + what));
                 }
             }
         }
-        return campaign.tunnelAlong(body, heading, "Cut through " + heading.asString() + " for " + what);
+        Optional<PortalRunCampaign.Task> cut = campaign.tunnelStraight(body, heading, floor, "Cut through " + heading.asString() + " for " + what);
+        if (cut.isPresent()) return cut;
+        // Nothing to stand on ahead and no tunnel on (a ledge over a cavern or a lava lake): the way a player would make.
+        if (turns == 0) {
+            Optional<PortalRunCampaign.Task> made = makeWay(body, floor, what);
+            if (made.isPresent()) {
+                startMaking(feet);
+                return made;
+            }
+        }
+        // No way on along this heading at all, not even through the rock: another heading from here. With none on any,
+        // a moment to look round, never nothing: the campaign's last resort is a jump down, and in the Nether that
+        // led toward the lava sea (staged End run 7).
+        if (turns == 0) tried.add(heading.getOpposite());
+        tried.add(heading);
+        exploreFrom = null;
+        makePasses = 0;
+        if (tried.size() < 4) {
+            heading = openest(player, tried);
+            return explore(body, what, turns + 1, tried);
+        }
+        return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Look round for a way on"));
+    }
+
+    /** Twelve blocks or more on along the heading, by the cheapest way with digging, bridging and pillaring. */
+    private Optional<PortalRunCampaign.Task> makeWay(NativePlayerBody body, int floor, String what) {
+        BlockPos from = body.entity().getBlockPos();
+        Direction way = heading;
+        BlockPos ahead = from.offset(heading, 24);
+        if (ahead.getY() < floor) ahead = ahead.withY(floor);
+        return campaign.buildRoute(body, ahead,
+                pos -> (pos.getX() - from.getX()) * way.getOffsetX() + (pos.getZ() - from.getZ()) * way.getOffsetZ() >= 12 && pos.getY() >= floor - 2,
+                editOnlyPasses > 0, "Make a way " + heading.asString() + " for " + what);
+    }
+
+    /** How far a look along a heading reaches, at eye level and a little below: open ground a player would make for. */
+    private static final double OPEN_SIGHT = 64;
+
+    /**
+     * The heading with the longest open view from here, as a player heads for open caverns rather than into rock:
+     * any but those in {@code skip} (given up on, or straight back), and seldom toward ground it has already explored.
+     * Ties go to the player's own side, so two players spread out.
+     */
+    private Direction openest(ServerPlayerEntity player, Set<Direction> skip) {
+        var world = player.getServerWorld();
+        var eye = player.getEyePos();
+        Direction own = Direction.fromHorizontal(Math.floorMod((int) player.getUuid().getMostSignificantBits(), 4));
+        Direction best = null;
+        double bestReach = -1;
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            if (skip.contains(side)) continue;
+            double reach = 0;
+            for (double drop : new double[] {0, 12}) {
+                double pitch = Math.toRadians(drop);
+                var end = eye.add(side.getOffsetX() * Math.cos(pitch) * OPEN_SIGHT, -Math.sin(pitch) * OPEN_SIGHT, side.getOffsetZ() * Math.cos(pitch) * OPEN_SIGHT);
+                var hit = world.raycast(new net.minecraft.world.RaycastContext(eye, end, net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
+                        net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+                reach += hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS ? OPEN_SIGHT : hit.getPos().distanceTo(eye);
+            }
+            // Back over ground it has already explored counts for little: staged run 8 turned round and walked two
+            // hundred blocks back along its own tunnel.
+            BlockPos ahead = player.getBlockPos().offset(side, 32);
+            if (explored.contains(net.minecraft.util.math.ChunkPos.toLong(ahead.getX() >> 4, ahead.getZ() >> 4))) reach *= 0.25;
+            if (best == null || reach > bestReach + 1 || Math.abs(reach - bestReach) <= 1 && side == own) {
+                bestReach = reach;
+                best = side;
+            }
+        }
+        return best != null ? best : own;
     }
 
     private static long cell(BlockPos pos) {
@@ -355,7 +579,7 @@ final class StrongholdLeg {
                 double[] spot = EyeFlights.secondThrow(first, SIDE_THROW);
                 asideFor = BlockPos.ofFloored(spot[0], player.getY(), spot[1]);
             }
-            if (first.offLine(player.getX(), player.getZ()) < SIDE_THROW * 0.6) return walkToward(player, asideFor.getX(), asideFor.getZ(), "Walk to the side for a second throw");
+            if (first.offLine(player.getX(), player.getZ()) < SIDE_THROW * 0.6) return walkToward(body, asideFor.getX(), asideFor.getZ(), "Walk to the side for a second throw");
         }
         int slot = PortalRunCampaign.hotbarSlot(body, Items.ENDER_EYE);
         if (slot < 0) {
@@ -396,24 +620,43 @@ final class StrongholdLeg {
         }
     }
 
-    private Optional<PortalRunCampaign.Task> travel(ServerPlayerEntity player) {
+    private Optional<PortalRunCampaign.Task> travel(NativePlayerBody body) {
+        var player = body.entity();
         if (estimate == null) return Optional.empty();
         double distance = Math.hypot(estimate[0] - player.getX(), estimate[1] - player.getZ());
         // Rounded, so the progress line changes every fifty blocks rather than every step.
         long about = Math.max(50, Math.round(distance / 50) * 50);
-        return walkToward(player, estimate[0], estimate[1], "Head for the stronghold, about " + about + " blocks off");
+        return walkToward(body, estimate[0], estimate[1], "Head for the stronghold, about " + about + " blocks off");
     }
 
-    /** A walk of at most {@link #LEG} blocks toward a far point, at ground level there. */
-    private Optional<PortalRunCampaign.Task> walkToward(ServerPlayerEntity player, double x, double z, String label) {
+    /**
+     * A walk toward a far point, at ground level where it ends: straight on as far as {@link #LEG} blocks, else a
+     * shorter way, else off to one side or the other, skipping ends that a walk has already failed to reach (a cliff,
+     * a ravine, a mountain in the way), as a player picks another line. With every line refused, it makes a way on:
+     * up the cliff, over the ravine or through the hill, whichever costs least.
+     */
+    private Optional<PortalRunCampaign.Task> walkToward(NativePlayerBody body, double x, double z, String label) {
+        var player = body.entity();
         var world = player.getServerWorld();
         double dx = x - player.getX(), dz = z - player.getZ(), distance = Math.hypot(dx, dz);
         if (distance < 2) return Optional.empty();
-        double step = Math.min(distance, LEG);
-        int tx = (int) Math.floor(player.getX() + dx / distance * step), tz = (int) Math.floor(player.getZ() + dz / distance * step);
-        BlockPos column = new BlockPos(tx, player.getBlockY(), tz);
-        int y = world.isChunkLoaded(column) ? world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, tx, tz) : player.getBlockY();
-        return Optional.of(PortalRunCampaign.go(new BlockPos(tx, y, tz), 4, true, label));
+        double ux = dx / distance, uz = dz / distance;
+        for (double leg : new double[] {LEG, 48, 24}) {
+            double step = Math.min(distance, leg);
+            for (double side : new double[] {0, 20, -20, 40, -40}) {
+                int tx = (int) Math.floor(player.getX() + ux * step - uz * side), tz = (int) Math.floor(player.getZ() + uz * step + ux * side);
+                BlockPos column = new BlockPos(tx, player.getBlockY(), tz);
+                if (!world.isChunkLoaded(column)) continue;
+                BlockPos end = new BlockPos(tx, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, tx, tz), tz);
+                if (campaign.blocked(end) || campaign.unreachable(end)) continue;
+                return Optional.of(PortalRunCampaign.go(end, 4, true, label));
+            }
+            if (step >= distance) break;
+        }
+        double px = player.getX(), pz = player.getZ(), want = Math.min(12, distance - 2);
+        BlockPos ahead = BlockPos.ofFloored(px + ux * Math.min(distance, 24), player.getY(), pz + uz * Math.min(distance, 24));
+        return campaign.buildRoute(body, ahead, pos -> (pos.getX() + 0.5 - px) * ux + (pos.getZ() + 0.5 - pz) * uz >= want, false,
+                label + ": make a way");
     }
 
     /**
@@ -437,12 +680,20 @@ final class StrongholdLeg {
         boolean over = Math.abs(dx) <= 2 && Math.abs(dz) <= 2;
         if (feet.getY() > DIG_TO) {
             if (PlayerRuntime.inDeepWater(player) || !world.getFluidState(feet).isEmpty()) {
-                var shore = new NativeNavigator(world).nearestReachableDryStand(feet, 6000, 64);
-                return shore.map(dry -> PortalRunCampaign.go(dry, 1, true, "To dry land to dig down from"));
+                // Out at sea: the nearest dry land it can swim to, else the last it stood on on the way out.
+                var shore = new NativeNavigator(world).nearestReachableDryStand(feet, 20_000, 96)
+                        .or(() -> Optional.ofNullable(lastDryLand));
+                if (shore.isEmpty()) return Optional.empty();
+                BlockPos dry = shore.get();
+                return dry.getSquaredDistance(feet) > LEG * LEG ? walkToward(body, dry.getX() + 0.5, dry.getZ() + 0.5, "To dry land to dig down from")
+                        : Optional.of(PortalRunCampaign.go(dry, 1, true, "To dry land to dig down from"));
             }
             Optional<PortalRunCampaign.Task> down = campaign.digDown(body, DIG_TO, "Dig down toward the stronghold");
             if (down.isPresent()) return down;
-            return campaign.tunnelAlong(body, toward, "Tunnel toward the stronghold");
+            Optional<PortalRunCampaign.Task> along = campaign.tunnelAlong(body, toward, "Tunnel toward the stronghold");
+            if (along.isPresent()) return along;
+            // On a shore or an island, water refuses every step down: further inland, then down from there.
+            return inland(body);
         }
         if (!over) return campaign.tunnelAlong(body, toward, "Tunnel toward the stronghold");
         // Over the spot with no bricks yet: further down, then out round about it.
@@ -452,6 +703,32 @@ final class StrongholdLeg {
         Optional<PortalRunCampaign.Task> cut = campaign.tunnelAlong(body, heading, "Tunnel round the stronghold's spot");
         if (cut.isEmpty()) heading = heading.rotateYClockwise();
         return cut;
+    }
+
+    /**
+     * The nearest dry standing place, a few blocks off, with no water or lava anywhere a staircase dug down from it
+     * would pass. Staged run 5's player stood on an ocean's shore, could dig down on no side for the sea, jumped back in
+     * and swam out again, along the coast for ever.
+     */
+    private Optional<PortalRunCampaign.Task> inland(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var navigator = new NativeNavigator(world);
+        for (BlockPos near : BlockPos.iterateOutwards(feet, 16, 3, 16)) {
+            if (near.getSquaredDistance(feet) < 3 * 3 || !world.isChunkLoaded(near)) continue;
+            if (!navigator.standable(near) || campaign.blocked(near) || campaign.unreachable(near)) continue;
+            if (wetAround(world, near)) continue;
+            return Optional.of(PortalRunCampaign.go(near.toImmutable(), 0.5, false, "Inland, away from the water, to dig down"));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean wetAround(ServerWorld world, BlockPos stand) {
+        for (int dy = -4; dy <= 0; dy++) for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+            if (!world.getFluidState(stand.add(dx, dy, dz)).isEmpty()) return true;
+        }
+        return false;
     }
 
     /** Through the stronghold toward bricks not yet walked to, until an End portal frame shows. */

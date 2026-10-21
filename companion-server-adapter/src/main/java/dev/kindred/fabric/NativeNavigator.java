@@ -1,5 +1,7 @@
 package dev.kindred.fabric;
 
+import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.tag.BlockTags;
@@ -32,12 +34,22 @@ final class NativeNavigator {
     }
 
     private final ServerWorld world;
-    private final Map<Long, BlockState> states = new HashMap<>();
+    /**
+     * What one search has read, so each block, chunk and test is worked out once: a search asks the same few hundred
+     * cells about many times over (move generation was about 50 microseconds a position without them). A navigator
+     * lives for one search or one tick, so nothing here goes stale.
+     */
+    private final Long2ObjectOpenHashMap<BlockState> states = new Long2ObjectOpenHashMap<>();
+    private final Long2ByteOpenHashMap chunks = new Long2ByteOpenHashMap(), passables = new Long2ByteOpenHashMap(),
+            standables = new Long2ByteOpenHashMap();
+    private final it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap terrain = new it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap();
     private final int maxDrop;
 
     NativeNavigator(ServerWorld world) {
         this(world, MAX_SAFE_DROP);
     }
+
+    ServerWorld world() { return world; }
 
     /** With a larger {@code maxDrop}, routes may include one deliberate fall that costs some health. */
     NativeNavigator(ServerWorld world, int maxDrop) {
@@ -225,6 +237,13 @@ final class NativeNavigator {
 
     /** No collision box (or only a thin one like a carpet) and nothing that hurts or traps. */
     boolean passable(BlockPos pos) {
+        long key = pos.asLong();
+        byte known = passables.get(key);
+        if (known == 0) passables.put(key, known = computePassable(pos) ? (byte) 1 : (byte) 2);
+        return known == 1;
+    }
+
+    private boolean computePassable(BlockPos pos) {
         if (!loaded(pos)) return false;
         BlockState state = state(pos);
         if (hazard(state)) return false;
@@ -239,6 +258,13 @@ final class NativeNavigator {
      * from the sources around it within a couple of seconds.
      */
     boolean standable(BlockPos feet) {
+        long key = feet.asLong();
+        byte known = standables.get(key);
+        if (known == 0) standables.put(key, known = computeStandable(feet) ? (byte) 1 : (byte) 2);
+        return known == 1;
+    }
+
+    private boolean computeStandable(BlockPos feet) {
         if (!clear(feet) || lavaAt(feet.up(2))) return false;
         for (Direction side : Direction.Type.HORIZONTAL) {
             if (lavaAt(feet.offset(side)) || lavaAt(feet.up().offset(side))) return false;
@@ -274,6 +300,14 @@ final class NativeNavigator {
 
     /** Extra cost near lava and for wading, so routes keep a margin from danger. */
     private double terrainCost(BlockPos feet) {
+        long key = feet.asLong();
+        if (terrain.containsKey(key)) return terrain.get(key);
+        double cost = computeTerrainCost(feet);
+        terrain.put(key, cost);
+        return cost;
+    }
+
+    private double computeTerrainCost(BlockPos feet) {
         // Swimming costs more than walking, and swimming with the head under far more: a route across water keeps to
         // the surface, where there is air, rather than the bottom (the staged End run drowned crossing an ocean bed).
         double cost = !swimmable(feet) ? 1.0 : state(feet.up()).getFluidState().isIn(FluidTags.WATER) ? 9.0 : 3.0;
@@ -289,11 +323,18 @@ final class NativeNavigator {
     }
 
     boolean loaded(BlockPos pos) {
-        return world.isInBuildLimit(pos) && world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)
-                && world.getWorldBorder().contains(pos);
+        if (!world.isInBuildLimit(pos)) return false;
+        int cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
+        long chunk = net.minecraft.util.math.ChunkPos.toLong(cx, cz);
+        byte known = chunks.get(chunk);
+        if (known == 0) chunks.put(chunk, known = world.isChunkLoaded(cx, cz) ? (byte) 1 : (byte) 2);
+        return known == 1 && world.getWorldBorder().contains(pos);
     }
 
     BlockState state(BlockPos pos) {
-        return states.computeIfAbsent(pos.asLong(), key -> world.getBlockState(pos));
+        long key = pos.asLong();
+        BlockState state = states.get(key);
+        if (state == null) states.put(key, state = world.getBlockState(pos));
+        return state;
     }
 }

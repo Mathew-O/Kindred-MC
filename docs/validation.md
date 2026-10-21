@@ -4,6 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-10e (routes that build and dig, in progress) with F-25c6's Nether exploration and its restart fix, on top of `8732b36`.
+  - New native fixtures: `aRouteBridgesAGapAndDigsThroughAWall` (passed twice alone in a stress run) and `aBodySavedInAnUnloadedChunkReconnectsAfterARestart` (blocked for reconciliation with the fix set aside; passes with it).
+  - The first suite run failed the route fixture once: another fixture's course left a way round its wall. With a wider clearing, `runGametest` passed 244/244 twice, and twice more on the final source.
+  - `./gradlew build` passed: 401 JUnit results, three skipped (the opt-in live model tests).
+  - Staged development runs 6 to 9 on seed 8675309 (a portal lit by command, a Nether kit handed over) are recorded in the evidence; they are not earned progress.
+  - JAR SHA-256: `128ce112f621f9be39ba21d398d8cba469a4721648926f484c14cbc2bb2ede69`.
 - F-25c6 (on from the lit portal to the End portal, in progress), on top of `f69d6dd`.
   - New: `StrongholdRunPlannerTest` (7) and `EyeFlightsTest` (4) pass. Two native fixtures, the portal crossing and a recorded throw, each passed alone in stress runs.
   - The crossing fixture with a debug count showed three dimension transits for one crossing before the fix and one after.

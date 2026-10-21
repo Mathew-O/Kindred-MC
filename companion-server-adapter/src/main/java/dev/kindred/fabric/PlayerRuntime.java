@@ -655,77 +655,112 @@ final class PlayerRuntime {
         ConnectionToken token = new ConnectionToken(startupGeneration, entry.data.id(), generation, requestId, expectedRevision);
         entry.pendingConnection = token;
 
-        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), nativeId).whenComplete((saved, readFailure) -> server.execute(() -> {
-            if (!running || !ready || startupGeneration != token.startupGeneration() || entries.get(entry.data.id()) != entry) return;
-            if (entry.pendingConnection == null || !token.equals(entry.pendingConnection)) {
-                // Obsolete request or retired by stop/detach/halt/superseding request.
+        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), nativeId).whenComplete((saved, readFailure) -> server.execute(
+                () -> completeNativeConnection(source, entry, token, fresh, saved, readFailure, 0)));
+    }
+
+    /** Ticks a connection waits for the chunk its body was saved in to load before it goes on regardless. */
+    private static final int CONNECT_LOAD_TICKS = 200;
+    private static final net.minecraft.server.world.ChunkTicketType<net.minecraft.util.math.ChunkPos> NATIVE_CONNECT =
+            net.minecraft.server.world.ChunkTicketType.create("kindred_native_connect",
+                    java.util.Comparator.comparingLong(net.minecraft.util.math.ChunkPos::toLong), CONNECT_LOAD_TICKS);
+
+    private void completeNativeConnection(ServerCommandSource source, Entry entry, ConnectionToken token, boolean fresh,
+                                          java.util.Optional<NativePlayerSaves.Bytes> saved, Throwable readFailure, int waited) {
+        if (!running || !ready || startupGeneration != token.startupGeneration() || entries.get(entry.data.id()) != entry) return;
+        if (entry.pendingConnection == null || !token.equals(entry.pendingConnection)) {
+            // Obsolete request or retired by stop/detach/halt/superseding request.
+            return;
+        }
+        // A body saved where no chunk is loaded (in the Nether after a restart, or far from spawn): its chunk is
+        // loaded first, as a joining player's is, and the connection goes on once it is in. Staged End run 7 was
+        // blocked for reconciliation on reconnecting a player saved in the Nether.
+        if (!fresh && readFailure == null && waited < CONNECT_LOAD_TICKS) {
+            var area = savedArea(entry, saved);
+            if (area != null && !area.getKey().isChunkLoaded(area.getValue())) {
+                var chunk = new net.minecraft.util.math.ChunkPos(area.getValue());
+                area.getKey().getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
+                NextTick.run(() -> completeNativeConnection(source, entry, token, fresh, saved, readFailure, waited + 1));
                 return;
             }
-            entry.pendingConnection = null;
-            if (entry.generation != token.entryGeneration() || (fresh && entry.snapshot().stopLatched())) {
+        }
+        entry.pendingConnection = null;
+        if (entry.generation != token.entryGeneration() || (fresh && entry.snapshot().stopLatched())) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection cancelled before dispatch; no late callback may restart it.";
+            return;
+        }
+        if (!fresh && entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection denied: ledger check state is " + entry.ledgerState + ". Reconciliation required.";
+            return;
+        }
+        if (entry.metadataFault || entry.reconciliationBlocked) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection denied: companion has metadata/reconciliation fault.";
+            return;
+        }
+        if (entry.nativeState == null || entry.nativeState.revision() != token.expectedNativeRevision()) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection denied: native revision changed before dispatch.";
+            return;
+        }
+        if (!nativeMayControl(source, entry) || (fresh && (nativeActor(source) == null || !nativeActor(source).operator()))) {
+            entry.nativePending = false;
+            entry.blocker = "Native connection lost administrative authority before dispatch.";
+            return;
+        }
+        try {
+            if (readFailure != null) throw new IllegalStateException("Native save could not be read", readFailure);
+            var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
+                    Identifier.of(entry.data.dimension())));
+            if (world == null) throw new IllegalStateException("Native dimension is unavailable");
+            java.util.Optional<net.minecraft.nbt.NbtCompound> state = saved.map(bytes -> bytes.decode(server));
+            net.minecraft.util.math.Vec3d position;
+            if (fresh) {
+                if (state.isPresent()) throw new IllegalStateException("Fresh creation conflicts with native data");
+                SpawnLocation spawn = nativeSpawn(source);
+                if (spawn == null || source.getWorld() != world) throw new IllegalStateException("Creation area is no longer available");
+                position = new net.minecraft.util.math.Vec3d(spawn.x(), spawn.y(), spawn.z());
+            } else {
+                var tag = state.orElseThrow(() -> new IllegalStateException("Native save is missing"));
+                var pos = tag.getList("Pos", net.minecraft.nbt.NbtElement.DOUBLE_TYPE);
+                if (pos.size() != 3) throw new IllegalStateException("Native save position is invalid");
+                position = new net.minecraft.util.math.Vec3d(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
+            }
+            NativePlayerBody body = new NativePlayerBody(world, entry.snapshot(), position,
+                    (lease, intent, target) -> nativeMutationAllowed(entry, lease, intent, target));
+            entry.arbiter = new ActionArbiter(entry.snapshot(), body);
+            body.bind(entry.arbiter);
+            if (!fresh) body.verifySave(state.orElseThrow(), entry.nativeState.saveReceipt());
+            entry.nativeBody = body;
+            entry.runner = new SkillRunner(entry.arbiter, PlayerRuntime::nanos);
+            body.onTick(() -> beforeNativeTick(entry, body));
+            body.onDeath(() -> onNativeDeath(entry, body));
+            body.connect(state, !fresh);
+            entry.data = entry.arbiter.snapshot();
+            if (fresh) establishNative(source, entry, body, body.saveNow());
+            else {
                 entry.nativePending = false;
-                entry.blocker = "Native connection cancelled before dispatch; no late callback may restart it.";
-                return;
+                entry.blocker = entry.snapshot().stopLatched() ? "Native body connected; stopped. Resume explicitly."
+                        : "Native body connected; automatic progression remains disabled.";
+                persist(entry);
+                feedback(source, entry.explanation());
             }
-            if (!fresh && entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR) {
-                entry.nativePending = false;
-                entry.blocker = "Native connection denied: ledger check state is " + entry.ledgerState + ". Reconciliation required.";
-                return;
-            }
-            if (entry.metadataFault || entry.reconciliationBlocked) {
-                entry.nativePending = false;
-                entry.blocker = "Native connection denied: companion has metadata/reconciliation fault.";
-                return;
-            }
-            if (entry.nativeState == null || entry.nativeState.revision() != token.expectedNativeRevision()) {
-                entry.nativePending = false;
-                entry.blocker = "Native connection denied: native revision changed before dispatch.";
-                return;
-            }
-            if (!nativeMayControl(source, entry) || (fresh && (nativeActor(source) == null || !nativeActor(source).operator()))) {
-                entry.nativePending = false;
-                entry.blocker = "Native connection lost administrative authority before dispatch.";
-                return;
-            }
-            try {
-                if (readFailure != null) throw new IllegalStateException("Native save could not be read", readFailure);
-                var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
-                        Identifier.of(entry.data.dimension())));
-                if (world == null) throw new IllegalStateException("Native dimension is unavailable");
-                java.util.Optional<net.minecraft.nbt.NbtCompound> state = saved.map(bytes -> bytes.decode(server));
-                net.minecraft.util.math.Vec3d position;
-                if (fresh) {
-                    if (state.isPresent()) throw new IllegalStateException("Fresh creation conflicts with native data");
-                    SpawnLocation spawn = nativeSpawn(source);
-                    if (spawn == null || source.getWorld() != world) throw new IllegalStateException("Creation area is no longer available");
-                    position = new net.minecraft.util.math.Vec3d(spawn.x(), spawn.y(), spawn.z());
-                } else {
-                    var tag = state.orElseThrow(() -> new IllegalStateException("Native save is missing"));
-                    var pos = tag.getList("Pos", net.minecraft.nbt.NbtElement.DOUBLE_TYPE);
-                    if (pos.size() != 3) throw new IllegalStateException("Native save position is invalid");
-                    position = new net.minecraft.util.math.Vec3d(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
-                }
-                NativePlayerBody body = new NativePlayerBody(world, entry.snapshot(), position,
-                        (lease, intent, target) -> nativeMutationAllowed(entry, lease, intent, target));
-                entry.arbiter = new ActionArbiter(entry.snapshot(), body);
-                body.bind(entry.arbiter);
-                if (!fresh) body.verifySave(state.orElseThrow(), entry.nativeState.saveReceipt());
-                entry.nativeBody = body;
-                entry.runner = new SkillRunner(entry.arbiter, PlayerRuntime::nanos);
-                body.onTick(() -> beforeNativeTick(entry, body));
-                body.onDeath(() -> onNativeDeath(entry, body));
-                body.connect(state, !fresh);
-                entry.data = entry.arbiter.snapshot();
-                if (fresh) establishNative(source, entry, body, body.saveNow());
-                else {
-                    entry.nativePending = false;
-                    entry.blocker = entry.snapshot().stopLatched() ? "Native body connected; stopped. Resume explicitly."
-                            : "Native body connected; automatic progression remains disabled.";
-                    persist(entry);
-                    feedback(source, entry.explanation());
-                }
-            } catch (RuntimeException failure) { nativeFailure(source, entry, "Native connection requires reconciliation", failure); }
-        }));
+        } catch (RuntimeException failure) { nativeFailure(source, entry, "Native connection requires reconciliation", failure); }
+    }
+
+    /** The world and block a saved body stands in, or null when the save cannot say. */
+    private java.util.Map.Entry<net.minecraft.server.world.ServerWorld, BlockPos> savedArea(Entry entry, java.util.Optional<NativePlayerSaves.Bytes> saved) {
+        try {
+            var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
+            if (world == null || saved.isEmpty()) return null;
+            var pos = saved.get().decode(server).getList("Pos", net.minecraft.nbt.NbtElement.DOUBLE_TYPE);
+            if (pos.size() != 3) return null;
+            return java.util.Map.entry(world, BlockPos.ofFloored(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2)));
+        } catch (RuntimeException unreadable) {
+            return null; // The connection itself reports it.
+        }
     }
 
     private void establishNative(ServerCommandSource source, Entry entry, NativePlayerBody body, UUID receipt) {
@@ -990,6 +1025,21 @@ final class PlayerRuntime {
                 "y", String.valueOf(target.getY()),
                 "z", String.valueOf(target.getZ()),
                 "slot", String.valueOf(hotbarSlot)));
+    }
+
+    /**
+     * One step toward {@code target} on a route that may dig, bridge or pillar (F-10e), dispatched as the ordinary
+     * recorded skill it needs; 0 when there is nothing to do from here (arrived, or no way at all).
+     */
+    int nativeRouteTo(ServerCommandSource source, UUID id, BlockPos target) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return reject(source, "Native player unavailable.");
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.observe(entry.nativeBody.entity());
+        var task = entry.campaign.buildRoute(entry.nativeBody, edits, target, pos -> pos.equals(target), "Route");
+        if (task.isEmpty()) return 0;
+        return nativeTask(source, id, task.get().skill(), task.get().args());
     }
 
     /** One recorded eye-of-ender throw from {@code hotbarSlot}, facing {@code yaw}; the goal throws its own the same way. */

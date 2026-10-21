@@ -99,6 +99,55 @@ public final class NativeStrongholdGameTests implements FabricGameTest {
     }
 
     /**
+     * A restart with the body far from loaded ground, as when a server stops while its player is in the Nether: the
+     * body's chunk is loaded as a joining player's is, and it reconnects where it was with what it had. Before, the
+     * connection found the chunk unloaded and blocked the player for reconciliation (staged End run 7). The body is
+     * moved off for the fixture; the reconnect is the ordinary one.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "farReconnect", tickLimit = 1200)
+    public void aBodySavedInAnUnloadedChunkReconnectsAfterARestart(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var world = context.getWorld();
+        BlockPos[] far = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Farfarer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    BlockPos here = f.player().getBlockPos();
+                    int x = here.getX() + 4096, z = here.getZ() + 4096;
+                    world.getChunk(x >> 4, z >> 4); // Generated for the fixture; the body stands on it.
+                    far[0] = new BlockPos(x, world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, x, z), z);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(x + 0.5, far[0].getY(), z + 0.5, 0, 0);
+                    player.getInventory().setStack(0, new ItemStack(Items.ENDER_EYE, 3));
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().getBlockPos().getSquaredDistance(far[0]) <= 4, "Far off: " + f.player().getPos()))
+                .createAndAdd(() -> f.runtime.stop())
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Saved and disconnected"))
+                .createAndAdd(() -> context.assertFalse(world.isChunkLoaded(far[0]), "Its chunk unloads with no one there"))
+                .createAndAdd(() -> {
+                    f.runtime = new PlayerRuntime(world.getServer(), f.directory);
+                    f.runtime.start();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Restarted"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 1, "Reconnect requested"))
+                .createAndAdd(() -> {
+                    var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
+                    context.assertTrue(status.connected() && status.phase() == dev.kindred.persistence.StoredNativePlayer.Phase.ESTABLISHED,
+                            "Reconnected, not blocked: " + status + " - " + f.runtime.panelBots(Actor.console()).getFirst());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.getBlockPos().getSquaredDistance(far[0]) <= 4, "Where it was: " + player.getBlockPos().toShortString());
+                    context.assertTrue(player.getInventory().count(Items.ENDER_EYE) == 3, "With what it had");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Stocked for the trip and a lit portal in sight: the End goal walks in, stands in it until it crosses, and in
      * the Nether goes looking for a fortress. Only the goal moves it; the fixture's player starts five blocks off.
      */

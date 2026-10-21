@@ -322,6 +322,12 @@ final class PortalRunCampaign {
     }
 
     void taskFinished(Task task, boolean completed, long tick) {
+        if (task != null) stronghold.taskFinished(task, completed, tick);
+        if (task != null && !completed && task.equals(lastRouteEdit) && position(task.args()) != null) {
+            // A dig, bridge or pillar on a made way that did not happen (a jump capped by a ceiling, a block that would
+            // not place): not there again for a minute, so the next plan goes another way.
+            blockedUntil.merge(position(task.args()).asLong(), tick + 1200, Math::max);
+        }
         if (task != null && task.label().startsWith("Recover") && dropSite != null && completed) {
             dropSiteUntil = Math.min(dropSiteUntil, tick + 600); // One more look around, then move on.
         }
@@ -1006,7 +1012,10 @@ final class PortalRunCampaign {
                 if (!navigator.passable(landing)) break; // Lava and fire are not passable either.
                 if (navigator.standable(landing)) {
                     boolean affordable = k <= 12 && player.getHealth() - Math.max(0, k - 3) >= 10;
-                    if (affordable && k > NativeNavigator.MAX_SAFE_DROP && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
+                    // Never down beside lava, nor in the Nether below the shore of its lava sea: a knock or a slip on
+                    // landing ends in it (staged End run 7 jumped down twice there and a hoglin knocked it in).
+                    boolean safe = !lavaAround(world, landing, 3) && (world.getRegistryKey() != net.minecraft.world.World.NETHER || landing.getY() >= StrongholdLeg.NETHER_FLOOR);
+                    if (affordable && safe && k > NativeNavigator.MAX_SAFE_DROP && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
                     break;
                 }
             }
@@ -1019,6 +1028,15 @@ final class PortalRunCampaign {
                 mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty()) return Optional.empty();
         return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
                 "drop", String.valueOf(Math.min(12, bestDrop)))), "Jump down from the ledge"));
+    }
+
+    /** Lava within {@code radius} blocks across and two down of {@code feet}, loaded ground only. */
+    private static boolean lavaAround(ServerWorld world, BlockPos feet, int radius) {
+        for (int dy = -2; dy <= 1; dy++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
+            BlockPos at = feet.add(dx, dy, dz);
+            if (world.isChunkLoaded(at) && world.getFluidState(at).isIn(FluidTags.LAVA)) return true;
+        }
+        return false;
     }
 
     /** Stone, dirt and odds and ends the route never needs, beyond a small keep; cobblestone-like blocks keep 64. */
@@ -1492,6 +1510,16 @@ final class PortalRunCampaign {
         return RoamingEdits.breakDenial(player, pos, policy, false) == null;
     }
 
+    /**
+     * A block a route may plan to dig from wherever it will stand when it gets there: the same rules as
+     * {@link #breakableNow}, less the reach and line of sight, which hold only once it is beside the block.
+     */
+    private boolean diggableLater(NativePlayerBody body, BlockPos pos) {
+        var player = body.entity();
+        if (blocked(pos) || liquidNear(player.getServerWorld(), pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null && harvestable(body, pos);
+    }
+
     private boolean harvestable(NativePlayerBody body, BlockPos pos) {
         var state = body.entity().getServerWorld().getBlockState(pos);
         return NativeBreakAction.bestTool(body, state) != -2;
@@ -1880,17 +1908,105 @@ final class PortalRunCampaign {
     }
 
     /** A two-high tunnel forward along {@code digDirection}; walls it exposes are scanned for ores. */
+    /**
+     * The next thing to do on a route that may dig, bridge or pillar (F-10e), as a player gets about where walking
+     * alone will not do: walk on to where the route first needs work, or do that work, digging what is in the way,
+     * placing a block of its own to bridge a gap, or pillaring up. Planned afresh on every pass from where the player
+     * stands, so each step is one ordinary recorded skill under the edit policy, and a world that changed is seen.
+     */
+    /** Positions one route plan may look at: about 25 microseconds each on the server thread. */
+    static final int ROUTE_NODES = 2_500;
+
+    /** {@link #buildRoute(NativePlayerBody, BlockPos, java.util.function.Predicate, boolean, String)} under the server's current edit policy. */
+    Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal, String label) {
+        this.policy = policy;
+        return buildRoute(body, target, goal, false, label);
+    }
+
+    /**
+     * The next step of the cheapest way toward {@code target} that may dig, bridge and pillar ({@link NativeRoutePlanner}):
+     * a walk up to the first change it makes, or that change. {@code needEdit} refuses a way that only walks, for a
+     * caller whose walk there has just failed.
+     */
+    Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, java.util.function.Predicate<BlockPos> goal, boolean needEdit, String label) {
+        var player = body.entity();
+        if (!player.isOnGround() && !player.isTouchingWater()) return Optional.empty(); // Mid-jump: plan on landing.
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var inventory = player.getInventory();
+        int blocks = 0;
+        if (policy != null && policy.autonomousEditsEnabled()) {
+            for (int s = 0; s < 36; s++) if (SEALING.contains(inventory.getStack(s).getItem())) blocks += inventory.getStack(s).getCount();
+        }
+        var allowance = new NativeRoutePlanner.Allowance(cell -> diggableLater(body, cell), cell -> !blocked(cell), blocks);
+        long started = System.nanoTime();
+        var route = new NativeRoutePlanner(new NativeNavigator(world), allowance).find(feet, target, goal, ROUTE_NODES, 48);
+        long millis = (System.nanoTime() - started) / 1_000_000;
+        // Planned on the server thread: a slow plan shows in the log, so live runs can tell whether it costs ticks.
+        if (millis >= 20) KindredMod.LOGGER.info("{} planned a way toward {} in {} ms ({} positions, {})", player.getName().getString(),
+                target.toShortString(), millis, route.expanded(), route.complete() ? "complete" : "partial");
+        if (route.steps().isEmpty()) return Optional.empty();
+        int edit = route.firstEdit();
+        if (edit < 0) return needEdit ? Optional.empty() : Optional.of(go(route.steps().getLast().to(), 0.5, true, label));
+        if (edit > 0) return Optional.of(go(route.steps().get(edit - 1).to(), 0.4, false, label + ": walk on"));
+        Optional<Task> change = routeEdit(body, route.steps().getFirst(), label);
+        lastRouteEdit = change.orElse(null);
+        return change;
+    }
+
+    /** The last change a made way asked for: if it fails, its cell is set aside so the next plan goes another way. */
+    private Task lastRouteEdit;
+
+    private Optional<Task> routeEdit(NativePlayerBody body, NativeRoutePlanner.Step step, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var inventory = player.getInventory();
+        return switch (step.kind()) {
+            case DIG -> step.cells().stream().filter(cell -> !passable(world, cell)).findFirst()
+                    .map(cell -> clearAt(cell, label + ": dig " + cell.toShortString()));
+            case BRIDGE -> placeBlock(body, step.cells().getFirst(), label + ": bridge " + step.cells().getFirst().toShortString());
+            case PILLAR -> {
+                int slot = -1;
+                for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+                if (slot < 0) yield Optional.empty();
+                if (slot >= 9) yield Optional.of(swapToHotbar(body, slot, "Ready a block"));
+                yield Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up"));
+            }
+            case WALK -> Optional.empty();
+        };
+    }
+
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
         digDirection = heading;
         return tunnel(body, label);
     }
 
+    /**
+     * Straight on along {@code heading} only, never stepping down below {@code floor}: an explorer's tunnel, which
+     * must not turn and wander back along ground already crossed (staged run 6 walked 13 blocks back that way).
+     */
+    Optional<Task> tunnelStraight(NativePlayerBody body, Direction heading, int floor, String label) {
+        digDirection = heading;
+        tunnelFloor = floor;
+        tunnelTurns = 1;
+        try {
+            return tunnel(body, label);
+        } finally {
+            tunnelFloor = Integer.MIN_VALUE;
+            tunnelTurns = 4;
+            digDirection = heading;
+        }
+    }
+
+    private int tunnelFloor = Integer.MIN_VALUE, tunnelTurns = 4;
+
     Optional<Task> tunnel(NativePlayerBody body, String label) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        for (int turn = 0; turn < 4; turn++) {
+        for (int turn = 0; turn < tunnelTurns; turn++) {
             BlockPos ahead = feet.offset(digDirection);
             boolean refused = false;
             for (BlockPos cell : List.of(ahead.up(), ahead)) {
@@ -1906,7 +2022,7 @@ final class PortalRunCampaign {
                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
             }
             // Never a step down into water: wading back out to here and stepping in again would go round for ever.
-            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down())
+            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down()) && ahead.getY() > tunnelFloor
                     && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
             }

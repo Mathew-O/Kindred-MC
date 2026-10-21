@@ -163,6 +163,70 @@ public final class NativeNavigationGameTests implements FabricGameTest {
     }
 
     /**
+     * A route that builds and digs (F-10e): a floating floor with a two-block gap over a long drop, then a stone wall
+     * across its whole width, and the goal beyond. Walking round is impossible, so the route bridges the gap with two
+     * of the player's own blocks and digs through the wall, one recorded skill at a time, planned again after each.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildRoute", tickLimit = 1200)
+    public void aRouteBridgesAGapAndDigsThroughAWall(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] origin = new BlockPos[1];
+        int[] cobble = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bridger"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // Clear well beyond the course: other fixtures' floating courses reach past their plots, and one
+                    // left a way round the wall in a suite run.
+                    for (int x = -3; x <= 15; x++) for (int z = -7; z <= 7; z++) for (int y = -2; y <= 5; y++) {
+                        world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (int x = -1; x <= 13; x++) for (int z = -2; z <= 2; z++) {
+                        if (x == 4 || x == 5) continue; // The gap.
+                        world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
+                    }
+                    for (int z = -2; z <= 2; z++) for (int y = 0; y <= 2; y++) {
+                        world.setBlockState(o.add(9, y, z), Blocks.STONE.getDefaultState()); // The wall.
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.COBBLESTONE, 16));
+                    cobble[0] = 16;
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the course"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    BlockPos goal = origin[0].add(12, 0, 0);
+                    if (player.getBlockPos().getSquaredDistance(goal) <= 1 && player.isOnGround()) return;
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    if (!activity.phase().equals("ACTIVE")) f.runtime.nativeRouteTo(f.source, f.id, goal);
+                    context.assertTrue(false, "On the way: " + player.getBlockPos().toShortString() + " " + activity);
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(world.getBlockState(origin[0].add(4, -1, 0)).isOf(Blocks.COBBLESTONE)
+                            && world.getBlockState(origin[0].add(5, -1, 0)).isOf(Blocks.COBBLESTONE), "The gap bridged with its own blocks");
+                    context.assertTrue(world.getBlockState(origin[0].add(9, 0, 0)).isAir() && world.getBlockState(origin[0].add(9, 1, 0)).isAir(),
+                            "A way dug through the wall");
+                    // Two spent on the bridge; the two stones dug from the wall drop cobblestone, picked up on the way through.
+                    int left = f.player().getInventory().count(Items.COBBLESTONE);
+                    context.assertTrue(left >= cobble[0] - 2 && left <= cobble[0], "Two blocks spent, none conjured: " + left);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A break longer than one paid slice, at real time (F-11c): obsidian takes 188 ticks with a diamond pickaxe, 9.4
      * seconds at 20 ticks a second. The test server runs as fast as its ticks allow, so the fixture holds it to 20 a
      * second while it waits, as a live server runs. Before renewal the five-second slice lapsed partway, the skill
