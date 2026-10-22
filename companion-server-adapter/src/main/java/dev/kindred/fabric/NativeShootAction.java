@@ -67,9 +67,11 @@ final class NativeShootAction extends NativeRecordedAction {
         return entity != null && entity.isAlive() && !entity.isRemoved() ? entity : null;
     }
 
-    /** Where on the target to aim: a crystal's middle, the dragon's body. */
+    /** Where on the target to aim: a crystal's middle, the perched dragon's head, the flying dragon's body. */
     private static Vec3d aimPoint(Entity target) {
         if (target instanceof EnderDragonEntity dragon) {
+            var head = NativeDragonAction.part(dragon, "head");
+            if (head != null && NativeDragonAction.perched(dragon)) return head.getBoundingBox().getCenter();
             for (var part : dragon.getBodyParts()) if ("body".equals(part.name)) return part.getBoundingBox().getCenter();
         }
         return target.getBoundingBox().getCenter();

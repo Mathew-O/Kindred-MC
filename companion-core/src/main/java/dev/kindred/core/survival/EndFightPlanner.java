@@ -61,8 +61,10 @@ public final class EndFightPlanner {
         }
         if (s.dragonKilled() || s.exitOpen() && !s.dragonAlive()) return Stage.EXIT;
         if (!s.onIsland()) return Stage.REACH_ISLAND;
-        // The crystals heal the dragon: they come first while there is a way to break them.
-        if (s.crystals() > 0 && (s.bow() && s.arrows() > 0 || s.caged() > 0 && s.blocks() >= 16)) return Stage.CRYSTALS;
+        // The crystals heal the dragon: they come first while there is a way to break one. One it has given up on for
+        // now (no clear shot, its arrows missing) does not hold the fight up: the dragon meanwhile (staged dragon run 3
+        // waited forty seconds by the last crystal it had given up on, and the dragon's breath found it there).
+        if (s.shootable() > 0 && s.bow() && s.arrows() > 0 || s.caged() > 0 && s.blocks() >= 16) return Stage.CRYSTALS;
         return Stage.DRAGON;
     }
 

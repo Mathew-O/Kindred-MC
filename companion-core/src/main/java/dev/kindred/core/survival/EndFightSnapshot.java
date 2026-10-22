@@ -13,8 +13,9 @@ package dev.kindred.core.survival;
  * @param portalOpen       the End portal's own blocks are there: the ring is full
  * @param onIsland         standing on the main island's end stone, within reach of the fight
  * @param crystals         End crystals still alive on their pillars, of those it has seen
- * @param shootable        of those, ones it can hit with an arrow from where it can stand now or from a place it knows
- * @param caged            of those, ones inside their iron bars
+ * @param shootable        of those, ones out of their bars it has not given up on for now (no clear shot found, or its
+ *                         arrows missing)
+ * @param caged            of those, ones inside their iron bars it has not given up on
  * @param dragonAlive      the dragon is alive (or not yet seen dead)
  * @param dragonPerched    the dragon sits on the exit portal's pillar, its head low enough to strike
  * @param inBreath         the player stands in or by the dragon's breath

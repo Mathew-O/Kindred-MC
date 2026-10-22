@@ -56,7 +56,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_step_in" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("move"), Set.of(),
                     Duration.ofSeconds(6), Duration.ofSeconds(2), 0);
-            case "native_dragon" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot"), Set.of(), Set.of(),
+            case "native_dragon" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
                     Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
             case "native_shoot" -> new SkillDescriptor(id, Set.of("slot", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);

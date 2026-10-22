@@ -57,6 +57,10 @@ class EndFightPlannerTest {
         // Only caged ones left: open them; none left: the dragon.
         assertEquals(List.of(Action.OPEN_CAGE, Action.SEEK_CRYSTALS), actions(new Builder().end().island().crystals(2, 0, 2).build()));
         assertEquals(Stage.DRAGON, EndFightPlanner.stage(new Builder().end().island().crystals(0, 0, 0).build()));
+        // One left that it has given up on for now: the dragon meanwhile, not a wait by the crystal.
+        var givenUp = new Builder().end().island().crystals(1, 0, 0).build();
+        assertEquals(Stage.DRAGON, EndFightPlanner.stage(givenUp));
+        assertEquals(List.of(Action.SHOOT_DRAGON, Action.HOLD_GROUND), actions(givenUp));
         // Without a bow or blocks there is no way to break them: on to the dragon all the same.
         var bare = new Builder().end().island().noBow();
         bare.blocks = 4;

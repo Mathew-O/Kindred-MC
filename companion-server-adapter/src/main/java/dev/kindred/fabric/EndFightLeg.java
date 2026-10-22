@@ -7,9 +7,11 @@ import dev.kindred.core.survival.EndFightSnapshot;
 import dev.kindred.core.survival.PortalRunSnapshot;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.EndPortalFrameBlock;
+import net.minecraft.entity.AreaEffectCloudEntity;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.item.Items;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -47,8 +49,10 @@ final class EndFightLeg {
     /** Arrows loosed at each crystal, the spot it shoots each from, spots that would not do, crystals it gave up on. */
     private final Map<UUID, Integer> shotsAt = new HashMap<>();
     private final Map<UUID, BlockPos> stands = new HashMap<>();
-    private final Set<Long> badStands = new HashSet<>();
-    private final Set<UUID> givenUp = new HashSet<>();
+    private final Map<UUID, Set<Long>> badStands = new HashMap<>();
+    /** Crystals given up on, until when: a while later it tries each again, from wherever it then is. */
+    private final Map<UUID, Long> givenUp = new HashMap<>();
+    static final long GIVE_UP_TICKS = 1200;
     /** Caged crystals whose bars on its side it has broken, and the foot of the pillar it built to reach them. */
     private final Set<UUID> opened = new HashSet<>();
     private BlockPos towerBase;
@@ -117,8 +121,8 @@ final class EndFightLeg {
                     false, 0, 0, 0, true, false, false, false, bow, arrows, blocks, p.swordTier(), player.getHealth());
         }
         var crystals = crystals(world);
-        int caged = (int) crystals.stream().filter(c -> caged(world, c)).count();
-        int shootable = (int) crystals.stream().filter(c -> !caged(world, c) && !givenUp.contains(c.getUuid())).count();
+        int caged = (int) crystals.stream().filter(c -> caged(player, c) && !givenUp(world, c.getUuid())).count();
+        int shootable = (int) crystals.stream().filter(c -> !caged(player, c) && !givenUp(world, c.getUuid())).count();
         EnderDragonEntity dragon = dragon(world);
         if (dragon != null) dragonSeen = true;
         boolean exit = exitPortal(world).isPresent();
@@ -147,11 +151,44 @@ final class EndFightLeg {
                 crystal -> crystal.isAlive() && Math.hypot(crystal.getX(), crystal.getZ()) > 12);
     }
 
-    /** Iron bars about the crystal: its cage, while any stands on the side the player last opened it from or any side. */
-    private boolean caged(ServerWorld world, EndCrystalEntity crystal) {
-        if (opened.contains(crystal.getUuid())) return false;
-        return !bars(world, crystal).isEmpty();
+    private void giveUp(ServerWorld world, UUID crystal) {
+        givenUp.put(crystal, world.getTime() + GIVE_UP_TICKS);
     }
+
+    /** Given up on for now; once the while is over, its count of arrows and its spot start again. */
+    private boolean givenUp(ServerWorld world, UUID crystal) {
+        Long until = givenUp.get(crystal);
+        if (until == null) return false;
+        if (world.getTime() < until) return true;
+        givenUp.remove(crystal);
+        shotsAt.remove(crystal);
+        stands.remove(crystal);
+        badStands.remove(crystal);
+        return false;
+    }
+
+    /** Iron bars about the crystal: its cage, while any stands on the side the player last opened it from or any side. */
+    private boolean caged(ServerPlayerEntity player, EndCrystalEntity crystal) {
+        UUID id = crystal.getUuid();
+        if (opened.contains(id)) return false;
+        var world = player.getServerWorld();
+        if (bars(world, crystal).isEmpty()) return false;
+        // Bars that leave a clear arc from somewhere on the island (broken on one side, by it or anyone, before a
+        // restart or since) are no cage: looked at again every so often, not every tick.
+        long now = world.getTime();
+        if (cageLooked.getOrDefault(id, Long.MIN_VALUE) <= now) {
+            cageLooked.put(id, now + CAGE_LOOK_TICKS);
+            if (standFor(player, crystal).isPresent()) {
+                opened.add(id);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** When each caged crystal is next looked at for a clear arc through its bars. */
+    private final Map<UUID, Long> cageLooked = new HashMap<>();
+    static final long CAGE_LOOK_TICKS = 600;
 
     private static List<BlockPos> bars(ServerWorld world, EndCrystalEntity crystal) {
         var bars = new ArrayList<BlockPos>();
@@ -194,8 +231,23 @@ final class EndFightLeg {
         var player = body.entity();
         var s = snapshot(player, p);
         stage = EndFightPlanner.stage(s);
+        // High up with no tower remembered (the server restarted while it was up there): its own pillar found again.
+        if (s.inEnd() && !s.inBreath() && towerBase == null && caging == null && player.isOnGround() && aloft(player)) {
+            towerBase = findTower(player).orElse(null);
+            if (towerBase != null && !onTower(player)) {
+                BlockPos top = new BlockPos(towerBase.getX(), player.getBlockY(), towerBase.getZ());
+                progress = "Dragon: " + label(stage) + ": up high - back onto its own pillar";
+                return Optional.of(PortalRunCampaign.go(top, 0.3, true, "Back onto its own pillar"));
+            }
+        }
         // Up its own pillar by a cage: the bars, then down again, before anything that walks (staged dragon run 2, a
         // block off the pillar's middle, was about to walk off it twenty blocks up).
+        // Its pillar is gone under it (it is down, or the column was another's): done with it.
+        if (towerBase != null && onTower(player) && !placed(player.getServerWorld().getBlockState(
+                new BlockPos(towerBase.getX(), player.getBlockY() - 1, towerBase.getZ())))) {
+            towerBase = null;
+            caging = null;
+        }
         if (s.inEnd() && !s.inBreath() && onTower(player)) {
             Optional<PortalRunCampaign.Task> tower = caging != null ? openCage(body) : Optional.empty();
             if (tower.isEmpty()) tower = Optional.of(down(player));
@@ -204,13 +256,20 @@ final class EndFightLeg {
         }
         for (var step : EndFightPlanner.plan(s)) {
             Optional<PortalRunCampaign.Task> task = realize(step, s, body, policy);
-            if (task.isPresent()) {
+            if (task.isPresent() && !campaign.setAside(task.get())) {
                 progress = "Dragon: " + label(stage) + ": " + step.why() + " - " + task.get().label();
                 return task;
             }
         }
-        progress = stage == EndFightPlanner.Stage.DONE ? "Dragon: beaten" : "Dragon: " + label(stage) + ": waiting for a feasible step";
-        return Optional.empty();
+        if (stage == EndFightPlanner.Stage.DONE) {
+            progress = "Dragon: beaten";
+            return Optional.empty();
+        }
+        // In the End nothing is ever left to the campaign's own fallbacks (an island's night pit, a ledge to jump off):
+        // a moment's wait where it stands, and the fight looked at again (staged dragon run 5 stood idle for seconds
+        // at a time with the dragon breathing nearby).
+        progress = "Dragon: " + label(stage) + ": nothing feasible this moment - Wait";
+        return s.inEnd() ? Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Wait a moment")) : Optional.empty();
     }
 
     static String label(EndFightPlanner.Stage stage) {
@@ -297,8 +356,8 @@ final class EndFightLeg {
     }
 
     /** A stand it has shot from enough, or one its walk there failed to reach (staged dragon run 2 tried two for a minute). */
-    private boolean unusable(BlockPos stand) {
-        return badStands.contains(stand.asLong()) || campaign.unreachable(stand) || campaign.blocked(stand);
+    private boolean unusable(UUID crystal, BlockPos stand) {
+        return badStands.getOrDefault(crystal, Set.of()).contains(stand.asLong()) || campaign.unreachable(stand) || campaign.blocked(stand);
     }
 
     /** Not this near the exit portal's pillar, where the dragon lands and breathes. */
@@ -318,7 +377,7 @@ final class EndFightLeg {
                 double angle = Math.toRadians(a * 15);
                 int x = (int) Math.floor(crystal.getX() + Math.cos(angle) * range), z = (int) Math.floor(crystal.getZ() + Math.sin(angle) * range);
                 var top = islandTop(world, x, z);
-                if (top.isEmpty() || unusable(top.get()) || Math.hypot(x, z) > 80 || Math.hypot(x, z) < PERCH_CLEAR) continue;
+                if (top.isEmpty() || unusable(crystal.getUuid(), top.get()) || Math.hypot(x, z) > 80 || Math.hypot(x, z) < PERCH_CLEAR) continue;
                 // Not by the island's edge, where a charging dragon knocks the player into the void.
                 if (!islandTop(world, x + 4, z).isPresent() && !islandTop(world, x - 4, z).isPresent()) continue;
                 Vec3d feet = Vec3d.ofBottomCenter(top.get());
@@ -340,7 +399,7 @@ final class EndFightLeg {
         var world = player.getServerWorld();
         // The crystal it set out for first, until it is down or given up: the nearest changes on the walk between two
         // (staged dragon run 2 turned back and forth between two pillars for a minute).
-        var targets = crystals(world).stream().filter(c -> !caged(world, c) && !givenUp.contains(c.getUuid()))
+        var targets = crystals(world).stream().filter(c -> !caged(player, c) && !givenUp(world, c.getUuid()))
                 .sorted(java.util.Comparator.<EndCrystalEntity>comparingInt(c -> c.getUuid().equals(target) ? 0 : 1)
                         .thenComparingDouble(player::squaredDistanceTo)).toList();
         for (EndCrystalEntity crystal : targets) {
@@ -352,10 +411,10 @@ final class EndFightLeg {
             boolean here = player.isOnGround() && away >= NEAREST_SHOT && away <= FARTHEST_SHOT
                     && clearShot(world, player.getPos(), crystal.getBoundingBox().getCenter());
             BlockPos stand = stands.get(id);
-            if (!here && (stand == null || unusable(stand))) {
+            if (!here && (stand == null || unusable(id, stand))) {
                 stand = standFor(player, crystal).orElse(null);
                 if (stand == null) {
-                    givenUp.add(id);
+                    giveUp(world, id);
                     KindredMod.LOGGER.info("{} finds no spot with a clear shot at the crystal at {}", player.getName().getString(), crystal.getBlockPos().toShortString());
                     continue;
                 }
@@ -363,8 +422,8 @@ final class EndFightLeg {
             }
             if (here || stand != null && player.getBlockPos().isWithinDistance(stand, 1.5) && player.isOnGround()) {
                 int shots = shotsAt.merge(id, 1, Integer::sum);
-                if (shots % SHOTS_PER_STAND == 0 && stand != null) badStands.add(stand.asLong());
-                if (shots >= SHOTS_PER_CRYSTAL) givenUp.add(id);
+                if (shots % SHOTS_PER_STAND == 0 && stand != null) badStands.computeIfAbsent(id, k -> new HashSet<>()).add(stand.asLong());
+                if (shots >= SHOTS_PER_CRYSTAL) giveUp(world, id);
                 return Optional.of(new PortalRunCampaign.Task("native_shoot", Map.of("slot", String.valueOf(bow), "target", id.toString()),
                         "Shoot the crystal on the pillar at " + crystal.getBlockPos().toShortString()));
             }
@@ -381,7 +440,7 @@ final class EndFightLeg {
     private Optional<PortalRunCampaign.Task> openCage(NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
-        var cages = crystals(world).stream().filter(c -> caged(world, c) && !givenUp.contains(c.getUuid()))
+        var cages = crystals(world).stream().filter(c -> caged(player, c) && !givenUp(world, c.getUuid()))
                 .sorted(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).toList();
         // Coming down from a cage already opened: a block at a time, down to the ground it started from.
         if (caging == null && onTower(player)) return Optional.of(down(player));
@@ -395,14 +454,14 @@ final class EndFightLeg {
         if (towerBase == null || towerBase.getSquaredDistance(center.getX(), towerBase.getY(), center.getZ()) > 6 * 6) {
             towerBase = towerFoot(world, player, crystal).orElse(null);
             if (towerBase == null) {
-                givenUp.add(caging);
+                giveUp(world, caging);
                 caging = null;
                 return Optional.empty();
             }
         }
         boolean atFoot = player.getBlockY() == towerBase.getY() && Math.hypot(player.getX() - (towerBase.getX() + 0.5), player.getZ() - (towerBase.getZ() + 0.5)) < 0.6;
         if (!atFoot && !onTower(player)) {
-            if (player.getBlockY() > towerBase.getY() + 1) return Optional.empty(); // On some other height: not from here.
+            if (aloft(player)) return Optional.empty(); // Up on some other height: not from here.
             return Optional.of(PortalRunCampaign.go(towerBase, 0.4, true, "To the foot of the caged crystal's pillar"));
         }
         // Up to where the bars are in reach, a block at a time, on the pillar's own column.
@@ -424,13 +483,50 @@ final class EndFightLeg {
                 .min(java.util.Comparator.comparingDouble(b -> eye.squaredDistanceTo(Vec3d.ofCenter(b))));
         if (near.isPresent()) {
             BlockPos bar = near.get();
+            // Not picked up: going after a bar's drop walks the player off its own pillar (staged dragon run 3).
             return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", String.valueOf(bar.getX()), "y", String.valueOf(bar.getY()),
-                    "z", String.valueOf(bar.getZ())), "Break the cage's bars at " + bar.toShortString()));
+                    "z", String.valueOf(bar.getZ()), "collect", "false"), "Break the cage's bars at " + bar.toShortString()));
         }
         opened.add(caging);
         KindredMod.LOGGER.info("{} opened the cage of the crystal at {}", player.getName().getString(), center.toShortString());
         caging = null;
         return Optional.of(down(player));
+    }
+
+    /** No end stone within a few blocks underfoot: on a pillar's top, or a tower of its own. */
+    private static boolean aloft(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        for (int dy = 1; dy <= 4; dy++) if (world.getBlockState(player.getBlockPos().down(dy)).isOf(Blocks.END_STONE)) return false;
+        return true;
+    }
+
+    /**
+     * A tower of its own beside where it stands, its top level with the player's feet: a column of placed blocks, at
+     * least three high, down to the island's end stone. Its foot is where the first of them was put.
+     */
+    private static Optional<BlockPos> findTower(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
+            BlockPos at = feet.add(dx, -1, dz);
+            int height = 0;
+            while (height < 64 && placed(world.getBlockState(at.down(height)))) height++;
+            if (height < 3 || !world.getBlockState(at.down(height)).isOf(Blocks.END_STONE)) continue;
+            double distance = Math.hypot(dx, dz);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = at.down(height - 1);
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
+    /** A block of the kinds it pillars with, not the island's own end stone. */
+    private static boolean placed(net.minecraft.block.BlockState state) {
+        return state.isOf(Blocks.COBBLESTONE) || state.isOf(Blocks.COBBLED_DEEPSLATE) || state.isOf(Blocks.NETHERRACK)
+                || state.isOf(Blocks.DIRT) || state.isOf(Blocks.STONE);
     }
 
     /** On its own pillar by a cage, above the ground it started from: within a block or so of the column's middle. */
@@ -474,12 +570,63 @@ final class EndFightLeg {
         return Optional.empty();
     }
 
+    /** The dragon's breath lying on the island within reach of the player's walks. */
+    private static List<AreaEffectCloudEntity> clouds(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(AreaEffectCloudEntity.class, player.getBoundingBox().expand(48, 8, 48),
+                cloud -> cloud.isAlive() && cloud.getParticleType().getType() == ParticleTypes.DRAGON_BREATH);
+    }
+
+    /**
+     * A walk straight from the player to {@code spot} keeps a block clear of every cloud of breath, the one it may stand
+     * in now aside, which the spot itself must be well out of.
+     */
+    private static boolean clearOfBreath(ServerPlayerEntity player, BlockPos spot, List<AreaEffectCloudEntity> clouds) {
+        double ax = player.getX(), az = player.getZ(), bx = spot.getX() + 0.5, bz = spot.getZ() + 0.5;
+        for (var cloud : clouds) {
+            double margin = cloud.getRadius() + 1.5;
+            if (Math.hypot(bx - cloud.getX(), bz - cloud.getZ()) < margin + 1) return false;
+            if (Math.hypot(ax - cloud.getX(), az - cloud.getZ()) < margin) continue; // In it now: only out of it counts.
+            // Nearest approach of the walk to the cloud's middle.
+            double dx = bx - ax, dz = bz - az, length = dx * dx + dz * dz;
+            double t = length == 0 ? 0 : Math.clamp(((cloud.getX() - ax) * dx + (cloud.getZ() - az) * dz) / length, 0, 1);
+            if (Math.hypot(ax + t * dx - cloud.getX(), az + t * dz - cloud.getZ()) < margin) return false;
+        }
+        return true;
+    }
+
+    /**
+     * The nearest spot on the island's end stone in the ring {@code inner}..{@code outer} blocks out from the exit
+     * portal's pillar whose walk there keeps out of the dragon's breath; empty when none.
+     */
+    private Optional<BlockPos> ringSpot(ServerPlayerEntity player, int inner, int outer) {
+        var world = player.getServerWorld();
+        var clouds = clouds(player);
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int r = inner; r <= outer; r += 3) {
+            for (int a = 0; a < 24; a++) {
+                double angle = Math.toRadians(a * 15);
+                var top = islandTop(world, (int) Math.floor(Math.cos(angle) * r), (int) Math.floor(Math.sin(angle) * r));
+                if (top.isEmpty() || campaign.unreachable(top.get()) || campaign.blocked(top.get()) || !clearOfBreath(player, top.get(), clouds)) continue;
+                // Not by the island's edge, where a charging dragon knocks the player into the void.
+                if (islandTop(world, top.get().getX() + 4, top.get().getZ()).isEmpty() && islandTop(world, top.get().getX() - 4, top.get().getZ()).isEmpty()) continue;
+                double distance = Math.hypot(top.get().getX() + 0.5 - player.getX(), top.get().getZ() + 0.5 - player.getZ());
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = top.get();
+                }
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
     /** How far out from the exit portal's pillar the player waits: clear of the perch, where the dragon lands and breathes. */
     static final int HOLD_OUT = 18, REST_OUT = 28;
 
     /**
      * Hurt in the End: out of the dragon's breath, then out from the exit portal's pillar where the dragon lands and
-     * breathes on whoever is near, and there rest (staged dragon run 1 rested beside the pillar and was breathed on).
+     * breathes on whoever is near, and there rest (staged dragon run 1 rested beside the pillar and was breathed on;
+     * run 3, walking out to rest, walked back through the cloud it had just left).
      */
     Optional<PortalRunCampaign.Task> rest(NativePlayerBody body) {
         var out = leaveBreath(body);
@@ -487,11 +634,8 @@ final class EndFightLeg {
         var player = body.entity();
         double d = Math.hypot(player.getX(), player.getZ());
         if (d < REST_OUT - 4) {
-            double ux = d < 1 ? 0 : player.getX() / d, uz = d < 1 ? 1 : player.getZ() / d;
-            for (int r = REST_OUT; r <= REST_OUT + 16; r += 4) {
-                var spot = islandTop(player.getServerWorld(), (int) Math.floor(ux * r), (int) Math.floor(uz * r));
-                if (spot.isPresent()) return Optional.of(PortalRunCampaign.go(spot.get(), 2.0, true, "Away from the dragon's perch to heal"));
-            }
+            var spot = ringSpot(player, REST_OUT, REST_OUT + 16);
+            if (spot.isPresent()) return Optional.of(PortalRunCampaign.go(spot.get(), 2.0, true, "Away from the dragon's perch to heal"));
         }
         return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "2"), "Rest to heal"));
     }
@@ -500,11 +644,12 @@ final class EndFightLeg {
     private Optional<PortalRunCampaign.Task> holdGround(NativePlayerBody body) {
         var player = body.entity();
         if (player.getHealth() < EndFightPlanner.LOW_HEALTH) return rest(body);
-        var world = player.getServerWorld();
-        Optional<BlockPos> spot = Optional.empty();
-        for (int r = HOLD_OUT; r <= HOLD_OUT + 10 && spot.isEmpty(); r += 2) spot = islandTop(world, 0, r);
+        double d = Math.hypot(player.getX(), player.getZ());
+        if (d >= HOLD_OUT - 2 && d <= HOLD_OUT + 14 && !aloft(player)) {
+            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Wait for the dragon to perch"));
+        }
+        var spot = ringSpot(player, HOLD_OUT, HOLD_OUT + 9);
         if (spot.isEmpty()) return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Wait"));
-        if (player.getBlockPos().isWithinDistance(spot.get(), 6)) return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Wait for the dragon to perch"));
         return Optional.of(PortalRunCampaign.go(spot.get(), 2.0, true, "To the exit portal's pillar"));
     }
 
@@ -513,37 +658,47 @@ final class EndFightLeg {
         return leaveBreath(body);
     }
 
-    /** Out of the dragon's breath, on the island, away from the cloud. */
+    /**
+     * Out of the dragon's breath: the nearest end stone round the cloud a few blocks past its edge, not toward the perch
+     * (staged dragon run 3 fled a cloud toward the pillar) and not through another cloud.
+     */
     private Optional<PortalRunCampaign.Task> leaveBreath(NativePlayerBody body) {
         var player = body.entity();
         var cloud = NativeDragonAction.breath(player, 1.0);
         if (cloud == null) return Optional.empty();
-        double dx = player.getX() - cloud.getX(), dz = player.getZ() - cloud.getZ(), d = Math.hypot(dx, dz);
-        // In the middle of the cloud there is no "away": toward the island's middle, away from the void.
-        if (d < 1) {
-            dx = -player.getX();
-            dz = -player.getZ();
-            d = Math.max(1, Math.hypot(dx, dz));
-        }
-        double reach = cloud.getRadius() + 4, base = Math.atan2(dz / d, dx / d);
-        for (double turn : new double[] {0, Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2}) {
-            double angle = base + turn;
-            var spot = islandTop(player.getServerWorld(), (int) Math.floor(cloud.getX() + Math.cos(angle) * reach),
-                    (int) Math.floor(cloud.getZ() + Math.sin(angle) * reach));
-            if (spot.isPresent() && !player.getBlockPos().isWithinDistance(spot.get(), 2)) {
-                return Optional.of(PortalRunCampaign.go(spot.get(), 1.0, true, "Out of the dragon's breath"));
+        var world = player.getServerWorld();
+        var clouds = clouds(player);
+        BlockPos best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (double reach = cloud.getRadius() + 3; reach <= cloud.getRadius() + 9; reach += 3) {
+            for (int a = 0; a < 16; a++) {
+                double angle = Math.toRadians(a * 22.5);
+                var spot = islandTop(world, (int) Math.floor(cloud.getX() + Math.cos(angle) * reach), (int) Math.floor(cloud.getZ() + Math.sin(angle) * reach));
+                if (spot.isEmpty() || player.getBlockPos().isWithinDistance(spot.get(), 2) || !clearOfBreath(player, spot.get(), clouds)) continue;
+                double out = Math.hypot(spot.get().getX(), spot.get().getZ());
+                double score = Math.hypot(spot.get().getX() + 0.5 - player.getX(), spot.get().getZ() + 0.5 - player.getZ())
+                        + (out < PERCH_CLEAR + 4 ? 20 : 0) + (out > 70 ? 20 : 0);
+                if (score < bestScore) {
+                    bestScore = score;
+                    best = spot.get();
+                }
             }
         }
-        return Optional.empty();
+        if (best == null) return Optional.empty();
+        return Optional.of(PortalRunCampaign.go(best, 1.0, true, "Out of the dragon's breath"));
     }
 
-    /** The perched dragon: in under its head and strike it, in one continuous fight while it sits. */
+    /**
+     * The perched dragon: to a spot in front of its head, out of its wings' reach and its head's touch, and strike it
+     * there in one continuous fight while it sits (staged dragon run 5, sent in under the head, was flung back by the
+     * wings every time).
+     */
     private Optional<PortalRunCampaign.Task> strikeDragon(NativePlayerBody body) {
         var player = body.entity();
         var dragon = dragon(player.getServerWorld());
         if (dragon == null || !NativeDragonAction.perched(dragon)) return Optional.empty();
-        var head = NativeDragonAction.part(dragon, "head");
-        Vec3d at = head == null ? dragon.getPos() : head.getPos();
+        var spot = NativeDragonAction.strikeSpot(player, dragon);
+        if (spot.isEmpty()) return Optional.empty(); // Nowhere to stand: arrows at the head instead.
         int sword = -1;
         float best = 0;
         for (int slot = 0; slot < 9; slot++) {
@@ -552,13 +707,15 @@ final class EndFightLeg {
             float score = PortalRunCampaign.tier(stack.getItem()) + (stack.isIn(net.minecraft.registry.tag.ItemTags.SWORDS) ? 0.5f : 0);
             if (score > best) { best = score; sword = slot; }
         }
-        if (Math.hypot(at.x - player.getX(), at.z - player.getZ()) <= 7) {
-            var args = new HashMap<String, String>(Map.of("target", dragon.getUuid().toString()));
+        BlockPos at = spot.get();
+        // Close enough, the fight itself walks the last blocks, keeping the spot up as the head turns.
+        if (Math.hypot(at.getX() + 0.5 - player.getX(), at.getZ() + 0.5 - player.getZ()) <= 6 && Math.abs(at.getY() - player.getY()) <= 2) {
+            var args = new HashMap<String, String>(Map.of("target", dragon.getUuid().toString(),
+                    "x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ())));
             if (sword >= 0) args.put("slot", String.valueOf(sword));
             return Optional.of(new PortalRunCampaign.Task("native_dragon", Map.copyOf(args), "Strike the dragon's head"));
         }
-        BlockPos under = BlockPos.ofFloored(at.x, player.getY(), at.z);
-        return Optional.of(PortalRunCampaign.go(under, 3.0, true, "In under the perched dragon"));
+        return Optional.of(PortalRunCampaign.go(at, 1.5, true, "In front of the perched dragon's head"));
     }
 
     /** The dragon in flight, in range with a clear arc: an arrow at it. */
@@ -566,12 +723,15 @@ final class EndFightLeg {
         var player = body.entity();
         var world = player.getServerWorld();
         var dragon = dragon(world);
-        if (dragon == null || NativeDragonAction.perched(dragon) || !player.isOnGround()) return Optional.empty();
+        if (dragon == null || !player.isOnGround()) return Optional.empty();
+        // Perched, its head is shot (the full arrow's worth); in flight its body, for a quarter and one.
+        boolean perched = NativeDragonAction.perched(dragon);
         double away = player.distanceTo(dragon);
-        if (away < 12 || away > 48) return Optional.empty();
+        if (away < (perched ? 6 : 12) || away > 48) return Optional.empty();
         int bow = hotbarOf(player, Items.BOW);
         if (bow < 0) return readyInHotbar(body, Items.BOW, "Ready the bow");
-        Vec3d at = dragon.getBoundingBox().getCenter();
+        var head = NativeDragonAction.part(dragon, "head");
+        Vec3d at = perched && head != null ? head.getBoundingBox().getCenter() : dragon.getBoundingBox().getCenter();
         if (!clearShot(world, player.getPos(), at)) return Optional.empty();
         return Optional.of(new PortalRunCampaign.Task("native_shoot", Map.of("slot", String.valueOf(bow), "target", dragon.getUuid().toString()),
                 "Shoot the dragon"));

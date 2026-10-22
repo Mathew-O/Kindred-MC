@@ -12,9 +12,12 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,12 +26,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Recorded fight with the Ender Dragon while it perches on the exit portal's pillar (E-39d), as players fight it: in
- * under its head and strike the head whenever reach and the swing allow, jumping for critical hits, and out of its
- * breath the moment a cloud of it comes down by the player. One continuous action for as long as the dragon sits, at
- * most twenty seconds; it ends when the dragon takes off or dies. Its only effects on owned items are the weapon's wear
- * (or its breaking) and pickups. The head takes the full blow; with the head out of reach a while, the neck or body is
- * struck, for a quarter.
+ * Recorded fight with the Ender Dragon while it perches on the exit portal's pillar (E-39d), as players fight it: from
+ * a spot in front of its head, a little more than a block off it, where vanilla 1.21.1's wings do not fling a player
+ * away (each wing's box widened by four) and the head's own touch does not hurt (its box widened by one), striking the
+ * head whenever reach and the swing allow, jumping for critical hits, and out of its breath the moment a cloud of it
+ * comes down by the player. One continuous action for as long as the dragon sits, at most twenty seconds; it ends when
+ * the dragon takes off or dies. Its only effects on owned items are the weapon's wear (or its breaking) and pickups.
+ * The head takes the full blow; with the head out of reach a while, the neck or body is struck, for a quarter.
  */
 final class NativeDragonAction extends NativeRecordedAction {
     static final int MAX_TICKS = 400;
@@ -40,6 +44,8 @@ final class NativeDragonAction extends NativeRecordedAction {
     private final Consumer<Runnable> dispatch;
     private final UUID dragonId;
     private final int slot;
+    /** Where it strikes from, kept up as the head turns; null until one is found. */
+    private BlockPos spot;
     private ActionLease issuedLease;
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -49,9 +55,9 @@ final class NativeDragonAction extends NativeRecordedAction {
     private CompletableFuture<ActionRecord> flush;
 
     NativeDragonAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
-                       UUID dragonId, int slot) {
+                       UUID dragonId, int slot, BlockPos spot) {
         this.body = body; this.lease = lease; this.writer = writer; this.dispatch = dispatch;
-        this.dragonId = dragonId; this.slot = slot;
+        this.dragonId = dragonId; this.slot = slot; this.spot = spot;
         if (!(body.entity().getServerWorld().getEntity(dragonId) instanceof EnderDragonEntity dragon) || !dragon.isAlive()) {
             throw new IllegalArgumentException("No dragon to fight");
         }
@@ -66,6 +72,67 @@ final class NativeDragonAction extends NativeRecordedAction {
     static EnderDragonPart part(EnderDragonEntity dragon, String name) {
         for (var part : dragon.getBodyParts()) if (name.equals(part.name)) return part;
         return null;
+    }
+
+    /** Where the dragon's wings fling a player away, as vanilla reckons it each tick: each wing's box widened by four, lowered by two. */
+    static List<Box> wingZones(EnderDragonEntity dragon) {
+        var zones = new ArrayList<Box>(2);
+        for (var part : dragon.getBodyParts()) if ("wing".equals(part.name)) zones.add(part.getBoundingBox().expand(4.0, 2.0, 4.0).offset(0.0, -2.0, 0.0));
+        return zones;
+    }
+
+    /** Where touching the head hurts (its box widened by a block), with a little to spare. */
+    static Box headZone(EnderDragonPart head) {
+        return head.getBoundingBox().expand(1.3);
+    }
+
+    /** A player's box standing with its feet at {@code feet}. */
+    private static Box standing(Vec3d feet) {
+        return new Box(feet.x - 0.3, feet.y, feet.z - 0.3, feet.x + 0.3, feet.y + 1.8, feet.z + 0.3);
+    }
+
+    /** Distance from {@code from} to the nearest point of {@code box}. */
+    private static double distance(Vec3d from, Box box) {
+        double x = Math.clamp(from.x, box.minX, box.maxX), y = Math.clamp(from.y, box.minY, box.maxY), z = Math.clamp(from.z, box.minZ, box.maxZ);
+        return from.distanceTo(new Vec3d(x, y, z));
+    }
+
+    /**
+     * The spot nearest the player to strike the perched dragon's head from: ground a player stands on (never the
+     * portal), the eyes within a sword's reach of the head, out of both wing zones, and clear of the head's touch even
+     * at the top of a jump; empty when there is none.
+     */
+    static Optional<BlockPos> strikeSpot(net.minecraft.server.network.ServerPlayerEntity player, EnderDragonEntity dragon) {
+        EnderDragonPart head = part(dragon, "head");
+        if (head == null) return Optional.empty();
+        var world = player.getServerWorld();
+        var wings = wingZones(dragon);
+        Box hurt = headZone(head), headBox = head.getBoundingBox();
+        Vec3d at = headBox.getCenter();
+        int hx = (int) Math.floor(at.x), hz = (int) Math.floor(at.z), hy = (int) Math.floor(at.y);
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) for (int y = hy + 1; y >= hy - 6; y--) {
+            BlockPos feet = new BlockPos(hx + dx, y, hz + dz);
+            if (!world.isChunkLoaded(feet)) break;
+            var below = world.getBlockState(feet.down());
+            if (!world.getBlockState(feet).getCollisionShape(world, feet).isEmpty() || !world.getBlockState(feet.up()).getCollisionShape(world, feet.up()).isEmpty()) continue;
+            if (below.isOf(net.minecraft.block.Blocks.END_PORTAL) || world.getBlockState(feet).isOf(net.minecraft.block.Blocks.END_PORTAL)) break;
+            if (!below.isSideSolidFullSquare(world, feet.down(), net.minecraft.util.math.Direction.UP)) continue;
+            // The first ground from the top down in this column: judged, and nothing under it looked at.
+            Vec3d foot = Vec3d.ofBottomCenter(feet);
+            Box box = standing(foot);
+            boolean clear = !box.intersects(hurt) && !box.offset(0, 1.25, 0).intersects(hurt) && wings.stream().noneMatch(box::intersects);
+            if (clear && distance(foot.add(0, 1.62, 0), headBox) <= 2.8) {
+                double away = Math.hypot(foot.x - player.getX(), foot.z - player.getZ());
+                if (away < bestDistance) {
+                    bestDistance = away;
+                    best = feet;
+                }
+            }
+            break;
+        }
+        return Optional.ofNullable(best);
     }
 
     /** The nearest cloud of the dragon's breath within {@code reach} blocks of the player's feet, or null. */
@@ -128,18 +195,28 @@ final class NativeDragonAction extends NativeRecordedAction {
         double dx = aim.x - player.getX(), dz = aim.z - player.getZ();
         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
         boolean ready = player.getAttackCooldownProgress(0.5f) >= 0.9f;
+        Box hurt = head == null ? null : headZone(head);
+        boolean tooClose = hurt != null && player.getBoundingBox().intersects(hurt);
+        boolean flung = wingZones(dragon).stream().anyMatch(player.getBoundingBox()::intersects);
+        // The head turns as the dragon looks about: the spot is found again every second, and at once if lost.
+        if (head != null && (spot == null || ticks % 20 == 0)) spot = strikeSpot(player, dragon).orElse(spot);
         if (cloud != null) {
             // Out of the breath, along the safest heading away from the cloud's middle.
             float away = (float) Math.toDegrees(Math.atan2(-(player.getX() - cloud.getX()), player.getZ() - cloud.getZ()));
             moved = flee(navigator, away);
+        } else if (tooClose || flung) {
+            // A step back from the head (its touch hurts) or out from under a wing (it throws the player off).
+            moved = body.move(issuedLease, -0.8f, 0, false, false, yaw);
         } else if (head != null && player.canInteractWithEntity(head, 0)) {
             outOfReach = 0;
             boolean airborne = !player.isOnGround();
-            boolean jump = !airborne && player.getAttackCooldownProgress(0.5f) >= 0.5f && !player.isTouchingWater();
+            // A jump for a critical hit, only where the top of it stays clear of the head.
+            boolean room = !player.getBoundingBox().offset(0, 1.25, 0).intersects(hurt);
+            boolean jump = !airborne && room && player.getAttackCooldownProgress(0.5f) >= 0.5f && !player.isTouchingWater();
             moved = body.move(issuedLease, 0, 0, jump, false, yaw);
             boolean falling = airborne && player.getVelocity().y < 0 && player.fallDistance > 0;
-            if (moved && ready && falling) {
-                boolean critical = !player.isSprinting();
+            if (moved && ready && (falling || !room)) {
+                boolean critical = falling && !player.isSprinting();
                 if (body.strikeDragon(issuedLease, head, slot)) {
                     hits++;
                     headHits++;
@@ -147,21 +224,26 @@ final class NativeDragonAction extends NativeRecordedAction {
                 }
             }
         } else {
-            // Head out of reach: in under it; after a while, whatever part is in reach.
+            // Head out of reach: to the spot in front of it; after a while, whatever part is in reach.
             outOfReach++;
             EnderDragonPart other = null;
             if (outOfReach > HEAD_PATIENCE) {
-                for (var part : dragon.getBodyParts()) if (player.canInteractWithEntity(part, 0)) { other = part; break; }
+                for (var part : dragon.getBodyParts()) if (!"wing".equals(part.name) && player.canInteractWithEntity(part, 0)) { other = part; break; }
             }
             if (other != null && ready) {
                 moved = body.move(issuedLease, 0, 0, false, false, yaw);
                 if (moved && body.strikeDragon(issuedLease, other, slot)) hits++;
-            } else if (navigator.safeHeading(player, yaw)) {
-                boolean climb = player.isOnGround() && player.horizontalCollision;
-                moved = body.move(issuedLease, Math.hypot(dx, dz) > 0.8 ? 1.0f : 0, 0, climb, false, yaw);
+            } else if (spot != null && Math.hypot(spot.getX() + 0.5 - player.getX(), spot.getZ() + 0.5 - player.getZ()) > 0.35) {
+                double sx = spot.getX() + 0.5 - player.getX(), sz = spot.getZ() + 0.5 - player.getZ();
+                float toSpot = (float) Math.toDegrees(Math.atan2(-sx, sz));
+                boolean climb = player.isOnGround() && (player.horizontalCollision || spot.getY() > player.getY() + 0.5);
+                moved = navigator.safeHeading(player, toSpot)
+                        ? body.move(issuedLease, Math.hypot(sx, sz) > 1.0 ? 1.0f : 0.4f, 0, climb, false, toSpot)
+                        : body.move(issuedLease, 0, 0, false, false, yaw);
             } else {
                 moved = body.move(issuedLease, 0, 0, false, false, yaw);
             }
+            if (outOfReach > HEAD_PATIENCE * 3) { settle(spot == null ? "No spot to strike the head from" : "The head stayed out of reach", true); return waiting(); }
         }
         if (!moved) settle("Movement authority denied", false);
         return Step.running(Map.of("hits", String.valueOf(hits), "head", String.valueOf(headHits)), true);

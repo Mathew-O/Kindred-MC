@@ -574,6 +574,11 @@ final class PortalRunCampaign {
         return until > lastTick || from != null && from.getSquaredDistance(lastFeet) < 8 * 8;
     }
 
+    /** A task set aside for now after failing again and again: a leg offers another instead. */
+    boolean setAside(Task task) {
+        return setAside.getOrDefault(task, Long.MIN_VALUE) > lastTick;
+    }
+
     boolean blocked(BlockPos pos) {
         Long until = blockedUntil.get(pos.asLong());
         return until != null && until > lastTick;
@@ -616,6 +621,12 @@ final class PortalRunCampaign {
      * shelter, waiting for daylight and resting do not count as time stuck.
      */
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
+        // The dragon goal is won once it has seen the dragon die and is out of the End: nothing of the run is left to
+        // do (staged dragon run 6, home after the credits, started over on iron with no portal of its own about).
+        if (goal == SurvivalGoal.DRAGON && stronghold.endFight().dragonKilled() && body.entity().getWorld().getRegistryKey() != net.minecraft.world.World.END) {
+            progress = "Dragon: beaten - the game is won";
+            return Optional.empty();
+        }
         if (lastActive && tick > lastTick) stuckClock += tick - lastTick;
         Optional<Task> planned = plan(body, policy, tick);
         // New ground restarts the clock; only material progress ends a move elsewhere and the run of attempts.
@@ -935,7 +946,9 @@ final class PortalRunCampaign {
         }
         // Morning on an island: out of the night's pit first. Nothing is built or found from inside it, and the layer
         // it stands on there has the void under it (sky-island run 8 waited ten minutes in one).
-        if (!night && !groundBelow(player) && inPit(player)) {
+        // Not in the End, where the main island has the void under it too and a cage's pillar or the fight's own
+        // ground is no night shelter (staged dragon run 4 kept climbing out of the foot of a crystal's pillar).
+        if (!night && !groundBelow(player) && inPit(player) && here.getRegistryKey() != net.minecraft.world.World.END) {
             Optional<Task> out = climb(body, "Climb out of the night shelter");
             if (out.isPresent()) {
                 progress = stageLabel(stage) + ": morning - " + out.get().label();

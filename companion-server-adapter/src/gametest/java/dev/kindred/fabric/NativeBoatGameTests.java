@@ -77,9 +77,11 @@ public final class NativeBoatGameTests implements FabricGameTest {
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     var result = f.runtime.nativeLastResult(f.id);
                     if (activity.work().startsWith("Completed native_row") && "shore".equals(result.get("ended"))) return;
-                    if (!activity.phase().equals("ACTIVE") && rows[0] < 3) {
+                    // Counted only when taken, with nothing running: a request while the last row is still reserving
+                    // its slice is refused.
+                    if ((activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED")) && rows[0] < 3
+                            && f.runtime.nativeRow(f.source, f.id, origin[0].getX() + 29.5, origin[0].getZ() + 0.5, 20) == 1) {
                         rows[0]++;
-                        f.runtime.nativeRow(f.source, f.id, origin[0].getX() + 29.5, origin[0].getZ() + 0.5, 20);
                     }
                     context.assertTrue(false, "Rowing: " + f.player().getPos() + " " + activity + " " + result);
                 })

@@ -178,12 +178,13 @@ public final class NativeEndGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the ground"))
                 .createAndAdd(() -> {
-                    // A shot at a time; another after each that missed, five at most.
+                    // A shot at a time; another after each that missed, five at most. Only with nothing running (idle, or
+                    // not yet loaded before the first request), and counted only when taken: a request while the last is
+                    // still reserving its slice is refused, and counting it made two shots of one arrow.
                     if (!crystal[0].isAlive()) return;
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    if (!activity.phase().equals("ACTIVE") && shots[0] < 5) {
+                    if ((activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED")) && shots[0] < 5 && f.runtime.nativeShoot(f.source, f.id, 0, crystal[0].getUuid()) == 1) {
                         shots[0]++;
-                        context.assertTrue(f.runtime.nativeShoot(f.source, f.id, 0, crystal[0].getUuid()) == 1, "Shot requested");
                     }
                     context.assertTrue(false, "Shooting: " + shots[0] + " shots, " + activity + " " + f.runtime.nativeLastResult(f.id));
                 })
@@ -203,6 +204,50 @@ public final class NativeEndGameTests implements FabricGameTest {
                         world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE);
                     }
                     forceChunks(world, o, false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Struck while breaking a block (the dragon's hits on its armour as it broke a cage's bars, staged dragon run 2): the
+     * break stopped part way is settled as having done nothing, the armour's wear no lost item, and the player is not
+     * blocked for reconciliation.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endWear", tickLimit = 400)
+    public void wornArmourMidBreakIsNoLostItem(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos obsidian = context.getAbsolutePos(new BlockPos(5, 2, 3));
+        int[] mined = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ward"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setBlockState(obsidian, Blocks.OBSIDIAN.getDefaultState());
+                    f.player().getInventory().setStack(0, new ItemStack(Items.DIAMOND_PICKAXE));
+                    f.player().getInventory().armor.set(3, new ItemStack(Items.IRON_HELMET));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeBreak(f.source, f.id, obsidian) == 1, "A long obsidian break is requested");
+                })
+                .createAndAdd(() -> context.assertTrue(++mined[0] >= 30, "Mining for a while"))
+                .createAndAdd(() -> {
+                    // A blow on the helmet, as vanilla wears armour that takes a hit, then the break is stopped.
+                    var helmet = f.player().getInventory().armor.get(3);
+                    helmet.setDamage(helmet.getDamage() + 6);
+                    f.runtime.nativeLifecycle(f.source, "stop", f.id);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(context.getWorld().getBlockState(obsidian).isOf(Blocks.OBSIDIAN), "The unfinished break changed nothing");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_break") && record.state() != ActionRecord.State.UNCERTAIN,
+                            "The stopped break settled without ambiguity: " + record);
+                    var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
+                    context.assertTrue(status.phase() == dev.kindred.persistence.StoredNativePlayer.Phase.ESTABLISHED && status.connected(),
+                            "Still established and connected, not blocked for reconciliation: " + status);
+                    context.assertTrue(f.player().getInventory().armor.get(3).isOf(Items.IRON_HELMET), "The worn helmet is still worn");
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

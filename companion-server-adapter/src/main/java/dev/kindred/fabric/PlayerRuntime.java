@@ -1199,7 +1199,9 @@ final class PlayerRuntime {
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
             } else if (skill.equals("native_dragon")) {
                 task = new NativeDragonAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
-                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
+                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
+                        arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                                Integer.parseInt(arguments.get("z"))) : null);
             } else if (skill.equals("native_shoot")) {
                 task = new NativeShootAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -6287,14 +6289,14 @@ final class PlayerRuntime {
             if (preset == null) {
                 return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Vesp.");
             }
+            // One player of each name, as with the whole roster: a second "Kindred" would be another player with the
+            // same name (a staged run asked for one while the first was alive in the Overworld).
+            if (rosterExists(preset.name())) return reject(source, preset.name() + " is already created.");
             return createNative(source, preset.name());
         }
         int spawned = 0;
         for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
-            boolean alreadyExists = entries.values().stream()
-                    .anyMatch(e -> e.data.displayName().equalsIgnoreCase(preset.name())
-                            && e.snapshot().lifecycle() != LifecycleState.REMOVED);
-            if (!alreadyExists) {
+            if (!rosterExists(preset.name())) {
                 createNative(source, preset.name());
                 spawned++;
             }
@@ -6303,6 +6305,11 @@ final class PlayerRuntime {
             feedback(source, "All canonical players (Kindred, Sol, Vesp) are already created.");
         }
         return 1;
+    }
+
+    private boolean rosterExists(String name) {
+        return entries.values().stream().anyMatch(e -> e.data.displayName().equalsIgnoreCase(name)
+                && e.snapshot().lifecycle() != LifecycleState.REMOVED);
     }
 
     private static final class NativeBody implements BodyAdapter {
