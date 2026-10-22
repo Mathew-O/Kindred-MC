@@ -74,6 +74,14 @@ Pace: `/aiplayer mode speedrun [player]` makes a player take the quickest way of
 
 The log shows `<name> in the End: N crystals left (C caged), the dragon at H health` as the fight goes, and `<name> dragon fight: hits, on the head, critical` after each perch fight. A staged fight (an End kit and a teleport given by command, so not earned) killed the dragon and came home on seed 8675309; see [E-39d](evidence/E-39d.md). Not yet seen in play: the bed and the gathering again after a real death in the End, the pearl way in a real fight, and an earned run from the stronghold; see [E-39e](evidence/E-39e.md), [E-39f](evidence/E-39f.md) and [E-39g](evidence/E-39g.md).
 
+**Hoglins (E-07e).** Gold armour keeps piglins neutral, not hoglins: hoglins attack any player they see.
+- **With time to spare:** when a hoglin comes for a player that has a goal, the player pillars two blocks up with its own blocks, where a hoglin cannot reach it, and waits it out. It stays up while one is near and can see it, and goes back to work after a minute and a half.
+- **Kept up there:** after half a minute with the hoglin in reach below, it strikes it from its perch, where the hoglin cannot strike back.
+- **Already on the player:** a hoglin that reaches it before it can get up is fought.
+- **Without a goal:** it never starts a fight with a hoglin.
+
+Gold armour for piglins is not done yet.
+
 **Breaking a fall (E-07d).** A player falling with a water bucket in its hotbar pours water on the block it is about to land on, once the block is in reach, whenever the fall would take four health or more. It lands unhurt and scoops the water back up. This works everywhere but the Nether, where water boils away. With a bucket ready it will also jump down ledges and drops of up to forty blocks, not twelve. Keep a water bucket in its hotbar where it climbs. Native players take fall damage as any player does, and vanilla spares any player that has just joined for its first three seconds.
 
 **Building (E-08a, E-08b; in development).** `/aiplayer build hut <x y z> [quarter turns] [player]` has a native player build a hut with its north-west floor corner at that spot, turned clockwise a quarter at a time. The hut has a plank floor, cobblestone walls on upright oak logs, a doorway in the south wall, a torch inside on the north wall, and a gabled roof of oak stairs facing in over a plank ceiling. `hut-7x5x3` sets the width, depth and wall height (3 to 15, 2 to 6); the default is 5×5×3, which takes 40 oak planks, 34 cobblestone, 12 oak logs, 20 oak stairs, 5 oak slabs and a torch. The player builds only from blocks it holds and says what it is short of when it starts. It works the way a player does:

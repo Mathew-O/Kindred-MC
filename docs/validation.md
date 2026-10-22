@@ -4,6 +4,14 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-07e (hoglins left alone, in progress), on top of `4373072`.
+  - New native fixtures: `aHoglinAfterThePlayerIsLeftBelowNotFought` (its control, the rule off, never got up out of reach) and `aHoglinAlreadyOnThePlayerIsFoughtBack`, each 4 of 4 alone.
+  - Found on the way:
+    - An early version climbed with the hoglin already on it, was knocked off its pillar again and again, and died having never struck back (suite 3, 271/272). Too close to climb, it now fights.
+    - `hazardArrivalDuringActiveWorkRevokesWorkWithoutOverlappingControllers` failed once (suite 2, 270/271). The retreat had happened, but an idle wait started before the fixture checked only the latest work. The fixture now notes the retreat while it waits; 3 of 3 alone after.
+    - Suite 5 failed the kiosk fixture once more on M-05's rare start that never begins (271/272). The status line showed every gate open but the routine refresh never run, so the player's tick hook did not run. The line now also reports whether the body is ticking.
+  - `runGametest` passed 272/272 twice on the final tree (suites 7 and 8). `./gradlew build` passed: 479 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `a5f489fafb2606a622c03e48483f5de0b8acf11ef1be1e08b9e4012f8cd28101`.
 - F-25c6: a portal is gone through only on purpose, on top of `189a062`.
   - The fix for the bug found in M-05's suite 1: portal travel was allowed for the whole End goal, so a player working beside a lit portal could be carried through. It is now allowed only while the goal's step goes through a portal.
   - New native fixture: `aPlayerHeldInALitPortalIsNotTakenAcrossWhileItsStepIsNotATrip`. Its control, run by hand on the old rule, was carried into the Nether.

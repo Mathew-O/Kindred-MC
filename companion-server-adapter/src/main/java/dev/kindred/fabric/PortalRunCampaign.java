@@ -2888,6 +2888,36 @@ final class PortalRunCampaign {
             Optional<Task> wall = cover(body, creeper);
             return wall.isPresent() ? wall : Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
+        // A hoglin after it is left where it can be (E-07e): it hits as hard as an iron sword and tosses a player
+        // sideways, which threw staged run 9 into the lava at a fortress's foot. Two blocks up its own blocks the hoglin
+        // cannot reach it (vanilla's attack box grows sideways, never up, and a hoglin stands 1.4 high), and it gives up
+        // a target it cannot reach. Only with no way up is it fought. Gold armour calms piglins, not hoglins.
+        net.minecraft.entity.mob.MobEntity hoglin = hoglinAfter(player);
+        // Up out of one's reach, it stays up while a hoglin is near and sees it: hoglins wander close by rather than
+        // leave, and one came straight back for the player that climbed down beside it (the fixture, at first).
+        if (hoglin == null && treedSince >= 0 && lastTick < treedSince + TREED_GIVE_UP) hoglin = hoglinNear(player);
+        if (hoglin == null) treedSince = -1;
+        if (hoglin != null && outOfReach(player, hoglin)) {
+            if (treedSince < 0) treedSince = lastTick;
+            // Kept up there a good while with it in reach below: it is struck from up there, where it cannot strike
+            // back. The one time a hoglin is fought by choice, and with no risk.
+            if (lastTick - treedSince >= TREED_TICKS && armed(player) && player.squaredDistanceTo(hoglin) <= 3.0 * 3.0) {
+                return Optional.of(strike(player, hoglin, OUT_OF_REACH + ": strike it from above"));
+            }
+            return Optional.of(new Task("native_wait", Map.of("seconds", "2"), OUT_OF_REACH + ": wait it out"));
+        }
+        // Up only with time to get there: a hoglin already on it tosses a player off a pillar half built (it killed the
+        // fixture's player once that way, never fighting back). Then it has to be fought.
+        if (hoglin != null && player.squaredDistanceTo(hoglin) > HOGLIN_CLOSE * HOGLIN_CLOSE && player.hurtTime == 0) {
+            Optional<Task> up = outOfReach(body, hoglin);
+            if (up.isPresent()) return up;
+        }
+        if (hoglin != null) {
+            foe = hoglin.getUuid();
+            foeUntil = lastTick + 100;
+            Task strike = strike(player, hoglin, "Fight " + Registries.ENTITY_TYPE.getId(hoglin.getType()).getPath());
+            return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+        }
         // Badly hurt with a mob on foot in reach that two swings will kill: finish it. Turning away from it is
         // worse: a zombie keeps pace with a player walking off and strikes its back (the tunnel fixture's zombie
         // killed a player with an iron sword that turned to back off at five health).
@@ -2974,6 +3004,59 @@ final class PortalRunCampaign {
                         creeper -> creeper.isAlive() && (creeper.getTarget() == player || creeper.getFuseSpeed() > 0) && player.canSee(creeper)
                                 && (ignoredFoes.getOrDefault(creeper.getUuid(), Long.MIN_VALUE) < lastTick || player.squaredDistanceTo(creeper) < 5 * 5))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** The label of the steps that get a player out of a hoglin's reach (E-07e). */
+    static final String OUT_OF_REACH = "Out of the hoglin's reach";
+    /** How far above a hoglin's feet a player's feet are out of its reach: its attack box is 1.4 high and grows no higher. */
+    static final double HOGLIN_REACH_ABOVE = 2.0;
+    /** A hoglin this near has no time left for a pillar: it is fought. */
+    static final double HOGLIN_CLOSE = 4.0;
+    /** Up out of a hoglin's reach this long with it in reach below, the player strikes it from there. */
+    static final long TREED_TICKS = 600;
+    /** Up there this long with a hoglin near but not after it, the player goes on with its work. */
+    static final long TREED_GIVE_UP = 1800;
+    /** When the player got up out of a hoglin's reach, or -1. */
+    private long treedSince = -1;
+
+    /** A hoglin or a zoglin after this player and in sight, the nearest. */
+    private net.minecraft.entity.mob.MobEntity hoglinAfter(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                        mob -> (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
+                                && mob.isAlive() && mob.getTarget() == player && player.canSee(mob))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** A hoglin or a zoglin near enough to see this player and come back for it, whatever it is after now. */
+    private net.minecraft.entity.mob.MobEntity hoglinNear(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(16, 8, 16),
+                        mob -> (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
+                                && mob.isAlive() && player.canSee(mob))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** Already out of {@code hoglin}'s reach: its feet far enough below the player's. */
+    static boolean outOfReach(ServerPlayerEntity player, net.minecraft.entity.mob.MobEntity hoglin) {
+        return player.getY() - hoglin.getY() >= HOGLIN_REACH_ABOVE - 0.01;
+    }
+
+    /**
+     * Up out of {@code hoglin}'s reach and waited out there: a block of its own under its feet at the top of each
+     * jump until its feet are two above the hoglin's, then still. Empty with no head room or no block to spare.
+     */
+    private Optional<Task> outOfReach(NativePlayerBody body, net.minecraft.entity.mob.MobEntity hoglin) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        // Mid-jump between steps: the cell it is about to land in, which the step waits for.
+        BlockPos feet = player.getBlockPos();
+        for (int down = 0; down < 2 && !player.isOnGround() && passable(world, feet.down()); down++) feet = feet.down();
+        if (!passable(world, feet.up(2))) return Optional.empty();
+        var inventory = player.getInventory();
+        int slot = -1;
+        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, OUT_OF_REACH + ": ready a block"));
+        return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), OUT_OF_REACH + ": pillar up"));
     }
 
     /** Sprint a dozen blocks straight away from a creeper; beyond seven its fuse goes out. */
@@ -3564,9 +3647,15 @@ final class PortalRunCampaign {
                 && (player.getAir() < player.getMaxAir() * 2 / 3 || !running.skill().equals("native_goto"))) {
             return "In deep water; up for air first";
         }
+        // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
+        if (running != null && running.label().startsWith(OUT_OF_REACH)) {
+            var after = hoglinAfter(player);
+            return after != null && !outOfReach(player, after) && (player.hurtTime > 0 || player.squaredDistanceTo(after) <= HOGLIN_CLOSE * HOGLIN_CLOSE)
+                    ? "The hoglin is on it; fight back" : null;
+        }
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
-                || running.label().startsWith("Hold the passage")) return null;
+                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;
         // Rowing outruns what swims after it: a drowned is left behind, not fought from the seat (staged run 12's row
         // was cancelled every tick for one, and the boat drifted).
         if ("native_row".equals(running.skill()) || "native_boat".equals(running.skill())) return null;
@@ -3577,6 +3666,10 @@ final class PortalRunCampaign {
             boolean shielded = running.label().equals("Fight creeper") && player.getOffHandStack().isOf(Items.SHIELD);
             // A mob a hit has just knocked a few steps back still counts as one in reach.
             return player.getHealth() < 6 && !shielded && finishable(player, 5.0) == null ? "Badly hurt; break off the fight" : null;
+        }
+        var hoglin = hoglinAfter(player);
+        if (hoglin != null && !outOfReach(player, hoglin) && !running.label().startsWith("Fight hoglin") && !running.label().startsWith("Fight zoglin")) {
+            return "A hoglin is after it; out of its reach first";
         }
         return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;
@@ -3591,7 +3684,7 @@ final class PortalRunCampaign {
         if (task == null) return false;
         String label = task.label();
         return label.startsWith("Fight") || label.startsWith("Close in") || label.startsWith("Back off") || label.startsWith("Take cover")
-                || label.startsWith("Run from") || label.startsWith("Hold the passage");
+                || label.startsWith("Run from") || label.startsWith("Hold the passage") || label.startsWith(OUT_OF_REACH);
     }
 
     /** Goal work that outranks everything else: a creeper's escape, and digging out of a block the head is stuck in. */

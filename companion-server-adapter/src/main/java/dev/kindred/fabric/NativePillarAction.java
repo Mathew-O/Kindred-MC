@@ -54,6 +54,10 @@ final class NativePillarAction extends NativeRecordedAction {
     private String dimensionKey;
     private long setupRevision;
     private int jumpTicks = -1;
+    /** Ticks spent waiting to land before the step begins: one planned mid-jump starts as the feet touch down. */
+    private int groundWait;
+    /** Longest it waits to land before a step planned mid-jump. */
+    private static final int GROUND_WAIT = 12;
     private boolean placed;
     private Step result;
     private boolean halted, unknown;
@@ -79,6 +83,7 @@ final class NativePillarAction extends NativeRecordedAction {
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded pillar step cannot replay after cancellation/restart", true);
         if (admission == null) {
+            if (!body.entity().isOnGround() && groundWait++ < GROUND_WAIT) return Step.running(Map.of("waiting", "to land"), false);
             Step refused = prepare();
             if (refused != null) return refused;
         }

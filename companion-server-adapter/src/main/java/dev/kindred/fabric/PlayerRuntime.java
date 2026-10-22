@@ -2274,7 +2274,12 @@ final class PlayerRuntime {
                         || seq.containsStep(dev.kindred.core.tactics.ActionStep.CRITICAL_STRIKE)) {
                     // Only a strike that can land now: an out-of-reach strike fails dispatch and, being urgent, would win
                     // again every tick and starve every other task, including closing the distance.
-                    if (targetId != null && world.getEntity(targetId) instanceof net.minecraft.entity.LivingEntity living
+                    // A hoglin is never struck first, nor one that is after it from a distance: left alone it does no
+                    // harm, and its toss is dangerous (E-07e). Only one that is on the player is fought.
+                    boolean hoglinLeftAlone = targetId != null && world.getEntity(targetId) instanceof net.minecraft.entity.mob.MobEntity mob
+                            && (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
+                            && (mob.getTarget() != player || player.squaredDistanceTo(mob) > 3.0 * 3.0);
+                    if (targetId != null && !hoglinLeftAlone && world.getEntity(targetId) instanceof net.minecraft.entity.LivingEntity living
                             && player.squaredDistanceTo(living) <= 16.0 && player.canSee(living)) {
                         double need = option.outcome().primaryObjective() == dev.kindred.core.tactics.TacticalObjective.RESOLVE_IMMEDIATE_SERIOUS_HARM
                                 ? 96.0 : 90.0;
@@ -5663,7 +5668,10 @@ final class PlayerRuntime {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
         if (entry == null) return "no such player";
-        return "phase=" + (entry.nativeState == null ? "none" : entry.nativeState.phase()) + " stop=" + entry.snapshot().stopLatched()
+        var body = entry.nativeBody;
+        String ticking = body == null ? "body=none" : "bodyTicks=" + body.ticksRun() + " age=" + body.entity().age + " removed=" + body.entity().isRemoved()
+                + " listed=" + (server.getPlayerManager().getPlayer(body.entity().getUuid()) == body.entity()) + " connected=" + body.connected();
+        return ticking + " phase=" + (entry.nativeState == null ? "none" : entry.nativeState.phase()) + " stop=" + entry.snapshot().stopLatched()
                 + " runner=" + (entry.runner == null ? "none" : entry.runner.state()) + " busy=" + (entry.runner != null && runnerBusy(entry))
                 + " workPending=" + entry.nativeWorkPending + " setupPending=" + entry.nativeSetupPending + " actionPending=" + entry.nativeActionPending
                 + " activity=" + (entry.activity == null ? "none" : entry.activity.phase()) + " flushes=" + entry.activityFlush.isDone() + "/"

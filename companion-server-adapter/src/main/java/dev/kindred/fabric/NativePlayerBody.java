@@ -119,6 +119,8 @@ final class NativePlayerBody implements BodyAdapter {
     private long foodUses;
     private boolean portalTravelAuthorized = false;
     private Runnable tickHook = () -> { };
+    /** Ticks this body has run, for a status line that asks whether it is ticking at all. */
+    private long ticksRun;
     private Runnable deathHook = () -> { };
     private boolean respawning;
 
@@ -204,6 +206,8 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     void onTick(Runnable hook) { requireThread(); tickHook = Objects.requireNonNull(hook); }
+
+    long ticksRun() { return ticksRun; }
     /** Runs when the body dies, before vanilla drops its inventory, so in-flight work settles against real contents. */
     void onDeath(Runnable hook) { requireThread(); deathHook = Objects.requireNonNull(hook); }
 
@@ -1815,6 +1819,7 @@ final class NativePlayerBody implements BodyAdapter {
         requireThread();
         if (connected && connection != null && !connection.open) disconnect();
         if (arbiter != null) arbiter.tick();
+        ticksRun++;
         tickHook.run();
         if (!current(controls)
                 || ((forward != 0 || sideways != 0 || jump || sprint || rowForward || rowLeft || rowRight) && !gate.permits(controls, Intent.MOVE, null))
