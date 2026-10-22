@@ -52,6 +52,9 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_pillar" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(), Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A flight of up to twelve steps, a second or so each (F-10h).
+            case "native_stair" -> new SkillDescriptor(id, Set.of("x", "y", "z", "dirs", "slot"), Set.of(), Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
+                    Duration.ofSeconds(20), Duration.ofSeconds(5), 0);
             case "native_throw_eye" -> new SkillDescriptor(id, Set.of("slot", "yaw"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_pearl" -> new SkillDescriptor(id, Set.of("slot", "yaw", "pitch"), Set.of("x", "y", "z"), Set.of(), Set.of(),

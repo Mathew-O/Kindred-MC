@@ -1939,6 +1939,21 @@ final class NativePlayerBody implements BodyAdapter {
             afterTick();
         }
 
+        /**
+         * Moved outside its own tick (a teleport by command, a fixture repositioning it, a push from another entity's
+         * tick), the body's chunk tickets follow it at once. A world ticks an entity only where a chunk is simulated,
+         * and a body moved into a chunk its tickets do not cover was never ticked again to move them: it froze where it
+         * stood (M-05's rare idle start). A human's client re-centres them with its next movement packet.
+         */
+        @Override public void setPosition(double x, double y, double z) {
+            super.setPosition(x, y, z);
+            if (this == player && !isRemoved() && connected && getWatchedSection() != null
+                    && !getWatchedSection().equals(net.minecraft.util.math.ChunkSectionPos.from(this))
+                    && server.getPlayerManager().getPlayer(getUuid()) == this && getServerWorld().getPlayers().contains(this)) {
+                getServerWorld().getChunkManager().updatePosition(this);
+            }
+        }
+
         @Override protected int getPermissionLevel() { return 0; }
 
         @Override public void onDeath(net.minecraft.entity.damage.DamageSource damageSource) {

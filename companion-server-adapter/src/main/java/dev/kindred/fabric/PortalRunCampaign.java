@@ -380,8 +380,14 @@ final class PortalRunCampaign {
         if (task != null) stronghold.taskFinished(task, completed, tick);
         if (task != null && !completed && task.equals(lastRouteEdit) && position(task.args()) != null) {
             // A dig, bridge or pillar on a made way that did not happen (a jump capped by a ceiling, a block that would
-            // not place): not there again for a minute, so the next plan goes another way.
-            blockedUntil.merge(position(task.args()).asLong(), tick + 1200, Math::max);
+            // not place): not there again for a minute, so the next plan goes another way. A flight of stairs that set
+            // no step starts from the player's cell: its first step's cell is the one set aside.
+            BlockPos aside = position(task.args());
+            if ("native_stair".equals(task.skill())) {
+                Direction first = Direction.byName(task.args().getOrDefault("dirs", "").split(",")[0]);
+                if (first != null) aside = aside.offset(first);
+            }
+            blockedUntil.merge(aside.asLong(), tick + 1200, Math::max);
         }
         if (task != null && task.label().startsWith("Recover") && dropSite != null && completed) {
             dropSiteUntil = Math.min(dropSiteUntil, tick + 600); // One more look around, then move on.
@@ -2091,7 +2097,8 @@ final class PortalRunCampaign {
         int edit = route.firstEdit();
         if (edit < 0) return needEdit ? Optional.empty() : Optional.of(go(route.steps().getLast().to(), 0.5, true, label));
         if (edit > 0) return Optional.of(go(route.steps().get(edit - 1).to(), 0.4, false, label + ": walk on"));
-        Optional<Task> change = routeEdit(body, route.steps().getFirst(), label);
+        Optional<Task> change = route.steps().getFirst().kind() == NativeRoutePlanner.Kind.STAIR ? stairs(body, route, label)
+                : routeEdit(body, route.steps().getFirst(), label);
         lastRouteEdit = change.orElse(null);
         return change;
     }
@@ -2115,8 +2122,41 @@ final class PortalRunCampaign {
                 if (slot >= 9) yield Optional.of(swapToHotbar(body, slot, "Ready a block"));
                 yield Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up"));
             }
-            case WALK -> Optional.empty();
+            case STAIR, WALK -> Optional.empty(); // A staircase is taken as a whole flight (buildRoute).
         };
+    }
+
+    /**
+     * The route's staircase from where the player stands, as one flight (F-10h): its steps one after another, as many as
+     * the blocks in one hotbar slot cover, up to {@link NativeStairAction#MAX_FLIGHT}.
+     */
+    private Optional<Task> stairs(NativePlayerBody body, NativeRoutePlanner.Route route, String label) {
+        var inventory = body.entity().getInventory();
+        int slot = -1;
+        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        int blocks = inventory.getStack(slot).getCount();
+        var directions = new java.util.ArrayList<String>();
+        for (var step : route.steps()) {
+            if (directions.size() == NativeStairAction.MAX_FLIGHT) break;
+            BlockPos from = step.from(), to = step.to();
+            int dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
+            boolean stepUp = to.getY() == from.getY() + 1 && Math.abs(dx) + Math.abs(dz) == 1;
+            // The walk up onto ground at the top of the flight is its last step, taken in the same movement.
+            if (step.kind() == NativeRoutePlanner.Kind.WALK && stepUp && !directions.isEmpty()) {
+                directions.add(Direction.fromVector(dx, 0, dz).asString());
+                break;
+            }
+            if (step.kind() != NativeRoutePlanner.Kind.STAIR) break;
+            blocks -= step.cells().size();
+            if (blocks < 0) break;
+            directions.add(Direction.fromVector(dx, 0, dz).asString());
+        }
+        if (directions.isEmpty()) return Optional.empty();
+        BlockPos feet = route.steps().getFirst().from();
+        return Optional.of(new Task("native_stair", coords(feet, Map.of("dirs", String.join(",", directions), "slot", String.valueOf(slot))),
+                label + ": stairs up " + directions.size()));
     }
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */

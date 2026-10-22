@@ -15,7 +15,8 @@ import java.util.function.Predicate;
 
 /**
  * Routes that may change the world on the way, the way a player gets about: walking where it can, and otherwise
- * digging through what is in the way, bridging a gap with a block of its own, or pillaring up, whichever costs least.
+ * digging through what is in the way, bridging a gap with a block of its own, pillaring up, or building a staircase
+ * up as it walks, whichever costs least.
  * Walking is cheap; digging costs by how hard the block is; a placed block costs more again (it spends one, and a
  * bridge over lava or a long drop is a risk), so a route builds only where walking round is far longer. It reads only
  * loaded blocks and edits nothing itself: each step is carried out by the ordinary recorded skills, one at a time,
@@ -23,7 +24,7 @@ import java.util.function.Predicate;
  */
 final class NativeRoutePlanner {
     /** What a step needs doing before the body can stand at {@link Step#to()}. */
-    enum Kind { WALK, DIG, BRIDGE, PILLAR }
+    enum Kind { WALK, DIG, BRIDGE, PILLAR, STAIR }
 
     /** One step: where it ends, what it takes, and the cells it acts on (to clear, or the one to place). */
     record Step(BlockPos from, BlockPos to, Kind kind, List<BlockPos> cells) { }
@@ -45,6 +46,12 @@ final class NativeRoutePlanner {
     }
 
     static final double BRIDGE_COST = 6, PILLAR_COST = 7, OVER_LAVA = 14;
+    /**
+     * A step of a staircase (F-10h): a block, and a block's height and a block's way gained in one movement, so a little
+     * less than a pillar's step, which gains only the height. A filler block under it, in the open, costs a bridge's
+     * block more.
+     */
+    static final double STAIR_COST = 6.5, FILLER_COST = 5;
     /**
      * The search leans toward the target by this much (weighted A*): a route a little dearer than the cheapest, found
      * in a fraction of the positions. Unweighted, digging at about three times a block's distance flooded the search
@@ -87,7 +94,7 @@ final class NativeRoutePlanner {
                 closestH = h;
                 closest = current.pos();
             }
-            for (var edge : edges(current.pos())) {
+            for (var edge : edges(current.pos(), via.get(current.pos()))) {
                 BlockPos to = edge.step().to();
                 if (Math.abs(to.getX() - start.getX()) > maxHorizontalRadius || Math.abs(to.getZ() - start.getZ()) > maxHorizontalRadius) continue;
                 double g = current.g() + edge.cost();
@@ -103,12 +110,14 @@ final class NativeRoutePlanner {
 
     private record Edge(Step step, double cost) { }
 
-    private List<Edge> edges(BlockPos from) {
+    /** The ways on from {@code from}, which {@code into} reached (null at the start). */
+    private List<Edge> edges(BlockPos from, Step into) {
         var edges = new ArrayList<Edge>(16);
         for (var move : navigator.moves(from)) edges.add(new Edge(new Step(from, move.to(), Kind.WALK, List.of()), move.cost()));
         boolean wet = navigator.swimmable(from);
         for (Direction side : Direction.Type.HORIZONTAL) {
             BlockPos flat = from.offset(side);
+            if (allowance.blocks() > 0 && !wet) stair(from, side, into, edges);
             if (!navigator.loaded(flat) || navigator.loaded(flat) && navigator.clear(flat) && navigator.standable(flat)) continue;
             // Dig through: what blocks the body's way at this level, with ground to stand on beyond.
             if (!wet) {
@@ -140,6 +149,33 @@ final class NativeRoutePlanner {
             edges.add(new Edge(new Step(from, from.up(), Kind.PILLAR, List.of(from)), PILLAR_COST));
         }
         return edges;
+    }
+
+    /**
+     * A step of a staircase along {@code side}: a block of its own set in the open cell ahead at the feet's level, and up
+     * onto it in the same movement. The block goes against a face under, beside or ahead of it; with none, in the open,
+     * a filler block goes under it first, against the block the player stands on (placed by the step that came here,
+     * when that was a placing step).
+     */
+    private void stair(BlockPos from, Direction side, Step into, List<Edge> edges) {
+        BlockPos block = from.offset(side), to = block.up();
+        if (!navigator.loaded(block) || !navigator.loaded(to.up()) || !navigator.loaded(from.up(2))) return;
+        BlockState state = navigator.state(block);
+        if (!state.isReplaceable() || !state.getFluidState().isEmpty() || navigator.hazard(block) || !allowance.placeable().test(block)) return;
+        // Up into the cell over the block: room for the body there, and for its head on the jump.
+        if (!navigator.clear(to) || !navigator.passable(from.up(2))) return;
+        if (NativeStairAction.face(navigator.world(), block, side) != null) {
+            edges.add(new Edge(new Step(from, to, Kind.STAIR, List.of(block)), STAIR_COST + (lavaBelow(block) ? OVER_LAVA : 0)));
+            return;
+        }
+        BlockPos filler = block.down();
+        boolean footing = NativeStairAction.solid(navigator.world(), from.down())
+                || into != null && !into.cells().isEmpty() && into.cells().getLast().equals(from.down());
+        if (!footing || !navigator.loaded(filler)) return;
+        BlockState under = navigator.state(filler);
+        if (under.isReplaceable() && under.getFluidState().isEmpty() && !navigator.hazard(filler) && allowance.placeable().test(filler)) {
+            edges.add(new Edge(new Step(from, to, Kind.STAIR, List.of(filler, block)), STAIR_COST + FILLER_COST + (lavaBelow(block) ? OVER_LAVA : 0)));
+        }
     }
 
     private boolean diggable(BlockPos cell) {

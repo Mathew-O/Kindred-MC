@@ -1223,6 +1223,17 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_stair")) {
+                var directions = new java.util.ArrayList<net.minecraft.util.math.Direction>();
+                for (String name : arguments.get("dirs").split(",")) {
+                    var direction = net.minecraft.util.math.Direction.byName(name.trim());
+                    if (direction == null) throw new IllegalArgumentException("Unknown staircase direction " + name);
+                    directions.add(direction);
+                }
+                task = new NativeStairAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        directions, Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_clutch")) {
                 task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")));
@@ -1470,8 +1481,8 @@ final class PlayerRuntime {
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_bed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SLEEP
                         || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
-                        || intent == NativePlayerBody.Intent.MOVE))
+                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId)) && (intent == NativePlayerBody.Intent.PLACE
+                        || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_clutch".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BUCKET || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -4506,7 +4517,8 @@ final class PlayerRuntime {
                 if (finishedTaskId != null) {
                     teamCoordinator.completeTask(TaskId.of(finishedTaskId), entry.data.id(), entry.blocker);
                 }
-                if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId)
+                        || "native_stair".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
                     entry.cachedCraftingTablePos = null;
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);

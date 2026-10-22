@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-10h (a staircase built up as it walks, in progress), on top of `fa05d18`.
+  - New native fixtures (`NativeStairGameTests`): `aWallTenHighIsClimbedByAStaircaseInOneMovement` and `inTheOpenEachStepIsSetOnAFillerBlock`. They passed 4 of 4 and 5 of 5 alone on the final tree, the same each time: the wall in 79 ticks, never still more than a tick; the open climb in 43, never still. Each block was its own verified record, in one task.
+  - Hand control, with stairs taken out of the route planner: the wall was climbed by a pillar in 138 ticks and the open climb by a pillar and a bridge in 163, standing still up to 8 and 11 ticks at a time.
+  - Found on the way: a block placed before the jump stops the player against its side, so the block is set in the air. The flight first ended a step below the ledge, and the walk up onto it waited for another task; it is now the flight's last step. A failed flight set aside the player's own cell rather than its first step's.
+  - M-05's rare start that never begins, found and fixed. An earlier pass of this tree failed the kiosk fixture (278/279), and the status line showed the body's chunk not simulated. A native body moved outside its own tick into a chunk nothing kept simulated was never ticked again. Its tickets now follow it wherever it is set down. New fixture: `aBodyMovedOutsideItsOwnTickIsStillTickedWhereItLands`; its control, without the fix, froze exactly as the stall did. See [M-05](evidence/M-05.md).
+  - `runGametest` passed 280/280 twice on the final tree. `./gradlew build` passed: 480 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `312e6925eef402f84f8f83d2186e868a9d29795ec87792c999a87195017afd43`.
 - E-07e (a piece of gold armour for piglins, in progress), on top of `fe4fb99`.
   - New JUnit: `aPieceOfGoldArmourIsFiveIngotsAndOneCraft`.
   - New native fixtures (`NativeGoldGameTests`):
