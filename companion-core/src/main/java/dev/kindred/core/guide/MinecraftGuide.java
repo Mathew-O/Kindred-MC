@@ -32,7 +32,9 @@ public final class MinecraftGuide {
             Need.ARROWS, new Recipe(Need.ARROWS, 4, Map.of(Need.FLINT, 1, Need.STICKS, 1, Need.FEATHERS, 1), true),
             Need.STICKS, new Recipe(Need.STICKS, 4, Map.of(), false),
             Need.SHIELD, new Recipe(Need.SHIELD, 1, Map.of(), true),
-            Need.BED, new Recipe(Need.BED, 1, Map.of(Need.WOOL, 3), true)));
+            Need.BED, new Recipe(Need.BED, 1, Map.of(Need.WOOL, 3), true),
+            // A golden helmet: five ingots, and as good as an iron one, so wearing it costs no protection.
+            Need.GOLD_ARMOR, new Recipe(Need.GOLD_ARMOR, 1, Map.of(Need.GOLD, 5), true)));
 
     private static final Map<Need, String> SOURCES = new EnumMap<>(Map.ofEntries(
             Map.entry(Need.STRING, "spiders (none to two a kill; calm in daylight) and cobwebs broken with a sword"),
@@ -46,7 +48,9 @@ public final class MinecraftGuide {
             Map.entry(Need.SHIELD, "six planks and an iron ingot at a crafting table"),
             Map.entry(Need.BOW, "three string and three sticks at a crafting table"),
             Map.entry(Need.WOOL, "sheep: one from each kill, one to three shorn with shears"),
-            Map.entry(Need.BED, "three wool of one colour and three planks at a crafting table; used, it sets where the player wakes after a death (in the Nether and the End it explodes)")));
+            Map.entry(Need.BED, "three wool of one colour and three planks at a crafting table; used, it sets where the player wakes after a death (in the Nether and the End it explodes)"),
+            Map.entry(Need.GOLD_ARMOR, "five gold ingots make a helmet, as good as iron's; one piece of gold worn keeps piglins from attacking (gold does not calm hoglins)"),
+            Map.entry(Need.GOLD, "nether gold ore mined with any pickaxe (two to six nuggets, nine to an ingot); gold ore mined with an iron pickaxe and smelted")));
 
     private static final Map<Objective, List<Requirement>> REQUIREMENTS = new EnumMap<>(Map.of(
             Objective.NETHER_TRIP, List.of(

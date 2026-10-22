@@ -45,7 +45,9 @@ final class WorldKnowledge {
         /** An End portal frame. */
         END_PORTAL_FRAME,
         /** A cobweb (mineshafts, strongholds): string, broken with a sword. */
-        COBWEB
+        COBWEB,
+        /** Nether gold ore: gold nuggets, mined with any pickaxe (E-07e). */
+        NETHER_GOLD_ORE
     }
 
     static final int HORIZONTAL_RADIUS = 32;
@@ -83,6 +85,7 @@ final class WorldKnowledge {
         if (state.isOf(Blocks.STONE_BRICKS) || state.isOf(Blocks.MOSSY_STONE_BRICKS) || state.isOf(Blocks.CRACKED_STONE_BRICKS)) return Kind.STONE_BRICK;
         if (state.isOf(Blocks.END_PORTAL_FRAME)) return Kind.END_PORTAL_FRAME;
         if (state.isOf(Blocks.COBWEB)) return Kind.COBWEB;
+        if (state.isOf(Blocks.NETHER_GOLD_ORE)) return Kind.NETHER_GOLD_ORE;
         var fluid = state.getFluidState();
         if (fluid.isStill() && fluid.isIn(FluidTags.WATER) && state.isOf(Blocks.WATER)) return Kind.WATER;
         if (fluid.isStill() && fluid.isIn(FluidTags.LAVA)) return Kind.LAVA;
@@ -92,7 +95,7 @@ final class WorldKnowledge {
     private static boolean needsSight(Kind kind) {
         return kind == Kind.COAL_ORE || kind == Kind.IRON_ORE || kind == Kind.DIAMOND_ORE || kind == Kind.WATER || kind == Kind.LAVA
                 || kind == Kind.CAVE || kind == Kind.SPAWNER || kind == Kind.STONE_BRICK || kind == Kind.END_PORTAL_FRAME
-                || kind == Kind.NETHER_BRICK || kind == Kind.COBWEB;
+                || kind == Kind.NETHER_BRICK || kind == Kind.COBWEB || kind == Kind.NETHER_GOLD_ORE;
     }
 
     /**

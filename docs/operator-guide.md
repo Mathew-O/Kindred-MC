@@ -80,7 +80,13 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 - **Already on the player:** a hoglin that reaches it before it can get up is fought.
 - **Without a goal:** it never starts a fight with a hoglin.
 
-Gold armour for piglins is not done yet.
+**Gold for piglins (E-07e).** One piece of gold armour worn keeps piglins neutral.
+- **What it makes:** a golden helmet, five gold ingots, which guards as well as an iron helmet.
+- **Where the gold comes from:** nether gold ore mined with any pickaxe gives two to six nuggets a block, and nine nuggets make an ingot at its crafting table.
+- **When it gets it:** with the Nether ahead it takes the gold as the chance comes, from ore within twelve blocks. In the Nether with no gold on it goes up to 48 blocks for ore it knows of.
+- **When it wears it:** in the Nether it puts the gold on, carrying the iron piece it swapped out. Out of the Nether the better piece goes back on.
+- **Piglins nearby:** it never breaks gold ore, or any other block piglins guard, with a piglin within sixteen blocks. Vanilla angers every piglin that near, seen or not, and gold does not calm a piglin angered that way. It never strikes a piglin that is not after it.
+- **Not yet:** Overworld gold ore (raw gold to smelt) is not gathered.
 
 **Breaking a fall (E-07d).** A player falling with a water bucket in its hotbar pours water on the block it is about to land on, once the block is in reach, whenever the fall would take four health or more. It lands unhurt and scoops the water back up. This works everywhere but the Nether, where water boils away. With a bucket ready it will also jump down ledges and drops of up to forty blocks, not twelve. Keep a water bucket in its hotbar where it climbs. Native players take fall damage as any player does, and vanilla spares any player that has just joined for its first three seconds.
 

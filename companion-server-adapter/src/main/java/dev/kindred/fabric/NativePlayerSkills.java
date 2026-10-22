@@ -42,7 +42,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
             case "native_retreat" -> new SkillDescriptor(id, Set.of("direction", "blocks"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
-            case "native_equip" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of(), Set.of(),
+            case "native_equip" -> new SkillDescriptor(id, Set.of("slot"), Set.of("swap"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_mine" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(), Set.of("break"), Set.of(dev.kindred.core.EditPolicy.Kind.BREAK),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -173,7 +173,9 @@ final class NativePlayerSkills {
         int value = Integer.parseInt(arguments.get(id.equals("native_wait") ? "seconds" : "slot"));
         if (id.equals("native_wait") && value >= 1 && value <= 4) return new MovementSkills.Wait(value);
         if (id.equals("native_eat") && value >= 0 && value <= 8) return new Eat(body, lease, value);
-        if (id.equals("native_equip") && value >= 0 && value < 36) return new Equip(body, lease, value);
+        if (id.equals("native_equip") && value >= 0 && value < 36) {
+            return new Equip(body, lease, value, Boolean.parseBoolean(arguments.getOrDefault("swap", "false")));
+        }
         throw new IllegalArgumentException("Native wait needs 1..4 seconds; eat needs hotbar slot 0..8");
     }
 
@@ -206,16 +208,22 @@ final class NativePlayerSkills {
         final int slot;
         final net.minecraft.entity.EquipmentSlot target;
         final ItemStack requested;
+        /** Swapped with the piece worn there (the number-key swap), rather than put into an empty slot. */
+        final boolean swap;
+        final ItemStack worn;
         boolean attempted, uncertain;
-        Equip(NativePlayerBody body, Supplier<ActionLease> lease, int slot) {
-            this.body = body; this.lease = lease; this.slot = slot;
-            target = body.equipmentDestination(slot).orElseThrow(() -> new IllegalArgumentException("Owned armor/shield needs an eligible empty equipment slot and an empty cursor"));
+        Equip(NativePlayerBody body, Supplier<ActionLease> lease, int slot, boolean swap) {
+            this.body = body; this.lease = lease; this.slot = slot; this.swap = swap;
+            target = (swap ? body.wearDestination(slot) : body.equipmentDestination(slot)).orElseThrow(() -> new IllegalArgumentException(swap
+                    ? "A swap needs owned armour in the hotbar for a worn slot it may take off, and an empty cursor"
+                    : "Owned armor/shield needs an eligible empty equipment slot and an empty cursor"));
             requested = body.entity().getInventory().getStack(slot).copy();
+            worn = body.entity().getEquippedStack(target).copy();
         }
         boolean permits() {
             var source = body.entity().getInventory().getStack(slot);
             return !attempted && source.getCount() == requested.getCount() && ItemStack.areItemsAndComponentsEqual(source, requested)
-                    && body.equipmentDestination(slot).filter(target::equals).isPresent();
+                    && (swap ? body.wearDestination(slot) : body.equipmentDestination(slot)).filter(target::equals).isPresent();
         }
         @Override public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
             if (checkpoint.isPresent() || !permits()) return Step.blocked("Equipment source/destination changed; no transfer attempted", true);
@@ -223,13 +231,13 @@ final class NativePlayerSkills {
             ItemStack[] before = new ItemStack[inventory.size()];
             for (int i = 0; i < before.length; i++) before[i] = inventory.getStack(i).copy();
             boolean moved;
-            try { moved = body.equipOwned(lease.get(), slot); }
+            try { moved = swap ? body.wearOwned(lease.get(), slot) : body.equipOwned(lease.get(), slot); }
             catch (RuntimeException failure) { attempted = uncertain = true; return Step.blocked("Native equipment outcome uncertain; reconcile", true); }
             attempted = true;
             if (!moved) return Step.blocked("Equipment authority denied; no transfer attempted", true);
             int destination = target == net.minecraft.entity.EquipmentSlot.OFFHAND ? 40 : 36 + target.getEntitySlotId();
             for (int i = 0; i < before.length; i++) {
-                var expected = i == slot ? ItemStack.EMPTY : i == destination ? requested : before[i];
+                var expected = i == slot ? (swap ? worn : ItemStack.EMPTY) : i == destination ? requested : before[i];
                 var actual = inventory.getStack(i);
                 if (actual.getCount() != expected.getCount() || !ItemStack.areItemsAndComponentsEqual(expected, actual)) {
                     uncertain = true;

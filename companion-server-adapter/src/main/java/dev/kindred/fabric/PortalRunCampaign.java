@@ -1667,14 +1667,25 @@ final class PortalRunCampaign {
      * is skipped along with its column.
      */
     Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what) {
-        return gather(body, kind, radius, what, false);
+        return gather(body, kind, radius, what, false, p -> true);
+    }
+
+    /** As {@link #gather(NativePlayerBody, WorldKnowledge.Kind, int, String)}, only from blocks that pass {@code also}. */
+    Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, Predicate<BlockPos> also) {
+        return gather(body, kind, radius, what, false, also);
     }
 
     private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded) {
+        return gather(body, kind, radius, what, guarded, p -> true);
+    }
+
+    private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
+                                  Predicate<BlockPos> also) {
         var player = body.entity();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
         Predicate<BlockPos> usable = p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+                && also.test(p)
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
                 && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
                 && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());

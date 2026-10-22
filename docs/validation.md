@@ -4,6 +4,20 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-07e (a piece of gold armour for piglins, in progress), on top of `fe4fb99`.
+  - New JUnit: `aPieceOfGoldArmourIsFiveIngotsAndOneCraft`.
+  - New native fixtures (`NativeGoldGameTests`):
+    - `inTheNetherAPieceOfGoldIsMadeFromTheOreAndWorn` and `outOfTheNetherTheIronHelmetGoesBackOn`;
+    - `aPiglinLeavesAPlayerWearingGoldAlone`, with its control `withoutGoldAPiglinGoesForThePlayer`;
+    - `noGoldIsMinedWhileAPiglinIsNear`.
+  - Hand controls: with the calm-piglin filter off, a strike on the calm piglin was offered for 88 ticks; with the piglin rule off, gold was mined with the piglin about.
+  - Found on the way:
+    - The game-test server simulates no chunk beyond the player's own, and the framework force-loads only the Overworld's test areas. In a Nether room a piglin one chunk away froze after a few ticks, and the first gold fixture passed with it frozen. The Nether fixtures now force-load their room and count the piglin's own ticks. Real servers simulate five chunks or more around a player.
+    - A fixture that failed before taking its piglin away held the next fixture's gold back. Each room now clears leftover piglins first.
+    - In the Nether gold counted only within twelve blocks, as the piece has no gate there. One suite failed the piglin fixture that way (276/277): freed 14 blocks from the seam, the player went on with the fortress search. In the Nether with no gold on, known ore up to 48 blocks away now counts.
+    - One suite failed the kiosk fixture on M-05's rare start that never begins (276/277). The body had ticked twice and was then no longer ticked by its world. The status line now also reports the world's side; see [M-05](evidence/M-05.md).
+  - `runGametest` passed 277/277 twice on the final tree. `./gradlew build` passed: 480 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `1ff2286eeee61721eb286956af1d0049c46d939d9142885aa1bde906f7ce7189`.
 - E-07e (hoglins left alone, in progress), on top of `4373072`.
   - New native fixtures: `aHoglinAfterThePlayerIsLeftBelowNotFought` (its control, the rule off, never got up out of reach) and `aHoglinAlreadyOnThePlayerIsFoughtBack`, each 4 of 4 alone.
   - Found on the way:

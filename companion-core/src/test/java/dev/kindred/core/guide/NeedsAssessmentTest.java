@@ -71,6 +71,16 @@ class NeedsAssessmentTest {
     }
 
     @Test
+    void aPieceOfGoldArmourIsFiveIngotsAndOneCraft() {
+        var wants = List.of(new Want(Need.GOLD_ARMOR, 1, Objective.SURVIVAL, "piglins leave a player in gold alone"));
+        assertEquals(List.of(new Chunk(Need.GOLD, Kind.GATHER, 3, Objective.SURVIVAL, "for the piece of gold armour"),
+                new Chunk(Need.GOLD_ARMOR, Kind.CRAFT, 1, Objective.SURVIVAL, "piglins leave a player in gold alone")),
+                NeedsAssessment.chunks(wants, Map.of(Need.GOLD, 2)), "two ingots in hand: three to go, then the helmet");
+        assertTrue(NeedsAssessment.chunks(wants, Map.of(Need.GOLD_ARMOR, 1)).isEmpty(), "one piece is enough");
+        assertTrue(NeedsAssessment.ready(new Chunk(Need.GOLD_ARMOR, Kind.CRAFT, 1, Objective.SURVIVAL, ""), Map.of(Need.GOLD, 5)));
+    }
+
+    @Test
     void productsAreDeclaredBeforeTheirInputs() {
         for (Need need : Need.values()) {
             MinecraftGuide.recipe(need).ifPresent(recipe -> recipe.inputs().keySet().forEach(input ->

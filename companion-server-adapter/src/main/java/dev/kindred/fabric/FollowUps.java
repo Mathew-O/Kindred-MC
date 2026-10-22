@@ -89,6 +89,12 @@ final class FollowUps {
             if (need != null) held.merge(need, stack.getCount(), Integer::sum);
         }
         wool.values().stream().max(Integer::compare).ifPresent(most -> held.put(Need.WOOL, most));
+        // Gold: ingots, and nuggets nine to an ingot; a piece of gold armour, worn or carried.
+        int nuggets = inventory.count(Items.GOLD_NUGGET);
+        held.put(Need.GOLD, inventory.count(Items.GOLD_INGOT) + nuggets / 9);
+        int gold = 0;
+        for (int slot = 0; slot < inventory.size(); slot++) if (golden(inventory.getStack(slot))) gold++;
+        held.put(Need.GOLD_ARMOR, gold);
         held.put(Need.SHIELD, p.shields());
         held.put(Need.FOOD, p.edibleFood());
         return held;
@@ -100,6 +106,11 @@ final class FollowUps {
      */
     private List<Want> wants(TaskQueue queue, Set<Objective> ahead) {
         var wants = new ArrayList<>(queue.wants(ahead));
+        // A piece of gold for the Nether, so piglins leave the player alone (E-07e): taken as the chance comes, not
+        // gathered before going through (a staying-alive want has no gate), gold from the Nether's own ore.
+        if (ahead.contains(Objective.NETHER_TRIP)) {
+            wants.add(new Want(Need.GOLD_ARMOR, 1, Objective.SURVIVAL, "a piece of gold worn keeps piglins from attacking"));
+        }
         if (ahead.contains(Objective.NETHER_TRIP) && campaign.preferences().has(PlanPreferences.Habit.MORE_FOOD)) {
             wants.add(new Want(Need.FOOD, StrongholdRunPlanner.PREP_FOOD + PlanPreferences.EXTRA_FOOD, Objective.NETHER_TRIP,
                     "a habit kept in this world: more food"));
@@ -181,10 +192,29 @@ final class FollowUps {
                 case BOW -> items.add(Items.BOW);
                 case WOOL -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.WOOL).forEach(e -> items.add(e.value()));
                 case BED -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.BEDS).forEach(e -> items.add(e.value()));
+                case GOLD -> { items.add(Items.GOLD_INGOT); items.add(Items.GOLD_NUGGET); }
+                case GOLD_ARMOR -> items.addAll(GOLDEN);
                 default -> { }
             }
         }
         return items;
+    }
+
+    /** The four pieces of gold armour. */
+    /**
+     * How far it goes for gold ore: as for any need, what is at hand unless it is due; but in the Nether with no gold on,
+     * where piglins turn on it, the gold is wanted now.
+     */
+    private static int goldRadius(ServerPlayerEntity player, boolean due) {
+        boolean bare = true;
+        for (var piece : player.getArmorItems()) bare &= !golden(piece);
+        return due || bare && player.getServerWorld().getRegistryKey() == World.NETHER ? 48 : 12;
+    }
+
+    static final Set<Item> GOLDEN = Set.of(Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS);
+
+    static boolean golden(ItemStack stack) {
+        return GOLDEN.contains(stack.getItem());
     }
 
     private static boolean ashore(ServerPlayerEntity player) {
@@ -248,6 +278,17 @@ final class FollowUps {
                     if (!onTheWay && wood(player) >= keep + 2) at.add(Need.STICKS);
                 }
                 case SHIELD -> { if (!onTheWay && p.ironIngots() >= 1 && wood(player) >= 6) at.add(Need.SHIELD); }
+                // Nether gold ore close by with a pickaxe to mine it, or nuggets enough for an ingot: in any dimension.
+                // Not ore with a piglin about, which mining gold would turn on the player.
+                case GOLD -> {
+                    int near = goldRadius(player, false);
+                    boolean ore = !RoamingEdits.piglinsAbout(player)
+                            && player.getInventory().containsAny(stack -> stack.isIn(net.minecraft.registry.tag.ItemTags.PICKAXES))
+                            && campaign.knowledge().nearest(world, WorldKnowledge.Kind.NETHER_GOLD_ORE, feet,
+                            b -> b.getSquaredDistance(feet) <= near * near && world.getBlockState(b).isOf(Blocks.NETHER_GOLD_ORE)
+                                    && RoamingEdits.clearOfPiglins(world, b)).isPresent();
+                    if (ore || player.getInventory().count(Items.GOLD_NUGGET) >= 9) at.add(Need.GOLD);
+                }
                 case WATER_BUCKET -> {
                     if (!onTheWay && ashore && player.getInventory().count(Items.BUCKET) > 0 && campaign.knowledge().nearest(world, WorldKnowledge.Kind.WATER, feet,
                             b -> b.getSquaredDistance(feet) <= 16 * 16).isPresent()) at.add(Need.WATER_BUCKET);
@@ -292,6 +333,14 @@ final class FollowUps {
             case BLOCKS -> ashore ? shared(PortalRunPlanner.Action.GATHER_STONE, count, why, p, body, policy) : Optional.empty();
             case FOOD -> ashore ? shared(PortalRunPlanner.Action.HUNT, count, why, p, body, policy)
                     .or(() -> shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy)) : Optional.empty();
+            // Nuggets made up into ingots first, then the ore: any pickaxe mines it, two to six nuggets a block.
+            case GOLD -> player.getInventory().count(Items.GOLD_NUGGET) >= 9 ? craftAtTable(body, "gold_ingot_from_nuggets")
+                    : RoamingEdits.piglinsAbout(player) ? Optional.empty()
+                    : campaign.gather(body, WorldKnowledge.Kind.NETHER_GOLD_ORE, goldRadius(player, due), "nether gold ore",
+                            ore -> RoamingEdits.clearOfPiglins(player.getServerWorld(), ore));
+            // A golden helmet: as good as iron's, so worn in the Nether it costs no protection.
+            case GOLD_ARMOR -> player.getInventory().count(Items.GOLD_INGOT) >= 5 ? craftAtTable(body, "golden_helmet")
+                    : player.getInventory().count(Items.GOLD_NUGGET) >= 9 ? craftAtTable(body, "gold_ingot_from_nuggets") : Optional.empty();
             case WATER_BUCKET -> !ashore ? Optional.empty() : player.getInventory().count(Items.BUCKET) > 0
                     ? shared(PortalRunPlanner.Action.FILL_WATER, count, why, p, body, policy)
                     : p.ironIngots() >= 3 ? craftAtTable(body, "bucket") : Optional.empty();

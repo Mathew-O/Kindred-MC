@@ -5,6 +5,7 @@ import net.minecraft.block.AbstractFurnaceBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -47,6 +48,7 @@ final class RoamingEdits {
         if (state.getHardness(world, pos) < 0) return "Unbreakable block";
         if (state.hasBlockEntity() && !emptyFurnace(player, pos, state)) return "Containers and block entities are not broken autonomously";
         if (state.isOf(Blocks.SPAWNER) || state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL_FRAME)) return "Protected structure block";
+        if (state.isIn(BlockTags.GUARDED_BY_PIGLINS) && piglinsAbout(player)) return "A piglin nearby would turn on the player for it";
         BlockPos support = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
         if (pos.equals(support) && !(underfoot && landing(world, pos.down()))) return "Would remove the block the player stands on";
         boolean guarded = waterGuarded && (state.isOf(Blocks.OBSIDIAN) && waterGuards(player, pos)
@@ -56,6 +58,25 @@ final class RoamingEdits {
             if (!guarded && world.isChunkLoaded(near) && world.getFluidState(near).isIn(FluidTags.LAVA)) return "Breaking it would release lava";
         }
         return null;
+    }
+
+    /**
+     * A piglin about that breaking gold would turn on the player (E-07e). Vanilla angers every piglin within sixteen
+     * blocks of a player who breaks a block piglins guard (gold ore of any kind, gold blocks, gilded blackstone), seen
+     * or not, and gold worn does not calm a piglin angered that way.
+     */
+    static boolean piglinsAbout(ServerPlayerEntity player) {
+        return !player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.PiglinEntity.class,
+                player.getBoundingBox().expand(16.0), net.minecraft.entity.LivingEntity::isAlive).isEmpty();
+    }
+
+    /**
+     * Gold ore a player could mine with no piglin near enough to be angered: none within sixteen blocks of where it could
+     * stand to mine it, its reach (4.5) beyond the ore.
+     */
+    static boolean clearOfPiglins(net.minecraft.server.world.ServerWorld world, BlockPos ore) {
+        return world.getEntitiesByClass(net.minecraft.entity.mob.PiglinEntity.class,
+                new net.minecraft.util.math.Box(ore).expand(16.0 + 5.0), net.minecraft.entity.LivingEntity::isAlive).isEmpty();
     }
 
     /** Solid ground a step down to land on: a full top face, nothing burning or flowing about it. */

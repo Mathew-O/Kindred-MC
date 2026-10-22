@@ -482,6 +482,35 @@ final class NativePlayerBody implements BodyAdapter {
         return Optional.of(target);
     }
 
+    /**
+     * The worn armour slot a piece in hotbar slot {@code hotbarSlot} would be swapped into, as a player swaps one with
+     * the number key over the armour slot: an armour piece whose slot is already filled with one it may take off.
+     */
+    Optional<net.minecraft.entity.EquipmentSlot> wearDestination(int hotbarSlot) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || player.currentScreenHandler != player.playerScreenHandler
+                || !player.playerScreenHandler.getCursorStack().isEmpty()) return Optional.empty();
+        var stack = player.getInventory().getStack(hotbarSlot);
+        if (stack.getCount() != 1 || !(stack.getItem() instanceof net.minecraft.item.ArmorItem)) return Optional.empty();
+        var target = player.getPreferredEquipmentSlot(stack);
+        if (target.getType() != net.minecraft.entity.EquipmentSlot.Type.HUMANOID_ARMOR || player.getEquippedStack(target).isEmpty()) return Optional.empty();
+        var to = player.playerScreenHandler.getSlotIndex(player.getInventory(), 36 + target.getEntitySlotId());
+        if (to.isEmpty() || !player.playerScreenHandler.getSlot(to.getAsInt()).canTakeItems(player)
+                || !player.playerScreenHandler.getSlot(to.getAsInt()).canInsert(stack)) return Optional.empty();
+        return Optional.of(target);
+    }
+
+    /** Swaps the piece in {@code hotbarSlot} with the one worn in its slot, with vanilla's own number-key swap. */
+    boolean wearOwned(ActionLease lease, int hotbarSlot) {
+        requireThread();
+        var target = wearDestination(hotbarSlot);
+        if (target.isEmpty()) return false;
+        return execute(lease, Intent.EQUIP, null, () -> {
+            int screenSlot = player.playerScreenHandler.getSlotIndex(player.getInventory(), 36 + target.get().getEntitySlotId()).orElseThrow();
+            player.playerScreenHandler.onSlotClick(screenSlot, hotbarSlot, net.minecraft.screen.slot.SlotActionType.SWAP, player);
+        });
+    }
+
     boolean equipOwned(ActionLease lease, int inventorySlot) {
         requireThread();
         if (equipmentDestination(inventorySlot).isEmpty()) return false;

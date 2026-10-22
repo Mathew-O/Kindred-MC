@@ -21,7 +21,11 @@ public enum Need {
     FLINT("flint", 16),
     STICKS("stick", 32),
     BLOCKS("block", 128),
-    FOOD("food", 32);
+    FOOD("food", 32),
+    /** One piece of gold armour worn keeps piglins from attacking (E-07e); gold does not calm hoglins. */
+    GOLD_ARMOR("piece of gold armour", 1),
+    /** Gold ingots: nether gold ore mined with any pickaxe gives nuggets, nine to an ingot. */
+    GOLD("gold ingot", 16);
 
     private final String word;
     private final int cap;

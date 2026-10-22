@@ -2562,6 +2562,52 @@ final class PlayerRuntime {
         return new ExpeditionObservation(x, y, z, dim, timeOfDay, thundering, raining, health, maxHealth, foodCount, foodLevel, occupied, 36, hasWeapon);
     }
 
+    /**
+     * In the Nether, one piece of gold armour worn, so piglins leave the player alone (E-07e): put on, or swapped for
+     * the piece worn in its slot (a golden helmet is as good as an iron one). Out of the Nether, the better piece it
+     * carries for that slot goes back on. The piece is moved to the hotbar first for the swap, as a player does it.
+     */
+    private static java.util.Optional<NativeTaskCandidate> goldCandidate(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        boolean nether = player.getWorld().getRegistryKey() == net.minecraft.world.World.NETHER;
+        net.minecraft.entity.EquipmentSlot wornGold = null;
+        for (var slot : List.of(net.minecraft.entity.EquipmentSlot.HEAD, net.minecraft.entity.EquipmentSlot.CHEST,
+                net.minecraft.entity.EquipmentSlot.LEGS, net.minecraft.entity.EquipmentSlot.FEET)) {
+            if (FollowUps.golden(player.getEquippedStack(slot))) wornGold = slot;
+        }
+        int pick = -1;
+        if (nether && wornGold == null) {
+            for (int s = 0; s < 36 && pick < 0; s++) if (FollowUps.golden(inventory.getStack(s))) pick = s;
+        } else if (!nether && wornGold != null) {
+            // Better protection, or as good and longer lasting: a golden helmet guards as well as iron's but wears out
+            // in half the hits, which tells in the End.
+            var wornStack = player.getEquippedStack(wornGold);
+            int worn = ((net.minecraft.item.ArmorItem) wornStack.getItem()).getProtection();
+            for (int s = 0; s < 36 && pick < 0; s++) {
+                var stack = inventory.getStack(s);
+                if (stack.getItem() instanceof net.minecraft.item.ArmorItem armour && player.getPreferredEquipmentSlot(stack) == wornGold
+                        && !FollowUps.golden(stack) && (armour.getProtection() > worn || armour.getProtection() == worn
+                        && stack.getMaxDamage() - stack.getDamage() > wornStack.getMaxDamage() - wornStack.getDamage())) pick = s;
+            }
+        }
+        if (pick < 0) return java.util.Optional.empty();
+        String why = nether ? "gold_on:" : "gold_off:";
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(UUID.nameUUIDFromBytes((why + entry.data.id() + ":" + pick)
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8)), dev.kindred.core.TaskPreferences.Priority.PROJECT, 76.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.5, 0.0, 0.0, 0.0), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (body.equipmentDestination(pick).isPresent()) {
+            return java.util.Optional.of(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(pick))));
+        }
+        if (pick >= 9) {
+            int hotbar = 8;
+            for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+            return java.util.Optional.of(new NativeTaskCandidate(candidate, "native_swap", Map.of("source", String.valueOf(pick), "target", String.valueOf(hotbar))));
+        }
+        if (body.wearDestination(pick).isEmpty()) return java.util.Optional.empty();
+        return java.util.Optional.of(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(pick), "swap", "true")));
+    }
+
     private static java.util.Optional<NativeTaskCandidate> equipCandidate(Entry entry, NativePlayerBody body,
                                                                          dev.kindred.core.TaskPreferences.Priority priority, double need) {
         for (int slot = 0; slot < 36; slot++) {
@@ -2619,6 +2665,8 @@ final class PlayerRuntime {
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
             candidates.addAll(campaignCandidates(entry, body));
+            // A piece of gold on in the Nether, the better piece back on out of it (E-07e).
+            goldCandidate(entry, body).ifPresent(candidates::add);
             // Armor the goal earned is put on before the next goal step, not carried.
             equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 75.0).ifPresent(candidates::add);
             return candidates;
@@ -5670,7 +5718,13 @@ final class PlayerRuntime {
         if (entry == null) return "no such player";
         var body = entry.nativeBody;
         String ticking = body == null ? "body=none" : "bodyTicks=" + body.ticksRun() + " age=" + body.entity().age + " removed=" + body.entity().isRemoved()
-                + " listed=" + (server.getPlayerManager().getPlayer(body.entity().getUuid()) == body.entity()) + " connected=" + body.connected();
+                + " listed=" + (server.getPlayerManager().getPlayer(body.entity().getUuid()) == body.entity()) + " connected=" + body.connected()
+                // Whether the world it is in ticks it: a world ticks an entity only where its chunk is simulated.
+                + " world=" + body.entity().getServerWorld().getRegistryKey().getValue().getPath()
+                + " inWorld=" + body.entity().getServerWorld().getPlayers().contains(body.entity())
+                + " lookup=" + (body.entity().getServerWorld().getEntity(body.entity().getUuid()) == body.entity())
+                + " simulated=" + body.entity().getServerWorld().shouldTickEntity(body.entity().getBlockPos())
+                + " forced=" + body.entity().getServerWorld().getForcedChunks().contains(body.entity().getChunkPos().toLong());
         return ticking + " phase=" + (entry.nativeState == null ? "none" : entry.nativeState.phase()) + " stop=" + entry.snapshot().stopLatched()
                 + " runner=" + (entry.runner == null ? "none" : entry.runner.state()) + " busy=" + (entry.runner != null && runnerBusy(entry))
                 + " workPending=" + entry.nativeWorkPending + " setupPending=" + entry.nativeSetupPending + " actionPending=" + entry.nativeActionPending
