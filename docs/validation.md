@@ -1,9 +1,16 @@
 # AI-player development validation
 
-## Current regression — 21 October 2026
+## Current regression — 22 October 2026
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-39a to E-39d (the single player's End fight: into the End, the bow and the crystals, caged crystals, the dragon and home), all in progress, with F-25c7's queue for every task and review fixes, on `432ecdd`, `3279121` and `4faa7da`.
+  - New JUnit: `EndFightPlannerTest` (4), `BallisticsTest` (4), two `StrongholdRunPlannerTest` cases.
+  - New native fixtures: `theRingIsFilledAndTheEndEntered`, `withoutTheServersLeaveTheDragonGoalIsRefused`, `aCrystalOnItsPillarIsShotDownFromTheGround`, `wornArmourMidBreakIsNoLostItem` (no control run without the fix), `beforeItsPortalTheEndGoalTakesFeathersOnTheWay`, `aHoglinWithLavaAtThePlayersBackNeverThrowsItIn` (a control run by hand before the fix stood at the edge for 81 ticks; the fixture allows 20) and `underTheSeaWithABoatItSurfacesBeforePuttingTheBoatIn`.
+  - The crystal fixture failed twice on its own request counting (a shot asked for while the last was still reserving its slice was refused but counted; then a check for an idle activity that is not yet loaded before the first request); the boat fixture counted the same way. Both now count only requests that were taken, with nothing running.
+  - `runGametest` passed 258/258 twice on `4faa7da` (the main tree, then a clean worktree on the commit). `./gradlew build` passed: 431 JUnit results, four skipped (the opt-in live model tests).
+  - Staged dragon runs 2 to 6 on seed 8675309 (an End kit and a teleport given by command, so not earned): the island's ten crystals cleared in about three minutes, both cages opened in earlier runs, and in run 6 the dragon killed (Free the End) and the player home after the credits. Recorded in [E-39b](evidence/E-39b.md), [E-39c](evidence/E-39c.md) and [E-39d](evidence/E-39d.md).
+  - JAR SHA-256: `97d6c247daf11804eb7d7d3553970f6a3d64ae151cabf83abba3ffb0185062b7`.
 - F-25c7 (what a larger task needs, assessed ahead and queued) and F-19e (the strategist's Minecraft guide and follow-ups), both in progress, on top of `a8d8b03`.
   - New JUnit: `NeedsAssessmentTest` (4), `TaskQueueTest` (5), two `StrongholdRunPlannerTest` cases, a `StrategyAdviceTest` case, two `OpenAiCompatibleStrategistTest` cases.
   - New native fixtures: `theEndFightsBowAndArrowsAreMadeOnTheWayFromWhatItGathers` and `whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold`. The memory round trip now covers the strategist's queue too.

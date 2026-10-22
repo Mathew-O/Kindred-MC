@@ -14,6 +14,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer edits on|off               server-wide switch for AI block breaking and placing (default off)
 /aiplayer goal nether [bot]          earn a lit Nether portal from what the player owns
 /aiplayer goal end [bot]             on from a lit portal to the End portal (earns the portal first)
+/aiplayer goal dragon [bot]          on through the End portal to beat the Ender Dragon (needs dragonfight on)
+/aiplayer dragonfight on|off         server-wide leave for AI players to go into the End and fight the dragon (default off)
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
 /aiplayer skin list                  the skins on offer
@@ -53,6 +55,15 @@ The Nether goal is a local plan, not a script. Like a player it pillars up out o
 - It stops with the End portal in sight and says where in chat.
 
 The player may use portals only while this goal runs. It never enters the End. Not yet seen in play: fortresses, blazes, endermen, eyes made from what it gathered, and the portal room. See [F-25c6](evidence/F-25c6.md).
+
+**The dragon goal (E-39a–d, in development).** `/aiplayer goal dragon` plays the End goal and goes on into the End, but only once an operator has run `/aiplayer dragonfight on` (kept in `edits.properties`, off by default; without it the goal is refused). It fights the way players do:
+- It fills the portal's frame with eyes it carries, one at a time, walking round the ring for the rest, and steps in.
+- On the main island it shoots the End crystals off their pillars with its own bow and arrows, aiming on the arc an arrow really flies, from spots where the whole arc is clear, 16 to 56 blocks off, away from the edge and the dragon's perch. A crystal it cannot get a clear arc to is left for a minute and tried again.
+- A caged crystal it cannot shoot through the bars it opens: it pillars up with its own blocks beside the pillar, breaks the bars on its side, and digs its pillar back down a block at a time. After a restart it finds its own pillar again.
+- It shoots the dragon in flight when it has a clear arc, and when the dragon perches it goes to a spot in front of the head, out of the wings' reach (they fling players away) and the head's touch (it hurts), and strikes the head with jumping critical hits; with no such spot it shoots the perched head instead. It steps out of the dragon's breath at once, never toward the perch or through another cloud, and when hurt it rests away from the perch.
+- When the dragon dies it says so in chat, goes through the exit portal, and after the credits is brought back to its spawn as a player's client would ask; the goal is then won.
+
+The log shows `<name> in the End: N crystals left (C caged), the dragon at H health` as the fight goes, and `<name> dragon fight: hits, on the head, critical` after each perch fight. A staged fight (an End kit and a teleport given by command, so not earned) killed the dragon and came home on seed 8675309; see [E-39d](evidence/E-39d.md). Not yet done: dying in the End (it respawns in the Overworld without its kit, and nothing yet re-provisions it before it heads back to the portal) and an earned run from the stronghold.
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 
