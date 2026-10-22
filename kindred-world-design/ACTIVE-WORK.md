@@ -1,6 +1,11 @@
-# Isolated foundation scope
+# Paused implementation: next-agent handoff
 
-Agent: Codex. Branch: `codex/world-design-foundation`. Started: 22 October 2026.
+Agent: Codex. Handoff branch: `codex/world-design-handoff`. Date: 22 October 2026.
+
+The user abandoned the implementation attempt and requested analysis and a handoff.
+Start at [docs/world-design-implementation-handoff.md](../docs/world-design-implementation-handoff.md).
+It supersedes earlier summaries claiming that the pure system or persistence is complete.
+Source has been preserved for review; no implementation is active in this handoff turn.
 
 Intended files: `kindred-world-design/**`, plus the root Gradle composition and
 the existing ordered persistence writer where design artifacts belong.
@@ -24,9 +29,10 @@ Native execution, registry mechanics qualification, ordinary-client sessions,
 and earned survival construction remain unimplemented. Persisted metadata does
 not prove an action reached the world or settle a physical outcome.
 
-Handoff: the bounded pure foundation is implemented and locally validated with
-29 scenarios and 128 transformed generation cases. The environment has Java 21
-runtime/compiler modules but no `javac` executable, so Gradle toolchain discovery
-cannot run; the same Java 21 compiler module was invoked directly. Next dependency
-is native worker stance/reach and placement-context compilation through existing
-E-08 authority; E-31 recovery and all parent IDs remain open.
+Earlier turns reported 29 pure scenarios and 128 transformed generation cases,
+plus direct compiler-module compilation. Those checks did not validate database
+migrations, native construction or the safety gaps identified in the source review.
+The original committed evidence covers 21 foundation scenarios. This documentation
+turn did not rerun runtime tests. Next: repair artifact and acceptance invariants,
+obtain a real JDK build, then qualify one native placement with interruption and
+recovery through the existing authority/ledger path. All parent IDs remain open.

@@ -1,12 +1,16 @@
-# Kindred world-design foundation
+# Kindred world-design prototype — implementation paused
 
-An isolated Java 21 planning project. The [full proposed specification](SPECIFICATION.md)
-describes the target system; this folder implements the first pure planning slice.
+Start with the [integration review and next-agent handoff](../docs/world-design-implementation-handoff.md). The user paused this implementation attempt for review. Preserved source contains known contract defects and does not enable end-to-end native construction.
+
+A Java 21 planning module. The [full proposed specification](SPECIFICATION.md)
+describes the target system; this folder contains the foundation and subsequent unqualified planning prototypes.
 It has no Minecraft, provider, SQLite, or third-party runtime dependencies.
 
-Existing files and the root Gradle project are unchanged. This folder is not
-included in the root build or bundled in the server JAR. It uses the repository's
-existing Gradle 8.14.3 wrapper with a separate `settings.gradle`.
+On this handoff branch the root Gradle project includes the module, the server
+adapter declares it as a bundled dependency, and the existing SQLite writer has
+draft design metadata migrations 9–11. Packaging and migrations have not been
+validated. A separate `settings.gradle` also permits isolated use of the existing
+Gradle 8.14.3 wrapper.
 
 ## Run
 
@@ -36,7 +40,7 @@ Outputs (ignored by Git):
 `demo` always writes its report. `run` prints the same synthetic report and can
 take an optional output path with `--args`. Neither command contacts a server.
 
-## Implemented behavior
+## Prototype surface (see review before reuse)
 
 | Component | Foundation scope |
 | --- | --- |
@@ -87,8 +91,9 @@ Future orchestration belongs in `PlayerRuntime`; core remains free of Minecraft
 objects. A server-thread adapter must supply trusted observed facts. Native
 skills retain the existing arbiter/runner/admission/checkpoint/cancellation path.
 Metadata must use the existing SQLite writer and physical items native saves.
-No alternate body controller, inventory, accounting ledger, or persistence writer
-is introduced here.
+The in-memory `ExecutionLedger` is a prototype with a known replay gap; do not
+integrate it as a second runtime ledger. Use the existing core `ActionRecord` and
+`ActionAdmission` with the ordered writer, as detailed in the handoff.
 
 Future work includes native stance/placement compilation, registry-derived
 recipes/fuel/tool costs, semantic design graph/style persistence, uniqueness
