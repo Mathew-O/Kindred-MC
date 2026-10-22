@@ -3445,10 +3445,53 @@ final class PlayerRuntime {
         entry.routineRefreshPending = true;
         var bill = dev.kindred.core.construction.BillOfMaterials.of(entry.build.blocks(), entry.build.snapshot(entry.nativeBody.entity().getServerWorld()),
                 BuildRunner.counts(entry.nativeBody.entity()));
-        String credit = blueprint.creator().isEmpty() ? "" : " by " + blueprint.creator() + (blueprint.license().isEmpty() ? "" : " (" + blueprint.license() + ")");
         String missing = bill.complete() ? "" : "; short of " + bill.missing();
+        String unsupported = bill.unsupported().isEmpty() ? "" : "; no way to place yet: " + String.join(", ", bill.unsupported());
         if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
-        feedback(source, entry.data.displayName() + ": building " + blueprint.name() + credit + " at " + origin.toShortString() + missing + ".");
+        feedback(source, entry.data.displayName() + ": building " + blueprint.name() + " (" + SchematicLibrary.credit(blueprint) + ") at "
+                + origin.toShortString() + missing + unsupported + ".");
+        return 1;
+    }
+
+    /** The schematics operators put in {@code config/kindred/schematics} (M-05). */
+    private final SchematicLibrary schematics = new SchematicLibrary(
+            net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("kindred").resolve("schematics"));
+
+    SchematicLibrary schematics() {
+        return schematics;
+    }
+
+    /**
+     * Starts a build of the schematic {@code name} from the library (M-05): read off the game thread, then started as
+     * {@link #startBuild} starts any blueprint. What the reading left out is said first.
+     */
+    int startSchematicBuild(ServerCommandSource source, UUID id, String name, BlockPos origin, int turns) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
+        schematics.load(name).whenComplete((loaded, failure) -> server.execute(() -> {
+            if (!running || entries.get(id) != entry) return;
+            if (failure != null) {
+                Throwable cause = failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+                reject(source, cause instanceof IllegalArgumentException ? cause.getMessage() : "The schematic could not be read.");
+                return;
+            }
+            for (String note : loaded.notes()) feedback(source, name + ": " + note);
+            startBuild(source, id, loaded.blueprint(), origin, turns);
+        }));
+        feedback(source, "Reading " + name + " from " + schematics.directory() + "...");
+        return 1;
+    }
+
+    /** The blueprints there are to build: the generators and the library's schematics. */
+    int listBlueprints(ServerCommandSource source) {
+        requireThread();
+        schematics.names().whenComplete((names, failure) -> server.execute(() -> feedback(source,
+                "Generators: hut (hut-<width>x<depth>x<walls>). Schematics in " + schematics.directory() + ": "
+                        + (names == null || names.isEmpty() ? "none" : String.join(", ", names)))));
         return 1;
     }
 
@@ -5609,6 +5652,22 @@ final class PlayerRuntime {
         Entry entry = entries.get(id);
         if (entry == null || entry.nativeBody == null) return 0;
         return evaluateNativeCandidates(entry, entry.nativeBody).size();
+    }
+
+    /** The gates on a native player's next decision, in a line, for a fixture that finds it idle. */
+    String nativeStatusLine(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null) return "no such player";
+        return "phase=" + (entry.nativeState == null ? "none" : entry.nativeState.phase()) + " stop=" + entry.snapshot().stopLatched()
+                + " runner=" + (entry.runner == null ? "none" : entry.runner.state()) + " busy=" + (entry.runner != null && runnerBusy(entry))
+                + " workPending=" + entry.nativeWorkPending + " setupPending=" + entry.nativeSetupPending + " actionPending=" + entry.nativeActionPending
+                + " activity=" + (entry.activity == null ? "none" : entry.activity.phase()) + " flushes=" + entry.activityFlush.isDone() + "/"
+                + entry.nativeActionFlush.isDone() + " cancelling=" + (entry.arbiter != null && entry.arbiter.cancellationPending())
+                + " hold=" + (entry.manualHoldUntilTick == Long.MIN_VALUE ? "none" : String.valueOf(entry.manualHoldUntilTick - server.getTicks())) + " edits=" + edits.autonomousEditsEnabled() + "/"
+                + edits.protectionCompatibilityKnown() + " playstyle=" + entry.runtimeSettings.playstyleProfile() + " routine="
+                + entry.cachedRoutineCandidates.size() + "/" + entry.routineRefreshPending + " build=" + (entry.build == null ? "none" : entry.build.progress())
+                + " blocker=" + entry.blocker;
     }
 
     int cachedRoutineCandidatesCountForTest(UUID id) {

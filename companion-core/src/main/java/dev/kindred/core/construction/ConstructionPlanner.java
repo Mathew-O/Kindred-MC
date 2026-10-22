@@ -40,6 +40,8 @@ public final class ConstructionPlanner {
     static final int SCAFFOLD_RADIUS = 4;
     /** A scaffold block, as the planner reckons it while weighing a column. */
     private static final Cell SCAFFOLD_CELL = new Cell(BuildSite.Kind.SOLID, BlockSpec.of("minecraft:dirt"), true);
+    /** Tallest prop it puts up beside a block with nothing to be set against. */
+    static final int MAX_PROP = 6;
     /** Tallest scaffold column it builds. */
     public static final int MAX_SCAFFOLD = 24;
 
@@ -50,6 +52,12 @@ public final class ConstructionPlanner {
         BREAK,
         /** Stand at {@code stance} and pillar up {@code height} blocks of scaffolding. */
         SCAFFOLD,
+        /**
+         * Place a block of scaffolding at {@code target}, from {@code stance} clicking {@code face} of {@code support}:
+         * a prop for a block that has nothing to be set against, as a log lying along a row with nothing at its ends.
+         * The prop is taken down with the rest of the scaffolding.
+         */
+        SUPPORT,
         /** Every block is in place and every clear cell clear, scaffolding down. */
         DONE,
         /** Nothing can be done now; {@code reason} says why. */
@@ -194,6 +202,13 @@ public final class ConstructionPlanner {
             var column = scaffold(site, b, feet, wanted, box, walk);
             if (column.isPresent()) return column.get();
         }
+        // Nothing to be set against: a prop beside it, a column of scaffolding from the ground.
+        weighed = 0;
+        for (var b : todo) {
+            if (++weighed > CANDIDATES || b.at().y() > lowest.at().y() + 1) break;
+            var prop = prop(site, b, feet, wanted, keepClear, box, walk);
+            if (prop.isPresent()) return prop.get();
+        }
         return Step.blocked("No way to reach " + lowest.spec().block() + " at " + lowest.at());
     }
 
@@ -293,6 +308,46 @@ public final class ConstructionPlanner {
                 best = new Step(Kind.SCAFFOLD, target, null, null, ground, null, null, null, 0, 0, height,
                         "Scaffold " + height + " up to reach " + target);
                 break;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
+    /**
+     * A prop for {@code b}, which has no face to be set against: beside it on a side its state can be clicked from, a
+     * column of scaffolding from whatever is under that cell up to it (at most {@link #MAX_PROP} high), worth it only
+     * if the block can then be placed from somewhere, on foot or from a scaffold. The step places the column's lowest
+     * missing block.
+     */
+    private static Optional<Step> prop(BuildSite site, Blueprint.Block b, Pos feet, Map<Pos, BlockSpec> wanted, Set<Pos> keepClear,
+                                       Box box, Set<Pos> walk) {
+        Step best = null;
+        double bestCost = Double.MAX_VALUE;
+        for (Face face : Placement.faces(b.spec())) {
+            Pos beside = b.at().offset(face.opposite());
+            var column = new ArrayList<Pos>();
+            boolean grounded = false;
+            for (Pos at = beside; column.size() < MAX_PROP; at = at.down()) {
+                var cell = site.cell(at);
+                if (cell.isEmpty() || !cell.get().placeable() || wanted.containsKey(at) || keepClear.contains(at)) break;
+                column.add(at);
+                if (site.cell(at.down()).map(Cell::clickable).orElse(false)) { grounded = true; break; }
+            }
+            if (!grounded) continue;
+            var props = new HashMap<Pos, Cell>();
+            for (Pos p : column) props.put(p, SCAFFOLD_CELL);
+            var propped = site.with(props);
+            if (placement(propped, b, feet, wanted, box, stances(b.at(), feet), walk).isEmpty()
+                    && scaffold(propped, b, feet, wanted, box, walk).isEmpty()) continue;
+            Pos lowest = column.getLast();
+            var place = placement(site, new Blueprint.Block(lowest, SCAFFOLD_CELL.state()), feet, wanted, box, stances(lowest, feet), walk);
+            if (place.isEmpty()) continue;
+            var step = place.get();
+            double cost = column.size() * 2 + Math.sqrt(step.stance().distanceSquared(feet));
+            if (cost < bestCost) {
+                bestCost = cost;
+                best = new Step(Kind.SUPPORT, lowest, SCAFFOLD_CELL.state(), null, step.stance(), step.support(), step.face(), step.hit(),
+                        step.yaw(), step.pitch(), column.size(), "Prop for " + b.spec().block() + " at " + b.at());
             }
         }
         return Optional.ofNullable(best);

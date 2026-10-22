@@ -50,7 +50,8 @@ Later, on a working loop: interiors and functions (a workshop with a table and s
 
 - **E-08a is done** ([evidence](evidence/E-08a.md)). It is the pure core in `dev.kindred.core.construction`. Pure tests simulate whole huts (3×4, 5×5, 7×9, each turned four ways) through the planner step by step, as the runner plays them. Every block ends in its exact state, every spot stood on is one it can walk to, and the scaffold all comes down.
 - **E-08b is in progress** ([evidence](evidence/E-08b.md)). A native player builds a 5×5 hut of 112 blocks, in six kinds, from its own blocks with `/aiplayer build hut`. Every block is verified in its state, and the fixture passed five runs of five. It is not yet kept across a restart.
-- **M-05 and E-08c** are next: reading `.nbt` and `.schem` files into blueprints, then gathering and crafting the bill.
+- **M-05 is in progress** ([evidence](evidence/M-05.md)). Vanilla structure files and Sponge schematics are read into blueprints with their attribution, from `config/kindred/schematics`. A structure saved by vanilla's own writer is built turned a quarter, every block as vanilla itself turns it. Blocks with nothing to be set against are propped.
+- **E-08c** is next: gathering and crafting the bill.
 
 Simulating whole builds and running the fixture again and again showed what a design on paper missed. A roof block can have nothing to be placed against. A scaffold must be judged from its top, by whether the placement works there with the facing it needs. A spot to stand is no use unless the player can walk to it. The server's own reach and sight checks differ a hair from any model of them, so a refused spot has to be let go.
 

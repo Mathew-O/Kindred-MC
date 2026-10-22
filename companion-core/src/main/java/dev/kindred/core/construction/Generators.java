@@ -9,6 +9,8 @@ import java.util.List;
  */
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
+    /** The generators there are, by name. */
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut");
 
     private Generators() { }
 

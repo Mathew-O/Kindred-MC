@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-05 (schematics read into blueprints and built, in progress), with props for E-08b, on top of `843e643`.
+  - New JUnit: `SchematicsTest` (4), `PropTest` (2); `BuildSimulation`, a whole build played through the planner as the runner plays it, now shared by `GeneratorsTest` and `PropTest`.
+  - New native fixture: `aStructureSavedByVanillaIsReadAndBuiltTurnedAQuarter`. A kiosk is saved by vanilla's own structure writer, read from the schematic library, and built turned a quarter. Every block matches the original as vanilla turns it.
+  - Alone, the build class passed 20 of 24 runs. Two failures were an unrecorded prop, now fixed. Two were a build that never began, its cause not yet known; see [M-05](evidence/M-05.md).
+  - Suite 1 failed one fixture this work does not touch, 268/269: `whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold`. While digging stone for the End fight beside the fixture's lit Nether portal, the player stood in the portal and was carried into the Nether ("We Need to Go Deeper"); the goal then went on to look for a fortress. It is a real bug, now open: a walk or a dig beside a portal can take a player through by accident while its goal allows portal travel.
+  - `runGametest` then passed 269/269 twice (suites 2 and 3). `./gradlew build` passed: 479 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `61406cbbe87744a864626151779f0f52f916fa49db47df8556e37dc1395f090a`.
 - E-08a (blueprints and the construction planner, complete) and E-08b (the native player building, in progress), taking over the world-design prototype ([building plan](building-plan.md)), on top of `08d94cc`.
   - New JUnit: `BlockSpecTest` (3), `BlueprintTest` (2), `PlacementTest` (2), `ConstructionPlannerTest` (14), `GeneratorsTest` (2: the hut, and whole huts of three sizes, each turned four ways, simulated step by step through the planner).
   - New native fixture: `aHutIsBuiltFromItsOwnBlocksEachInItsState`. It passed 5 of 5 alone on the final tree.

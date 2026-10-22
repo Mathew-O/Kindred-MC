@@ -45,6 +45,8 @@ final class BuildRunner {
     private static final int TRIES = 2;
     /** How far round the build the world is looked at. */
     private static final int MARGIN = 6;
+    /** The label of a prop's placement. */
+    private static final String PROP = "Prop at ";
     /** Tasks failing one after another before the build stops and says why. */
     private static final int STUCK = 8;
 
@@ -123,13 +125,15 @@ final class BuildRunner {
             if (feet.y() >= columnTop || !(feet.x() == column.x() && feet.z() == column.z())) column = null;
         }
         var step = ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
-        if (step.kind() == ConstructionPlanner.Kind.PLACE || step.kind() == ConstructionPlanner.Kind.BREAK) issuedFrom = step.stance();
+        if (step.kind() == ConstructionPlanner.Kind.PLACE || step.kind() == ConstructionPlanner.Kind.BREAK
+                || step.kind() == ConstructionPlanner.Kind.SUPPORT) issuedFrom = step.stance();
         var tally = ConstructionPlanner.progress(blocks, clear, site);
         progress = blueprint.name() + ": " + tally.placed() + "/" + tally.total() + " placed - " + step.reason();
         // Wanted elsewhere while on its own scaffold: down it first, digging out the block underfoot, as a player gets
         // off a pillar too high to jump from.
         Pos under = feet.down();
         if (scaffold.contains(under) && player.isOnGround() && site.cell(under).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false) && (step.kind() == ConstructionPlanner.Kind.PLACE
+                || step.kind() == ConstructionPlanner.Kind.SUPPORT
                 || step.kind() == ConstructionPlanner.Kind.SCAFFOLD || step.kind() == ConstructionPlanner.Kind.BREAK) && !feet.equals(step.stance())) {
             return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
                     "collect", "true", "underfoot", "true"), "Down the scaffold"));
@@ -155,6 +159,17 @@ final class BuildRunner {
                 column = step.stance();
                 columnTop = step.stance().y() + step.height();
                 yield next(body);
+            }
+            case SUPPORT -> {
+                if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To a spot to prop " + step.target() + " from " + feet));
+                int slot = scaffoldSlot(player, wanted, site);
+                if (slot < 0) yield Optional.of(wait("No blocks to spare for a prop"));
+                if (slot >= 9) yield Optional.of(swap(player, slot, "Ready a block for a prop"));
+                yield Optional.of(new PortalRunCampaign.Task("native_place", Map.of("x", str(step.target().x()), "y", str(step.target().y()),
+                        "z", str(step.target().z()), "side", step.face().id(), "slot", str(slot),
+                        "yaw", String.format(Locale.ROOT, "%.3f", step.yaw()), "pitch", String.format(Locale.ROOT, "%.3f", step.pitch()),
+                        "hit", String.format(Locale.ROOT, "%.4f,%.4f,%.4f", step.hit()[0], step.hit()[1], step.hit()[2])),
+                        PROP + step.target()));
             }
             case PLACE -> {
                 if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To a spot to place " + shortName(step.spec()) + " from " + feet));
@@ -192,6 +207,11 @@ final class BuildRunner {
         }
         if (completed) shunned.clear();
         else if (issuedFrom != null && !"Down the scaffold".equals(task.label())) shunned.add(issuedFrom);
+        // A prop is scaffolding once it stands, as the task it was placed by says (re-planning may run before this does).
+        if (placing && task.label().startsWith(PROP)) {
+            if (completed) scaffold.add(at);
+            return;
+        }
         if (breaking) {
             if (completed) scaffold.remove(at);
             return;

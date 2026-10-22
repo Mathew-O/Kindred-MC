@@ -19,6 +19,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
 /aiplayer build stop [bot]           stop building; what is built stays
+/aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
+/aiplayer build list                 the generators and schematics on offer
 /aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
 /aiplayer skin list                  the skins on offer
 /aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
@@ -82,7 +84,20 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 - Survival needs still come first. The build goes ahead of a standing goal and the goal resumes when it is done.
 - After eight failed steps in a row it stops and says why. `/aiplayer build stop` ends a build; what is built stays.
 
-The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. Not yet: a build kept across a restart (the project is held in memory; what is built stays, so the same command picks it up from the world), gathering and crafting what is missing (E-08c), imported schematics (M-05). See [the building plan](building-plan.md) and [E-08b](evidence/E-08b.md).
+- A block with nothing to be set against (a log lying along a row with nothing at its ends) gets a prop: a short column of scaffolding beside it, taken down with the rest.
+
+**Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
+
+When it reads a schematic it:
+- keeps air as space to keep clear, and ignores structure void;
+- places containers, signs and the like empty, never copying their contents;
+- leaves out entities;
+- leaves out blocks a survival player cannot get as an item (bedrock, spawners, end portal frames, command blocks, infested stone, farmland and the like);
+- leaves out blocks or states this version of the game does not know.
+
+It says what it left out. A schematic may be up to 96 blocks a side and 32,768 blocks. Blocks with no placement rule yet (doors, beds, signs, buttons, rails, redstone, plants) are skipped and listed.
+
+The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. Not yet: a build kept across a restart (the project is held in memory; what is built stays, so the same command picks it up from the world), gathering and crafting what is missing (E-08c), Litematica `.litematic` files. See [the building plan](building-plan.md) and [E-08b](evidence/E-08b.md).
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 

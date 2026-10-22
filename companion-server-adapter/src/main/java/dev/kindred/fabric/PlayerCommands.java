@@ -16,6 +16,7 @@ import net.minecraft.command.argument.UuidArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -59,8 +60,13 @@ public final class PlayerCommands {
                             if (id == null) return 0;
                             return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
                         }))));
-        // A build from a generator (E-08b): /aiplayer build hut|hut-7x5x3 <x y z> [quarter turns] [player]; build stop [player].
+        // A build (E-08b, M-05): /aiplayer build hut|hut-7x5x3|<schematic> <x y z> [quarter turns] [player]; build stop [player];
+        // build list.
         root.then(CommandManager.literal("build")
+                .then(CommandManager.literal("list").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.listBlueprints(context.getSource());
+                }))
                 .then(CommandManager.literal("stop").executes(context -> build(context, false, false, false))
                         .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
                                 .executes(context -> build(context, false, false, true))))
@@ -861,9 +867,12 @@ public final class PlayerCommands {
         }
         if (!start) return runtime.startBuild(context.getSource(), id, null, null, 0);
         String name = StringArgumentType.getString(context, "blueprint");
+        BlockPos at = BlockPosArgumentType.getBlockPos(context, "at");
+        int turns = turned ? IntegerArgumentType.getInteger(context, "turns") : 0;
+        var parts = name.split("-", 2);
+        if (!dev.kindred.core.construction.Generators.NAMES.contains(parts[0])) return runtime.startSchematicBuild(context.getSource(), id, name, at, turns);
         dev.kindred.core.construction.Blueprint blueprint;
         try {
-            var parts = name.split("-", 2);
             var sizes = new java.util.ArrayList<Integer>();
             if (parts.length > 1) for (String size : parts[1].split("x")) sizes.add(Integer.parseInt(size));
             blueprint = dev.kindred.core.construction.Generators.named(parts[0], sizes);
@@ -871,8 +880,7 @@ public final class PlayerCommands {
             context.getSource().sendError(Text.literal(invalid.getMessage() == null ? "Not a blueprint: " + name : invalid.getMessage()));
             return 0;
         }
-        return runtime.startBuild(context.getSource(), id, blueprint, BlockPosArgumentType.getBlockPos(context, "at"),
-                turned ? IntegerArgumentType.getInteger(context, "turns") : 0);
+        return runtime.startBuild(context.getSource(), id, blueprint, at, turns);
     }
 
     private static int unavailable(ServerCommandSource source) {
