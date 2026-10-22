@@ -267,4 +267,77 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+    /**
+     * Standing in a lit portal is no trip while the goal's step is not one (F-25c6). A suite run on 2026-10-22 had
+     * the End goal's player, digging stone by its portal, stand in it and be carried into the Nether: portal travel
+     * was allowed for the whole goal. Here the player is held in the portal by bedrock while the goal provisions for
+     * the End fight. Vanilla takes a player standing in a portal across after eighty ticks; it must stay put for two
+     * hundred. Run once on the code before the fix, the same fixture took the player into the Nether.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "portalBystander", tickLimit = 1600)
+    public void aPlayerHeldInALitPortalIsNotTakenAcrossWhileItsStepIsNotATrip(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        long[] inSince = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bystander"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos in = NativeStrongholdGameTests.litPortal(context);
+                    world.setTimeOfDay(1000);
+                    // Held in the portal: bedrock in front of it and behind it, where nothing can dig a way out.
+                    for (int x = 3; x <= 4; x++) for (int y = 3; y <= 5; y++) {
+                        world.setBlockState(context.getAbsolutePos(new BlockPos(x, y, 2)), Blocks.BEDROCK.getDefaultState());
+                        world.setBlockState(context.getAbsolutePos(new BlockPos(x, y, 4)), Blocks.BEDROCK.getDefaultState());
+                    }
+                    var player = f.player();
+                    // The stronghold already pinned, the End fight's kit nearly whole: the goal's step is provisioning.
+                    var memory = new PlayerMemoryStore.Memory();
+                    memory.stronghold = new double[] {in.getX() + 0.5, in.getZ() + 8.5};
+                    memory.pinned = true;
+                    try {
+                        var folder = f.directory.resolve("memory");
+                        java.nio.file.Files.createDirectories(folder);
+                        java.nio.file.Files.writeString(folder.resolve(f.id + ".json"), new com.google.gson.Gson().toJson(memory));
+                    } catch (java.io.IOException failed) {
+                        throw new AssertionError("Memory fixture could not be written", failed);
+                    }
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 60));
+                    inventory.setStack(5, new ItemStack(Items.BOW));
+                    inventory.setStack(6, new ItemStack(Items.ARROW, 32));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.ENDER_EYE, 10));
+                    inventory.setStack(20, new ItemStack(Items.WHITE_BED));
+                    player.refreshPositionAndAngles(in.getX() + 0.5, in.getY(), in.getZ() + 0.5, 180, 0);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var world = context.getWorld();
+                    context.assertTrue(player != null && player.getServerWorld().getRegistryKey() == net.minecraft.world.World.OVERWORLD,
+                            "Still in the Overworld: " + (player == null ? "gone" : player.getServerWorld().getRegistryKey().getValue())
+                                    + " / " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    boolean inPortal = world.getBlockState(player.getBlockPos()).isOf(Blocks.NETHER_PORTAL);
+                    long now = world.getTime();
+                    if (!inPortal) inSince[0] = -1;
+                    else if (inSince[0] < 0) inSince[0] = now;
+                    context.assertTrue(inSince[0] >= 0 && now - inSince[0] >= 200, "In the portal for two hundred ticks: "
+                            + (inSince[0] < 0 ? "not in it" : (now - inSince[0]) + " so far") + " / " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    KindredMod.LOGGER.info("Bystander: in the portal two hundred ticks, still in {}; goal {}", player.getServerWorld().getRegistryKey().getValue(),
+                            f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

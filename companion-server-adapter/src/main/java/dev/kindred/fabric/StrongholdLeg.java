@@ -466,7 +466,7 @@ final class StrongholdLeg {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         if (world.getBlockState(feet).isOf(Blocks.NETHER_PORTAL)) {
-            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "4"), "Wait in the portal"));
+            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "4"), PortalRunCampaign.IN_PORTAL));
         }
         BlockPos portal = overworld(player) ? overworldPortal : nether(player) ? netherPortal : null;
         if (portal == null || !world.getBlockState(portal).isOf(Blocks.NETHER_PORTAL)) {
@@ -475,7 +475,7 @@ final class StrongholdLeg {
         if (portal == null) return Optional.empty();
         // The portal's lowest block: its feet cell.
         while (world.getBlockState(portal.down()).isOf(Blocks.NETHER_PORTAL)) portal = portal.down();
-        return Optional.of(PortalRunCampaign.go(portal, 0.4, false, "Walk into the portal"));
+        return Optional.of(PortalRunCampaign.go(portal, 0.4, false, PortalRunCampaign.INTO_PORTAL));
     }
 
     private Optional<PortalRunCampaign.Task> fight(ServerPlayerEntity player, Class<? extends LivingEntity> type, double range, String label) {

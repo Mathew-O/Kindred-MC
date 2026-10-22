@@ -1565,6 +1565,14 @@ final class PortalRunCampaign {
         return Map.copyOf(args);
     }
 
+    /** Labels of the steps that go through a Nether portal on purpose. */
+    static final String INTO_PORTAL = "Walk into the portal", IN_PORTAL = "Wait in the portal";
+
+    /** A step that goes through a portal on purpose: into a Nether portal and waiting in it, or the step into an End portal. */
+    static boolean throughPortal(Task task) {
+        return task != null && ("native_step_in".equals(task.skill()) || INTO_PORTAL.equals(task.label()) || IN_PORTAL.equals(task.label()));
+    }
+
     static Task go(BlockPos target, double range, boolean partial, String label) {
         return new Task("native_goto", coords(target, Map.of("range", String.valueOf(range), "partial", String.valueOf(partial))), label);
     }

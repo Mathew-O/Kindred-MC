@@ -3299,13 +3299,17 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.pursue(entry.goal);
-        // Through its own portal only while it is after the End portal: the operator's goal is what allows the trip.
-        body.setPortalTravelAuthorized(entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
-                || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight);
         entry.campaign.dragonAllowed(dragonFight);
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
         var task = entry.campaign.next(body, edits, server.getTicks());
+        // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
+        // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
+        // digging stone by its lit portal stood in it and was carried into the Nether (suite on 2026-10-22).
+        boolean mayTravel = entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
+                || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight;
+        body.setPortalTravelAuthorized(mayTravel && (task.filter(PortalRunCampaign::throughPortal).isPresent()
+                || PortalRunCampaign.throughPortal(entry.activeCampaignTask)));
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server));
         entry.goalProgress = entry.campaign.progress();
@@ -6334,6 +6338,8 @@ final class PlayerRuntime {
             return reject(source, "The dragon fight is off on this server; an operator must turn it on first (/aiplayer dragonfight on).");
         }
         entry.goal = goal;
+        // Portal travel is the goal's to allow, a step at a time (campaignCandidates); a new goal starts without it.
+        if (entry.nativeBody != null) entry.nativeBody.setPortalTravelAuthorized(false);
         entry.goalProgress = goal == dev.kindred.core.survival.SurvivalGoal.NONE ? "" : "Starting: " + goal.label();
         if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
             entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
