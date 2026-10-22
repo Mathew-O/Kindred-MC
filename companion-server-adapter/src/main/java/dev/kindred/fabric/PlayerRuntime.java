@@ -939,6 +939,12 @@ final class PlayerRuntime {
                 "z", String.valueOf(target.getZ()), "range", String.valueOf(range)));
     }
 
+    /** As {@link #nativeGoto}, allowing one deliberate drop of up to {@code drop} blocks (broken with water when deep). */
+    int nativeGotoDropping(ServerCommandSource source, UUID id, BlockPos target, double range, int drop) {
+        return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", String.valueOf(range), "partial", "false", "drop", String.valueOf(drop)));
+    }
+
     /** As {@link #nativeGoto}, keeping out of the notice of hostile mobs other than the {@code engage} kinds. */
     int nativeGotoAvoiding(ServerCommandSource source, UUID id, BlockPos target, double range, String engage) {
         return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
@@ -1217,6 +1223,9 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_clutch")) {
+                task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_pearl")) {
                 task = new NativePearlAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")), Float.parseFloat(arguments.get("pitch")),
@@ -1464,6 +1473,7 @@ final class PlayerRuntime {
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_clutch".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BUCKET || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_fill_frame".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FRAME || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shoot".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHOOT || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_dragon".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
@@ -1490,6 +1500,23 @@ final class PlayerRuntime {
 
     static boolean isHazardousSituation(ServerPlayerEntity player) {
         return isHazardousSituation(player, true);
+    }
+
+    /**
+     * The hotbar slot of a water bucket to break the fall the player is in, or -1 (E-07d): falling, out of water and
+     * lava, not climbing or gliding, with ground under it that a fall onto would hurt, and in a dimension where water
+     * stays poured (not the Nether).
+     */
+    static int clutchSlot(ServerPlayerEntity player) {
+        if (player.isOnGround() || player.isTouchingWater() || player.isInLava() || player.isClimbing() || player.isFallFlying()
+                || player.getAbilities().flying || player.hasVehicle() || player.getVelocity().y > -0.3 || player.fallDistance < 2
+                || player.getServerWorld().getDimension().ultrawarm()) return -1;
+        int slot = -1;
+        for (int i = 0; i < 9 && slot < 0; i++) if (player.getInventory().getStack(i).isOf(Items.WATER_BUCKET)) slot = i;
+        if (slot < 0) return -1;
+        var landing = NativeClutchAction.landing(player);
+        if (landing.isEmpty() || !dev.kindred.core.tactics.FallClutch.worth(player.fallDistance, landing.get().getValue(), player.getHealth())) return -1;
+        return slot;
     }
 
     /** As {@link #isHazardousSituation(ServerPlayerEntity)}, counting being alight only when {@code burning} says so. */
@@ -2027,6 +2054,16 @@ final class PlayerRuntime {
         var candidates = new java.util.ArrayList<NativeTaskCandidate>();
         var player = body.entity();
         var world = player.getServerWorld();
+        // 00. A long fall with a water bucket in the hotbar: broken with water before anything else (E-07d).
+        int clutchSlot = clutchSlot(player);
+        if (clutchSlot >= 0) {
+            UUID taskId = UUID.nameUUIDFromBytes(("clutch:" + entry.data.id() + ":" + server.getTicks()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 100.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            candidates.add(new NativeTaskCandidate(candidate, "native_clutch", Map.of("slot", String.valueOf(clutchSlot))));
+            return candidates;
+        }
+
         // 0. Environmental hazard detection and evasive retreat (URGENT)
         BlockPos feetPos = player.getBlockPos();
         if (isHazardousSituation(player)) {
@@ -3607,11 +3644,14 @@ final class PlayerRuntime {
         // Burning from a blaze's fireball is no reason to drop the fight with it; standing in fire or lava still is.
         boolean burningInFight = "native_fight".equals(entry.skillId) && body.entity().isOnFire() && !body.entity().isInLava()
                 && !isHazardousSituation(body.entity(), false);
-        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper)
-                && !"native_retreat".equals(entry.skillId) && !escapingWater) {
+        // A long fall to break with water ends whatever else it was doing (E-07d).
+        boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
+        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper || breakFall)
+                && !"native_retreat".equals(entry.skillId) && !"native_clutch".equals(entry.skillId) && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
-            entry.runner.abort("Hazard/threat detected: urgent retreat required");
+            entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
+                    : "Hazard/threat detected: urgent retreat required");
             body.stopInputs();
             observeRunner(entry);
             if (entry.runner == null) return;
@@ -3635,7 +3675,8 @@ final class PlayerRuntime {
                 && entry.activityFlush.isDone() && !entry.nativeActionPending && entry.nativeActionFlush.isDone()
                 && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)
                 && !entry.arbiter.cancellationPending()
-                && server.getTicks() >= entry.manualHoldUntilTick
+                // A fall to break is a reflex: it does not wait out the hold that follows a commanded task (E-07d).
+                && (server.getTicks() >= entry.manualHoldUntilTick || clutchSlot(body.entity()) >= 0)
                 && edits.autonomousEditsEnabled() && edits.protectionCompatibilityKnown();
 
         // 1. Cheap immediate survival candidates (evaluated every tick, even with zero optional budget)

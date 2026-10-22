@@ -113,6 +113,9 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
             case "native_bucket" -> new SkillDescriptor(id, Set.of("x", "y", "z", "mode"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
+            // A fall broken with water (E-07d): poured on the landing block within reach, scooped back up after.
+            case "native_clutch" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of("bucket"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(10), Duration.ofSeconds(10), 0);
             case "native_cast" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");

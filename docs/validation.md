@@ -4,6 +4,12 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-39h (walled in against the dragon's wings) and E-07d (a long fall broken with a water bucket), both in progress, on top of `067bc69`.
+  - New JUnit: `ApproachTest` (3), `FallClutchTest` (3).
+  - New native fixtures: `wallsAtItsFeetHoldItOnItsTowerAgainstTheWings` and its control `theWingsFlingAPlayerOffABareTower`; `aLongFallIsBrokenWithWaterAndTheWaterTakenBack`, its control `withoutABucketAFallHurtsAsVanillaSays`, and `offAPillarTheFallIsBrokenWithWaterNotAPearl`. Each passed 3 of 3 alone before the suite.
+  - Found on the way: vanilla spares a player that has just joined from harm for sixty ticks, and the first fall fixtures dropped the player inside them (a twelve-block fall hurt nothing). They now wait it out. The native body was already reporting falls to vanilla, so native players take fall damage as any player does. The clutch first waited out the hold after a commanded task; as a reflex it no longer does.
+  - `runGametest` passed 267/267 twice. `./gradlew build` passed: 450 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `d7cf2879ee3f2f19d05de831255a6c32fe43d3c06cc41523605e7291989d1139`.
 - E-39e (damage), E-39f (ender pearls), E-39g (the bed and recovery after a death in the End) and F-25c8 (the playbook and speedrun pace), all in progress, on `d636fa6` and the working tree committed after it.
   - New JUnit: `DamageModelTest` (4), `PlaybookTest` (4), two `BallisticsTest` cases, an `EndFightPlannerTest` case (the bed before going in), `NeedsAssessmentTest` cases (wool and the bed), a `StrategyAdviceTest` case and two `OpenAiCompatibleStrategistTest` cases (the advised way).
   - New native fixtures: `theFightsWeaponIsTheOneThatDealsTheMost`, `aPearlIsThrownUpOntoALedgeAndLandsThere`, `strandedOnAPillarItPearlsDownClearOfTheCrystals`, `aBedSetDownAndUsedSetsTheRespawnPoint`.

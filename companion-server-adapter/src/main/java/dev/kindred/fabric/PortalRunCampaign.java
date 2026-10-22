@@ -1101,13 +1101,16 @@ final class PortalRunCampaign {
     private Optional<Task> jumpDown(ServerPlayerEntity player) {
         var world = player.getServerWorld();
         var navigator = new NativeNavigator(world);
+        // With a water bucket ready the fall is broken (E-07d): deeper drops, and no health spent on them.
+        boolean clutch = NativeNavigator.clutchReady(player);
+        int deepest = clutch ? NativeNavigator.MAX_CLUTCH_DROP : 12;
         BlockPos feet = player.getBlockPos();
         BlockPos best = null;
         int bestDrop = Integer.MAX_VALUE;
         for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
             BlockPos edge = feet.add(dx, 0, dz);
             if ((dx == 0 && dz == 0) || !navigator.clear(edge) || navigator.standable(edge)) continue;
-            for (int k = 1; k <= 24; k++) {
+            for (int k = 1; k <= Math.max(24, deepest); k++) {
                 BlockPos landing = edge.down(k);
                 if (navigator.swimmable(landing)) {
                     if (k <= 12 && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
@@ -1115,7 +1118,7 @@ final class PortalRunCampaign {
                 }
                 if (!navigator.passable(landing)) break; // Lava and fire are not passable either.
                 if (navigator.standable(landing)) {
-                    boolean affordable = k <= 12 && player.getHealth() - Math.max(0, k - 3) >= 10;
+                    boolean affordable = k <= deepest && (clutch && k > 12 || player.getHealth() - Math.max(0, k - 3) >= 10);
                     // Never down beside lava, nor in the Nether below the shore of its lava sea: a knock or a slip on
                     // landing ends in it (staged End run 7 jumped down twice there and a hoglin knocked it in).
                     boolean safe = !lavaAround(world, landing, 3) && (world.getRegistryKey() != net.minecraft.world.World.NETHER || landing.getY() >= StrongholdLeg.NETHER_FLOOR);
@@ -1131,7 +1134,7 @@ final class PortalRunCampaign {
         if (!shielded(player) && !world.getEntitiesByClass(HostileEntity.class, new Box(landing).expand(12, 6, 12),
                 mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty()) return Optional.empty();
         return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
-                "drop", String.valueOf(Math.min(12, bestDrop)))), "Jump down from the ledge"));
+                "drop", String.valueOf(Math.min(deepest, bestDrop)))), bestDrop > 12 ? "Jump down from the ledge and break the fall with water" : "Jump down from the ledge"));
     }
 
     /** Lava within {@code radius} blocks across and two down of {@code feet}, loaded ground only. */

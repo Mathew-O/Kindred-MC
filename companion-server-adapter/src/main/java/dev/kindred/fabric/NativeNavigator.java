@@ -28,6 +28,11 @@ final class NativeNavigator {
     static final int DEFAULT_MAX_NODES = 6_000;
     static final int MAX_SAFE_DROP = 3;
     static final int MAX_WATER_DROP = 12;
+    /**
+     * The deepest deliberate drop, taken only with a water bucket ready to break it (E-07d): forty blocks down a fall
+     * is about two blocks a tick, inside the 2.8 blocks a tick at which the ground is surely in reach for a tick.
+     */
+    static final int MAX_CLUTCH_DROP = 40;
 
     record Path(List<BlockPos> nodes, boolean complete, int expanded) {
         BlockPos end() { return nodes.isEmpty() ? null : nodes.getLast(); }
@@ -58,6 +63,13 @@ final class NativeNavigator {
     static final double DANGER_WEIGHT = 10;
     private List<Danger> dangers = List.of();
 
+    /** A water bucket in the hotbar where water stays poured (not the Nether): a long fall can be broken (E-07d). */
+    static boolean clutchReady(net.minecraft.server.network.ServerPlayerEntity player) {
+        if (player.getServerWorld().getDimension().ultrawarm()) return false;
+        for (int slot = 0; slot < 9; slot++) if (player.getInventory().getStack(slot).isOf(net.minecraft.item.Items.WATER_BUCKET)) return true;
+        return false;
+    }
+
     /** Routes priced to keep out of these mobs' notice: dearer the nearer they pass (F-10g). */
     NativeNavigator avoiding(List<Danger> dangers) {
         this.dangers = List.copyOf(dangers);
@@ -65,10 +77,13 @@ final class NativeNavigator {
         return this;
     }
 
-    /** With a larger {@code maxDrop}, routes may include one deliberate fall that costs some health. */
+    /**
+     * With a larger {@code maxDrop}, routes may include one deliberate fall that costs some health, or, past twelve
+     * blocks, one broken with water (callers allow that only with a water bucket ready; see {@link #clutchReady}).
+     */
     NativeNavigator(ServerWorld world, int maxDrop) {
         this.world = world;
-        this.maxDrop = Math.clamp(maxDrop, MAX_SAFE_DROP, 12);
+        this.maxDrop = Math.clamp(maxDrop, MAX_SAFE_DROP, MAX_CLUTCH_DROP);
     }
 
     /**
@@ -152,7 +167,7 @@ final class NativeNavigator {
             }
             // Drop: walk off an edge onto ground (or water) a few blocks below.
             if (clear(flat)) {
-                int limit = inWater ? 1 : MAX_WATER_DROP;
+                int limit = inWater ? 1 : Math.max(MAX_WATER_DROP, maxDrop);
                 for (int k = 1; k <= limit; k++) {
                     BlockPos landing = flat.down(k);
                     if (!loaded(landing)) break;

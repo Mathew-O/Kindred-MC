@@ -290,10 +290,20 @@ final class EndFightLeg {
         // end stone, never a walk off the edge.
         var underfoot = player.getServerWorld().getBlockState(player.getBlockPos().down());
         long now = player.getServerWorld().getTime();
+        boolean clutch = NativeNavigator.clutchReady(player);
         if (s.inEnd() && !s.inBreath() && player.isOnGround() && now >= nextStrandedLook && Math.hypot(player.getX(), player.getZ()) <= 90
                 && (underfoot.isOf(Blocks.OBSIDIAN) || underfoot.isOf(Blocks.IRON_BARS)) && aloft(player)
-                && !onTower(player) && findTower(player).isEmpty() && pearls(player) > 0) {
+                && !onTower(player) && findTower(player).isEmpty() && (pearls(player) > 0 || clutch)) {
             nextStrandedLook = now + 40;
+            // A water bucket keeps the pearls: off the edge onto end stone, the fall broken with water (E-07d).
+            var off = clutch ? stepOff(player, campaign::blocked) : Optional.<Map.Entry<BlockPos, Integer>>empty();
+            if (off.isPresent()) {
+                BlockPos landing = off.get().getKey();
+                progress = "Dragon: " + label(stage) + ": stranded up high - off the edge, the fall broken with water";
+                return Optional.of(new PortalRunCampaign.Task("native_goto", Map.of("x", String.valueOf(landing.getX()), "y", String.valueOf(landing.getY()),
+                        "z", String.valueOf(landing.getZ()), "range", "0.8", "partial", "false", "drop", String.valueOf(off.get().getValue())),
+                        "Step off the pillar and break the fall with water"));
+            }
             int slot = hotbarOf(player, Items.ENDER_PEARL);
             Optional<PortalRunCampaign.Task> down = slot < 0 ? readyInHotbar(body, Items.ENDER_PEARL, "Ready an ender pearl")
                     : downThrow(player, player.getPos(), player.getPos(), 6, campaign::blocked, 12).map(t -> pearlTask(slot, t, "Pearl down to the island"));
@@ -318,6 +328,15 @@ final class EndFightLeg {
                 new BlockPos(towerBase.getX(), player.getBlockY() - 1, towerBase.getZ())))) {
             towerBase = null;
             caging = null;
+        }
+        // Up its tower with the dragon seen coming: its feet walled in on every open side before the wings reach, and
+        // nothing done that would take it out of the walls (a block broken underfoot) until it has gone by (E-39h).
+        if (s.inEnd() && onTower(player) && player.isOnGround()) {
+            var guard = guard(body);
+            if (guard.isPresent()) {
+                progress = "Dragon: " + label(stage) + ": up its pillar with the dragon coming - " + guard.get().label();
+                return guard;
+            }
         }
         if (s.inEnd() && !s.inBreath() && onTower(player)) {
             Optional<PortalRunCampaign.Task> tower = caging != null ? openCage(body) : Optional.empty();
@@ -569,6 +588,12 @@ final class EndFightLeg {
         BlockPos feet = new BlockPos(towerBase.getX(), player.getBlockY(), towerBase.getZ());
         int barsAt = crystal.getBlockY() - 1;
         if (feet.getY() < barsAt) {
+            // A guard's block over the head, left from the dragon going by: out of the way before going up.
+            BlockPos over = feet.up(2);
+            if (placed(world.getBlockState(over))) {
+                return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", String.valueOf(over.getX()), "y", String.valueOf(over.getY()),
+                        "z", String.valueOf(over.getZ()), "collect", "true"), "Take down the block over its head"));
+            }
             int slot = -1;
             for (int i = 0; i < 9 && slot < 0; i++) if (isBlock(player.getInventory().getStack(i))) slot = i;
             if (slot < 0) {
@@ -651,6 +676,106 @@ final class EndFightLeg {
         return below.isSideSolidFullSquare(world, pos.down(), net.minecraft.util.math.Direction.UP);
     }
 
+    // ------------------------------------------------------------------ the guard against the wings (E-39h)
+
+    /**
+     * Ticks of warning within which the feet are walled in: at a few ticks a block, enough for the side away from the
+     * dragon and both flanks before its wings reach.
+     */
+    static final int GUARD_WARNING = 60;
+
+    /**
+     * When the dragon, seen from here, comes within its wings' reach of the player by its present flight, if it does
+     * within {@link #GUARD_WARNING} ticks: the wings fling anyone near them away from the body (vanilla adds four
+     * blocks a tick over the distance, every tick), which takes a player off a tower one block wide.
+     */
+    static java.util.OptionalInt dragonComing(ServerPlayerEntity player, EnderDragonEntity dragon) {
+        if (dragon == null || !dragon.isAlive() || !player.canSee(dragon)) return java.util.OptionalInt.empty();
+        Vec3d v = dragon.getVelocity();
+        return dev.kindred.core.tactics.Approach.within(new double[] {player.getX(), player.getY(), player.getZ()},
+                new double[] {dragon.getX(), dragon.getY(), dragon.getZ()}, new double[] {v.x, v.y, v.z},
+                dev.kindred.core.tactics.Approach.WING_REACH, GUARD_WARNING);
+    }
+
+    /** One block of the guard round the feet: where it goes, and the face of the block it is set against. */
+    record GuardBlock(BlockPos at, net.minecraft.util.math.Direction side) { }
+
+    /**
+     * The next block of a guard for a player on a column one block wide, pushed from {@code from}. Vanilla's wings push
+     * a player sideways and lift it a fifth of a block every tick it is in their reach, so the lift builds up and walls
+     * alone would be cleared in a few ticks. The guard is therefore walls at the feet and a block over the head. First
+     * the wall on the side the push goes toward (the block beside the column's top, set against its side, then the one
+     * at the feet on top of that). Then the block over the head, set against whatever stands beside that space (the
+     * pillar's obsidian or the cage's bars), or on a column built up on that first side. Then the walls on the other
+     * open sides. Empty when the guard is whole.
+     */
+    static Optional<GuardBlock> guardStep(ServerPlayerEntity player, Vec3d from) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        double px = player.getX() - from.x, pz = player.getZ() - from.z;
+        var sides = new ArrayList<>(net.minecraft.util.math.Direction.Type.HORIZONTAL.stream().toList());
+        sides.sort(java.util.Comparator.comparingDouble(d -> -(d.getOffsetX() * px + d.getOffsetZ() * pz)));
+        // The side the push goes toward that is not closed by the pillar or the cage: open, or a wall of its own there.
+        var far = sides.stream().filter(d -> !closedWall(world, feet.offset(d)) || placed(world.getBlockState(feet.offset(d)))).findFirst();
+        if (far.isPresent()) {
+            var wall = wallStep(world, feet, far.get());
+            if (wall.isPresent()) return wall;
+        }
+        BlockPos over = feet.up(2);
+        if (world.getBlockState(over).isReplaceable()) {
+            for (var side : sides) {
+                if (!world.getBlockState(over.offset(side)).isReplaceable()) return Optional.of(new GuardBlock(over, side.getOpposite()));
+            }
+            // Nothing beside the space over the head: a column up on the first side's wall to set it against.
+            var first = sides.stream().filter(d -> !world.getBlockState(feet.offset(d)).isReplaceable()).findFirst();
+            if (first.isPresent()) {
+                BlockPos head = feet.up().offset(first.get());
+                if (world.getBlockState(head).isReplaceable()) return Optional.of(new GuardBlock(head, net.minecraft.util.math.Direction.UP));
+                BlockPos top = head.up();
+                if (world.getBlockState(top).isReplaceable()) return Optional.of(new GuardBlock(top, net.minecraft.util.math.Direction.UP));
+            }
+        }
+        for (var side : sides) {
+            var wall = wallStep(world, feet, side);
+            if (wall.isPresent()) return wall;
+        }
+        return Optional.empty();
+    }
+
+    /** The next block of the wall at the feet on {@code side}: the block beside the column's top, then the one on it. */
+    private static Optional<GuardBlock> wallStep(ServerWorld world, BlockPos feet, net.minecraft.util.math.Direction side) {
+        BlockPos at = feet.offset(side);
+        if (!world.getBlockState(at).isReplaceable()) return Optional.empty();
+        BlockPos below = at.down();
+        if (world.getBlockState(below).isReplaceable()) return Optional.of(new GuardBlock(below, side));
+        return Optional.of(new GuardBlock(at, net.minecraft.util.math.Direction.UP));
+    }
+
+    /** A side already closed at the feet by something a push does not go through. */
+    private static boolean closedWall(ServerWorld world, BlockPos at) {
+        return !world.getBlockState(at).isReplaceable();
+    }
+
+    /** The guard's next step while the dragon is coming: a block, a block readied, or a wait walled in; empty otherwise. */
+    private Optional<PortalRunCampaign.Task> guard(NativePlayerBody body) {
+        var player = body.entity();
+        EnderDragonEntity dragon = dragon(player.getServerWorld());
+        var coming = dragonComing(player, dragon);
+        if (coming.isEmpty()) return Optional.empty();
+        var step = guardStep(player, dragon.getPos());
+        if (step.isEmpty()) return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Walled in on its pillar while the dragon goes by"));
+        int slot = -1;
+        for (int i = 0; i < 9 && slot < 0; i++) if (isBlock(player.getInventory().getStack(i))) slot = i;
+        if (slot < 0) {
+            for (int i = 9; i < 36; i++) if (isBlock(player.getInventory().getStack(i))) return Optional.of(campaign.swapToHotbar(body, i, "Ready a block for a wall"));
+            return Optional.empty();
+        }
+        BlockPos at = step.get().at();
+        if (coming.getAsInt() > 0) KindredMod.LOGGER.info("{} sees the dragon coming, {} ticks off; walling in its feet", player.getName().getString(), coming.getAsInt());
+        return Optional.of(new PortalRunCampaign.Task("native_place", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                "z", String.valueOf(at.getZ()), "slot", String.valueOf(slot), "side", step.get().side().asString()), "Wall in its feet against the wings"));
+    }
+
     // ------------------------------------------------------------------ pearls (E-39f)
 
     /** When it next looks for a throw down from a height it was stranded on. */
@@ -658,6 +783,32 @@ final class EndFightLeg {
 
     private static int pearls(ServerPlayerEntity player) {
         return player.getInventory().count(Items.ENDER_PEARL);
+    }
+
+    /**
+     * End stone to step down onto from a height, the fall to be broken with water (E-07d): straight below a free block
+     * one to three out from the feet, at most {@link NativeNavigator#MAX_CLUTCH_DROP} down, away from the perch and
+     * with end stone round it (not the island's rim over the void); the shortest drop first. With how far it drops.
+     */
+    static Optional<Map.Entry<BlockPos, Integer>> stepOff(ServerPlayerEntity player, java.util.function.Predicate<BlockPos> blocked) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        BlockPos best = null;
+        int bestDrop = Integer.MAX_VALUE;
+        for (int dx = -3; dx <= 3; dx++) for (int dz = -3; dz <= 3; dz++) {
+            if (dx == 0 && dz == 0) continue;
+            BlockPos edge = feet.add(dx, 0, dz);
+            if (!world.getBlockState(edge).getCollisionShape(world, edge).isEmpty()
+                    || !world.getBlockState(edge.up()).getCollisionShape(world, edge.up()).isEmpty()
+                    || !world.getBlockState(edge.down()).getCollisionShape(world, edge.down()).isEmpty()) continue;
+            var top = islandTop(world, edge.getX(), edge.getZ());
+            if (top.isEmpty() || blocked.test(top.get()) || Math.hypot(top.get().getX(), top.get().getZ()) < PERCH_CLEAR) continue;
+            int drop = feet.getY() - top.get().getY();
+            if (drop <= NativeNavigator.MAX_SAFE_DROP || drop > NativeNavigator.MAX_CLUTCH_DROP) continue;
+            if (islandTop(world, top.get().getX() + 2, top.get().getZ()).isEmpty() && islandTop(world, top.get().getX() - 2, top.get().getZ()).isEmpty()) continue;
+            if (drop < bestDrop) { bestDrop = drop; best = top.get(); }
+        }
+        return best == null ? Optional.empty() : Optional.of(Map.entry(best, bestDrop));
     }
 
     private static PortalRunCampaign.Task pearlTask(int slot, PearlFlight.Throw t, String label) {

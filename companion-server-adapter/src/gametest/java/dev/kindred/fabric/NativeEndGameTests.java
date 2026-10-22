@@ -429,6 +429,142 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /** A column of cobblestone one wide and {@code height} high beside an obsidian pillar's side, as the leg builds one. */
+    private static void tower(net.minecraft.server.world.ServerWorld world, BlockPos o, int height) {
+        for (int x = -12; x <= 12; x++) for (int z = -12; z <= 12; z++) {
+            world.setBlockState(o.add(x, 1, z), Blocks.END_STONE.getDefaultState());
+            for (int y = 2; y <= 22; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+        }
+        // The pillar's obsidian rises past the tower's top, as it does while the tower goes up beside it.
+        for (int y = 2; y <= 20; y++) world.setBlockState(o.add(-1, y, 0), Blocks.OBSIDIAN.getDefaultState());
+        for (int y = 2; y < 2 + height; y++) world.setBlockState(o.add(0, y, 0), Blocks.COBBLESTONE.getDefaultState());
+    }
+
+    /** Vanilla's wings, as `EnderDragonEntity.launchLivingEntities` pushes a player each tick: away from the body by four over the distance, and up a fifth. */
+    private static void fling(net.minecraft.server.network.ServerPlayerEntity player, net.minecraft.util.math.Vec3d body) {
+        double f = player.getX() - body.x, g = player.getZ() - body.z, h = Math.max(f * f + g * g, 0.1);
+        player.addVelocity(f / h * 4.0, 0.2, g / h * 4.0);
+        player.velocityModified = true;
+    }
+
+    private static void clearTower(net.minecraft.server.world.ServerWorld world, BlockPos o) {
+        for (int x = -12; x <= 12; x++) for (int z = -12; z <= 12; z++) for (int y = 2; y <= 22; y++) {
+            world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE);
+        }
+    }
+
+    /**
+     * The control for the guard (E-39h): on a bare column three high, vanilla's wing fling from three blocks off takes
+     * the player off its top in a few ticks.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endFling", tickLimit = 400)
+    public void theWingsFlingAPlayerOffABareTower(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        int[] ticks = {0};
+        net.minecraft.util.math.Vec3d[] body = new net.minecraft.util.math.Vec3d[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bare"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    tower(world, o, 3);
+                    f.player().refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 5, o.getZ() + 0.5, 0, 0);
+                    body[0] = new net.minecraft.util.math.Vec3d(o.getX() - 2.5, o.getY() + 7, o.getZ() + 0.5);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockY() == context.getAbsolutePos(BlockPos.ORIGIN).getY() + 5, "On the column's top"))
+                .createAndAdd(() -> {
+                    if (ticks[0]++ < 10) fling(f.player(), body[0]);
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    var player = f.player();
+                    context.assertTrue(Math.hypot(player.getX() - (o.getX() + 0.5), player.getZ() - (o.getZ() + 0.5)) > 1.5, "Flung off: still on top");
+                    KindredMod.LOGGER.info("Bare: flung {} blocks off its column in {} ticks",
+                            String.format(java.util.Locale.ROOT, "%.1f", Math.hypot(player.getX() - (o.getX() + 0.5), player.getZ() - (o.getZ() + 0.5))), ticks[0]);
+                    clearTower(context.getWorld(), o);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Walls at its feet and a block over its head hold the player on its tower against the wings (E-39h): on a column
+     * fifteen high beside an obsidian pillar, the guard's blocks are set, the side the push goes toward first, each a
+     * recorded placement of its own cobblestone, until the guard is whole; then ten ticks of vanilla's fling from three
+     * blocks off, whose lift alone would take it over a wall, leave it where it stands.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endGuard", tickLimit = 900)
+    public void wallsAtItsFeetHoldItOnItsTowerAgainstTheWings(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        int[] ticks = {0}, placed = {0};
+        long[] began = {-1}, whole = {-1};
+        java.util.List<String> order = new java.util.ArrayList<>();
+        net.minecraft.util.math.Vec3d[] body = new net.minecraft.util.math.Vec3d[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Warden"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    forceChunks(world, o, true);
+                    tower(world, o, 15);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 17, o.getZ() + 0.5, 0, 0);
+                    player.getInventory().clear();
+                    player.getInventory().setStack(0, new ItemStack(Items.COBBLESTONE, 16));
+                    // The dragon's body three blocks off on the open side, a little above: the push is due east.
+                    body[0] = new net.minecraft.util.math.Vec3d(o.getX() - 2.5, o.getY() + 19, o.getZ() + 0.5);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockY() == context.getAbsolutePos(BlockPos.ORIGIN).getY() + 17, "On its tower's top"))
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    if (!(activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED"))) { context.assertTrue(false, "Placing: " + activity); return; }
+                    var step = EndFightLeg.guardStep(f.player(), body[0]);
+                    if (step.isPresent()) {
+                        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                        BlockPos at = step.get().at();
+                        if (f.runtime.nativePlace(f.source, f.id, at, step.get().side().asString(), 0) == 1) {
+                            if (began[0] < 0) began[0] = context.getWorld().getTime();
+                            placed[0]++;
+                            order.add((at.getX() - o.getX()) + "," + (at.getY() - o.getY()) + "," + (at.getZ() - o.getZ()));
+                        }
+                        context.assertTrue(false, "Walling in: " + placed[0] + " placed");
+                    }
+                    whole[0] = context.getWorld().getTime();
+                })
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Warden: walled in with {} blocks in {} ticks, in this order: {}", placed[0], whole[0] - began[0], order);
+                    context.assertTrue(whole[0] - began[0] <= EndFightLeg.GUARD_WARNING, "Whole within the warning: " + (whole[0] - began[0]) + " ticks");
+                    // The pillar's obsidian stands beside the space over its head: the block there is set against it.
+                    context.assertTrue(order.equals(java.util.List.of("1,16,0", "1,17,0", "0,19,0", "0,16,-1", "0,17,-1", "0,16,1", "0,17,1")),
+                            "The side the push goes toward, the block over the head, then the flanks: " + order);
+                    context.assertTrue(f.player().getInventory().count(Items.COBBLESTONE) == 16 - placed[0], "Its own blocks spent, none conjured");
+                })
+                .createAndAdd(() -> {
+                    if (ticks[0]++ < 10) fling(f.player(), body[0]);
+                    var player = f.player();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    double off = Math.hypot(player.getX() - (o.getX() + 0.5), player.getZ() - (o.getZ() + 0.5));
+                    context.assertTrue(off < 0.5 && player.getBlockY() >= o.getY() + 17, "Still on its tower: " + String.format(java.util.Locale.ROOT, "%.2f", off));
+                    context.assertTrue(ticks[0] >= 20 && player.isOnGround(), "Ten ticks of the fling and settled again");
+                    KindredMod.LOGGER.info("Warden: after the fling it stands {} from its column's middle, health {}",
+                            String.format(java.util.Locale.ROOT, "%.2f", off), player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_place") && record.state() == ActionRecord.State.VERIFIED,
+                            "Verified placements: " + record);
+                    clearTower(context.getWorld(), o);
+                    forceChunks(context.getWorld(), o, false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /**
      * The respawn point by the End portal (E-39g): a bed it carries set down on a floor two blocks off, facing east, and
      * used; vanilla sets the respawn point at the bed by day or by night. One bed item spent, both halves standing.
