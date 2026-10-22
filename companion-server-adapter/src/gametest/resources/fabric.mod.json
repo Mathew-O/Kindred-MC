@@ -55,7 +55,8 @@
       "dev.kindred.fabric.NativeFollowUpGameTests",
       "dev.kindred.fabric.NativeEdgeFightGameTests",
       "dev.kindred.fabric.NativeEndGameTests",
-      "dev.kindred.fabric.NativeFallGameTests"
+      "dev.kindred.fabric.NativeFallGameTests",
+      "dev.kindred.fabric.NativeBuildGameTests"
     ]
   },
   "depends": {

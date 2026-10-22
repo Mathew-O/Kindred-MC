@@ -1258,6 +1258,16 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     boolean placeBlock(ActionLease lease, int hotbarSlot, BlockPos target, Direction side) {
+        return placeBlock(lease, hotbarSlot, target, side, null);
+    }
+
+    /**
+     * A look for a placement (E-08b): the way the player faces and the point on the clicked face, which together give a
+     * placed block its state (a stair's facing and half, a slab's half). Null keeps the face's middle and the current look.
+     */
+    record PlaceLook(float yaw, float pitch, Vec3d hit) { }
+
+    boolean placeBlock(ActionLease lease, int hotbarSlot, BlockPos target, Direction side, PlaceLook aim) {
         requireThread();
         if (hotbarSlot < 0 || hotbarSlot > 8) return false;
         var stack = player.getInventory().getStack(hotbarSlot);
@@ -1287,9 +1297,10 @@ final class NativePlayerBody implements BodyAdapter {
 
         return execute(lease, Intent.PLACE, placedPos, () -> {
             player.getInventory().selectedSlot = hotbarSlot;
-            var hitVec = new Vec3d(clickedPos.getX() + 0.5 + clickedSide.getOffsetX() * 0.5,
+            var hitVec = aim != null ? aim.hit() : new Vec3d(clickedPos.getX() + 0.5 + clickedSide.getOffsetX() * 0.5,
                     clickedPos.getY() + 0.5 + clickedSide.getOffsetY() * 0.5,
                     clickedPos.getZ() + 0.5 + clickedSide.getOffsetZ() * 0.5);
+            if (aim != null) look(aim.yaw(), aim.pitch());
             var hitResult = new BlockHitResult(hitVec, clickedSide, clickedPos, false);
             player.setSneaking(true);
             try {

@@ -17,6 +17,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer goal dragon [bot]          on through the End portal to beat the Ender Dragon (needs dragonfight on)
 /aiplayer dragonfight on|off         server-wide leave for AI players to go into the End and fight the dragon (default off)
 /aiplayer goal none [bot]            stop pursuing the goal
+/aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
+/aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
 /aiplayer skin list                  the skins on offer
 /aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
@@ -71,6 +73,16 @@ Pace: `/aiplayer mode speedrun [player]` makes a player take the quickest way of
 The log shows `<name> in the End: N crystals left (C caged), the dragon at H health` as the fight goes, and `<name> dragon fight: hits, on the head, critical` after each perch fight. A staged fight (an End kit and a teleport given by command, so not earned) killed the dragon and came home on seed 8675309; see [E-39d](evidence/E-39d.md). Not yet seen in play: the bed and the gathering again after a real death in the End, the pearl way in a real fight, and an earned run from the stronghold; see [E-39e](evidence/E-39e.md), [E-39f](evidence/E-39f.md) and [E-39g](evidence/E-39g.md).
 
 **Breaking a fall (E-07d).** A player falling with a water bucket in its hotbar pours water on the block it is about to land on, once the block is in reach, whenever the fall would take four health or more. It lands unhurt and scoops the water back up. This works everywhere but the Nether, where water boils away. With a bucket ready it will also jump down ledges and drops of up to forty blocks, not twelve. Keep a water bucket in its hotbar where it climbs. Native players take fall damage as any player does, and vanilla spares any player that has just joined for its first three seconds.
+
+**Building (E-08a, E-08b; in development).** `/aiplayer build hut <x y z> [quarter turns] [player]` has a native player build a hut with its north-west floor corner at that spot, turned clockwise a quarter at a time. The hut has a plank floor, cobblestone walls on upright oak logs, a doorway in the south wall, a torch inside on the north wall, and a gabled roof of oak stairs facing in over a plank ceiling. `hut-7x5x3` sets the width, depth and wall height (3 to 15, 2 to 6); the default is 5×5×3, which takes 40 oak planks, 34 cobblestone, 12 oak logs, 20 oak stairs, 5 oak slabs and a torch. The player builds only from blocks it holds and says what it is short of when it starts. It works the way a player does:
+- It builds layer by layer, the nearest block first, each against a face it can click from where it can stand and walk to.
+- It stands in each block's centre to place it and looks the way that gives the block its state: a stair's facing and half, a log's axis, a slab's half, a torch on its wall. Every block is checked in that state afterwards; one placed wrong is broken and placed again, and after two tries it is left for the operator.
+- What is in the build's way is broken first, but never a container or anything not the build's to break.
+- Where nothing is in reach from the ground it scaffolds up with spare dirt or cobblestone (never blocks the build still needs) and digs its scaffold down to get off it. It takes all the scaffolding away at the end.
+- Survival needs still come first. The build goes ahead of a standing goal and the goal resumes when it is done.
+- After eight failed steps in a row it stops and says why. `/aiplayer build stop` ends a build; what is built stays.
+
+The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. Not yet: a build kept across a restart (the project is held in memory; what is built stays, so the same command picks it up from the world), gathering and crafting what is missing (E-08c), imported schematics (M-05). See [the building plan](building-plan.md) and [E-08b](evidence/E-08b.md).
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 

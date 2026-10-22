@@ -47,6 +47,8 @@ final class NativeGoToSkill implements SkillBody {
     private final int maxNodes;
     private final boolean sprint;
     private final int maxDrop;
+    /** Arrived only near the middle of the target block, as a player lines up on a spot to build from (E-08b). */
+    private boolean centre;
     private List<BlockPos> path;
     private boolean pathComplete;
     private int index;
@@ -97,13 +99,21 @@ final class NativeGoToSkill implements SkillBody {
         return Math.sqrt(feet.getSquaredDistance(target)) <= range + 0.01;
     }
 
+    /** Arrive only near the middle of the target block. */
+    NativeGoToSkill centred() {
+        centre = true;
+        return this;
+    }
+
     private boolean plan() {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop);
         if (engage != null) navigator.avoiding(dangers());
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
-        if (found.nodes().size() < 2 && !goalReached(start) || !found.complete() && !partial) {
+        // A body over an edge searches from the block below its feet; when that is the goal, the route is the step off.
+        boolean below = found.complete() && found.nodes().size() == 1 && goalReached(found.nodes().getFirst());
+        if (found.nodes().size() < 2 && !goalReached(start) && !below || !found.complete() && !partial) {
             KindredMod.LOGGER.debug("No route from {} toward {} (expanded {}, standing {})", start.toShortString(),
                     target.toShortString(), found.expanded(), navigator.standable(start));
             path = null;
@@ -122,7 +132,7 @@ final class NativeGoToSkill implements SkillBody {
         var player = body.entity();
         ticks++;
         BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
-        if (goalReached(feet) && (player.isOnGround() || player.isTouchingWater())) {
+        if (goalReached(feet) && (!centre || reached(player.getPos(), target)) && (player.isOnGround() || player.isTouchingWater())) {
             body.stopInputs();
             return Step.completed(Map.of("arrived", feet.toShortString()));
         }

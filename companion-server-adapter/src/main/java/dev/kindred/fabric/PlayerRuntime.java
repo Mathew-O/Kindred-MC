@@ -1261,7 +1261,8 @@ final class PlayerRuntime {
                 task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
-                        Direction.byName(arguments.getOrDefault("side", "up")), Integer.parseInt(arguments.get("slot")));
+                        Direction.byName(arguments.getOrDefault("side", "up")), Integer.parseInt(arguments.get("slot")),
+                        BuildRunner.aim(entry.nativeBody.entity(), arguments));
             } else if (skill.equals("native_smelt")) {
                 BlockPos targetPos = null;
                 if (arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z")) {
@@ -2605,6 +2606,11 @@ final class PlayerRuntime {
             return candidates;
         }
 
+        if (entry.build != null) {
+            candidates.addAll(buildCandidates(entry, body));
+            return candidates;
+        }
+
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
             candidates.addAll(campaignCandidates(entry, body));
@@ -3370,6 +3376,89 @@ final class PlayerRuntime {
         entry.cachedRoutineCandidates = List.of();
     }
 
+    /** The build's next step, as one project candidate; survival needs still outrank it (E-08b). */
+    private List<NativeTaskCandidate> buildCandidates(Entry entry, NativePlayerBody body) {
+        var build = entry.build;
+        var task = build.next(body);
+        entry.goalProgress = build.progress();
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} build: {}", entry.data.displayName(), entry.goalProgress);
+        }
+        if (task.isEmpty()) {
+            if (build.done()) {
+                entry.build = null;
+                entry.buildTasks.clear();
+                server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + build.progress()
+                        + " at " + build.origin.getX() + ", " + build.origin.getY() + ", " + build.origin.getZ() + "."), false);
+                entry.routineRefreshPending = true;
+            }
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("build:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    private void buildTaskFinished(Entry entry, SkillRunner.State state) {
+        var task = entry.activeBuildTask;
+        entry.activeBuildTask = null;
+        if (task == null || entry.build == null || entry.nativeBody == null) return;
+        entry.build.finished(task, state == SkillRunner.State.COMPLETED, entry.runner.reason().orElse(""),
+                entry.nativeBody.entity().getServerWorld());
+        entry.routineRefreshPending = true;
+        entry.cachedRoutineCandidates = List.of();
+    }
+
+    /**
+     * Starts a build (E-08b): {@code blueprint} placed with its origin at {@code origin}, turned clockwise
+     * {@code turns} quarters, built from the player's own blocks ahead of its standing goal. Null stops the build.
+     */
+    int startBuild(ServerCommandSource source, UUID id, dev.kindred.core.construction.Blueprint blueprint, BlockPos origin, int turns) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (blueprint == null) {
+            entry.build = null;
+            entry.buildTasks.clear();
+            entry.goalProgress = "";
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+            feedback(source, entry.data.displayName() + ": the build is stopped; what is built stays.");
+            return 1;
+        }
+        if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
+        entry.build = new BuildRunner(blueprint, origin, turns);
+        entry.goalProgress = "Starting: " + blueprint.name();
+        if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+        }
+        entry.manualHoldUntilTick = Long.MIN_VALUE;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        var bill = dev.kindred.core.construction.BillOfMaterials.of(entry.build.blocks(), entry.build.snapshot(entry.nativeBody.entity().getServerWorld()),
+                BuildRunner.counts(entry.nativeBody.entity()));
+        String credit = blueprint.creator().isEmpty() ? "" : " by " + blueprint.creator() + (blueprint.license().isEmpty() ? "" : " (" + blueprint.license() + ")");
+        String missing = bill.complete() ? "" : "; short of " + bill.missing();
+        if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
+        feedback(source, entry.data.displayName() + ": building " + blueprint.name() + credit + " at " + origin.toShortString() + missing + ".");
+        return 1;
+    }
+
+    /** The build a player is on, if any, as a line of progress. */
+    Optional<String> buildStatus(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.build == null ? Optional.empty() : Optional.of(entry.build.progress());
+    }
+
     private List<NativeTaskCandidate> evaluateNativeCandidates(Entry entry, NativePlayerBody body) {
         bindBodyBlockScanBudget(body);
         var list = new java.util.ArrayList<NativeTaskCandidate>();
@@ -3749,6 +3838,14 @@ final class PlayerRuntime {
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     entry.activeCampaignTask = res == 1 ? entry.campaignTasks.get(chosen.id()) : null;
+                    entry.activeBuildTask = res == 1 ? entry.buildTasks.get(chosen.id()) : null;
+                    if (res != 1 && entry.build != null && entry.buildTasks.containsKey(chosen.id())) {
+                        var refusedTask = entry.buildTasks.get(chosen.id());
+                        KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker, refusedTask.label());
+                        entry.build.finished(refusedTask, false, String.valueOf(entry.blocker), body.entity().getServerWorld());
+                        entry.routineRefreshPending = true;
+                        entry.cachedRoutineCandidates = List.of();
+                    }
                     if (res != 1) {
                         if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
                             KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(),
@@ -4285,8 +4382,10 @@ final class PlayerRuntime {
                 || state == SkillRunner.State.CANCELLED)) {
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
-                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]" : "");
+                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
+                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
             campaignTaskFinished(entry, state);
+            buildTaskFinished(entry, state);
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED || state == SkillRunner.State.PAUSED)) {
@@ -5664,6 +5763,10 @@ final class PlayerRuntime {
         PortalRunCampaign campaign;
         final Map<UUID, PortalRunCampaign.Task> campaignTasks = new HashMap<>();
         PortalRunCampaign.Task activeCampaignTask;
+        /** A build the player is on (E-08b), ahead of its standing goal until it is done. */
+        BuildRunner build;
+        final Map<UUID, PortalRunCampaign.Task> buildTasks = new HashMap<>();
+        PortalRunCampaign.Task activeBuildTask;
         boolean goalAnnounced;
         String loggedGoalProgress = "";
         boolean foodTaskAuthorized = false;

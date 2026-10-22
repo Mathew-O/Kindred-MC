@@ -59,6 +59,20 @@ public final class PlayerCommands {
                             if (id == null) return 0;
                             return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
                         }))));
+        // A build from a generator (E-08b): /aiplayer build hut|hut-7x5x3 <x y z> [quarter turns] [player]; build stop [player].
+        root.then(CommandManager.literal("build")
+                .then(CommandManager.literal("stop").executes(context -> build(context, false, false, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> build(context, false, false, true))))
+                .then(CommandManager.argument("blueprint", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("hut"); builder.suggest("hut-7x5x3"); return builder.buildFuture(); })
+                        .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                                .executes(context -> build(context, true, false, false))
+                                .then(CommandManager.argument("turns", IntegerArgumentType.integer(0, 3))
+                                        .executes(context -> build(context, true, true, false))
+                                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                                .suggests((context, builder) -> suggestBots(builder))
+                                                .executes(context -> build(context, true, true, true)))))));
         root.then(CommandManager.literal("skin")
                 .then(CommandManager.literal("list").executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
@@ -835,6 +849,30 @@ public final class PlayerCommands {
                     return handler.run(runtime, context, id);
                 }));
         return node;
+    }
+
+    private static int build(CommandContext<ServerCommandSource> context, boolean start, boolean turned, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        if (!start) return runtime.startBuild(context.getSource(), id, null, null, 0);
+        String name = StringArgumentType.getString(context, "blueprint");
+        dev.kindred.core.construction.Blueprint blueprint;
+        try {
+            var parts = name.split("-", 2);
+            var sizes = new java.util.ArrayList<Integer>();
+            if (parts.length > 1) for (String size : parts[1].split("x")) sizes.add(Integer.parseInt(size));
+            blueprint = dev.kindred.core.construction.Generators.named(parts[0], sizes);
+        } catch (IllegalArgumentException invalid) {
+            context.getSource().sendError(Text.literal(invalid.getMessage() == null ? "Not a blueprint: " + name : invalid.getMessage()));
+            return 0;
+        }
+        return runtime.startBuild(context.getSource(), id, blueprint, BlockPosArgumentType.getBlockPos(context, "at"),
+                turned ? IntegerArgumentType.getInteger(context, "turns") : 0);
     }
 
     private static int unavailable(ServerCommandSource source) {

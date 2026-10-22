@@ -71,7 +71,7 @@ final class NativePlayerSkills {
             case "native_bed" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "facing"), Set.of(),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side"),
+            case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side", "yaw", "pitch", "hit"),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_smelt" -> new SkillDescriptor(id, Set.of(), Set.of("x", "y", "z", "action", "fuel_slot", "input_slot", "count"),
@@ -103,7 +103,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage"), Set.of("move"), Set.of(),
+            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
             case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
@@ -130,13 +130,14 @@ final class NativePlayerSkills {
                           NativeMovementHabits habits) {
         if (id.equals("native_goto")) {
             BlockPos target = new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
-            return new NativeGoToSkill(body, lease, target, Double.parseDouble(arguments.getOrDefault("range", "1.5")),
+            var go = new NativeGoToSkill(body, lease, target, Double.parseDouble(arguments.getOrDefault("range", "1.5")),
                     Boolean.parseBoolean(arguments.getOrDefault("partial", "false")),
                     Integer.parseInt(arguments.getOrDefault("nodes", String.valueOf(NativeNavigator.DEFAULT_MAX_NODES))),
                     Boolean.parseBoolean(arguments.getOrDefault("sprint", "false")),
                     Integer.parseInt(arguments.getOrDefault("drop", String.valueOf(NativeNavigator.MAX_SAFE_DROP))),
                     Boolean.parseBoolean(arguments.getOrDefault("avoid", "false"))
                             ? new java.util.HashSet<>(java.util.Arrays.asList(arguments.getOrDefault("engage", "").split(","))) : null);
+            return Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
         }
         if (id.equals("native_step_in")) {
             return new NativeStepInSkill(body, lease,

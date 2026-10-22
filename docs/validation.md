@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-08a (blueprints and the construction planner, complete) and E-08b (the native player building, in progress), taking over the world-design prototype ([building plan](building-plan.md)), on top of `08d94cc`.
+  - New JUnit: `BlockSpecTest` (3), `BlueprintTest` (2), `PlacementTest` (2), `ConstructionPlannerTest` (14), `GeneratorsTest` (2: the hut, and whole huts of three sizes, each turned four ways, simulated step by step through the planner).
+  - New native fixture: `aHutIsBuiltFromItsOwnBlocksEachInItsState`. It passed 5 of 5 alone on the final tree.
+  - Found on the way. In the planner: a ridge slab with nothing to be placed against; scaffold columns chosen without checking what they reach; spots the player could not walk to. In the adapter: a navigator bug in every walk (a body over an edge whose goal was the block below it got "no walkable route"); the cell stood on misread over an edge; scaffold recorded before its step landed; a break refused where the server's reach and sight checks differ from the planner's. Each is fixed; see [E-08a](evidence/E-08a.md) and [E-08b](evidence/E-08b.md). Earlier runs of the fixture failed on each in turn (107, 110 and 112 of 112 placed but scaffold left; a crash of the fixture's own message once the runtime had stopped).
+  - The core package is `dev.kindred.core.construction`. It was first `dev.kindred.core.build`, which the repository's `**/build/` ignore rule for Gradle output silently left out of git; it was renamed, and everything was run again on the renamed tree.
+  - `runGametest` passed 268/268 twice. `./gradlew build` passed: 473 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `6100235e5b84aff944213f634793d17b605be2a1b49e5c5347971743524eef91`.
 - E-39h (walled in against the dragon's wings) and E-07d (a long fall broken with a water bucket), both in progress, on top of `067bc69`.
   - New JUnit: `ApproachTest` (3), `FallClutchTest` (3).
   - New native fixtures: `wallsAtItsFeetHoldItOnItsTowerAgainstTheWings` and its control `theWingsFlingAPlayerOffABareTower`; `aLongFallIsBrokenWithWaterAndTheWaterTakenBack`, its control `withoutABucketAFallHurtsAsVanillaSays`, and `offAPillarTheFallIsBrokenWithWaterNotAPearl`. Each passed 3 of 3 alone before the suite.
