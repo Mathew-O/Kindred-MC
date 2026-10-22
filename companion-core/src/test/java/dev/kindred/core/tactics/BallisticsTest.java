@@ -44,4 +44,31 @@ class BallisticsTest {
         assertEquals(12, arc.getLast()[1], 0.05);
         assertTrue(arc.stream().anyMatch(p -> p[1] > 12), "it rises above the line and comes down onto the target");
     }
+
+    @Test
+    void aPearlFliesSlowerAndFallsLessAndReachesAboutThirtyBlocksUp() {
+        var pearl = Ballistics.Projectile.PEARL;
+        // Twelve blocks off and eight up, a pearl's low arc lands there; slower than an arrow, it takes longer.
+        var shot = Ballistics.aim(12, 8, pearl, false).orElseThrow();
+        assertEquals(8, Ballistics.heightAt(shot.pitch(), pearl, 12).orElseThrow()[0], 0.05);
+        assertTrue(shot.ticks() > Ballistics.aim(12, 8, Ballistics.Projectile.ARROW, false).orElseThrow().ticks());
+        // About thirty blocks up is within a pearl's reach from close by, forty is not.
+        assertTrue(Ballistics.aim(3, 28, pearl, false).isPresent(), "a caged pillar's roof from its foot");
+        assertTrue(Ballistics.aim(3, 45, pearl, false).isEmpty(), "out of reach above");
+        // Down from a pillar, twenty blocks out and twenty below.
+        var down = Ballistics.aim(20, -20, pearl, false).orElseThrow();
+        assertEquals(-20, Ballistics.heightAt(down.pitch(), pearl, 20).orElseThrow()[0], 0.05);
+    }
+
+    @Test
+    void theHighArcComesDownSteeplyOnTheSameTarget() {
+        var low = Ballistics.aim(30, 10, Ballistics.Projectile.ARROW, false).orElseThrow();
+        var high = Ballistics.aim(30, 10, Ballistics.Projectile.ARROW, true).orElseThrow();
+        assertTrue(high.pitch() < low.pitch() - 20, "the high arc is aimed far higher: " + high.pitch() + " against " + low.pitch());
+        assertTrue(high.ticks() > low.ticks(), "and arrives later");
+        assertEquals(10, Ballistics.heightAt(high.pitch(), Ballistics.Projectile.ARROW, 30).orElseThrow()[0], 0.05);
+        // Descending as it arrives: just short of the target it was higher.
+        var arc = Ballistics.trajectory(high.pitch(), Ballistics.Projectile.ARROW, 30);
+        assertTrue(arc.get(arc.size() - 2)[1] > arc.getLast()[1], "coming down onto it");
+    }
 }

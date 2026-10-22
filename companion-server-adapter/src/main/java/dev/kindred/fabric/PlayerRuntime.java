@@ -950,6 +950,12 @@ final class PlayerRuntime {
                 "z", String.valueOf(target.getZ())));
     }
 
+    /** As {@link #nativeBreak}, leaving the drop where it falls when {@code collect} is false (bars broken up on a cage). */
+    int nativeBreak(ServerCommandSource source, UUID id, BlockPos target, boolean collect) {
+        return nativeTask(source, id, "native_break", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "collect", String.valueOf(collect)));
+    }
+
     /** Cast one obsidian block in place at {@code target} from the player's own lava and water buckets. */
     int nativeCast(ServerCommandSource source, UUID id, BlockPos target) {
         return nativeTask(source, id, "native_cast", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
@@ -1076,6 +1082,12 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_shoot", Map.of("slot", String.valueOf(hotbarSlot), "target", target.toString()));
     }
 
+    /** As {@link #nativeShoot}, on the high arc when {@code high} (down through an opened cage roof). */
+    int nativeShoot(ServerCommandSource source, UUID id, int hotbarSlot, UUID target, boolean high) {
+        return nativeTask(source, id, "native_shoot", high ? Map.of("slot", String.valueOf(hotbarSlot), "target", target.toString(), "arc", "high")
+                : Map.of("slot", String.valueOf(hotbarSlot), "target", target.toString()));
+    }
+
     /** One recorded boat step ({@code launch} from {@code hotbarSlot} onto {@code water}, {@code board} or {@code land}), as the goal takes it. */
     int nativeBoat(ServerCommandSource source, UUID id, String mode, int hotbarSlot, BlockPos water) {
         var args = new java.util.HashMap<String, String>(Map.of("mode", mode));
@@ -1091,6 +1103,11 @@ final class PlayerRuntime {
     /** Rows the boat the native player is in toward {@code x}, {@code z} for at most {@code seconds}. */
     int nativeRow(ServerCommandSource source, UUID id, double x, double z, int seconds) {
         return nativeTask(source, id, "native_row", Map.of("x", String.valueOf(x), "z", String.valueOf(z), "seconds", String.valueOf(seconds)));
+    }
+
+    /** One recorded ender pearl throw from {@code hotbarSlot} at {@code yaw} and {@code pitch} (E-39f), as the goal throws its own. */
+    int nativePearl(ServerCommandSource source, UUID id, int hotbarSlot, float yaw, float pitch) {
+        return nativeTask(source, id, "native_pearl", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw), "pitch", String.valueOf(pitch)));
     }
 
     /** One recorded eye-of-ender throw from {@code hotbarSlot}, facing {@code yaw}; the goal throws its own the same way. */
@@ -1194,6 +1211,11 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_pearl")) {
+                task = new NativePearlAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")), Float.parseFloat(arguments.get("pitch")),
+                        arguments.containsKey("x") ? new Vec3d(Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("y")),
+                                Double.parseDouble(arguments.get("z"))) : null);
             } else if (skill.equals("native_throw_eye")) {
                 task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
@@ -1204,7 +1226,7 @@ final class PlayerRuntime {
                                 Integer.parseInt(arguments.get("z"))) : null);
             } else if (skill.equals("native_shoot")) {
                 task = new NativeShootAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
-                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")), "high".equals(arguments.get("arc")));
             } else if (skill.equals("native_fill_frame")) {
                 task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")),
@@ -1428,6 +1450,7 @@ final class PlayerRuntime {
                     || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_fill_frame".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FRAME || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shoot".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHOOT || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_dragon".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT

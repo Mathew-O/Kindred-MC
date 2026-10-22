@@ -194,7 +194,8 @@ final class NativeDragonAction extends NativeRecordedAction {
         Vec3d aim = head == null ? dragon.getPos() : head.getBoundingBox().getCenter();
         double dx = aim.x - player.getX(), dz = aim.z - player.getZ();
         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        boolean ready = player.getAttackCooldownProgress(0.5f) >= 0.9f;
+        // A full swing: anything short of it costs damage as its square (vanilla scales a hit by 0.2 + 0.8 * charge²).
+        boolean ready = player.getAttackCooldownProgress(0.5f) >= 1.0f;
         Box hurt = head == null ? null : headZone(head);
         boolean tooClose = hurt != null && player.getBoundingBox().intersects(hurt);
         boolean flung = wingZones(dragon).stream().anyMatch(player.getBoundingBox()::intersects);

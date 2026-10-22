@@ -116,7 +116,8 @@ final class NativeFightAction extends NativeRecordedAction {
         double dx = target.getX() - player.getX(), dz = target.getZ() - player.getZ();
         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
         double distance = player.distanceTo(target);
-        boolean ready = player.getAttackCooldownProgress(0.5f) >= 0.9f;
+        // A full swing (E-39e): vanilla scales a hit by 0.2 + 0.8 * charge², and a critical needs more than 0.9.
+        boolean ready = player.getAttackCooldownProgress(0.5f) >= 1.0f;
         var navigator = new NativeNavigator(player.getServerWorld());
         CreeperEntity hissing = hissingCreeper(player);
         boolean moved;

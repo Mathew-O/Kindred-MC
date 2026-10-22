@@ -14,6 +14,7 @@ class EndFightPlannerTest {
         boolean inEnd, killed, portalOpen, onIsland, alive = true, perched, breath, exitOpen, bow = true;
         int framesSeen = 12, framesFilled = 2, eyes = 11, crystals = 10, shootable = 8, caged = 2, arrows = 32, blocks = 64, sword = 3;
         float health = 20;
+        int pearls = 0;
 
         Builder end() { inEnd = true; portalOpen = true; framesFilled = 12; eyes = 1; return this; }
         Builder island() { onIsland = true; return this; }
@@ -23,10 +24,11 @@ class EndFightPlannerTest {
         Builder dead() { alive = false; exitOpen = true; return this; }
         Builder noBow() { bow = false; arrows = 0; return this; }
         Builder health(float h) { health = h; return this; }
+        Builder pearls(int n) { pearls = n; return this; }
 
         EndFightSnapshot build() {
             return new EndFightSnapshot(inEnd, killed, framesSeen, framesFilled, eyes, portalOpen, onIsland, crystals, shootable, caged,
-                    alive, perched, breath, exitOpen, bow, arrows, blocks, sword, health);
+                    alive, perched, breath, exitOpen, bow, arrows, blocks, sword, health, pearls);
         }
     }
 
@@ -61,6 +63,11 @@ class EndFightPlannerTest {
         var givenUp = new Builder().end().island().crystals(1, 0, 0).build();
         assertEquals(Stage.DRAGON, EndFightPlanner.stage(givenUp));
         assertEquals(List.of(Action.SHOOT_DRAGON, Action.HOLD_GROUND), actions(givenUp));
+        // Two pearls are a way into a cage without blocks: up onto its roof and back down.
+        var pearled = new Builder().end().island().crystals(1, 0, 1);
+        pearled.blocks = 4;
+        assertEquals(Stage.DRAGON, EndFightPlanner.stage(pearled.build()));
+        assertEquals(List.of(Action.OPEN_CAGE, Action.SEEK_CRYSTALS), actions(pearled.pearls(2).build()));
         // Without a bow or blocks there is no way to break them: on to the dragon all the same.
         var bare = new Builder().end().island().noBow();
         bare.blocks = 4;

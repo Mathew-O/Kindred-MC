@@ -64,7 +64,7 @@ public final class EndFightPlanner {
         // The crystals heal the dragon: they come first while there is a way to break one. One it has given up on for
         // now (no clear shot, its arrows missing) does not hold the fight up: the dragon meanwhile (staged dragon run 3
         // waited forty seconds by the last crystal it had given up on, and the dragon's breath found it there).
-        if (s.shootable() > 0 && s.bow() && s.arrows() > 0 || s.caged() > 0 && s.blocks() >= 16) return Stage.CRYSTALS;
+        if (s.shootable() > 0 && s.bow() && s.arrows() > 0 || s.caged() > 0 && s.canOpenCage()) return Stage.CRYSTALS;
         return Stage.DRAGON;
     }
 
@@ -83,7 +83,7 @@ public final class EndFightPlanner {
             case REACH_ISLAND -> steps.add(new Step(Action.TO_ISLAND, stage, "Onto the main island"));
             case CRYSTALS -> {
                 if (s.shootable() > 0 && s.bow() && s.arrows() > 0) steps.add(new Step(Action.SHOOT_CRYSTAL, stage, "Shoot an End crystal off its pillar"));
-                if (s.caged() > 0 && s.blocks() >= 16) steps.add(new Step(Action.OPEN_CAGE, stage, "Open a caged crystal's bars"));
+                if (s.caged() > 0 && s.canOpenCage()) steps.add(new Step(Action.OPEN_CAGE, stage, "Open a caged crystal's bars"));
                 steps.add(new Step(Action.SEEK_CRYSTALS, stage, "Look for the crystals left"));
             }
             case DRAGON -> {

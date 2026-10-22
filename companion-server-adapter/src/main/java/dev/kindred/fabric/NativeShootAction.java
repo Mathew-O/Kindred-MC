@@ -41,6 +41,8 @@ final class NativeShootAction extends NativeRecordedAction {
     private final Consumer<Runnable> dispatch;
     private final int slot;
     private final UUID targetId;
+    /** The high arc, coming down steeply (through a cage's broken roof); else the low. */
+    private final boolean high;
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -53,6 +55,12 @@ final class NativeShootAction extends NativeRecordedAction {
 
     NativeShootAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       int slot, UUID targetId) {
+        this(body, lease, writer, dispatch, slot, targetId, false);
+    }
+
+    NativeShootAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
+                      int slot, UUID targetId, boolean high) {
+        this.high = high;
         this.body = body;
         this.lease = lease;
         this.writer = writer;
@@ -67,11 +75,14 @@ final class NativeShootAction extends NativeRecordedAction {
         return entity != null && entity.isAlive() && !entity.isRemoved() ? entity : null;
     }
 
-    /** Where on the target to aim: a crystal's middle, the perched dragon's head, the flying dragon's body. */
-    private static Vec3d aimPoint(Entity target) {
+    /**
+     * Where on the target to aim: a crystal's middle; the dragon's head, the one part that takes an arrow in full
+     * (E-39e), else its body.
+     */
+    static Vec3d aimPoint(Entity target) {
         if (target instanceof EnderDragonEntity dragon) {
             var head = NativeDragonAction.part(dragon, "head");
-            if (head != null && NativeDragonAction.perched(dragon)) return head.getBoundingBox().getCenter();
+            if (head != null) return head.getBoundingBox().getCenter();
             for (var part : dragon.getBodyParts()) if ("body".equals(part.name)) return part.getBoundingBox().getCenter();
         }
         return target.getBoundingBox().getCenter();
@@ -85,7 +96,7 @@ final class NativeShootAction extends NativeRecordedAction {
         Optional<Ballistics.Shot> shot = Optional.empty();
         for (int pass = 0; pass < 3; pass++) {
             double dx = at.x - start.x, dz = at.z - start.z;
-            shot = Ballistics.aim(Math.hypot(dx, dz), at.y - start.y, Ballistics.FULL_DRAW);
+            shot = Ballistics.aim(Math.hypot(dx, dz), at.y - start.y, Ballistics.Projectile.ARROW, high);
             if (shot.isEmpty()) return null;
             at = aimPoint(target).add(targetMotion.multiply(shot.get().ticks()));
         }

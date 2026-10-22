@@ -213,4 +213,33 @@ public final class NativeCombatGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * The weapon a goal's fight strikes with is the one that deals the most (E-39e): an iron sword's crits (9 every
+     * 12.5 ticks) over a diamond axe's (13.5 every 20) and a wooden sword; but with the zombie down to 12 health, the
+     * axe's one crit finishes it where the sword's would not. Stacks in the main inventory are not swapped in mid-fight.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "combatWeapon", tickLimit = 100)
+    public void theFightsWeaponIsTheOneThatDealsTheMost(TestContext context) {
+        var player = context.createMockCreativeServerPlayerInWorld();
+        var inventory = player.getInventory();
+        inventory.clear();
+        inventory.setStack(0, new ItemStack(Items.DIAMOND_AXE));
+        inventory.setStack(1, new ItemStack(Items.IRON_SWORD));
+        inventory.setStack(2, new ItemStack(Items.WOODEN_SWORD));
+        inventory.setStack(20, new ItemStack(Items.NETHERITE_SWORD));
+        ZombieEntity zombie = context.spawnEntity(EntityType.ZOMBIE, new BlockPos(3, 2, 3));
+        zombie.setAiDisabled(true);
+        var full = PortalRunCampaign.strike(player, zombie, "Fight zombie");
+        context.assertTrue("1".equals(full.args().get("slot")), "The iron sword over the fight: " + full.args());
+        zombie.setHealth(12);
+        var finish = PortalRunCampaign.strike(player, zombie, "Fight zombie");
+        context.assertTrue("0".equals(finish.args().get("slot")), "The axe's one crit to finish it: " + finish.args());
+        inventory.setStack(1, ItemStack.EMPTY);
+        inventory.setStack(0, ItemStack.EMPTY);
+        var wooden = PortalRunCampaign.strike(player, zombie, "Fight zombie");
+        context.assertTrue("2".equals(wooden.args().get("slot")), "What the hotbar holds, not the sword in the pack: " + wooden.args());
+        zombie.discard();
+        context.complete();
+    }
 }

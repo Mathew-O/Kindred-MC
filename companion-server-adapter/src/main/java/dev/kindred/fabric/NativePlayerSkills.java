@@ -54,11 +54,13 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_throw_eye" -> new SkillDescriptor(id, Set.of("slot", "yaw"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
+            case "native_pearl" -> new SkillDescriptor(id, Set.of("slot", "yaw", "pitch"), Set.of("x", "y", "z"), Set.of(), Set.of(),
+                    Duration.ofSeconds(12), Duration.ofSeconds(9), 0);
             case "native_step_in" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("move"), Set.of(),
                     Duration.ofSeconds(6), Duration.ofSeconds(2), 0);
             case "native_dragon" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
                     Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
-            case "native_shoot" -> new SkillDescriptor(id, Set.of("slot", "target"), Set.of(), Set.of(), Set.of(),
+            case "native_shoot" -> new SkillDescriptor(id, Set.of("slot", "target"), Set.of("arc"), Set.of(), Set.of(),
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_fill_frame" -> new SkillDescriptor(id, Set.of("slot", "x", "y", "z"), Set.of(), Set.of("place"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

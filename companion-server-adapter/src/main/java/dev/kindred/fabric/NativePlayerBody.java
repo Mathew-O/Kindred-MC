@@ -1474,13 +1474,18 @@ final class NativePlayerBody implements BodyAdapter {
      * kept, as for any player.
      */
     boolean throwHeld(ActionLease lease, int hotbarSlot, float yaw) {
+        return throwHeld(lease, hotbarSlot, yaw, -15f);
+    }
+
+    /** As {@link #throwHeld(ActionLease, int, float)}, at {@code pitch}: a pearl thrown on the arc chosen for it (E-39f). */
+    boolean throwHeld(ActionLease lease, int hotbarSlot, float yaw, float pitch) {
         requireThread();
-        if (hotbarSlot < 0 || hotbarSlot > 8 || !Float.isFinite(yaw)) return false;
+        if (hotbarSlot < 0 || hotbarSlot > 8 || !Float.isFinite(yaw) || !Float.isFinite(pitch) || Math.abs(pitch) > 90) return false;
         return execute(lease, Intent.THROW, null, () -> {
             player.getInventory().selectedSlot = hotbarSlot;
             player.setYaw(yaw);
             player.setHeadYaw(yaw);
-            player.setPitch(-15f);
+            player.setPitch(pitch);
             player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
             player.clearActiveItem();
         });

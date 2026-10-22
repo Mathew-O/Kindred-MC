@@ -3652,14 +3652,8 @@ final class PortalRunCampaign {
     }
 
     static Task strike(ServerPlayerEntity player, net.minecraft.entity.LivingEntity target, String label) {
-        int weapon = -1;
-        float best = 0;
-        for (int s = 0; s < 9; s++) {
-            var stack = player.getInventory().getStack(s);
-            if (!stack.isIn(ItemTags.SWORDS) && !stack.isIn(ItemTags.AXES)) continue;
-            float score = tier(stack.getItem()) + (stack.isIn(ItemTags.SWORDS) ? 0.5f : 0);
-            if (score > best) { best = score; weapon = s; }
-        }
+        // The hotbar weapon that deals the most over the fight, or the one hit that finishes the target (E-39e).
+        int weapon = Weapons.choose(player, target.getHealth(), true).map(Weapons.Held::slot).orElse(-1);
         var args = new LinkedHashMap<String, String>();
         args.put("target", target.getUuid().toString());
         if (weapon >= 0) args.put("slot", String.valueOf(weapon));
