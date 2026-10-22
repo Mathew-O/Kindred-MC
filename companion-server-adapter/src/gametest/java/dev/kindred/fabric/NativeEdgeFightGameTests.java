@@ -74,6 +74,10 @@ public final class NativeEdgeFightGameTests implements FabricGameTest {
                     context.assertTrue(edgeTicks[0] <= 20, "Off the edge within a second, not trading hits there: " + edgeTicks[0] + " ticks");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    // The trench filled in: batches reuse the same ground, and lava left there burns the next tests.
+                    for (int x = -3; x <= -1; x++) for (int z = -3; z <= 9; z++) {
+                        context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
+                    }
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

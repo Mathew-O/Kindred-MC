@@ -1,5 +1,6 @@
 package dev.kindred.fabric;
 
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import java.nio.charset.StandardCharsets;
@@ -59,7 +60,17 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
         return true;
     }
 
+    /**
+     * An item as held, wear aside: armour struck while a block was being broken (staged dragon run 2, the dragon's
+     * hits on iron armour mid-break) or a tool worn by a swing is the same item, not one lost and another gained. A
+     * worn-out item that broke is gone from the count, and still counts as lost.
+     */
     private static String key(ItemStack stack) {
+        if (stack.isDamageable() && stack.contains(DataComponentTypes.DAMAGE)) {
+            var unworn = stack.copy();
+            unworn.remove(DataComponentTypes.DAMAGE);
+            return Registries.ITEM.getId(stack.getItem()) + "|" + unworn.getComponents();
+        }
         return Registries.ITEM.getId(stack.getItem()) + "|" + stack.getComponents();
     }
 

@@ -129,4 +129,83 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /** The test server ticks no entity but players outside the test's own chunks; arrows and crystals need theirs. */
+    static void forceChunks(net.minecraft.server.world.ServerWorld world, BlockPos o, boolean forced) {
+        for (int x = o.getX() - 16; x <= o.getX() + 48; x += 16) for (int z = o.getZ() - 32; z <= o.getZ() + 32; z += 16) {
+            world.setChunkForced(x >> 4, z >> 4, forced);
+        }
+    }
+
+    /**
+     * An End crystal on its pillar: obsidian three wide and sixteen high, a bedrock block on top and the crystal on it,
+     * twenty-one blocks off across open ground. With a bow and eight arrows the player shoots it down from the ground,
+     * an arrow a shot, each on the arc vanilla's arrow flies; the crystal's blast is far from it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endCrystal", tickLimit = 1200)
+    public void aCrystalOnItsPillarIsShotDownFromTheGround(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.decoration.EndCrystalEntity[] crystal = new net.minecraft.entity.decoration.EndCrystalEntity[1];
+        int[] shots = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Archer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    forceChunks(world, o, true);
+                    for (int x = -4; x <= 28; x++) for (int z = -6; z <= 6; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.END_STONE.getDefaultState());
+                        for (int y = 2; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (int x = 20; x <= 22; x++) for (int z = -1; z <= 1; z++) for (int y = 2; y <= 16; y++) {
+                        world.setBlockState(o.add(x, y, z), Blocks.OBSIDIAN.getDefaultState());
+                    }
+                    world.setBlockState(o.add(21, 17, 0), Blocks.BEDROCK.getDefaultState());
+                    crystal[0] = net.minecraft.entity.EntityType.END_CRYSTAL.create(world);
+                    crystal[0].refreshPositionAndAngles(o.getX() + 21.5, o.getY() + 18, o.getZ() + 0.5, 0, 0);
+                    crystal[0].setShowBottom(true);
+                    world.spawnEntity(crystal[0]);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, -90, 0);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BOW));
+                    inventory.setStack(1, new ItemStack(Items.ARROW, 8));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the ground"))
+                .createAndAdd(() -> {
+                    // A shot at a time; another after each that missed, five at most.
+                    if (!crystal[0].isAlive()) return;
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    if (!activity.phase().equals("ACTIVE") && shots[0] < 5) {
+                        shots[0]++;
+                        context.assertTrue(f.runtime.nativeShoot(f.source, f.id, 0, crystal[0].getUuid()) == 1, "Shot requested");
+                    }
+                    context.assertTrue(false, "Shooting: " + shots[0] + " shots, " + activity + " " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    int arrows = player.getInventory().count(Items.ARROW);
+                    KindredMod.LOGGER.info("Archer: crystal down after {} shots, arrows left {}, health {}", shots[0], arrows, player.getHealth());
+                    context.assertTrue(!crystal[0].isAlive(), "The crystal is down");
+                    context.assertTrue(arrows == 8 - shots[0], "An arrow a shot, none conjured: " + arrows + " left after " + shots[0]);
+                    context.assertTrue(player.getHealth() >= 20, "Far from the blast");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_shoot") && record.state() == ActionRecord.State.VERIFIED,
+                            "A verified shot: " + record);
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -4; x <= 28; x++) for (int z = -6; z <= 6; z++) for (int y = 2; y <= 24; y++) {
+                        world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE);
+                    }
+                    forceChunks(world, o, false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

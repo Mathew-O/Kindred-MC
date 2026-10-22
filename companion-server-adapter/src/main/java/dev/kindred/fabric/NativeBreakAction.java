@@ -63,17 +63,26 @@ final class NativeBreakAction extends NativeRecordedAction {
     private CompletableFuture<ActionRecord> flush;
     private net.minecraft.util.math.Vec3d anchor;
     private boolean holding;
+    private final boolean underfoot;
 
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
                       boolean guarded) {
+        this(body, lease, worldId, policy, claims, writer, dispatch, target, collect, guarded, false);
+    }
+
+    /** With {@code underfoot}, the block the player stands on, down its own pillar a step at a time (E-39c). */
+    NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
+                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
+                      boolean guarded, boolean underfoot) {
+        this.underfoot = underfoot;
         this.body = body; this.lease = lease; this.policy = policy; this.claims = claims; this.writer = writer;
         this.dispatch = dispatch; this.target = target.toImmutable(); this.collect = collect; this.guarded = guarded;
         var player = body.entity();
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) throw new IllegalArgumentException("Break target is unloaded");
         state = world.getBlockState(target);
-        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded);
+        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot);
         if (denial != null) throw new IllegalArgumentException(denial);
         body.faceBlock(target);
         if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
@@ -157,7 +166,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     private boolean intact() { return body.entity().getWorld().isChunkLoaded(target) && body.entity().getWorld().getBlockState(target) == state; }
     private boolean ownsClaim() { return claim != null && claims.holdsAll(claim, System.currentTimeMillis()); }
     private boolean eligible() {
-        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded) == null;
+        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot) == null;
     }
     private boolean receipt() {
         return body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)

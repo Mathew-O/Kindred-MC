@@ -56,6 +56,10 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_step_in" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("move"), Set.of(),
                     Duration.ofSeconds(6), Duration.ofSeconds(2), 0);
+            case "native_dragon" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot"), Set.of(), Set.of(),
+                    Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
+            case "native_shoot" -> new SkillDescriptor(id, Set.of("slot", "target"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_fill_frame" -> new SkillDescriptor(id, Set.of("slot", "x", "y", "z"), Set.of(), Set.of("place"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
@@ -96,7 +100,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
-            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded"), Set.of("break", "pickup"),
+            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
             case "native_discard" -> new SkillDescriptor(id, Set.of("slot", "count"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

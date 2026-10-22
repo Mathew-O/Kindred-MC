@@ -30,6 +30,15 @@ final class RoamingEdits {
      * it, as in a cobblestone generator: lava flowing into the gap touches that water and hardens at once.
      */
     static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded) {
+        return breakDenial(player, pos, policy, waterGuarded, false);
+    }
+
+    /**
+     * As {@link #breakDenial(ServerPlayerEntity, BlockPos, EditPolicy.ServerPolicy, boolean)}; {@code underfoot} lets the
+     * player mine the block it stands on where the block under that is solid ground to land on a step down, as a player
+     * gets down a pillar it built (E-39c), and nowhere else.
+     */
+    static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded, boolean underfoot) {
         String common = common(player, pos, policy);
         if (common != null) return common;
         var world = player.getServerWorld();
@@ -39,7 +48,7 @@ final class RoamingEdits {
         if (state.hasBlockEntity() && !emptyFurnace(player, pos, state)) return "Containers and block entities are not broken autonomously";
         if (state.isOf(Blocks.SPAWNER) || state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL_FRAME)) return "Protected structure block";
         BlockPos support = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
-        if (pos.equals(support)) return "Would remove the block the player stands on";
+        if (pos.equals(support) && !(underfoot && landing(world, pos.down()))) return "Would remove the block the player stands on";
         boolean guarded = waterGuarded && (state.isOf(Blocks.OBSIDIAN) && waterGuards(player, pos)
                 || state.isOf(Blocks.COBBLESTONE) && waterBeside(player, pos));
         for (Direction direction : Direction.values()) {
@@ -47,6 +56,16 @@ final class RoamingEdits {
             if (!guarded && world.isChunkLoaded(near) && world.getFluidState(near).isIn(FluidTags.LAVA)) return "Breaking it would release lava";
         }
         return null;
+    }
+
+    /** Solid ground a step down to land on: a full top face, nothing burning or flowing about it. */
+    private static boolean landing(net.minecraft.server.world.ServerWorld world, BlockPos below) {
+        BlockState state = world.getBlockState(below);
+        if (!state.isSideSolidFullSquare(world, below, Direction.UP) || state.isOf(Blocks.MAGMA_BLOCK)) return false;
+        for (Direction direction : Direction.values()) {
+            if (world.isChunkLoaded(below.offset(direction)) && world.getFluidState(below.offset(direction)).isIn(FluidTags.LAVA)) return false;
+        }
+        return true;
     }
 
     private static boolean waterGuards(ServerPlayerEntity player, BlockPos pos) {

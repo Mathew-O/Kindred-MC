@@ -876,6 +876,15 @@ final class PortalRunCampaign {
                 return up;
             }
         }
+        // In the End, out of the dragon's breath before anything, and hurt, away from its perch to heal (E-39d).
+        if (legActive && dragonFight() && player.getWorld().getRegistryKey() == net.minecraft.world.World.END) {
+            boolean hurt = player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0);
+            Optional<Task> safe = hurt ? stronghold.endFight().rest(body) : stronghold.endFight().outOfBreath(body);
+            if (safe.isPresent()) {
+                progress = "Dragon: " + safe.get().label();
+                return safe;
+            }
+        }
         // Hurt with nothing after it: heal before going on (food in hand is eaten by the survival tasks).
         if (player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
             progress = stageLabel(stage) + ": heal before going on";

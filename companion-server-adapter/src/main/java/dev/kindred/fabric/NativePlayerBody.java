@@ -529,6 +529,64 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /**
+     * Strikes a part of the Ender Dragon within reach (E-39d), as a player's click lands on the part it looks at: the
+     * head takes the full blow, the rest a quarter. The parts are not entities the world can be asked for by id.
+     */
+    boolean strikeDragon(ActionLease lease, net.minecraft.entity.boss.dragon.EnderDragonPart part, int slot) {
+        requireThread();
+        if (part == null || part.owner == null || !part.owner.isAlive() || part.owner.getWorld() != player.getWorld()) return false;
+        Vec3d at = part.getBoundingBox().getCenter();
+        // Reach as the server allows a player's click on an entity: to its box, within the interaction range.
+        if (!player.canInteractWithEntity(part, 0)) return false;
+        return execute(lease, Intent.ATTACK, null, () -> {
+            if (slot >= 0 && slot < 9 && player.getInventory().selectedSlot != slot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = slot;
+            }
+            face(at);
+            player.attack(part);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Home from the End's exit portal (E-39d), as a client's request after the credits brings a player back: vanilla takes
+     * the player out of every world and waits for that request, and a native body has no client to send it. The same
+     * player, with all it carries, at its spawn point in the Overworld; nothing is restored or recreated here.
+     */
+    boolean returnFromCredits() {
+        requireThread();
+        if (!connected() || !player.notInAnyWorld) return false;
+        if (controls != null && arbiter != null) arbiter.cancel(controls);
+        haltControls();
+        controls = null;
+        NativePlayer gone = player;
+        var handler = gone.networkHandler;
+        gone.notInAnyWorld = false;
+        ServerPlayerEntity fresh;
+        respawning = true;
+        try {
+            fresh = gone.server.getPlayerManager().respawnPlayer(gone, true, net.minecraft.entity.Entity.RemovalReason.CHANGED_DIMENSION);
+        } finally {
+            respawning = false;
+        }
+        if (!(fresh instanceof NativePlayer next)) throw new IllegalStateException("The return home did not produce the native body");
+        handler.player = next;
+        player = next;
+        next.setCustomName(Text.literal(identity.displayName()));
+        next.setCustomNameVisible(true);
+        net.minecraft.advancement.criterion.Criteria.CHANGED_DIMENSION.trigger(next, net.minecraft.world.World.END, net.minecraft.world.World.OVERWORLD);
+        haltControls();
+        return true;
+    }
+
+    /** Out of every world after the exit portal's credits, waiting for the request home. */
+    boolean awayAfterCredits() {
+        requireThread();
+        return connected() && player.notInAnyWorld;
+    }
+
     boolean block(ActionLease lease, boolean active) {
         requireThread();
         if (!active) {
@@ -1448,6 +1506,40 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /**
+     * Draws the bow in {@code hotbarSlot} along {@code yaw} and {@code pitch}, as a player holds the use key (E-39b):
+     * vanilla draws only with an arrow carried, and the draw strengthens for a second.
+     */
+    boolean drawBow(ActionLease lease, int hotbarSlot, float yaw, float pitch) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || !player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.BOW)) return false;
+        return execute(lease, Intent.SHOOT, null, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            look(yaw, pitch);
+            player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
+    /** Keeps the drawn bow on a target that moves: the aim follows it. */
+    boolean aimBow(ActionLease lease, float yaw, float pitch) {
+        requireThread();
+        return execute(lease, Intent.SHOOT, null, () -> look(yaw, pitch));
+    }
+
+    /** Looses the drawn arrow along the aim, as a player lets go of the use key. */
+    boolean looseBow(ActionLease lease) {
+        requireThread();
+        if (!player.isUsingItem() || !player.getActiveItem().isOf(net.minecraft.item.Items.BOW)) return false;
+        return execute(lease, Intent.SHOOT, null, player::stopUsingItem);
+    }
+
+    private void look(float yaw, float pitch) {
+        player.setYaw(yaw);
+        player.setHeadYaw(yaw);
+        player.setBodyYaw(yaw);
+        player.setPitch(pitch);
+    }
+
     /** The boat the body sits in, if it is in one. */
     Optional<BoatEntity> boat() {
         requireThread();
@@ -1670,7 +1762,8 @@ final class NativePlayerBody implements BodyAdapter {
         tickHook.run();
         if (!current(controls)
                 || ((forward != 0 || sideways != 0 || jump || sprint || rowForward || rowLeft || rowRight) && !gate.permits(controls, Intent.MOVE, null))
-                || (player.isUsingItem() && !gate.permits(controls, Intent.EAT, null) && !gate.permits(controls, Intent.BLOCK, null))
+                || (player.isUsingItem() && !gate.permits(controls, Intent.EAT, null) && !gate.permits(controls, Intent.BLOCK, null)
+                    && !gate.permits(controls, Intent.SHOOT, null))
                 || (miningTarget != null && (!gate.permits(controls, Intent.MINE, miningTarget)
                     || !canMine(miningTarget) || player.getWorld().getBlockState(miningTarget) != miningState))) {
             if (controls != null && arbiter != null) {

@@ -102,6 +102,8 @@ final class StrongholdLeg {
     private final Set<Long> explored = new HashSet<>();
     private StrongholdRunPlanner.Stage stage;
     private StrongholdRunSnapshot lastSnapshot;
+    private boolean killRemembered;
+
     /** On the dragon goal, past the End portal: the fight (E-39). */
     private final EndFightLeg endFight;
 
@@ -195,6 +197,7 @@ final class StrongholdLeg {
 
     /** What the leg knows, to be kept in the player's memory of this world. */
     PlayerMemoryStore.Memory remember(PlayerMemoryStore.Memory into) {
+        into.dragonKilled = endFight.dragonKilled();
         into.overworldPortal = place("minecraft:overworld", overworldPortal);
         into.netherPortal = place("minecraft:the_nether", netherPortal);
         into.fortress = place("minecraft:the_nether", fortress);
@@ -207,6 +210,7 @@ final class StrongholdLeg {
 
     /** What the player remembers of this world from before a restart; what it has learnt since stands. */
     void recall(PlayerMemoryStore.Memory memory) {
+        endFight.dragonKilled(memory.dragonKilled);
         if (overworldPortal == null) overworldPortal = pos(memory.overworldPortal);
         if (netherPortal == null) netherPortal = pos(memory.netherPortal);
         if (fortress == null) fortress = pos(memory.fortress);
@@ -341,6 +345,10 @@ final class StrongholdLeg {
             stage = StrongholdRunPlanner.Stage.DONE;
             Optional<PortalRunCampaign.Task> fight = endFight.next(body, p, policy);
             progress = endFight.progress();
+            if (endFight.dragonKilled() && !killRemembered) {
+                killRemembered = true;
+                memoryRevision++;
+            }
             return fight;
         }
         var followUps = campaign.followUps();

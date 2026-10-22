@@ -39,6 +39,8 @@ final class PlayerMemoryStore implements AutoCloseable {
         /** Where the flights cross (x, z), and whether an eye thrown close by pinned it. */
         double[] stronghold;
         boolean pinned;
+        /** It saw the Ender Dragon die (E-39). */
+        boolean dragonKilled;
     }
 
     private final Path folder;

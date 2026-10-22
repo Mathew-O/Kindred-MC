@@ -134,7 +134,8 @@ public final class NativeBoatGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = origin[0] = f.player().getBlockPos().up(24).toImmutable();
+                    // Far off the test grid: batches reuse the same ground, and a sea left there floods the next tests.
+                    BlockPos o = origin[0] = f.player().getBlockPos().add(4000, 24, 0).toImmutable();
                     forceSea(world, o, true);
                     // Open sea, five deep, with no shore within twenty blocks of the player.
                     for (int x = -24; x <= 56; x++) for (int z = -24; z <= 24; z++) {
@@ -180,7 +181,11 @@ public final class NativeBoatGameTests implements FabricGameTest {
                     context.assertTrue(player.getInventory().count(Items.OAK_BOAT) == 0, "Its one boat is on the water, none conjured");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
-                    forceSea(context.getWorld(), origin[0], false);
+                    var world = context.getWorld();
+                    for (int x = -24; x <= 56; x++) for (int z = -24; z <= 24; z++) for (int y = -6; y <= 1; y++) {
+                        world.setBlockState(origin[0].add(x, y, z), Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE);
+                    }
+                    forceSea(world, origin[0], false);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

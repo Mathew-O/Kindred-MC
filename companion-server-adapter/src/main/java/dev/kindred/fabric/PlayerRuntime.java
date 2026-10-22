@@ -1071,6 +1071,11 @@ final class PlayerRuntime {
         return nativeTask(source, id, task.get().skill(), task.get().args());
     }
 
+    /** One recorded shot from the bow in {@code hotbarSlot} at the entity {@code target}, as the dragon goal takes it (E-39b). */
+    int nativeShoot(ServerCommandSource source, UUID id, int hotbarSlot, UUID target) {
+        return nativeTask(source, id, "native_shoot", Map.of("slot", String.valueOf(hotbarSlot), "target", target.toString()));
+    }
+
     /** One recorded boat step ({@code launch} from {@code hotbarSlot} onto {@code water}, {@code board} or {@code land}), as the goal takes it. */
     int nativeBoat(ServerCommandSource source, UUID id, String mode, int hotbarSlot, BlockPos water) {
         var args = new java.util.HashMap<String, String>(Map.of("mode", mode));
@@ -1192,6 +1197,12 @@ final class PlayerRuntime {
             } else if (skill.equals("native_throw_eye")) {
                 task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
+            } else if (skill.equals("native_dragon")) {
+                task = new NativeDragonAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
+            } else if (skill.equals("native_shoot")) {
+                task = new NativeShootAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_fill_frame")) {
                 task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")),
@@ -1271,7 +1282,8 @@ final class PlayerRuntime {
                         nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Boolean.parseBoolean(arguments.getOrDefault("collect", "true")),
-                        Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")));
+                        Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")),
+                        Boolean.parseBoolean(arguments.getOrDefault("underfoot", "false")));
             } else if (skill.equals("native_bucket")) {
                 task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), server::execute,
@@ -1415,6 +1427,9 @@ final class PlayerRuntime {
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_fill_frame".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FRAME || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_shoot".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHOOT || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_dragon".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
+                        || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_boat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.ATTACK))
                     || ("native_row".equals(entry.skillId) && intent == NativePlayerBody.Intent.MOVE)
@@ -1663,6 +1678,10 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
 
         var batch = new ArrayList<dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot>();
+        // Home after the credits: out of every world, a body gets no tick of its own to ask with (E-39d).
+        for (Entry entry : entries.values()) {
+            if (entry.nativeBody != null && entry.nativeBody.awayAfterCredits()) returnFromCredits(entry, entry.nativeBody);
+        }
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 refreshTacticalObservation(entry, tick);
@@ -3222,6 +3241,10 @@ final class PlayerRuntime {
             server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I found the End portal near "
                     + at.getX() + ", " + at.getY() + ", " + at.getZ() + "!"), false);
         }
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && entry.campaign.stronghold().endFight().dragonKilled() && !entry.dragonAnnounced) {
+            entry.dragonAnnounced = true;
+            server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> The Ender Dragon is dead. I beat the game!"), false);
+        }
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
             entry.loggedGoalProgress = entry.goalProgress;
             var at = body.entity().getBlockPos();
@@ -3410,6 +3433,33 @@ final class PlayerRuntime {
                 player.getDamageTracker().getDeathMessage().getString());
     }
 
+    /** After the exit portal's credits, the request home a client would make, and the runtime's state for the new entity. */
+    private void returnFromCredits(Entry entry, NativePlayerBody body) {
+        if (entry.reconciliationBlocked) return;
+        if (entry.runner != null && runnerBusy(entry)) {
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort("Through the exit portal");
+            observeRunner(entry);
+        }
+        closeNativeAction(entry);
+        if (entry.activity != null) entry.activity.stop();
+        admission.release(entry.data.id());
+        entry.currentTaskId = null;
+        try {
+            body.returnFromCredits();
+        } catch (RuntimeException failure) {
+            nativeFailure(server.getCommandSource(), entry, "Native return from the End failed", failure);
+            return;
+        }
+        entry.routineRefreshPending = true;
+        entry.cachedRoutineCandidates = List.of();
+        entry.cachedCraftingTablePos = null;
+        entry.cachedFurnacePos = null;
+        entry.lastTacticalObservation = null;
+        entry.blocker = "Home from the End.";
+        KindredMod.LOGGER.info("{} came home from the End after the credits, at {}", entry.data.displayName(), body.entity().getBlockPos().toShortString());
+    }
+
     /**
      * Vanilla respawn once the dead body has lain for its last tick (vanilla removes it at twenty), about as long
      * as a person takes to press respawn. The world tolerates the swap mid-iteration, as it does portal travel.
@@ -3504,6 +3554,8 @@ final class PlayerRuntime {
             entry.runner.abort(campaignStop);
             body.stopInputs();
             observeRunner(entry);
+            // Closing the action can stop the entry on the spot (an outcome that needs reconciling): nothing more this tick.
+            if (entry.runner == null) return;
             busy = runnerBusy(entry);
         }
 
@@ -3522,6 +3574,7 @@ final class PlayerRuntime {
             entry.runner.abort("Hazard/threat detected: urgent retreat required");
             body.stopInputs();
             observeRunner(entry);
+            if (entry.runner == null) return;
             busy = runnerBusy(entry);
         }
 
@@ -5408,7 +5461,7 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         private boolean awaitingRespawn;
         private boolean campaignFightInterrupt;
-        private boolean endPortalAnnounced;
+        private boolean endPortalAnnounced, dragonAnnounced;
         private UUID tacticalRetreatTaskId;
         private long lastTacticalRetreatTick = Long.MIN_VALUE / 2;
         private UUID barricadeTaskId;
