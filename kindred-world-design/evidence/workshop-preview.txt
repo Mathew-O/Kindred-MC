@@ -1,0 +1,20 @@
+Kindred world-design synthetic pilot
+No world IO, inventory changes, reservations, or completion evidence.
+Design: pilot_workshop.shell revision 1
+Artifact SHA-256: e85f8a2a42b5ca03fc022b911e1254943bca80946f55e0496dbabe09c26c867e
+Static geometry valid: true
+Native execution qualified: false
+Proposed blocks: 99
+minecraft:cobblestone: required=74, unreserved=65, deficit=9
+minecraft:oak_planks: required=25, unreserved=20, deficit=5
+Preliminary support steps: 99
+Missing qualification: [construction-access, durable-action-reconciliation, native-placement-mechanics, runtime-authority, temporary-supports, worker-stance-and-reach]
+Floor/path overhead (z=-3..4, x=0..4; # block, . empty):
+..#..
+..#..
+..#..
+#####
+#####
+#####
+#####
+#####
