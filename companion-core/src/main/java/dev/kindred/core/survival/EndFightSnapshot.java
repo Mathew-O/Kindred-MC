@@ -25,18 +25,20 @@ package dev.kindred.core.survival;
  * @param blocks           blocks for pillaring
  * @param swordTier        best sword: 0 none, 1 wood/gold, 2 stone, 3 iron, 4 diamond
  * @param health           health 0..20
- * @param pearls           ender pearls carried (a caged crystal's roof is reached by one and left by another)
+ * @param bed              a bed carried, to set down by the End portal
+ * @param spawnByPortal    its respawn point is already by the End portal (a bed it used there)
  */
 public record EndFightSnapshot(boolean inEnd, boolean dragonKilled, int framesSeen, int framesFilled, int eyes, boolean portalOpen,
                                boolean onIsland, int crystals, int shootable, int caged,
                                boolean dragonAlive, boolean dragonPerched, boolean inBreath, boolean exitOpen,
-                               boolean bow, int arrows, int blocks, int swordTier, float health, int pearls) {
+                               boolean bow, int arrows, int blocks, int swordTier, float health,
+                               boolean bed, boolean spawnByPortal) {
     /** Frame blocks in a full End portal ring. */
     public static final int RING = 12;
 
-    /** A way into a cage it holds: blocks to pillar up beside it, or two pearls to go up onto its roof and back down. */
+    /** A way into a cage it holds: blocks to pillar up beside it. */
     public boolean canOpenCage() {
-        return blocks >= 16 || pearls >= 2;
+        return blocks >= 16;
     }
 
     /** Eyes still wanted to fill the ring: one for each frame it has not seen filled. */

@@ -225,7 +225,8 @@ final class PortalRunCampaign {
         event("strategist advised " + advice.stance() + (advice.focus() == PlanPreferences.Focus.NONE ? "" : ", " + advice.focus() + " first")
                 + (advice.reason().isEmpty() ? "" : ": " + advice.reason())
                 + (advice.queue().isEmpty() ? "" : "; queued " + String.join(", ", advice.queue().stream()
-                        .map(w -> w.count() + " " + w.need().words(w.count())).toList())), false);
+                        .map(w -> w.count() + " " + w.need().words(w.count())).toList()))
+                + advice.advised().map(a -> "; advised " + a.words()).orElse(""), false);
     }
 
     /**
@@ -270,8 +271,13 @@ final class PortalRunCampaign {
 
     /** What the planner keeps to beyond the route: the habits, and the focus in force. */
     PlanPreferences preferences() {
-        return new PlanPreferences(habits, focus());
+        return new PlanPreferences(habits, focus(), pace, advice != null && lastTick < adviceUntil ? advice.approach() : null);
     }
+
+    /** The playbook's mode (F-25c8): speedrun when the player's playstyle is, else normal play. */
+    private dev.kindred.core.guide.Playbook.Mode pace = dev.kindred.core.guide.Playbook.Mode.NORMAL;
+
+    void pace(dev.kindred.core.guide.Playbook.Mode mode) { pace = java.util.Objects.requireNonNull(mode); }
 
     /** Places the player itself has reported: where it died, and the danger zones it marked. */
     List<StrategyAdvice.Place> reportedPlaces() {
@@ -307,7 +313,10 @@ final class PortalRunCampaign {
                     .append(s.diamonds()).append(" diamonds, ").append(s.obsidian()).append(" obsidian.\n");
         }
         out.append("Deaths so far: ").append(deathCount).append(". No-progress spells: ").append(stuckSpells).append(".\n");
-        out.append("Stance in force: ").append(stance()).append(", focus ").append(focus()).append(".\n");
+        out.append("Stance in force: ").append(stance()).append(", focus ").append(focus())
+                .append(preferences().recommended().map(a -> ", way advised " + a).orElse("")).append(".\n");
+        out.append("Pace: ").append(pace == dev.kindred.core.guide.Playbook.Mode.SPEEDRUN ? "speedrun (the quickest way of each part)"
+                : "normal play (a speedrunner's way only when the chance is at hand)").append(".\n");
         out.append("Habits kept in this world: ").append(habits.isEmpty() ? "none" : habits.toString()).append(".\n");
         out.append("Queue: ").append(followUps.describe(player)).append('\n');
         if (!events.isEmpty()) {

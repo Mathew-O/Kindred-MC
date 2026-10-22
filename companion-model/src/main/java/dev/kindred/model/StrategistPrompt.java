@@ -47,6 +47,12 @@ public final class StrategistPrompt {
             fight's and the Nether trip's own needs are queued already. Leave the queue empty when nothing is missing; never queue what the \
             player already holds enough of.
 
+            Ways of doing a part of the run: for some parts the player knows more than one way (the guide lists them) \
+            and picks the cheapest it can do; in normal play it takes a speedrunner's way only when the chance is at \
+            hand, and in speedrun mode (the report's pace) the quickest. You may advise one way, from the fixed set, \
+            when the report gives a reason for it; it is taken only where it can be done and costs at most half as \
+            much again as the player's own choice. Otherwise advise NONE.
+
             # Guide
 
             """;
@@ -75,8 +81,18 @@ public final class StrategistPrompt {
     public static final String RETIRE = "A habit kept in this world (listed in the report) that is no longer worth keeping, or NONE.";
     public static final String QUEUE = "Up to three follow-ups for the player's queue: needs a task ahead will want that the queue lacks, "
             + "or an empty list. The player gathers and crafts them itself, when the chance comes and before the task.";
-    public static final String QUEUE_NEED = "What is needed: BOW, ARROWS, SHIELD, WATER_BUCKET, STRING, FEATHERS, FLINT, STICKS, BLOCKS or FOOD.";
+    public static final String QUEUE_NEED = "What is needed: BOW, ARROWS, SHIELD, WATER_BUCKET, BED, STRING, FEATHERS, WOOL, FLINT, STICKS, BLOCKS or FOOD.";
     public static final String QUEUE_COUNT = "How many to have in hand, at least.";
     public static final String QUEUE_FOR = "The task it is for: NETHER_PORTAL, NETHER_TRIP, STRONGHOLD, END_FIGHT or SURVIVAL.";
+    public static final String APPROACH = "A way to take for a part of the run, or NONE: CAST_FRAME, MINE_OBSIDIAN or RUINED_PORTAL "
+            + "into the Nether; HUNT_ENDERMEN or BARTER for pearls; OVERWORLD_WALK or NETHER_SHORTCUT to the stronghold; "
+            + "SHOOT_THROUGH or PILLAR for a caged crystal; PERCH_STRIKES or BED_BOMBS for the dragon; "
+            + "BED_BY_PORTAL for the respawn point. Taken only where it can be done and is not much dearer than the player's own choice.";
+
+    /** A way of the playbook the reply may name ({@link dev.kindred.core.guide.Playbook.Approach}), or none. */
+    public enum Way {
+        NONE, CAST_FRAME, MINE_OBSIDIAN, RUINED_PORTAL, HUNT_ENDERMEN, BARTER, OVERWORLD_WALK, NETHER_SHORTCUT,
+        SHOOT_THROUGH, PILLAR, PERCH_STRIKES, BED_BOMBS, BED_BY_PORTAL
+    }
     public static final String QUEUE_WHY = "Why, in a few words, from the report or the guide.";
 }

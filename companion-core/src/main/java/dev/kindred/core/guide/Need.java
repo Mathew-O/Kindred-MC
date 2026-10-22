@@ -14,8 +14,10 @@ public enum Need {
     ARROWS("arrow", 64),
     SHIELD("shield", 1),
     WATER_BUCKET("water bucket", 1),
+    BED("bed", 4),
     STRING("string", 16),
     FEATHERS("feather", 16),
+    WOOL("wool", 16),
     FLINT("flint", 16),
     STICKS("stick", 32),
     BLOCKS("block", 128),
@@ -34,7 +36,7 @@ public enum Need {
 
     /** What the report calls {@code count} of it ("8 feathers", "3 string"). */
     public String words(int count) {
-        if (count == 1 || this == STRING || this == FLINT || this == FOOD) return word;
+        if (count == 1 || this == STRING || this == FLINT || this == FOOD || this == WOOL) return word;
         return word + "s";
     }
 

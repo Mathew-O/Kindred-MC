@@ -24,6 +24,8 @@ public final class EndFightPlanner {
         FILL_FRAME,
         /** Into the open End portal (or, in the End, the exit portal). */
         ENTER_PORTAL,
+        /** A bed set down by the End portal and used, so a death in the End starts again there. */
+        SET_SPAWN,
         /** Walk or make a way from the arrival platform onto the main island. */
         TO_ISLAND,
         /** Shoot an End crystal it can hit from where it stands, or from a place it can see it from. */
@@ -79,7 +81,10 @@ public final class EndFightPlanner {
             case FILL_PORTAL -> steps.add(new Step(Action.FILL_FRAME, stage, s.framesSeen() < EndFightSnapshot.RING
                     ? "Fill the End portal's frame, and look for the rest of the ring" : "Fill the End portal's frame with eyes"));
             case SHORT_OF_EYES -> { } // The stronghold leg fetches more eyes.
-            case ENTER_END -> steps.add(new Step(Action.ENTER_PORTAL, stage, "Into the End portal"));
+            case ENTER_END -> {
+                if (s.bed() && !s.spawnByPortal()) steps.add(new Step(Action.SET_SPAWN, stage, "Set the respawn point by the End portal first"));
+                steps.add(new Step(Action.ENTER_PORTAL, stage, "Into the End portal"));
+            }
             case REACH_ISLAND -> steps.add(new Step(Action.TO_ISLAND, stage, "Onto the main island"));
             case CRYSTALS -> {
                 if (s.shootable() > 0 && s.bow() && s.arrows() > 0) steps.add(new Step(Action.SHOOT_CRYSTAL, stage, "Shoot an End crystal off its pillar"));

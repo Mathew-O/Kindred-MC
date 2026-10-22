@@ -66,7 +66,8 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                     NativeStrongholdGameTests.litPortal(context);
                     yard(context);
                     for (BlockPos web : webs) world.setBlockState(context.getAbsolutePos(web), Blocks.COBWEB.getDefaultState());
-                    for (int i = 0; i < 5; i++) {
+                    // Eight: a chicken drops none to two feathers, so five gave none at all once in a suite (one run in 243).
+                    for (int i = 0; i < 8; i++) {
                         var chicken = EntityType.CHICKEN.create(world);
                         BlockPos at = context.getAbsolutePos(new BlockPos(6 + i % 3, 2, 9 + i / 3 * 2));
                         chicken.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
@@ -170,6 +171,7 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                     inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
                     inventory.setStack(8, new ItemStack(Items.ENDER_EYE, 10));
                     inventory.setStack(9, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(20, new ItemStack(Items.WHITE_BED)); // The End fight's bed (E-39g) is held: the fixture is about the rest.
                     inventory.setStack(10, new ItemStack(Items.IRON_INGOT));
                     inventory.setStack(11, new ItemStack(Items.OAK_PLANKS, 6));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");

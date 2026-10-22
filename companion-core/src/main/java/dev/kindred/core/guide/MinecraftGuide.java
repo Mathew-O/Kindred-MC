@@ -31,19 +31,22 @@ public final class MinecraftGuide {
             Need.BOW, new Recipe(Need.BOW, 1, Map.of(Need.STRING, 3, Need.STICKS, 3), true),
             Need.ARROWS, new Recipe(Need.ARROWS, 4, Map.of(Need.FLINT, 1, Need.STICKS, 1, Need.FEATHERS, 1), true),
             Need.STICKS, new Recipe(Need.STICKS, 4, Map.of(), false),
-            Need.SHIELD, new Recipe(Need.SHIELD, 1, Map.of(), true)));
+            Need.SHIELD, new Recipe(Need.SHIELD, 1, Map.of(), true),
+            Need.BED, new Recipe(Need.BED, 1, Map.of(Need.WOOL, 3), true)));
 
-    private static final Map<Need, String> SOURCES = new EnumMap<>(Map.of(
-            Need.STRING, "spiders (none to two a kill; calm in daylight) and cobwebs broken with a sword",
-            Need.FEATHERS, "chickens (none to two a kill)",
-            Need.FLINT, "gravel dug up (one in ten; gravel set down and dug again until it drops)",
-            Need.ARROWS, "crafted, four at a time; skeletons drop none to two",
-            Need.WATER_BUCKET, "an iron bucket (three ingots) filled at still water",
-            Need.BLOCKS, "stone dug with a pickaxe (it drops cobblestone), or netherrack",
-            Need.FOOD, "animals hunted: cows, pigs, sheep, chickens, rabbits",
-            Need.STICKS, "two planks make four",
-            Need.SHIELD, "six planks and an iron ingot at a crafting table",
-            Need.BOW, "three string and three sticks at a crafting table"));
+    private static final Map<Need, String> SOURCES = new EnumMap<>(Map.ofEntries(
+            Map.entry(Need.STRING, "spiders (none to two a kill; calm in daylight) and cobwebs broken with a sword"),
+            Map.entry(Need.FEATHERS, "chickens (none to two a kill)"),
+            Map.entry(Need.FLINT, "gravel dug up (one in ten; gravel set down and dug again until it drops)"),
+            Map.entry(Need.ARROWS, "crafted, four at a time; skeletons drop none to two"),
+            Map.entry(Need.WATER_BUCKET, "an iron bucket (three ingots) filled at still water"),
+            Map.entry(Need.BLOCKS, "stone dug with a pickaxe (it drops cobblestone), or netherrack"),
+            Map.entry(Need.FOOD, "animals hunted: cows, pigs, sheep, chickens, rabbits"),
+            Map.entry(Need.STICKS, "two planks make four"),
+            Map.entry(Need.SHIELD, "six planks and an iron ingot at a crafting table"),
+            Map.entry(Need.BOW, "three string and three sticks at a crafting table"),
+            Map.entry(Need.WOOL, "sheep: one from each kill, one to three shorn with shears"),
+            Map.entry(Need.BED, "three wool of one colour and three planks at a crafting table; used, it sets where the player wakes after a death (in the Nether and the End it explodes)")));
 
     private static final Map<Objective, List<Requirement>> REQUIREMENTS = new EnumMap<>(Map.of(
             Objective.NETHER_TRIP, List.of(
@@ -54,7 +57,8 @@ public final class MinecraftGuide {
                     new Requirement(Need.ARROWS, 32, "a few for each of the ten crystals, and for the dragon in flight"),
                     new Requirement(Need.BLOCKS, 64, "to pillar up to the two caged crystals and wall off endermen"),
                     new Requirement(Need.WATER_BUCKET, 1, "to break a fall from a pillar; endermen keep out of water"),
-                    new Requirement(Need.FOOD, 16, "there is nothing to eat in the End"))));
+                    new Requirement(Need.FOOD, 16, "there is nothing to eat in the End"),
+                    new Requirement(Need.BED, 1, "set down by the End portal and used, so a death in the End starts again close by"))));
 
     private MinecraftGuide() { }
 

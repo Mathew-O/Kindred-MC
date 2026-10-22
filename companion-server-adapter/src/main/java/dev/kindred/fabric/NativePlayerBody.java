@@ -1377,6 +1377,46 @@ final class NativePlayerBody implements BodyAdapter {
         return mine(lease, target);
     }
 
+    /**
+     * Sets the bed in {@code hotbarSlot} down on top of {@code floor} with its head toward {@code facing}, as a player
+     * looking that way places one (E-39g): vanilla puts the foot on the clicked top and the head beyond it.
+     */
+    boolean placeBed(ActionLease lease, int hotbarSlot, BlockPos floor, Direction facing) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || facing.getAxis().isVertical()) return false;
+        var stack = player.getInventory().getStack(hotbarSlot);
+        if (!(stack.getItem() instanceof net.minecraft.item.BedItem)) return false;
+        var world = player.getServerWorld();
+        BlockPos foot = floor.up(), head = foot.offset(facing);
+        if (!world.isChunkLoaded(head) || !world.getBlockState(foot).isReplaceable() || !world.getBlockState(head).isReplaceable()) return false;
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(foot)) > 25.0) return false;
+        return execute(lease, Intent.PLACE, foot, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            float yaw = facing.asRotation();
+            player.setYaw(yaw);
+            player.setHeadYaw(yaw);
+            var hit = new BlockHitResult(new Vec3d(floor.getX() + 0.5, floor.getY() + 1.0, floor.getZ() + 0.5), Direction.UP, floor, false);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hit);
+        });
+    }
+
+    /**
+     * Uses the bed at {@code target} as a player right-clicks it (E-39g): vanilla sets the respawn point there, by day
+     * as by night, and lays the player down only at night, when it gets straight up again.
+     */
+    boolean useBed(ActionLease lease, BlockPos target) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (!world.isChunkLoaded(target) || !world.getBlockState(target).isIn(BlockTags.BEDS)) return false;
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(target)) > 25.0) return false;
+        return execute(lease, Intent.SLEEP, target, () -> {
+            var hit = new BlockHitResult(Vec3d.ofCenter(target).add(0, 0.06, 0), Direction.UP, target, false);
+            player.setSneaking(false);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hit);
+            if (player.isSleeping()) player.wakeUp(false, true);
+        });
+    }
+
     boolean sleepInBed(ActionLease lease, BlockPos target) {
         requireThread();
         var world = player.getServerWorld();

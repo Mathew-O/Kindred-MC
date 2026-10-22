@@ -17,6 +17,7 @@ import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -24,6 +25,7 @@ import net.minecraft.world.World;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,9 +68,15 @@ final class FollowUps {
     static Map<Need, Integer> held(ServerPlayerEntity player, PortalRunSnapshot p) {
         var held = new EnumMap<Need, Integer>(Need.class);
         var inventory = player.getInventory();
+        // A bed takes three wool of one colour: wool counts by its commonest colour, so mixed wool does not pass for a bed's.
+        var wool = new HashMap<Item, Integer>();
         for (int slot = 0; slot < inventory.size(); slot++) {
             ItemStack stack = inventory.getStack(slot);
             if (stack.isEmpty()) continue;
+            if (stack.isIn(net.minecraft.registry.tag.ItemTags.WOOL)) {
+                wool.merge(stack.getItem(), stack.getCount(), Integer::sum);
+                continue;
+            }
             Need need = stack.isOf(Items.BOW) ? Need.BOW
                     : stack.isOf(Items.ARROW) || stack.isOf(Items.SPECTRAL_ARROW) || stack.isOf(Items.TIPPED_ARROW) ? Need.ARROWS
                     : stack.isOf(Items.WATER_BUCKET) ? Need.WATER_BUCKET
@@ -76,9 +84,11 @@ final class FollowUps {
                     : stack.isOf(Items.FEATHER) ? Need.FEATHERS
                     : stack.isOf(Items.FLINT) ? Need.FLINT
                     : stack.isOf(Items.STICK) ? Need.STICKS
-                    : stack.isOf(Items.COBBLESTONE) || stack.isOf(Items.COBBLED_DEEPSLATE) || stack.isOf(Items.NETHERRACK) ? Need.BLOCKS : null;
+                    : stack.isOf(Items.COBBLESTONE) || stack.isOf(Items.COBBLED_DEEPSLATE) || stack.isOf(Items.NETHERRACK) ? Need.BLOCKS
+                    : stack.isIn(net.minecraft.registry.tag.ItemTags.BEDS) ? Need.BED : null;
             if (need != null) held.merge(need, stack.getCount(), Integer::sum);
         }
+        wool.values().stream().max(Integer::compare).ifPresent(most -> held.put(Need.WOOL, most));
         held.put(Need.SHIELD, p.shields());
         held.put(Need.FOOD, p.edibleFood());
         return held;
@@ -107,7 +117,7 @@ final class FollowUps {
     StrongholdRunPlanner.Provisions assess(ServerPlayerEntity player, PortalRunSnapshot p, Set<Objective> ahead, Set<Objective> atGate,
                                            int swordTier, boolean onTheWay) {
         this.ahead = Set.copyOf(ahead);
-        var held = held(player, p);
+        var held = heldNow(player, p);
         TaskQueue queue = campaign.queue().settle(held, ahead);
         campaign.queue(queue);
         var all = wants(queue, ahead);
@@ -169,6 +179,8 @@ final class FollowUps {
                 case FLINT -> items.add(Items.FLINT);
                 case ARROWS -> items.add(Items.ARROW);
                 case BOW -> items.add(Items.BOW);
+                case WOOL -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.WOOL).forEach(e -> items.add(e.value()));
+                case BED -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.BEDS).forEach(e -> items.add(e.value()));
                 default -> { }
             }
         }
@@ -213,6 +225,10 @@ final class FollowUps {
                 case FEATHERS -> {
                     if (ashore && !world.getEntitiesByClass(ChickenEntity.class, player.getBoundingBox().expand(16, 6, 16),
                             chicken -> chicken.isAlive() && !chicken.isBaby() && player.canSee(chicken)).isEmpty()) at.add(Need.FEATHERS);
+                }
+                case WOOL -> {
+                    if (ashore && !world.getEntitiesByClass(net.minecraft.entity.passive.SheepEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                            sheep -> sheep.isAlive() && !sheep.isBaby() && player.canSee(sheep)).isEmpty()) at.add(Need.WOOL);
                 }
                 case STRING -> {
                     boolean spider = swordTier >= 2 && player.getHealth() >= 14 && !world.getEntitiesByClass(SpiderEntity.class,
@@ -269,6 +285,10 @@ final class FollowUps {
                     : (swordTier >= 2 && player.getHealth() >= 14 ? fightSpider(player) : Optional.<PortalRunCampaign.Task>empty())
                     .or(() -> swordTier >= 1 ? campaign.gather(body, WorldKnowledge.Kind.COBWEB, due ? 48 : 16, "cobweb") : Optional.empty());
             case FLINT -> ashore ? campaign.flint(body) : Optional.empty();
+            // A bed of the colour it holds three wool of, and the planks it takes, at a table.
+            case BED -> !craftable(need) || wood < 3 ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
+            case WOOL -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool")
+                    .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy) : Optional.empty());
             case BLOCKS -> ashore ? shared(PortalRunPlanner.Action.GATHER_STONE, count, why, p, body, policy) : Optional.empty();
             case FOOD -> ashore ? shared(PortalRunPlanner.Action.HUNT, count, why, p, body, policy)
                     .or(() -> shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy)) : Optional.empty();
@@ -291,6 +311,19 @@ final class FollowUps {
             if (task.isPresent()) return task;
         }
         return Optional.empty();
+    }
+
+    /** The colour of wool it holds three of, for a bed; empty when no colour has three. */
+    private static Optional<String> bedColour(ServerPlayerEntity player) {
+        var counts = new HashMap<String, Integer>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (!stack.isIn(net.minecraft.registry.tag.ItemTags.WOOL)) continue;
+            String path = Registries.ITEM.getId(stack.getItem()).getPath();
+            counts.merge(path.substring(0, path.length() - "_wool".length()), stack.getCount(), Integer::sum);
+        }
+        return counts.entrySet().stream().filter(e -> e.getValue() >= 3).max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
     }
 
     private Optional<PortalRunCampaign.Task> fightSpider(ServerPlayerEntity player) {
@@ -319,6 +352,13 @@ final class FollowUps {
     String describe(ServerPlayerEntity player) {
         PortalRunSnapshot p = campaign.lastSnapshot();
         if (p == null || ahead.isEmpty()) return "not assessed yet.";
-        return campaign.queue().describe(ahead, held(player, p));
+        return campaign.queue().describe(ahead, heldNow(player, p));
+    }
+
+    /** {@link #held}, with the bed already set down and used by the End portal counted as the one the End fight wants. */
+    private Map<Need, Integer> heldNow(ServerPlayerEntity player, PortalRunSnapshot p) {
+        var held = held(player, p);
+        if (campaign.stronghold().spawnByPortal(player)) held.merge(Need.BED, 1, Integer::sum);
+        return held;
     }
 }

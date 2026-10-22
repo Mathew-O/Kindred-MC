@@ -178,6 +178,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         queue.addProperty("description", StrategistPrompt.QUEUE);
         queue.add("items", follow);
         properties.add("queue", queue);
+        properties.add("approach", enumField(StrategistPrompt.APPROACH, StrategistPrompt.Way.values()));
         var all = new JsonArray();
         for (String name : properties.keySet()) all.add(name);
         var schema = new JsonObject();
@@ -213,7 +214,8 @@ public final class OpenAiCompatibleStrategist implements Strategist {
                 + "\"habit\" (NONE, MORE_FOOD, SPARE_PICKAXE, NO_CAVES or SHELTER_EARLY; " + StrategistPrompt.HABIT + "), "
                 + "\"retire\" (as habit; " + StrategistPrompt.RETIRE + "), "
                 + "\"queue\" (a list of {\"need\":..,\"count\":..,\"task\":..,\"why\":..}; " + StrategistPrompt.QUEUE + " need: "
-                + StrategistPrompt.QUEUE_NEED + " count: " + StrategistPrompt.QUEUE_COUNT + " task: " + StrategistPrompt.QUEUE_FOR + ").";
+                + StrategistPrompt.QUEUE_NEED + " count: " + StrategistPrompt.QUEUE_COUNT + " task: " + StrategistPrompt.QUEUE_FOR + "), "
+                + "\"approach\" (" + StrategistPrompt.APPROACH + ").";
     }
 
     /** The completion's reply, validated in core, and its token counts. */
@@ -263,7 +265,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             }
         }
         var advice = StrategyAdvice.validated(text(reply, "stance"), places, text(reply, "note"), text(reply, "reason"), reported,
-                text(reply, "focus"), text(reply, "habit"), text(reply, "retire"), queue);
+                text(reply, "focus"), text(reply, "habit"), text(reply, "retire"), queue, text(reply, "approach"));
         return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
     }
 

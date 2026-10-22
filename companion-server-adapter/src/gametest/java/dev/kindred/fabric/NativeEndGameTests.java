@@ -132,7 +132,7 @@ public final class NativeEndGameTests implements FabricGameTest {
 
     /** The test server ticks no entity but players outside the test's own chunks; arrows and crystals need theirs. */
     static void forceChunks(net.minecraft.server.world.ServerWorld world, BlockPos o, boolean forced) {
-        for (int x = o.getX() - 16; x <= o.getX() + 48; x += 16) for (int z = o.getZ() - 32; z <= o.getZ() + 32; z += 16) {
+        for (int x = o.getX() - 48; x <= o.getX() + 48; x += 16) for (int z = o.getZ() - 32; z <= o.getZ() + 32; z += 16) {
             world.setChunkForced(x >> 4, z >> 4, forced);
         }
     }
@@ -305,8 +305,8 @@ public final class NativeEndGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    KindredMod.LOGGER.info("Leaper: landed at {}, planned {}, health {}", player.getBlockPos().toShortString(),
-                            planned[0].rest().toShortString(), player.getHealth());
+                    KindredMod.LOGGER.info("Leaper: landed at {}, planned {} ({} of {} spread throws land), health {}", player.getBlockPos().toShortString(),
+                            planned[0].rest().toShortString(), planned[0].steady(), PearlFlight.SAMPLES, player.getHealth());
                     context.assertTrue(player.getBlockY() == ledge[0].getY()
                             && Math.hypot(player.getBlockX() - ledge[0].getX(), player.getBlockZ() - ledge[0].getZ()) <= 1.5,
                             "On the ledge: " + player.getBlockPos().toShortString() + " for " + ledge[0].toShortString());
@@ -350,113 +350,131 @@ public final class NativeEndGameTests implements FabricGameTest {
     }
 
     /**
-     * The pearl way into a cage (E-39f): from end stone twelve blocks off, a pearl up onto the cage's roof of bars, the
-     * bars over the crystal broken without being picked up, a pearl back down to end stone, and the crystal shot on the
-     * high arc down through the opened roof. Two pearls spent, ten health for the landings, and nothing else lost.
+     * Stranded on a pillar's top (E-39f), as a dragon's fling or a stray step can leave a player, it pearls down to end
+     * stone rather than walk off the edge: the throw is chosen by flying it through the real blocks under vanilla's
+     * spread, landing fourteen times in sixteen, and never one whose spread could strike the caged crystal on the next
+     * pillar (vanilla blows a crystal up at a pearl's hit, beside the player it brings) or leave a deadly drop. One
+     * pearl spent, five health for the landing, the crystal untouched.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endCage", tickLimit = 2400)
-    public void aCageIsOpenedFromItsRoofByPearlAndTheCrystalShotThroughIt(TestContext context) {
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endStranded", tickLimit = 600)
+    public void strandedOnAPillarItPearlsDownClearOfTheCrystals(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         net.minecraft.entity.decoration.EndCrystalEntity[] crystal = new net.minecraft.entity.decoration.EndCrystalEntity[1];
-        int[] step = {0}, shots = {0};
+        PearlFlight.Throw[] planned = new PearlFlight.Throw[1];
         java.util.function.Predicate<BlockPos> open = pos -> false;
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Vaulter"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Perch"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
                     forceChunks(world, o, true);
-                    for (int x = -14; x <= 38; x++) for (int z = -16; z <= 16; z++) {
+                    for (int x = -16; x <= 30; x++) for (int z = -16; z <= 16; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.END_STONE.getDefaultState());
-                        for (int y = 2; y <= 26; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                        for (int y = 2; y <= 22; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
-                    crystal[0] = cagedPillar(world, o.add(12, 2, 0), 14);
+                    // Its pillar: obsidian three wide and fourteen high, nothing on top. The next one is caged, eight off.
+                    for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) for (int y = 2; y <= 15; y++) {
+                        world.setBlockState(o.add(x, y, z), Blocks.OBSIDIAN.getDefaultState());
+                    }
+                    crystal[0] = cagedPillar(world, o.add(8, 2, 0), 14);
                     var player = f.player();
-                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, -90, 0);
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 16, o.getZ() + 0.5, 90, 0);
                     var inventory = player.getInventory();
                     inventory.clear();
                     inventory.setStack(0, new ItemStack(Items.ENDER_PEARL, 4));
-                    inventory.setStack(1, new ItemStack(Items.BOW));
-                    inventory.setStack(2, new ItemStack(Items.ARROW, 16));
-                    inventory.setStack(3, new ItemStack(Items.DIAMOND_PICKAXE));
                     player.setHealth(20);
-                    // Below vanilla's regeneration (food 18), so the landings' damage shows in the health left.
+                    // Below vanilla's regeneration (food 18), so the landing's damage shows in the health left.
                     player.getHungerManager().setFoodLevel(16);
                     player.getHungerManager().setSaturationLevel(0);
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the ground"))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the pillar's top"))
                 .createAndAdd(() -> {
                     var player = f.player();
-                    var up = EndFightLeg.roofThrow(player, player.getPos(), crystal[0], open);
-                    context.assertTrue(up.isPresent(), "A steady throw onto the roof, with one back down from there");
-                    context.assertTrue(f.runtime.nativePearl(f.source, f.id, 0, up.get().yaw(), up.get().pitch()) == 1, "Pearl up requested");
+                    planned[0] = EndFightLeg.downThrow(player, player.getPos(), player.getPos(), 6, open, 12).orElse(null);
+                    context.assertTrue(planned[0] != null, "A steady throw down to end stone, clear of the crystal");
+                    KindredMod.LOGGER.info("Perch: down to {} at pitch {}, {} of {} spread throws land", planned[0].rest().toShortString(),
+                            planned[0].pitch(), planned[0].steady(), PearlFlight.SAMPLES);
+                    context.assertTrue(planned[0].steady() >= PearlFlight.STEADY, "Steady");
+                    context.assertTrue(f.runtime.nativePearl(f.source, f.id, 0, planned[0].yaw(), planned[0].pitch()) == 1, "Pearl down requested");
                 })
                 .createAndAdd(() -> {
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     context.assertTrue(activity.work().startsWith("Completed native_pearl") && f.player().isOnGround(), "Landed: " + activity);
                 })
-                .createAndAdd(() -> context.assertTrue(EndFightLeg.onRoof(f.player(), crystal[0]),
-                        "On the cage's roof: " + f.player().getBlockPos().toShortString() + " over " + crystal[0].getBlockPos().toShortString()))
-                .createAndAdd(() -> {
-                    // The roof's bars over the crystal, one at a time, none it stands on.
-                    var player = f.player();
-                    var world = context.getWorld();
-                    BlockPos at = crystal[0].getBlockPos();
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    if (activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED")) {
-                        var under = player.getBoundingBox().expand(0.05, 0, 0.05).offset(0, -0.2, 0);
-                        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-                            BlockPos bar = at.add(dx, 2, dz);
-                            if (!world.getBlockState(bar).isOf(Blocks.IRON_BARS) || new net.minecraft.util.math.Box(bar).intersects(under)
-                                    || player.getEyePos().distanceTo(net.minecraft.util.math.Vec3d.ofCenter(bar)) > 4.4) continue;
-                            f.runtime.nativeBreak(f.source, f.id, bar, false);
-                            context.assertTrue(false, "Breaking " + bar.toShortString());
-                        }
-                    } else context.assertTrue(false, "Breaking: " + activity);
-                    context.assertTrue(!world.getBlockState(at.add(0, 2, 0)).isOf(Blocks.IRON_BARS), "The bar over the crystal is gone");
-                    context.assertTrue(EndFightLeg.onRoof(player, crystal[0]), "Still on the roof");
-                })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    var down = EndFightLeg.downThrow(player, player.getPos(), crystal[0], open);
-                    context.assertTrue(down.isPresent(), "A steady throw back down");
-                    context.assertTrue(f.runtime.nativePearl(f.source, f.id, 0, down.get().yaw(), down.get().pitch()) == 1, "Pearl down requested");
-                })
-                .createAndAdd(() -> {
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    context.assertTrue(activity.work().startsWith("Completed native_pearl") && f.player().isOnGround()
-                            && f.player().getBlockY() == context.getAbsolutePos(BlockPos.ORIGIN).getY() + 2, "Down on the end stone: " + activity);
-                })
-                .createAndAdd(() -> {
-                    // Shot on the arc that is clear through the opened roof (the high one, coming down, where the sides stand).
-                    if (!crystal[0].isAlive()) return;
-                    var player = f.player();
-                    var arc = EndFightLeg.clearArc(context.getWorld(), player.getPos(), crystal[0].getBoundingBox().getCenter());
-                    context.assertTrue(arc.isPresent(), "A clear arc through the opened roof");
-                    if (shots[0] == 0) KindredMod.LOGGER.info("Vaulter: the clear arc is the {} one", arc.get() ? "high" : "low");
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    if ((activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED")) && shots[0] < 6
-                            && f.runtime.nativeShoot(f.source, f.id, 1, crystal[0].getUuid(), arc.get()) == 1) shots[0]++;
-                    context.assertTrue(false, "Shooting through the roof: " + shots[0] + " shots");
-                })
-                .createAndAdd(() -> {
-                    var player = f.player();
-                    KindredMod.LOGGER.info("Vaulter: crystal down after {} high shots; pearls {}, health {}", shots[0],
-                            player.getInventory().count(Items.ENDER_PEARL), player.getHealth());
-                    context.assertTrue(!crystal[0].isAlive(), "The crystal is down");
-                    context.assertTrue(player.getInventory().count(Items.ENDER_PEARL) == 2, "Two pearls spent, none conjured");
-                    context.assertTrue(player.getInventory().count(Items.ARROW) == 16 - shots[0], "An arrow a shot");
-                    context.assertTrue(player.getHealth() >= 9.5 && player.getHealth() <= 10.5, "Ten health for two landings: " + player.getHealth());
-                    var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
-                    for (int x = -14; x <= 38; x++) for (int z = -16; z <= 16; z++) for (int y = 2; y <= 26; y++) {
+                    KindredMod.LOGGER.info("Perch: landed at {}, planned {}, health {}", player.getBlockPos().toShortString(),
+                            planned[0].rest().toShortString(), player.getHealth());
+                    context.assertTrue(player.getBlockY() == o.getY() + 2, "Down on the end stone: " + player.getBlockPos().toShortString());
+                    context.assertTrue(crystal[0].isAlive(), "The crystal untouched");
+                    context.assertTrue(player.getInventory().count(Items.ENDER_PEARL) == 3, "One pearl spent, none conjured");
+                    context.assertTrue(player.getHealth() >= 14.5 && player.getHealth() <= 15.5, "Five health for the landing: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_pearl") && record.state() == ActionRecord.State.VERIFIED,
+                            "A verified throw: " + record);
+                    var world = context.getWorld();
+                    crystal[0].discard();
+                    for (int x = -16; x <= 30; x++) for (int z = -16; z <= 16; z++) for (int y = 2; y <= 22; y++) {
                         world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE);
                     }
                     forceChunks(world, o, false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * The respawn point by the End portal (E-39g): a bed it carries set down on a floor two blocks off, facing east, and
+     * used; vanilla sets the respawn point at the bed by day or by night. One bed item spent, both halves standing.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "endBed", tickLimit = 400)
+    public void aBedSetDownAndUsedSetsTheRespawnPoint(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] floor = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sleeper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -2; x <= 6; x++) for (int z = -3; z <= 3; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE_BRICKS.getDefaultState());
+                        for (int y = 2; y <= 4; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    floor[0] = o.add(2, 1, 0);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, -90, 0);
+                    player.getInventory().clear();
+                    player.getInventory().setStack(0, new ItemStack(Items.WHITE_BED));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeBed(f.source, f.id, 0, floor[0], net.minecraft.util.math.Direction.EAST) == 1, "Bed requested");
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.work().startsWith("Completed native_bed"), "Bed down: " + activity + " " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = f.player();
+                    BlockPos foot = floor[0].up(), head = foot.east();
+                    context.assertTrue(world.getBlockState(foot).isIn(net.minecraft.registry.tag.BlockTags.BEDS)
+                            && world.getBlockState(head).isIn(net.minecraft.registry.tag.BlockTags.BEDS), "Both halves of the bed stand");
+                    context.assertTrue(foot.equals(player.getSpawnPointPosition()) || head.equals(player.getSpawnPointPosition()),
+                            "The respawn point is at the bed: " + player.getSpawnPointPosition());
+                    context.assertTrue(player.getInventory().count(Items.WHITE_BED) == 0, "The one bed was spent");
+                    context.assertFalse(player.isSleeping(), "Up again: the point is set, by day or by night");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_bed") && record.state() == ActionRecord.State.VERIFIED,
+                            "A verified bed: " + record);
+                    for (BlockPos pos : java.util.List.of(foot, head)) world.setBlockState(pos, Blocks.AIR.getDefaultState(), net.minecraft.block.Block.FORCE_STATE | net.minecraft.block.Block.SKIP_DROPS);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

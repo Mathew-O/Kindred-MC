@@ -1,5 +1,6 @@
 package dev.kindred.core.survival;
 
+import dev.kindred.core.guide.Playbook;
 import dev.kindred.core.guide.TaskQueue;
 import dev.kindred.core.guide.Want;
 
@@ -13,8 +14,9 @@ import java.util.Optional;
  * Advice for an AI player's standing goal from an optional model strategist (F-19b, F-19c): a stance the local route
  * keeps for a while, places to keep away from, a focus on what to do next, and a note for the player's own memory,
  * which may carry a habit the player keeps in that world from then on (or retire one it kept), and follow-ups for the
- * player's queue: needs from a fixed set for the objectives ahead, gathered or crafted when the chance comes (F-19e).
- * Advice is never an
+ * player's queue: needs from a fixed set for the objectives ahead, gathered or crafted when the chance comes (F-19e),
+ * and a way of the playbook to take for a part of the run, taken only where it can be done and is not much dearer than
+ * the best (F-25c8). Advice is never an
  * order: the planner and the body's rules still decide every step, and the advice only shifts how careful they are
  * and which of the route's ordinary jobs comes first ({@link PlanPreferences}). Places must lie near something the
  * player itself reported (a death, a danger zone), so a model cannot point the player at hidden resources or
@@ -28,9 +30,11 @@ import java.util.Optional;
  * @param habit  a lasting lesson the note carries, or {@code NONE}
  * @param retire a habit kept in this world that is no longer worth keeping, or {@code NONE}
  * @param queue  follow-ups for the player's queue, at most {@link TaskQueue#MAX_PER_ADVICE}
+ * @param approach a way of the playbook advised for a part of the run, or null for none
  */
 public record StrategyAdvice(Stance stance, List<Place> avoid, String note, String reason,
-                             PlanPreferences.Focus focus, PlanPreferences.Habit habit, PlanPreferences.Habit retire, List<Want> queue) {
+                             PlanPreferences.Focus focus, PlanPreferences.Habit habit, PlanPreferences.Habit retire, List<Want> queue,
+                             Playbook.Approach approach) {
     /** How careful the route is. */
     public enum Stance {
         /** Carry on with the route as the local planner sees fit. */
@@ -64,6 +68,15 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
         queue = List.copyOf(queue.subList(0, Math.min(queue.size(), TaskQueue.MAX_PER_ADVICE)));
     }
 
+    /** Advice with no way of the playbook advised. */
+    public StrategyAdvice(Stance stance, List<Place> avoid, String note, String reason,
+                          PlanPreferences.Focus focus, PlanPreferences.Habit habit, PlanPreferences.Habit retire, List<Want> queue) {
+        this(stance, avoid, note, reason, focus, habit, retire, queue, null);
+    }
+
+    /** The way of the playbook advised, if any. */
+    public Optional<Playbook.Approach> advised() { return Optional.ofNullable(approach); }
+
     /** Advice with nothing for the queue. */
     public StrategyAdvice(Stance stance, List<Place> avoid, String note, String reason,
                           PlanPreferences.Focus focus, PlanPreferences.Habit habit, PlanPreferences.Habit retire) {
@@ -77,7 +90,7 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
 
     /** The same advice under another stance. */
     public StrategyAdvice withStance(Stance other) {
-        return new StrategyAdvice(other, avoid, note, reason, focus, habit, retire, queue);
+        return new StrategyAdvice(other, avoid, note, reason, focus, habit, retire, queue, approach);
     }
 
     /** {@link #validated(String, List, String, String, List, String, String, String)} with no focus or habit. */
@@ -102,6 +115,15 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
      */
     public static Optional<StrategyAdvice> validated(String stance, List<Place> avoid, String note, String reason, List<Place> reported,
                                                      String focus, String habit, String retire, List<Want> queue) {
+        return validated(stance, avoid, note, reason, reported, focus, habit, retire, queue, null);
+    }
+
+    /**
+     * As {@link #validated(String, List, String, String, List, String, String, String, List)}, with a way of the
+     * playbook ({@link Playbook.Approach#parse}); an unknown way, or none, counts as none.
+     */
+    public static Optional<StrategyAdvice> validated(String stance, List<Place> avoid, String note, String reason, List<Place> reported,
+                                                     String focus, String habit, String retire, List<Want> queue, String approach) {
         Optional<Stance> parsed = parse(Stance.class, stance);
         if (parsed.isEmpty()) return Optional.empty();
         var kept = new ArrayList<Place>();
@@ -122,7 +144,8 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
         }
         return Optional.of(new StrategyAdvice(parsed.get(), kept, plainNote, plain(reason),
                 parse(PlanPreferences.Focus.class, focus).orElse(PlanPreferences.Focus.NONE), learned,
-                parse(PlanPreferences.Habit.class, retire).orElse(PlanPreferences.Habit.NONE), wants));
+                parse(PlanPreferences.Habit.class, retire).orElse(PlanPreferences.Habit.NONE), wants,
+                Playbook.Approach.parse(approach).orElse(null)));
     }
 
     private static <E extends Enum<E>> Optional<E> parse(Class<E> type, String name) {

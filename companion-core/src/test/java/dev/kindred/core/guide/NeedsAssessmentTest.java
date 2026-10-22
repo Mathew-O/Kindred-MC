@@ -51,8 +51,12 @@ class NeedsAssessmentTest {
         assertEquals(3, find(chunks, Need.FEATHERS).count());
         assertEquals(4, find(chunks, Need.STICKS).count(), "three wanted, one held: one craft of four");
         assertNull(find(chunks, Need.FOOD));
+        // The bed for the respawn point by the End portal: three wool from sheep, then the bed at a table.
+        assertEquals(3, find(chunks, Need.WOOL).count());
+        assertEquals(1, find(chunks, Need.BED).count());
+        assertNull(find(TaskQueue.EMPTY.chunks(END, Map.of(Need.BED, 1)), Need.WOOL), "a bed in hand wants no wool");
         // Everything in hand: nothing to do.
-        var all = Map.of(Need.BOW, 1, Need.ARROWS, 40, Need.FOOD, 16, Need.BLOCKS, 64, Need.WATER_BUCKET, 1);
+        var all = Map.of(Need.BOW, 1, Need.ARROWS, 40, Need.FOOD, 16, Need.BLOCKS, 64, Need.WATER_BUCKET, 1, Need.BED, 1);
         assertTrue(TaskQueue.EMPTY.chunks(END, all).isEmpty());
     }
 

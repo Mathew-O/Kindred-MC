@@ -43,7 +43,8 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription(StrategistPrompt.FOCUS) PlanPreferences.Focus focus,
             @JsonPropertyDescription(StrategistPrompt.HABIT) PlanPreferences.Habit habit,
             @JsonPropertyDescription(StrategistPrompt.RETIRE) PlanPreferences.Habit retire,
-            @JsonPropertyDescription(StrategistPrompt.QUEUE) List<FollowUp> queue) { }
+            @JsonPropertyDescription(StrategistPrompt.QUEUE) List<FollowUp> queue,
+            @JsonPropertyDescription(StrategistPrompt.APPROACH) StrategistPrompt.Way approach) { }
 
     public record Spot(int x, int y, int z) { }
 
@@ -147,7 +148,7 @@ public final class ClaudeStrategist implements Strategist {
             var queue = r.queue() == null ? List.<Want>of() : r.queue().stream().filter(Objects::nonNull)
                     .flatMap(f -> Want.parse(name(f.need()), f.count(), name(f.task()), f.why()).stream()).toList();
             var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported,
-                    name(r.focus()), name(r.habit()), name(r.retire()), queue);
+                    name(r.focus()), name(r.habit()), name(r.retire()), queue, name(r.approach()));
             return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
         } catch (RateLimitException limited) {
             return Outcome.failed("rate limited", (System.nanoTime() - started) / 1_000_000);

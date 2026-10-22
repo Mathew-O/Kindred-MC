@@ -131,8 +131,18 @@ final class StrongholdLeg {
 
     /** The leg has begun: the portal is lit, or the player has already been through it. */
     boolean active(ServerPlayerEntity player) {
+        // Back from the End with nothing: the run's own early stages make a pickaxe again before the leg goes on.
+        if (endFight.restocking() && !pickaxe(player)) return false;
         return overworldPortal != null || netherPortal != null || player.getServerWorld().getRegistryKey() != World.OVERWORLD
                 || campaign.litPortal(player).isPresent() || seenPortal(player).isPresent();
+    }
+
+    private static boolean pickaxe(ServerPlayerEntity player) {
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = player.getInventory().getStack(slot);
+            if (stack.isIn(net.minecraft.registry.tag.ItemTags.PICKAXES) && PortalRunCampaign.tier(stack.getItem()) >= 2) return true;
+        }
+        return false;
     }
 
     /** A lit portal it has seen, its own or one it came across, as players use any portal they find. */
@@ -153,6 +163,17 @@ final class StrongholdLeg {
     String progress() { return progress; }
     /** Where it found the End portal, once it has. */
     Optional<BlockPos> endPortal() { return Optional.ofNullable(endPortal); }
+
+    /**
+     * Its respawn point is a bed in the Overworld within the portal room's reach of the End portal it found (E-39g):
+     * the bed is down already, so none need be carried, and a death in the End starts again here.
+     */
+    boolean spawnByPortal(ServerPlayerEntity player) {
+        BlockPos spawn = player.getSpawnPointPosition();
+        if (endPortal == null || spawn == null || player.getSpawnPointDimension() != World.OVERWORLD || !spawn.isWithinDistance(endPortal, 24)) return false;
+        var overworld = player.getServer().getOverworld();
+        return !overworld.isChunkLoaded(spawn) || overworld.getBlockState(spawn).isIn(net.minecraft.registry.tag.BlockTags.BEDS);
+    }
 
     private static boolean overworld(ServerPlayerEntity player) {
         return player.getServerWorld().getRegistryKey() == World.OVERWORLD;
@@ -334,12 +355,45 @@ final class StrongholdLeg {
                 .min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
+    /**
+     * After a death in the End: the End fight's own needs gathered again at its gate, as before the first descent, with
+     * the same clocks (half a day without progress, half a minute with nothing to be had), then back to the fight.
+     */
+    private Optional<PortalRunCampaign.Task> restock(NativePlayerBody body, PortalRunSnapshot p, StrongholdRunSnapshot s, EditPolicy.ServerPolicy policy) {
+        var player = body.entity();
+        var followUps = campaign.followUps();
+        provisions = followUps.assess(player, p, java.util.EnumSet.of(Objective.END_FIGHT, Objective.SURVIVAL), java.util.Set.of(Objective.END_FIGHT),
+                s.swordTier(), false);
+        stage = StrongholdRunPlanner.Stage.PROVISION;
+        if (!provisions.due(Objective.END_FIGHT)) {
+            endFight.restocked();
+            return Optional.empty();
+        }
+        for (var chunk : provisions.gated().getOrDefault(Objective.END_FIGHT, java.util.List.of())) {
+            Optional<PortalRunCampaign.Task> task = followUps.realize(chunk.need(), chunk.count(), true, chunk.why(), p, body, policy, s.swordTier());
+            if (task.isPresent() && !campaign.setAside(task.get())) {
+                followUps.idle(Objective.END_FIGHT, player, true);
+                progress = "End: restocking after a death in the End - " + task.get().label();
+                return task;
+            }
+        }
+        followUps.idle(Objective.END_FIGHT, player, false);
+        progress = "End: restocking after a death in the End - nothing of it to be had here yet";
+        return Optional.of(new PortalRunCampaign.Task("native_wait", java.util.Map.of("seconds", "2"), "Wait: nothing to restock here yet"));
+    }
+
     /** The next task toward the End portal, or empty when nothing can be done from here now. */
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body, PortalRunSnapshot p, EditPolicy.ServerPolicy policy) {
         var player = body.entity();
         observe(player);
         var s = snapshot(player, p);
         lastSnapshot = s;
+        // Back from the End with the dragon alive: the End fight's kit gathered again before going back through.
+        if (campaign.dragonFight()) endFight.noteWhere(player);
+        if (campaign.dragonFight() && endFight.restocking() && s.dimension() != StrongholdRunSnapshot.Dimension.END) {
+            var restock = restock(body, p, s, policy);
+            if (restock.isPresent()) return restock;
+        }
         // On the dragon goal, once the End portal is found (or over there already): the fight's own steps.
         if (campaign.dragonFight() && (s.dimension() == StrongholdRunSnapshot.Dimension.END || s.portalRoomSeen())) {
             stage = StrongholdRunPlanner.Stage.DONE;

@@ -71,6 +71,34 @@ final class EndFightLeg {
 
     EndFightPlanner.Stage stage() { return stage; }
 
+    /** It went into the End this fight; back out with the dragon alive it is restocking. */
+    private boolean wentIn, restocking;
+
+    /**
+     * Where the player is, each pass: back in the Overworld from the End with the dragon alive (it died there), its kit
+     * is lost in the End, so the End fight's needs are gathered again before it goes back through (E-39g).
+     */
+    void noteWhere(ServerPlayerEntity player) {
+        if (inEnd(player)) {
+            wentIn = true;
+            restocking = false;
+        } else if (wentIn && !dragonKilled && player.isAlive()) {
+            wentIn = false;
+            restocking = true;
+            campaign.followUps().reopen(dev.kindred.core.guide.Objective.END_FIGHT);
+            KindredMod.LOGGER.info("{} is back from the End with the dragon alive; restocking before going back in", player.getName().getString());
+        }
+    }
+
+    /** Restocking the End fight's needs after coming back from the End with the dragon alive. */
+    boolean restocking() { return restocking; }
+
+    /** Restocked, or given up on restocking: back to the fight. */
+    void restocked() {
+        if (restocking) KindredMod.LOGGER.info("End fight: restocking over; back to the End");
+        restocking = false;
+    }
+
     String progress() { return progress; }
 
     boolean dragonKilled() { return dragonKilled; }
@@ -120,7 +148,8 @@ final class EndFightLeg {
         int melee = Weapons.held(player).isEmpty() ? p.swordTier() : Math.max(1, p.swordTier());
         if (!inEnd(player)) {
             return new EndFightSnapshot(false, dragonKilled, frames.size(), filled, eyes, open,
-                    false, 0, 0, 0, true, false, false, false, bow, arrows, blocks, melee, player.getHealth(), pearls(player));
+                    false, 0, 0, 0, true, false, false, false, bow, arrows, blocks, melee, player.getHealth(),
+                    bedSlot(player) >= 0, spawnByPortal(player));
         }
         var crystals = crystals(world);
         int caged = (int) crystals.stream().filter(c -> caged(player, c) && !givenUp(world, c.getUuid())).count();
@@ -138,7 +167,7 @@ final class EndFightLeg {
         }
         return new EndFightSnapshot(true, dragonKilled, 0, 0, eyes, true, onIsland(player), crystals.size(), shootable, caged,
                 dragon != null, dragon != null && NativeDragonAction.perched(dragon), NativeDragonAction.breath(player, 1.0) != null, exit,
-                bow, arrows, blocks, melee, player.getHealth(), pearls(player));
+                bow, arrows, blocks, melee, player.getHealth(), bedSlot(player) >= 0, spawnByPortal(player));
     }
 
     private static int blocks(ServerPlayerEntity player) {
@@ -256,13 +285,21 @@ final class EndFightLeg {
         var player = body.entity();
         var s = snapshot(player, p);
         stage = EndFightPlanner.stage(s);
-        // Up on a cage's roof by pearl: open it, shoot from the height, and down by pearl again; nothing that walks.
-        if (s.inEnd() && !s.inBreath() && player.isOnGround()) {
-            var roof = roofUnder(player);
-            if (roof.isPresent()) {
-                var work = roofWork(body, roof.get());
-                progress = "Dragon: " + label(stage) + ": on a cage's roof - " + work.label();
-                return Optional.of(work);
+
+        // High up on what is not its own pillar (a pillar's top or a cage it was flung or pearled onto): down by pearl to
+        // end stone, never a walk off the edge.
+        var underfoot = player.getServerWorld().getBlockState(player.getBlockPos().down());
+        long now = player.getServerWorld().getTime();
+        if (s.inEnd() && !s.inBreath() && player.isOnGround() && now >= nextStrandedLook && Math.hypot(player.getX(), player.getZ()) <= 90
+                && (underfoot.isOf(Blocks.OBSIDIAN) || underfoot.isOf(Blocks.IRON_BARS)) && aloft(player)
+                && !onTower(player) && findTower(player).isEmpty() && pearls(player) > 0) {
+            nextStrandedLook = now + 40;
+            int slot = hotbarOf(player, Items.ENDER_PEARL);
+            Optional<PortalRunCampaign.Task> down = slot < 0 ? readyInHotbar(body, Items.ENDER_PEARL, "Ready an ender pearl")
+                    : downThrow(player, player.getPos(), player.getPos(), 6, campaign::blocked, 12).map(t -> pearlTask(slot, t, "Pearl down to the island"));
+            if (down.isPresent()) {
+                progress = "Dragon: " + label(stage) + ": stranded up high - " + down.get().label();
+                return down;
             }
         }
         // High up with no tower remembered (the server restarted while it was up there): its own pillar found again.
@@ -315,6 +352,7 @@ final class EndFightLeg {
         return switch (step.action()) {
             case FILL_FRAME -> fillFrame(body);
             case ENTER_PORTAL -> s.inEnd() ? exit(body) : enterPortal(body);
+            case SET_SPAWN -> setSpawn(body);
             case TO_ISLAND -> toIsland(body, policy);
             case SHOOT_CRYSTAL -> shootCrystal(body);
             case OPEN_CAGE -> openCage(body);
@@ -512,11 +550,6 @@ final class EndFightLeg {
             return onTower(player) ? Optional.of(down(player)) : Optional.empty();
         }
         EndCrystalEntity crystal = cages.stream().filter(c -> c.getUuid().equals(caging)).findFirst().orElse(cages.getFirst());
-        // Quicker than a pillar when it holds pearls: up onto the roof by one, and back down by another (E-39f).
-        if (towerBase == null) {
-            var byPearl = pearlUp(body, crystal);
-            if (byPearl.isPresent()) return byPearl;
-        }
         caging = crystal.getUuid();
         BlockPos center = crystal.getBlockPos();
         if (towerBase == null || towerBase.getSquaredDistance(center.getX(), towerBase.getY(), center.getZ()) > 6 * 6) {
@@ -561,33 +594,70 @@ final class EndFightLeg {
         return Optional.of(down(player));
     }
 
+    // ------------------------------------------------------------------ the respawn point (E-39g)
+
+    /** A hotbar slot holding a bed, readying one from the pack if need be; -1 for none. */
+    private static int bedSlot(ServerPlayerEntity player) {
+        for (int slot = 0; slot < 36; slot++) if (player.getInventory().getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.BEDS)) return slot;
+        return -1;
+    }
+
+    /** Its respawn point is a bed in the Overworld within the portal room's reach of the End portal it found. */
+    private boolean spawnByPortal(ServerPlayerEntity player) {
+        return leg.spawnByPortal(player);
+    }
+
+    /**
+     * A bed set down on the portal room's floor near the player and used, so a death in the End starts again here:
+     * two free blocks on solid tops, never on the portal or its frame; walked up to when out of reach.
+     */
+    private Optional<PortalRunCampaign.Task> setSpawn(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        int slot = bedSlot(player);
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(campaign.swapToHotbar(body, slot, "Ready the bed"));
+        BlockPos feet = player.getBlockPos();
+        BlockPos best = null;
+        net.minecraft.util.math.Direction bestFacing = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (BlockPos floor : BlockPos.iterate(feet.add(-6, -3, -6), feet.add(6, 2, 6))) {
+            for (var facing : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
+                BlockPos foot = floor.up(), head = foot.offset(facing);
+                if (!bedFits(world, foot) || !bedFits(world, head)) continue;
+                if (foot.equals(feet) || head.equals(feet) || foot.equals(feet.up()) || head.equals(feet.up())) continue;
+                double distance = Vec3d.ofCenter(foot).squaredDistanceTo(player.getPos());
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = floor.toImmutable();
+                    bestFacing = facing;
+                }
+            }
+        }
+        if (best == null) return Optional.empty();
+        BlockPos foot = best.up();
+        if (player.getEyePos().distanceTo(Vec3d.ofCenter(foot)) <= 4.0 && Math.abs(player.getY() - foot.getY()) <= 1.5) {
+            return Optional.of(new PortalRunCampaign.Task("native_bed", Map.of("x", String.valueOf(best.getX()), "y", String.valueOf(best.getY()),
+                    "z", String.valueOf(best.getZ()), "slot", String.valueOf(slot), "facing", bestFacing.asString()), "Set the bed down by the End portal and use it"));
+        }
+        return Optional.of(PortalRunCampaign.go(foot, 2.0, true, "Up to a spot for the bed by the End portal"));
+    }
+
+    /** Room for one half of a bed at {@code pos}: free, with head room, on a solid top that is not the portal's. */
+    private static boolean bedFits(ServerWorld world, BlockPos pos) {
+        if (!world.isChunkLoaded(pos) || !world.getBlockState(pos).isAir() || !world.getBlockState(pos.up()).isAir()) return false;
+        var below = world.getBlockState(pos.down());
+        if (below.isOf(Blocks.END_PORTAL) || below.isOf(Blocks.END_PORTAL_FRAME) || below.isOf(Blocks.LAVA)) return false;
+        return below.isSideSolidFullSquare(world, pos.down(), net.minecraft.util.math.Direction.UP);
+    }
+
     // ------------------------------------------------------------------ pearls (E-39f)
 
-    /** Pearl tries at each cage's roof: after two that did not bring it there, the pillar of its own blocks instead. */
-    private final Map<UUID, Integer> pearlTries = new HashMap<>();
-    private final Map<UUID, BlockPos> pearlStands = new HashMap<>();
-    /** Arrows loosed from up on a roof at each other crystal. */
-    private final Map<UUID, Integer> roofShots = new HashMap<>();
-    /** Health it goes up with: five for the pearl up and five for the one down, and some to spare. */
-    static final float PEARL_HEALTH = 16;
-    static final int PEARL_TRIES = 2;
+    /** When it next looks for a throw down from a height it was stranded on. */
+    private long nextStrandedLook;
 
     private static int pearls(ServerPlayerEntity player) {
         return player.getInventory().count(Items.ENDER_PEARL);
-    }
-
-    /** Where feet stand on a cage's roof: on the bars three above the bedrock under the crystal. */
-    private static int roofFeetY(EndCrystalEntity crystal) {
-        return crystal.getBlockY() + 3;
-    }
-
-    static boolean onRoof(ServerPlayerEntity player, EndCrystalEntity crystal) {
-        BlockPos at = crystal.getBlockPos();
-        return player.getBlockY() == roofFeetY(crystal) && Math.abs(player.getBlockX() - at.getX()) <= 2 && Math.abs(player.getBlockZ() - at.getZ()) <= 2;
-    }
-
-    private static Optional<EndCrystalEntity> roofUnder(ServerPlayerEntity player) {
-        return crystals(player.getServerWorld()).stream().filter(c -> onRoof(player, c)).findFirst();
     }
 
     private static PortalRunCampaign.Task pearlTask(int slot, PearlFlight.Throw t, String label) {
@@ -597,38 +667,14 @@ final class EndFightLeg {
                 "x", String.valueOf(rest.getX() + 0.5), "y", String.valueOf(rest.getY()), "z", String.valueOf(rest.getZ() + 0.5)), label);
     }
 
-    /**
-     * A steady throw from {@code feet} onto the roof of {@code crystal}'s cage, aimed at the roof's edge nearest the
-     * thrower so that the bars over the crystal are left to break, and from whose landing a steady throw back down exists.
-     */
-    private Optional<PearlFlight.Throw> roofThrow(ServerPlayerEntity player, Vec3d feet, EndCrystalEntity crystal) {
-        return roofThrow(player, feet, crystal, campaign::blocked);
-    }
-
-    static Optional<PearlFlight.Throw> roofThrow(ServerPlayerEntity player, Vec3d feet, EndCrystalEntity crystal,
-                                                java.util.function.Predicate<BlockPos> blocked) {
-        BlockPos at = crystal.getBlockPos();
-        double dx = feet.x - (at.getX() + 0.5), dz = feet.z - (at.getZ() + 0.5), d = Math.hypot(dx, dz);
-        if (d < 4 || d > 22) return Optional.empty();
-        BlockPos edge = Math.abs(dx) >= Math.abs(dz) ? new BlockPos(at.getX() + (int) Math.signum(dx) * 2, roofFeetY(crystal), at.getZ())
-                : new BlockPos(at.getX(), roofFeetY(crystal), at.getZ() + (int) Math.signum(dz) * 2);
-        var up = PearlFlight.toward(player, feet, edge, 2.0)
-                .filter(t -> Math.abs(t.rest().getX() - at.getX()) <= 2 && Math.abs(t.rest().getZ() - at.getZ()) <= 2);
-        return up.filter(t -> downThrow(player, Vec3d.ofBottomCenter(t.rest()), crystal, blocked).isPresent());
-    }
-
-    /** A steady throw from {@code feet} up on the roof down to end stone round the pillar, the nearest first. */
-    private Optional<PearlFlight.Throw> downThrow(ServerPlayerEntity player, Vec3d feet, EndCrystalEntity crystal) {
-        return downThrow(player, feet, crystal, campaign::blocked);
-    }
-
-    static Optional<PearlFlight.Throw> downThrow(ServerPlayerEntity player, Vec3d feet, EndCrystalEntity crystal,
-                                                java.util.function.Predicate<BlockPos> blocked) {
+    /** A steady throw from {@code feet} down to end stone in rings from {@code inner} blocks round {@code around}, the nearest first. */
+    static Optional<PearlFlight.Throw> downThrow(ServerPlayerEntity player, Vec3d feet, Vec3d around, int inner,
+                                                java.util.function.Predicate<BlockPos> blocked, int tries) {
         var world = player.getServerWorld();
         var spots = new ArrayList<BlockPos>();
-        for (int r = 12; r <= 24; r += 4) for (int a = 0; a < 16; a++) {
+        for (int r = inner; r <= inner + 12; r += 4) for (int a = 0; a < 16; a++) {
             double angle = Math.toRadians(a * 22.5);
-            islandTop(world, (int) Math.floor(crystal.getX() + Math.cos(angle) * r), (int) Math.floor(crystal.getZ() + Math.sin(angle) * r))
+            islandTop(world, (int) Math.floor(around.x + Math.cos(angle) * r), (int) Math.floor(around.z + Math.sin(angle) * r))
                     .filter(top -> Math.hypot(top.getX(), top.getZ()) >= PERCH_CLEAR + 4 && !blocked.test(top))
                     .filter(top -> islandTop(world, top.getX() + 4, top.getZ()).isPresent() || islandTop(world, top.getX() - 4, top.getZ()).isPresent())
                     .ifPresent(spots::add);
@@ -636,109 +682,11 @@ final class EndFightLeg {
         spots.sort(java.util.Comparator.comparingDouble(top -> Vec3d.ofBottomCenter(top).squaredDistanceTo(feet)));
         int tried = 0;
         for (BlockPos spot : spots) {
-            if (++tried > 16) break;
+            if (++tried > tries) break;
             var t = PearlFlight.toward(player, feet, spot, 1.5);
             if (t.isPresent()) return t;
         }
         return Optional.empty();
-    }
-
-    /**
-     * Up onto the roof of {@code crystal}'s cage by pearl: from here if a steady throw reaches it, else from a spot round
-     * the pillar that one does; only with two pearls (up and down) and the health for both landings.
-     */
-    private Optional<PortalRunCampaign.Task> pearlUp(NativePlayerBody body, EndCrystalEntity crystal) {
-        var player = body.entity();
-        UUID id = crystal.getUuid();
-        if (pearls(player) < 2 || player.getHealth() < PEARL_HEALTH || pearlTries.getOrDefault(id, 0) >= PEARL_TRIES) return Optional.empty();
-        if (!player.isOnGround() || aloft(player)) return Optional.empty();
-        int slot = hotbarOf(player, Items.ENDER_PEARL);
-        if (slot < 0) return readyInHotbar(body, Items.ENDER_PEARL, "Ready an ender pearl");
-        String where = crystal.getBlockPos().toShortString();
-        var fromHere = roofThrow(player, player.getPos(), crystal);
-        if (fromHere.isPresent()) {
-            pearlTries.merge(id, 1, Integer::sum);
-            KindredMod.LOGGER.info("{} pearls up onto the cage of the crystal at {}", player.getName().getString(), where);
-            return Optional.of(pearlTask(slot, fromHere.get(), "Pearl up onto the cage of the crystal at " + where));
-        }
-        BlockPos stand = pearlStands.get(id);
-        if (stand != null && player.getBlockPos().isWithinDistance(stand, 1.5)) {
-            // There, and the throw no longer holds (the player stands a little off the spot): another try elsewhere.
-            pearlStands.remove(id);
-            pearlTries.merge(id, 1, Integer::sum);
-            return Optional.empty();
-        }
-        if (stand == null || unusable(id, stand)) {
-            stand = pearlStand(player, crystal).orElse(null);
-            if (stand == null) {
-                pearlTries.put(id, PEARL_TRIES);
-                KindredMod.LOGGER.info("{} finds no steady pearl throw onto the cage at {}; a pillar instead", player.getName().getString(), where);
-                return Optional.empty();
-            }
-            pearlStands.put(id, stand);
-        }
-        return Optional.of(PortalRunCampaign.go(stand, 0.4, true, "To a pearl's throw onto the cage at " + where));
-    }
-
-    /** End stone round the pillar from which a steady throw lands on the roof, the nearest to the player first. */
-    private Optional<BlockPos> pearlStand(ServerPlayerEntity player, EndCrystalEntity crystal) {
-        var world = player.getServerWorld();
-        var spots = new ArrayList<BlockPos>();
-        for (int r = 8; r <= 17; r += 3) for (int a = 0; a < 16; a++) {
-            double angle = Math.toRadians(a * 22.5);
-            islandTop(world, (int) Math.floor(crystal.getX() + Math.cos(angle) * r), (int) Math.floor(crystal.getZ() + Math.sin(angle) * r))
-                    .filter(top -> !unusable(crystal.getUuid(), top) && Math.hypot(top.getX(), top.getZ()) >= PERCH_CLEAR)
-                    .ifPresent(spots::add);
-        }
-        spots.sort(java.util.Comparator.comparingDouble(top -> top.getSquaredDistance(player.getBlockPos())));
-        int tried = 0;
-        for (BlockPos spot : spots) {
-            if (++tried > 12) break;
-            if (roofThrow(player, Vec3d.ofBottomCenter(spot), crystal).isPresent()) return Optional.of(spot);
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * On the roof: the bars over the crystal broken (not those it stands on, nor picked up), then an arrow at any other
-     * crystal with a clear arc from the height, then down by pearl to end stone; the opened crystal is shot from the
-     * ground on the high arc, down through the roof.
-     */
-    private PortalRunCampaign.Task roofWork(NativePlayerBody body, EndCrystalEntity crystal) {
-        var player = body.entity();
-        var world = player.getServerWorld();
-        BlockPos at = crystal.getBlockPos();
-        int roofY = at.getY() + 2;
-        Vec3d eye = player.getEyePos();
-        Box under = player.getBoundingBox().expand(0.05, 0, 0.05).offset(0, -0.2, 0);
-        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-            BlockPos bar = new BlockPos(at.getX() + dx, roofY, at.getZ() + dz);
-            if (!world.getBlockState(bar).isOf(Blocks.IRON_BARS) || new Box(bar).intersects(under)) continue;
-            if (eye.distanceTo(Vec3d.ofCenter(bar)) > 4.4) continue;
-            return new PortalRunCampaign.Task("native_break", Map.of("x", String.valueOf(bar.getX()), "y", String.valueOf(bar.getY()),
-                    "z", String.valueOf(bar.getZ()), "collect", "false"), "Open the cage's roof at " + bar.toShortString());
-        }
-        cageLooked.remove(crystal.getUuid()); // From the ground, its arc through the opened roof is looked at afresh.
-        int bow = hotbarOf(player, Items.BOW);
-        if (bow >= 0) {
-            for (EndCrystalEntity other : crystals(world)) {
-                if (other == crystal || givenUp(world, other.getUuid()) || roofShots.getOrDefault(other.getUuid(), 0) >= SHOTS_PER_STAND) continue;
-                if (player.getPos().distanceTo(other.getPos()) < NEAREST_SHOT || !bars(world, other).isEmpty()) continue;
-                var arc = clearArc(world, player.getPos(), other.getBoundingBox().getCenter());
-                if (arc.isEmpty()) continue;
-                roofShots.merge(other.getUuid(), 1, Integer::sum);
-                var args = new HashMap<String, String>(Map.of("slot", String.valueOf(bow), "target", other.getUuid().toString()));
-                if (arc.get()) args.put("arc", "high");
-                return new PortalRunCampaign.Task("native_shoot", Map.copyOf(args), "From the cage's roof, shoot the crystal at " + other.getBlockPos().toShortString());
-            }
-        }
-        int slot = hotbarOf(player, Items.ENDER_PEARL);
-        if (slot < 0) {
-            for (int i = 9; i < 36; i++) if (player.getInventory().getStack(i).isOf(Items.ENDER_PEARL)) return campaign.swapToHotbar(body, i, "Ready an ender pearl");
-        }
-        var down = slot < 0 ? Optional.<PearlFlight.Throw>empty() : downThrow(player, player.getPos(), crystal);
-        if (down.isPresent()) return pearlTask(slot, down.get(), "Pearl down from the cage at " + at.toShortString());
-        return new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Wait on the cage's roof for a throw down");
     }
 
     /** No end stone within a few blocks underfoot: on a pillar's top, or a tower of its own. */

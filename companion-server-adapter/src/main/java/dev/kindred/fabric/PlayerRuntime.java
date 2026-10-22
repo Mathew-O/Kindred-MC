@@ -1105,6 +1105,12 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_row", Map.of("x", String.valueOf(x), "z", String.valueOf(z), "seconds", String.valueOf(seconds)));
     }
 
+    /** One recorded bed set down on top of {@code floor} facing {@code facing} and used, setting the respawn point (E-39g). */
+    int nativeBed(ServerCommandSource source, UUID id, int hotbarSlot, BlockPos floor, Direction facing) {
+        return nativeTask(source, id, "native_bed", Map.of("x", String.valueOf(floor.getX()), "y", String.valueOf(floor.getY()),
+                "z", String.valueOf(floor.getZ()), "slot", String.valueOf(hotbarSlot), "facing", facing.asString()));
+    }
+
     /** One recorded ender pearl throw from {@code hotbarSlot} at {@code yaw} and {@code pitch} (E-39f), as the goal throws its own. */
     int nativePearl(ServerCommandSource source, UUID id, int hotbarSlot, float yaw, float pitch) {
         return nativeTask(source, id, "native_pearl", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw), "pitch", String.valueOf(pitch)));
@@ -1237,6 +1243,11 @@ final class PlayerRuntime {
                         Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
                 task = new NativeBoatAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), water);
+            } else if (skill.equals("native_bed")) {
+                task = new NativeBedAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        Direction.byName(arguments.get("facing")), Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_place")) {
                 task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
@@ -1447,6 +1458,8 @@ final class PlayerRuntime {
                     || ("native_gather".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_craft".equals(entry.skillId) && intent == NativePlayerBody.Intent.CRAFT)
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_bed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SLEEP
+                        || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pillar".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -3247,6 +3260,8 @@ final class PlayerRuntime {
         body.setPortalTravelAuthorized(entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight);
         entry.campaign.dragonAllowed(dragonFight);
+        entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
+                ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server));
@@ -6113,7 +6128,7 @@ final class PlayerRuntime {
             return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
         }
         if (goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && !dragonFight) {
-            return reject(source, "The dragon fight is off on this server; an operator must turn it on first (/kindred dragonfight on).");
+            return reject(source, "The dragon fight is off on this server; an operator must turn it on first (/aiplayer dragonfight on).");
         }
         entry.goal = goal;
         entry.goalProgress = goal == dev.kindred.core.survival.SurvivalGoal.NONE ? "" : "Starting: " + goal.label();

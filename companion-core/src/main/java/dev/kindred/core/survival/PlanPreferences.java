@@ -9,9 +9,11 @@ import java.util.Set;
  * kept with the note that explains it, and a short focus on what to do next. They come from the optional strategist
  * but are plain data here, from fixed sets; the planner and the goal read them and nothing else. They change the
  * order and amount of ordinary work only: no step is skipped that the route needs, no item is given, and the
- * survival checks (fights, shelter, healing) always come first.
+ * survival checks (fights, shelter, healing) always come first. The playbook's mode (normal play or speedrun) and a
+ * way it was advised to take choose between the ways of doing a part of the run (F-25c8).
  */
-public record PlanPreferences(Set<Habit> habits, Focus focus) {
+public record PlanPreferences(Set<Habit> habits, Focus focus, dev.kindred.core.guide.Playbook.Mode mode,
+                              dev.kindred.core.guide.Playbook.Approach advised) {
     /** Lessons kept for a world, each tied to the note it came with. */
     public enum Habit {
         NONE,
@@ -45,9 +47,15 @@ public record PlanPreferences(Set<Habit> habits, Focus focus) {
 
     public static final PlanPreferences NONE = new PlanPreferences(Set.of(), Focus.NONE);
 
+    /** Habits and a focus in normal play, with no way of the playbook advised. */
+    public PlanPreferences(Set<Habit> habits, Focus focus) {
+        this(habits, focus, dev.kindred.core.guide.Playbook.Mode.NORMAL, null);
+    }
+
     public PlanPreferences {
         Objects.requireNonNull(habits);
         Objects.requireNonNull(focus);
+        Objects.requireNonNull(mode);
         var kept = EnumSet.noneOf(Habit.class);
         kept.addAll(habits);
         kept.remove(Habit.NONE);
@@ -55,4 +63,7 @@ public record PlanPreferences(Set<Habit> habits, Focus focus) {
     }
 
     public boolean has(Habit habit) { return habits.contains(habit); }
+
+    /** The way of the playbook the strategist advised, if any (F-25c8). */
+    public java.util.Optional<dev.kindred.core.guide.Playbook.Approach> recommended() { return java.util.Optional.ofNullable(advised); }
 }

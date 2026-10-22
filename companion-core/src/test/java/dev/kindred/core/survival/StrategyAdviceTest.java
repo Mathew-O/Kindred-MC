@@ -94,4 +94,18 @@ class StrategyAdviceTest {
         assertEquals("crystals", advice.queue().getFirst().why(), "the first want for a need is the one kept");
         assertTrue(StrategyAdvice.validated("PRESS_ON", List.of(), "", "", REPORTED).orElseThrow().queue().isEmpty());
     }
+
+    @Test
+    void aWayOfThePlaybookIsAdvisedOnlyByItsNameAndKeptWithAnotherStance() {
+        var advice = StrategyAdvice.validated("PRESS_ON", List.of(), "", "", REPORTED, "NONE", "NONE", "NONE", List.of(), "pillar").orElseThrow();
+        assertEquals(java.util.Optional.of(dev.kindred.core.guide.Playbook.Approach.PILLAR), advice.advised());
+        assertEquals(advice.advised(), advice.withStance(Stance.PLAY_SAFE).advised());
+        for (String other : new String[] {"NONE", "teleport", "", null}) {
+            assertTrue(StrategyAdvice.validated("PRESS_ON", List.of(), "", "", REPORTED, "NONE", "NONE", "NONE", List.of(), other)
+                    .orElseThrow().advised().isEmpty(), String.valueOf(other));
+        }
+        var preferences = new PlanPreferences(java.util.Set.of(), PlanPreferences.Focus.NONE, dev.kindred.core.guide.Playbook.Mode.NORMAL,
+                advice.approach());
+        assertEquals(advice.advised(), preferences.recommended(), "what the planner is given");
+    }
 }

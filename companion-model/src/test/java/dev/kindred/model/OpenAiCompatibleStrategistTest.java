@@ -91,7 +91,7 @@ class OpenAiCompatibleStrategistTest {
             var schema = format.getAsJsonObject("json_schema");
             assertTrue(schema.get("strict").getAsBoolean());
             var required = schema.getAsJsonObject("schema").getAsJsonArray("required");
-            for (String field : List.of("stance", "reason", "note", "avoid", "focus", "habit", "retire", "queue")) {
+            for (String field : List.of("stance", "reason", "note", "avoid", "focus", "habit", "retire", "queue", "approach")) {
                 assertTrue(required.toString().contains("\"" + field + "\""), field);
             }
             var messages = body.getAsJsonArray("messages");
@@ -168,6 +168,36 @@ class OpenAiCompatibleStrategistTest {
             var queue = outcome.advice().orElseThrow(() -> new AssertionError(outcome.failure())).queue();
             assertEquals(List.of("SHIELD", "ARROWS"), queue.stream().map(w -> w.need().name()).toList(), "an elytra is no need the player can act on");
             assertEquals(64, queue.getLast().count(), "held to the cap");
+        }
+    }
+
+    @Test
+    void aWayOfThePlaybookIsTakenFromTheFixedSetAndNoneOrAnUnknownOneIsNone() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            String base = "{\"stance\":\"PRESS_ON\",\"reason\":\"Gold in the pack.\",\"note\":\"\",\"avoid\":[],\"focus\":\"NONE\","
+                    + "\"habit\":\"NONE\",\"retire\":\"NONE\",\"queue\":[],\"approach\":";
+            replies.add(completion(base + "\"BARTER\"}", "stop"));
+            replies.add(completion(base + "\"NONE\"}", "stop"));
+            replies.add(completion(base + "\"ELYTRA_SKIP\"}", "stop"));
+            var advised = new java.util.ArrayList<java.util.Optional<dev.kindred.core.guide.Playbook.Approach>>();
+            for (int i = 0; i < 3; i++) {
+                var outcome = strategist.advise("Report.", REPORTED).get(10, TimeUnit.SECONDS);
+                advised.add(outcome.advice().orElseThrow(() -> new AssertionError(outcome.failure())).advised());
+            }
+            assertEquals(List.of(java.util.Optional.of(dev.kindred.core.guide.Playbook.Approach.BARTER), java.util.Optional.empty(),
+                    java.util.Optional.empty()), advised);
+        }
+    }
+
+    @Test
+    void theRepliesWaysAreThePlaybooksAndTheGuideNamesEach() {
+        var ways = java.util.Arrays.stream(StrategistPrompt.Way.values()).map(Enum::name).toList();
+        var approaches = java.util.Arrays.stream(dev.kindred.core.guide.Playbook.Approach.values()).map(Enum::name).toList();
+        assertEquals("NONE", ways.getFirst());
+        assertEquals(approaches, ways.subList(1, ways.size()), "the reply's set is the playbook's, and only it");
+        for (String name : approaches) {
+            assertTrue(StrategistPrompt.APPROACH.contains(name), name);
+            assertTrue(StrategistPrompt.GUIDE.contains(name), name);
         }
     }
 

@@ -156,7 +156,7 @@ final class NativeFightAction extends NativeRecordedAction {
             boolean jump = jumping && !airborne && player.getAttackCooldownProgress(0.5f) >= JUMP_AT;
             // With an edge behind (lava, a drop), a hit would knock the player over it: a player sidesteps round the mob
             // until the ground behind is safe, still facing it (a hoglin threw the staged End run into a fortress's lava).
-            int[] step = player.isOnGround() && !navigator.safeKnockback(player, yaw + 180, knockback(target))
+            int[] step = player.isOnGround() && !safeFrom(navigator, player.getX(), player.getY(), player.getZ(), yaw + 180, target)
                     ? offTheEdge(navigator, target, yaw) : new int[]{0, 0};
             boolean stepping = step[0] != 0 || step[1] != 0;
             moved = body.move(issuedLease, step[0], step[1], jump && !stepping, false, yaw);
@@ -190,11 +190,28 @@ final class NativeFightAction extends NativeRecordedAction {
                 && !player.hasVehicle() && !player.isSprinting();
     }
 
-    /** How far a hit from {@code target} can push the player: the heavy hitters toss it well back. */
-    private static double knockback(LivingEntity target) {
+    /** The heavy hitters, whose hits toss a player well back. */
+    private static boolean heavy(LivingEntity target) {
         return target instanceof net.minecraft.entity.mob.HoglinEntity || target instanceof net.minecraft.entity.mob.ZoglinEntity
                 || target instanceof net.minecraft.entity.mob.RavagerEntity || target instanceof net.minecraft.entity.passive.IronGolemEntity
-                || target instanceof net.minecraft.entity.mob.PiglinBruteEntity ? 3.6 : 1.6;
+                || target instanceof net.minecraft.entity.mob.PiglinBruteEntity;
+    }
+
+    /** How far a hit from {@code target} can push the player. */
+    private static double knockback(LivingEntity target) {
+        return heavy(target) ? 3.6 : 1.6;
+    }
+
+    /**
+     * Whether a hit from {@code target} cannot push a player at x, y, z over an edge, pushed toward {@code away}. A
+     * heavy hitter's toss is not only straight back: vanilla adds a second push turned by a random angle (a hoglin's,
+     * `Hoglin.knockback`, is turned by up to ten radians, so it can point almost anywhere), so the ground to the sides
+     * must be safe too; a hoglin's toss threw the player into the lava beside it when only the ground behind was.
+     */
+    private static boolean safeFrom(NativeNavigator navigator, double x, double y, double z, float away, LivingEntity target) {
+        float[] fan = heavy(target) ? new float[]{0, -45, 45, -90, 90} : new float[]{0};
+        for (float turn : fan) if (!navigator.safeKnockback(x, y, z, away + turn, knockback(target))) return false;
+        return true;
     }
 
     /**
@@ -213,7 +230,7 @@ final class NativeFightAction extends NativeRecordedAction {
             double radians = Math.toRadians(heading);
             double x = player.getX() - Math.sin(radians), z = player.getZ() + Math.cos(radians);
             float away = (float) Math.toDegrees(Math.atan2(-(x - target.getX()), z - target.getZ()));
-            if (navigator.safeKnockback(x, player.getY(), z, away, knockback(target))) return step;
+            if (safeFrom(navigator, x, player.getY(), z, away, target)) return step;
         }
         return walkable;
     }

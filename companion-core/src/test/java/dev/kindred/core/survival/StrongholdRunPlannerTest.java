@@ -195,7 +195,7 @@ class StrongholdRunPlannerTest {
         assertTrue(steps.stream().allMatch(step -> step.action() == Action.FOLLOW_UP));
         assertEquals("STRING", steps.stream().filter(step -> step.item().equals("STRING")).findFirst().orElseThrow().item());
         // All in hand, or no longer due (the gathering stalled, or the descent has begun): down it goes.
-        var all = Map.of(Need.BOW, 1, Need.ARROWS, 32, Need.BLOCKS, 64, Need.WATER_BUCKET, 1, Need.FOOD, 16);
+        var all = Map.of(Need.BOW, 1, Need.ARROWS, 32, Need.BLOCKS, 64, Need.WATER_BUCKET, 1, Need.FOOD, 16, Need.BED, 1);
         assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there, endFight(all, Set.of(), true)));
         assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there, endFight(Map.of(), Set.of(), false)));
         assertEquals(Stage.DESCEND, StrongholdRunPlanner.stage(there), "with nothing queued, as before");

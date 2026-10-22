@@ -68,6 +68,9 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
             case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(125), Duration.ofSeconds(10), 0);
+            case "native_bed" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "facing"), Set.of(),
+                    Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side"),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

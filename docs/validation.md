@@ -4,6 +4,15 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-39e (damage), E-39f (ender pearls), E-39g (the bed and recovery after a death in the End) and F-25c8 (the playbook and speedrun pace), all in progress, on `d636fa6` and the working tree committed after it.
+  - New JUnit: `DamageModelTest` (4), `PlaybookTest` (4), two `BallisticsTest` cases, an `EndFightPlannerTest` case (the bed before going in), `NeedsAssessmentTest` cases (wool and the bed), a `StrategyAdviceTest` case and two `OpenAiCompatibleStrategistTest` cases (the advised way).
+  - New native fixtures: `theFightsWeaponIsTheOneThatDealsTheMost`, `aPearlIsThrownUpOntoALedgeAndLandsThere`, `strandedOnAPillarItPearlsDownClearOfTheCrystals`, `aBedSetDownAndUsedSetsTheRespawnPoint`.
+  - Dropped: a cage's roof reached by pearl. In suite 6 the throw the search chose (8 landings in 16 samples, none flagged as harmful) fell through the bars and blew the crystal up; see [E-39f](evidence/E-39f.md). Suites 3 to 6 failed only the pearl fixtures (260/262, then 261/262 three times) as the throw's choice was reworked. Suite 2 is void: a Gradle compile ran while it was running.
+  - Suite 7 passed 262/262. Suite 8 failed two fixtures that had passed before:
+    - `aHoglinWithLavaAtThePlayersBackNeverThrowsItIn`: a hoglin's toss, which vanilla turns by a random angle, threw the player sideways into the lava. Alone it failed 1 in 12 runs at the new full-charge swing and 0 in 12 at the old 0.9. The edge rule now checks a fan for heavy hitters, and the fixture passed 36 in 36 alone. See [E-39e](evidence/E-39e.md).
+    - `theEndFightsBowAndArrowsAreMadeOnTheWayFromWhatItGathers`: all five chickens dropped no feathers (vanilla's 0 to 2 each; one run in 243). It passed 16 in 16 alone, and the fixture now has eight chickens.
+  - `runGametest` then passed 262/262 twice (suites 9 and 10) on the final tree. `./gradlew build` passed: 444 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `dd3a045952d6aaf85cc2b2dc5ef545957ff058a07b1eb6817c9ffd31c394e61f`.
 - E-39a to E-39d (the single player's End fight: into the End, the bow and the crystals, caged crystals, the dragon and home), all in progress, with F-25c7's queue for every task and review fixes, on `432ecdd`, `3279121` and `4faa7da`.
   - New JUnit: `EndFightPlannerTest` (4), `BallisticsTest` (4), two `StrongholdRunPlannerTest` cases.
   - New native fixtures: `theRingIsFilledAndTheEndEntered`, `withoutTheServersLeaveTheDragonGoalIsRefused`, `aCrystalOnItsPillarIsShotDownFromTheGround`, `wornArmourMidBreakIsNoLostItem` (no control run without the fix), `beforeItsPortalTheEndGoalTakesFeathersOnTheWay`, `aHoglinWithLavaAtThePlayersBackNeverThrowsItIn` (a control run by hand before the fix stood at the edge for 81 ticks; the fixture allows 20) and `underTheSeaWithABoatItSurfacesBeforePuttingTheBoatIn`.
