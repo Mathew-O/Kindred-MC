@@ -1,4 +1,5 @@
 dependencies {
+    api project(':kindred-world-design')
     api project(':companion-core')
     api project(':companion-scheduler')
     implementation 'org.xerial:sqlite-jdbc:3.50.3.0'

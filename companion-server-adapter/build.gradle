@@ -15,9 +15,11 @@ dependencies {
     implementation project(':companion-core')
     implementation project(':companion-scheduler')
     implementation project(':companion-persistence')
+    implementation project(':kindred-world-design')
     include project(':companion-core')
     include project(':companion-scheduler')
     include project(':companion-persistence')
+    include project(':kindred-world-design')
     include 'org.xerial:sqlite-jdbc:3.50.3.0'
 }
 

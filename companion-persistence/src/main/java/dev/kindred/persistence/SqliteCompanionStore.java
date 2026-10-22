@@ -643,6 +643,128 @@ public final class SqliteCompanionStore {
         });
     }
 
+    // ----- Immutable design metadata (E-29) -----
+
+    /** Idempotently stores a content-bound revision. A conflicting reuse of an ID/revision is rejected. */
+    public CompletableFuture<StoredDesignRevision> saveDesignRevision(StoredDesignRevision revision) {
+        Objects.requireNonNull(revision);
+        return submit(() -> transaction(() -> {
+            Optional<StoredDesignRevision> existing = selectDesignRevision(revision.designId(), revision.revision());
+            if (existing.isPresent()) {
+                if (!existing.orElseThrow().equals(revision)) throw new ConcurrentModificationException("Design revision is immutable");
+                return existing.orElseThrow();
+            }
+            if (revision.revision() == 1 && revision.parentRevision() != 0) {
+                throw new IllegalArgumentException("Initial design revision has no parent");
+            }
+            if (revision.revision() > 1 && (revision.parentRevision() != revision.revision() - 1
+                    || selectDesignRevision(revision.designId(), revision.parentRevision()).isEmpty())) {
+                throw new IllegalArgumentException("Design revision parent is missing or non-contiguous");
+            }
+            try (PreparedStatement insert = database.prepareStatement("""
+                    INSERT INTO design_revisions(design_id, revision, parent_revision, world_id, dimension, observation_id,
+                    observation_revision, geometry_sha256, semantic_sha256, generator_version, status, artifact_json, validation_json, created_at_ms)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """)) {
+                insert.setString(1, revision.designId()); insert.setLong(2, revision.revision()); insert.setLong(3, revision.parentRevision());
+                insert.setString(4, revision.worldId().toString()); insert.setString(5, revision.dimension()); insert.setString(6, revision.observationId());
+                insert.setLong(7, revision.observationRevision()); insert.setString(8, revision.geometrySha256()); insert.setString(9, revision.semanticSha256());
+                insert.setString(10, revision.generatorVersion()); insert.setString(11, revision.status()); insert.setString(12, revision.artifactJson());
+                insert.setString(13, revision.validationJson()); insert.setLong(14, Instant.now().toEpochMilli()); insert.executeUpdate();
+            }
+            return revision;
+        }));
+    }
+
+    public CompletableFuture<Optional<StoredDesignRevision>> findDesignRevision(String designId, long revision) {
+        return submit(() -> selectDesignRevision(designId, revision));
+    }
+
+    public CompletableFuture<DesignBinding> createDesignBinding(DesignBinding binding) {
+        Objects.requireNonNull(binding);
+        return submit(() -> transaction(() -> {
+            if (selectDesignRevision(binding.designId(), binding.revision()).isEmpty()) throw new IllegalArgumentException("Design revision is missing");
+            try (PreparedStatement insert = database.prepareStatement("""
+                    INSERT INTO design_bindings(design_id, revision, project_id, state, validation_sha256, version, updated_at_ms)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """)) {
+                insert.setString(1, binding.designId()); insert.setLong(2, binding.revision()); insert.setString(3, binding.projectId());
+                insert.setString(4, binding.state().name()); insert.setString(5, binding.validationSha256()); insert.setLong(6, binding.version());
+                insert.setLong(7, Instant.now().toEpochMilli()); insert.executeUpdate();
+            }
+            return binding;
+        }));
+    }
+
+    public CompletableFuture<Optional<DesignBinding>> findDesignBinding(String designId, long revision) {
+        return submit(() -> selectDesignBinding(designId, revision));
+    }
+
+    public CompletableFuture<DesignPlacementAction> saveDesignPlacementAction(DesignPlacementAction action) {
+        Objects.requireNonNull(action);
+        return submit(() -> transaction(() -> {
+            DesignBinding binding = selectDesignBinding(action.designId(), action.revision()).orElseThrow(() -> new IllegalArgumentException("Design binding is missing"));
+            if (binding.state() != DesignBinding.State.ACCEPTED) throw new IllegalStateException("Only accepted designs may expose actions");
+            try (PreparedStatement insert = database.prepareStatement("INSERT INTO design_placement_actions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                insert.setString(1, action.designId()); insert.setLong(2, action.revision()); insert.setString(3, action.actionId());
+                insert.setInt(4, action.x()); insert.setInt(5, action.y()); insert.setInt(6, action.z()); insert.setString(7, action.blockId());
+                insert.setString(8, action.side()); insert.setString(9, action.dependencyDigest()); insert.executeUpdate();
+            }
+            return action;
+        }));
+    }
+
+    public CompletableFuture<Optional<DesignPlacementAction>> findAcceptedDesignPlacementAction(String designId, long revision, String actionId) {
+        return submit(() -> {
+            if (selectDesignBinding(designId, revision).map(DesignBinding::state).orElse(null) != DesignBinding.State.ACCEPTED) return Optional.empty();
+            try (PreparedStatement q = database.prepareStatement("SELECT * FROM design_placement_actions WHERE design_id=? AND revision=? AND action_id=?")) {
+                q.setString(1, designId); q.setLong(2, revision); q.setString(3, actionId); try (ResultSet r = q.executeQuery()) {
+                    return r.next() ? Optional.of(new DesignPlacementAction(r.getString("design_id"), r.getLong("revision"), r.getString("action_id"), r.getInt("x"), r.getInt("y"), r.getInt("z"), r.getString("block_id"), r.getString("side"), r.getString("dependency_digest"))) : Optional.empty(); }
+            }
+        });
+    }
+
+    public CompletableFuture<DesignBinding> transitionDesignBinding(DesignBinding next, long expectedVersion) {
+        Objects.requireNonNull(next);
+        return submit(() -> transaction(() -> {
+            DesignBinding stored = selectDesignBinding(next.designId(), next.revision()).orElseThrow(() -> new IllegalArgumentException("Design binding is missing"));
+            if (stored.version() != expectedVersion || next.version() != Math.incrementExact(expectedVersion)
+                    || !stored.projectId().equals(next.projectId()) || !stored.validationSha256().equals(next.validationSha256()))
+                throw new ConcurrentModificationException("Stale or altered design binding");
+            stored.transition(next.state());
+            try (PreparedStatement update = database.prepareStatement("UPDATE design_bindings SET state=?, version=?, updated_at_ms=? WHERE design_id=? AND revision=? AND version=?")) {
+                update.setString(1, next.state().name()); update.setLong(2, next.version()); update.setLong(3, Instant.now().toEpochMilli());
+                update.setString(4, next.designId()); update.setLong(5, next.revision()); update.setLong(6, expectedVersion);
+                if (update.executeUpdate() != 1) throw new ConcurrentModificationException("Stale design binding");
+            }
+            return next;
+        }));
+    }
+
+    private Optional<StoredDesignRevision> selectDesignRevision(String designId, long revision) throws SQLException {
+        try (PreparedStatement query = database.prepareStatement("SELECT * FROM design_revisions WHERE design_id=? AND revision=?")) {
+            query.setString(1, designId); query.setLong(2, revision);
+            try (ResultSet row = query.executeQuery()) { return row.next() ? Optional.of(readDesignRevision(row)) : Optional.empty(); }
+        }
+    }
+
+    private static StoredDesignRevision readDesignRevision(ResultSet row) throws SQLException {
+        return new StoredDesignRevision(row.getString("design_id"), row.getLong("revision"), row.getLong("parent_revision"),
+                UUID.fromString(row.getString("world_id")), row.getString("dimension"), row.getString("observation_id"),
+                row.getLong("observation_revision"), row.getString("geometry_sha256"), row.getString("semantic_sha256"),
+                row.getString("generator_version"), row.getString("status"), row.getString("artifact_json"), row.getString("validation_json"));
+    }
+
+    private Optional<DesignBinding> selectDesignBinding(String designId, long revision) throws SQLException {
+        try (PreparedStatement query = database.prepareStatement("SELECT * FROM design_bindings WHERE design_id=? AND revision=?")) {
+            query.setString(1, designId); query.setLong(2, revision);
+            try (ResultSet row = query.executeQuery()) {
+                return row.next() ? Optional.of(new DesignBinding(row.getString("design_id"), row.getLong("revision"), row.getString("project_id"),
+                        DesignBinding.State.valueOf(row.getString("state")), row.getString("validation_sha256"), row.getLong("version"))) : Optional.empty();
+            }
+        }
+    }
+
     /**
      * Reads an immutable startup snapshot of unresolved action ledger rows across all expected logical player IDs.
      * Guaranteed to return an entry for every requested identity.
@@ -1372,7 +1494,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 8) {
+            if (schemaVersion < 0 || schemaVersion > 11) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1383,6 +1505,9 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 6) migrate(6, "V6__intentions.sql");
             if (schemaVersion < 7) migrate(7, "V7__native_players.sql");
             if (schemaVersion < 8) migrate(8, "V8__shared_projects.sql");
+            if (schemaVersion < 9) migrate(9, "V9__design_revisions.sql");
+            if (schemaVersion < 10) migrate(10, "V10__design_bindings.sql");
+            if (schemaVersion < 11) migrate(11, "V11__design_placement_actions.sql");
         }
         recover();
     }

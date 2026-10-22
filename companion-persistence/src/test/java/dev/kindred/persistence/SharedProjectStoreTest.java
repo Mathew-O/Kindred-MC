@@ -107,6 +107,29 @@ class SharedProjectStoreTest {
     }
 
     @Test
+    void immutableDesignRevisionRoundTripsAndRejectsConflictingReuse() {
+        String hash = "a".repeat(64);
+        StoredDesignRevision first = new StoredDesignRevision("workshop.design", 1, 0L, UUID.randomUUID(),
+                "minecraft:overworld", "observation.1", 4, hash, hash, "generator.1", "DRAFT", "{}", "{}");
+        assertEquals(first, store.saveDesignRevision(first).join());
+        assertEquals(first, store.saveDesignRevision(first).join(), "same immutable record is idempotent");
+        assertEquals(first, store.findDesignRevision("workshop.design", 1).join().orElseThrow());
+        DesignBinding binding = new DesignBinding("workshop.design", 1, "project.workshop", DesignBinding.State.DRAFT, hash, 0);
+        assertEquals(binding, store.createDesignBinding(binding).join());
+        DesignBinding validated = binding.transition(DesignBinding.State.VALIDATED);
+        assertEquals(validated, store.transitionDesignBinding(validated, 0).join());
+        DesignBinding accepted = validated.transition(DesignBinding.State.ACCEPTED);
+        assertEquals(accepted, store.transitionDesignBinding(accepted, 1).join());
+        assertThrows(IllegalStateException.class, () -> accepted.transition(DesignBinding.State.DRAFT));
+        StoredDesignRevision conflict = new StoredDesignRevision("workshop.design", 1, 0L, first.worldId(),
+                "minecraft:overworld", "observation.1", 4, "b".repeat(64), hash, "generator.1", "DRAFT", "{}", "{}");
+        assertThrows(CompletionException.class, () -> store.saveDesignRevision(conflict).join());
+        StoredDesignRevision skippedParent = new StoredDesignRevision("workshop.design", 3, 1L, first.worldId(),
+                "minecraft:overworld", "observation.1", 4, hash, hash, "generator.1", "DRAFT", "{}", "{}");
+        assertThrows(CompletionException.class, () -> store.saveDesignRevision(skippedParent).join());
+    }
+
+    @Test
     void taskRevisionEnforcesOptimisticLocking() {
         ProjectId pid = ProjectId.of("mine_iron");
         TaskId tid = TaskId.random();

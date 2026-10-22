@@ -1,0 +1,22 @@
+PASS flat shell has connected entrance and usable clearance
+PASS rotation, negative coordinates, and seeds remain valid
+PASS deterministic generation and order-independent exact digest
+PASS digest binds palette, clearance, ports, and revisions
+PASS unknown target fails closed
+PASS occupied and hazardous targets cannot be overwritten
+PASS protected target rejects and compiler refuses invalid design
+PASS removed ground and unknown ground both reject
+PASS blocked and unknown interior clearance reject
+PASS blocked entrance disconnects interior port
+PASS planned block cannot invade clearance
+PASS duplicate target and out-of-scope placement reject
+PASS stale observation rejects before compilation
+PASS world and dimension mismatch reject
+PASS reservations reduce free stock and reveal exact deficits
+PASS negative and inconsistent stock reject; maximal counts do not overflow
+PASS support graph is ordered, adjacent, complete, and never executable
+PASS unsupported floating component cannot compile
+PASS input collections and returned artifacts are immutable
+PASS bounded arithmetic rejects extremes and permits boundary-sized boxes
+PASS invalid identifiers and pilot limits reject
+PASS: 21 pure scenarios (128 rotation/site/seed cases); no native or live evidence.
