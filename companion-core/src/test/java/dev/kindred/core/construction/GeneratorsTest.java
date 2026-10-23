@@ -62,4 +62,20 @@ class GeneratorsTest {
         assertThrows(IllegalArgumentException.class, () -> Generators.pyramid(8, "minecraft:sandstone"), "an odd base");
         assertThrows(IllegalArgumentException.class, () -> Generators.tower(4, 8, "minecraft:stone"));
     }
+
+    @Test
+    void aPenIsARingOfFencesWithItsGateMidSouthAndIsBuiltWhole() {
+        var pen = Generators.pen(7, 7, "spruce");
+        assertEquals(24, pen.blocks().size(), "the ring of a seven-by-seven pen");
+        assertEquals(23, pen.blocks().stream().filter(b -> b.spec().block().equals("minecraft:spruce_fence")).count());
+        var gate = pen.blocks().stream().filter(b -> b.spec().block().equals("minecraft:spruce_fence_gate")).toList();
+        assertEquals(1, gate.size());
+        assertEquals(new Pos(3, 0, 6), gate.getFirst().at(), "the middle of the south side");
+        assertEquals("north", gate.getFirst().spec().property("facing"), "hung from outside the pen");
+        var held = new java.util.HashSet<>(Set.of("minecraft:spruce_fence", "minecraft:spruce_fence_gate", "minecraft:dirt"));
+        var origin = new Pos(-3, 1, -3);
+        BuildSimulation.build(pen.placed(origin, 0), pen.placedClear(origin, 0), BuildTestSites.flat(), new Pos(-8, 1, 0), held, pen.name());
+        assertThrows(IllegalArgumentException.class, () -> Generators.pen(6, 7, "oak"), "an odd width");
+        assertThrows(IllegalArgumentException.class, () -> Generators.pen(7, 7, "oak]"), "a wood by name");
+    }
 }

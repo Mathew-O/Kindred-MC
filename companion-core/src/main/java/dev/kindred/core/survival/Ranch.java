@@ -1,0 +1,302 @@
+package dev.kindred.core.survival;
+
+import dev.kindred.core.construction.Pos;
+
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * A ranch in Co-op Survival (M-01a): a fenced pen with a gate, a pair of animals led into it by the food they follow,
+ * shut in and fed until a young one is born, and the gate shut behind the player as it leaves. One pass at a time from
+ * what the player sees, so it carries on from wherever the world stands; it remembers only which animal it is leading,
+ * which ones it gave up on, and how long it has waited. Pure.
+ *
+ * <p>The pen is a ring of fences {@code width} by {@code depth} from its north-west corner, the gate in the middle of
+ * its south side. Inside is everything within the ring.
+ */
+public final class Ranch {
+    /** The animals a pen is for, each with the food it follows and is bred with, as vanilla has them. */
+    public enum Kind {
+        COW("minecraft:cow", List.of("minecraft:wheat")),
+        SHEEP("minecraft:sheep", List.of("minecraft:wheat")),
+        PIG("minecraft:pig", List.of("minecraft:carrot", "minecraft:potato", "minecraft:beetroot")),
+        CHICKEN("minecraft:chicken", List.of("minecraft:wheat_seeds", "minecraft:melon_seeds", "minecraft:pumpkin_seeds",
+                "minecraft:beetroot_seeds", "minecraft:torchflower_seeds"));
+
+        public final String entity;
+        public final List<String> food;
+
+        Kind(String entity, List<String> food) {
+            this.entity = entity;
+            this.food = food;
+        }
+
+        public String noun() { return name().toLowerCase(java.util.Locale.ROOT); }
+
+        public static Optional<Kind> of(String entity) {
+            for (Kind kind : values()) if (kind.entity.equals(entity)) return Optional.of(kind);
+            return Optional.empty();
+        }
+    }
+
+    /** One animal seen: grown, ready to breed (no cooldown, not in love), in love. */
+    public record Animal(UUID id, Kind kind, Pos at, boolean adult, boolean ready, boolean inLove) { }
+
+    /**
+     * What the player sees on a pass.
+     *
+     * @param feet     the block its feet are in
+     * @param built    every fence and the gate of the pen stand
+     * @param gateOpen the pen's gate stands open
+     * @param food     how many of the kind's food it carries
+     * @param animals  the animals of every kind in sight round the pen
+     * @param tick     the server's tick, for how long it has waited
+     */
+    public record Observation(Pos feet, boolean built, boolean gateOpen, int food, List<Animal> animals, long tick) { }
+
+    /** What to do next. */
+    public sealed interface Step {
+        /** Build the pen: its fences and gate. */
+        record Build() implements Step { }
+
+        /** Walk toward {@code target} until within {@code range}, holding the food (or not), at most {@code leg} blocks. */
+        record Go(Pos target, double range, boolean holdFood, int leg, String why) implements Step { }
+
+        /** Open or shut the pen's gate, from within reach of it. */
+        record Gate(boolean open, String why) implements Step { }
+
+        /** Feed the animal, in reach, so it breeds. */
+        record Feed(UUID animal, String why) implements Step { }
+
+        /** Stand a second, holding the food (or not). */
+        record Wait(boolean holdFood, String why) implements Step { }
+
+        /** The ranch is done, or can go no further; the outcome in words. */
+        record Done(String outcome, boolean bred) implements Step { }
+    }
+
+    /** How far it looks for animals round the pen, and leads one from. */
+    public static final int RANGE = 32;
+    /** Close enough that the animal follows the food; farther, it walks up to it again. */
+    static final double FOLLOWING = 6;
+    /** How far it walks before looking back for the animal it leads. */
+    static final int LEG = 4;
+    /** Behind by more than this, it waits for the animal to catch up. */
+    static final double LAGGING = 4.5;
+    /** Ticks it waits for a led animal to come into the pen, and for the young one, before giving up. */
+    static final long COME_IN = 300, BIRTH = 600;
+    /** Ticks it waits for animals to move off the gate before opening it to go out anyway. */
+    static final long CLEAR = 200;
+    /** Within this of an animal it feeds it (a player reaches three blocks to an entity's box). */
+    static final double FEEDING = 2.5;
+    /** Within this of the gate it works it. */
+    static final double AT_GATE = 3;
+
+    enum Phase { BUILD, FETCH, SHUT, BREED, LEAVE, DONE }
+
+    private final Pos origin;
+    private final int width, depth;
+    private final Kind kind;
+    private Phase phase = Phase.BUILD;
+    private UUID leading;
+    private long waitingSince = -1, clearSince = -1;
+    private final Set<UUID> givenUp = new HashSet<>();
+    private int youngBefore = -1;
+    private String outcome = "";
+    private boolean bred;
+
+    public Ranch(Pos origin, int width, int depth, Kind kind) {
+        if (width < 5 || depth < 5 || width > 15 || depth > 15 || width % 2 == 0) {
+            throw new IllegalArgumentException("A pen 5 to 15 blocks a side, an odd width so its gate is in the middle");
+        }
+        this.origin = origin;
+        this.width = width;
+        this.depth = depth;
+        this.kind = kind;
+    }
+
+    public Kind kind() { return kind; }
+
+    public Pos origin() { return origin; }
+
+    public int width() { return width; }
+
+    public int depth() { return depth; }
+
+    /** The gate's block, in the middle of the south side. */
+    public Pos gate() { return origin.add(width / 2, 0, depth - 1); }
+
+    /** Just outside the gate, to the south. */
+    public Pos outside() { return gate().add(0, 0, 1); }
+
+    /** Just inside the gate. */
+    public Pos inner() { return gate().add(0, 0, -1); }
+
+    /** Inside, across from the gate: where it stands for the animals to come in. */
+    public Pos far() { return origin.add(width / 2, 0, 1); }
+
+    /** Within the ring of fences. */
+    public boolean inside(Pos at) {
+        return at.x() > origin.x() && at.x() < origin.x() + width - 1 && at.z() > origin.z() && at.z() < origin.z() + depth - 1
+                && Math.abs(at.y() - origin.y()) <= 2;
+    }
+
+    /** What it is doing, in words. */
+    public String phase() {
+        return switch (phase) {
+            case BUILD -> "building the pen";
+            case FETCH -> "leading " + kind.noun() + "s into the pen";
+            case SHUT -> "shutting the gate";
+            case BREED -> "breeding the " + kind.noun() + "s";
+            case LEAVE -> "leaving the pen";
+            case DONE -> outcome;
+        };
+    }
+
+    public boolean done() { return phase == Phase.DONE; }
+
+    public boolean bred() { return bred; }
+
+    public Step next(Observation seen) {
+        if (phase == Phase.DONE) return new Step.Done(outcome, bred);
+        if (!seen.built()) {
+            phase = Phase.BUILD;
+            return new Step.Build();
+        }
+        if (phase == Phase.BUILD) phase = Phase.FETCH;
+        var adultsIn = seen.animals().stream().filter(a -> a.kind() == kind && a.adult() && inside(a.at())).toList();
+        boolean in = inside(seen.feet());
+        if (phase == Phase.FETCH) {
+            if (adultsIn.size() >= 2) {
+                phase = Phase.SHUT;
+                leading = null;
+                waitingSince = -1;
+            } else {
+                return fetch(seen, in, adultsIn.size());
+            }
+        }
+        if (phase == Phase.SHUT) {
+            if (!in) {
+                // Pushed out, or the pair walked in on its own: in through the gate first.
+                if (!seen.gateOpen()) return gate(seen, true, outside(), false, "Open the gate");
+                return go(inner(), 1, false, 0, "Into the pen");
+            }
+            // Food put away first, so the animals stop following it to the gate.
+            if (seen.gateOpen()) return gate(seen, false, inner(), false, "Shut the " + kind.noun() + "s in");
+            phase = Phase.BREED;
+            youngBefore = (int) seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && inside(a.at())).count();
+            waitingSince = -1;
+        }
+        if (phase == Phase.BREED) {
+            long young = seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && inside(a.at())).count();
+            if (young > youngBefore) {
+                bred = true;
+                return leave(seen, "A young " + kind.noun() + " born in the pen");
+            }
+            var inLove = adultsIn.stream().filter(Animal::inLove).toList();
+            var ready = adultsIn.stream().filter(Animal::ready).sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet()))).toList();
+            if (inLove.size() >= 2) {
+                if (waitingSince < 0) waitingSince = seen.tick();
+                if (seen.tick() - waitingSince > BIRTH) return leave(seen, "No young one came");
+                return new Step.Wait(false, "Wait for the young " + kind.noun());
+            }
+            if (inLove.size() + ready.size() < 2) return leave(seen, "The " + kind.noun() + "s are not ready to breed again yet");
+            if (seen.food() <= 0) return leave(seen, "Out of " + foodName() + " to breed them");
+            var next = ready.getFirst();
+            if (Math.sqrt(next.at().distanceSquared(seen.feet())) > FEEDING) return go(next.at(), FEEDING - 0.5, true, 0, "Walk up to a " + kind.noun());
+            return new Step.Feed(next.id(), "Feed a " + kind.noun() + " " + foodName());
+        }
+        // Leaving: out through the gate and shut it behind, the food put away so nothing follows.
+        if (in) return out(seen, "Open the gate to leave", "Out of the pen");
+        if (seen.gateOpen()) return gate(seen, false, outside(), false, "Shut the gate behind");
+        phase = Phase.DONE;
+        return new Step.Done(outcome, bred);
+    }
+
+    private Step fetch(Observation seen, boolean in, int adultsIn) {
+        var candidates = seen.animals().stream()
+                .filter(a -> a.kind() == kind && a.adult() && !inside(a.at()) && !givenUp.contains(a.id())
+                        && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE)
+                .sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet())))
+                .toList();
+        var lead = candidates.stream().filter(a -> a.id().equals(leading)).findFirst().or(() -> candidates.stream().findFirst());
+        if (lead.isEmpty()) {
+            return leave(seen, adultsIn == 1 ? "Only one " + kind.noun() + " in the pen; no other in sight" : "No " + kind.noun() + "s in sight to bring in");
+        }
+        if (seen.food() <= 0) return leave(seen, "No " + foodName() + " to lead " + kind.noun() + "s with");
+        var animal = lead.get();
+        if (!animal.id().equals(leading)) {
+            leading = animal.id();
+            waitingSince = -1;
+        }
+        double apart = Math.sqrt(animal.at().distanceSquared(seen.feet()));
+        if (in) {
+            if (apart > FOLLOWING + 4) {
+                // Not following: out for it with the food put away, so the one inside stays.
+                waitingSince = -1;
+                return out(seen, "Open the gate", "Out for another " + kind.noun());
+            }
+            // Following: across the pen for it to come in. One that will not come in is left, and another fetched.
+            if (waitingSince < 0) waitingSince = seen.tick();
+            if (seen.tick() - waitingSince > COME_IN) {
+                givenUp.add(animal.id());
+                leading = null;
+                waitingSince = -1;
+                return new Step.Wait(false, "That " + kind.noun() + " will not come in");
+            }
+            if (!seen.gateOpen()) return gate(seen, true, inner(), true, "Open the gate for the " + kind.noun());
+            return Math.sqrt(far().distanceSquared(seen.feet())) > 1.5 ? go(far(), 1, true, LEG, "Across the pen for the " + kind.noun() + " to follow")
+                    : new Step.Wait(true, "Wait for the " + kind.noun() + " to come in");
+        }
+        waitingSince = -1;
+        if (apart > FOLLOWING) {
+            // The one already in is shut in before it walks off for the next.
+            if (seen.gateOpen() && adultsIn > 0) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
+            return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
+        }
+        if (apart > LAGGING) return new Step.Wait(true, "Let the " + kind.noun() + " catch up");
+        if (!seen.gateOpen()) return gate(seen, true, outside(), true, "Open the gate");
+        return go(far(), 1, true, LEG, "Lead the " + kind.noun() + " into the pen");
+    }
+
+    /**
+     * Out of the pen with the food put away: the gate opened only once no animal stands just inside it (or after a
+     * while), then one step out, so the gate stands open as briefly as it can.
+     */
+    private Step out(Observation seen, String open, String step) {
+        if (!seen.gateOpen()) {
+            boolean crowded = seen.animals().stream().anyMatch(a -> a.kind() == kind && inside(a.at()) && a.at().distanceSquared(inner()) <= 2);
+            if (crowded && Math.sqrt(gate().distanceSquared(seen.feet())) <= AT_GATE) {
+                if (clearSince < 0) clearSince = seen.tick();
+                if (seen.tick() - clearSince <= CLEAR) return new Step.Wait(false, "Wait for the " + kind.noun() + "s to move off the gate");
+            }
+            return gate(seen, true, inner(), false, open);
+        }
+        clearSince = -1;
+        return go(outside(), 0.6, false, 0, step);
+    }
+
+    /** Work the gate from within reach of it, else walk to {@code from} beside it first. */
+    private Step gate(Observation seen, boolean open, Pos from, boolean food, String why) {
+        if (Math.sqrt(gate().distanceSquared(seen.feet())) <= AT_GATE) return new Step.Gate(open, why);
+        return go(from, 1, food, food ? LEG : 0, "To the gate: " + why.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    private Step leave(Observation seen, String why) {
+        phase = Phase.LEAVE;
+        outcome = why;
+        return next(seen);
+    }
+
+    private static Step go(Pos target, double range, boolean food, int leg, String why) {
+        return new Step.Go(target, range, food, leg, why);
+    }
+
+    private String foodName() {
+        return kind.food.getFirst().substring("minecraft:".length()).replace('_', ' ');
+    }
+}

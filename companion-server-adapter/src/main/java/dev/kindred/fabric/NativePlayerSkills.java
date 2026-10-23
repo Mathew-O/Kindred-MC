@@ -106,7 +106,8 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre"), Set.of("move"), Set.of(),
+            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
+                    "hold", "leg"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
             case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
@@ -121,6 +122,11 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(10), Duration.ofSeconds(10), 0);
             case "native_cast" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
+            // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
+            case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_gate" -> new SkillDescriptor(id, Set.of("x", "y", "z", "open"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");
         };
     }
@@ -140,6 +146,8 @@ final class NativePlayerSkills {
                     Integer.parseInt(arguments.getOrDefault("drop", String.valueOf(NativeNavigator.MAX_SAFE_DROP))),
                     Boolean.parseBoolean(arguments.getOrDefault("avoid", "false"))
                             ? new java.util.HashSet<>(java.util.Arrays.asList(arguments.getOrDefault("engage", "").split(","))) : null);
+            if (arguments.containsKey("hold")) go.holding(Integer.parseInt(arguments.get("hold")));
+            if (arguments.containsKey("leg")) go.leg(Integer.parseInt(arguments.get("leg")));
             return Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
         }
         if (id.equals("native_step_in")) {
@@ -149,6 +157,10 @@ final class NativePlayerSkills {
         if (id.equals("native_row")) {
             return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),
                     Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")));
+        }
+        if (id.equals("native_gate")) {
+            return new Gate(body, lease, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                    Integer.parseInt(arguments.get("z"))), Boolean.parseBoolean(arguments.get("open")));
         }
         if (id.equals("native_walk")) return new Walk(body, lease, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
         if (id.equals("native_traverse")) {
@@ -190,7 +202,9 @@ final class NativePlayerSkills {
         return (task instanceof Eat food && food.permits(intent))
                 || (task instanceof Walk walk && intent == NativePlayerBody.Intent.MOVE && walk.safe())
                 || (task instanceof Traverse trav && intent == NativePlayerBody.Intent.MOVE && trav.safe())
-                || (task instanceof NativeGoToSkill && intent == NativePlayerBody.Intent.MOVE)
+                || (task instanceof NativeGoToSkill go && (intent == NativePlayerBody.Intent.MOVE
+                    || intent == NativePlayerBody.Intent.SELECT_SLOT && go.holds()))
+                || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
                 || (task instanceof NativeRowSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
@@ -781,6 +795,50 @@ final class NativePlayerSkills {
 
         @Override public void halt() { body.stopInputs(); }
         @Override public boolean settled() { return true; }
+    }
+
+    /**
+     * Opens or shuts a fence gate within reach (M-01a), a use click on its near side; done once the gate stands as asked,
+     * and nothing is clicked when it already does.
+     */
+    static final class Gate implements SkillBody {
+        private final NativePlayerBody body;
+        private final Supplier<ActionLease> lease;
+        private final BlockPos gate;
+        private final boolean open;
+        private int clicked = -1, ticks;
+
+        Gate(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos gate, boolean open) {
+            this.body = body;
+            this.lease = lease;
+            this.gate = gate.toImmutable();
+            this.open = open;
+        }
+
+        @Override
+        public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
+            if (checkpoint.isPresent()) return Step.blocked("A gate cannot replay a saved step", true);
+            ticks++;
+            BlockState state = body.entity().getServerWorld().getBlockState(gate);
+            if (!(state.getBlock() instanceof net.minecraft.block.FenceGateBlock)) return Step.blocked("No fence gate at " + gate.toShortString(), true);
+            if (state.get(net.minecraft.block.FenceGateBlock.OPEN) == open) {
+                return Step.completed(Map.of("gate", gate.toShortString(), "open", String.valueOf(open)));
+            }
+            if (clicked >= 0) {
+                // Vanilla turns the gate on the click itself; one that has not turned a tick later did not take it.
+                return ticks - clicked < 2 ? Step.running(Map.of("gate", "turning"), false)
+                        : Step.blocked("The gate at " + gate.toShortString() + " did not " + (open ? "open" : "shut"), true);
+            }
+            if (!body.useGate(lease.get(), gate)) return Step.blocked("The gate is out of reach or the click was refused", true);
+            clicked = ticks;
+            return Step.running(Map.of("gate", "clicked"), false);
+        }
+
+        @Override
+        public void halt() { }
+
+        @Override
+        public boolean settled() { return true; }
     }
 
     static final class Block implements SkillBody {

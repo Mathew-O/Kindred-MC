@@ -105,6 +105,26 @@ final class NativeGoToSkill implements SkillBody {
         return this;
     }
 
+    /** The hotbar slot held on the way, as a player walks with food out for animals to follow (M-01a); -1 for none. */
+    private int hold = -1;
+    /** Done after this many blocks along the route, to look back at what follows; 0 for the whole way. */
+    private int leg;
+    private Vec3d start;
+
+    NativeGoToSkill holding(int slot) {
+        if (slot < -1 || slot > 8) throw new IllegalArgumentException("A held hotbar slot is 0..8");
+        hold = slot;
+        return this;
+    }
+
+    NativeGoToSkill leg(int blocks) {
+        if (blocks < 0 || blocks > 64) throw new IllegalArgumentException("A leg is 0..64 blocks");
+        leg = blocks;
+        return this;
+    }
+
+    boolean holds() { return hold >= 0; }
+
     private boolean plan() {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop);
@@ -132,9 +152,18 @@ final class NativeGoToSkill implements SkillBody {
         var player = body.entity();
         ticks++;
         BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        if (hold >= 0 && player.getInventory().selectedSlot != hold && !body.selectHotbar(lease.get(), hold)) {
+            body.stopInputs();
+            return Step.blocked("Could not take hotbar slot " + hold + " in hand", true);
+        }
         if (goalReached(feet) && (!centre || reached(player.getPos(), target)) && (player.isOnGround() || player.isTouchingWater())) {
             body.stopInputs();
             return Step.completed(Map.of("arrived", feet.toShortString()));
+        }
+        if (start == null) start = player.getPos();
+        if (leg > 0 && player.isOnGround() && Math.hypot(player.getX() - start.x, player.getZ() - start.z) >= leg) {
+            body.stopInputs();
+            return Step.completed(Map.of("leg", feet.toShortString()));
         }
         if (path == null || fresh) {
             if (!plan()) {

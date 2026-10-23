@@ -88,7 +88,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1647,6 +1647,48 @@ final class NativePlayerBody implements BodyAdapter {
             face(top);
             player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
                     new BlockHitResult(top, Direction.UP, frame, false));
+        });
+    }
+
+    /**
+     * Feeds the animal the food in {@code hotbarSlot}, as a player's use click lands on it (M-01a): vanilla takes one of
+     * the food and sets a grown animal ready to breed in love. Only within the reach the server allows a player's click.
+     */
+    boolean feed(ActionLease lease, int hotbarSlot, net.minecraft.entity.passive.AnimalEntity animal) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || animal == null || !animal.isAlive() || animal.getWorld() != player.getWorld()) return false;
+        if (!player.canInteractWithEntity(animal, 0)) return false;
+        Vec3d at = animal.getBoundingBox().getCenter();
+        return execute(lease, Intent.FEED, null, () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            face(at);
+            player.interact(animal, Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Opens or shuts the fence gate at {@code gate} with a use click on its near side, as a player does (M-01a). Nothing
+     * else is used: whatever the hand holds, a gate's own use comes first, and the player is never sneaking.
+     */
+    boolean useGate(ActionLease lease, BlockPos gate) {
+        requireThread();
+        var world = player.getServerWorld();
+        var state = world.getBlockState(gate);
+        if (!(state.getBlock() instanceof net.minecraft.block.FenceGateBlock) || player.isSneaking()) return false;
+        Vec3d centre = Vec3d.ofCenter(gate);
+        if (player.getEyePos().squaredDistanceTo(centre) > 4.5 * 4.5) return false;
+        Vec3d eye = player.getEyePos();
+        Direction side = Direction.getFacing(eye.x - centre.x, 0, eye.z - centre.z);
+        Vec3d hit = centre.add(side.getOffsetX() * 0.5, 0, side.getOffsetZ() * 0.5);
+        return execute(lease, Intent.GATE, gate, () -> {
+            face(hit);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(hit, side, gate, false));
+            player.swingHand(Hand.MAIN_HAND);
         });
     }
 

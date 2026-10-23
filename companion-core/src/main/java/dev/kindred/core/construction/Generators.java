@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen");
 
     private Generators() { }
 
@@ -154,13 +154,39 @@ public final class Generators {
     }
 
     /** The generator a name stands for, with its sizes: {@code hut}, {@code hut 5 5 3}. */
+    /**
+     * A pen for animals (M-01a): a ring of {@code wood} fences on the ground, {@code width} by {@code depth}, with a gate
+     * of the same wood in the middle of the south side, hung to swing north and south and set facing north, so it is
+     * hung from outside the pen. The origin is the north-west post; nothing inside is touched.
+     *
+     * @param width east to west, odd, 5 to 15
+     * @param depth north to south, 5 to 15
+     * @param wood  the wood, as its planks are named: oak, spruce, birch, ...
+     */
+    public static Blueprint pen(int width, int depth, String wood) {
+        if (width < 5 || width > 15 || width % 2 == 0 || depth < 5 || depth > 15) {
+            throw new IllegalArgumentException("A pen 5 to 15 blocks a side, an odd width so its gate is in the middle");
+        }
+        if (!wood.matches("[a-z_]+")) throw new IllegalArgumentException("Not a wood: " + wood);
+        var blocks = new ArrayList<Blueprint.Block>();
+        var fence = BlockSpec.of("minecraft:" + wood + "_fence");
+        for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) {
+            if (x != 0 && x != width - 1 && z != 0 && z != depth - 1) continue;
+            boolean gate = x == width / 2 && z == depth - 1;
+            blocks.add(new Blueprint.Block(new Pos(x, 0, z), gate ? BlockSpec.parse("minecraft:" + wood + "_fence_gate[facing=north]") : fence));
+        }
+        return new Blueprint(wood + " pen " + width + "x" + depth, SOURCE + "pen?width=" + width + "&depth=" + depth + "&wood=" + wood,
+                "Kindred", "Kindred's own", blocks);
+    }
+
     public static Blueprint named(String name, List<Integer> sizes) {
         return switch (name) {
             case "hut" -> hut(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 5, sizes.size() > 2 ? sizes.get(2) : 3);
             case "tower" -> tower(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 8, "minecraft:stone_bricks");
             case "pyramid" -> pyramid(sizes.size() > 0 ? sizes.get(0) : 9, "minecraft:sandstone");
             case "lighthouse" -> lighthouse(sizes.size() > 0 ? sizes.get(0) : 10, "minecraft:white_concrete", "minecraft:red_concrete");
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse");
+            case "pen" -> pen(sizes.size() > 0 ? sizes.get(0) : 7, sizes.size() > 1 ? sizes.get(1) : 7, "oak");
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen");
         };
     }
 }

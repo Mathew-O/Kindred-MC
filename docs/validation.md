@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-01a (a ranch), on top of `fc2680e`.
+  - New JUnit: `RanchTest` (5), `aPenIsARingOfFencesWithItsGateMidSouthAndIsBuiltWhole`.
+  - New native fixture: `anAiPlayerPensAPairOfCowsWithItsOwnWoodAndBreedsThem`. From fourteen oak logs and eight wheat, Wren crafts the gate, 24 fences and a table, and builds a seven-by-seven pen. It leads two cows from across a field into the pen with the wheat in hand and shuts them in. It feeds both (two wheat spent); a calf is born; it goes out and shuts the gate. All three are still penned ten seconds later.
+  - Three hand controls, each failing as expected: the food never held on the way (the cows never followed), the animals never fed (no calf), the gate not shut behind.
+  - Found on the way: opening the gate at once to leave let a cow out in one run of three; the gate now opens only once nothing stands just inside it, and four runs in a row passed alone.
+  - `runGametest` passed 294/294 twice. `./gradlew build` passed: 525 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `ce08294898fb8511f8245846cd871dd7f2464b33118028928dda7e41afc17abe`.
 - M-04a (build battles), on top of `583b7ad`.
   - New JUnit: `BuildBattleTest` (4), `aBuildBattleBuildsForItsTimeThenWaitsOnTheVote`, `theTowerPyramidAndLighthouseAreBuiltWholeAndTheirScaffoldTakenDown`.
   - New native fixture: `twoAiBuildersBuildTheThemeInCreativeAndVoteOnEachOther`. Two plots marked out where the operator stands; the theme a pyramid; both AI builders in creative and at work, each only on its own plot; both build sandstone pyramids in a minute; each votes on the other; the best mean wins with fireworks; both leave with nothing and in survival.

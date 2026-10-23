@@ -21,6 +21,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
 /aiplayer build list                 the generators and schematics on offer
+/aiplayer ranch <cow|sheep|pig|chicken> <x y z> [bot]  build a pen there from its own wood, lead a pair in with their food and breed them
+/aiplayer ranch stop [bot]           stop the ranch; what is built stays
 /aiplayer match duel <first> <second>  propose a duel between two players (AI players or humans online)
 /aiplayer match speedrun <runner...> propose a speedrun race to the dragon for one to eight runners
 /aiplayer match manhunt <runners> vs <hunters>  propose a manhunt: runners make for the dragon, hunters hunt them
@@ -150,6 +152,14 @@ See [M-03a](evidence/M-03a.md).
 - **The runners** make for the dragon: an AI runner plays the dragon goal at speedrun pace. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
 - **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see.
 - **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Every one is taken back when the hunt ends. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
+
+**A ranch (M-01a; in development).** `/aiplayer ranch <cow|sheep|pig|chicken> <x y z> [player]` has a native player make a ranch with the pen's north-west post at that spot. Only its administrator may ask, and only where AI world edits are allowed.
+- **The pen.** Seven by seven: 23 fences and a gate in the middle of the south side, of the wood it has most of. It crafts them at a crafting table from its own logs or planks, setting down or making a table if none is near. It builds the pen as it builds anything. With too little wood it says so and stops.
+- **The pair.** With the animals' own food in hand (wheat for cows and sheep; carrots, potatoes or beetroot for pigs; seeds for chickens), it walks up to the nearest within 32 blocks. It leads them back a few blocks at a time and opens the gate. It waits inside for them to come in, then shuts them in with the food put away.
+- **Breeding.** It feeds each of the pair one of their food, waits for the young one, and leaves, shutting the gate behind it. Nothing is given: the food and wood are its own, and each feeding is recorded.
+- **What it says.** It says how the ranch went, or why it stopped: no food, no animals in range, or none ready to breed again yet. Survival needs still come first. `/aiplayer ranch stop` stops it, and what is built stays.
+
+See [M-01a](evidence/M-01a.md).
 
 **Build battles (M-04a; in development).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
 - **The plots.** One per builder, fifteen blocks a side, in a row east of where you stand, three apart, marked in white concrete with a grey edge. They need open, level ground, clear sixteen blocks up.
