@@ -57,6 +57,11 @@ final class NativeFightAction extends NativeRecordedAction {
     private int ticks, unseen, hits, crits, unsafe, guardTicks;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
+    /** The fight's record (E-41a): what was seen, chosen and confirmed each tick. */
+    private dev.kindred.core.tactics.EncounterRecorder recorder;
+    private String decision = "";
+    private final java.util.List<String> events = new java.util.ArrayList<>();
+    private int shieldWear = -1;
 
     NativeFightAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       UUID targetId, int slot) {
@@ -104,6 +109,8 @@ final class NativeFightAction extends NativeRecordedAction {
             }
             if (admission.take().isEmpty()) return waiting();
             fighting = true;
+            recorder = new dev.kindred.core.tactics.EncounterRecorder(issuedLease.actionId().toString(), player.getUuidAsString(),
+                    player.getServerWorld().getTime());
             if (slot >= 0 && slot < 9) body.selectHotbar(issuedLease, slot);
         }
         if (admission.phase() != ActionAdmission.Phase.ISSUED || !fighting) return waiting();
@@ -127,12 +134,16 @@ final class NativeFightAction extends NativeRecordedAction {
             float toward = (float) Math.toDegrees(Math.atan2(-(hissing.getX() - player.getX()), hissing.getZ() - player.getZ()));
             moved = body.move(issuedLease, 0, 0, false, false, toward);
             guard(true);
+            decision = "face the hissing creeper behind the shield";
         } else if (hissing != null) {
             moved = flee(navigator, hissing);
+            decision = "run from the hissing creeper";
         } else if (target instanceof CreeperEntity && !ready && distance < 4.0) {
             // Hit and run: out of its reach while the swing recovers, so it never gets close enough to light.
             moved = flee(navigator, target);
+            decision = "back off while the swing recovers";
         } else if (distance > STRIKE_RANGE || !visible) {
+            decision = visible ? "close in" : "close in out of sight";
             if (navigator.safeHeading(player, yaw)) {
                 unsafe = 0;
                 // Closing in on a shooter, the shield goes up while it draws its bow and a moment after, as players
@@ -145,6 +156,7 @@ final class NativeFightAction extends NativeRecordedAction {
                 // Cannot get at it from here (a ledge, lava between): step back from the edge, where a hit or an
                 // arrow could knock the player over, until giving up on this fight.
                 moved = flee(navigator, target);
+                decision = "back from the edge";
                 if (++unsafe > UNSAFE_TICKS) { settle("The way to the target is unsafe", false); return waiting(); }
             }
         } else {
@@ -160,16 +172,23 @@ final class NativeFightAction extends NativeRecordedAction {
                     ? offTheEdge(navigator, target, yaw) : new int[]{0, 0};
             boolean stepping = step[0] != 0 || step[1] != 0;
             moved = body.move(issuedLease, step[0], step[1], jump && !stepping, false, yaw);
+            decision = stepping ? "sidestep off the edge" : jump && !stepping ? "jump for a critical" : "wait for the swing";
             boolean falling = airborne && player.getVelocity().y < 0 && player.fallDistance > 0;
             if (moved && ready && (!jumping || falling)) {
                 guard(false); // The shield comes down for the swing.
                 boolean critical = critical(player);
+                decision = critical ? "strike, critical" : "strike";
                 if (body.attack(issuedLease, targetId, slot)) {
                     hits++;
                     if (critical) crits++;
+                    // Confirmed only as a player sees it: the target's hurt flash, from this blow.
+                    var source = target.getRecentDamageSource();
+                    boolean landed = target.hurtTime == target.maxHurtTime && source != null && source.getAttacker() == player;
+                    events.add((landed ? "hit-landed" : "hit-unseen") + " target=" + shortId(target) + (critical ? " critical" : ""));
                 }
             }
         }
+        record(player, target, visible, distance);
         if (!moved) settle("Movement authority denied", false);
         return Step.running(Map.of("hits", String.valueOf(hits), "distance", String.format("%.1f", distance)), true);
     }
@@ -276,8 +295,42 @@ final class NativeFightAction extends NativeRecordedAction {
         return true;
     }
 
+    /** This tick in the fight's record: the player, the target as it could know it, the choice, the confirmed events. */
+    private void record(net.minecraft.server.network.ServerPlayerEntity player, LivingEntity target, boolean visible, double distance) {
+        if (recorder == null) return;
+        if (player.hurtTime > 0 && player.hurtTime == player.maxHurtTime) {
+            var source = player.getRecentDamageSource();
+            var attacker = source == null ? null : source.getAttacker();
+            events.add("hit-taken from=" + (attacker == null ? "unknown" : net.minecraft.registry.Registries.ENTITY_TYPE.getId(attacker.getType()).getPath()));
+        }
+        var shield = player.getOffHandStack();
+        int wear = shield.isOf(Items.SHIELD) ? shield.getDamage() : -1;
+        if (shieldWear >= 0 && wear > shieldWear) events.add("blocked");
+        shieldWear = wear;
+        var belief = body.beliefs().of(target.getUuid(), target.getMaxHealth(), target instanceof net.minecraft.entity.player.PlayerEntity,
+                player.getServerWorld().getTime());
+        var seen = new dev.kindred.core.tactics.EncounterRecorder.Seen(shortId(target),
+                net.minecraft.registry.Registries.ENTITY_TYPE.getId(target.getType()).getPath(), distance, visible,
+                NativePlayerBody.believedHealth(player, target), belief.confidence(),
+                target instanceof net.minecraft.entity.mob.MobEntity mob && mob.getTarget() == player);
+        var self = new dev.kindred.core.tactics.EncounterRecorder.Self(player.getX(), player.getY(), player.getZ(), player.getHealth(),
+                player.getAttackCooldownProgress(0.5f), player.isOnGround(), player.isBlocking(),
+                net.minecraft.registry.Registries.ITEM.getId(player.getMainHandStack().getItem()).toString());
+        recorder.record(new dev.kindred.core.tactics.EncounterRecorder.Frame(player.getServerWorld().getTime(), self, java.util.List.of(seen), decision, events));
+        events.clear();
+    }
+
+    private static String shortId(net.minecraft.entity.Entity entity) {
+        return entity.getUuidAsString().substring(0, 8);
+    }
+
     private void settle(String reason, boolean won) {
         body.stopInputs();
+        if (recorder != null) {
+            recorder.end(reason);
+            EncounterLog.write(body.entity().getServer(), body.entity().getUuid(), recorder);
+            recorder = null;
+        }
         if (hits > 0) KindredMod.LOGGER.info("{} fight: {} hits, {} critical - {}", body.entity().getName().getString(), hits, crits, reason);
         var after = InventoryEvidence.capture(body);
         if (conserved(after)) {

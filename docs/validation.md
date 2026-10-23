@@ -4,6 +4,11 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-41a, third slice: each fight recorded and read back, on top of `e26e807`.
+  - New JUnit: `EncounterRecorderTest` (3).
+  - New native fixture: `aFightIsRecordedAndReadBack`. 40 frames in tick order under the ruleset's name, three hits seen to land, and the believed health falling from 20 to 0. The fight's choices are all there: close in, jump for a critical, wait for the swing, strike critically. A first version put the zombie eight blocks off, where the player never saw it; the record showed exactly that ("lost sight of the target").
+  - `runGametest` passed 287/287 twice on the final tree. `./gradlew build` passed: 493 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `64228a08e3037f49a9224e76feab981839cc3e6f7124b51dbce31c4bf043f2fc`.
 - E-41a, second slice: opponents' health as a player can know it, on top of `16fb83f`.
   - New JUnit: `HealthBeliefsTest` (4), `armourTakesFourPercentAPointOfWhatIsLeftEffective`.
   - New native fixture: `theHealthItBelievesIsWorkedOutFromTheHitsItSawLand`. A zombie hurt to 10 unseen was believed at 20. After one sword hit it was believed at 14.82 against the server's 4.82, the ruleset's estimate matching vanilla's damage to within 1e-3. Its control, reading the server's number, saw 10.
