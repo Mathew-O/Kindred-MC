@@ -146,6 +146,24 @@ public final class PlayerCommands {
                                     if (first == null || second == null) return 0;
                                     return runtime.proposeDuel(context.getSource(), first, second);
                                 }))))
+                // A race from a fresh start to the dragon (M-03a): the runners' names, one to eight of them.
+                .then(CommandManager.literal("speedrun").then(CommandManager.argument("runners", StringArgumentType.greedyString())
+                        .suggests((context, builder) -> suggestPlayers(context,
+                                builder.createOffset(builder.getStart() + builder.getRemaining().lastIndexOf(' ') + 1)))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            var runners = new java.util.ArrayList<UUID>();
+                            for (String name : StringArgumentType.getString(context, "runners").trim().split("\\s+")) {
+                                UUID runner = runtime.matchPlayerId(name);
+                                if (runner == null) {
+                                    context.getSource().sendError(Text.literal("No such player online: '" + name + "'."));
+                                    return 0;
+                                }
+                                runners.add(runner);
+                            }
+                            return runtime.proposeSpeedrun(context.getSource(), runners);
+                        })))
                 .then(CommandManager.literal("join").then(CommandManager.argument("match", StringArgumentType.string())
                         .executes(context -> matchCommand(context, (runtime, id) -> runtime.joinMatch(context.getSource(), id)))))
                 .then(CommandManager.literal("start").then(CommandManager.argument("match", StringArgumentType.string())

@@ -101,4 +101,48 @@ class MatchRegistryTest {
         assertTrue(registry.find("zzzz").isEmpty());
         assertEquals(8, MatchRegistry.shortId(match.id()).length());
     }
+
+    @Test
+    void aSpeedrunIsARaceWithNoStrikingThatTheFirstToFinishWins() {
+        var registry = new MatchRegistry();
+        assertTrue(registry.propose(MatchRegistry.Mode.SPEEDRUN, List.of(cy)).accepted(), "one runner alone");
+        registry.stopAll();
+        var nine = new java.util.ArrayList<UUID>();
+        for (int i = 0; i < 9; i++) nine.add(UUID.randomUUID());
+        assertFalse(registry.propose(MatchRegistry.Mode.SPEEDRUN, nine).accepted(), "at most eight");
+        assertFalse(registry.propose(MatchRegistry.Mode.SPEEDRUN, List.of(ada, ada)).accepted(), "each once");
+        var race = registry.propose(MatchRegistry.Mode.SPEEDRUN, List.of(ada, bram)).match().orElseThrow();
+        registry.join(race.id(), ada);
+        registry.join(race.id(), bram);
+        registry.start(race.id(), 0);
+        var running = registry.tick(MatchRegistry.COUNTDOWN_TICKS).getFirst();
+        assertEquals(MatchRegistry.State.RUNNING, running.state());
+        assertFalse(registry.mayAttack(ada, bram), "a race is no fight");
+        assertTrue(registry.fallen(ada).isEmpty(), "a fall is only a setback");
+        assertTrue(registry.tick(10_000_000).isEmpty(), "no time limit");
+        var finished = registry.finished(bram).orElseThrow();
+        assertEquals(bram, finished.winner());
+        assertEquals("finished", finished.result());
+        assertTrue(registry.finished(ada).isEmpty(), "over once the first finishes");
+    }
+
+    @Test
+    void aRunnerWhoDropsOutLeavesTheRestRacingUntilNoneIsLeft() {
+        var registry = new MatchRegistry();
+        var race = registry.propose(MatchRegistry.Mode.SPEEDRUN, List.of(ada, bram)).match().orElseThrow();
+        registry.join(race.id(), ada);
+        registry.join(race.id(), bram);
+        registry.start(race.id(), 0);
+        registry.tick(MatchRegistry.COUNTDOWN_TICKS);
+        var on = registry.leave(race.id(), ada).match().orElseThrow();
+        assertEquals(MatchRegistry.State.RUNNING, on.state(), "Bram runs on");
+        assertFalse(on.playing(ada));
+        assertTrue(registry.active(ada).isEmpty(), "Ada is free for another match");
+        assertFalse(registry.leave(race.id(), ada).accepted(), "already out");
+        assertTrue(registry.finished(ada).isEmpty(), "out, so no finish");
+        var over = registry.departed(bram).orElseThrow();
+        assertEquals(MatchRegistry.State.ENDED, over.state());
+        assertNull(over.winner());
+        assertEquals("Every runner left the game", over.result());
+    }
 }

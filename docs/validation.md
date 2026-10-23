@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-00b (a match shown to ordinary clients) and M-03a (speedrun races), on top of `8c69eba`.
+  - New JUnit: `MatchPresentationTest` (4), `SpeedrunSplitsTest` (3), two speedrun tests in `MatchRegistryTest`.
+  - New native fixture: `anAiRunnerRacesFromAFreshStartTimedByVanillaAdvancements`. A runner carrying an item is refused, and so is one without the dragon fight's leave. The race starts with the server's PvP off, which it does not need. The runner is set to the dragon goal at speedrun pace. Two advancements granted in vanilla's place: the iron split timed at 0:00.10 and Free the End at 0:01.10, which finishes it. Its own pace back, and refused again once it has the splits. The duel fixture now also checks what each player was shown: both on the boss bar, Ada 3, 2, 1, Fight!, Victory and Bram the same with Defeat, the bar taken down.
+  - Four hand controls, each failing as expected: the fresh-start check (the race proposed carrying dirt), the finish (the race never ends), the pace given back (the runner left at speedrun pace) and the countdown shown once a second (each second shown again every tick).
+  - Found on the way: starting a match checked the server's PvP, which a race does not need. Ending a race's goal went through the goal's start, which overwrote the pace just given back.
+  - `runGametest` passed 290/290 twice. `./gradlew build` passed: 509 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `1ab0001cc284748c8599f88506ecb1ea15e5ca092fa7a0617bc032bea21fa53a`.
 - M-00a (duel matches, the first of the match framework) and four fixtures fixed, on top of `5287416`.
   - New JUnit: `MatchRegistryTest` (5).
   - New native fixtures: `twoAiPlayersFightOnlyWhileTheDuelTheyJoinedRuns` and `anAiPlayerTakenOutOfTheGameForfeitsItsDuel`. A strike at the other player is refused before the match, through its countdown and after its end, with the server's PvP on. With the server's PvP off, no duel is proposed. While it runs, Ada (iron sword) beats Bram (wooden sword, leather chestplate) with three critical hits, as the ruleset predicts. A body taken out mid-duel forfeits it.

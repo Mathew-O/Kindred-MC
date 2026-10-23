@@ -109,6 +109,10 @@ public final class NativeMatchGameTests implements FabricGameTest {
                     context.assertTrue(state == MatchRegistry.State.RUNNING, "Running after the countdown");
                     context.assertTrue(!hurt[0], "Hurt during the countdown");
                     context.assertTrue(refusedInCountdown[0], "A strike refused during the countdown");
+                    // Both see the match on a boss bar with its clock (M-00b).
+                    var bar = f.runtime.presenter().barPlayers(match[0]);
+                    context.assertTrue(bar.contains(players[0]) && bar.contains(players[1]), "Both on the bar: " + bar);
+                    context.assertTrue(f.runtime.presenter().barText(match[0]).startsWith("Duel: Ada vs Bram - "), "The bar: " + f.runtime.presenter().barText(match[0]));
                     context.assertTrue(context.getWorld().getServer().getTicks() - countdown[0] >= MatchRegistry.COUNTDOWN_TICKS - 1, "The whole countdown");
                 })
                 .createAndAdd(() -> {
@@ -120,6 +124,11 @@ public final class NativeMatchGameTests implements FabricGameTest {
                     var duel = f.runtime.matches().getFirst();
                     KindredMod.LOGGER.info("Duel: {} ({}), the winner {}", duel.state(), duel.result(), duel.winner() == null ? "none" : player(f, duel.winner()).getName().getString());
                     context.assertTrue("fell".equals(duel.result()) && players[0].equals(duel.winner()), "Ada won by Bram's fall: " + duel.result());
+                    // What each was shown: the countdown's seconds, the start and its own result, and then no bar.
+                    var presenter = f.runtime.presenter();
+                    context.assertTrue(presenter.shown(players[0]).equals(java.util.List.of("3", "2", "1", "Fight!", "Victory")), "Ada shown " + presenter.shown(players[0]));
+                    context.assertTrue(presenter.shown(players[1]).equals(java.util.List.of("3", "2", "1", "Fight!", "Defeat")), "Bram shown " + presenter.shown(players[1]));
+                    context.assertTrue(presenter.barPlayers(match[0]).isEmpty(), "The bar taken down");
                 })
                 .createAndAdd(() -> {
                     // Over: a strike is refused again, once Bram is back on its feet.
@@ -175,6 +184,97 @@ public final class NativeMatchGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * A speedrun race (M-03a) with one AI runner. It must start fresh (nothing carried) and needs the dragon fight's
+     * leave. Once it runs, the runner plays the dragon goal at speedrun pace. Its splits are the advancements vanilla
+     * gives it, here granted by the fixture in vanilla's place, since a fixture cannot play the whole run. The dragon's
+     * advancement finishes it, and the runner's own pace comes back. A runner that has a split's advancement already
+     * is not at a fresh start.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "matchRace", tickLimit = 1600)
+    public void anAiRunnerRacesFromAFreshStartTimedByVanillaAdvancements(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1400);
+        UUID[] id = new UUID[1], player = new UUID[1], match = new UUID[1];
+        String[] pace = new String[1];
+        var server = context.getWorld().getServer();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sprinter"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Established");
+                    id[0] = statuses.getFirst().id();
+                    player[0] = statuses.getFirst().nativeId();
+                })
+                .createAndAdd(() -> {
+                    var runner = player(f, player[0]);
+                    // Carrying anything, it is not at a fresh start (with the dragon fight allowed, so that is the only reason).
+                    f.runtime.setDragonFightForTest(true);
+                    runner.getInventory().setStack(0, new ItemStack(Items.DIRT));
+                    context.assertTrue(f.runtime.proposeSpeedrun(f.source, java.util.List.of(player[0])) == 0 && f.runtime.matches().isEmpty(), "Refused carrying dirt");
+                    runner.getInventory().clear();
+                    // An AI runner needs the dragon fight's leave.
+                    f.runtime.setDragonFightForTest(false);
+                    context.assertTrue(f.runtime.proposeSpeedrun(f.source, java.util.List.of(player[0])) == 0 && f.runtime.matches().isEmpty(), "Refused without the dragon fight");
+                    f.runtime.setDragonFightForTest(true);
+                    pace[0] = bot(f, id[0]).playstyle();
+                })
+                .createAndAdd(() -> {
+                    // Each step acts only once its checks pass, since a failed step is tried again from its start.
+                    context.assertTrue(f.runtime.proposeSpeedrun(f.source, java.util.List.of(player[0])) == 1, "Proposed");
+                    match[0] = f.runtime.matches().getFirst().id();
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().joined().size() == 1, "Entered by its administrator");
+                    context.assertTrue(f.runtime.startMatch(f.source, match[0]) == 1, "Started, with the server's PvP off: a race needs none");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().state() == MatchRegistry.State.RUNNING, "Running");
+                    var bot = bot(f, id[0]);
+                    context.assertTrue(bot.goal() == dev.kindred.core.survival.SurvivalGoal.DRAGON && bot.playstyle().equals("SPEEDRUN_ANY_PERCENT"),
+                            "The dragon goal at speedrun pace: " + bot.goal() + " " + bot.playstyle());
+                    context.assertTrue(f.runtime.raceSplits(match[0], player[0]).isEmpty(), "No split yet");
+                    // In vanilla's place: the iron ingot's advancement, as smelting one would give it.
+                    context.assertTrue(grant(server, player(f, player[0]), "minecraft:story/smelt_iron", "iron"), "Iron granted");
+                })
+                .createAndAdd(() -> {
+                    var splits = f.runtime.raceSplits(match[0], player[0]);
+                    context.assertTrue(splits.size() == 1 && splits.getFirst().split().id().equals("iron") && splits.getFirst().ticks() > 0,
+                            "The iron split, timed: " + splits);
+                    context.assertTrue(f.runtime.matches().getFirst().state() == MatchRegistry.State.RUNNING, "Still running");
+                    context.assertTrue(grant(server, player(f, player[0]), "minecraft:end/kill_dragon", "killed_dragon"), "Free the End granted");
+                })
+                .createAndAdd(() -> {
+                    var race = f.runtime.matches().getFirst();
+                    context.assertTrue(race.state() == MatchRegistry.State.ENDED && "finished".equals(race.result()) && player[0].equals(race.winner()),
+                            "Finished: " + race.state() + " " + race.result());
+                    var splits = f.runtime.raceSplits(match[0], player[0]);
+                    context.assertTrue(splits.size() == 2 && splits.getLast().finish() && splits.getLast().ticks() >= splits.getFirst().ticks(), "Both splits: " + splits);
+                    KindredMod.LOGGER.info("Race: {}", splits.stream().map(r -> r.split().label() + " " + dev.kindred.core.match.SpeedrunSplits.time(r.ticks())).toList());
+                    var bot = bot(f, id[0]);
+                    context.assertTrue(bot.goal() == dev.kindred.core.survival.SurvivalGoal.NONE && bot.playstyle().equals(pace[0]),
+                            "The race's goal over, its own pace back: " + bot.goal() + " " + bot.playstyle());
+                    context.assertTrue(f.runtime.presenter().shown(player[0]).getLast().equals("Victory"), "Shown " + f.runtime.presenter().shown(player[0]));
+                    // Its advancements are its own now: it is no longer at a fresh start.
+                    player(f, player[0]).getInventory().clear();
+                    context.assertTrue(f.runtime.proposeSpeedrun(f.source, java.util.List.of(player[0])) == 0, "Refused once it has the splits");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    private static PlayerRuntime.PanelBot bot(NativePaidSkillsGameTests.Fixture f, UUID id) {
+        return f.runtime.panelBots(Actor.console()).stream().filter(b -> b.id().equals(id)).findFirst().orElseThrow();
+    }
+
+    /** An advancement's criterion granted as vanilla grants it when the criterion is met. */
+    private static boolean grant(net.minecraft.server.MinecraftServer server, ServerPlayerEntity player, String advancement, String criterion) {
+        var entry = server.getAdvancementLoader().get(net.minecraft.util.Identifier.of(advancement));
+        return entry != null && player.getAdvancementTracker().grantCriterion(entry, criterion);
     }
 
     /** Nothing running or still being written for the player, so a request is taken now. */

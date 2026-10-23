@@ -204,6 +204,12 @@ final class PlayerRuntime {
     private final TeamCoordinator teamCoordinator = new TeamCoordinator();
     /** Matches, and who may attack whom in them (M-00a, D7). */
     private final dev.kindred.core.match.MatchRegistry matches = new dev.kindred.core.match.MatchRegistry();
+    /** Titles, sounds and a boss bar for the players in a match (M-00b). */
+    private final MatchPresenter presenter;
+    /** Each race's splits, by match (M-03a). */
+    private final Map<UUID, dev.kindred.core.match.SpeedrunSplits> races = new HashMap<>();
+    /** The pace each AI runner had before its race, given back when it is out of it. */
+    private final Map<UUID, PlaystyleProfile> racePace = new HashMap<>();
     public TeamCoordinator teamCoordinator() { return teamCoordinator; }
 
     public ExpeditionState getExpeditionState(UUID id) {
@@ -326,6 +332,7 @@ final class PlayerRuntime {
                   java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator,
                   StartupLedgerReader startupLedgerReader) {
         this.server = server;
+        this.presenter = new MatchPresenter(server);
         this.metadataDirectory = metadataDirectory;
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memories = new PlayerMemoryStore(metadataDirectory);
@@ -1759,6 +1766,9 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        if (tick % 20 == 7) pollRaces();
+        races.keySet().removeIf(id -> matches.get(id).isEmpty());
+        presenter.tick(matches.list(), tick, this::playerName, this::raceProgress);
 
         var batch = new ArrayList<dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot>();
         // Home after the credits: out of every world, a body gets no tick of its own to ask with (E-39d).
@@ -5517,6 +5527,14 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
+        for (var raced : racePace.entrySet()) {
+            Entry entry = entries.get(raced.getKey());
+            if (entry == null) continue;
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(raced.getValue());
+            if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) entry.goal = dev.kindred.core.survival.SurvivalGoal.NONE;
+        }
+        racePace.clear();
         for (Entry entry : entries.values()) {
             entry.pendingConnection = null;
             entry.nativePending = false;
@@ -5528,6 +5546,7 @@ final class PlayerRuntime {
         }
         running = false;
         matches.stopAll();
+        presenter.clear();
         strategist.ifPresent(StrategistBridge::close);
         memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
@@ -5743,7 +5762,7 @@ final class PlayerRuntime {
      */
     private List<NativeTaskCandidate> duelCandidates(NativePlayerBody body) {
         var player = body.entity();
-        var match = matches.running(player.getUuid()).orElse(null);
+        var match = matches.running(player.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL).orElse(null);
         if (match == null) return null;
         var candidates = new java.util.ArrayList<NativeTaskCandidate>();
         UUID opponentId = dev.kindred.core.match.MatchRegistry.other(match, player.getUuid());
@@ -5790,15 +5809,18 @@ final class PlayerRuntime {
 
     /** Tells every invited player where its match stands. */
     private void announce(dev.kindred.core.match.MatchRegistry.Match match) {
-        String who = match.invited().stream().map(this::playerName).collect(java.util.stream.Collectors.joining(" against "));
+        boolean race = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN;
         String what = switch (match.state()) {
             case LOBBY -> "waiting for every player to join";
             case COUNTDOWN -> "starting in three seconds";
-            case RUNNING -> "fight!";
+            case RUNNING -> race ? "go!" : "fight!";
             case ENDED -> match.winner() != null ? playerName(match.winner()) + " wins (" + match.result() + ")" : match.result();
         };
-        String line = "Duel " + who + ": " + what;
+        String line = match.mode().label() + " " + who(match) + ": " + what;
         KindredMod.LOGGER.info(line);
+        presenter.changed(match, this::playerName);
+        if (race && match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && !races.containsKey(match.id())) startRace(match);
+        if (race) leaveRace(match);
         for (UUID invited : match.invited()) {
             var player = server.getPlayerManager().getPlayer(invited);
             if (player != null) player.sendMessage(Text.literal(line), false);
@@ -5829,25 +5851,152 @@ final class PlayerRuntime {
         }
         var result = matches.propose(dev.kindred.core.match.MatchRegistry.Mode.DUEL, invited);
         if (!result.accepted()) return reject(source, result.reason());
-        var match = result.match().orElseThrow();
-        for (UUID player : invited) {
+        var match = enter(result.match().orElseThrow());
+        feedback(source, match.mode().label() + " " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
+                + "; " + match.joined().size() + " of " + match.invited().size() + " joined.");
+        return 1;
+    }
+
+    /**
+     * The AI players invited to a new match entered by their administrator, who proposed it; each human invited told how
+     * to join. Joining is the human's own choice: a click runs the join as that human, and nothing else enters it (D7).
+     */
+    private dev.kindred.core.match.MatchRegistry.Match enter(dev.kindred.core.match.MatchRegistry.Match match) {
+        for (UUID player : match.invited()) {
             if (entryForPlayer(player) != null) {
                 match = matches.join(match.id(), player).match().orElse(match);
-            } else {
-                var human = server.getPlayerManager().getPlayer(player);
-                if (human != null) {
-                    // Joining is the human's own choice: a click runs the join as the human, and nothing else enters it.
-                    String join = "/aiplayer match join " + dev.kindred.core.match.MatchRegistry.shortId(match.id());
-                    human.sendMessage(Text.literal("You are invited to a duel against " + playerName(dev.kindred.core.match.MatchRegistry.other(match, player))
-                            + ". To fight in it: ").append(Text.literal("[Join]").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
+                continue;
+            }
+            var human = server.getPlayerManager().getPlayer(player);
+            if (human == null) continue;
+            String others = match.invited().stream().filter(other -> !other.equals(player)).map(this::playerName)
+                    .collect(java.util.stream.Collectors.joining(", "));
+            String what = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL ? "a duel against " + others
+                    : "a speedrun race" + (others.isEmpty() ? "" : " against " + others);
+            String join = "/aiplayer match join " + dev.kindred.core.match.MatchRegistry.shortId(match.id());
+            human.sendMessage(Text.literal("You are invited to " + what + ". To play in it: ").append(Text.literal("[Join]")
+                    .styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
                             .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, join))
                             .withHoverEvent(new net.minecraft.text.HoverEvent(net.minecraft.text.HoverEvent.Action.SHOW_TEXT, Text.literal(join))))), false);
+        }
+        return match;
+    }
+
+    /** A match's players as its announcements name them. */
+    private String who(dev.kindred.core.match.MatchRegistry.Match match) {
+        return match.invited().stream().map(this::playerName).collect(java.util.stream.Collectors.joining(
+                match.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL ? " against " : ", "));
+    }
+
+    /**
+     * A speedrun race proposed for one to eight runners (M-03a): from a fresh start to the dragon, timed by the game's
+     * ticks, with splits at vanilla's own advancements. Every runner starts with nothing: an empty inventory and none
+     * of the splits' advancements, the same rule for humans and AIs. An AI runner is entered by its administrator and
+     * needs the server's leave for AI world edits and the dragon fight; a human joins for itself.
+     */
+    int proposeSpeedrun(ServerCommandSource source, List<UUID> runners) {
+        requireThread();
+        for (UUID runner : runners) {
+            Entry entry = entryForPlayer(runner);
+            var player = server.getPlayerManager().getPlayer(runner);
+            if (player == null) return reject(source, "No such player online.");
+            if (entry != null) {
+                if (!nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an AI runner needs them (/aiplayer edits on).");
+                if (!dragonFight) return reject(source, "The dragon fight is off on this server; an AI runner needs it (/aiplayer dragonfight on).");
+            }
+            if (!player.getInventory().isEmpty()) return reject(source, playerName(runner) + " is not at a fresh start: it carries items.");
+            for (var split : dev.kindred.core.match.SpeedrunSplits.ANY_PERCENT) {
+                if (reached(player, split)) return reject(source, playerName(runner) + " is not at a fresh start: it has already reached " + split.label() + ".");
+            }
+        }
+        var result = matches.propose(dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN, runners);
+        if (!result.accepted()) return reject(source, result.reason());
+        var match = enter(result.match().orElseThrow());
+        feedback(source, "Speedrun " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
+                + "; " + match.joined().size() + " of " + match.invited().size() + " joined.");
+        return 1;
+    }
+
+    /** Whether vanilla has given {@code player} the split's advancement. */
+    private boolean reached(ServerPlayerEntity player, dev.kindred.core.match.SpeedrunSplits.Split split) {
+        var advancement = server.getAdvancementLoader().get(net.minecraft.util.Identifier.of(split.advancement()));
+        return advancement != null && player.getAdvancementTracker().getProgress(advancement).isDone();
+    }
+
+    /** A race begins: each AI runner set to the dragon goal at speedrun pace, its own pace kept to give back. */
+    private void startRace(dev.kindred.core.match.MatchRegistry.Match match) {
+        races.put(match.id(), new dev.kindred.core.match.SpeedrunSplits(server.getTicks()));
+        for (UUID runner : match.joined()) {
+            Entry entry = entryForPlayer(runner);
+            if (entry == null) continue;
+            racePace.put(entry.data.id(), entry.runtimeSettings.playstyleProfile());
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.SPEEDRUN_ANY_PERCENT);
+            beginGoal(entry, dev.kindred.core.survival.SurvivalGoal.DRAGON);
+            if (entry.snapshot().stopLatched()) nativeLifecycle(server.getCommandSource(), "resume", entry.data.id());
+        }
+    }
+
+    /** An AI runner out of its race (it ended, or the runner dropped out): the race's goal ends and its own pace is back. */
+    private void leaveRace(dev.kindred.core.match.MatchRegistry.Match match) {
+        for (UUID runner : match.joined()) {
+            if (match.state() != dev.kindred.core.match.MatchRegistry.State.ENDED && match.playing(runner)) continue;
+            Entry entry = entryForPlayer(runner);
+            if (entry == null) continue;
+            var pace = racePace.remove(entry.data.id());
+            if (pace == null) continue;
+            if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
+                entry.goal = dev.kindred.core.survival.SurvivalGoal.NONE;
+                entry.goalProgress = "";
+                if (entry.nativeBody != null) entry.nativeBody.setPortalTravelAuthorized(false);
+                entry.cachedRoutineCandidates = List.of();
+                entry.routineRefreshPending = true;
+            }
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(pace);
+        }
+    }
+
+    /** Once a second: each running race's runners checked for the splits vanilla has given them since. */
+    private void pollRaces() {
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING) continue;
+            var splits = races.get(match.id());
+            if (splits == null) continue;
+            for (UUID runner : match.joined()) {
+                if (!match.playing(runner)) continue;
+                var player = server.getPlayerManager().getPlayer(runner);
+                if (player == null) continue;
+                for (var split : dev.kindred.core.match.SpeedrunSplits.ANY_PERCENT) {
+                    if (!reached(player, split)) continue;
+                    var reached = splits.reach(runner, split, server.getTicks()).orElse(null);
+                    if (reached == null) continue;
+                    presenter.split(match, reached, this::playerName);
+                    KindredMod.LOGGER.info("Speedrun {}: {} {} at {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(runner),
+                            split.label(), dev.kindred.core.match.SpeedrunSplits.time(reached.ticks()));
+                    if (reached.finish()) {
+                        matches.finished(runner).ifPresent(this::announce);
+                        return;
+                    }
                 }
             }
         }
-        feedback(source, "Duel " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + match.invited().stream().map(this::playerName)
-                .collect(java.util.stream.Collectors.joining(" against ")) + "; " + match.joined().size() + " of 2 joined.");
-        return 1;
+    }
+
+    /** How far the leading runner of a race is, as a share of the splits; a whole bar for anything else. */
+    private float raceProgress(UUID matchId) {
+        var splits = races.get(matchId);
+        var match = matches.get(matchId).orElse(null);
+        if (splits == null || match == null) return 1f;
+        int most = 0;
+        for (UUID runner : match.joined()) most = Math.max(most, splits.of(runner).size());
+        return most / (float) dev.kindred.core.match.SpeedrunSplits.ANY_PERCENT.size();
+    }
+
+    /** A race's splits as reached so far, for a fixture or a status line. */
+    List<dev.kindred.core.match.SpeedrunSplits.Reached> raceSplits(UUID matchId, UUID runner) {
+        requireThread();
+        var splits = races.get(matchId);
+        return splits == null ? List.of() : splits.of(runner);
     }
 
     /** The player running the command joins a match it was invited to. Only a player can join, and only for itself. */
@@ -5856,7 +6005,7 @@ final class PlayerRuntime {
         if (!(source.getEntity() instanceof ServerPlayerEntity player)) return reject(source, "Only a player can join a match, for itself.");
         var result = matches.join(matchId, player.getUuid());
         if (!result.accepted()) return reject(source, result.reason());
-        feedback(source, "Joined the duel.");
+        feedback(source, "Joined the " + result.match().orElseThrow().mode().label().toLowerCase(java.util.Locale.ROOT) + ".");
         return 1;
     }
 
@@ -5867,7 +6016,7 @@ final class PlayerRuntime {
         if (match == null) return reject(source, "No such match.");
         boolean participant = source.getEntity() instanceof ServerPlayerEntity player && match.participant(player.getUuid());
         if (!participant && !source.hasPermissionLevel(2)) return reject(source, "Only an operator or a player in the match can start it.");
-        if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
+        if (match.mode().pvp && !server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
         var result = matches.start(matchId, server.getTicks());
         if (!result.accepted()) return reject(source, result.reason());
         announce(result.match().orElseThrow());
@@ -5908,6 +6057,11 @@ final class PlayerRuntime {
     java.util.Optional<dev.kindred.core.match.MatchRegistry.Match> findMatch(String raw) {
         requireThread();
         return matches.find(raw);
+    }
+
+    MatchPresenter presenter() {
+        requireThread();
+        return presenter;
     }
 
     List<dev.kindred.core.match.MatchRegistry.Match> matches() {
@@ -6603,6 +6757,14 @@ final class PlayerRuntime {
         if (goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && !dragonFight) {
             return reject(source, "The dragon fight is off on this server; an operator must turn it on first (/aiplayer dragonfight on).");
         }
+        beginGoal(entry, goal);
+        if (entry.snapshot().stopLatched()) return nativeLifecycle(source, "resume", id);
+        feedback(source, entry.data.displayName() + ": " + goal.label() + ".");
+        return 1;
+    }
+
+    /** The goal set and work toward it begun at once, whoever asked: a command, or a race starting (M-03a). */
+    private void beginGoal(Entry entry, dev.kindred.core.survival.SurvivalGoal goal) {
         entry.goal = goal;
         // Portal travel is the goal's to allow, a step at a time (campaignCandidates); a new goal starts without it.
         if (entry.nativeBody != null) entry.nativeBody.setPortalTravelAuthorized(false);
@@ -6613,9 +6775,6 @@ final class PlayerRuntime {
         entry.manualHoldUntilTick = Long.MIN_VALUE;
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
-        if (entry.snapshot().stopLatched()) return nativeLifecycle(source, "resume", id);
-        feedback(source, entry.data.displayName() + ": " + goal.label() + ".");
-        return 1;
     }
 
     /** Hand a strategist's advice to a native player's running goal, as the strategist bridge does with a reply (F-19b). */
