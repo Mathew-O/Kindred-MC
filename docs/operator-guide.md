@@ -18,6 +18,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer dragonfight on|off         server-wide leave for AI players to go into the End and fight the dragon (default off)
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
+/aiplayer build cabin|house|manor <x y z> [turns] [bot]  build a stage of a base there, of oak and cobblestone
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
 /aiplayer build list                 the generators and schematics on offer
@@ -124,12 +125,12 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 
 Give a native player its storage with `/aiplayer storage at <x y z> [player]`, looking at a chest in its world. Only its administrator may assign storage. The storage is saved with the player's setup, and the player stops until you resume it. Every take is recorded, and checked against the server's edit policy just before the items move. A player with no work area uses no other container, apart from its own crafting and smelting.
 
-**Bases (M-01b; in development).** The build planner has three stages of a base, each a functional build, though none can yet be asked for by command or built in game:
+**Bases (M-01b; in development).** A base comes in three stages, each a functional build of oak and cobblestone. `/aiplayer build cabin|house|manor <x y z> [quarter turns] [player]` builds one with its north-west floor corner at that spot. Whatever the player is short of goes through the needs queue above. All three have been built by AI players in testing:
 - **A cabin** (7×7, 222 blocks): a bed, a table, a furnace and two chests.
 - **A two-floor house** (9×11, 553 blocks): a storage wall, a workshop, and a staircase up to a bedroom.
 - **A manor** (13×15, 972 blocks): a storage hall, a workshop, an enchanting room ringed by bookshelves, bedrooms and a library.
 
-Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them.
+Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them. When to move a base on a stage is decided (a cabin once it has stone tools; a house with iron tools once the chests fill or three days pass; a manor once it can make an enchanting table), but nothing acts on it yet: the player does not yet choose a stage or a site for itself.
 
 **Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
 

@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor");
 
     private Generators() { }
 
@@ -186,7 +186,11 @@ public final class Generators {
             case "pyramid" -> pyramid(sizes.size() > 0 ? sizes.get(0) : 9, "minecraft:sandstone");
             case "lighthouse" -> lighthouse(sizes.size() > 0 ? sizes.get(0) : 10, "minecraft:white_concrete", "minecraft:red_concrete");
             case "pen" -> pen(sizes.size() > 0 ? sizes.get(0) : 7, sizes.size() > 1 ? sizes.get(1) : 7, "oak");
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen");
+            // The three stages of a base (M-01b), of oak and cobblestone.
+            case "cabin" -> Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+            case "house" -> Houses.of(Houses.Stage.HOUSE, "oak", "cobblestone");
+            case "manor" -> Houses.of(Houses.Stage.MANOR, "oak", "cobblestone");
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor");
         };
     }
 }

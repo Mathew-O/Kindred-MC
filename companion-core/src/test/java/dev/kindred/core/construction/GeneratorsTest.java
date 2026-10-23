@@ -31,6 +31,7 @@ class GeneratorsTest {
         assertThrows(IllegalArgumentException.class, () -> Generators.hut(2, 5, 3));
         assertThrows(IllegalArgumentException.class, () -> Generators.named("castle", List.of()));
         assertEquals(Generators.hut(7, 5, 3), Generators.named("hut", List.of(7, 5, 3)));
+        assertEquals(Houses.of(Houses.Stage.MANOR, "oak", "cobblestone"), Generators.named("manor", List.of()));
     }
 
     /**

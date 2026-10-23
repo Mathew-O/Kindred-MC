@@ -60,7 +60,8 @@ public final class PlayerCommands {
                             if (id == null) return 0;
                             return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
                         }))));
-        // A build (E-08b, M-05): /aiplayer build hut|hut-7x5x3|<schematic> <x y z> [quarter turns] [player]; build stop [player];
+        // A build (E-08b, M-05, M-01b): /aiplayer build hut|hut-7x5x3|cabin|house|manor|<schematic> <x y z> [quarter turns] [player];
+        // build stop [player];
         // build list.
         root.then(CommandManager.literal("build")
                 .then(CommandManager.literal("list").executes(context -> {
@@ -71,7 +72,7 @@ public final class PlayerCommands {
                         .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
                                 .executes(context -> build(context, false, false, true))))
                 .then(CommandManager.argument("blueprint", StringArgumentType.word())
-                        .suggests((context, builder) -> { builder.suggest("hut"); builder.suggest("hut-7x5x3"); return builder.buildFuture(); })
+                        .suggests((context, builder) -> { for (String s : new String[] {"hut", "hut-7x5x3", "cabin", "house", "manor"}) builder.suggest(s); return builder.buildFuture(); })
                         .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
                                 .executes(context -> build(context, true, false, false))
                                 .then(CommandManager.argument("turns", IntegerArgumentType.integer(0, 3))

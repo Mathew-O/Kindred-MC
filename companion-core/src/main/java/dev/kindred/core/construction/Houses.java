@@ -81,8 +81,8 @@ public final class Houses {
         b.bed(1, 1, 2, "north");
         b.put(b.width - 2, 1, 1, "minecraft:crafting_table");
         b.put(b.width - 2, 1, 2, "minecraft:furnace[facing=west]");
-        b.put(b.width - 2, 1, 4, "minecraft:chest[facing=west]");
-        b.put(1, 1, 4, "minecraft:chest[facing=east]");
+        b.put(b.width - 2, 1, 4, "minecraft:chest[facing=west,type=single]");
+        b.put(1, 1, 4, "minecraft:chest[facing=east,type=single]");
         b.put(b.width / 2, 2, 1, "minecraft:wall_torch[facing=south]");
         b.clearInside(1, 3);
     }
@@ -109,7 +109,7 @@ public final class Houses {
         int sx = b.width - 2;
         b.stairs(sx, 1, 6, "north", 4);
         // Below: a storage wall of chests along the west wall, one apart so none join into a double chest, and the workshop.
-        for (int z = 1; z < b.depth - 2; z += 2) b.put(1, 1, z, "minecraft:chest[facing=east]");
+        for (int z = 1; z < b.depth - 2; z += 2) b.put(1, 1, z, "minecraft:chest[facing=east,type=single]");
         b.put(sx - 1, 1, 1, "minecraft:crafting_table");
         b.put(sx - 2, 1, 1, "minecraft:furnace[facing=south]");
         b.put(sx - 3, 1, 1, "minecraft:furnace[facing=south]");
@@ -118,7 +118,7 @@ public final class Houses {
         // Above: the bedroom.
         b.bed(1, 6, 2, "north");
         b.bed(3, 6, 2, "north");
-        b.put(1, 6, b.depth - 3, "minecraft:chest[facing=east]");
+        b.put(1, 6, b.depth - 3, "minecraft:chest[facing=east,type=single]");
         b.put(b.width / 2, 7, 1, "minecraft:wall_torch[facing=south]");
         b.clearInside(1, 4);
         b.clearInside(6, 8);
@@ -144,7 +144,7 @@ public final class Houses {
         int sx = b.width - 2;
         b.stairs(sx, 1, 6, "north", 4);
         // The storage hall along the west wall.
-        for (int z = 1; z < b.depth - 1; z += 2) b.put(1, 1, z, "minecraft:chest[facing=east]");
+        for (int z = 1; z < b.depth - 1; z += 2) b.put(1, 1, z, "minecraft:chest[facing=east,type=single]");
         // The workshop by the stairs.
         b.put(sx - 1, 1, 8, "minecraft:crafting_table");
         b.put(sx - 1, 1, 9, "minecraft:furnace[facing=west]");

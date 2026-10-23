@@ -3771,7 +3771,7 @@ final class PlayerRuntime {
     int listBlueprints(ServerCommandSource source) {
         requireThread();
         schematics.names().whenComplete((names, failure) -> server.execute(() -> feedback(source,
-                "Generators: hut (hut-<width>x<depth>x<walls>), tower (tower-<width>x<height>), pyramid (pyramid-<base>), lighthouse (lighthouse-<height>), pen (pen-<width>x<depth>). Schematics in " + schematics.directory() + ": "
+                "Generators: hut (hut-<width>x<depth>x<walls>), tower (tower-<width>x<height>), pyramid (pyramid-<base>), lighthouse (lighthouse-<height>), pen (pen-<width>x<depth>), and a base's three stages: cabin, house, manor. Schematics in " + schematics.directory() + ": "
                         + (names == null || names.isEmpty() ? "none" : String.join(", ", names)))));
         return 1;
     }

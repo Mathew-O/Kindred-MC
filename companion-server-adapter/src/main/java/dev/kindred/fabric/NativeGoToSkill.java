@@ -158,11 +158,13 @@ final class NativeGoToSkill implements SkillBody {
         }
         if (goalReached(feet) && (!centre || reached(player.getPos(), target)) && (player.isOnGround() || player.isTouchingWater())) {
             body.stopInputs();
+            shutOnArrival(player);
             return Step.completed(Map.of("arrived", feet.toShortString()));
         }
         if (start == null) start = player.getPos();
         if (leg > 0 && player.isOnGround() && Math.hypot(player.getX() - start.x, player.getZ() - start.z) >= leg) {
             body.stopInputs();
+            shutOnArrival(player);
             return Step.completed(Map.of("leg", feet.toShortString()));
         }
         if (path == null || fresh) {
@@ -187,9 +189,15 @@ final class NativeGoToSkill implements SkillBody {
         BlockPos next = path.get(index);
         if (index == path.size() - 1 && reached(pos, next)) {
             body.stopInputs();
-            if (pathComplete) return Step.completed(Map.of("arrived", feet.toShortString()));
+            if (pathComplete) {
+                shutOnArrival(player);
+                return Step.completed(Map.of("arrived", feet.toShortString()));
+            }
             // The partial route ends here; another plan from this vantage may see farther.
-            if (!replan()) return Step.completed(Map.of("closest", feet.toShortString(), "partial", "true"));
+            if (!replan()) {
+                shutOnArrival(player);
+                return Step.completed(Map.of("closest", feet.toShortString(), "partial", "true"));
+            }
             next = path.get(index);
         }
         double horizontal = Math.hypot(next.getX() + 0.5 - pos.x, next.getZ() + 0.5 - pos.z);
@@ -252,6 +260,16 @@ final class NativeGoToSkill implements SkillBody {
 
     /** A door it opened on the way, to shut once through. */
     private BlockPos opened;
+
+    /** A door it opened, shut as it arrives just past it when it is out of the doorway and in reach, not left open. */
+    private void shutOnArrival(net.minecraft.server.network.ServerPlayerEntity player) {
+        if (opened == null) return;
+        BlockPos shut = opened;
+        opened = null;
+        BlockPos feet = player.getBlockPos();
+        if (!feet.equals(shut) && !feet.equals(shut.down()) && !feet.equals(shut.up()) && openDoor(shut)
+                && player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(shut)) <= 4.4 * 4.4) body.useDoor(lease.get(), shut);
+    }
 
     private boolean closedDoor(BlockPos at) {
         var state = body.entity().getServerWorld().getBlockState(at);

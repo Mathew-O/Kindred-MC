@@ -381,6 +381,9 @@ final class BuildRunner {
         }
         if (breaking) {
             if (completed) scaffold.remove(at);
+            // A block in the build's place that may not be broken (a container placed in another state) is left as it is,
+            // rather than refused again between every placement.
+            else if (refused.merge(at, 1, Integer::sum) >= 3) givenUp.add(at);
             return;
         }
         // A block whose placement is refused again and again (the server's policy, another's claim) is left.

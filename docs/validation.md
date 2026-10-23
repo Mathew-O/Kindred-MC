@@ -4,6 +4,18 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-01b (bases in three stages): all three built in game, on top of `5ff7e99`.
+  - New JUnit: `BaseProgressionTest` (3); `GeneratorsTest` checks the stages by name.
+  - New native fixtures:
+    - `anAiPlayerBuildsACabinWithItsFurnitureThenWalksInThroughItsDoor`: Mason builds the cabin from its bill, all 222 blocks exact. These include the door, the bed, the table, the furnace, two chests and a torch. Then, from outside, it walks in, opening the door ahead of it and shutting it behind.
+    - `anAiPlayerBuildsATwoFloorHouseThenWalksUpItsStairsToTheBedroom`: Mason builds the house, all 553 blocks exact. Then it walks in through the door, which it shuts behind, and up its staircase to the bedroom.
+    - `anAiPlayerBuildsAManorWithItsEnchantingRoomThenWalksUpstairs`: Mason builds the manor, all 972 blocks exact, its enchanting table drawing on fifteen bookshelves as vanilla counts them. Then it walks in and up to the floor above.
+  - Three hand controls on the cabin and house fixtures, as in [M-01b](evidence/M-01b.md).
+  - Found on the way:
+    - A chest is saved with `type=single`, which the blueprint did not say, so the planner tried 782 times to break a chest it had placed right; the stages now state the chest's whole state, and a refused break is given up after three tries.
+    - A walk that ended just past a door left it open; it is now shut on arrival.
+  - `runGametest` passed 299/299 twice. `./gradlew build` passed: 535 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `cc46e4cc74a77ca0f4ca3614b78524c712bc0ec882674a97f005476d96a765ed`.
 - E-08c (a build's needs as a queue) and M-01b's groundwork (bases in three stages), on top of `7423174`.
   - New JUnit: `BuildNeedsTest` (4), `eachStageOfABaseIsFunctionalAndBuiltWhole`, `aDoorAndABedArePlacedByTheirFirstHalfTheRestComingWithIt`; `ConstructionPlannerTest` and `PlacementTest` now use a trapdoor and a sign as the blocks with nothing to be set against.
   - New native fixture: `aBuilderShortOfBlocksBuildsWhatItCanThenFetchesTheRestInOneTrip`. Mason holds about two thirds of a 5×5 hut's 112 blocks. Its own storage, twelve blocks off, holds the torch and 20 cobblestone; it takes them before placing anything. It places all 79 blocks it then holds, then sets out once: 17 logs cut from three trees, planks, slabs and stairs crafted at its table. It finishes the hut, every block in its exact state.
