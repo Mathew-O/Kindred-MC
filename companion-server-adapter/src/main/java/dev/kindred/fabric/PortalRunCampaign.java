@@ -377,6 +377,9 @@ final class PortalRunCampaign {
 
     long lastTick() { return lastTick; }
 
+    /** The server's edit policy for work outside the goal's own passes, as a build's needs (E-08c). */
+    void policy(EditPolicy.ServerPolicy policy) { this.policy = policy; }
+
     /** Bounded perception each tick; cheap enough to run while other work proceeds. */
     void observe(ServerPlayerEntity player) {
         knowledge.scan(player);
@@ -1792,6 +1795,11 @@ final class PortalRunCampaign {
         if (!groundBelow(player)) return explore(player, what);
         if (underground(player)) return tunnel(body, "Tunnel for " + what).or(() -> explore(body, what));
         return explore(body, what).or(() -> tunnel(body, "Tunnel for " + what));
+    }
+
+    /** A walk out over the surface to look for {@code what}, as the goal looks for a tree it has not seen (E-08c). */
+    Optional<Task> lookFor(NativePlayerBody body, String what) {
+        return groundBelow(body.entity()) && !underground(body.entity()) ? explore(body.entity(), what) : Optional.empty();
     }
 
     /**

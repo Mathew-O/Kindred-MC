@@ -1,6 +1,7 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.construction.BlockSpec;
+import dev.kindred.core.construction.BuildNeeds;
 import dev.kindred.core.construction.Blueprint;
 import dev.kindred.core.construction.BuildSite;
 import dev.kindred.core.construction.ConstructionPlanner;
@@ -93,8 +94,50 @@ final class BuildRunner {
     }
     boolean done() { return done; }
 
+    /**
+     * What a build's needs draw on (E-08c): the run's own gathering and crafting, and the player's own assigned
+     * storage, if it has one (null otherwise).
+     */
+    record Supply(PortalRunCampaign campaign, BlockPos storage) { }
+
+    /** How far its own storage may be for stepping over to it to count as easy. */
+    private static final int STORAGE_NEAR = 24;
+
+    private final BuildNeeds needs = new BuildNeeds();
+    private PortalRunCampaign.Task needsTask;
+    private String needsNote = "";
+    /** What it cannot get for the rest of the build, once nothing it can do gets it; null while it still can. */
+    private String wanting;
+    /** Its own build's cells, never a source of blocks for it. */
+    private Set<Pos> own;
+    /** Walks out to look for what the trip still wants and has not seen; at most {@link #LOOKS} a trip. */
+    private int looks;
+    private static final int LOOKS = 4;
+
+    /** Whether {@code task} was one the build's needs gave (taken, crafted or gathered), not a placement. */
+    boolean needsTask(PortalRunCampaign.Task task) {
+        return task != null && task.equals(needsTask);
+    }
+
+    /** What the build's needs are about, for its progress line. */
+    String needsNote() { return needsNote; }
+
+    private int trips;
+
+    /** How many trips it has set out on for the build's shortfall. */
+    int trips() { return trips; }
+
     /** The next task, or empty when the build is done. */
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body) {
+        return next(body, null);
+    }
+
+    /**
+     * The next task, or empty when the build is done. With a {@code supply}, a build short of blocks builds what it can
+     * with what it holds, then fetches the whole shortfall in one trip (its own storage, then what it gathers and
+     * crafts), taking at once what its storage close by holds and making at once what it can from what it carries.
+     */
+    Optional<PortalRunCampaign.Task> next(NativePlayerBody body, Supply supply) {
         if (done) return Optional.empty();
         if (failures >= STUCK) {
             done = true;
@@ -125,6 +168,23 @@ final class BuildRunner {
             if (feet.y() >= columnTop || !(feet.x() == column.x() && feet.z() == column.z())) column = null;
         }
         var step = ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
+        if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
+            var fetch = fetch(body, supply, wanted, site, step);
+            if (fetch.isPresent()) {
+                needsTask = fetch.get();
+                var tally = ConstructionPlanner.progress(blocks, clear, site);
+                progress = blueprint.name() + ": " + tally.placed() + "/" + tally.total() + " placed - " + needsNote;
+                return fetch;
+            }
+            // Built all it can, and nothing it can do gets the rest: it ends there and says what the build still wants,
+            // rather than wait on blocks that will not come.
+            if (wanting != null && step.kind() == ConstructionPlanner.Kind.BLOCKED) {
+                done = true;
+                var tally = ConstructionPlanner.progress(blocks, clear, site);
+                progress = blueprint.name() + ": built but for " + wanting + ", " + tally.placed() + "/" + tally.total() + " blocks";
+                return Optional.empty();
+            }
+        }
         if (step.kind() == ConstructionPlanner.Kind.PLACE || step.kind() == ConstructionPlanner.Kind.BREAK
                 || step.kind() == ConstructionPlanner.Kind.SUPPORT) issuedFrom = step.stance();
         var tally = ConstructionPlanner.progress(blocks, clear, site);
@@ -190,11 +250,114 @@ final class BuildRunner {
         };
     }
 
+    /** The build's needs this pass, as a task, or empty to go on building. */
+    private Optional<PortalRunCampaign.Task> fetch(NativePlayerBody body, Supply supply, List<Blueprint.Block> wanted, BuildSite site,
+                                                   ConstructionPlanner.Step step) {
+        var player = body.entity();
+        var held = counts(player);
+        var bill = dev.kindred.core.construction.BillOfMaterials.of(wanted, site, held);
+        wanting = null;
+        if (bill.missing().isEmpty()) {
+            needsNote = "";
+            return Optional.empty();
+        }
+        String missing = bill.missing().entrySet().stream().map(e -> e.getValue() + " " + shortName(e.getKey()))
+                .collect(java.util.stream.Collectors.joining(", "));
+        boolean placeable = step.kind() == ConstructionPlanner.Kind.PLACE || step.kind() == ConstructionPlanner.Kind.SUPPORT
+                || step.kind() == ConstructionPlanner.Kind.BREAK || step.kind() == ConstructionPlanner.Kind.SCAFFOLD;
+        Map<String, Integer> stored = Map.of();
+        boolean near = false;
+        if (supply.storage() != null && player.getServerWorld().isChunkLoaded(supply.storage())
+                && player.getServerWorld().getBlockEntity(supply.storage()) instanceof Inventory chest
+                && player.getBlockPos().getSquaredDistance(supply.storage()) <= 64 * 64) {
+            stored = contents(chest);
+            near = player.getBlockPos().getSquaredDistance(supply.storage()) <= STORAGE_NEAR * STORAGE_NEAR;
+        }
+        boolean pickaxe = false;
+        for (int s = 0; s < 36; s++) if (player.getInventory().getStack(s).isIn(net.minecraft.registry.tag.ItemTags.PICKAXES)) pickaxe = true;
+        boolean wasOnTrip = needs.onTrip();
+        var next = needs.next(bill.needed(), held, placeable, stored, near, wood(), pickaxe);
+        if (!wasOnTrip && needs.onTrip()) {
+            trips++;
+            looks = 0;
+            KindredMod.LOGGER.info("Build {}: out for the rest of the build, trip {}: {}", blueprint.name(), trips, bill.missing());
+        }
+        switch (next) {
+            case BuildNeeds.Step.Build b -> {
+                needsNote = needs.onTrip() ? needsNote : "";
+                return Optional.empty();
+            }
+            case BuildNeeds.Step.Take t -> {
+                var first = t.items().entrySet().iterator().next();
+                needsNote = t.why() + ": " + first.getValue() + " " + shortName(first.getKey());
+                Vec3d centre = Vec3d.ofCenter(supply.storage());
+                if (player.getEyePos().squaredDistanceTo(centre) > 4.2 * 4.2) return Optional.of(near(pos(supply.storage()), "To its storage for " + shortName(first.getKey())));
+                return Optional.of(new PortalRunCampaign.Task("native_take", Map.of("item", first.getKey(), "count", str(first.getValue())),
+                        "Take " + first.getValue() + " " + shortName(first.getKey()) + " from its storage"));
+            }
+            case BuildNeeds.Step.Craft c -> {
+                needsNote = c.why() + ": " + shortName(c.recipe().item());
+                return supply.campaign().craftAtTable(body, Identifier.of(c.recipe().item()).getPath());
+            }
+            case BuildNeeds.Step.Gather g -> {
+                needsNote = g.why() + " (" + g.count() + ")";
+                var kind = g.item().endsWith("_log") ? WorldKnowledge.Kind.LOG : WorldKnowledge.Kind.STONE;
+                if (own == null) {
+                    own = new HashSet<>(clear);
+                    for (var b : blocks) own.add(b.at());
+                }
+                String what = kind == WorldKnowledge.Kind.LOG ? "logs" : "stone";
+                var task = supply.campaign().gather(body, kind, 64, what, p -> !own.contains(pos(p)));
+                // None in sight: out over the ground to look, a few times, before the build ends without them.
+                if (task.isEmpty() && looks < LOOKS) {
+                    task = supply.campaign().lookFor(body, what);
+                    if (task.isPresent()) needsNote = "Looking for " + what + " for the rest of the build";
+                }
+                if (task.isEmpty()) {
+                    needsNote = "No " + shortName(g.item()) + " in sight for the rest of the build";
+                    wanting = missing;
+                }
+                return task;
+            }
+            case BuildNeeds.Step.Short shortOf -> {
+                needsNote = shortOf.why();
+                wanting = missing;
+                return Optional.empty();
+            }
+        }
+    }
+
+    /** The wood the build is mostly made of, for recipes that take any planks; oak if none. */
+    private String wood() {
+        var count = new HashMap<String, Integer>();
+        for (var b : blocks) {
+            String id = b.spec().block().substring(b.spec().block().indexOf(':') + 1);
+            for (String w : BuildNeeds.WOODS) if (id.startsWith(w + "_")) count.merge(w, 1, Integer::sum);
+        }
+        return count.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("oak");
+    }
+
+    private static Map<String, Integer> contents(Inventory chest) {
+        var counts = new HashMap<String, Integer>();
+        for (int slot = 0; slot < chest.size(); slot++) {
+            ItemStack stack = chest.getStack(slot);
+            if (!stack.isEmpty()) counts.merge(Registries.ITEM.getId(stack.getItem()).toString(), stack.getCount(), Integer::sum);
+        }
+        return counts;
+    }
+
     /**
      * A task the runner gave has ended: a placement in the wrong state is counted, and after {@link #TRIES} the block is
      * given up on (the planner breaks it and places it again until then, as anything else in a target's way).
      */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
+        // A step for the build's needs is no placement: the run's own gathering keeps account of those that fail.
+        if (needsTask(task)) {
+            needsTask = null;
+            if ("native_goto".equals(task.skill()) && task.label().startsWith("Explore")) looks++;
+            if (completed) failures = 0;
+            return;
+        }
         if (completed) {
             failures = 0;
         } else if (!"native_wait".equals(task.skill())) {
@@ -352,7 +515,11 @@ final class BuildRunner {
     }
 
     private static String shortName(BlockSpec spec) {
-        return spec.block().substring(spec.block().indexOf(':') + 1).replace('_', ' ');
+        return shortName(spec.block());
+    }
+
+    private static String shortName(String id) {
+        return id.substring(id.indexOf(':') + 1).replace('_', ' ');
     }
 
     /**

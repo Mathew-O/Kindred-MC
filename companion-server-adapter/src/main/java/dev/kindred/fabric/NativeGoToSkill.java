@@ -127,7 +127,7 @@ final class NativeGoToSkill implements SkillBody {
 
     private boolean plan() {
         var player = body.entity();
-        var navigator = new NativeNavigator(player.getServerWorld(), maxDrop);
+        var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
         if (engage != null) navigator.avoiding(dangers());
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
@@ -204,7 +204,7 @@ final class NativeGoToSkill implements SkillBody {
             }
             next = path.get(index);
         }
-        var navigator = new NativeNavigator(player.getServerWorld());
+        var navigator = new NativeNavigator(player.getServerWorld()).throughDoors();
         if (navigator.hazard(next) || navigator.hazard(next.up())) {
             if (!replan()) {
                 body.stopInputs();
@@ -229,12 +229,46 @@ final class NativeGoToSkill implements SkillBody {
                 next = path.get(index);
             }
         }
+        // A closed wooden door on the way is opened as a player opens it, and shut again behind once through (M-01b).
+        BlockPos door = closedDoor(next) ? next : closedDoor(next.up()) ? next.up() : null;
+        if (door != null && player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(door)) <= 4.4 * 4.4) {
+            body.stopInputs();
+            if (!body.useDoor(lease.get(), door)) return Step.blocked("The door at " + door.toShortString() + " would not open", true);
+            opened = door;
+            return Step.running(Map.of("door", door.toShortString()), true);
+        }
+        if (opened != null && behind(player, opened)) {
+            BlockPos shut = opened;
+            opened = null;
+            if (openDoor(shut)) body.useDoor(lease.get(), shut);
+        }
         if (!steer(next, pos)) {
             body.stopInputs();
             return Step.blocked("Movement authority denied", true);
         }
         return Step.running(Map.of("remaining", String.valueOf(Math.round(Math.sqrt(feet.getSquaredDistance(target)))),
                 "waypoint", String.valueOf(index)), true);
+    }
+
+    /** A door it opened on the way, to shut once through. */
+    private BlockPos opened;
+
+    private boolean closedDoor(BlockPos at) {
+        var state = body.entity().getServerWorld().getBlockState(at);
+        return state.getBlock() instanceof net.minecraft.block.DoorBlock door && door.getBlockSetType().canOpenByHand()
+                && !state.get(net.minecraft.block.DoorBlock.OPEN);
+    }
+
+    private boolean openDoor(BlockPos at) {
+        var state = body.entity().getServerWorld().getBlockState(at);
+        return state.getBlock() instanceof net.minecraft.block.DoorBlock && state.get(net.minecraft.block.DoorBlock.OPEN);
+    }
+
+    /** Through the door and clear of it: out of its cell and more than a block and a half off, still in reach to shut it. */
+    private static boolean behind(net.minecraft.server.network.ServerPlayerEntity player, BlockPos door) {
+        BlockPos feet = player.getBlockPos();
+        double off = Math.hypot(player.getX() - (door.getX() + 0.5), player.getZ() - (door.getZ() + 0.5));
+        return !feet.equals(door) && !feet.equals(door.down()) && off > 1.6 && player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(door)) <= 4.4 * 4.4;
     }
 
     /**

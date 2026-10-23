@@ -21,7 +21,7 @@ final class NativeEdits {
         String denial = switch (kind) {
             case BREAK -> RoamingEdits.breakDenial(player, pos, policy);
             case PLACE -> RoamingEdits.placeDenial(player, pos, policy);
-            case CONTAINER -> "Roaming players only use containers through their own crafting and smelting steps";
+            case CONTAINER -> RoamingEdits.storageDenial(player, setup, pos, blockId, policy);
         };
         return denial == null ? new EditPolicy.Decision(EditPolicy.Verdict.ALLOWED, "Roaming survival edit under server policy")
                 : new EditPolicy.Decision(EditPolicy.Verdict.OUTSIDE_AREA, denial);

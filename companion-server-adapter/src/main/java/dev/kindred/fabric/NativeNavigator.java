@@ -86,6 +86,16 @@ final class NativeNavigator {
         this.maxDrop = Math.clamp(maxDrop, MAX_SAFE_DROP, MAX_CLUTCH_DROP);
     }
 
+    /** Whether a closed wooden door counts as a way through: for a walk that opens the doors on its way (M-01b). */
+    private boolean doors;
+
+    NativeNavigator throughDoors() {
+        doors = true;
+        passables.clear();
+        standables.clear();
+        return this;
+    }
+
     /**
      * Searches from {@code start} (feet position) toward {@code target}. A node satisfying {@code goal} ends the
      * search; otherwise the path to the explored node closest to the target is returned as incomplete.
@@ -299,6 +309,7 @@ final class NativeNavigator {
         BlockState state = state(pos);
         if (hazard(state)) return false;
         if (state.getFluidState().isIn(FluidTags.LAVA)) return false;
+        if (doors && state.getBlock() instanceof net.minecraft.block.DoorBlock door && door.getBlockSetType().canOpenByHand()) return true;
         var shape = state.getCollisionShape(world, pos);
         return shape.isEmpty() || shape.getMax(Direction.Axis.Y) <= 0.2;
     }

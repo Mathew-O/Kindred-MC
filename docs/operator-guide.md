@@ -21,6 +21,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
 /aiplayer build list                 the generators and schematics on offer
+/aiplayer storage at <x y z> [bot]   make the container there the player's own storage (stops it until resumed)
 /aiplayer ranch <cow|sheep|pig|chicken> <x y z> [bot]  build a pen there from its own wood, lead a pair in with their food and breed them
 /aiplayer ranch stop [bot]           stop the ranch; what is built stays
 /aiplayer match duel <first> <second>  propose a duel between two players (AI players or humans online)
@@ -104,7 +105,7 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 
 **Breaking a fall (E-07d).** A player falling with a water bucket in its hotbar pours water on the block it is about to land on, once the block is in reach, whenever the fall would take four health or more. It lands unhurt and scoops the water back up. This works everywhere but the Nether, where water boils away. With a bucket ready it will also jump down ledges and drops of up to forty blocks, not twelve. Keep a water bucket in its hotbar where it climbs. Native players take fall damage as any player does, and vanilla spares any player that has just joined for its first three seconds.
 
-**Building (E-08a, E-08b; in development).** `/aiplayer build hut <x y z> [quarter turns] [player]` has a native player build a hut with its north-west floor corner at that spot, turned clockwise a quarter at a time. The hut has a plank floor, cobblestone walls on upright oak logs, a doorway in the south wall, a torch inside on the north wall, and a gabled roof of oak stairs facing in over a plank ceiling. `hut-7x5x3` sets the width, depth and wall height (3 to 15, 2 to 6); the default is 5×5×3, which takes 40 oak planks, 34 cobblestone, 12 oak logs, 20 oak stairs, 5 oak slabs and a torch. The player builds only from blocks it holds and says what it is short of when it starts. It works the way a player does:
+**Building (E-08a, E-08b; in development).** `/aiplayer build hut <x y z> [quarter turns] [player]` has a native player build a hut with its north-west floor corner at that spot, turned clockwise a quarter at a time. The hut has a plank floor, cobblestone walls on upright oak logs, a doorway in the south wall, a torch inside on the north wall, and a gabled roof of oak stairs facing in over a plank ceiling. `hut-7x5x3` sets the width, depth and wall height (3 to 15, 2 to 6); the default is 5×5×3, which takes 40 oak planks, 34 cobblestone, 12 oak logs, 20 oak stairs, 5 oak slabs and a torch. It says what it is short of when it starts. It works the way a player does:
 - It builds layer by layer, the nearest block first, each against a face it can click from where it can stand and walk to.
 - It stands in each block's centre to place it and looks the way that gives the block its state: a stair's facing and half, a log's axis, a slab's half, a torch on its wall. Every block is checked in that state afterwards; one placed wrong is broken and placed again, and after two tries it is left for the operator.
 - What is in the build's way is broken first, but never a container or anything not the build's to break.
@@ -113,6 +114,22 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 - After eight failed steps in a row it stops and says why. `/aiplayer build stop` ends a build; what is built stays.
 
 - A block with nothing to be set against (a log lying along a row with nothing at its ends) gets a prop: a short column of scaffolding beside it, taken down with the rest.
+
+**Short of blocks (E-08c; in development).** A player short of blocks for a build treats its needs as a queue, as the owner set them. It does not stop to fetch each block as it comes up:
+- **Easy, at once.** What its own storage holds, when the storage is within 24 blocks, it takes before it places anything. What it can make from what it carries, with no walk, it makes.
+- **Then it builds.** It places everything it can with what it holds.
+- **One trip for the rest.** Stuck for blocks, it fetches the whole shortfall in one trip: its storage first, then all the logs the rest takes in one go (from trees in sight, never from the build itself, walking out to look when none are in sight), then it crafts what it needs at a table. A table it carries is set down, or it makes one. Then it comes back and finishes.
+- **What it can make.** Every wood's planks, stairs, slabs, fences, gates, doors and trapdoors; sticks, crafting tables, chests, ladders; cobblestone and stone-brick stairs and slabs; glass panes, bookshelves and furnaces.
+- **When it cannot finish.** When nothing it can do gets the rest, it finishes what it can and says what the build still wants, for example `hut 5x5: built but for 8 oak log, 5 oak slab, 20 oak stairs`.
+
+Give a native player its storage with `/aiplayer storage at <x y z> [player]`, looking at a chest in its world. Only its administrator may assign storage. The storage is saved with the player's setup, and the player stops until you resume it. Every take is recorded, and checked against the server's edit policy just before the items move. A player with no work area uses no other container, apart from its own crafting and smelting.
+
+**Bases (M-01b; in development).** The build planner has three stages of a base, each a functional build, though none can yet be asked for by command or built in game:
+- **A cabin** (7×7, 222 blocks): a bed, a table, a furnace and two chests.
+- **A two-floor house** (9×11, 553 blocks): a storage wall, a workshop, and a staircase up to a bedroom.
+- **A manor** (13×15, 972 blocks): a storage hall, a workshop, an enchanting room ringed by bookshelves, bedrooms and a library.
+
+Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them.
 
 **Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
 
@@ -123,9 +140,9 @@ When it reads a schematic it:
 - leaves out blocks a survival player cannot get as an item (bedrock, spawners, end portal frames, command blocks, infested stone, farmland and the like);
 - leaves out blocks or states this version of the game does not know.
 
-It says what it left out. A schematic may be up to 96 blocks a side and 32,768 blocks. Blocks with no placement rule yet (doors, beds, signs, buttons, rails, redstone, plants) are skipped and listed.
+It says what it left out. A schematic may be up to 96 blocks a side and 32,768 blocks. Blocks with no placement rule yet (signs, buttons, rails, redstone, plants) are skipped and listed.
 
-The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. Not yet: a build kept across a restart (the project is held in memory; what is built stays, so the same command picks it up from the world), gathering and crafting what is missing (E-08c), Litematica `.litematic` files. See [the building plan](building-plan.md) and [E-08b](evidence/E-08b.md).
+The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. Not yet: a build kept across a restart (the project is held in memory; what is built stays, so the same command picks it up from the world), stone gathered for a build, smelted blocks such as glass, Litematica `.litematic` files. See [the building plan](building-plan.md), [E-08b](evidence/E-08b.md), [E-08c](evidence/E-08c.md) and [M-01b](evidence/M-01b.md).
 
 **Duels (M-00a; in development).** Players fight one another only inside a match they joined (D7), and only on a server that allows PvP at all (`pvp=true` in `server.properties`; with it off, no duel is proposed or started). `/aiplayer match duel <first> <second>` proposes a duel between two players, AI players or humans online:
 - An AI player is entered by whoever may administer it; proposing needs that access for each AI player in it.

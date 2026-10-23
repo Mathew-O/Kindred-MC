@@ -23,6 +23,7 @@ public record BillOfMaterials(Map<String, Integer> needed, Map<String, Integer> 
         var unsupported = new java.util.TreeSet<String>();
         for (var b : blocks) {
             if (site.cell(b.at()).map(c -> c.state().sameAs(b.spec())).orElse(false)) continue;
+            if (Placement.rule(b.spec()) == Placement.Rule.COMPANION) continue; // Comes with its partner's item.
             if (Placement.rule(b.spec()) == Placement.Rule.UNSUPPORTED) {
                 unsupported.add(b.spec().block());
                 continue;

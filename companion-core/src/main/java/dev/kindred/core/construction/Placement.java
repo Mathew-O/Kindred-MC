@@ -32,7 +32,16 @@ public final class Placement {
         FACING_PLAYER,
         /** Facing the way the player looks: a fence gate. */
         FACING_AWAY,
-        /** Not modelled yet: doors, beds, signs, buttons, rails, redstone, plants and the rest. */
+        /**
+         * A door's lower half: on the top of the block below, facing the way the player looks, the upper half coming
+         * with it into the cell above, which must be clear (M-01b).
+         */
+        DOOR,
+        /** A bed's foot: on the top of the block below, facing the way the player looks, its head coming with it in the cell ahead. */
+        BED,
+        /** Placed with another block, never on its own: a door's upper half, a bed's head. */
+        COMPANION,
+        /** Not modelled yet: trapdoors, signs, buttons, rails, redstone, plants and the rest. */
         UNSUPPORTED
     }
 
@@ -61,6 +70,10 @@ public final class Placement {
         if (id.endsWith("_glazed_terracotta") || FACING_PLAYER.contains(id) && !"left".equals(spec.property("type"))
                 && !"right".equals(spec.property("type"))) return spec.property("facing") == null ? Rule.FULL : Rule.FACING_PLAYER;
         if (id.endsWith("_fence_gate")) return Rule.FACING_AWAY;
+        if (id.endsWith("_door") && !id.endsWith("_trapdoor") && spec.property("facing") != null) {
+            return "upper".equals(spec.property("half")) ? Rule.COMPANION : Rule.DOOR;
+        }
+        if (id.endsWith("_bed") && spec.property("facing") != null) return "head".equals(spec.property("part")) ? Rule.COMPANION : Rule.BED;
         if (spec.property("axis") != null) return Rule.AXIS;
         if (UNSUPPORTED_SUFFIXES.stream().anyMatch(id::endsWith) || UNSUPPORTED.contains(id)) return Rule.UNSUPPORTED;
         // A facing, a half or a hinge we have no rule for: not guessed at.
@@ -88,7 +101,7 @@ public final class Placement {
     public static List<Face> faces(BlockSpec spec) {
         return switch (rule(spec)) {
             case FULL, FACING_PLAYER, FACING_AWAY -> List.of(Face.UP, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST, Face.DOWN);
-            case GRAVITY, ON_TOP -> List.of(Face.UP);
+            case GRAVITY, ON_TOP, DOOR, BED -> List.of(Face.UP);
             case WALL -> {
                 Face facing = face(spec.property("facing"));
                 yield facing == null || !facing.horizontal() ? List.of() : List.of(facing);
@@ -103,7 +116,28 @@ public final class Placement {
                     : List.of(Face.UP, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
             case STAIRS -> "top".equals(spec.property("half")) ? List.of(Face.DOWN, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST)
                     : List.of(Face.UP, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
-            case UNSUPPORTED -> List.of();
+            case UNSUPPORTED, COMPANION -> List.of();
+        };
+    }
+
+    /**
+     * The cell the block placed as {@code spec} at {@code at} also fills: a door's upper half above it, a bed's head
+     * ahead of its foot. Empty for a block of one cell.
+     */
+    public static java.util.Optional<Pos> partner(BlockSpec spec, Pos at) {
+        return switch (rule(spec)) {
+            case DOOR -> java.util.Optional.of(at.up());
+            case BED -> java.util.Optional.ofNullable(face(spec.property("facing"))).map(at::offset);
+            default -> java.util.Optional.empty();
+        };
+    }
+
+    /** The state of what {@link #partner} fills, as vanilla sets it: the same door's upper half, the same bed's head. */
+    public static BlockSpec partnerState(BlockSpec spec) {
+        return switch (rule(spec)) {
+            case DOOR -> spec.with("half", "upper");
+            case BED -> spec.with("part", "head");
+            default -> spec;
         };
     }
 
@@ -123,7 +157,7 @@ public final class Placement {
     public static Face playerFacing(BlockSpec spec) {
         Face facing = face(spec.property("facing"));
         return switch (rule(spec)) {
-            case STAIRS, FACING_AWAY -> facing;
+            case STAIRS, FACING_AWAY, DOOR, BED -> facing;
             case FACING_PLAYER -> facing == null ? null : facing.opposite();
             default -> null;
         };

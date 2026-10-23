@@ -4,6 +4,22 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-08c (a build's needs as a queue) and M-01b's groundwork (bases in three stages), on top of `7423174`.
+  - New JUnit: `BuildNeedsTest` (4), `eachStageOfABaseIsFunctionalAndBuiltWhole`, `aDoorAndABedArePlacedByTheirFirstHalfTheRestComingWithIt`; `ConstructionPlannerTest` and `PlacementTest` now use a trapdoor and a sign as the blocks with nothing to be set against.
+  - New native fixture: `aBuilderShortOfBlocksBuildsWhatItCanThenFetchesTheRestInOneTrip`. Mason holds about two thirds of a 5×5 hut's 112 blocks. Its own storage, twelve blocks off, holds the torch and 20 cobblestone; it takes them before placing anything. It places all 79 blocks it then holds, then sets out once: 17 logs cut from three trees, planks, slabs and stairs crafted at its table. It finishes the hut, every block in its exact state.
+  - Hand controls: four fail as expected (no needs at all, storage not taken at once, no building before the trip, a trip for each item: four trips). The fifth, the build's own blocks counted as a source, does not fail this fixture: its walks to its own corner logs found no route.
+  - Found on the way:
+    - storage could not be assigned to a native player;
+    - a roaming player could use no container at all;
+    - the first gather went for the hut's own corner logs;
+    - no tree was in sight from inside the walls;
+    - looks were counted as planned, not walked;
+    - a build without a goal had edits disabled for its gathering;
+    - back from the trees, the player waited with no target to walk to.
+  - Walks are now door-aware (M-01b): a closed wooden door is passable to the navigator and opened ahead, then shut behind. The full suite runs every walk through this.
+  - A clock-dependent JUnit test, `AttentionWorkSchedulerTest.dirtyEventStormCoalescesAndRetainsDueAge`, failed once in the first build of this change, which ran beside another build. The scheduler reads the clock itself, and on a busy machine its 2 ms soft budget for the tick ran out before the test's loop reached the work it looks for. The test's tick now starts a minute ahead of the clock, since the budget running out is not what it tests.
+  - `runGametest` passed 296/296 twice. `./gradlew build` passed: 532 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `64de215dd9dceb6de6c1b1d1ed5b0d6282e2c5cecdab54242c28c5b704a1bb7b`, from the final build. The two `runGametest` runs were on the same tree before one doc comment in `PlayerRuntime` was moved and the scheduler test changed.
 - M-02b (manhunt roles) and the owner's notes of 2026-10-23 recorded, on top of `bcfca5c`.
   - Native fixtures:
     - `aRunnerKeepsItsDistanceFromAHunterInSightAndFightsOnlyWhenCaught` (new): Rue moves off from Hal, held ten blocks away, rather than cut the tree beside it, and is twenty blocks off within eight seconds; with Hal kept at its heels, Rue turns and strikes it.

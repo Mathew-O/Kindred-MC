@@ -18,12 +18,13 @@ public record BlockSpec(String block, Map<String, String> properties) {
 
     /**
      * Properties that follow from a block's neighbours or from play, not from how it was placed: a fence's or a pane's
-     * connections, a stair's corner shape, grass under snow, leaves' distance, a furnace alight, water in a block.
+     * connections, a stair's corner shape, grass under snow, leaves' distance, a furnace alight, water in a block, the
+     * side a door hangs on (vanilla hangs it by its neighbours).
      * Two states that differ only in these are the same block placed the same way.
      */
     public static final Set<String> DERIVED = Set.of("north", "south", "east", "west", "up", "shape", "waterlogged", "snowy",
             "distance", "persistent", "power", "powered", "lit", "open", "occupied", "attached", "disarmed", "in_wall",
-            "triggered", "has_book", "bottom", "age", "stage", "moisture", "level", "note", "instrument", "signal_fire");
+            "triggered", "has_book", "bottom", "age", "stage", "moisture", "level", "note", "instrument", "signal_fire", "hinge");
 
     public BlockSpec {
         block = Objects.requireNonNull(block).toLowerCase(Locale.ROOT);

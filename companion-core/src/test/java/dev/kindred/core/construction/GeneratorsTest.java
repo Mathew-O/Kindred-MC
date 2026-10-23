@@ -78,4 +78,33 @@ class GeneratorsTest {
         assertThrows(IllegalArgumentException.class, () -> Generators.pen(6, 7, "oak"), "an odd width");
         assertThrows(IllegalArgumentException.class, () -> Generators.pen(7, 7, "oak]"), "a wood by name");
     }
+
+    @Test
+    void eachStageOfABaseIsFunctionalAndBuiltWhole() {
+        var held = new java.util.HashSet<>(Set.of("minecraft:oak_planks", "minecraft:oak_log", "minecraft:cobblestone", "minecraft:oak_stairs",
+                "minecraft:oak_slab", "minecraft:oak_door", "minecraft:red_bed", "minecraft:chest", "minecraft:furnace", "minecraft:crafting_table",
+                "minecraft:torch", "minecraft:bookshelf", "minecraft:enchanting_table", "minecraft:dirt"));
+        var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+        assertEquals(java.util.Map.of("door", 1, "bed", 1, "minecraft:crafting_table", 1, "minecraft:furnace", 1, "minecraft:chest", 2),
+                Houses.functions(cabin), "a bed, a table, a furnace and two chests behind a door");
+        var house = Houses.of(Houses.Stage.HOUSE, "oak", "cobblestone");
+        var functions = Houses.functions(house);
+        assertEquals(2, functions.get("bed"));
+        assertEquals(5, functions.get("minecraft:chest"));
+        assertEquals(2, functions.get("minecraft:furnace"));
+        assertTrue(house.blocks().stream().anyMatch(b -> b.at().y() >= 6 && b.spec().block().endsWith("_bed")), "the bedroom upstairs");
+        var manor = Houses.of(Houses.Stage.MANOR, "spruce", "stone_bricks");
+        assertEquals(1, Houses.functions(manor).get("minecraft:enchanting_table"));
+        assertTrue(Houses.functions(manor).get("minecraft:bookshelf") >= 15, "fifteen shelves round the table, more in the library");
+        assertTrue(manor.blocks().size() > house.blocks().size() && house.blocks().size() > cabin.blocks().size(), "each stage bigger than the last");
+        for (var base : java.util.List.of(cabin, house)) {
+            var origin = new Pos(-3, 1, -3);
+            BuildSimulation.build(base.placed(origin, 0), base.placedClear(origin, 0), BuildTestSites.flat(), new Pos(-8, 1, 0), held, base.name());
+        }
+        var spruce = new java.util.HashSet<>(held);
+        for (String part : java.util.List.of("planks", "log", "stairs", "slab", "door")) spruce.add("minecraft:spruce_" + part);
+        spruce.add("minecraft:stone_bricks");
+        var origin = new Pos(-3, 1, -3);
+        BuildSimulation.build(manor.placed(origin, 0), manor.placedClear(origin, 0), BuildTestSites.flat(), new Pos(-8, 1, 0), spruce, manor.name());
+    }
 }

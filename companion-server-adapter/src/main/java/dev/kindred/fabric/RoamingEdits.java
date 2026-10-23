@@ -1,6 +1,7 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.EditPolicy;
+import dev.kindred.core.WorkSetup;
 import net.minecraft.block.AbstractFurnaceBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -110,6 +111,22 @@ final class RoamingEdits {
         if (common != null) return common;
         var state = player.getServerWorld().getBlockState(pos);
         if (!state.isReplaceable()) return "The destination is occupied";
+        return null;
+    }
+
+    /**
+     * A roaming player uses one container outside its own crafting and smelting steps: the storage an operator assigned
+     * it (E-08c), while that block is still the one assigned.
+     */
+    static String storageDenial(ServerPlayerEntity player, WorkSetup setup, BlockPos pos, String blockId, EditPolicy.ServerPolicy policy) {
+        String common = common(player, pos, policy);
+        if (common != null) return common;
+        var storage = setup == null ? null : setup.storage();
+        if (storage == null || !storage.position().equals(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))
+                || !setup.dimension().equals(player.getServerWorld().getRegistryKey().getValue().toString())) {
+            return "Roaming players only use their assigned storage and their own crafting and smelting steps";
+        }
+        if (blockId != null && !blockId.equals(storage.blockId())) return "The assigned container's block identity changed; reassign storage";
         return null;
     }
 

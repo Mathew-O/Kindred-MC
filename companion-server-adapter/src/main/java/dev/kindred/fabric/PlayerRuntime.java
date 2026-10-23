@@ -926,6 +926,54 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * Assigns the container at {@code pos} as a native player's own storage (E-08c), saved with its work setup as a
+     * patch is: the container verified now and again before every take, the player stopped until resumed.
+     */
+    int nativeStorage(ServerCommandSource source, UUID id, BlockPos pos) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (entry.metadataFault || entry.reconciliationBlocked || entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED
+                || entry.nativeSetupPending || !entry.setupWrite.isDone() || entry.setupWrite.isCompletedExceptionally()) {
+            return reject(source, "Reconcile native state and finish pending setup writes first.");
+        }
+        var world = source.getWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(entry.data.dimension())) return reject(source, "Storage must be in the native player's dimension.");
+        StorageTargets.Observation observed = StorageTargets.observe(world, pos);
+        if (observed == null || !observed.container()) return reject(source, "That block is not a container.");
+        WorkSetup previous = entry.setup;
+        WorkSetup changed = previous.withStorage(new WorkSetup.StorageTarget(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()),
+                observed.blockId(), observed.version()));
+        halt(entry, Actor.console(), "Storage changed; stopped until explicit resume.");
+        entry.nativeSetupPending = true;
+        entry.setup = changed; // Apply changed authority immediately; stop stays latched throughout IO.
+        entry.setupWrite = store.saveWorkSetup(changed, previous.revision()).thenApply(saved -> {
+            if (!changed.equals(saved)) throw new IllegalStateException("Mismatched durable native setup acknowledgement");
+            return saved;
+        });
+        entry.setupWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || entries.get(id) != entry) return;
+            entry.nativeSetupPending = false;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Native storage could not be saved; reconcile metadata.");
+                reject(source, entry.blocker);
+            } else feedback(source, "Saved storage " + observed.blockId() + " at " + pos.toShortString() + ". Player remains stopped.");
+        }));
+        feedback(source, "Saving the player's storage; native work revoked immediately.");
+        return 1;
+    }
+
+    /** Whether a native player's setup change is still being saved. */
+    boolean nativeSetupSaving(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry != null && (entry.nativeSetupPending || !entry.setupWrite.isDone());
+    }
+
     record NativeActionStatus(String phase, ActionRecord record) { }
     NativeActionStatus nativeActionStatus(Actor actor, UUID id) {
         requireThread();
@@ -1277,6 +1325,9 @@ final class PlayerRuntime {
             } else if (skill.equals("native_shoot")) {
                 task = new NativeShootAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")), "high".equals(arguments.get("arc")));
+            } else if (skill.equals("native_take")) {
+                task = new NativeTakeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), server::execute, arguments.get("item"), Integer.parseInt(arguments.get("count")));
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -1497,9 +1548,10 @@ final class PlayerRuntime {
                 && (("native_eat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.EAT || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
-                    || ("native_goto".equals(entry.skillId) && intent == NativePlayerBody.Intent.SELECT_SLOT)
+                    || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
                     || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
+                    || ("native_take".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
                     || (("native_bucket".equals(entry.skillId) || "native_cast".equals(entry.skillId))
@@ -3496,7 +3548,13 @@ final class PlayerRuntime {
     /** The build's next step, as one project candidate; survival needs still outrank it (E-08b). */
     private List<NativeTaskCandidate> buildCandidates(Entry entry, NativePlayerBody body) {
         var build = entry.build;
-        var task = build.next(body);
+        // What its needs draw on: the run's gathering and crafting, and its own assigned storage (E-08c). A build
+        // battle's builder holds all it needs.
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.policy(edits);
+        var storage = entry.setup == null || entry.setup.storage() == null ? null : new BlockPos(entry.setup.storage().position().x(),
+                entry.setup.storage().position().y(), entry.setup.storage().position().z());
+        var task = build.next(body, new BuildRunner.Supply(entry.campaign, storage));
         entry.goalProgress = build.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
             entry.loggedGoalProgress = entry.goalProgress;
@@ -3555,6 +3613,20 @@ final class PlayerRuntime {
     private void buildTaskFinished(Entry entry, SkillRunner.State state) {
         var task = entry.activeBuildTask;
         entry.activeBuildTask = null;
+        if (task != null && entry.build != null && entry.nativeBody != null && entry.campaign != null && entry.build.needsTask(task)) {
+            // A step for the build's needs (E-08c): the run's own gathering hears how it went, and a table set down to
+            // craft at is its own to come back to.
+            boolean completed = state == SkillRunner.State.COMPLETED;
+            if (completed && "native_place".equals(task.skill())) {
+                BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
+                        Integer.parseInt(task.args().get("z")));
+                if (entry.nativeBody.entity().getServerWorld().getBlockState(placed).isOf(Blocks.CRAFTING_TABLE)) {
+                    entry.campaign.placedWorkstation(placed);
+                    entry.campaign.knowledge().remember(WorldKnowledge.Kind.CRAFTING_TABLE, placed);
+                }
+            }
+            entry.campaign.taskFinished(task, completed, server.getTicks());
+        }
         if (task != null && entry.ranch != null && entry.nativeBody != null) {
             var world = entry.nativeBody.entity().getServerWorld();
             boolean completed = state == SkillRunner.State.COMPLETED;
@@ -3702,6 +3774,13 @@ final class PlayerRuntime {
                 "Generators: hut (hut-<width>x<depth>x<walls>), tower (tower-<width>x<height>), pyramid (pyramid-<base>), lighthouse (lighthouse-<height>), pen (pen-<width>x<depth>). Schematics in " + schematics.directory() + ": "
                         + (names == null || names.isEmpty() ? "none" : String.join(", ", names)))));
         return 1;
+    }
+
+    /** How many trips the build in progress has made for its shortfall (E-08c); -1 with no build. */
+    int buildTrips(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.build == null ? -1 : entry.build.trips();
     }
 
     /** The build a player is on, if any, as a line of progress. */
@@ -3943,7 +4022,8 @@ final class PlayerRuntime {
 
         if (usable && body.entity() != null) {
             refreshTacticalObservation(entry, server.getTicks());
-            if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE) {
+            // A goal looks around as it goes, and so does a build, for the trees and stone its needs may send it to (E-08c).
+            if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
                 entry.campaign.observe(body.entity());
             }
@@ -4796,8 +4876,23 @@ final class PlayerRuntime {
             return reject(source, "Storage must be in the companion's own dimension (" + entry.setup.dimension() + ").");
         }
         if (!(player.raycast(6, 0, false) instanceof BlockHitResult hit)) return reject(source, "Look at a chest or barrel within six blocks.");
-        BlockPos pos = hit.getBlockPos();
-        StorageTargets.Observation observed = StorageTargets.observe(player.getWorld(), pos);
+        return storageSetAt(source, entry, player.getWorld(), hit.getBlockPos());
+    }
+
+    /** Assigns the container at {@code pos}, in the source's own world, as the player's storage. */
+    int storageSetAt(ServerCommandSource source, UUID requestedId, BlockPos pos) {
+        Entry native_ = requestedId != null ? entries.get(requestedId) : null;
+        if (native_ != null && native_.nativeState != null) return nativeStorage(source, requestedId, pos);
+        Entry entry = authorizedEntry(source, requestedId, "change this setup");
+        if (entry == null) return 0;
+        if (!source.getWorld().getRegistryKey().getValue().toString().equals(entry.setup.dimension())) {
+            return reject(source, "Storage must be in the companion's own dimension (" + entry.setup.dimension() + ").");
+        }
+        return storageSetAt(source, entry, source.getWorld(), pos);
+    }
+
+    private int storageSetAt(ServerCommandSource source, Entry entry, net.minecraft.world.World world, BlockPos pos) {
+        StorageTargets.Observation observed = StorageTargets.observe(world, pos);
         if (observed == null || !observed.container()) return reject(source, "That block is not a container.");
         return editSetup(source, entry, setup -> setup.withStorage(new WorkSetup.StorageTarget(
                 new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()), observed.blockId(), observed.version())),

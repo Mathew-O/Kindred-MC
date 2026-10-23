@@ -27,9 +27,13 @@ final class BuildSimulation {
     static Run build(List<Blueprint.Block> blocks, List<Pos> clear, Map<Pos, Cell> cells, Pos feet, Set<String> held, String label) {
         var scaffold = new HashSet<Pos>();
         int steps = 0, scaffolds = 0, props = 0;
+        var recent = new java.util.ArrayDeque<String>();
         while (true) {
-            assertTrue(++steps < 6000, label + ": finishes");
+            final Pos at = feet;
+            assertTrue(++steps < 6000, () -> label + ": finishes; last steps " + recent);
             Step step = ConstructionPlanner.next(blocks, clear, new BuildSite(cells), feet, held, scaffold);
+            if (recent.size() >= 8) recent.removeFirst();
+            recent.addLast(step.kind() + " " + step.target() + " from " + step.stance() + " at " + at + " (" + step.reason() + ")");
             if (step.kind() == ConstructionPlanner.Kind.DONE) break;
             assertNotEquals(ConstructionPlanner.Kind.BLOCKED, step.kind(), label + " at " + feet + ": " + step.reason());
             if (scaffold.contains(feet.down()) && !feet.equals(step.stance())) {
@@ -38,10 +42,10 @@ final class BuildSimulation {
                 feet = feet.down();
                 continue;
             }
-            assertTrue(ConstructionPlanner.walkable(new BuildSite(cells), feet, scaffold).contains(step.stance()), label + ": walks to " + step.stance());
+            assertTrue(ConstructionPlanner.walkable(blocks, clear, new BuildSite(cells), feet, scaffold).contains(step.stance()), label + ": walks to " + step.stance());
             switch (step.kind()) {
                 case PLACE, SUPPORT -> {
-                    assertTrue(new BuildSite(cells).standable(step.stance()), label + ": stands on ground");
+                    assertTrue(ConstructionPlanner.steps(blocks, clear, new BuildSite(cells)).standable(step.stance()), label + ": stands on ground");
                     feet = step.stance();
                     double ex = feet.x() + 0.5, ey = feet.y() + ConstructionPlanner.EYE, ez = feet.z() + 0.5;
                     double reach = Math.sqrt(Math.pow(step.hit()[0] - ex, 2) + Math.pow(step.hit()[1] - ey, 2) + Math.pow(step.hit()[2] - ez, 2));
@@ -49,6 +53,12 @@ final class BuildSimulation {
                     var placed = placedState(step);
                     assertTrue(placed.sameAs(step.spec()), label + ": placed as planned: " + placed + " for " + step.spec());
                     cells.put(step.target(), cellFor(placed));
+                    // A door's upper half and a bed's head come with it, as vanilla sets them.
+                    var partner = Placement.partner(placed, step.target());
+                    if (partner.isPresent()) {
+                        assertTrue(new BuildSite(cells).cell(partner.get()).map(Cell::placeable).orElse(false), label + ": room for the rest of " + placed);
+                        cells.put(partner.get(), cellFor(Placement.partnerState(placed)));
+                    }
                     if (step.kind() == ConstructionPlanner.Kind.SUPPORT) {
                         props++;
                         scaffold.add(step.target());
@@ -95,7 +105,7 @@ final class BuildSimulation {
             case AXIS -> props.put("axis", step.face().axis());
             case WALL -> props.put("facing", step.face().id());
             case FACING_PLAYER -> props.put("facing", looking.opposite().id());
-            case FACING_AWAY -> props.put("facing", looking.id());
+            case FACING_AWAY, DOOR, BED -> props.put("facing", looking.id());
             default -> { }
         }
         var merged = new HashMap<>(spec.properties());
@@ -107,6 +117,7 @@ final class BuildSimulation {
     private static Cell cellFor(BlockSpec spec) {
         String id = spec.block();
         if (id.endsWith("torch")) return new Cell(Kind.PASSABLE, spec, false);
+        if (id.endsWith("_door") || id.endsWith("_bed")) return new Cell(Kind.SOLID, spec, false);
         boolean top = "top".equals(spec.property("half")) || "top".equals(spec.property("type"));
         boolean fullTop = top || !id.endsWith("_stairs") && !id.endsWith("_slab") && !id.endsWith("lantern");
         return new Cell(Kind.SOLID, spec, fullTop);

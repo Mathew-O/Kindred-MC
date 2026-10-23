@@ -196,15 +196,15 @@ class ConstructionPlannerTest {
     void progressAndTheBillCountWhatIsLeftAndListWhatItCannotPlaceYet() {
         var cells = BuildTestSites.flat();
         var blocks = List.of(block(0, 1, 0, "minecraft:cobblestone"), block(1, 1, 0, "minecraft:cobblestone"),
-                block(2, 1, 0, "minecraft:wall_torch[facing=east]"), block(3, 1, 0, "minecraft:oak_door[facing=north,half=lower,hinge=left]"));
+                block(2, 1, 0, "minecraft:wall_torch[facing=east]"), block(3, 1, 0, "minecraft:oak_trapdoor[facing=north,half=bottom]"));
         cells.put(new Pos(0, 1, 0), BuildTestSites.solid("minecraft:cobblestone"));
         var progress = ConstructionPlanner.progress(blocks, List.of(), new BuildSite(cells));
         assertEquals(1, progress.placed());
-        assertEquals(List.of("minecraft:oak_door"), progress.unsupported());
+        assertEquals(List.of("minecraft:oak_trapdoor"), progress.unsupported());
         var bill = BillOfMaterials.of(blocks, new BuildSite(cells), Map.of("minecraft:cobblestone", 4));
         assertEquals(Map.of("minecraft:cobblestone", 1, "minecraft:torch", 1), bill.needed());
         assertEquals(Map.of("minecraft:torch", 1), bill.missing());
-        assertEquals(List.of("minecraft:oak_door"), bill.unsupported());
+        assertEquals(List.of("minecraft:oak_trapdoor"), bill.unsupported());
     }
 
     /** A finished block, two scaffold columns two high at {@code columns}, on the flat test ground. */

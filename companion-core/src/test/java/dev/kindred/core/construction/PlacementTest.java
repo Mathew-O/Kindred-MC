@@ -20,7 +20,7 @@ class PlacementTest {
         assertEquals(Rule.FACING_PLAYER, Placement.rule(BlockSpec.parse("minecraft:furnace[facing=north]")));
         assertEquals(Rule.WALL, Placement.rule(BlockSpec.parse("minecraft:wall_torch[facing=east]")));
         assertEquals(Rule.GRAVITY, Placement.rule(BlockSpec.of("minecraft:sand")));
-        assertEquals(Rule.UNSUPPORTED, Placement.rule(BlockSpec.parse("minecraft:oak_door[facing=north,half=lower,hinge=left]")));
+        assertEquals(Rule.UNSUPPORTED, Placement.rule(BlockSpec.parse("minecraft:oak_sign[rotation=4]")));
         assertEquals(Rule.UNSUPPORTED, Placement.rule(BlockSpec.parse("minecraft:dispenser[facing=up]")), "no rule, no guess");
     }
 
@@ -37,5 +37,36 @@ class PlacementTest {
         assertEquals(Face.NORTH, Placement.facingOf(180));
         assertEquals(Face.EAST, Placement.facingOf(-90));
         assertEquals("minecraft:torch", Placement.item(BlockSpec.parse("minecraft:wall_torch[facing=east]")));
+    }
+
+    @Test
+    void aDoorAndABedArePlacedByTheirFirstHalfTheRestComingWithIt() {
+        var door = BlockSpec.parse("minecraft:oak_door[facing=south,half=lower,hinge=left,open=false]");
+        var bed = BlockSpec.parse("minecraft:red_bed[facing=east,part=foot]");
+        assertEquals(Rule.DOOR, Placement.rule(door));
+        assertEquals(Rule.COMPANION, Placement.rule(door.with("half", "upper")));
+        assertEquals(Rule.BED, Placement.rule(bed));
+        assertEquals(Rule.COMPANION, Placement.rule(bed.with("part", "head")));
+        assertEquals(Face.SOUTH, Placement.playerFacing(door), "facing the way the player looks");
+        assertEquals(List.of(Face.UP), Placement.faces(bed), "on the top of the block below");
+        assertEquals(new Pos(0, 1, 0), Placement.partner(door, new Pos(0, 0, 0)).orElseThrow(), "the upper half above");
+        assertEquals(new Pos(1, 0, 0), Placement.partner(bed, new Pos(0, 0, 0)).orElseThrow(), "the head ahead of the foot");
+        assertTrue(door.sameAs(door.with("hinge", "right")), "the hinge is vanilla's to choose");
+        assertEquals(Rule.UNSUPPORTED, Placement.rule(BlockSpec.parse("minecraft:oak_trapdoor[facing=north,half=bottom]")));
+
+        // A room with a door and a bed in it, built whole: the upper half and the head never placed on their own.
+        var blocks = new java.util.ArrayList<Blueprint.Block>();
+        for (int x = 0; x < 5; x++) for (int z = 0; z < 5; z++) blocks.add(new Blueprint.Block(new Pos(x, 0, z), BlockSpec.of("minecraft:oak_planks")));
+        blocks.add(new Blueprint.Block(new Pos(2, 1, 4), door));
+        blocks.add(new Blueprint.Block(new Pos(2, 2, 4), door.with("half", "upper")));
+        blocks.add(new Blueprint.Block(new Pos(1, 1, 1), bed));
+        blocks.add(new Blueprint.Block(new Pos(2, 1, 1), bed.with("part", "head")));
+        var room = new Blueprint("room", "test", "Kindred", "Kindred's own", blocks);
+        var bill = BillOfMaterials.of(room.placed(new Pos(0, 1, 0), 0), new BuildSite(BuildTestSites.flat()), java.util.Map.of());
+        assertEquals(1, bill.needed().get("minecraft:oak_door"), "one door item for both halves");
+        assertEquals(1, bill.needed().get("minecraft:red_bed"));
+        var origin = new Pos(-2, 1, -2);
+        BuildSimulation.build(room.placed(origin, 0), room.placedClear(origin, 0), BuildTestSites.flat(), new Pos(-6, 1, 0),
+                java.util.Set.of("minecraft:oak_planks", "minecraft:oak_door", "minecraft:red_bed", "minecraft:dirt"), "room");
     }
 }

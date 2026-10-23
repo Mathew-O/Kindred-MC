@@ -127,6 +127,9 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_gate" -> new SkillDescriptor(id, Set.of("x", "y", "z", "open"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // Items taken out of the player's own assigned storage for a build (E-08c).
+            case "native_take" -> new SkillDescriptor(id, Set.of("item", "count"), Set.of(), Set.of("container"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");
         };
     }
@@ -202,7 +205,7 @@ final class NativePlayerSkills {
         return (task instanceof Eat food && food.permits(intent))
                 || (task instanceof Walk walk && intent == NativePlayerBody.Intent.MOVE && walk.safe())
                 || (task instanceof Traverse trav && intent == NativePlayerBody.Intent.MOVE && trav.safe())
-                || (task instanceof NativeGoToSkill go && (intent == NativePlayerBody.Intent.MOVE
+                || (task instanceof NativeGoToSkill go && (intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.DOOR
                     || intent == NativePlayerBody.Intent.SELECT_SLOT && go.holds()))
                 || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
                 || (task instanceof NativeRowSkill && intent == NativePlayerBody.Intent.MOVE)

@@ -64,7 +64,9 @@ class AttentionWorkSchedulerTest {
         var diag = scheduler.diagnostics();
         assertEquals(20L, diag.invalidationsByKind().get(WorkKind.ROUTINE_GOALS));
 
-        long now = System.nanoTime(); // One clock reading: a slow machine must not spend the tick's soft time budget.
+        // A tick begun a minute ahead of the clock: however slow or busy the machine, the loop below never spends the
+        // tick's soft time budget (the budget running out is not what this test is about; selectNext reads the clock itself).
+        long now = System.nanoTime() + java.util.concurrent.TimeUnit.MINUTES.toNanos(1);
         scheduler.beginTick(tick, now);
         WorkToken token = null;
         while (true) {

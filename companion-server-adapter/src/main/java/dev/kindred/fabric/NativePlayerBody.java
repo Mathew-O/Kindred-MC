@@ -88,7 +88,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1666,6 +1666,58 @@ final class NativePlayerBody implements BodyAdapter {
             }
             face(at);
             player.interact(animal, Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Takes up to {@code count} of {@code item} out of the container at {@code chest} into the inventory, stack by stack,
+     * as a player shift-clicks them out of a chest it has open (E-08c). Only within reach; what does not fit stays.
+     *
+     * @return how many moved
+     */
+    int takeFromContainer(ActionLease lease, BlockPos chest, Item item, int count) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (count <= 0 || !world.isChunkLoaded(chest) || !(world.getBlockEntity(chest) instanceof Inventory container)) return 0;
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(chest)) > 4.5 * 4.5) return 0;
+        int[] moved = {0};
+        boolean done = execute(lease, Intent.TAKE, chest, () -> {
+            for (int slot = 0; slot < container.size() && moved[0] < count; slot++) {
+                ItemStack stack = container.getStack(slot);
+                if (!stack.isOf(item)) continue;
+                ItemStack part = stack.copyWithCount(Math.min(count - moved[0], stack.getCount()));
+                int offered = part.getCount();
+                player.getInventory().insertStack(part);
+                int took = offered - part.getCount();
+                if (took <= 0) break;
+                stack.decrement(took);
+                container.setStack(slot, stack.isEmpty() ? ItemStack.EMPTY : stack);
+                moved[0] += took;
+            }
+            container.markDirty();
+        });
+        return done ? moved[0] : 0;
+    }
+
+    /**
+     * Opens or shuts the wooden door at {@code door} (either half) with a use click on its near side, as a player does on
+     * its way through (M-01b).
+     */
+    boolean useDoor(ActionLease lease, BlockPos door) {
+        requireThread();
+        var world = player.getServerWorld();
+        var state = world.getBlockState(door);
+        if (!(state.getBlock() instanceof net.minecraft.block.DoorBlock block) || !block.getBlockSetType().canOpenByHand() || player.isSneaking()) return false;
+        Vec3d centre = Vec3d.ofCenter(door);
+        if (player.getEyePos().squaredDistanceTo(centre) > 4.5 * 4.5) return false;
+        Vec3d eye = player.getEyePos();
+        Direction side = Direction.getFacing(eye.x - centre.x, 0, eye.z - centre.z);
+        Vec3d hit = centre.add(side.getOffsetX() * 0.4, 0, side.getOffsetZ() * 0.4);
+        return execute(lease, Intent.DOOR, door, () -> {
+            face(hit);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(hit, side, door, false));
             player.swingHand(Hand.MAIN_HAND);
         });
     }

@@ -436,6 +436,20 @@ public final class PlayerCommands {
         root.then(area);
         root.then(CommandManager.literal("storage").then(withOptionalId(CommandManager.literal("set"),
                 (runtime, context, id) -> runtime.storageSet(context.getSource(), id))));
+        // A container named by its place rather than looked at (E-08c): for a console or a command block.
+        root.then(CommandManager.literal("storage").then(CommandManager.literal("at").then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    return runtime.storageSetAt(context.getSource(), runtime.defaultBotId(), BlockPosArgumentType.getBlockPos(context, "at"));
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            return id == null ? 0 : runtime.storageSetAt(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "at"));
+                        })))));
         root.then(CommandManager.literal("patch").then(CommandManager.literal("set")
                 .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
                 .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())

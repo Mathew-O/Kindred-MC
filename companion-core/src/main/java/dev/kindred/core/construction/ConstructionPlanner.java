@@ -132,8 +132,9 @@ public final class ConstructionPlanner {
      * As {@link #next}, never standing at a spot in {@code shunned}: where the server refused a step the plan thought
      * sound (a reach or a line of sight reckoned a hair differently), so another spot is tried.
      */
-    public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite site, Pos feet, Set<String> items, Set<Pos> scaffold,
+    public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
                             Set<Pos> shunned) {
+        BuildSite site = steps(blocks, clear, world);
         Map<Pos, BlockSpec> wanted = Blueprint.byPosition(blocks);
         Set<Pos> keepClear = new HashSet<>(clear);
         Box box = Box.of(blocks);
@@ -164,7 +165,7 @@ public final class ConstructionPlanner {
             var cell = site.cell(b.at());
             if (cell.isEmpty()) continue;
             if (cell.get().state().sameAs(b.spec()) || !cell.get().placeable()) continue;
-            if (Placement.rule(b.spec()) == Placement.Rule.UNSUPPORTED) continue;
+            if (Placement.rule(b.spec()) == Placement.Rule.UNSUPPORTED || Placement.rule(b.spec()) == Placement.Rule.COMPANION) continue;
             anyRule = true;
             if (!items.contains(Placement.item(b.spec()))) continue;
             anyItem = true;
@@ -193,6 +194,16 @@ public final class ConstructionPlanner {
             return Step.done();
         }
         todo.sort(Comparator.<Blueprint.Block>comparingInt(b -> b.at().y()).thenComparingLong(b -> b.at().distanceSquared(feet)));
+        // Up its own scaffold, what it went up for first: a block placed from where it stands, before a lower one from
+        // somewhere it would have to dig down to walk to (a roof's deck beside the pillar, M-01b).
+        if (scaffold.contains(feet.down())) {
+            int lowestY = todo.getFirst().at().y();
+            for (var b : todo) {
+                if (b.at().y() > lowestY + 1) break;
+                var place = placement(site, b, feet, wanted, box, List.of(feet), walk);
+                if (place.isPresent()) return place.get();
+            }
+        }
         int weighed = 0;
         for (var b : todo) {
             if (++weighed > CANDIDATES) break;
@@ -215,7 +226,7 @@ public final class ConstructionPlanner {
             var prop = prop(site, b, feet, wanted, keepClear, box, walk);
             if (prop.isPresent()) return prop.get();
         }
-        return Step.blocked("No way to reach " + lowest.spec().block() + " at " + lowest.at());
+        return Step.blockedAt(lowest.at(), "No way to reach " + lowest.spec().block() + " at " + lowest.at());
     }
 
     /**
@@ -225,6 +236,9 @@ public final class ConstructionPlanner {
     private static Optional<Step> placement(BuildSite site, Blueprint.Block b, Pos feet, Map<Pos, BlockSpec> wanted, Box box,
                                             List<Pos> stances, Set<Pos> walk) {
         BlockSpec spec = b.spec();
+        // A door's upper half and a bed's head come with it: their cell must be clear for them.
+        var partner = Placement.partner(spec, b.at());
+        if (partner.isPresent() && !site.cell(partner.get()).map(Cell::placeable).orElse(false)) return Optional.empty();
         Face mustFace = Placement.playerFacing(spec);
         double height = Placement.hitHeight(spec);
         Step best = null;
@@ -237,6 +251,7 @@ public final class ConstructionPlanner {
             double[] hit = hitPoint(support, face, height);
             for (Pos stance : stances) {
                 if (walk != null && !walk.contains(stance) || !site.standable(stance) || occupies(stance, b.at())) continue;
+                if (partner.isPresent() && occupies(stance, partner.get())) continue;
                 if (wanted.containsKey(stance) || wanted.containsKey(stance.up())) continue; // Never stand where a block is still to go.
                 double ex = stance.x() + 0.5, ey = stance.y() + EYE, ez = stance.z() + 0.5;
                 double dx = hit[0] - ex, dy = hit[1] - ey, dz = hit[2] - ez;
@@ -375,7 +390,31 @@ public final class ConstructionPlanner {
      * room for the jump, a drop of up to three, across to the four sides; and down its own scaffold, digging out the
      * block underfoot. Bounded.
      */
-    static Set<Pos> walkable(BuildSite site, Pos feet, Set<Pos> scaffold) {
+    /**
+     * The site with the build's own staircase as footing (M-01b): a stair placed as wanted, with the head room over
+     * it kept clear by the blueprint, is walked up though its top is not one full face. A roof's courses, with nothing
+     * kept clear over them, are not.
+     */
+    static BuildSite steps(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite site) {
+        if (clear.isEmpty()) return site;
+        var keep = new HashSet<>(clear);
+        var footing = new java.util.HashMap<Pos, Cell>();
+        for (var b : blocks) {
+            if (!b.spec().block().endsWith("_stairs") || !keep.contains(b.at().up())) continue;
+            var cell = site.cell(b.at());
+            if (cell.isPresent() && cell.get().kind() == BuildSite.Kind.SOLID && cell.get().state().sameAs(b.spec()) && !cell.get().floor()) {
+                footing.put(b.at(), new Cell(BuildSite.Kind.SOLID, cell.get().state(), true));
+            }
+        }
+        return footing.isEmpty() ? site : site.with(footing);
+    }
+
+    /** {@link #walkable(BuildSite, Pos, Set)} on the site with the build's own staircase as footing. */
+    public static Set<Pos> walkable(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite site, Pos feet, Set<Pos> scaffold) {
+        return walkable(steps(blocks, clear, site), feet, scaffold);
+    }
+
+    public static Set<Pos> walkable(BuildSite site, Pos feet, Set<Pos> scaffold) {
         var seen = new HashSet<Pos>();
         var queue = new ArrayDeque<Pos>();
         seen.add(feet);
@@ -391,12 +430,12 @@ public final class ConstructionPlanner {
                 for (int dy = 1; dy >= -MAX_DROP; dy--) {
                     Pos to = side.add(0, dy, 0);
                     // Up a step needs the head room for the jump; down, the body falls through the side's open cells.
-                    if (dy == 1 && !site.cell(at.add(0, 2, 0)).map(Cell::passable).orElse(false)) continue;
-                    if (site.standable(to)) {
+                    if (dy == 1 && !through(site, at.add(0, 2, 0))) continue;
+                    if (site.cell(to.down()).map(Cell::floor).orElse(false) && through(site, to) && through(site, to.up())) {
                         if (seen.add(to)) queue.add(to);
                         break;
                     }
-                    if (dy <= 0 && !site.cell(to.up()).map(Cell::passable).orElse(false)) break;
+                    if (dy <= 0 && !through(site, to.up())) break;
                 }
             }
         }
@@ -440,6 +479,17 @@ public final class ConstructionPlanner {
      * Whether a player standing at {@code stance} inside the build would be shut in once {@code placing} and every
      * block still wanted were in place: no way out of the build's box through cells that stay clear.
      */
+    /** Feet or head may pass: open, or a wooden door, which a walk opens on its way through (M-01b). */
+    private static boolean through(BuildSite site, Pos at) {
+        return site.cell(at).map(c -> c.passable() || doorway(c.state())).orElse(false);
+    }
+
+    /** A wooden door, either half: a way through for a player, unlike an iron one. */
+    static boolean doorway(BlockSpec spec) {
+        String id = spec.block();
+        return id.endsWith("_door") && !id.endsWith("_trapdoor") && !id.equals("minecraft:iron_door");
+    }
+
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {
         var seen = new HashSet<Pos>();
         var queue = new ArrayDeque<Pos>();
@@ -451,10 +501,10 @@ public final class ConstructionPlanner {
             if (!box.inside(at)) return false;
             for (Face f : Face.values()) {
                 Pos next = at.offset(f);
-                if (!seen.add(next) || next.equals(placing) || wanted.containsKey(next) || wanted.containsKey(next.up())) continue;
-                var cell = site.cell(next);
-                var head = site.cell(next.up());
-                if (cell.isEmpty() || head.isEmpty() || !cell.get().passable() || !head.get().passable()) continue;
+                if (!seen.add(next) || next.equals(placing)) continue;
+                // A door still to go is a way out all the same.
+                if (wanted.containsKey(next) && !doorway(wanted.get(next)) || wanted.containsKey(next.up()) && !doorway(wanted.get(next.up()))) continue;
+                if (!through(site, next) || !through(site, next.up())) continue;
                 queue.add(next);
             }
         }
