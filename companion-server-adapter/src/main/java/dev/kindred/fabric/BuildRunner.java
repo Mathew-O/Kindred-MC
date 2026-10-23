@@ -283,8 +283,9 @@ final class BuildRunner {
             }
             if (feet.y() >= columnTop || !(feet.x() == column.x() && feet.z() == column.z())) column = null;
         }
-        // Back from a trip down for stone with all it went for: out of the ground first, as the goal climbs out.
-        if (supply != null && !needs.onTrip() && !onSite(feet) && feet.y() < siteFloor()) {
+        // Back from a trip down for stone with all it went for: out of the ground first, as the goal climbs out. Only
+        // from where it dug, begun off the site: a hollow beside the build (a blast's crater) is where it works from.
+        if (supply != null && !needs.onTrip() && !onSite(feet) && !nearSite(feet) && feet.y() < siteFloor()) {
             var out = backUp(body, supply);
             if (out.isPresent()) {
                 needsTask = out.get();

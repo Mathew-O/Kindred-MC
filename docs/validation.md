@@ -4,6 +4,16 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-31a (repair of a player's own base), on top of `6f9b4a9`.
+  - New native fixture: `aPlayerRepairsItsOwnCabinWhenAChestIsBrokenAndAWallBlownOut`.
+    - Mason builds its cabin as its base from the whole bill, as though gathered, with some left over and no spare chest.
+    - One of its chests is broken with nothing left of it, and a blast of a creeper's strength goes off outside its north wall.
+    - It sees its cabin out of place, says so, and builds back what is missing: the chest crafted from planks at a table, the wall from what it holds and what the blast dropped. The cabin is exact again.
+  - Two hand controls, as in [E-31a](evidence/E-31a.md): no check of its bases, and the climb out from anywhere below its floor.
+  - Found on the way: in the blast's crater beside the wall, the player climbed out and went back in to place a floor plank, until the fixture ran out of time. It now climbs out only from off its site.
+  - The M-01c cabin fixture passed again with that change.
+  - Two full `runGametest` runs in a row passed 301/301. `./gradlew build` passed: 540 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `a8a5664fd429245fdcd61f81da3d7d785ced9f38cfd064e6123c873ae760e85c`.
 - M-01c (a player's own base), on top of `5b427bb`.
   - New JUnit: `BaseSiteTest` (4), `aTripEndsOnceEverythingIsInHandHoweverTheLastOfItCame`.
   - New native fixture: `aPlayerWithStoneToolsSitesAndBuildsItsOwnCabinThenWaitsForIron`.

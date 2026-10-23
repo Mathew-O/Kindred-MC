@@ -140,6 +140,7 @@ Doors and beds now have a placement rule: each is placed by its first half, and 
 - **Where.** On the nearest flat, open, natural ground within 24 blocks of its home, or of where it stood when it first looked. Each later stage goes beside the last. It says why and where as it starts.
 - **Building it.** It builds through the needs queue. For stone it digs a staircase down off its site, and it climbs out after.
 - **Remembered.** Its bases are kept across restarts in `kindred/memory/<player>.bases.json`. A stage it did not finish is taken up again where it stands.
+- **Kept whole (E-31a).** When it looks to its base it checks what it built against the plan. A chest broken, a wall blown out or any block gone or out of place is built back as any build is, from what it holds or fetches; a chest is crafted again from planks. A repair that ends short is tried again after five minutes.
 - **Stopping one.** `/aiplayer build stop` on a base's build puts it off for five minutes.
 - **Not yet:** the base's chests do not become its storage, and it builds only in oak.
 

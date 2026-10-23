@@ -3683,6 +3683,7 @@ final class PlayerRuntime {
             // A base's build stopped by its administrator is not taken up again at once (M-01c).
             if (entry.build != null && entry.build == entry.baseBuild) {
                 entry.baseBuild = null;
+                entry.baseRepair = null;
                 entry.baseCheckAt = server.getTicks() + BASE_RETRY;
             }
             entry.build = null;
@@ -3754,6 +3755,19 @@ final class PlayerRuntime {
         if (last != null && !last.complete()) {
             return startBase(entry, stageOf(last), new BlockPos(last.x(), last.y(), last.z()), "Back to its " + last.stage());
         }
+        // What it built it keeps whole (E-31a): a stage with blocks gone or out of place (a chest broken, a wall blown
+        // out) is built again on its own plan, which places only what is missing, its blocks fetched as any build's.
+        for (var base : record.built) {
+            if (!base.dimension().equals(dimension)) continue;
+            int damage = baseDamage(world, base);
+            if (damage > 0) {
+                String why = "Repairing its " + base.stage() + ", " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
+                noteBase(entry, why);
+                if (!startBase(entry, stageOf(base), new BlockPos(base.x(), base.y(), base.z()), why)) return false;
+                entry.baseRepair = base;
+                return true;
+            }
+        }
         var decision = dev.kindred.core.construction.BaseProgression.next(baseProgress(body, last));
         noteBase(entry, decision.why());
         if (decision.next().isEmpty()) return false;
@@ -3799,6 +3813,15 @@ final class PlayerRuntime {
     /** A base's build has ended: whole, or after its last try as far as it goes, it is the player's base now. */
     private void baseBuilt(Entry entry, BuildRunner build) {
         entry.baseBuild = null;
+        var repaired = entry.baseRepair;
+        entry.baseRepair = null;
+        if (repaired != null) {
+            // A repair that ends short is tried again later, never at once: what it lacks may come with time.
+            if (!build.complete()) entry.baseCheckAt = server.getTicks() + BASE_RETRY;
+            noteBase(entry, build.complete() ? "Its " + repaired.stage() + " is whole again"
+                    : "Its " + repaired.stage() + "'s repair ended short (" + build.progress() + "); back to it later");
+            return;
+        }
         var record = entry.bases;
         if (record == null || record.built.isEmpty()) return;
         int at = record.built.size() - 1;
@@ -3809,9 +3832,27 @@ final class PlayerRuntime {
             return;
         }
         entry.baseTries = 0;
+        // As far as it goes, it is its base now; what it still lacks is a repair, tried later rather than at once.
+        if (!build.complete()) entry.baseCheckAt = server.getTicks() + BASE_RETRY;
         record.built.set(at, new PlayerMemoryStore.Base(last.stage(), last.dimension(), last.x(), last.y(), last.z(), true));
         memories.saveBases(entry.data.id(), record);
         noteBase(entry, "Its " + last.stage() + " stands" + (build.complete() ? "" : " as far as it goes (" + build.progress() + ")"));
+    }
+
+    /**
+     * How many of a base's blocks are gone or out of place, as the build compares them (a door open, a furnace lit and
+     * the like count as in place); none when any of it is out of loaded ground.
+     */
+    private static int baseDamage(ServerWorld world, PlayerMemoryStore.Base base) {
+        var stage = stageOf(base);
+        var blueprint = dev.kindred.core.construction.Houses.of(stage, "oak", "cobblestone");
+        int damage = 0;
+        for (var block : blueprint.placed(new dev.kindred.core.construction.Pos(base.x(), base.y(), base.z()), 0)) {
+            BlockPos at = BuildRunner.blockPos(block.at());
+            if (!world.isChunkLoaded(at)) return 0;
+            if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
+        }
+        return damage;
     }
 
     private static void noteBase(Entry entry, String why) {
@@ -7229,6 +7270,8 @@ final class PlayerRuntime {
         PlayerMemoryStore.Bases bases;
         boolean basesLoading;
         BuildRunner baseBuild;
+        /** The base the build in hand repairs (E-31a), if it is a repair. */
+        PlayerMemoryStore.Base baseRepair;
         long baseCheckAt;
         int baseTries;
         String baseNote = "";

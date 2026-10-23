@@ -34,20 +34,7 @@ public final class NativeBaseGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    // Ground as it lies: grass on two of dirt over four of stone, no stone in sight.
-                    for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) {
-                        for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
-                        for (int y = 4; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.DIRT.getDefaultState());
-                        world.setBlockState(o.add(x, 6, z), Blocks.GRASS_BLOCK.getDefaultState());
-                        for (int y = 7; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
-                    }
-                    for (BlockPos trunk : trunks) {
-                        for (int y = 0; y < 6; y++) world.setBlockState(trunk.up(y), Blocks.OAK_LOG.getDefaultState());
-                        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-                            if (dx != 0 || dz != 0) world.setBlockState(trunk.add(dx, 5, dz), Blocks.OAK_LEAVES.getDefaultState().with(LeavesBlock.PERSISTENT, true));
-                        }
-                        world.setBlockState(trunk.up(6), Blocks.OAK_LEAVES.getDefaultState().with(LeavesBlock.PERSISTENT, true));
-                    }
+                    ground(context, trunks);
                     for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) for (int y = 0; y <= 3; y++) {
                         if (world.getBlockState(o.add(x, y, z)).isOf(Blocks.STONE)) stoneLeft[0]++;
                     }
@@ -84,16 +71,7 @@ public final class NativeBaseGameTests implements FabricGameTest {
                     // Sited where it stood: the cabin's middle within a few blocks of home, its floor on the ground.
                     context.assertTrue(Math.abs(origin.getX() + 3 - home.getX()) <= 4 && Math.abs(origin.getZ() + 3 - home.getZ()) <= 4
                             && origin.getY() == home.getY(), "Sited by home: " + origin.toShortString());
-                    int wrong = 0;
-                    var report = new StringBuilder();
-                    for (var b : cabin.placed(BuildRunner.pos(origin), 0)) {
-                        var got = BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at())));
-                        if (!got.sameAs(b.spec())) {
-                            wrong++;
-                            if (report.length() < 600) report.append(b.at()).append(' ').append(got).append(" for ").append(b.spec()).append("; ");
-                        }
-                    }
-                    context.assertTrue(wrong == 0, wrong + " blocks not in their state: " + report);
+                    exact(context, cabin, origin);
                     int logsLeft = 0, stone = 0;
                     for (BlockPos trunk : trunks) for (int y = 0; y < 6; y++) if (world.getBlockState(trunk.up(y)).isOf(Blocks.OAK_LOG)) logsLeft++;
                     for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) for (int y = 0; y <= 3; y++) {
@@ -115,5 +93,39 @@ public final class NativeBaseGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** Ground as it lies: grass on two of dirt over four of stone, no stone in sight; two trees of six logs. */
+    static void ground(TestContext context, BlockPos[] trunks) {
+        var world = context.getWorld();
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) {
+            for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+            for (int y = 4; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.DIRT.getDefaultState());
+            world.setBlockState(o.add(x, 6, z), Blocks.GRASS_BLOCK.getDefaultState());
+            for (int y = 7; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+        }
+        for (BlockPos trunk : trunks) {
+            for (int y = 0; y < 6; y++) world.setBlockState(trunk.up(y), Blocks.OAK_LOG.getDefaultState());
+            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                if (dx != 0 || dz != 0) world.setBlockState(trunk.add(dx, 5, dz), Blocks.OAK_LEAVES.getDefaultState().with(LeavesBlock.PERSISTENT, true));
+            }
+            world.setBlockState(trunk.up(6), Blocks.OAK_LEAVES.getDefaultState().with(LeavesBlock.PERSISTENT, true));
+        }
+    }
+
+    /** Every block of the cabin at {@code origin} in its state. */
+    static void exact(TestContext context, dev.kindred.core.construction.Blueprint cabin, BlockPos origin) {
+        var world = context.getWorld();
+        int wrong = 0;
+        var report = new StringBuilder();
+        for (var b : cabin.placed(BuildRunner.pos(origin), 0)) {
+            var got = BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at())));
+            if (!got.sameAs(b.spec())) {
+                wrong++;
+                if (report.length() < 600) report.append(b.at()).append(' ').append(got).append(" for ").append(b.spec()).append("; ");
+            }
+        }
+        context.assertTrue(wrong == 0, wrong + " blocks not in their state: " + report);
     }
 }
