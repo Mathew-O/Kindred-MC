@@ -167,6 +167,19 @@ final class WorldKnowledge {
         }
     }
 
+    /**
+     * A close look at one place, as a player looks over something it has come to: every block of {@code kind} within
+     * {@code radius} (and {@code height} up and down) of {@code center} that the player can see from where it stands is
+     * remembered now, wherever the sweep has got to. Bounded: a small box, and one sight line a block of the kind.
+     */
+    void look(ServerPlayerEntity player, BlockPos center, int radius, int height, Kind kind) {
+        ServerWorld world = player.getServerWorld();
+        for (BlockPos pos : BlockPos.iterate(center.add(-radius, -height, -radius), center.add(radius, height, radius))) {
+            if (!world.isChunkLoaded(pos) || classify(world.getBlockState(pos)) != kind || !exposed(world, pos, kind)) continue;
+            if (!needsSight(kind) || visible(player, pos)) remember(kind, pos);
+        }
+    }
+
     private void nextSection() {
         cursor++;
         index = 0;

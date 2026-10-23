@@ -123,6 +123,11 @@ final class NativePlayerBody implements BodyAdapter {
     private long ticksRun;
     /** What this player can know of others' health from the hits it saw land (E-41a); never the server's number. */
     private final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
+    /**
+     * Whether this player may attack another player (M-00a, D7): only a joined participant of a running match it is in.
+     * The runtime sets it; until then every player target is refused.
+     */
+    private java.util.function.BiPredicate<UUID, UUID> pvp = (attacker, target) -> false;
     /** The beliefs of a viewer that is no native player: every creature at its kind's full health. Read only. */
     private static final dev.kindred.core.tactics.HealthBeliefs NO_BELIEFS = new dev.kindred.core.tactics.HealthBeliefs();
     private Runnable deathHook = () -> { };
@@ -214,6 +219,13 @@ final class NativePlayerBody implements BodyAdapter {
     long ticksRun() { return ticksRun; }
 
     dev.kindred.core.tactics.HealthBeliefs beliefs() { return beliefs; }
+
+    void pvp(java.util.function.BiPredicate<UUID, UUID> rule) { pvp = java.util.Objects.requireNonNull(rule); }
+
+    /** Whether a strike at {@code target} is allowed at all: any creature but this player, a player only as {@link #pvp} allows. */
+    boolean mayStrike(LivingEntity target) {
+        return target != player && (!(target instanceof PlayerEntity) || pvp.test(player.getUuid(), target.getUuid()));
+    }
 
     /**
      * The health {@code viewer} can believe {@code target} has (E-41a): worked out from the hits it saw land, as a player
@@ -575,8 +587,8 @@ final class NativePlayerBody implements BodyAdapter {
         if (targetId == null) return false;
         var entity = player.getServerWorld().getEntity(targetId);
         if (!(entity instanceof LivingEntity target) || !target.isAlive() || target.isRemoved()) return false;
-        if (target == player) return false;
-        if (target instanceof PlayerEntity) return false; // Default safe player privacy
+        // Another player only inside a running match both joined (M-00a, D7).
+        if (!mayStrike(target)) return false;
         // A client's reach (E-41a): three blocks from the eyes to the target's hitbox, as the Dragon strike has it.
         if (!player.canInteractWithEntity(target, 0)) return false;
         if (!player.canSee(target)) return false;

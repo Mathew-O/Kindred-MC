@@ -202,6 +202,8 @@ final class PlayerRuntime {
     int blocksScannedThisTick() { return blocksScannedThisTick; }
 
     private final TeamCoordinator teamCoordinator = new TeamCoordinator();
+    /** Matches, and who may attack whom in them (M-00a, D7). */
+    private final dev.kindred.core.match.MatchRegistry matches = new dev.kindred.core.match.MatchRegistry();
     public TeamCoordinator teamCoordinator() { return teamCoordinator; }
 
     public ExpeditionState getExpeditionState(UUID id) {
@@ -753,6 +755,7 @@ final class PlayerRuntime {
             }
             NativePlayerBody body = new NativePlayerBody(world, entry.snapshot(), position,
                     (lease, intent, target) -> nativeMutationAllowed(entry, lease, intent, target));
+            body.pvp((attacker, target) -> server.isPvpEnabled() && matches.mayAttack(attacker, target));
             entry.arbiter = new ActionArbiter(entry.snapshot(), body);
             body.bind(entry.arbiter);
             if (!fresh) body.verifySave(state.orElseThrow(), entry.nativeState.saveReceipt());
@@ -824,6 +827,8 @@ final class PlayerRuntime {
         entry.pendingConnection = null;
         entry.nativePending = false;
         halt(entry, Actor.console(), reason);
+        // A body taken out of the game leaves its match as any player who leaves does.
+        if (entry.nativeBody != null && entry.nativeBody.entity() != null) matches.departed(entry.nativeBody.entity().getUuid()).ifPresent(this::announce);
         if (entry.nativeBody != null) entry.nativeBody.disconnect();
         entry.data = entry.snapshot();
         entry.nativeBody = null;
@@ -1753,6 +1758,7 @@ final class PlayerRuntime {
         }
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
+        for (var changed : matches.tick(tick)) announce(changed);
 
         var batch = new ArrayList<dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot>();
         // Home after the credits: out of every world, a body gets no tick of its own to ask with (E-39d).
@@ -2637,6 +2643,10 @@ final class PlayerRuntime {
         var player = body.entity();
         var world = player.getServerWorld();
         primeWorkstationCaches(entry, body);
+
+        // In a running match it joined, the fight comes first (M-00a): no goal, build or team task goes on meanwhile.
+        var duel = duelCandidates(body);
+        if (duel != null) return duel;
 
         // 0. Team project task candidates (TEAM-01, TEAM-02)
         java.util.Optional<SharedTask> currentSharedTask = teamCoordinator.getPlayerCurrentTask(entry.data.id());
@@ -3688,6 +3698,7 @@ final class PlayerRuntime {
     private void onNativeDeath(Entry entry, NativePlayerBody body) {
         if (entry.nativeBody != body || entry.awaitingRespawn) return;
         var player = body.entity();
+        matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
         teamCoordinator.handlePlayerDeath(entry.data.id());
@@ -3868,8 +3879,10 @@ final class PlayerRuntime {
             attentionScheduler.invalidate(entry.data.id(), WorkKind.EQUIPMENT_READINESS);
         }
 
+        // A running match the player was entered into is an instruction to fight, as a goal is (M-00a).
+        boolean dueling = body.entity() != null && matches.running(body.entity().getUuid()).isPresent();
         boolean autonomyAdmitted = usable && !entry.snapshot().stopLatched() && !busy
-                && !entry.runtimeSettings.playstyleProfile().isIdleObserving()
+                && (!entry.runtimeSettings.playstyleProfile().isIdleObserving() || dueling)
                 && (entry.runner == null || entry.runner.state() != SkillRunner.State.PAUSED)
                 && !entry.nativeWorkPending && !entry.nativeSetupPending
                 && entry.activityFlush.isDone() && !entry.nativeActionPending && entry.nativeActionFlush.isDone()
@@ -5514,6 +5527,7 @@ final class PlayerRuntime {
             ++entry.generation;
         }
         running = false;
+        matches.stopAll();
         strategist.ifPresent(StrategistBridge::close);
         memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
@@ -5721,6 +5735,184 @@ final class PlayerRuntime {
         Entry entry = entries.get(id);
         if (entry == null || entry.nativeBody == null) return 0;
         return evaluateNativeCandidates(entry, entry.nativeBody).size();
+    }
+
+    /**
+     * The duel a player in a running match fights (M-00a): its opponent, with the weapon that deals the most over the
+     * fight, or a walk toward it when it is far. Null when the player is in no running match.
+     */
+    private List<NativeTaskCandidate> duelCandidates(NativePlayerBody body) {
+        var player = body.entity();
+        var match = matches.running(player.getUuid()).orElse(null);
+        if (match == null) return null;
+        var candidates = new java.util.ArrayList<NativeTaskCandidate>();
+        UUID opponentId = dev.kindred.core.match.MatchRegistry.other(match, player.getUuid());
+        var opponent = opponentId == null ? null : server.getPlayerManager().getPlayer(opponentId);
+        if (opponent == null || !opponent.isAlive() || opponent.getServerWorld() != player.getServerWorld()) return candidates;
+        UUID taskId = UUID.nameUUIDFromBytes(("duel:" + match.id() + ":" + player.getUuid()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (player.squaredDistanceTo(opponent) > 20 * 20) {
+            BlockPos at = opponent.getBlockPos();
+            candidates.add(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                    "z", String.valueOf(at.getZ()))));
+            return candidates;
+        }
+        int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, opponent), true).map(Weapons.Held::slot).orElse(-1);
+        candidates.add(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", opponentId.toString(), "slot", String.valueOf(slot))));
+        return candidates;
+    }
+
+    /** A match's player by name or id: an AI player (its body's player id) or a human online. */
+    UUID matchPlayerId(String raw) {
+        requireThread();
+        UUID bot = resolveBotId(raw);
+        if (bot != null) {
+            Entry entry = entries.get(bot);
+            return entry != null && entry.nativeBody != null && entry.nativeBody.entity() != null ? entry.nativeBody.entity().getUuid() : null;
+        }
+        var human = server.getPlayerManager().getPlayer(raw);
+        return human != null ? human.getUuid() : null;
+    }
+
+    /** The entry whose body is player {@code playerId}, if it is a native player here. */
+    private Entry entryForPlayer(UUID playerId) {
+        for (Entry entry : entries.values()) {
+            if (entry.nativeBody != null && entry.nativeBody.entity() != null && entry.nativeBody.entity().getUuid().equals(playerId)) return entry;
+        }
+        return null;
+    }
+
+    private String playerName(UUID playerId) {
+        var player = server.getPlayerManager().getPlayer(playerId);
+        return player != null ? player.getName().getString() : playerId.toString().substring(0, 8);
+    }
+
+    /** Tells every invited player where its match stands. */
+    private void announce(dev.kindred.core.match.MatchRegistry.Match match) {
+        String who = match.invited().stream().map(this::playerName).collect(java.util.stream.Collectors.joining(" against "));
+        String what = switch (match.state()) {
+            case LOBBY -> "waiting for every player to join";
+            case COUNTDOWN -> "starting in three seconds";
+            case RUNNING -> "fight!";
+            case ENDED -> match.winner() != null ? playerName(match.winner()) + " wins (" + match.result() + ")" : match.result();
+        };
+        String line = "Duel " + who + ": " + what;
+        KindredMod.LOGGER.info(line);
+        for (UUID invited : match.invited()) {
+            var player = server.getPlayerManager().getPlayer(invited);
+            if (player != null) player.sendMessage(Text.literal(line), false);
+            // An AI player in it chooses again at once: the fight begins, or what it was doing goes on.
+            Entry entry = entryForPlayer(invited);
+            if (entry != null) {
+                entry.cachedRoutineCandidates = List.of();
+                entry.routineRefreshPending = true;
+                // The fight is what the administrator entered it for: a hold left by an earlier command gives way.
+                if (match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING) entry.manualHoldUntilTick = Long.MIN_VALUE;
+            }
+        }
+    }
+
+    /**
+     * A duel proposed between two players (M-00a). An AI player is entered by whoever administers it; a human must join
+     * it itself (/aiplayer match join), so no human is ever entered into a fight by anyone else (D7).
+     */
+    int proposeDuel(ServerCommandSource source, UUID first, UUID second) {
+        requireThread();
+        // The server's own rule comes first: with PvP off, no player can hurt another, in a match or not.
+        if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
+        var invited = List.of(first, second);
+        for (UUID player : invited) {
+            Entry entry = entryForPlayer(player);
+            if (entry == null && server.getPlayerManager().getPlayer(player) == null) return reject(source, "No such player online.");
+            if (entry != null && !nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+        }
+        var result = matches.propose(dev.kindred.core.match.MatchRegistry.Mode.DUEL, invited);
+        if (!result.accepted()) return reject(source, result.reason());
+        var match = result.match().orElseThrow();
+        for (UUID player : invited) {
+            if (entryForPlayer(player) != null) {
+                match = matches.join(match.id(), player).match().orElse(match);
+            } else {
+                var human = server.getPlayerManager().getPlayer(player);
+                if (human != null) {
+                    // Joining is the human's own choice: a click runs the join as the human, and nothing else enters it.
+                    String join = "/aiplayer match join " + dev.kindred.core.match.MatchRegistry.shortId(match.id());
+                    human.sendMessage(Text.literal("You are invited to a duel against " + playerName(dev.kindred.core.match.MatchRegistry.other(match, player))
+                            + ". To fight in it: ").append(Text.literal("[Join]").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
+                            .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, join))
+                            .withHoverEvent(new net.minecraft.text.HoverEvent(net.minecraft.text.HoverEvent.Action.SHOW_TEXT, Text.literal(join))))), false);
+                }
+            }
+        }
+        feedback(source, "Duel " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + match.invited().stream().map(this::playerName)
+                .collect(java.util.stream.Collectors.joining(" against ")) + "; " + match.joined().size() + " of 2 joined.");
+        return 1;
+    }
+
+    /** The player running the command joins a match it was invited to. Only a player can join, and only for itself. */
+    int joinMatch(ServerCommandSource source, UUID matchId) {
+        requireThread();
+        if (!(source.getEntity() instanceof ServerPlayerEntity player)) return reject(source, "Only a player can join a match, for itself.");
+        var result = matches.join(matchId, player.getUuid());
+        if (!result.accepted()) return reject(source, result.reason());
+        feedback(source, "Joined the duel.");
+        return 1;
+    }
+
+    /** Starts a match whose every invited player has joined: an operator, or a joined player. */
+    int startMatch(ServerCommandSource source, UUID matchId) {
+        requireThread();
+        var match = matches.get(matchId).orElse(null);
+        if (match == null) return reject(source, "No such match.");
+        boolean participant = source.getEntity() instanceof ServerPlayerEntity player && match.participant(player.getUuid());
+        if (!participant && !source.hasPermissionLevel(2)) return reject(source, "Only an operator or a player in the match can start it.");
+        if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
+        var result = matches.start(matchId, server.getTicks());
+        if (!result.accepted()) return reject(source, result.reason());
+        announce(result.match().orElseThrow());
+        return 1;
+    }
+
+    /** Stops a match: an operator stops it outright; a player in it forfeits. */
+    int stopMatch(ServerCommandSource source, UUID matchId) {
+        requireThread();
+        var match = matches.get(matchId).orElse(null);
+        if (match == null) return reject(source, "No such match.");
+        dev.kindred.core.match.MatchRegistry.Result result;
+        if (source.hasPermissionLevel(2)) {
+            result = matches.stop(matchId);
+        } else if (source.getEntity() instanceof ServerPlayerEntity player && match.participant(player.getUuid())) {
+            result = matches.leave(matchId, player.getUuid());
+        } else {
+            return reject(source, "Only an operator or a player in the match can stop it.");
+        }
+        if (!result.accepted()) return reject(source, result.reason());
+        announce(result.match().orElseThrow());
+        return 1;
+    }
+
+    /** A player fell: a running duel it was in ends, the other the winner. */
+    void playerFell(UUID playerId) {
+        requireThread();
+        matches.fallen(playerId).ifPresent(this::announce);
+    }
+
+    /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
+    void playerLeft(UUID playerId) {
+        requireThread();
+        matches.departed(playerId).ifPresent(this::announce);
+    }
+
+    /** A match by its id or the start of it, as typed. */
+    java.util.Optional<dev.kindred.core.match.MatchRegistry.Match> findMatch(String raw) {
+        requireThread();
+        return matches.find(raw);
+    }
+
+    List<dev.kindred.core.match.MatchRegistry.Match> matches() {
+        requireThread();
+        return matches.list();
     }
 
     /** The gates on a native player's next decision, in a line, for a fixture that finds it idle. */

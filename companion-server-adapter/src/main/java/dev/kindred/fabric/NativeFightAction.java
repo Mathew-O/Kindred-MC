@@ -115,6 +115,8 @@ final class NativeFightAction extends NativeRecordedAction {
         }
         if (admission.phase() != ActionAdmission.Phase.ISSUED || !fighting) return waiting();
         if (target == null) { settle("The target was defeated or is gone", true); return waiting(); }
+        // A player is fought only while the match both joined runs (M-00a, D7).
+        if (!body.mayStrike(target)) { settle("No running match allows striking that player", false); return waiting(); }
         if (++ticks > MAX_TICKS || player.squaredDistanceTo(target) > 24 * 24) { settle("The fight broke off", false); return waiting(); }
         boolean visible = player.canSee(target);
         unseen = visible ? 0 : unseen + 1;

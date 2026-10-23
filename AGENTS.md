@@ -1,6 +1,6 @@
 # Kindred MC — autonomous AI players
 
-Build three persistent AI players that earn a cooperative survival playthrough from empty inventory through the Ender Dragon. They have their own goals, needs and team commitments. Humans may cooperate or administer the world. Follow/help/wait are tasks, not the agent's identity. The same players play four core modes (Co-op Survival, Manhunt, Speedrun, Builder) on one runtime; see MODE-01..04 in the contract and M-00..M-05 in the tracker.
+Build three persistent AI players that earn a cooperative survival playthrough from empty inventory through the Ender Dragon. They have their own goals, needs and team commitments. Humans may cooperate or administer the world. Follow/help/wait are tasks, not the agent's identity. The same players play four core modes (Co-op Survival, Manhunt, Speedrun, Builder) and an optional Factions mode on one runtime; see MODE-01..05 in the contract and M-00..M-06 in the tracker.
 
 Read [the player contract](minecraft_player_spec.md), [architecture](docs/player-architecture.md), [canonical tracker](docs/feature-spec.md), [validation](docs/validation.md) and [manifest](release-manifest.json). Current user instructions prevail. The companion product is retired: do not reconstruct its roadmap from old evidence, class names, SQL fields or command aliases.
 

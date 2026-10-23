@@ -119,6 +119,11 @@ public final class NativeRulesetGameTests implements FabricGameTest {
                     var player = f.player();
                     player.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
                     player.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+                    // Kept alive through the hits that land while the shield is not yet up, or turned away, until one
+                    // lands on it: Resistance V takes all the damage, and leaves the shield's blocking and disabling as
+                    // they are. One run died to those hits first and never saw the shield struck.
+                    player.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.RESISTANCE,
+                            1200, 4, false, false));
                     player.setYaw(0);
                     player.setHeadYaw(0);
                     // Spawned with its goals (the test context's spawnMob clears them): it walks up and swings.
@@ -129,6 +134,7 @@ public final class NativeRulesetGameTests implements FabricGameTest {
                     zombie[0].setPersistent();
                     world.spawnEntity(zombie[0]);
                     zombie[0].equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+                    zombie[0].equipStack(EquipmentSlot.HEAD, new ItemStack(Items.CARVED_PUMPKIN)); // No burning by day.
                     zombie[0].setTarget(player);
                     context.assertTrue(f.runtime.nativeBlock(f.source, f.id, 40) == 1, "Block requested");
                 })
@@ -280,6 +286,10 @@ public final class NativeRulesetGameTests implements FabricGameTest {
                     player.getInventory().selectedSlot = 0;
                     zombie[0] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(3.5, 2.0, 5.5));
                     zombie[0].setHealth(10);
+                    // Anything on its head keeps it from burning by day (a carved pumpkin adds no armour). A burn the
+                    // fixture does not control hurt it just before a strike, inside the damage immunity, so the strike
+                    // showed no hurt flash and was rightly not believed; or after it, so the health lost was not the hit.
+                    zombie[0].equipStack(net.minecraft.entity.EquipmentSlot.HEAD, new ItemStack(Items.CARVED_PUMPKIN));
                     double believed = NativePlayerBody.believedHealth(player, zombie[0]);
                     context.assertTrue(believed == 20, "Hurt by nothing it saw, believed whole: " + believed);
                     var seen = NativeTacticalObserver.observe(player, f.id, 0, false, false, context.getWorld().getTime());

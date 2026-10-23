@@ -206,4 +206,59 @@ class ConstructionPlannerTest {
         assertEquals(Map.of("minecraft:torch", 1), bill.missing());
         assertEquals(List.of("minecraft:oak_door"), bill.unsupported());
     }
+
+    /** A finished block, two scaffold columns two high at {@code columns}, on the flat test ground. */
+    private static Map<Pos, Cell> scaffolded(List<Blueprint.Block> blocks, java.util.Set<Pos> scaffold, Pos... columns) {
+        var cells = BuildTestSites.flat();
+        for (var b : blocks) cells.put(b.at(), BuildTestSites.solid(b.spec().block()));
+        for (Pos column : columns) for (int h = 0; h < 2; h++) {
+            cells.put(column.add(0, h, 0), BuildTestSites.solid("minecraft:dirt"));
+            scaffold.add(column.add(0, h, 0));
+        }
+        return cells;
+    }
+
+    /**
+     * Built, the scaffolding comes down from the top of each column, the highest first and of equal height the nearest:
+     * beside one column, that one, whatever order the scaffold set gives them.
+     */
+    @Test
+    void ofScaffoldTopsAsHighTheNearestComesDownFirst() {
+        var blocks = List.of(new Blueprint.Block(new Pos(0, 1, 0), BlockSpec.parse("minecraft:cobblestone")));
+        Pos near = new Pos(1, 1, 6), far = new Pos(1, 1, -6);
+        for (Pos[] order : new Pos[][] {{near, far}, {far, near}}) {
+            var scaffold = new java.util.LinkedHashSet<Pos>();
+            var cells = scaffolded(blocks, scaffold, order);
+            var step = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), new Pos(0, 1, 6), Set.of(), scaffold);
+            assertEquals(ConstructionPlanner.Kind.BREAK, step.kind());
+            assertEquals(near.up(), step.target(), "the near column's top, listed " + List.of(order));
+        }
+    }
+
+    /**
+     * Scaffolding out of reach from everywhere it can walk to waits while what it can reach comes down; then it is
+     * blocked over that column, with the column's place, for the runner to go over to it.
+     */
+    @Test
+    void aColumnOutOfReachFromHereIsLeftForTheRestAndNamed() {
+        var blocks = List.of(new Blueprint.Block(new Pos(0, 1, 0), BlockSpec.parse("minecraft:cobblestone")));
+        Pos beside = new Pos(1, 1, 6), away = new Pos(1, 1, -10);
+        var scaffold = new java.util.LinkedHashSet<Pos>();
+        var cells = scaffolded(blocks, scaffold, away, beside);
+        // Walled in where it stands, so the far column is in reach of nothing it can walk to.
+        Pos feet = new Pos(0, 1, 6);
+        for (Face face : List.of(Face.NORTH, Face.SOUTH, Face.WEST)) for (int h = 0; h < 3; h++) cells.put(feet.offset(face).add(0, h, 0), BuildTestSites.solid("minecraft:stone"));
+        cells.put(beside.add(0, 2, 0), BuildTestSites.solid("minecraft:stone"));
+        var step = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, Set.of(), scaffold);
+        assertEquals(ConstructionPlanner.Kind.BREAK, step.kind(), step.reason());
+        assertEquals(beside.up(), step.target(), "the one in reach first, though the other is listed first");
+        // That column down, the wall it made is closed with stone, so the far one is still out of reach.
+        scaffold.remove(beside.up());
+        scaffold.remove(beside);
+        cells.put(beside.up(), BuildTestSites.solid("minecraft:stone"));
+        cells.put(beside, BuildTestSites.solid("minecraft:stone"));
+        var stuck = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, Set.of(), scaffold);
+        assertEquals(ConstructionPlanner.Kind.BLOCKED, stuck.kind());
+        assertEquals(away.up(), stuck.target(), "named, for the runner to walk over to it");
+    }
 }

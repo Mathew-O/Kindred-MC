@@ -133,6 +133,35 @@ public final class PlayerCommands {
             if (runtime == null) return unavailable(context.getSource());
             return runtime.openControlGui(context.getSource());
         }));
+        // Matches (M-00a): an AI player is entered by whoever administers it; a human joins only for itself (D7).
+        root.then(CommandManager.literal("match")
+                .then(CommandManager.literal("duel").then(CommandManager.argument("first", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestPlayers(context, builder))
+                        .then(CommandManager.argument("second", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestPlayers(context, builder))
+                                .executes(context -> {
+                                    PlayerRuntime runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID first = resolveMatchPlayer(context, "first", runtime), second = resolveMatchPlayer(context, "second", runtime);
+                                    if (first == null || second == null) return 0;
+                                    return runtime.proposeDuel(context.getSource(), first, second);
+                                }))))
+                .then(CommandManager.literal("join").then(CommandManager.argument("match", StringArgumentType.string())
+                        .executes(context -> matchCommand(context, (runtime, id) -> runtime.joinMatch(context.getSource(), id)))))
+                .then(CommandManager.literal("start").then(CommandManager.argument("match", StringArgumentType.string())
+                        .executes(context -> matchCommand(context, (runtime, id) -> runtime.startMatch(context.getSource(), id)))))
+                .then(CommandManager.literal("stop").then(CommandManager.argument("match", StringArgumentType.string())
+                        .executes(context -> matchCommand(context, (runtime, id) -> runtime.stopMatch(context.getSource(), id)))))
+                .then(CommandManager.literal("list").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    var all = runtime.matches();
+                    if (all.isEmpty()) context.getSource().sendFeedback(() -> Text.literal("No matches."), false);
+                    for (var match : all) context.getSource().sendFeedback(() -> Text.literal(dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " " + match.mode() + " " + match.state()
+                            + " (" + match.joined().size() + " of " + match.invited().size() + " joined)"
+                            + (match.result().isEmpty() ? "" : ": " + match.result())), false);
+                    return all.size();
+                })));
         root.then(CommandManager.literal("mode").then(CommandManager.argument("profile", StringArgumentType.word())
                 .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
@@ -805,6 +834,36 @@ public final class PlayerCommands {
             }
         }
         return builder.buildFuture();
+    }
+
+    /** AI players and the humans online, for a match's players. */
+    private static CompletableFuture<Suggestions> suggestPlayers(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining().toLowerCase(java.util.Locale.ROOT);
+        PlayerRuntime runtime = KindredMod.runtime();
+        var names = new java.util.LinkedHashSet<String>();
+        if (runtime != null) names.addAll(runtime.availableBotNames());
+        for (var player : context.getSource().getServer().getPlayerManager().getPlayerList()) names.add(player.getName().getString());
+        for (String name : names) if (name.toLowerCase(java.util.Locale.ROOT).startsWith(remaining)) builder.suggest(name);
+        return builder.buildFuture();
+    }
+
+    /** A match's player by name: an AI player or a human online, as its player id. */
+    private static UUID resolveMatchPlayer(CommandContext<ServerCommandSource> context, String argName, PlayerRuntime runtime) {
+        String raw = StringArgumentType.getString(context, argName);
+        UUID player = runtime.matchPlayerId(raw);
+        if (player == null) context.getSource().sendError(Text.literal("No such player online: '" + raw + "'."));
+        return player;
+    }
+
+    private static int matchCommand(CommandContext<ServerCommandSource> context, java.util.function.BiFunction<PlayerRuntime, UUID, Integer> action) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        var match = runtime.findMatch(StringArgumentType.getString(context, "match"));
+        if (match.isEmpty()) {
+            context.getSource().sendError(Text.literal("No match with that id; /aiplayer match list shows them."));
+            return 0;
+        }
+        return action.apply(runtime, match.get().id());
     }
 
     private static dev.kindred.core.survival.SurvivalGoal goal(String raw) {

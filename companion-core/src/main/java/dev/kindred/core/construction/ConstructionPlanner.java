@@ -88,6 +88,9 @@ public final class ConstructionPlanner {
 
         static Step blocked(String reason) { return new Step(Kind.BLOCKED, null, null, null, null, null, null, null, 0, 0, 0, reason); }
 
+        /** Blocked over {@code target}: nothing to be done from here, but there may be from nearer it. */
+        static Step blockedAt(Pos target, String reason) { return new Step(Kind.BLOCKED, target, null, null, null, null, null, null, 0, 0, 0, reason); }
+
         static Step breaking(Pos target, Pos stance, String reason) {
             return new Step(Kind.BREAK, target, null, null, stance, null, null, null, 0, 0, 0, reason);
         }
@@ -174,16 +177,19 @@ public final class ConstructionPlanner {
             if (blocks.stream().anyMatch(b -> site.cell(b.at()).map(c -> !c.state().sameAs(b.spec())).orElse(true))) {
                 return anyRule ? Step.blocked("The rest cannot be placed from here") : Step.blocked("The rest are blocks it cannot place yet");
             }
-            // Built: the scaffolding comes down, top first.
-            var up = scaffold.stream().filter(p -> site.cell(p).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false))
-                    .max(Comparator.comparingInt(Pos::y));
-            if (up.isPresent()) {
-                Pos top = up.get();
+            // Built: the scaffolding comes down, each column from its top, the highest first and of those the nearest.
+            // One it cannot reach from here waits while another it can comes down (a suite run stood beside one column
+            // and gave up on another across the hut, the higher only by the order the set gave them).
+            var tops = scaffold.stream().filter(p -> site.cell(p).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false))
+                    .filter(p -> !scaffold.contains(p.up()) || site.cell(p.up()).map(c -> c.kind() != BuildSite.Kind.SOLID).orElse(true))
+                    .sorted(Comparator.<Pos>comparingInt(p -> -p.y()).thenComparingLong(p -> p.distanceSquared(feet)).thenComparing(Comparator.naturalOrder()))
+                    .toList();
+            for (Pos top : tops) {
                 Optional<Pos> stance = stanceToBreak(site, top, feet, wanted, box, walk);
                 if (stance.isPresent()) return Step.breaking(top, stance.get(), "Scaffolding down");
                 if (feet.equals(top.up())) return Step.breaking(top, feet, "Scaffolding down, from on top of it");
-                return Step.blocked("Scaffolding at " + top + " is out of reach to take down");
             }
+            if (!tops.isEmpty()) return Step.blockedAt(tops.getFirst(), "Scaffolding at " + tops.getFirst() + " is out of reach to take down");
             return Step.done();
         }
         todo.sort(Comparator.<Blueprint.Block>comparingInt(b -> b.at().y()).thenComparingLong(b -> b.at().distanceSquared(feet)));

@@ -70,6 +70,19 @@ public final class KindredMod implements ModInitializer {
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
             if (entity instanceof CompanionEntity companion && runtime != null) runtime.unloaded(companion);
         });
+        // A player's fall ends a duel it was in (M-00a); a native player's own death is handled by its runtime as well.
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+            if (entity instanceof net.minecraft.server.network.ServerPlayerEntity fallen && runtime != null) runtime.playerFell(fallen.getUuid());
+        });
+        // Leaving the game forfeits a duel, or calls it off before its start (M-00a).
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            java.util.UUID left = handler.player.getUuid();
+            if (server.isOnThread()) {
+                if (runtime != null) runtime.playerLeft(left);
+            } else {
+                server.execute(() -> { if (runtime != null) runtime.playerLeft(left); });
+            }
+        });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             if (runtime != null) runtime.stop();
         });

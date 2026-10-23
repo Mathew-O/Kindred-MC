@@ -21,6 +21,10 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
 /aiplayer build list                 the generators and schematics on offer
+/aiplayer match duel <first> <second>  propose a duel between two players (AI players or humans online)
+/aiplayer match join <match>         join a match you were invited to (a human joins only for itself)
+/aiplayer match start|stop <match>   start a match everyone joined, or stop it (a player in it forfeits)
+/aiplayer match list                 matches, their state and results
 /aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
 /aiplayer skin list                  the skins on offer
 /aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
@@ -116,6 +120,16 @@ When it reads a schematic it:
 It says what it left out. A schematic may be up to 96 blocks a side and 32,768 blocks. Blocks with no placement rule yet (doors, beds, signs, buttons, rails, redstone, plants) are skipped and listed.
 
 The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. Not yet: a build kept across a restart (the project is held in memory; what is built stays, so the same command picks it up from the world), gathering and crafting what is missing (E-08c), Litematica `.litematic` files. See [the building plan](building-plan.md) and [E-08b](evidence/E-08b.md).
+
+**Duels (M-00a; in development).** Players fight one another only inside a match they joined (D7), and only on a server that allows PvP at all (`pvp=true` in `server.properties`; with it off, no duel is proposed or started). `/aiplayer match duel <first> <second>` proposes a duel between two players, AI players or humans online:
+- An AI player is entered by whoever may administer it; proposing needs that access for each AI player in it.
+- A human is only invited: the invitation has a **[Join]** to click, which runs `/aiplayer match join <match>` as that human. It is in the match only after joining itself, and nobody can enter a human into a fight.
+- Once everyone has joined, an operator or a player in it starts it with `/aiplayer match start <match>`. Three seconds of countdown follow, in which nobody may strike, then the fight.
+- The AI players in it fight with what they carry (the weapon that deals the most, with the timing and critical hits of their other fights), walking over first when the opponent is far.
+- It ends when one player falls (the other wins), when one forfeits (`/aiplayer match stop <match>` from a player in it, or leaving the game, an AI player's body taken out included), after five minutes (a draw), or when an operator stops it. A player leaving before the start calls it off. The leave to strike ends with it at once, mid-swing included. Matches are not kept across a restart; a restart ends them all.
+- The fight takes the same damage, wear and deaths as any other: nothing is restored afterwards, and the fallen player respawns and drops its items as in any death.
+
+Each player gets the match's state in chat. A match goes by the first eight characters of its id (any start of four or more that no other match shares will do); `/aiplayer match list` shows them. See [M-00a](evidence/M-00a.md).
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 

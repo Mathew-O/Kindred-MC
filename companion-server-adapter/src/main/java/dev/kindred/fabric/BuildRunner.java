@@ -145,7 +145,11 @@ final class BuildRunner {
                         + (tally.unsupported().isEmpty() ? "" : ", without " + String.join(", ", tally.unsupported()));
                 yield Optional.empty();
             }
-            case BLOCKED -> Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
+            // Out of reach from here of something it can see: over to it, by the navigator's own way, to plan again
+            // from beside it. Anything else is waited out.
+            case BLOCKED -> step.target() != null && feet.distanceSquared(step.target()) > 9
+                    ? Optional.of(near(step.target(), step.reason() + "; over to it"))
+                    : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
                 if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To break " + step.target() + " from " + feet));
                 boolean underfoot = step.target().equals(feet.down());
@@ -334,6 +338,12 @@ final class BuildRunner {
     private static PortalRunCampaign.Task go(Pos stance, String label) {
         return new PortalRunCampaign.Task("native_goto", Map.of("x", str(stance.x()), "y", str(stance.y()), "z", str(stance.z()),
                 "range", "0", "centre", "true"), label);
+    }
+
+    /** Within a few blocks of {@code target}, wherever the navigator finds to stand. */
+    private PortalRunCampaign.Task near(Pos target, String reason) {
+        progress = blueprint.name() + ": " + reason;
+        return new PortalRunCampaign.Task("native_goto", Map.of("x", str(target.x()), "y", str(target.y()), "z", str(target.z()), "range", "2.5"), reason);
     }
 
     private PortalRunCampaign.Task wait(String reason) {

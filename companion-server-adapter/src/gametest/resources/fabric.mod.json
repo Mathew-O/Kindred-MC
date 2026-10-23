@@ -61,7 +61,8 @@
       "dev.kindred.fabric.NativeStairGameTests",
       "dev.kindred.fabric.NativeBodyTickingGameTests",
       "dev.kindred.fabric.NativeRulesetGameTests",
-      "dev.kindred.fabric.NativeEncounterGameTests"
+      "dev.kindred.fabric.NativeEncounterGameTests",
+      "dev.kindred.fabric.NativeMatchGameTests"
     ]
   },
   "depends": {

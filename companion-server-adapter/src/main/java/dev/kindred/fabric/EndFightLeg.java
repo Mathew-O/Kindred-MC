@@ -1113,6 +1113,10 @@ final class EndFightLeg {
     private Optional<PortalRunCampaign.Task> fillFrame(NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
+        // Beside the ring, a player looks it over: each frame it can see is known now, not only once the sweep of its
+        // surroundings comes round to it (one suite run rounded the ring for a minute knowing a single frame).
+        leg.endPortal().filter(first -> first.isWithinDistance(player.getBlockPos(), 10))
+                .ifPresent(first -> campaign.knowledge().look(player, first, 6, 1, WorldKnowledge.Kind.END_PORTAL_FRAME));
         var frames = frames(world);
         var empty = frames.stream().filter(f -> !filled(world, f))
                 .min(java.util.Comparator.comparingDouble(f -> f.getSquaredDistance(player.getBlockPos())));
