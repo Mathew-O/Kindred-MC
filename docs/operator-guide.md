@@ -146,11 +146,11 @@ Each player in it sees the match as a minigame server shows one, on an ordinary 
 
 See [M-03a](evidence/M-03a.md).
 
-**Manhunts (M-02a; in development).** `/aiplayer match manhunt <runner...> vs <hunter...>` proposes a manhunt between two and eight players, AI players or humans online, joined and started like any match.
+**Manhunts (M-02a, M-02b; in development).** `/aiplayer match manhunt <runner...> vs <hunter...>` proposes a manhunt between two and eight players, AI players or humans online, joined and started like any match.
 - **Fair game only once joined.** A runner and a hunter may strike one another; two on the same side never may. A human is fair game only once it has joined (D7).
 - **Everyone starts with nothing.** It needs the server's PvP on. An AI player in it needs `/aiplayer edits on`, and an AI runner `/aiplayer dragonfight on` as well.
-- **The runners** make for the dragon: an AI runner plays the dragon goal at speedrun pace. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
-- **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see.
+- **The runners** make for the dragon. An AI runner plays the dragon goal quickly but reliably, at its own steady pace rather than speedrun pace. It keeps its distance from a hunter it can see within twenty blocks, running off away from it, and fights only once caught. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
+- **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see. It gears up as the hunt goes on: iron armour from the iron it holds (a chestplate, leggings, a helmet, boots, in that order), made and put on before it follows the needle on.
 - **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Every one is taken back when the hunt ends. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
 
 **A ranch (M-01a; in development).** `/aiplayer ranch <cow|sheep|pig|chicken> <x y z> [player]` has a native player make a ranch with the pen's north-west post at that spot. Only its administrator may ask, and only where AI world edits are allowed.

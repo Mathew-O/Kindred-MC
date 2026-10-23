@@ -36,10 +36,12 @@ class RanchTest {
         assertTrue(walk.holdFood());
         // Following: led back to the gate a few blocks at a time, waited for when it falls behind.
         var lead = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(13, 10, false, 8, 20, cow(DAISY, 11, 10), cow(BESS, 12, 11))));
-        assertEquals(new Pos(3, 64, 7), lead.target(), "to just outside the gate");
+        assertEquals(new Pos(3, 64, 10), lead.target(), "round to the front of the gate, to come at it in line");
         assertTrue(lead.holdFood() && lead.leg() > 0, "a short leg at the pace of the animal behind");
-        assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(8, 8, false, 8, 30, cow(DAISY, 13, 10), cow(BESS, 13, 11))));
-        // At the gate: opened, then across the pen for them to follow in.
+        assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(8, 10, false, 8, 30, cow(DAISY, 13, 10), cow(BESS, 13, 11))));
+        // Lined up in front: to the gate, which is opened, then across the pen for them to follow in.
+        var lined = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 10, false, 8, 35, cow(DAISY, 5, 11), cow(BESS, 6, 12))));
+        assertEquals(new Pos(3, 64, 7), lined.target(), "to just outside the gate");
         assertEquals(new Ranch.Step.Gate(true, "Open the gate"), ranch.next(seen(3, 7, false, 8, 40, cow(DAISY, 5, 8), cow(BESS, 6, 9))));
         var in = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 7, true, 8, 50, cow(DAISY, 5, 8), cow(BESS, 6, 9))));
         assertEquals(new Pos(3, 64, 1), in.target());
@@ -93,8 +95,11 @@ class RanchTest {
     void oneThatWillNotComeInIsLeftAndWithNoneLeftItSaysSoAndLeaves() {
         var ranch = ranch();
         ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 3, 8)));
-        // Bess stands just outside, following, and never comes in.
-        assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(3, 1, true, 8, 100, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
+        // Bess stands just outside, following, and never comes in: drawn from across the pen, then from just inside the gate.
+        assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(3, 1, true, 8, 30, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
+        var toGate = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 1, true, 8, 100, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
+        assertEquals(new Pos(3, 64, 5), toGate.target());
+        assertTrue(toGate.holdFood());
         assertEquals(new Ranch.Step.Wait(false, "That cow will not come in"), ranch.next(seen(3, 1, true, 8, 400, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
         var leaving = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 1, true, 8, 410, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
         assertFalse(leaving.holdFood());
@@ -102,6 +107,29 @@ class RanchTest {
         var done = assertInstanceOf(Ranch.Step.Done.class, ranch.next(seen(3, 7, false, 8, 430, cow(DAISY, 3, 3), cow(BESS, 3, 9))));
         assertEquals("Only one cow in the pen; no other in sight", done.outcome());
         assertFalse(done.bred());
+    }
+
+    @Test
+    void oneThatSlipsOutAsItLeavesIsBroughtBackIn() {
+        var ranch = ranch();
+        var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(2, 64, 2), true, false, false);
+        var bess = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(4, 64, 2), true, false, false);
+        var calf = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 2), false, false, false);
+        // Shut in, not ready to breed again: it leaves with all three penned.
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 8, List.of(daisy, bess, calf), 0));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calf), 10));
+        // Out and the gate shut, the calf has slipped out behind it: it turns back for it, wheat in hand.
+        var calfOut = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(10, 64, 12), false, false, false);
+        var back = assertInstanceOf(Ranch.Step.Go.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, calfOut), 20)));
+        assertTrue(back.holdFood());
+        assertEquals("bringing a cow back into the pen", ranch.phase());
+        // Led in, the gate shut on them all from inside, then out again.
+        var calfIn = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 3), false, false, false);
+        assertInstanceOf(Ranch.Step.Gate.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calfIn), 30)));
+        assertInstanceOf(Ranch.Step.Gate.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 8, List.of(daisy, bess, calfIn), 40)));
+        assertInstanceOf(Ranch.Step.Go.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calfIn), 50)));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 8, List.of(daisy, bess, calfIn), 60));
+        assertInstanceOf(Ranch.Step.Done.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, calfIn), 70)));
     }
 
     @Test

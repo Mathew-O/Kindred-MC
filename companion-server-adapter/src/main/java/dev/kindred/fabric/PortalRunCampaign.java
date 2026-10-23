@@ -1331,6 +1331,14 @@ final class PortalRunCampaign {
         return nearestWorkstation(body.entity(), Blocks.CRAFTING_TABLE, 16).isPresent() || body.findNearbyBlock(Blocks.CRAFTING_TABLE, 4.5).isPresent();
     }
 
+    /** Craft at a crafting table: one close by, else one it carries set down, else one made from four planks. */
+    Optional<Task> craftAtTable(NativePlayerBody body, String item) {
+        Optional<Task> made = craft(body, item);
+        if (made.isPresent() || tableNear(body)) return made;
+        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) return placeTable(body);
+        return craft(body, "crafting_table");
+    }
+
     /** Set down a crafting table it carries. */
     Optional<Task> placeTable(NativePlayerBody body) {
         return placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");

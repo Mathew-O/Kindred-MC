@@ -4,6 +4,16 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-02b (manhunt roles) and the owner's notes of 2026-10-23 recorded, on top of `bcfca5c`.
+  - Native fixtures:
+    - `aRunnerKeepsItsDistanceFromAHunterInSightAndFightsOnlyWhenCaught` (new): Rue moves off from Hal, held ten blocks away, rather than cut the tree beside it, and is twenty blocks off within eight seconds; with Hal kept at its heels, Rue turns and strikes it.
+    - `aHunterMakesItsKitThenArmourFromItsIronBeforeItHunts` (extended from the kit fixture): from sixteen ingots, a sword, a shield, then an iron chestplate and helmet, worn before any strike; then it hunts the runner down.
+    - The compass fixture also checks the runner's pace: reliable, not speedrun pace.
+  - Four hand controls, each failing as expected: the runner at speedrun pace, no moving off, no fighting back once caught, no armour made.
+  - Found on the way: with moving off reverted, an earlier evasion fixture still passed, since Rue's goal took it exploring away from Hal; the fixture now counts Rue's own move-offs.
+  - The ranch (M-01a) sharpened after a calf slipped out of the pen in a suite run: animals led round to the front of the gate first, drawn in by turns from across the pen and from inside the gate, and any that get out brought back; six runs in a row alone.
+  - `runGametest` passed 295/295 twice in a row, the second and third of three runs. The first failed once in `goalCastsAWholePortalFrameFromALavaPoolWithoutDiamonds`, which this change does not touch: its player did not see the lava pool on its first look and explored off. `./gradlew build` passed: 526 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `3f41fc536c82b6f5539d2faa631c9007c2f5775e0e65379f2c8295ffda5136e6`.
 - M-01a (a ranch), on top of `fc2680e`.
   - New JUnit: `RanchTest` (5), `aPenIsARingOfFencesWithItsGateMidSouthAndIsBuiltWhole`.
   - New native fixture: `anAiPlayerPensAPairOfCowsWithItsOwnWoodAndBreedsThem`. From fourteen oak logs and eight wheat, Wren crafts the gate, 24 fences and a table, and builds a seven-by-seven pen. It leads two cows from across a field into the pen with the wheat in hand and shuts them in. It feeds both (two wheat spent); a calf is born; it goes out and shuts the gate. All three are still penned ten seconds later.

@@ -89,6 +89,8 @@ public final class Ranch {
     static final double LAGGING = 4.5;
     /** Ticks it waits for a led animal to come into the pen, and for the young one, before giving up. */
     static final long COME_IN = 300, BIRTH = 600;
+    /** Ticks it draws a following animal from one spot before trying the other. */
+    static final long DRAW = 60;
     /** Ticks it waits for animals to move off the gate before opening it to go out anyway. */
     static final long CLEAR = 200;
     /** Within this of an animal it feeds it (a player reaches three blocks to an entity's box). */
@@ -96,7 +98,10 @@ public final class Ranch {
     /** Within this of the gate it works it. */
     static final double AT_GATE = 3;
 
-    enum Phase { BUILD, FETCH, SHUT, BREED, LEAVE, DONE }
+    enum Phase { BUILD, FETCH, SHUT, BREED, LEAVE, RETURN, DONE }
+
+    /** How many times it brings back animals that got out as it left, before it says one got away. */
+    static final int RETURNS = 3;
 
     private final Pos origin;
     private final int width, depth;
@@ -104,10 +109,15 @@ public final class Ranch {
     private Phase phase = Phase.BUILD;
     private UUID leading;
     private long waitingSince = -1, clearSince = -1;
+    /** Whether the animal it leads has been brought round to the front of the gate. */
+    private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
     private int youngBefore = -1;
     private String outcome = "";
     private boolean bred;
+    /** The animals it shut in, and the young born to them: those it checks are still in as it leaves. */
+    private final Set<UUID> penned = new HashSet<>();
+    private int returns;
 
     public Ranch(Pos origin, int width, int depth, Kind kind) {
         if (width < 5 || depth < 5 || width > 15 || depth > 15 || width % 2 == 0) {
@@ -133,6 +143,9 @@ public final class Ranch {
     /** Just outside the gate, to the south. */
     public Pos outside() { return gate().add(0, 0, 1); }
 
+    /** Out in front of the gate, a few blocks off: where a led animal is lined up with it. */
+    public Pos front() { return gate().add(0, 0, 4); }
+
     /** Just inside the gate. */
     public Pos inner() { return gate().add(0, 0, -1); }
 
@@ -153,6 +166,7 @@ public final class Ranch {
             case SHUT -> "shutting the gate";
             case BREED -> "breeding the " + kind.noun() + "s";
             case LEAVE -> "leaving the pen";
+            case RETURN -> "bringing a " + kind.noun() + " back into the pen";
             case DONE -> outcome;
         };
     }
@@ -170,13 +184,24 @@ public final class Ranch {
         if (phase == Phase.BUILD) phase = Phase.FETCH;
         var adultsIn = seen.animals().stream().filter(a -> a.kind() == kind && a.adult() && inside(a.at())).toList();
         boolean in = inside(seen.feet());
+        if (phase == Phase.RETURN) {
+            var out = escaped(seen);
+            if (out.isEmpty()) {
+                phase = Phase.SHUT;
+                leading = null;
+                waitingSince = -1;
+            } else {
+                return fetch(seen, in, (int) seen.animals().stream().filter(a -> penned.contains(a.id()) && inside(a.at())).count(),
+                        a -> out.contains(a.id()));
+            }
+        }
         if (phase == Phase.FETCH) {
             if (adultsIn.size() >= 2) {
                 phase = Phase.SHUT;
                 leading = null;
                 waitingSince = -1;
             } else {
-                return fetch(seen, in, adultsIn.size());
+                return fetch(seen, in, adultsIn.size(), Animal::adult);
             }
         }
         if (phase == Phase.SHUT) {
@@ -187,6 +212,9 @@ public final class Ranch {
             }
             // Food put away first, so the animals stop following it to the gate.
             if (seen.gateOpen()) return gate(seen, false, inner(), false, "Shut the " + kind.noun() + "s in");
+            seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
+            // Brought back in after breeding: out again, the gate shut behind.
+            if (bred) return leave(seen, outcome);
             phase = Phase.BREED;
             youngBefore = (int) seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && inside(a.at())).count();
             waitingSince = -1;
@@ -195,6 +223,7 @@ public final class Ranch {
             long young = seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && inside(a.at())).count();
             if (young > youngBefore) {
                 bred = true;
+                seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
                 return leave(seen, "A young " + kind.noun() + " born in the pen");
             }
             var inLove = adultsIn.stream().filter(Animal::inLove).toList();
@@ -213,13 +242,30 @@ public final class Ranch {
         // Leaving: out through the gate and shut it behind, the food put away so nothing follows.
         if (in) return out(seen, "Open the gate to leave", "Out of the pen");
         if (seen.gateOpen()) return gate(seen, false, outside(), false, "Shut the gate behind");
+        // The gate shut, it looks back: one that slipped out as it left is brought back in, a few times at most.
+        var out = escaped(seen);
+        if (!out.isEmpty() && returns < RETURNS && seen.food() > 0) {
+            returns++;
+            phase = Phase.RETURN;
+            return next(seen);
+        }
+        if (!out.isEmpty()) outcome = outcome + "; " + out.size() + " got out";
         phase = Phase.DONE;
         return new Step.Done(outcome, bred);
     }
 
-    private Step fetch(Observation seen, boolean in, int adultsIn) {
+    /** Those it shut in, now outside the pen within its reach. */
+    private Set<UUID> escaped(Observation seen) {
+        var out = new HashSet<UUID>();
+        for (var a : seen.animals()) {
+            if (penned.contains(a.id()) && !inside(a.at()) && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE) out.add(a.id());
+        }
+        return out;
+    }
+
+    private Step fetch(Observation seen, boolean in, int adultsIn, java.util.function.Predicate<Animal> wanted) {
         var candidates = seen.animals().stream()
-                .filter(a -> a.kind() == kind && a.adult() && !inside(a.at()) && !givenUp.contains(a.id())
+                .filter(a -> a.kind() == kind && wanted.test(a) && !inside(a.at()) && !givenUp.contains(a.id())
                         && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE)
                 .sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet())))
                 .toList();
@@ -232,8 +278,10 @@ public final class Ranch {
         if (!animal.id().equals(leading)) {
             leading = animal.id();
             waitingSince = -1;
+            lined = false;
         }
         double apart = Math.sqrt(animal.at().distanceSquared(seen.feet()));
+        if (in) lined = false;
         if (in) {
             if (apart > FOLLOWING + 4) {
                 // Not following: out for it with the food put away, so the one inside stays.
@@ -249,7 +297,12 @@ public final class Ranch {
                 return new Step.Wait(false, "That " + kind.noun() + " will not come in");
             }
             if (!seen.gateOpen()) return gate(seen, true, inner(), true, "Open the gate for the " + kind.noun());
-            return Math.sqrt(far().distanceSquared(seen.feet())) > 1.5 ? go(far(), 1, true, LEG, "Across the pen for the " + kind.noun() + " to follow")
+            // An animal following the food goes straight for it and can hang against the fence beside the gate; drawn
+            // from across the pen, then from just inside the gate, by turns, it finds its way in.
+            boolean fromGate = (seen.tick() - waitingSince) / DRAW % 2 == 1;
+            Pos stand = fromGate ? inner() : far();
+            return Math.sqrt(stand.distanceSquared(seen.feet())) > 1.5
+                    ? go(stand, 1, true, LEG, fromGate ? "Just inside the gate to draw the " + kind.noun() + " in" : "Across the pen for the " + kind.noun() + " to follow")
                     : new Step.Wait(true, "Wait for the " + kind.noun() + " to come in");
         }
         waitingSince = -1;
@@ -259,6 +312,12 @@ public final class Ranch {
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
         if (apart > LAGGING) return new Step.Wait(true, "Let the " + kind.noun() + " catch up");
+        // Round to the front of the gate first, so the animal comes up behind it in line with the gate rather than
+        // along the fence, where going straight for the food walks it into the fence.
+        if (!lined) {
+            if (Math.sqrt(front().distanceSquared(seen.feet())) > 1.5) return go(front(), 1, true, LEG, "Lead the " + kind.noun() + " round to the front of the gate");
+            lined = true;
+        }
         if (!seen.gateOpen()) return gate(seen, true, outside(), true, "Open the gate");
         return go(far(), 1, true, LEG, "Lead the " + kind.noun() + " into the pen");
     }

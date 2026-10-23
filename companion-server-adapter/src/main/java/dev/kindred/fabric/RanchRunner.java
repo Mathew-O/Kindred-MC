@@ -69,7 +69,12 @@ final class RanchRunner {
         if (done) return Optional.empty();
         var player = body.entity();
         var world = player.getServerWorld();
-        var step = ranch.next(observe(player, world));
+        var seen = observe(player, world);
+        var step = ranch.next(seen);
+        if (step instanceof Ranch.Step.Done) {
+            KindredMod.LOGGER.info("Ranch done at {}: {}; it saw {}", origin.toShortString(), ranch.phase(), seen.animals().stream()
+                    .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList());
+        }
         progress = ranch.phase();
         return switch (step) {
             case Ranch.Step.Build b -> buildPen(body, campaign);

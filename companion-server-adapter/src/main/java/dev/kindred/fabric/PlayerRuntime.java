@@ -2677,8 +2677,10 @@ final class PlayerRuntime {
         // In a running match it joined, the fight comes first (M-00a): no goal, build or team task goes on meanwhile.
         var duel = duelCandidates(body);
         if (duel != null) return duel;
-        var hunt = huntCandidates(body);
+        var hunt = huntCandidates(entry, body);
         if (hunt != null) return hunt;
+        var evade = evadeCandidates(body);
+        if (evade != null) return evade;
 
         // 0. Team project task candidates (TEAM-01, TEAM-02)
         java.util.Optional<SharedTask> currentSharedTask = teamCoordinator.getPlayerCurrentTask(entry.data.id());
@@ -6349,8 +6351,9 @@ final class PlayerRuntime {
     }
 
     /**
-     * A race or a hunt begins: each AI runner set to the dragon goal at speedrun pace; each AI hunter to the run's own
-     * route, which earns its tools and the iron for its kit (M-02a). Their own pace is kept to give back.
+     * A race or a hunt begins: each AI runner set to the dragon goal, at speedrun pace in a race and at a reliable pace in
+     * a hunt; each AI hunter to the run's own route, which earns its tools and the iron for its kit (M-02a, M-02b). Their
+     * own pace is kept to give back.
      */
     private void startRace(dev.kindred.core.match.MatchRegistry.Match match) {
         boolean hunt = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT;
@@ -6361,7 +6364,10 @@ final class PlayerRuntime {
             if (entry == null) continue;
             racePace.put(entry.data.id(), entry.runtimeSettings.playstyleProfile());
             var goal = match.runners().contains(player) ? dev.kindred.core.survival.SurvivalGoal.DRAGON : dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
-            if (match.runners().contains(player)) entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.SPEEDRUN_ANY_PERCENT);
+            // A race's runner goes at speedrun pace; a manhunt's beats the game quickly but reliably, at its own pace (M-02b).
+            if (match.runners().contains(player)) {
+                entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(hunt ? PlaystyleProfile.OPTIMAL_SURVIVAL : PlaystyleProfile.SPEEDRUN_ANY_PERCENT);
+            }
             raceGoal.put(entry.data.id(), goal);
             beginGoal(entry, goal);
             if (entry.snapshot().stopLatched()) nativeLifecycle(server.getCommandSource(), "resume", entry.data.id());
@@ -6471,7 +6477,7 @@ final class PlayerRuntime {
      * as the chance comes. Kitted, it follows its compass's needle, as a player does, never told where the runner is.
      * Null when the player hunts nobody, or is still making its kit with no runner in sight (its goal's own work).
      */
-    private List<NativeTaskCandidate> huntCandidates(NativePlayerBody body) {
+    private List<NativeTaskCandidate> huntCandidates(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         var match = matches.running(player.getUuid()).filter(m -> m.hunter(player.getUuid())).orElse(null);
         if (match == null) return null;
@@ -6490,6 +6496,12 @@ final class PlayerRuntime {
             return List.of(new NativeTaskCandidate(fight, "native_fight", Map.of("target", prey.getUuid().toString(), "slot", String.valueOf(slot))));
         }
         if (!huntReady(player)) return null;
+        // Gearing up as the hunt goes on (M-02b): iron armour it carries put on, and the next piece made from the iron in
+        // hand, before the needle is followed on.
+        var wear = equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 92.0);
+        if (wear.isPresent()) return List.of(wear.get());
+        var gear = hunterArmour(entry, body);
+        if (gear != null) return gear;
         var bearing = HuntCompass.bearing(player, match.id());
         if (bearing.isEmpty()) return null;
         BlockPos toward = HuntCompass.along(player.getBlockPos(), bearing.get(), 16);
@@ -6497,6 +6509,103 @@ final class PlayerRuntime {
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(follow, "native_goto", Map.of("x", String.valueOf(toward.getX()), "y", String.valueOf(toward.getY()),
                 "z", String.valueOf(toward.getZ()), "range", "3", "partial", "true", "sprint", "true")));
+    }
+
+    /** Iron armour a hunter makes, best protection for its iron first: the piece, its ingots. */
+    private static final List<Map.Entry<net.minecraft.item.Item, Integer>> HUNTER_ARMOUR = List.of(
+            Map.entry(Items.IRON_CHESTPLATE, 8), Map.entry(Items.IRON_LEGGINGS, 7), Map.entry(Items.IRON_HELMET, 5), Map.entry(Items.IRON_BOOTS, 4));
+
+    /**
+     * The next piece of iron armour a kitted hunter can make from the iron ingots it holds, at a crafting table, or
+     * null when it has the iron for none it lacks. A slot already holding iron or better is not made again.
+     */
+    private List<NativeTaskCandidate> hunterArmour(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        int iron = player.getInventory().count(Items.IRON_INGOT);
+        for (var piece : HUNTER_ARMOUR) {
+            var slot = player.getPreferredEquipmentSlot(new ItemStack(piece.getKey()));
+            var worn = player.getEquippedStack(slot);
+            boolean covered = worn.getItem() instanceof net.minecraft.item.ArmorItem armour
+                    && armour.getProtection() >= ((net.minecraft.item.ArmorItem) piece.getKey()).getProtection();
+            if (covered || player.getInventory().count(piece.getKey()) > 0 || iron < piece.getValue()) continue;
+            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+            var task = entry.campaign.craftAtTable(body, net.minecraft.registry.Registries.ITEM.getId(piece.getKey()).getPath());
+            if (task.isEmpty()) return null;
+            var t = task.get();
+            UUID id = UUID.nameUUIDFromBytes(("gear:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                    .getBytes(StandardCharsets.UTF_8));
+            entry.campaignTasks.clear();
+            entry.campaignTasks.put(id, t);
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 91.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+        }
+        return null;
+    }
+
+    /** How many times each runner has moved off from a hunter in sight, for its log and fixtures. */
+    private final Map<UUID, Integer> evasions = new HashMap<>();
+    private final Map<UUID, BlockPos> evadingTo = new HashMap<>();
+
+    int evasions(UUID player) {
+        requireThread();
+        return evasions.getOrDefault(player, 0);
+    }
+
+    /** How near a hunter a runner sees before it moves off, and how near it is caught and fights back. */
+    private static final double EVADE = 20, CAUGHT = 3.2;
+
+    /**
+     * An AI runner in a running manhunt, a hunter in sight (M-02b): it keeps its distance, at a run, away from the
+     * nearest hunter it can see, and fights only once caught. Null when no hunter is in sight, or the player runs from
+     * nobody; its goal goes on.
+     */
+    private List<NativeTaskCandidate> evadeCandidates(NativePlayerBody body) {
+        var player = body.entity();
+        var match = matches.running(player.getUuid())
+                .filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT && m.runners().contains(player.getUuid())).orElse(null);
+        if (match == null) return null;
+        ServerPlayerEntity hunter = null;
+        for (UUID other : match.joined()) {
+            if (!match.hunter(other) || !match.playing(other)) continue;
+            var seen = server.getPlayerManager().getPlayer(other);
+            if (seen == null || !seen.isAlive() || seen.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(seen) > EVADE * EVADE
+                    || !player.canSee(seen)) continue;
+            if (hunter == null || player.squaredDistanceTo(seen) < player.squaredDistanceTo(hunter)) hunter = seen;
+        }
+        if (hunter == null) return null;
+        UUID taskId = UUID.nameUUIDFromBytes(("evade:" + match.id() + ":" + player.getUuid()).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (player.distanceTo(hunter) <= CAUGHT) {
+            // Caught: no getting away from a hunter at arm's length, so it fights.
+            int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, hunter), true).map(Weapons.Held::slot).orElse(-1);
+            return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", hunter.getUuid().toString(), "slot", String.valueOf(slot))));
+        }
+        // Away from the hunter, or at an angle to it where the way straight off is shut.
+        Vec3d away = player.getPos().subtract(hunter.getPos()).multiply(1, 0, 1);
+        if (away.lengthSquared() < 1e-4) away = new Vec3d(1, 0, 0);
+        away = away.normalize();
+        var navigator = new NativeNavigator(player.getServerWorld());
+        BlockPos feet = player.getBlockPos(), target = null;
+        for (double turn : new double[] {0, 45, -45, 90, -90}) {
+            Vec3d way = away.rotateY((float) Math.toRadians(turn));
+            BlockPos at = BlockPos.ofFloored(feet.getX() + 0.5 + way.x * 16, feet.getY(), feet.getZ() + 0.5 + way.z * 16);
+            for (int dy : new int[] {0, 1, -1, 2, -2}) {
+                if (navigator.standable(at.up(dy))) { target = at.up(dy); break; }
+            }
+            if (target != null) break;
+        }
+        if (target == null) target = BlockPos.ofFloored(feet.getX() + 0.5 + away.x * 16, feet.getY(), feet.getZ() + 0.5 + away.z * 16);
+        var last = evadingTo.get(player.getUuid());
+        if (last == null || last.getSquaredDistance(target) > 16) {
+            evadingTo.put(player.getUuid(), target.toImmutable());
+            evasions.merge(player.getUuid(), 1, Integer::sum);
+            KindredMod.LOGGER.info("{} keeps away from {}, {} blocks off: toward {}", player.getName().getString(), hunter.getName().getString(),
+                    String.format("%.1f", player.distanceTo(hunter)), target.toShortString());
+        }
+        return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", "3", "partial", "true", "sprint", "true")));
     }
 
     /** Once a second: each running race's runners checked for the splits vanilla has given them since. */

@@ -405,12 +405,8 @@ final class FollowUps {
         return campaign.realize(new PortalRunPlanner.Step(action, "", Math.max(1, count), PortalRunPlanner.Stage.DONE, why), p, body, policy);
     }
 
-    /** Craft at a crafting table: one close by, else one it carries set down, else one made from four planks. */
     private Optional<PortalRunCampaign.Task> craftAtTable(NativePlayerBody body, String item) {
-        Optional<PortalRunCampaign.Task> made = campaign.craft(body, item);
-        if (made.isPresent() || campaign.tableNear(body)) return made;
-        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body);
-        return campaign.craft(body, "crafting_table");
+        return campaign.craftAtTable(body, item);
     }
 
     /** The queue in words for the strategist, as it stood on the last pass. */
