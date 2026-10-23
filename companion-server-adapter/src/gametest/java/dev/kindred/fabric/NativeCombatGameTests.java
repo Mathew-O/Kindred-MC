@@ -232,9 +232,14 @@ public final class NativeCombatGameTests implements FabricGameTest {
         zombie.setAiDisabled(true);
         var full = PortalRunCampaign.strike(player, zombie, "Fight zombie");
         context.assertTrue("1".equals(full.args().get("slot")), "The iron sword over the fight: " + full.args());
+        // Known to be down to twelve, the axe's one crit finishes it.
+        var finish = Weapons.choose(player, 12, true);
+        context.assertTrue(finish.isPresent() && finish.get().slot() == 0, "The axe's one crit to finish it: " + finish);
+        // But a player sees no health: hurt by nothing it saw, the zombie is believed whole, and the sword is still the
+        // weapon over the fight (E-41a).
         zombie.setHealth(12);
-        var finish = PortalRunCampaign.strike(player, zombie, "Fight zombie");
-        context.assertTrue("0".equals(finish.args().get("slot")), "The axe's one crit to finish it: " + finish.args());
+        var unseen = PortalRunCampaign.strike(player, zombie, "Fight zombie");
+        context.assertTrue("1".equals(unseen.args().get("slot")), "Believed whole, the sword: " + unseen.args());
         inventory.setStack(1, ItemStack.EMPTY);
         inventory.setStack(0, ItemStack.EMPTY);
         var wooden = PortalRunCampaign.strike(player, zombie, "Fight zombie");

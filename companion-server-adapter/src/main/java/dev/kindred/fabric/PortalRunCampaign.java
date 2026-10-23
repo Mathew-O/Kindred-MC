@@ -3802,7 +3802,7 @@ final class PortalRunCampaign {
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(reach, 1.5, reach),
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
                                 && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < reach
-                                && player.canSee(mob) && mob.getHealth() <= 2 * damage)
+                                && player.canSee(mob) && NativePlayerBody.believedHealth(player, mob) <= 2 * damage)
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
@@ -3817,7 +3817,7 @@ final class PortalRunCampaign {
 
     static Task strike(ServerPlayerEntity player, net.minecraft.entity.LivingEntity target, String label) {
         // The hotbar weapon that deals the most over the fight, or the one hit that finishes the target (E-39e).
-        int weapon = Weapons.choose(player, target.getHealth(), true).map(Weapons.Held::slot).orElse(-1);
+        int weapon = Weapons.choose(player, NativePlayerBody.believedHealth(player, target), true).map(Weapons.Held::slot).orElse(-1);
         var args = new LinkedHashMap<String, String>();
         args.put("target", target.getUuid().toString());
         if (weapon >= 0) args.put("slot", String.valueOf(weapon));

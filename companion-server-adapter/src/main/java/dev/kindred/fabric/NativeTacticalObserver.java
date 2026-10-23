@@ -100,7 +100,8 @@ public final class NativeTacticalObserver {
 
             String entityType = Registries.ENTITY_TYPE.getId(mob.getType()).toString();
             double distance = player.distanceTo(mob);
-            float currentHealth = mob.getHealth();
+            // As a player can know it: from the hits it saw land, never the server's number (E-41a).
+            float currentHealth = (float) Math.min(mob.getMaxHealth(), NativePlayerBody.believedHealth(player, mob));
             float maxHealth = mob.getMaxHealth();
             int armor = mob.getArmor();
             double toughness = mob.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);

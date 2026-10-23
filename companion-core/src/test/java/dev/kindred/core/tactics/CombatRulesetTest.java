@@ -58,6 +58,20 @@ class CombatRulesetTest {
         assertEquals(10, CombatRuleset.IMMUNE_TICKS);
     }
 
+    /**
+     * Vanilla's armour: the points less the hit over (two and a quarter of the toughness), kept between a fifth of the
+     * points and twenty, four percent off each.
+     */
+    @Test
+    void armourTakesFourPercentAPointOfWhatIsLeftEffective() {
+        assertEquals(6 * (1 - 0.4 / 25), CombatRuleset.afterArmour(6, 2, 0), 1e-9, "a zombie's two points: 2 - 6/2 is below a fifth, so 0.4");
+        assertEquals(6 * (1 - (2 - 6 / 7.0) / 25), CombatRuleset.afterArmour(6, 2, 20), 1e-9, "toughness keeps more of the armour");
+        assertEquals(3.0, CombatRuleset.afterArmour(10, 20, 8), 1e-9, "full diamond on a ten-point hit: 17.5 effective");
+        assertEquals(24.0, CombatRuleset.afterArmour(30, 20, 0), 1e-9, "20 - 30/2 = 5");
+        assertEquals(84.0, CombatRuleset.afterArmour(100, 20, 0), 1e-9, "never below a fifth of the points");
+        assertEquals(5, CombatRuleset.afterArmour(5, 0, 0), 1e-9, "no armour, all of it");
+    }
+
     @Test
     void aShieldBlocksFromTheFrontOnceHeldUpFiveTicks() {
         assertFalse(CombatRuleset.blocks(4, 1), "not up long enough");

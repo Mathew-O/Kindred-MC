@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-41a, second slice: opponents' health as a player can know it, on top of `16fb83f`.
+  - New JUnit: `HealthBeliefsTest` (4), `armourTakesFourPercentAPointOfWhatIsLeftEffective`.
+  - New native fixture: `theHealthItBelievesIsWorkedOutFromTheHitsItSawLand`. A zombie hurt to 10 unseen was believed at 20. After one sword hit it was believed at 14.82 against the server's 4.82, the ruleset's estimate matching vanilla's damage to within 1e-3. Its control, reading the server's number, saw 10.
+  - The first two suites failed two goal fixtures, both times (284/286). Each assumed the player knew a zombie's health it had not seen: one zombie spawned wounded, one healed mid-fight behind the player's back. With beliefs the players acted as players would, backing off from a zombie believed whole and finishing one believed nearly dead. The fixtures now stage what the player knows.
+  - Two fixtures' expectations changed by design. The tactical observer now sees a zombie set to 14 health at its kind's 20. The weapon-choice fixture tests the finishing weapon for a known health directly, and fights a zombie the player saw no hits on with the sword.
+  - `runGametest` passed 286/286 twice on the final tree. `./gradlew build` passed: 490 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `8e24515535e60c59597abafc2ede0ac8674c2a90c3042dd2edfa259235c70a39`.
 - E-41a (the combat ruleset and adapter, Milestone 0 of the owner's combat design, in progress), on top of `417473e`.
   - New JUnit: `CombatRulesetTest` (5).
   - New native fixtures (`NativeRulesetGameTests`): `aSwingChargesTickByTickAsTheRulesetSays`, `aShieldBlocksOnlyOnceHeldUpFiveTicks`, `anAxeOnARaisedShieldPutsItOutOfUseForAHundredTicks`, `aSecondHitWithinTheImmunityLandsOnlyItsExcess` and `aStrikeReachesThreeBlocksToTheHitboxAndNoFurther`.

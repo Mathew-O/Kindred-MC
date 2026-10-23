@@ -92,6 +92,17 @@ public final class CombatRuleset {
     }
 
     /**
+     * The damage a hit leaves through armour, as vanilla works it out (a weapon's Breach aside): the armour points less the
+     * hit over two and a quarter of the toughness, at least a fifth of the points and at most twenty, each worth four
+     * percent off.
+     */
+    public static double afterArmour(double damage, double armour, double toughness) {
+        double divisor = 2 + toughness / 4;
+        double effective = Math.max(armour * 0.2, Math.min(20, armour - damage / divisor));
+        return damage * (1 - effective / 25);
+    }
+
+    /**
      * Whether a shield held up {@code ticksRaised} ticks blocks a hit from a source whose direction from the defender has
      * {@code towardSource} (cosine) with the way the defender faces: held long enough, and the source anywhere in front.
      */

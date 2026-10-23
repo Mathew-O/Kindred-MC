@@ -260,4 +260,50 @@ public final class NativeRulesetGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Health as a player can know it (E-41a). A zombie hurt to ten by something the player never saw is believed whole,
+     * at its kind's twenty. After the player's own sword hit lands it is believed at twenty less what that hit dealt, as
+     * the ruleset works it out, while the server knows it is lower. The tactical observer sees the belief, not the number.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rulesetBelief", tickLimit = 300)
+    public void theHealthItBelievesIsWorkedOutFromTheHitsItSawLand(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Believer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().selectedSlot = 0;
+                    zombie[0] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(3.5, 2.0, 5.5));
+                    zombie[0].setHealth(10);
+                    double believed = NativePlayerBody.believedHealth(player, zombie[0]);
+                    context.assertTrue(believed == 20, "Hurt by nothing it saw, believed whole: " + believed);
+                    var seen = NativeTacticalObserver.observe(player, f.id, 0, false, false, context.getWorld().getTime());
+                    context.assertTrue(seen.observedMobs().size() == 1 && seen.observedMobs().getFirst().currentHealth() == 20,
+                            "The observer sees the belief: " + seen.observedMobs());
+                    context.assertTrue(f.runtime.nativeAttack(f.source, f.id, zombie[0].getUuid(), 0) == 1, "Strike requested");
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_attack"), "Struck: " + activity.work());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    double truth = zombie[0].getHealth(), dealt = 10 - truth;
+                    double believed = NativePlayerBody.believedHealth(player, zombie[0]);
+                    var seen = NativeTacticalObserver.observe(player, f.id, 0, false, false, context.getWorld().getTime());
+                    KindredMod.LOGGER.info("Believer: the hit dealt {}; believed {}, the server's {}", dealt, believed, truth);
+                    context.assertTrue(dealt > 0, "The hit landed");
+                    context.assertTrue(Math.abs(believed - (20 - dealt)) < 1e-3, "Believed at twenty less the hit as the ruleset works it out: " + believed);
+                    context.assertTrue(Math.abs(believed - truth) > 5, "Not the server's number: " + believed + " against " + truth);
+                    context.assertTrue(Math.abs(seen.observedMobs().getFirst().currentHealth() - believed) < 1e-3, "The observer sees the belief");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

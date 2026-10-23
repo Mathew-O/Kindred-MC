@@ -91,6 +91,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     zombie[0].setHealth(8);
                     context.getWorld().spawnEntity(zombie[0]);
                     zombie[0].setTarget(player);
+                    // Wounded by the player's own earlier blows, which it remembers: a player knows a mob's health only
+                    // from the hits it saw land (E-41a).
+                    f.runtime.nativeBody(f.id).orElseThrow().beliefs().hit(zombie[0].getUuid(), zombie[0].getMaxHealth(), false, 12,
+                            context.getWorld().getTime());
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
@@ -145,6 +149,9 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // whole again, so this is a fight being lost, not one two more swings would win.
                     var player = f.player();
                     zombie[0].setHealth(zombie[0].getMaxHealth());
+                    // And believed whole: a player knows a mob's health only from the hits it saw land (E-41a), and here
+                    // nothing it saw has worn this one down.
+                    f.runtime.nativeBody(f.id).orElseThrow().beliefs().forget(zombie[0].getUuid());
                     player.damage(context.getWorld().getDamageSources().mobAttack(zombie[0]), 3);
                     context.assertTrue(player.getHealth() < 6, "Hurt: " + player.getHealth());
                 })

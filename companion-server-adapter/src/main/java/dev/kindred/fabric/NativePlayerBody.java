@@ -121,6 +121,10 @@ final class NativePlayerBody implements BodyAdapter {
     private Runnable tickHook = () -> { };
     /** Ticks this body has run, for a status line that asks whether it is ticking at all. */
     private long ticksRun;
+    /** What this player can know of others' health from the hits it saw land (E-41a); never the server's number. */
+    private final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
+    /** The beliefs of a viewer that is no native player: every creature at its kind's full health. Read only. */
+    private static final dev.kindred.core.tactics.HealthBeliefs NO_BELIEFS = new dev.kindred.core.tactics.HealthBeliefs();
     private Runnable deathHook = () -> { };
     private boolean respawning;
 
@@ -208,6 +212,35 @@ final class NativePlayerBody implements BodyAdapter {
     void onTick(Runnable hook) { requireThread(); tickHook = Objects.requireNonNull(hook); }
 
     long ticksRun() { return ticksRun; }
+
+    dev.kindred.core.tactics.HealthBeliefs beliefs() { return beliefs; }
+
+    /**
+     * The health {@code viewer} can believe {@code target} has (E-41a): worked out from the hits it saw land, as a player
+     * would, never read from the server. The Dragon's is the exception, shown to every player on its boss bar.
+     */
+    static double believedHealth(ServerPlayerEntity viewer, LivingEntity target) {
+        if (target instanceof net.minecraft.entity.boss.dragon.EnderDragonEntity) return target.getHealth();
+        var beliefs = viewer instanceof NativePlayer nativePlayer ? nativePlayer.body().beliefs : NO_BELIEFS;
+        return beliefs.of(target.getUuid(), target.getMaxHealth(), target instanceof PlayerEntity, viewer.getServerWorld().getTime()).value();
+    }
+
+    /**
+     * A strike just made on {@code target}, recorded if the player saw it land (the target's hurt flash, from this
+     * player's blow) as what the ruleset says it deals: the weapon at its charge, critical or not, through the armour the
+     * player can see, and held to its excess within the damage immunity of the player's last hit.
+     */
+    private void recordHit(LivingEntity target, ItemStack weapon, float charge, boolean critical) {
+        var source = target.getRecentDamageSource();
+        if (target.hurtTime != target.maxHurtTime || source == null || source.getAttacker() != player) return;
+        int strength = player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.STRENGTH)
+                ? player.getStatusEffect(net.minecraft.entity.effect.StatusEffects.STRENGTH).getAmplifier() + 1 : 0;
+        double raw = dev.kindred.core.tactics.DamageModel.hit(Weapons.of(weapon).orElse(dev.kindred.core.tactics.DamageModel.Weapon.HAND),
+                charge, critical, strength, player.fallDistance);
+        double dealt = dev.kindred.core.tactics.CombatRuleset.afterArmour(raw, target.getArmor(),
+                target.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ARMOR_TOUGHNESS));
+        beliefs.hit(target.getUuid(), target.getMaxHealth(), target instanceof PlayerEntity, dealt, player.getServerWorld().getTime());
+    }
     /** Runs when the body dies, before vanilla drops its inventory, so in-flight work settles against real contents. */
     void onDeath(Runnable hook) { requireThread(); deathHook = Objects.requireNonNull(hook); }
 
@@ -558,8 +591,14 @@ final class NativePlayerBody implements BodyAdapter {
             float pitch = (float) Math.toDegrees(-Math.atan2(diff.y, diffXZ));
             player.setYaw(yaw);
             player.setPitch(pitch);
+            float charge = player.getAttackCooldownProgress(0.5f);
+            boolean critical = dev.kindred.core.tactics.CombatRuleset.critical(new dev.kindred.core.tactics.CombatRuleset.Swing(charge,
+                    player.fallDistance, player.isOnGround(), player.isClimbing(), player.isTouchingWater(),
+                    player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS), player.hasVehicle(), player.isSprinting()));
+            ItemStack held = player.getMainHandStack().copy();
             player.attack(target);
             player.swingHand(Hand.MAIN_HAND);
+            recordHit(target, held, charge, critical);
         });
     }
 
@@ -1920,6 +1959,7 @@ final class NativePlayerBody implements BodyAdapter {
 
     private final class NativePlayer extends ServerPlayerEntity implements PreparedNativePlayer {
         private Optional<NbtCompound> preparedState;
+        NativePlayerBody body() { return NativePlayerBody.this; }
         private NativePlayer(ServerWorld world, GameProfile profile) {
             super(world.getServer(), world, profile, new SyncedClientOptions("en_us", 2,
                     net.minecraft.network.message.ChatVisibility.HIDDEN, false, 127,
