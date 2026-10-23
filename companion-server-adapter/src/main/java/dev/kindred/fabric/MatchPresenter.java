@@ -121,7 +121,8 @@ final class MatchPresenter {
         return bar == null ? "" : bar.getName().getString();
     }
 
-    private void show(UUID playerId, MatchPresentation.Title title) {
+    /** One title shown to one player, with its sound, and kept among what it was shown. */
+    void show(UUID playerId, MatchPresentation.Title title) {
         var titles = shown.computeIfAbsent(playerId, id -> new ArrayDeque<>());
         if (titles.size() == SHOWN_KEPT) titles.removeFirst();
         titles.addLast(title.title());

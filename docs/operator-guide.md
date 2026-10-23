@@ -24,6 +24,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer match duel <first> <second>  propose a duel between two players (AI players or humans online)
 /aiplayer match speedrun <runner...> propose a speedrun race to the dragon for one to eight runners
 /aiplayer match manhunt <runners> vs <hunters>  propose a manhunt: runners make for the dragon, hunters hunt them
+/aiplayer match build <builders> [for <seconds>] [theme <name>]  propose a build battle (operators; plots laid where you stand)
+/aiplayer match vote <builder> <1-5> score another builder's build while a build battle is voted on
 /aiplayer match join <match>         join a match you were invited to (a human joins only for itself)
 /aiplayer match start|stop <match>   start a match everyone joined, or stop it (a player in it forfeits)
 /aiplayer match list                 matches, their state and results
@@ -148,6 +150,16 @@ See [M-03a](evidence/M-03a.md).
 - **The runners** make for the dragon: an AI runner plays the dragon goal at speedrun pace. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
 - **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see.
 - **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Every one is taken back when the hunt ends. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
+
+**Build battles (M-04a; in development).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
+- **The plots.** One per builder, fifteen blocks a side, in a row east of where you stand, three apart, marked in white concrete with a grey edge. They need open, level ground, clear sixteen blocks up.
+- **The theme.** Announced as a title at the start, by chance or as you name it: cottage, watchtower, pyramid or lighthouse. The build lasts five minutes unless you say otherwise (`for 120`; thirty seconds to half an hour).
+- **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves with nothing in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included.
+- **Each to its own plot.** While it builds, a human may break or place only on its own plot, and nobody may on another's.
+- **AI builders** turn the theme into a design of their own, with a size and materials by chance, and build it block by block with the same planner as a survival build. The theme alone decides the design.
+- **The vote.** When the time is up, everyone looks on in adventure mode and scores every other build one to five: AI players at once by what they see standing on each plot, humans by clicking a score in chat or `/aiplayer match vote <builder> <score>`. Once everyone has voted, or after thirty seconds, the best mean wins (ties together), with fireworks over the winner's plot. With no votes it is a draw.
+
+See [M-04a](evidence/M-04a.md).
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 

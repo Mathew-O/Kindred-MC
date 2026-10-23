@@ -4,6 +4,13 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-04a (build battles), on top of `583b7ad`.
+  - New JUnit: `BuildBattleTest` (4), `aBuildBattleBuildsForItsTimeThenWaitsOnTheVote`, `theTowerPyramidAndLighthouseAreBuiltWholeAndTheirScaffoldTakenDown`.
+  - New native fixture: `twoAiBuildersBuildTheThemeInCreativeAndVoteOnEachOther`. Two plots marked out where the operator stands; the theme a pyramid; both AI builders in creative and at work, each only on its own plot; both build sandstone pyramids in a minute; each votes on the other; the best mean wins with fireworks; both leave with nothing and in survival.
+  - Four hand controls, each failing as expected: creative's blocks not cleared at the vote, the builder's own game mode not given back, the plots not kept, and creative not allowed to the body (as first written: neither builder moved).
+  - Found on the way: the body's controls worked in survival only, and a placement in creative (which uses nothing up) failed the conservation check.
+  - `runGametest` passed 293/293 twice. `./gradlew build` passed: 519 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `c7e9b5c1ce4d2ef42768fac4770915843155beaa157632b4661c40e0c50f7017`.
 - M-02a (manhunts), on top of `52c50cb`.
   - New JUnit: three manhunt tests in `MatchRegistryTest`, `aManhuntShowsItsSidesAndTheWinningSide`.
   - New native fixtures:

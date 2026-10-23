@@ -212,6 +212,12 @@ final class PlayerRuntime {
     private final Map<UUID, PlaystyleProfile> racePace = new HashMap<>();
     /** The goal a race or a hunt set each AI player in it, ended when it is out of it. */
     private final Map<UUID, dev.kindred.core.survival.SurvivalGoal> raceGoal = new HashMap<>();
+    /** Each build battle's round: its theme, plots and votes, by match (M-04a). */
+    private final Map<UUID, dev.kindred.core.match.BuildBattle> battles = new HashMap<>();
+    /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
+    private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
+    /** Build battles whose building has begun, by match. */
+    private final Set<UUID> buildsBegun = new HashSet<>();
     /** Manhunts begun, by match (M-02a). */
     private final Set<UUID> hunts = new HashSet<>();
     /** Where each runner was last seen in each world: where a hunter's compass points once the runner has left it. */
@@ -1774,6 +1780,7 @@ final class PlayerRuntime {
         for (var changed : matches.tick(tick)) announce(changed);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
+        if (tick % 20 == 17) pollBuildBattles();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
         presenter.tick(matches.list(), tick, this::playerName, this::raceProgress);
 
@@ -5546,6 +5553,16 @@ final class PlayerRuntime {
         }
         racePace.clear();
         raceGoal.clear();
+        // A build battle's creative mode goes with it: blocks cleared, game modes back, before anything is saved.
+        for (var builder : new ArrayList<>(modeBefore.entrySet())) {
+            var player = server.getPlayerManager().getPlayer(builder.getKey());
+            if (player == null) continue;
+            Entry builderEntry = entryForPlayer(builder.getKey());
+            if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(false);
+            player.getInventory().clear();
+            player.changeGameMode(builder.getValue());
+        }
+        modeBefore.clear();
         // A hunt's compasses go with the hunt (D6).
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) continue;
@@ -5832,7 +5849,13 @@ final class PlayerRuntime {
         String what = switch (match.state()) {
             case LOBBY -> "waiting for every player to join";
             case COUNTDOWN -> "starting in three seconds";
-            case RUNNING -> race ? "go!" : match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT ? "the hunt is on!" : "fight!";
+            case RUNNING -> switch (match.mode()) {
+                case SPEEDRUN -> "go!";
+                case MANHUNT -> "the hunt is on!";
+                case BUILDER -> "build!";
+                case DUEL -> "fight!";
+            };
+            case VOTING -> "time is up; vote on each build, one to five (/aiplayer match vote <player> <score>)";
             case ENDED -> match.winner() != null ? playerName(match.winner()) + " wins (" + match.result() + ")" : match.result();
         };
         String line = match.mode().label() + " " + who(match) + ": " + what;
@@ -5843,6 +5866,11 @@ final class PlayerRuntime {
                 && !hunts.contains(match.id())) startRace(match);
         if (race || hunt) leaveRace(match);
         takeBackCompasses(match);
+        if (match.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER) {
+            if (match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && buildsBegun.add(match.id())) startBuilding(match);
+            if (match.state() == dev.kindred.core.match.MatchRegistry.State.VOTING) startVoting(match);
+            leaveBuilding(match);
+        }
         for (UUID invited : match.invited()) {
             var player = server.getPlayerManager().getPlayer(invited);
             if (player != null) player.sendMessage(Text.literal(line), false);
@@ -5898,6 +5926,7 @@ final class PlayerRuntime {
                 case SPEEDRUN -> "a speedrun race" + (others.isEmpty() ? "" : " against " + others);
                 case MANHUNT -> "a manhunt, as " + (match.runners().contains(player) ? "a runner" : "a hunter") + " (" + who(match)
                         + "); once you join, the other side may attack you";
+                case BUILDER -> "a build battle against " + others + "; you build in creative on your own plot, then everyone votes";
             };
             String join = "/aiplayer match join " + dev.kindred.core.match.MatchRegistry.shortId(match.id());
             human.sendMessage(Text.literal("You are invited to " + what + ". To play in it: ").append(Text.literal("[Join]")
@@ -5977,6 +6006,237 @@ final class PlayerRuntime {
         feedback(source, "Manhunt " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
                 + "; " + match.joined().size() + " of " + match.invited().size() + " joined.");
         return 1;
+    }
+
+    /**
+     * A build battle proposed (M-04a): one plot each, laid out in a row from where the operator stands, for two to eight
+     * builders. Each arrives with nothing and leaves with nothing: building is in creative, the only mode where blocks
+     * are free, and whatever creative gave is cleared at the end. An AI builder needs the server's leave for AI world
+     * edits. Operators only, as the plots are laid on the ground: open ground, level and clear sixteen blocks up.
+     */
+    int proposeBuildBattle(ServerCommandSource source, List<UUID> builders, int buildTicks, dev.kindred.core.match.BuildBattle.Theme theme) {
+        requireThread();
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator lays out a build battle's plots.");
+        for (UUID builder : builders) {
+            Entry entry = entryForPlayer(builder);
+            var online = server.getPlayerManager().getPlayer(builder);
+            if (online == null) return reject(source, "No such player online.");
+            if (entry != null) {
+                if (!nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an AI builder needs them (/aiplayer edits on).");
+            }
+            if (!online.getInventory().isEmpty()) return reject(source, playerName(builder) + " must arrive with nothing: it carries items.");
+        }
+        var world = source.getWorld();
+        BlockPos feet = BlockPos.ofFloored(source.getPosition());
+        var start = new dev.kindred.core.construction.Pos(feet.getX() + 2, feet.getY() - 1, feet.getZ() + 2);
+        var plots = dev.kindred.core.match.BuildBattle.layout(builders, start);
+        for (var plot : plots) {
+            var o = plot.origin();
+            for (int x = 0; x < dev.kindred.core.match.BuildBattle.PLOT; x++) for (int z = 0; z < dev.kindred.core.match.BuildBattle.PLOT; z++) {
+                BlockPos floor = new BlockPos(o.x() + x, o.y(), o.z() + z);
+                if (!world.getBlockState(floor).isSideSolidFullSquare(world, floor, net.minecraft.util.math.Direction.UP)) {
+                    return reject(source, "The plots need level ground: " + floor.toShortString() + " is not solid. Stand on open, level ground.");
+                }
+                for (int y = 1; y <= 16; y++) {
+                    var state = world.getBlockState(floor.up(y));
+                    if (!state.isAir() && !state.isReplaceable()) return reject(source, "The plots need open ground: " + floor.up(y).toShortString() + " is in the way.");
+                }
+            }
+        }
+        var result = matches.proposeBuild(builders, buildTicks);
+        if (!result.accepted()) return reject(source, result.reason());
+        // The plots, marked out: white concrete, a grey edge, plants cleared off them.
+        for (var plot : plots) {
+            var o = plot.origin();
+            for (int x = 0; x < dev.kindred.core.match.BuildBattle.PLOT; x++) for (int z = 0; z < dev.kindred.core.match.BuildBattle.PLOT; z++) {
+                boolean edge = x == 0 || z == 0 || x == dev.kindred.core.match.BuildBattle.PLOT - 1 || z == dev.kindred.core.match.BuildBattle.PLOT - 1;
+                BlockPos floor = new BlockPos(o.x() + x, o.y(), o.z() + z);
+                world.setBlockState(floor, (edge ? Blocks.LIGHT_GRAY_CONCRETE : Blocks.WHITE_CONCRETE).getDefaultState());
+                for (int y = 1; y <= 16; y++) if (!world.getBlockState(floor.up(y)).isAir()) world.setBlockState(floor.up(y), Blocks.AIR.getDefaultState());
+            }
+        }
+        var match = enter(result.match().orElseThrow());
+        battles.put(match.id(), new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots));
+        feedback(source, "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match) + ", "
+                + buildTicks / 20 + " seconds to build; " + match.joined().size() + " of " + match.invited().size() + " joined.");
+        return 1;
+    }
+
+    /**
+     * The build begins: the theme announced, every builder in creative on its plot, and each AI builder at work on its
+     * design for the theme, stocked with what the design takes (creative's free blocks, in this mode only).
+     */
+    private void startBuilding(dev.kindred.core.match.MatchRegistry.Match match) {
+        var battle = battles.get(match.id());
+        if (battle == null) return;
+        int seconds = matches.limit(match.id()) / 20;
+        for (UUID builder : match.joined()) {
+            var player = server.getPlayerManager().getPlayer(builder);
+            if (player == null) continue;
+            modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
+            Entry builderEntry = entryForPlayer(builder);
+            if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
+            player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
+            presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
+                    + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60), dev.kindred.core.match.MatchPresentation.Cue.START));
+            Entry entry = entryForPlayer(builder);
+            var plot = battle.plot(builder).orElse(null);
+            if (entry == null || plot == null) continue;
+            var design = dev.kindred.core.match.BuildBattle.design(battle.theme(), new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits()));
+            var site = plot.site(design);
+            stockFor(player, design);
+            startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
+            KindredMod.LOGGER.info("Build battle {}: {} builds {} at {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
+                    design.name(), site);
+        }
+    }
+
+    /** An AI builder's inventory filled with what its design takes, and scaffolding: free in creative, in Builder only. */
+    private static void stockFor(ServerPlayerEntity player, dev.kindred.core.construction.Blueprint design) {
+        var counts = new java.util.LinkedHashMap<String, Integer>();
+        for (var b : design.blocks()) counts.merge(dev.kindred.core.construction.Placement.item(b.spec()), 1, Integer::sum);
+        counts.merge("minecraft:dirt", 64, Integer::sum);
+        var inventory = player.getInventory();
+        int slot = 0;
+        for (var e : counts.entrySet()) {
+            var item = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(e.getKey()));
+            for (int left = e.getValue(); left > 0 && slot < 36; left -= 64) inventory.setStack(slot++, new ItemStack(item, Math.min(64, left)));
+        }
+    }
+
+    /** The blocks standing on a plot, over its floor, by kind: what a voter sees of a build. */
+    private Map<dev.kindred.core.construction.Pos, String> plotBlocks(net.minecraft.server.world.ServerWorld world, dev.kindred.core.match.BuildBattle.Plot plot) {
+        var out = new HashMap<dev.kindred.core.construction.Pos, String>();
+        var o = plot.origin();
+        for (int x = 0; x < dev.kindred.core.match.BuildBattle.PLOT; x++) for (int z = 0; z < dev.kindred.core.match.BuildBattle.PLOT; z++) for (int y = 1; y <= 24; y++) {
+            var state = world.getBlockState(new BlockPos(o.x() + x, o.y() + y, o.z() + z));
+            if (!state.isAir()) out.put(new dev.kindred.core.construction.Pos(x, y, z), net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).toString());
+        }
+        return out;
+    }
+
+    /**
+     * The build's time is up: building stops, every builder's creative blocks are cleared and it looks on in adventure
+     * mode while each votes. An AI builder votes at once, as the judge scores what stands on each other plot; a human is
+     * offered the votes to click.
+     */
+    private void startVoting(dev.kindred.core.match.MatchRegistry.Match match) {
+        var battle = battles.get(match.id());
+        if (battle == null) return;
+        for (UUID builder : match.joined()) {
+            var player = server.getPlayerManager().getPlayer(builder);
+            if (player == null) continue;
+            Entry entry = entryForPlayer(builder);
+            if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
+            if (entry != null && entry.nativeBody != null) entry.nativeBody.allowCreative(false);
+            player.getInventory().clear();
+            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
+            if (entry != null) {
+                for (var plot : battle.plots()) {
+                    if (plot.builder().equals(builder)) continue;
+                    int score = dev.kindred.core.match.BuildBattle.judge(plotBlocks(player.getServerWorld(), plot), battle.theme());
+                    battle.vote(builder, plot.builder(), score);
+                    KindredMod.LOGGER.info("Build battle {}: {} gives {}'s build {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
+                            playerName(plot.builder()), score);
+                }
+                continue;
+            }
+            for (var plot : battle.plots()) {
+                if (plot.builder().equals(builder)) continue;
+                String name = playerName(plot.builder());
+                var line = Text.literal("Vote on " + name + "'s build: ");
+                for (int score = 1; score <= 5; score++) {
+                    String vote = "/aiplayer match vote " + name + " " + score;
+                    line.append(Text.literal("[" + score + "] ").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
+                            .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, vote))));
+                }
+                player.sendMessage(line, false);
+            }
+        }
+    }
+
+    /** A builder's vote on another's build, one to five, while the round is voted on. */
+    int voteBuild(ServerCommandSource source, UUID builder, int score) {
+        requireThread();
+        if (!(source.getEntity() instanceof ServerPlayerEntity voter)) return reject(source, "Only a builder votes, for itself.");
+        var match = matches.active(voter.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER).orElse(null);
+        if (match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) return reject(source, "No build battle of yours is being voted on.");
+        var battle = battles.get(match.id());
+        var refused = battle == null ? java.util.Optional.of("No such round") : battle.vote(voter.getUuid(), builder, score);
+        if (refused.isPresent()) return reject(source, refused.get() + ".");
+        feedback(source, "Voted " + score + " for " + playerName(builder) + "'s build.");
+        return 1;
+    }
+
+    /** Once a second: a vote everyone has finished, or whose time is up, decided. */
+    private void pollBuildBattles() {
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.BUILDER || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) continue;
+            var battle = battles.get(match.id());
+            if (battle == null) continue;
+            boolean all = match.joined().stream().filter(match::playing).allMatch(battle::votedAll);
+            if (!all && server.getTicks() < match.endsAt()) continue;
+            var winners = battle.winners();
+            matches.decide(match.id(), winners, winners.isEmpty() ? "Nobody voted" : "the best mean vote").match().ifPresent(this::announce);
+        }
+    }
+
+    /**
+     * Builders out of their build battle (it ended, or they left it): creative's blocks cleared and their own game mode
+     * back, and each AI builder's build stopped. At the end, fireworks over the winners' plots.
+     */
+    private void leaveBuilding(dev.kindred.core.match.MatchRegistry.Match match) {
+        boolean over = match.state() == dev.kindred.core.match.MatchRegistry.State.ENDED;
+        for (UUID builder : match.invited()) {
+            if (!over && match.playing(builder)) continue;
+            var mode = modeBefore.remove(builder);
+            if (mode == null) continue;
+            var player = server.getPlayerManager().getPlayer(builder);
+            if (player == null) continue;
+            Entry entry = entryForPlayer(builder);
+            if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
+            if (entry != null && entry.nativeBody != null) entry.nativeBody.allowCreative(false);
+            player.getInventory().clear();
+            player.changeGameMode(mode);
+        }
+        var battle = battles.get(match.id());
+        if (!over || battle == null) return;
+        var world = server.getOverworld();
+        for (UUID winner : match.winners()) {
+            battle.plot(winner).ifPresent(plot -> {
+                var rocket = new ItemStack(Items.FIREWORK_ROCKET);
+                rocket.set(net.minecraft.component.DataComponentTypes.FIREWORKS, new net.minecraft.component.type.FireworksComponent(1, List.of(
+                        new net.minecraft.component.type.FireworkExplosionComponent(net.minecraft.component.type.FireworkExplosionComponent.Type.LARGE_BALL,
+                                it.unimi.dsi.fastutil.ints.IntList.of(0xFFD700, 0xFFFFFF), it.unimi.dsi.fastutil.ints.IntList.of(), true, true))));
+                var o = plot.origin();
+                for (int i = 0; i < 3; i++) {
+                    world.spawnEntity(new net.minecraft.entity.projectile.FireworkRocketEntity(world, o.x() + 3.5 + i * 4, o.y() + 1.5, o.z() + 7.5, rocket.copy()));
+                }
+            });
+        }
+        battles.remove(match.id());
+        buildsBegun.remove(match.id());
+    }
+
+    /**
+     * Whether {@code player} may break or place at {@code pos} with a build battle on (M-04a): while it builds, a builder
+     * only on its own plot; nobody on another's plot, in the battle or not. Anywhere else, as ever.
+     */
+    boolean mayEditAt(ServerPlayerEntity player, BlockPos pos) {
+        if (!running) return true;
+        var at = new dev.kindred.core.construction.Pos(pos.getX(), pos.getY(), pos.getZ());
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.BUILDER || match.state() == dev.kindred.core.match.MatchRegistry.State.ENDED) continue;
+            var battle = battles.get(match.id());
+            if (battle == null) continue;
+            var own = battle.plot(player.getUuid()).filter(p -> match.playing(player.getUuid()));
+            boolean onAPlot = battle.plots().stream().anyMatch(p -> p.contains(at));
+            if (onAPlot && (own.isEmpty() || !own.get().contains(at) || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING)) return false;
+            // A human builder keeps to its plot while it builds; an AI builder's scaffold may stand in the gap beside it.
+            if (own.isPresent() && match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && !onAPlot && entryForPlayer(player.getUuid()) == null) return false;
+        }
+        return true;
     }
 
     /** Whether vanilla has given {@code player} the split's advancement. */

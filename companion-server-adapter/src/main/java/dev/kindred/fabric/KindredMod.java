@@ -74,6 +74,15 @@ public final class KindredMod implements ModInitializer {
         net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (entity instanceof net.minecraft.server.network.ServerPlayerEntity fallen && runtime != null) runtime.playerFell(fallen.getUuid());
         });
+        // A build battle's plots are their builders' alone while it runs (M-04a).
+        net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) ->
+                !(player instanceof net.minecraft.server.network.ServerPlayerEntity builder) || runtime == null || runtime.mayEditAt(builder, pos));
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
+            if (!(player instanceof net.minecraft.server.network.ServerPlayerEntity builder) || runtime == null) return net.minecraft.util.ActionResult.PASS;
+            boolean placing = !player.getStackInHand(hand).isEmpty() && player.getStackInHand(hand).getItem() instanceof net.minecraft.item.BlockItem;
+            return !placing || runtime.mayEditAt(builder, hit.getBlockPos().offset(hit.getSide())) && runtime.mayEditAt(builder, hit.getBlockPos())
+                    ? net.minecraft.util.ActionResult.PASS : net.minecraft.util.ActionResult.FAIL;
+        });
         // Leaving the game forfeits a duel, or calls it off before its start (M-00a).
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             java.util.UUID left = handler.player.getUuid();

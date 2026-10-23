@@ -28,7 +28,12 @@ public final class MatchRegistry {
          * Runners make for the dragon while hunters hunt them (M-02a): a runner and a hunter may strike one another, never
          * two on the same side. A runner's fall puts it out; a hunter's is only a setback.
          */
-        MANHUNT(2, 8, true, 0);
+        MANHUNT(2, 8, true, 0),
+        /**
+         * A creative build battle on a theme (M-04a): each builder on its own plot for the build's time, then a vote, then
+         * the results. Nobody strikes anybody.
+         */
+        BUILDER(2, 8, false, 6000);
 
         public final int minPlayers, maxPlayers;
         /** Whether its players may strike one another while it runs. */
@@ -43,10 +48,11 @@ public final class MatchRegistry {
             this.ticks = ticks;
         }
 
-        public String label() { return name().charAt(0) + name().substring(1).toLowerCase(java.util.Locale.ROOT); }
+        public String label() { return this == BUILDER ? "Build battle" : name().charAt(0) + name().substring(1).toLowerCase(java.util.Locale.ROOT); }
     }
 
-    public enum State { LOBBY, COUNTDOWN, RUNNING, ENDED }
+    /** Where a match is in its life. VOTING is a build battle's: building is over and the builds are being judged. */
+    public enum State { LOBBY, COUNTDOWN, RUNNING, VOTING, ENDED }
 
     /**
      * A match as it stands: who was invited and which of them run (every player in a speedrun, the runners of a
@@ -80,6 +86,7 @@ public final class MatchRegistry {
         Match without(Set<UUID> out) { return new Match(id, mode, invited, runners, joined, out, state, countdownEnds, endsAt, winner, winners, result); }
         Match counting(long until) { return new Match(id, mode, invited, runners, joined, out, State.COUNTDOWN, until, endsAt, winner, winners, result); }
         Match running(long until) { return new Match(id, mode, invited, runners, joined, out, State.RUNNING, countdownEnds, until, winner, winners, result); }
+        Match voting(long until) { return new Match(id, mode, invited, runners, joined, out, State.VOTING, countdownEnds, until, winner, winners, result); }
         Match ended(UUID winner, Set<UUID> winners, String result) {
             return new Match(id, mode, invited, runners, joined, out, State.ENDED, countdownEnds, endsAt, winner, winners, result);
         }
@@ -96,10 +103,14 @@ public final class MatchRegistry {
     public static final int COUNTDOWN_TICKS = 60;
     /** A duel's time: five minutes, then a draw. */
     public static final int DUEL_TICKS = Mode.DUEL.ticks;
+    /** A build battle's vote: thirty seconds. */
+    public static final int VOTE_TICKS = 600;
     /** Ended matches remembered for their results. */
     static final int ENDED_KEPT = 16;
 
     private final Map<UUID, Match> matches = new LinkedHashMap<>();
+    /** A match's own time where it was given one (a build battle's build time), instead of its mode's. */
+    private final Map<UUID, Integer> limits = new LinkedHashMap<>();
 
     /** A match proposed between its players, none of them joined yet: two for a duel, one to eight runners for a speedrun. */
     public Result propose(Mode mode, List<UUID> invited) {
@@ -113,6 +124,14 @@ public final class MatchRegistry {
         var invited = new ArrayList<UUID>(runners);
         invited.addAll(hunters);
         return propose(Mode.MANHUNT, invited, Set.copyOf(runners));
+    }
+
+    /** A build battle proposed between its builders, with {@code buildTicks} to build in. */
+    public Result proposeBuild(List<UUID> builders, int buildTicks) {
+        if (buildTicks < 20 * 30 || buildTicks > 20 * 60 * 30) return Result.refused("A build takes from thirty seconds to half an hour");
+        var result = propose(Mode.BUILDER, builders, Set.of());
+        result.match().ifPresent(match -> limits.put(match.id(), buildTicks));
+        return result;
     }
 
     private Result propose(Mode mode, List<UUID> invited, Set<UUID> runners) {
@@ -160,9 +179,13 @@ public final class MatchRegistry {
         var changed = new ArrayList<Match>();
         for (var entry : matches.entrySet()) {
             Match match = entry.getValue();
+            int limit = limits.getOrDefault(match.id(), match.mode().ticks);
             if (match.state() == State.COUNTDOWN && tick >= match.countdownEnds()) {
-                match = match.running(match.mode().ticks > 0 ? tick + match.mode().ticks : Long.MAX_VALUE);
-            } else if (match.state() == State.RUNNING && match.mode().ticks > 0 && tick >= match.endsAt()) {
+                match = match.running(limit > 0 ? tick + limit : Long.MAX_VALUE);
+            } else if (match.state() == State.RUNNING && limit > 0 && tick >= match.endsAt() && match.mode() == Mode.BUILDER) {
+                // The build's time is up: on to the vote, which the players' votes decide (decide).
+                match = match.voting(tick + VOTE_TICKS);
+            } else if (match.state() == State.RUNNING && limit > 0 && tick >= match.endsAt()) {
                 match = match.ended(null, Set.of(), "Time ran out: a draw");
             } else {
                 continue;
@@ -250,6 +273,19 @@ public final class MatchRegistry {
         return side;
     }
 
+    /**
+     * A build battle's vote decided: {@code winners} the builders with the best builds (none, if nobody voted), as the
+     * votes gave them. Only while it is voting.
+     */
+    public Result decide(UUID matchId, Set<UUID> winners, String result) {
+        Match match = matches.get(matchId);
+        if (match == null) return Result.refused("No such match");
+        if (match.state() != State.VOTING) return Result.refused("Not being voted on");
+        var kept = new LinkedHashSet<UUID>();
+        for (UUID player : winners) if (match.participant(player)) kept.add(player);
+        return Result.ok(end(match, kept.size() == 1 ? kept.iterator().next() : null, kept, result), result);
+    }
+
     /** Stopped by an operator: no winner, and the leave to attack ends now. */
     public Result stop(UUID matchId) {
         Match match = matches.get(matchId);
@@ -316,6 +352,12 @@ public final class MatchRegistry {
         Match ended = match.ended(winner, winners, how);
         matches.put(match.id(), ended);
         return ended;
+    }
+
+    /** A match's own time limit in ticks, or its mode's. */
+    public int limit(UUID matchId) {
+        Match match = matches.get(matchId);
+        return match == null ? 0 : limits.getOrDefault(matchId, match.mode().ticks);
     }
 
     private void prune() {

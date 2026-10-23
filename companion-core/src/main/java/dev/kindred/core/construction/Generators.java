@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse");
 
     private Generators() { }
 
@@ -80,6 +80,75 @@ public final class Generators {
                 "Kindred", "Kindred's own", blocks, clear);
     }
 
+    /**
+     * A square watchtower: a floor, hollow walls of {@code material} with a doorway in the south wall, open at the top
+     * with battlements round its edge, every other block. Open, since a platform over the hollow would be out of reach
+     * of anywhere a builder on foot can stand. The origin is the floor's north-west corner.
+     *
+     * @param width  5 to 11, a side
+     * @param height 4 to 16, the walls over the floor
+     */
+    public static Blueprint tower(int width, int height, String material) {
+        if (width < 5 || width > 11 || height < 4 || height > 16) throw new IllegalArgumentException("A tower 5 to 11 a side, 4 to 16 high");
+        var blocks = new ArrayList<Blueprint.Block>();
+        var clear = new ArrayList<Pos>();
+        var stone = BlockSpec.of(material);
+        int door = width / 2;
+        for (int x = 0; x < width; x++) for (int z = 0; z < width; z++) blocks.add(new Blueprint.Block(new Pos(x, 0, z), stone));
+        for (int y = 1; y <= height; y++) for (int x = 0; x < width; x++) for (int z = 0; z < width; z++) {
+            boolean edge = x == 0 || z == 0 || x == width - 1 || z == width - 1;
+            var at = new Pos(x, y, z);
+            if (!edge || x == door && z == width - 1 && y <= 2) clear.add(at);
+            else blocks.add(new Blueprint.Block(at, stone));
+        }
+        for (int x = 0; x < width; x++) for (int z = 0; z < width; z++) {
+            boolean edge = x == 0 || z == 0 || x == width - 1 || z == width - 1;
+            if (edge && (x + z) % 2 == 0) blocks.add(new Blueprint.Block(new Pos(x, height + 1, z), stone));
+        }
+        return new Blueprint("tower " + width + "x" + height, SOURCE + "tower?width=" + width + "&height=" + height + "&material=" + material,
+                "Kindred", "Kindred's own", blocks, clear);
+    }
+
+    /**
+     * A stepped pyramid of {@code material}: each course a ring in from the one below, solid, to a single block on top.
+     * The origin is the base's north-west corner.
+     *
+     * @param base 3 to 15, odd, a side of the bottom course
+     */
+    public static Blueprint pyramid(int base, String material) {
+        if (base < 3 || base > 15 || base % 2 == 0) throw new IllegalArgumentException("A pyramid 3 to 15 at its base, odd");
+        var blocks = new ArrayList<Blueprint.Block>();
+        var stone = BlockSpec.of(material);
+        for (int y = 0; y <= base / 2; y++) for (int x = y; x < base - y; x++) for (int z = y; z < base - y; z++) {
+            blocks.add(new Blueprint.Block(new Pos(x, y, z), stone));
+        }
+        return new Blueprint("pyramid " + base, SOURCE + "pyramid?base=" + base + "&material=" + material, "Kindred", "Kindred's own", blocks);
+    }
+
+    /**
+     * A lighthouse: a column three a side striped in two colours, two courses each, on a base five a side; on top a lamp
+     * of glowstone in a ring of glass under a roof of slabs. Solid, so every course stands on the one below and is
+     * within a builder's reach from a scaffold beside it. The origin is the base's north-west corner.
+     *
+     * @param height 6 to 16, the striped column over the base
+     */
+    public static Blueprint lighthouse(int height, String stripe, String band) {
+        if (height < 6 || height > 16) throw new IllegalArgumentException("A lighthouse 6 to 16 high");
+        var blocks = new ArrayList<Blueprint.Block>();
+        var clear = new ArrayList<Pos>();
+        for (int x = 0; x < 5; x++) for (int z = 0; z < 5; z++) blocks.add(new Blueprint.Block(new Pos(x, 0, z), BlockSpec.of(band)));
+        for (int y = 1; y <= height; y++) for (int x = 1; x < 4; x++) for (int z = 1; z < 4; z++) {
+            blocks.add(new Blueprint.Block(new Pos(x, y, z), BlockSpec.of((y - 1) / 2 % 2 == 0 ? stripe : band)));
+        }
+        // The lamp room: glowstone in the middle, glass round it, slabs over all.
+        for (int x = 1; x < 4; x++) for (int z = 1; z < 4; z++) {
+            blocks.add(new Blueprint.Block(new Pos(x, height + 1, z), BlockSpec.of(x == 2 && z == 2 ? "minecraft:glowstone" : "minecraft:glass")));
+            blocks.add(new Blueprint.Block(new Pos(x, height + 2, z), BlockSpec.parse("minecraft:smooth_stone_slab[type=bottom]")));
+        }
+        return new Blueprint("lighthouse " + height, SOURCE + "lighthouse?height=" + height + "&stripe=" + stripe + "&band=" + band,
+                "Kindred", "Kindred's own", blocks, clear);
+    }
+
     private static BlockSpec stair(String facing) {
         return BlockSpec.parse("minecraft:oak_stairs[facing=" + facing + ",half=bottom,shape=straight]");
     }
@@ -88,7 +157,10 @@ public final class Generators {
     public static Blueprint named(String name, List<Integer> sizes) {
         return switch (name) {
             case "hut" -> hut(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 5, sizes.size() > 2 ? sizes.get(2) : 3);
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there is: hut");
+            case "tower" -> tower(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 8, "minecraft:stone_bricks");
+            case "pyramid" -> pyramid(sizes.size() > 0 ? sizes.get(0) : 9, "minecraft:sandstone");
+            case "lighthouse" -> lighthouse(sizes.size() > 0 ? sizes.get(0) : 10, "minecraft:white_concrete", "minecraft:red_concrete");
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse");
         };
     }
 }

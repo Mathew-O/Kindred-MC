@@ -51,6 +51,19 @@ public record Blueprint(String name, String source, String creator, String licen
         for (int i = 0; i < 3; i++) if ((long) max[i] - min[i] + 1 > MAX_SPAN) throw new IllegalArgumentException("Blueprint wider than " + MAX_SPAN);
     }
 
+    /**
+     * This blueprint in other materials: each block whose kind {@code palette} names becomes the kind it maps to, in the
+     * same state (an oak stair facing north becomes a spruce stair facing north). Nothing else changes.
+     */
+    public Blueprint recolored(Map<String, String> palette, String name) {
+        var out = new ArrayList<Block>(blocks.size());
+        for (Block b : blocks) {
+            String kind = palette.getOrDefault(b.spec().block(), b.spec().block());
+            out.add(new Block(b.at(), new BlockSpec(kind, b.spec().properties())));
+        }
+        return new Blueprint(name, source, creator, license, out, clear);
+    }
+
     /** A blueprint with no clearance kept. */
     public Blueprint(String name, String source, String creator, String license, List<Block> blocks) {
         this(name, source, creator, license, blocks, List.of());

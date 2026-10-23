@@ -47,4 +47,19 @@ class GeneratorsTest {
             assertTrue(run.scaffolds() > 0, "the ridge is out of reach from the ground");
         }
     }
+
+    /** The build battle's designs (M-04a), each built whole through the planner as the runner builds it. */
+    @Test
+    void theTowerPyramidAndLighthouseAreBuiltWholeAndTheirScaffoldTakenDown() {
+        var held = new java.util.HashSet<>(HELD);
+        for (String kind : List.of("minecraft:stone_bricks", "minecraft:sandstone", "minecraft:white_concrete", "minecraft:red_concrete",
+                "minecraft:glass", "minecraft:glowstone", "minecraft:smooth_stone_slab", "minecraft:dirt")) held.add(kind);
+        for (var design : List.of(Generators.tower(5, 8, "minecraft:stone_bricks"), Generators.pyramid(9, "minecraft:sandstone"),
+                Generators.lighthouse(8, "minecraft:white_concrete", "minecraft:red_concrete"))) {
+            var origin = new Pos(-3, 1, -3);
+            BuildSimulation.build(design.placed(origin, 0), design.placedClear(origin, 0), BuildTestSites.flat(), new Pos(-8, 1, 0), held, design.name());
+        }
+        assertThrows(IllegalArgumentException.class, () -> Generators.pyramid(8, "minecraft:sandstone"), "an odd base");
+        assertThrows(IllegalArgumentException.class, () -> Generators.tower(4, 8, "minecraft:stone"));
+    }
 }

@@ -188,6 +188,57 @@ public final class PlayerCommands {
                             }
                             return runtime.proposeManhunt(context.getSource(), runners, hunters);
                         })))
+                // A build battle (M-04a): the builders' names, then optionally "for <seconds>" and "theme <name>".
+                .then(CommandManager.literal("build").then(CommandManager.argument("builders", StringArgumentType.greedyString())
+                        .suggests((context, builder) -> suggestPlayers(context,
+                                builder.createOffset(builder.getStart() + builder.getRemaining().lastIndexOf(' ') + 1)))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            var builders = new java.util.ArrayList<UUID>();
+                            int seconds = 300;
+                            dev.kindred.core.match.BuildBattle.Theme theme = null;
+                            String[] words = StringArgumentType.getString(context, "builders").trim().split("\\s+");
+                            for (int i = 0; i < words.length; i++) {
+                                if (words[i].equalsIgnoreCase("for") && i + 1 < words.length) {
+                                    try {
+                                        seconds = Integer.parseInt(words[++i]);
+                                    } catch (NumberFormatException bad) {
+                                        context.getSource().sendError(Text.literal("'for' takes the build's seconds: for 300"));
+                                        return 0;
+                                    }
+                                    continue;
+                                }
+                                if (words[i].equalsIgnoreCase("theme") && i + 1 < words.length) {
+                                    String name = words[++i].toUpperCase(java.util.Locale.ROOT);
+                                    theme = java.util.Arrays.stream(dev.kindred.core.match.BuildBattle.Theme.values()).filter(t -> t.name().equals(name)).findFirst().orElse(null);
+                                    if (theme == null) {
+                                        context.getSource().sendError(Text.literal("No such theme; there are: cottage, watchtower, pyramid, lighthouse"));
+                                        return 0;
+                                    }
+                                    continue;
+                                }
+                                UUID player = runtime.matchPlayerId(words[i]);
+                                if (player == null) {
+                                    context.getSource().sendError(Text.literal("No such player online: '" + words[i] + "'."));
+                                    return 0;
+                                }
+                                builders.add(player);
+                            }
+                            return runtime.proposeBuildBattle(context.getSource(), builders, seconds * 20, theme);
+                        })))
+                // A builder's vote on another's build, one to five.
+                .then(CommandManager.literal("vote").then(CommandManager.argument("builder", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestPlayers(context, builder))
+                        .then(CommandManager.argument("score", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 5))
+                                .executes(context -> {
+                                    PlayerRuntime runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID builder = resolveMatchPlayer(context, "builder", runtime);
+                                    if (builder == null) return 0;
+                                    return runtime.voteBuild(context.getSource(), builder,
+                                            com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "score"));
+                                }))))
                 .then(CommandManager.literal("join").then(CommandManager.argument("match", StringArgumentType.string())
                         .executes(context -> matchCommand(context, (runtime, id) -> runtime.joinMatch(context.getSource(), id)))))
                 .then(CommandManager.literal("start").then(CommandManager.argument("match", StringArgumentType.string())

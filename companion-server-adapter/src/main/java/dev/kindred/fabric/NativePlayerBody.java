@@ -123,6 +123,7 @@ final class NativePlayerBody implements BodyAdapter {
     private long ticksRun;
     /** What this player can know of others' health from the hits it saw land (E-41a); never the server's number. */
     private final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
+    private boolean creativeAllowed;
     /**
      * Whether this player may attack another player (M-00a, D7): only a joined participant of a running match it is in.
      * The runtime sets it; until then every player target is refused.
@@ -1847,10 +1848,17 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     private boolean current(ActionLease lease) {
+        var mode = player.interactionManager.getGameMode();
         return lease != null && Objects.equals(controls, lease) && arbiter != null
                 && arbiter.isCurrent(lease) && player.isAlive() && !player.isRemoved()
-                && player.interactionManager.getGameMode() == GameMode.SURVIVAL;
+                && (mode == GameMode.SURVIVAL || mode == GameMode.CREATIVE && creativeAllowed);
     }
+
+    /**
+     * Whether the body may act in creative: only while the runtime has it build in a build battle (M-04a), the one mode
+     * where blocks are free. Otherwise controls work in survival alone.
+     */
+    void allowCreative(boolean allowed) { requireThread(); creativeAllowed = allowed; }
 
     private boolean canMine(BlockPos target) {
         ServerWorld world = player.getServerWorld();

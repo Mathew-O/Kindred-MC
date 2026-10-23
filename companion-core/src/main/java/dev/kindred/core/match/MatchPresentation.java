@@ -38,6 +38,7 @@ public final class MatchPresentation {
         return switch (match.mode()) {
             case DUEL -> new Title("Fight!", "", Cue.START);
             case SPEEDRUN -> new Title("Go!", "To the dragon", Cue.START);
+            case BUILDER -> new Title("Build!", "", Cue.START);
             case MANHUNT -> match.runners().contains(viewer) ? new Title("Run!", "Free the End before they catch you", Cue.START)
                     : new Title("Hunt!", "Catch the runners before they free the End", Cue.START);
         };
@@ -51,6 +52,7 @@ public final class MatchPresentation {
             if (how.startsWith("Time ran out")) return new Title("Draw", "Time ran out", Cue.DRAW);
             if (how.equals("Stopped")) return new Title("Stopped", "No winner", Cue.DRAW);
             if (how.startsWith("Every runner")) return new Title("Race over", how, Cue.DRAW);
+            if (match.mode() == MatchRegistry.Mode.BUILDER) return new Title("Draw", how, Cue.DRAW);
             return new Title("Called off", how, Cue.DRAW);
         }
         if (match.won(viewer)) return new Title("Victory", subtitle(match, names), Cue.WIN);
@@ -79,9 +81,11 @@ public final class MatchPresentation {
             case RUNNING -> {
                 if (match.mode().ticks == 0) yield new Bar(mode + ": " + who + " - " + clock(Math.max(0, tick - match.countdownEnds())),
                         Math.clamp(progress, 0f, 1f));
-                long left = Math.max(0, match.endsAt() - tick);
-                yield new Bar(mode + ": " + who + " - " + clock(left), Math.clamp(left / (float) match.mode().ticks, 0f, 1f));
+                long left = Math.max(0, match.endsAt() - tick), total = Math.max(1, match.endsAt() - match.countdownEnds());
+                yield new Bar(mode + ": " + who + " - " + clock(left), Math.clamp(left / (float) total, 0f, 1f));
             }
+            case VOTING -> new Bar(mode + ": " + who + " - vote on the builds: " + clock(Math.max(0, match.endsAt() - tick)),
+                    Math.clamp((match.endsAt() - tick) / (float) MatchRegistry.VOTE_TICKS, 0f, 1f));
             case ENDED -> new Bar(mode + ": " + who + " - over", 0f);
         };
     }
@@ -112,6 +116,9 @@ public final class MatchPresentation {
             if (how.startsWith("Every runner")) return "The runners gave up";
             if (how.startsWith("Every hunter")) return "The hunters gave up";
             return how;
+        }
+        if (match.mode() == MatchRegistry.Mode.BUILDER) {
+            return match.winners().stream().map(names).collect(Collectors.joining(" and ")) + (match.winners().size() > 1 ? " tie" : " wins") + " the vote";
         }
         String winner = names.apply(match.winner());
         return switch (match.result() == null ? "" : match.result()) {

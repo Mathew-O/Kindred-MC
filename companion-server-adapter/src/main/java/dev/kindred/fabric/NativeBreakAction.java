@@ -90,7 +90,8 @@ final class NativeBreakAction extends NativeRecordedAction {
         int tool = bestTool(body, state);
         // A block that needs a tool still gives way to a bare hand, slowly and dropping nothing: only a clearing
         // (nothing collected) may be dug like that, as a player punches through rock with no pickaxe left.
-        if (tool == -2 && collect) throw new IllegalArgumentException("No owned tool can harvest " + resource);
+        // In creative (a build battle's only, M-04a) any block gives way at once, dropping nothing, tool or none.
+        if (tool == -2 && collect && !player.isCreative()) throw new IllegalArgumentException("No owned tool can harvest " + resource);
         toolSlot = tool == -2 ? -1 : tool;
         hotbarSlot = toolSlot >= 0 && toolSlot < 9 ? toolSlot : toolSlot < 0 ? bareHandSlot(body) : swapDestination(body);
         priorReceipt = body.miningReceipt().map(NativePlayerBody.MiningReceipt::sequence).orElse(0L);

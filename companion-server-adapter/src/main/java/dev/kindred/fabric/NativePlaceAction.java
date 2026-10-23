@@ -238,6 +238,13 @@ final class NativePlaceAction extends NativeRecordedAction {
 
     private boolean verifyConservation(InventoryEvidence before, InventoryEvidence after, BlockItem blockItem) {
         if (before.stacks().length != after.stacks().length) return false;
+        // In creative, which only a build battle gives (M-04a), vanilla places without using the item up: nothing changes.
+        if (body.entity().isCreative()) {
+            for (int i = 0; i < before.stacks().length; i++) {
+                if (!ItemStack.areItemsAndComponentsEqual(before.stacks()[i], after.stacks()[i]) || before.stacks()[i].getCount() != after.stacks()[i].getCount()) return false;
+            }
+            return true;
+        }
         for (int i = 0; i < before.stacks().length; i++) {
             ItemStack b = before.stacks()[i];
             ItemStack a = after.stacks()[i];

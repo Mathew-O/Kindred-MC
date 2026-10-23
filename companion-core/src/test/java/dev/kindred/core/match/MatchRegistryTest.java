@@ -3,6 +3,7 @@ package dev.kindred.core.match;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -202,5 +203,28 @@ class MatchRegistryTest {
         var second = manhunt(other, List.of(ada), List.of(bram), 0);
         var forfeit = other.leave(second.id(), ada).match().orElseThrow();
         assertTrue(forfeit.won(bram) && forfeit.result().startsWith("Every runner"), "the hunter wins once the runner gives up");
+    }
+
+    @Test
+    void aBuildBattleBuildsForItsTimeThenWaitsOnTheVote() {
+        var registry = new MatchRegistry();
+        assertFalse(registry.proposeBuild(List.of(ada, bram), 100).accepted(), "at least thirty seconds to build");
+        var battle = registry.proposeBuild(List.of(ada, bram), 1200).match().orElseThrow();
+        assertEquals(1200, registry.limit(battle.id()));
+        registry.join(battle.id(), ada);
+        registry.join(battle.id(), bram);
+        registry.start(battle.id(), 0);
+        var building = registry.tick(MatchRegistry.COUNTDOWN_TICKS).getFirst();
+        assertEquals(MatchRegistry.State.RUNNING, building.state());
+        assertFalse(registry.mayAttack(ada, bram), "nobody strikes anybody");
+        assertFalse(registry.decide(battle.id(), Set.of(ada), "votes").accepted(), "not before the vote");
+        assertTrue(registry.tick(MatchRegistry.COUNTDOWN_TICKS + 1199).isEmpty());
+        var voting = registry.tick(MatchRegistry.COUNTDOWN_TICKS + 1200).getFirst();
+        assertEquals(MatchRegistry.State.VOTING, voting.state(), "the build's time up: the vote");
+        assertTrue(registry.tick(10_000_000).isEmpty(), "the votes decide it, not the clock");
+        assertTrue(registry.active(ada).isPresent(), "still in it while it is voted on");
+        var won = registry.decide(battle.id(), Set.of(bram, cy), "the best mean vote").match().orElseThrow();
+        assertEquals(bram, won.winner(), "only those in it win");
+        assertTrue(won.won(bram) && !won.won(ada) && !won.won(cy));
     }
 }
