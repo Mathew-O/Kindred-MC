@@ -4,6 +4,27 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-01c (a player's own base), on top of `5b427bb`.
+  - New JUnit: `BaseSiteTest` (4), `aTripEndsOnceEverythingIsInHandHoweverTheLastOfItCame`.
+  - New native fixture: `aPlayerWithStoneToolsSitesAndBuildsItsOwnCabinThenWaitsForIron`.
+    - Mason has the operator's leave for bases, stone tools, and the cabin's wood but half its logs and none of its stone, on grass over dirt over stone.
+    - It chooses a cabin, sites it where it stood, and builds what it holds.
+    - In one trip it cuts six logs and digs a staircase down off its site for 62 cobblestone, then crafts the furnace and climbs out.
+    - It finishes the cabin at the first go, all 222 blocks exact, then waits for iron.
+  - Three hand controls, as in [M-01c](evidence/M-01c.md): no leave, stone only from what is in sight, no way back up.
+  - Found on the way:
+    - surface stone mined round a tree left nowhere to stand;
+    - stairs mined away left no way up;
+    - a trip that never ended kept the climb-out from running;
+    - a table set down went unrecognised, and a second was crafted from the cabin's planks;
+    - the walk off the site before digging ended too close to leave it;
+    - a climb out that failed one step ended the build;
+    - sent "over to" a roof stair, the player walked onto the roof. Every build now walks over on the ground beside the block.
+    - in the first suite runs: the staircase for stone dug six deeper each time stone in sight ran out, down to just above bedrock; a pillar from the route back up was taken down as scaffold from far below; mining at the bottom took its own stair steps; a roof block overhead was always "far", so the walk over to it never ended.
+  - With the last fix in, the fixture passed six runs in a row alone, and the house and build-needs fixtures again.
+  - The runner's limit on one `runGametest` run went from 25 to 45 minutes: the suite with these fixtures outgrew it once.
+  - `runGametest` passed 300/300 twice in a row, the third and fourth of four runs on this tree. The second failed once in the ranch fixture (M-01a), whose choice of animals this change does not touch: Wren saw both cows outside its pen and led neither in; the ranch then passed twice alone. `./gradlew build` passed: 540 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `15af1607a4370846e9ed66a03e47131dec07468d472e168a0d0ce3178a335db6`.
 - M-01b (bases in three stages): all three built in game, on top of `5ff7e99`.
   - New JUnit: `BaseProgressionTest` (3); `GeneratorsTest` checks the stages by name.
   - New native fixtures:

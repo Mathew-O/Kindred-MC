@@ -168,6 +168,9 @@ public final class BuildNeeds {
     /** Whether it is out fetching the shortfall. */
     public boolean onTrip() { return trip; }
 
+    /** Everything the build takes is in hand: any trip for it is over. */
+    public void allInHand() { trip = false; }
+
     /**
      * The next step for the build's needs.
      *

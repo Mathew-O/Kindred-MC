@@ -87,4 +87,16 @@ class BuildNeedsTest {
         assertTrue(BuildNeeds.recipe("minecraft:spruce_fence_gate", "oak").orElseThrow().takes().containsKey("minecraft:spruce_planks"));
         assertEquals("minecraft:birch_planks", BuildNeeds.recipe(STICK, "birch").orElseThrow().takes().keySet().iterator().next());
     }
+
+    @Test
+    void aTripEndsOnceEverythingIsInHandHoweverTheLastOfItCame() {
+        var needs = new BuildNeeds();
+        // Stuck for cobblestone it has no stone for: it sets out.
+        var out = needs.next(Map.of(COBBLE, 10), Map.of(), false, Map.of(), false, "oak", true);
+        assertInstanceOf(BuildNeeds.Step.Gather.class, out);
+        assertTrue(needs.onTrip());
+        // The last of it came in by a way the queue was not asked about (a craft, a pick-up): the trip is over.
+        needs.allInHand();
+        assertFalse(needs.onTrip());
+    }
 }

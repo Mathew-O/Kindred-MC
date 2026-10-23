@@ -67,7 +67,8 @@
       "dev.kindred.fabric.NativeBuildBattleGameTests",
       "dev.kindred.fabric.NativeRanchGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
-      "dev.kindred.fabric.NativeHouseGameTests"
+      "dev.kindred.fabric.NativeHouseGameTests",
+      "dev.kindred.fabric.NativeBaseGameTests"
     ]
   },
   "depends": {

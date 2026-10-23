@@ -19,6 +19,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
 /aiplayer build cabin|house|manor <x y z> [turns] [bot]  build a stage of a base there, of oak and cobblestone
+/aiplayer bases on|off               server-wide leave for AI players to choose, site and build their own bases (default off)
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
 /aiplayer build list                 the generators and schematics on offer
@@ -130,7 +131,17 @@ Give a native player its storage with `/aiplayer storage at <x y z> [player]`, l
 - **A two-floor house** (9×11, 553 blocks): a storage wall, a workshop, and a staircase up to a bedroom.
 - **A manor** (13×15, 972 blocks): a storage hall, a workshop, an enchanting room ringed by bookshelves, bedrooms and a library.
 
-Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them. When to move a base on a stage is decided (a cabin once it has stone tools; a house with iron tools once the chests fill or three days pass; a manor once it can make an enchanting table), but nothing acts on it yet: the player does not yet choose a stage or a site for itself.
+Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them. **Its own base (M-01c; in development).** With `/aiplayer bases on` (operators only; AI world edits must be on too), a player that is playing builds its own base as it goes.
+- **When.** It does this when it has no goal, build or ranch of its own and is not stopped. A new player only looks on until it is set to play, with `/aiplayer mode optimal` or the K panel.
+- **Which stage.** It moves its base on a stage when it is ready:
+  - a cabin once it has stone tools;
+  - a house with iron tools, once the cabin's chests are three-quarters full or three days have passed;
+  - a manor once it has an enchanting table's makings.
+- **Where.** On the nearest flat, open, natural ground within 24 blocks of its home, or of where it stood when it first looked. Each later stage goes beside the last. It says why and where as it starts.
+- **Building it.** It builds through the needs queue. For stone it digs a staircase down off its site, and it climbs out after.
+- **Remembered.** Its bases are kept across restarts in `kindred/memory/<player>.bases.json`. A stage it did not finish is taken up again where it stands.
+- **Stopping one.** `/aiplayer build stop` on a base's build puts it off for five minutes.
+- **Not yet:** the base's chests do not become its storage, and it builds only in oak.
 
 **Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
 

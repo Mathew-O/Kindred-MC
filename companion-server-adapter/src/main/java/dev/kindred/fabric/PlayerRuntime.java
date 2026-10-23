@@ -178,6 +178,8 @@ final class PlayerRuntime {
      * the dragon fight is an encounter a server may want to keep for its people.
      */
     private boolean dragonFight;
+    /** The operator's leave for AI players to choose, site and build their own bases (M-01c); off by default. */
+    private boolean bases;
     private final AdmissionBoard admission = AdmissionBoard.serverTarget(10);
     private final ClaimRegistry claims = new ClaimRegistry();
     ClaimRegistry claims() { return claims; }
@@ -370,16 +372,19 @@ final class PlayerRuntime {
     private static long now() { return System.nanoTime() / 1_000_000; }
     private static long nanos() { return System.nanoTime(); }
 
-    /** The operator's dragon fight setting in edits.properties ({@code dragonFight}); off when absent or unreadable. */
-    private static boolean readDragonFight(Path directory) {
+    /**
+     * One of the operator's leaves in edits.properties: {@code dragonFight}, {@code bases}; off when absent or
+     * unreadable.
+     */
+    private static boolean readLeave(Path directory, String key) {
         try {
             java.nio.file.Path file = directory.resolve("edits.properties");
             if (!java.nio.file.Files.exists(file)) return false;
             java.util.Properties properties = new java.util.Properties();
             try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
-            return Boolean.parseBoolean(properties.getProperty("dragonFight", "false"));
+            return Boolean.parseBoolean(properties.getProperty(key, "false"));
         } catch (Exception failure) {
-            KindredMod.LOGGER.error("Kindred dragon fight setting could not be read; the fight stays off", failure);
+            KindredMod.LOGGER.error("Kindred setting " + key + " could not be read; it stays off", failure);
             return false;
         }
     }
@@ -410,7 +415,7 @@ final class PlayerRuntime {
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
-        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readDragonFight(directory)))
+        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases")))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
                         .thenCompose(database -> database.list().thenCompose(records -> {
                             Set<UUID> logicalIds = records.stream().map(r -> r.companion().id()).collect(java.util.stream.Collectors.toSet());
@@ -420,7 +425,7 @@ final class PlayerRuntime {
                                                     database.nativePlayers().thenCompose(nativePlayers ->
                                                             startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
                                                                     database.modes(logicalIds).thenApply(modes ->
-                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), database, records,
+                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), database, records,
                                                                                     profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes)
                                                                     )
                                                             )
@@ -501,6 +506,7 @@ final class PlayerRuntime {
                     ready = true;
                     edits = loaded.edits();
                     dragonFight = loaded.dragonFight();
+                    bases = loaded.bases();
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
                     store.listProjects().whenComplete((loadedProjects, err) -> {
@@ -2783,6 +2789,13 @@ final class PlayerRuntime {
             return candidates;
         }
 
+        // With the operator's leave, a player with no goal of its own looks to its base (M-01c): the next stage, sited
+        // and then built as any build is.
+        if (baseDecision(entry, body)) {
+            candidates.addAll(buildCandidates(entry, body));
+            return candidates;
+        }
+
         boolean playerHasPickaxe = false;
         for (int s = 0; s < 36; s++) {
             if (player.getInventory().getStack(s).isIn(ItemTags.PICKAXES)) {
@@ -3562,6 +3575,7 @@ final class PlayerRuntime {
         }
         if (task.isEmpty()) {
             if (build.done()) {
+                if (build == entry.baseBuild) baseBuilt(entry, build);
                 entry.build = null;
                 entry.buildTasks.clear();
                 server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + build.progress()
@@ -3613,9 +3627,11 @@ final class PlayerRuntime {
     private void buildTaskFinished(Entry entry, SkillRunner.State state) {
         var task = entry.activeBuildTask;
         entry.activeBuildTask = null;
-        if (task != null && entry.build != null && entry.nativeBody != null && entry.campaign != null && entry.build.needsTask(task)) {
-            // A step for the build's needs (E-08c): the run's own gathering hears how it went, and a table set down to
-            // craft at is its own to come back to.
+        // A table set down to craft at for the build's needs (E-08c) is its own to come back to, however often the build
+        // planned again while it was being set down; the build's own table is the build's.
+        boolean tableForNeeds = task != null && "native_place".equals(task.skill()) && "Place a crafting table".equals(task.label());
+        if (task != null && entry.build != null && entry.nativeBody != null && entry.campaign != null && (entry.build.needsTask(task) || tableForNeeds)) {
+            // A step for the build's needs (E-08c): the run's own gathering hears how it went.
             boolean completed = state == SkillRunner.State.COMPLETED;
             if (completed && "native_place".equals(task.skill())) {
                 BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
@@ -3664,6 +3680,11 @@ final class PlayerRuntime {
             return reject(source, "Native player unavailable or administrative access denied.");
         }
         if (blueprint == null) {
+            // A base's build stopped by its administrator is not taken up again at once (M-01c).
+            if (entry.build != null && entry.build == entry.baseBuild) {
+                entry.baseBuild = null;
+                entry.baseCheckAt = server.getTicks() + BASE_RETRY;
+            }
             entry.build = null;
             entry.buildTasks.clear();
             entry.goalProgress = "";
@@ -3689,6 +3710,208 @@ final class PlayerRuntime {
         feedback(source, entry.data.displayName() + ": building " + blueprint.name() + " (" + SchematicLibrary.credit(blueprint) + ") at "
                 + origin.toShortString() + missing + unsupported + ".");
         return 1;
+    }
+
+    /** How often a player with no goal looks to its base (M-01c), after finding nowhere to put one, after a stage ended short. */
+    private static final int BASE_LOOK = 200, BASE_NO_SITE = 1200, BASE_RETRY = 6000;
+    /** How far from its anchor a player looks for ground for a base, and how often a stage that ends short is tried. */
+    private static final int BASE_RADIUS = 24, BASE_TRIES = 3;
+
+    /**
+     * A player's own base (M-01c), with the operator's leave and AI world edits on, when it has no goal, build or ranch
+     * of its own: a stage it began, taken up again where it stands; otherwise the next stage {@link
+     * dev.kindred.core.construction.BaseProgression} calls for, on the nearest flat open ground ({@link
+     * dev.kindred.core.construction.BaseSite}) to where it first looked, or beside its last base. The stage is then a
+     * build like any other, its blocks fetched through its needs (E-08c). Whether it started a build.
+     */
+    private boolean baseDecision(Entry entry, NativePlayerBody body) {
+        if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
+                || entry.ranch != null || entry.snapshot().stopLatched()) return false;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
+        long now = server.getTicks();
+        if (now < entry.baseCheckAt) return false;
+        UUID id = entry.data.id();
+        if (entry.bases == null) {
+            if (!entry.basesLoading) {
+                entry.basesLoading = true;
+                memories.loadBases(id, entry.data.displayName()).whenComplete((loaded, failure) -> server.execute(() -> {
+                    if (!running || entries.get(id) != entry) return;
+                    entry.bases = loaded != null ? loaded : new PlayerMemoryStore.Bases();
+                    // A record it cannot read as one of its stages (an edited file, a stage since renamed) is left out.
+                    entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null);
+                    entry.basesLoading = false;
+                }));
+            }
+            return false;
+        }
+        entry.baseCheckAt = now + BASE_LOOK;
+        String dimension = world.getRegistryKey().getValue().toString();
+        var record = entry.bases;
+        var last = record.built.isEmpty() ? null : record.built.get(record.built.size() - 1);
+        if (last != null && !last.dimension().equals(dimension)) return false;
+        if (last != null && !last.complete()) {
+            return startBase(entry, stageOf(last), new BlockPos(last.x(), last.y(), last.z()), "Back to its " + last.stage());
+        }
+        var decision = dev.kindred.core.construction.BaseProgression.next(baseProgress(body, last));
+        noteBase(entry, decision.why());
+        if (decision.next().isEmpty()) return false;
+        var stage = decision.next().get();
+        if (record.anchor == null) {
+            BlockPos home = entry.setup == null || entry.setup.home() == null ? player.getBlockPos()
+                    : new BlockPos(entry.setup.home().position().x(), entry.setup.home().position().y(), entry.setup.home().position().z());
+            record.anchor = new PlayerMemoryStore.Place(dimension, home.getX(), home.getY(), home.getZ());
+        }
+        int anchorX = record.anchor.x(), anchorZ = record.anchor.z();
+        if (last != null) {
+            var before = stageOf(last);
+            anchorX = last.x() + before.width / 2;
+            anchorZ = last.z() + before.depth / 2;
+        }
+        var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
+        for (var base : record.built) {
+            var built = stageOf(base);
+            avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(base.x(), base.z(), base.x() + built.width - 1, base.z() + built.depth - 1));
+        }
+        var site = dev.kindred.core.construction.BaseSite.choose(ground(world), anchorX, anchorZ, BASE_RADIUS, stage.width, stage.depth,
+                stageHeight(stage), avoid);
+        if (site.isEmpty()) {
+            entry.baseCheckAt = now + BASE_NO_SITE;
+            noteBase(entry, "No flat open ground for a " + stage.noun + " within " + BASE_RADIUS + " blocks of " + anchorX + ", " + anchorZ);
+            return false;
+        }
+        var origin = new BlockPos(site.get().x(), site.get().y(), site.get().z());
+        record.built.add(new PlayerMemoryStore.Base(stage.noun, dimension, origin.getX(), origin.getY(), origin.getZ(), false));
+        memories.saveBases(id, record);
+        return startBase(entry, stage, origin, decision.why());
+    }
+
+    private boolean startBase(Entry entry, dev.kindred.core.construction.Houses.Stage stage, BlockPos origin, String why) {
+        var blueprint = dev.kindred.core.construction.Houses.of(stage, "oak", "cobblestone");
+        if (startBuild(server.getCommandSource(), entry.data.id(), blueprint, origin, 0) != 1) return false;
+        entry.baseBuild = entry.build;
+        server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + why + ": a " + stage.noun + " at "
+                + origin.getX() + ", " + origin.getY() + ", " + origin.getZ() + "."), false);
+        return true;
+    }
+
+    /** A base's build has ended: whole, or after its last try as far as it goes, it is the player's base now. */
+    private void baseBuilt(Entry entry, BuildRunner build) {
+        entry.baseBuild = null;
+        var record = entry.bases;
+        if (record == null || record.built.isEmpty()) return;
+        int at = record.built.size() - 1;
+        var last = record.built.get(at);
+        if (!build.complete() && ++entry.baseTries < BASE_TRIES) {
+            entry.baseCheckAt = server.getTicks() + BASE_RETRY;
+            noteBase(entry, "Its " + last.stage() + " ended short (" + build.progress() + "); back to it later");
+            return;
+        }
+        entry.baseTries = 0;
+        record.built.set(at, new PlayerMemoryStore.Base(last.stage(), last.dimension(), last.x(), last.y(), last.z(), true));
+        memories.saveBases(entry.data.id(), record);
+        noteBase(entry, "Its " + last.stage() + " stands" + (build.complete() ? "" : " as far as it goes (" + build.progress() + ")"));
+    }
+
+    private static void noteBase(Entry entry, String why) {
+        if (why.equals(entry.baseNote)) return;
+        entry.baseNote = why;
+        KindredMod.LOGGER.info("{} base: {}", entry.data.displayName(), why);
+    }
+
+    private static dev.kindred.core.construction.Houses.Stage stageOf(PlayerMemoryStore.Base base) {
+        return stageNamed(base.stage());
+    }
+
+    /** The stage a base record names, or null when it names none. */
+    private static dev.kindred.core.construction.Houses.Stage stageNamed(String noun) {
+        if (noun == null) return null;
+        for (var stage : dev.kindred.core.construction.Houses.Stage.values()) if (stage.noun.equals(noun)) return stage;
+        return null;
+    }
+
+    /** A stage's height over its floor, roof included. */
+    private static int stageHeight(dev.kindred.core.construction.Houses.Stage stage) {
+        int top = 0;
+        for (var b : dev.kindred.core.construction.Houses.of(stage, "oak", "cobblestone").blocks()) top = Math.max(top, b.at().y());
+        return top + 1;
+    }
+
+    /**
+     * Where the player stands toward its next base: its tools, whether it has an enchanting table's makings, how much
+     * room its base's chests have left, and the days played.
+     */
+    private static dev.kindred.core.construction.BaseProgression.Progress baseProgress(NativePlayerBody body, PlayerMemoryStore.Base last) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        boolean stone = false, iron = false, table = false;
+        int diamonds = 0, obsidian = 0, books = 0;
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isOf(Items.STONE_PICKAXE)) stone = true;
+            if (stack.isOf(Items.IRON_PICKAXE) || stack.isOf(Items.DIAMOND_PICKAXE) || stack.isOf(Items.NETHERITE_PICKAXE)) stone = iron = true;
+            if (stack.isOf(Items.ENCHANTING_TABLE)) table = true;
+            if (stack.isOf(Items.DIAMOND)) diamonds += stack.getCount();
+            if (stack.isOf(Items.OBSIDIAN)) obsidian += stack.getCount();
+            if (stack.isOf(Items.BOOK)) books += stack.getCount();
+        }
+        int free = 0, slots = 0;
+        var world = player.getServerWorld();
+        if (last != null) {
+            var stage = stageOf(last);
+            int height = stageHeight(stage);
+            for (BlockPos pos : BlockPos.iterate(last.x(), last.y(), last.z(), last.x() + stage.width - 1, last.y() + height, last.z() + stage.depth - 1)) {
+                if (!world.isChunkLoaded(pos) || !(world.getBlockEntity(pos) instanceof net.minecraft.block.entity.ChestBlockEntity chest)) continue;
+                slots += chest.size();
+                for (int slot = 0; slot < chest.size(); slot++) if (chest.getStack(slot).isEmpty()) free++;
+            }
+        }
+        return new dev.kindred.core.construction.BaseProgression.Progress(last == null ? Optional.empty() : Optional.of(stageOf(last)),
+                stone, iron, table || diamonds >= 2 && obsidian >= 4 && books >= 1, free, slots, Math.max(0, world.getTimeOfDay() / 24000));
+    }
+
+    /** The ground round a site as a player sees it, column by column, each read once. */
+    private static dev.kindred.core.construction.BaseSite.Ground ground(ServerWorld world) {
+        var seen = new HashMap<Long, Optional<dev.kindred.core.construction.BaseSite.Column>>();
+        return (x, z) -> seen.computeIfAbsent(BlockPos.asLong(x, 0, z), key -> column(world, x, z));
+    }
+
+    /**
+     * One column: the top block that blocks movement (leaves aside), whether it is natural ground to build on (dirt,
+     * grass, stone, sand, gravel; not water, a log, a container or another's build), and how many open cells are over
+     * it before anything that is not air or a plant in the way.
+     */
+    private static Optional<dev.kindred.core.construction.BaseSite.Column> column(ServerWorld world, int x, int z) {
+        if (!world.isChunkLoaded(x >> 4, z >> 4)) return Optional.empty();
+        int top = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        if (top < world.getBottomY()) return Optional.empty();
+        var state = world.getBlockState(new BlockPos(x, top, z));
+        boolean firm = !state.hasBlockEntity() && state.getFluidState().isEmpty() && (state.isIn(net.minecraft.registry.tag.BlockTags.DIRT)
+                || state.isIn(net.minecraft.registry.tag.BlockTags.BASE_STONE_OVERWORLD) || state.isIn(net.minecraft.registry.tag.BlockTags.SAND)
+                || state.isOf(Blocks.GRAVEL));
+        int open = 0;
+        while (open < 24) {
+            var above = world.getBlockState(new BlockPos(x, top + 1 + open, z));
+            if (!(above.isAir() || above.isReplaceable() && above.getFluidState().isEmpty())) break;
+            open++;
+        }
+        return Optional.of(new dev.kindred.core.construction.BaseSite.Column(top, firm, open));
+    }
+
+    /** The base a player has or is building (M-01c), if any. */
+    Optional<PlayerMemoryStore.Base> currentBase(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.bases == null || entry.bases.built.isEmpty()) return Optional.empty();
+        return Optional.of(entry.bases.built.get(entry.bases.built.size() - 1));
+    }
+
+    /** What a player last decided about its base (M-01c). */
+    String baseNote(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null ? "" : entry.baseNote;
     }
 
     /**
@@ -5904,8 +6127,8 @@ final class PlayerRuntime {
         } catch (IOException failure) { throw new CompletionException(failure); }
     }
 
-    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight) { }
-    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
+    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases) { }
+    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
                                   java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
                                   java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
                                   StartupLedgerSnapshot ledgerSnapshot,
@@ -6999,6 +7222,16 @@ final class PlayerRuntime {
         PortalRunCampaign.Task activeBuildTask;
         /** A ranch in progress (M-01a): the pen, the pair led in and bred. Its build and its steps run as the build's do. */
         RanchRunner ranch;
+        /**
+         * The player's own bases (M-01c), once read; the build that is its base's; when it next looks to its base, how
+         * often its base's build has ended short, and what it last decided.
+         */
+        PlayerMemoryStore.Bases bases;
+        boolean basesLoading;
+        BuildRunner baseBuild;
+        long baseCheckAt;
+        int baseTries;
+        String baseNote = "";
         boolean goalAnnounced;
         String loggedGoalProgress = "";
         boolean foodTaskAuthorized = false;
@@ -7440,7 +7673,7 @@ final class PlayerRuntime {
         EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
         edits = next; // Revocation applies to the next mutation check immediately.
         Path file = metadataDirectory.resolve("edits.properties");
-        String content = policyFile(enabled, dragonFight);
+        String content = policyFile(enabled, dragonFight, bases);
         CompletableFuture.runAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
@@ -7459,10 +7692,10 @@ final class PlayerRuntime {
         return 1;
     }
 
-    private static String policyFile(boolean edits, boolean dragon) {
+    private static String policyFile(boolean edits, boolean dragon, boolean bases) {
         return "# Kindred server edit policy (decision D4). autonomousEdits lets AI players break and place blocks;\n"
-                + "# dragonFight lets them fight the Ender Dragon.\n"
-                + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\n";
+                + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases.\n"
+                + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n";
     }
 
     boolean dragonFightAllowed() { return dragonFight; }
@@ -7474,7 +7707,7 @@ final class PlayerRuntime {
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change whether AI players fight the dragon.");
         dragonFight = allowed;
         Path file = metadataDirectory.resolve("edits.properties");
-        String content = policyFile(edits.autonomousEditsEnabled(), allowed);
+        String content = policyFile(edits.autonomousEditsEnabled(), allowed, bases);
         CompletableFuture.runAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
@@ -7490,6 +7723,37 @@ final class PlayerRuntime {
         }));
         feedback(source, allowed ? "The dragon fight is on: an AI player with the goal may go into the End and fight the Ender Dragon."
                 : "The dragon fight is off: AI players stop at the End portal.");
+        return 1;
+    }
+
+    boolean basesAllowed() { return bases; }
+
+    /**
+     * Records whether AI players may choose, site and build their own bases as they go (M-01c), in edits.properties;
+     * operators only. Their builds are still world edits: AI world edits must be on as well.
+     */
+    int setBases(ServerCommandSource source, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change whether AI players build their own bases.");
+        bases = allowed;
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = policyFile(edits.autonomousEditsEnabled(), dragonFight, allowed);
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> server.execute(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred bases setting could not be saved", failure);
+                reject(source, "The setting applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        feedback(source, allowed ? "Bases are on: an AI player with no goal of its own chooses, sites and builds its base as it goes, in three stages."
+                : "Bases are off: AI players build only what they are asked to.");
         return 1;
     }
 

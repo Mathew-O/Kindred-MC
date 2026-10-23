@@ -43,6 +43,19 @@ final class PlayerMemoryStore implements AutoCloseable {
         boolean dragonKilled;
     }
 
+    /**
+     * A base the player built or is building (M-01c): its stage ({@code cabin}, {@code house}, {@code manor}), where
+     * its floor's north-west corner is, and whether it stands whole.
+     */
+    record Base(String stage, String dimension, int x, int y, int z, boolean complete) { }
+
+    /** The player's bases in one world, oldest first, and the place the first was sited by. Game thread only. */
+    static final class Bases {
+        String player = "";
+        Place anchor;
+        List<Base> built = new ArrayList<>();
+    }
+
     private final Path folder;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final ExecutorService io = Executors.newSingleThreadExecutor(task -> {
@@ -56,6 +69,29 @@ final class PlayerMemoryStore implements AutoCloseable {
     }
 
     private Path file(UUID id) { return folder.resolve(id + ".json"); }
+
+    private Path basesFile(UUID id) { return folder.resolve(id + ".bases.json"); }
+
+    /** This player's bases in this world, or none; read off the game thread. */
+    CompletableFuture<Bases> loadBases(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            Bases bases = null;
+            try {
+                if (Files.isRegularFile(basesFile(id))) bases = gson.fromJson(Files.readString(basesFile(id), StandardCharsets.UTF_8), Bases.class);
+            } catch (IOException | RuntimeException unreadable) {
+                KindredMod.LOGGER.warn("The bases of {} could not be read; starting afresh: {}", name, unreadable.toString());
+            }
+            if (bases == null) bases = new Bases();
+            if (bases.built == null) bases.built = new ArrayList<>();
+            bases.player = name;
+            return bases;
+        }, io);
+    }
+
+    /** Write a copy of the player's bases taken now on the game thread; the write itself happens off it. */
+    void saveBases(UUID id, Bases bases) {
+        write(id, basesFile(id), gson.toJson(bases), bases.player);
+    }
 
     /** This player's memory of this world, or an empty one; read off the game thread. */
     CompletableFuture<Memory> load(UUID id, String name) {
@@ -76,19 +112,22 @@ final class PlayerMemoryStore implements AutoCloseable {
 
     /** Write a copy taken now on the game thread; the write itself happens off it. */
     void save(UUID id, Memory memory) {
-        String json = gson.toJson(memory);
+        write(id, file(id), gson.toJson(memory), memory.player);
+    }
+
+    private void write(UUID id, Path target, String json, String player) {
         io.execute(() -> {
             try {
                 Files.createDirectories(folder);
-                Path temp = folder.resolve(id + ".json.tmp");
+                Path temp = target.resolveSibling(target.getFileName() + ".tmp");
                 Files.writeString(temp, json, StandardCharsets.UTF_8);
                 try {
-                    Files.move(temp, file(id), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
                 } catch (AtomicMoveNotSupportedException plain) {
-                    Files.move(temp, file(id), StandardCopyOption.REPLACE_EXISTING);
+                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
                 }
             } catch (IOException failed) {
-                KindredMod.LOGGER.warn("Memory of {} could not be written: {}", memory.player, failed.toString());
+                KindredMod.LOGGER.warn("Memory of {} could not be written: {}", player, failed.toString());
             }
         });
     }

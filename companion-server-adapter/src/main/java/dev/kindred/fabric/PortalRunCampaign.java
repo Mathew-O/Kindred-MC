@@ -1869,6 +1869,29 @@ final class PortalRunCampaign {
      * Every break is still a separate recorded action with the lava and support checks.
      */
     Optional<Task> digDown(NativePlayerBody body, int targetY, String label) {
+        return digDown(body, targetY, label, p -> true);
+    }
+
+    /**
+     * Stone for a build (E-08c), as the goal gets its own: stone in sight close by, else a staircase down to
+     * {@code depth} and a tunnel along it, which is all stone. Every cell it digs is one {@code allowed} lets it: never
+     * the build's own site, nor the steps of its own staircase.
+     */
+    Optional<Task> stoneFor(NativePlayerBody body, int depth, Predicate<BlockPos> allowed) {
+        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed)
+                .or(() -> digDown(body, depth, "Dig for stone", allowed));
+    }
+
+    /**
+     * Out of where it dug for a build's stone, up to the ground, as the goal climbs out (E-08c); open sky over a pit
+     * does not make a way up it.
+     */
+    Optional<Task> climbOut(NativePlayerBody body) {
+        return wayUp(body, "Climb out to the build");
+    }
+
+    /** As {@link #digDown(NativePlayerBody, int, String)}, digging only cells {@code allowed} lets it. */
+    Optional<Task> digDown(NativePlayerBody body, int targetY, String label, Predicate<BlockPos> allowed) {
         var player = body.entity();
         if (player.getBlockY() <= targetY) return tunnel(body, label);
         var world = player.getServerWorld();
@@ -1886,8 +1909,9 @@ final class PortalRunCampaign {
                     // Nor down toward a place where mobs killed or cornered it: the staircase turns, or the tunnel
                     // fallback carries it off sideways to dig down elsewhere (live runs 52 and 56 dug back down into
                     // the cave under spawn they had died in).
-                    || dangerBelow(step);
+                    || dangerBelow(step) || !allowed.test(step.down());
             for (BlockPos cell : clear) {
+                if (!allowed.test(cell)) refused = true;
                 if (refused) break;
                 if (passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }

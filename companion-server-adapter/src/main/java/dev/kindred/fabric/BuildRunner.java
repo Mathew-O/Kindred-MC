@@ -108,8 +108,124 @@ final class BuildRunner {
     private String needsNote = "";
     /** What it cannot get for the rest of the build, once nothing it can do gets it; null while it still can. */
     private String wanting;
-    /** Its own build's cells, never a source of blocks for it. */
-    private Set<Pos> own;
+    /**
+     * Its own site, never a source of blocks for it: the build's box, a block round it, and three below it, so that
+     * stone mined for the walls never digs out the ground the floor stands on.
+     */
+    private boolean onSite(Pos p) {
+        if (box == null) {
+            box = new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
+            for (var b : blocks) {
+                box[0] = Math.min(box[0], b.at().x()); box[1] = Math.min(box[1], b.at().y()); box[2] = Math.min(box[2], b.at().z());
+                box[3] = Math.max(box[3], b.at().x()); box[4] = Math.max(box[4], b.at().y()); box[5] = Math.max(box[5], b.at().z());
+            }
+        }
+        return p.x() >= box[0] - 1 && p.x() <= box[3] + 1 && p.z() >= box[2] - 1 && p.z() <= box[5] + 1 && p.y() >= box[1] - 3 && p.y() <= box[4];
+    }
+
+    /** The build's box, min x y z then max x y z, once worked out. */
+    private int[] box;
+
+    private static Pos feet(ServerPlayerEntity player) { return pos(player.getBlockPos()); }
+
+    /**
+     * Up from where it dug for stone to the ground round the site: by a route that digs, bridges or pillars where
+     * walking will not do (F-10e), its own staircase perhaps mined away; else up as the goal climbs out.
+     */
+    private Optional<PortalRunCampaign.Task> backUp(NativePlayerBody body, Supply supply) {
+        Pos feet = feet(body.entity());
+        onSite(feet);
+        int floor = siteFloor();
+        BlockPos toward = new BlockPos(Math.max(box[0] - 1, Math.min(box[3] + 1, feet.x())), floor, Math.max(box[2] - 1, Math.min(box[5] + 1, feet.z())));
+        var route = supply.campaign().buildRoute(body, toward, p -> {
+            Pos at = pos(p);
+            return p.getY() >= floor && !onSite(at) && nearSite(at);
+        }, false, "Back up to the build");
+        return route.isPresent() ? route : supply.campaign().climbOut(body);
+    }
+
+    /** The square of the distance across the ground between two cells, height aside. */
+    private static int flat(Pos a, Pos b) {
+        int dx = a.x() - b.x(), dz = a.z() - b.z();
+        return dx * dx + dz * dz;
+    }
+
+    /** Up off the ground on the build: over its floor by more than a step, within its box. */
+    private boolean up(Pos feet) {
+        onSite(feet);
+        return feet.y() > box[1] + 1 && feet.x() >= box[0] && feet.x() <= box[3] && feet.z() >= box[2] && feet.z() <= box[5];
+    }
+
+    /**
+     * To {@code spot} outside the build, and no nearer than a block of it: a walk that may end anywhere within reach of
+     * its spot can end inside the walls, from where the roof has no stance.
+     */
+    private PortalRunCampaign.Task outside(Pos spot, String reason) {
+        progress = blueprint.name() + ": " + reason;
+        return new PortalRunCampaign.Task("native_goto", Map.of("x", str(spot.x()), "y", str(spot.y()), "z", str(spot.z()), "range", "1.0"), reason);
+    }
+
+    /** The ground two blocks outside the build nearest {@code at}, clear of scaffolds against its walls, at the floor's height. */
+    private Pos groundBeside(Pos at) {
+        onSite(at);
+        int x = Math.max(box[0], Math.min(box[3], at.x())), z = Math.max(box[2], Math.min(box[5], at.z()));
+        int west = x - box[0], east = box[3] - x, north = z - box[2], south = box[5] - z;
+        int least = Math.min(Math.min(west, east), Math.min(north, south));
+        if (least == west) x = box[0] - 2;
+        else if (least == east) x = box[3] + 2;
+        else if (least == north) z = box[2] - 2;
+        else z = box[5] + 2;
+        return new Pos(x, box[1], z);
+    }
+
+    /** The height of the build's lowest blocks. */
+    private int siteFloor() {
+        onSite(new Pos(0, 0, 0));
+        return box[1];
+    }
+
+    /** Within a few blocks of the site, where a staircase dug down for stone could run under it. */
+    private boolean nearSite(Pos feet) {
+        onSite(feet);
+        return feet.x() >= box[0] - 4 && feet.x() <= box[3] + 4 && feet.z() >= box[2] - 4 && feet.z() <= box[5] + 4
+                && feet.y() >= box[1] - 4 && feet.y() <= box[4] + 1;
+    }
+
+    /**
+     * A spot eight blocks out from the site's side nearest {@code feet}, at the floor's height: somewhere to dig, clear
+     * of {@link #nearSite} however short of it the walk there ends (2.5 blocks).
+     */
+    private Pos offSite(Pos feet) {
+        onSite(feet);
+        int west = feet.x() - box[0], east = box[3] - feet.x(), north = feet.z() - box[2], south = box[5] - feet.z();
+        int least = Math.min(Math.min(west, east), Math.min(north, south));
+        int x = Math.max(box[0], Math.min(box[3], feet.x())), z = Math.max(box[2], Math.min(box[5], feet.z()));
+        if (least == west) x = box[0] - OFF_SITE;
+        else if (least == east) x = box[3] + OFF_SITE;
+        else if (least == north) z = box[2] - OFF_SITE;
+        else z = box[5] + OFF_SITE;
+        return new Pos(x, box[1], z);
+    }
+
+    private static final int OFF_SITE = 8;
+
+    /** The label of a pillar step up the build's own scaffold. */
+    private static final String UP_THE_SCAFFOLD = "Up the scaffold";
+
+    /** The blocks it has stood on below its build's floor, digging for stone: its own staircase, never mined. */
+    private final Set<Pos> stood = new HashSet<>();
+
+    /** How far under the floor it digs for stone before it tunnels along. */
+    private static final int STONE_DEPTH = 6;
+
+    /** One-second waits for a way up out of where it dug, before it gives the rest of the build up. */
+    private int belowWaits;
+    private static final int BELOW_WAITS = 30;
+
+    private boolean complete;
+
+    /** Whether the build ended whole: every block in its state, nothing left wanting. */
+    boolean complete() { return complete; }
     /** Walks out to look for what the trip still wants and has not seen; at most {@link #LOOKS} a trip. */
     private int looks;
     private static final int LOOKS = 4;
@@ -163,9 +279,18 @@ final class BuildRunner {
                 if (slot >= 9) return Optional.of(swap(player, slot, "Ready a block for the scaffold"));
                 progress = blueprint.name() + ": up the scaffold to " + columnTop;
                 return Optional.of(new PortalRunCampaign.Task("native_pillar", Map.of("x", str(cell.x()), "y", str(cell.y()), "z", str(cell.z()),
-                        "slot", str(slot)), "Up the scaffold"));
+                        "slot", str(slot)), UP_THE_SCAFFOLD));
             }
             if (feet.y() >= columnTop || !(feet.x() == column.x() && feet.z() == column.z())) column = null;
+        }
+        // Back from a trip down for stone with all it went for: out of the ground first, as the goal climbs out.
+        if (supply != null && !needs.onTrip() && !onSite(feet) && feet.y() < siteFloor()) {
+            var out = backUp(body, supply);
+            if (out.isPresent()) {
+                needsTask = out.get();
+                progress = blueprint.name() + ": climbing out to the build";
+                return out;
+            }
         }
         var step = ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
         if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
@@ -201,14 +326,19 @@ final class BuildRunner {
         return switch (step.kind()) {
             case DONE -> {
                 done = true;
+                complete = tally.placed() == tally.total();
                 progress = blueprint.name() + ": built, " + tally.placed() + "/" + tally.total() + " blocks"
                         + (tally.unsupported().isEmpty() ? "" : ", without " + String.join(", ", tally.unsupported()));
                 yield Optional.empty();
             }
             // Out of reach from here of something it can see: over to it, by the navigator's own way, to plan again
             // from beside it. Anything else is waited out.
-            case BLOCKED -> step.target() != null && feet.distanceSquared(step.target()) > 9
-                    ? Optional.of(near(step.target(), step.reason() + "; over to it"))
+            // Over to the ground beside it, never onto the build itself (a walk to a roof's cell walks onto the roof); and
+            // stuck up on the build, back down to the ground beside it.
+            case BLOCKED -> step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
+                    ? Optional.of(outside(groundBeside(step.target()), step.reason() + "; over to it"))
+                    : step.target() != null && up(feet) && !scaffold.contains(feet.down())
+                    ? Optional.of(outside(groundBeside(feet), step.reason() + "; down off the build first"))
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
                 if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To break " + step.target() + " from " + feet));
@@ -258,6 +388,7 @@ final class BuildRunner {
         var bill = dev.kindred.core.construction.BillOfMaterials.of(wanted, site, held);
         wanting = null;
         if (bill.missing().isEmpty()) {
+            needs.allInHand();
             needsNote = "";
             return Optional.empty();
         }
@@ -302,12 +433,37 @@ final class BuildRunner {
             case BuildNeeds.Step.Gather g -> {
                 needsNote = g.why() + " (" + g.count() + ")";
                 var kind = g.item().endsWith("_log") ? WorldKnowledge.Kind.LOG : WorldKnowledge.Kind.STONE;
-                if (own == null) {
-                    own = new HashSet<>(clear);
-                    for (var b : blocks) own.add(b.at());
-                }
                 String what = kind == WorldKnowledge.Kind.LOG ? "logs" : "stone";
-                var task = supply.campaign().gather(body, kind, 64, what, p -> !own.contains(pos(p)));
+                // Stone as the goal gets it: close by, else a staircase down, begun off the build's site.
+                if (kind == WorldKnowledge.Kind.STONE) {
+                    Pos feet = pos(player.getBlockPos());
+                    if (nearSite(feet)) return Optional.of(near(offSite(feet), "Off its site to dig for stone"));
+                    // Down to a fixed depth under the floor, then along it: not deeper each time it runs out in sight.
+                    // Never the steps it stood on going down: they are its way back up.
+                    if (feet.y() < siteFloor()) stood.add(feet.down());
+                    var dig = supply.campaign().stoneFor(body, siteFloor() - STONE_DEPTH, p -> !onSite(pos(p)) && !stood.contains(pos(p)));
+                    if (dig.isEmpty()) {
+                        needsNote = "No way to stone from here for the rest of the build";
+                        wanting = missing;
+                    }
+                    return dig;
+                }
+                // Trees are found from the ground: up out of where it dug for stone first.
+                if (feet(player).y() < siteFloor()) {
+                    var out = backUp(body, supply);
+                    if (out.isPresent()) {
+                        belowWaits = 0;
+                        needsNote = "Out of the ground for " + what;
+                        return out;
+                    }
+                    // A way up refused for now (a step that did not land is set aside a while): it waits and tries
+                    // again, rather than end the build for want of trees it cannot see from below.
+                    if (++belowWaits < BELOW_WAITS) {
+                        needsNote = "Finding a way up for " + what;
+                        return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Finding a way up for " + what));
+                    }
+                }
+                var task = supply.campaign().gather(body, kind, 64, what, p -> !onSite(pos(p)));
                 // None in sight: out over the ground to look, a few times, before the build ends without them.
                 if (task.isEmpty() && looks < LOOKS) {
                     task = supply.campaign().lookFor(body, what);
@@ -369,7 +525,9 @@ final class BuildRunner {
         if (!placing && !breaking && !pillar) return;
         Pos at = new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
         if (pillar) {
-            if (completed) scaffold.add(at); // The block it jumped and put under its feet.
+            // The block it jumped and put under its feet, on a scaffold of the build's own: not a pillar a route out of
+            // where it dug for stone put up, however often the build planned again while that ran.
+            if (completed && UP_THE_SCAFFOLD.equals(task.label())) scaffold.add(at);
             return;
         }
         if (completed) shunned.clear();

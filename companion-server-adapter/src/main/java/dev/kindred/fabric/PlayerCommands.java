@@ -140,6 +140,15 @@ public final class PlayerCommands {
                     String raw = StringArgumentType.getString(context, "enabled");
                     return runtime.setDragonFight(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                 })));
+        // The leave for AI players to build their own bases (M-01c): /aiplayer bases on|off.
+        root.then(CommandManager.literal("bases").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setBases(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
         root.then(CommandManager.literal("gui").executes(context -> {
             PlayerRuntime runtime = KindredMod.runtime();
             if (runtime == null) return unavailable(context.getSource());
