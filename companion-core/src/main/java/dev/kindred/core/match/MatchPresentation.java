@@ -33,21 +33,31 @@ public final class MatchPresentation {
         return Optional.of(new Title(String.valueOf(seconds(left)), "Get ready", Cue.COUNT));
     }
 
-    /** The title as the fight begins. */
-    public static Title start() { return new Title("Fight!", "", Cue.START); }
+    /** The title as the match begins, as {@code viewer} plays it: a duel's fight, a race's start, a runner's or a hunter's. */
+    public static Title start(MatchRegistry.Match match, UUID viewer) {
+        return switch (match.mode()) {
+            case DUEL -> new Title("Fight!", "", Cue.START);
+            case SPEEDRUN -> new Title("Go!", "To the dragon", Cue.START);
+            case MANHUNT -> match.runners().contains(viewer) ? new Title("Run!", "Free the End before they catch you", Cue.START)
+                    : new Title("Hunt!", "Catch the runners before they free the End", Cue.START);
+        };
+    }
 
     /** The result as {@code viewer} sees it: won, lost, or neither, with how it ended. */
     public static Title result(MatchRegistry.Match match, UUID viewer, Function<UUID, String> names) {
         String how = match.result() == null ? "" : match.result();
-        if (match.winner() == null) {
+        if (match.winners().isEmpty()) {
             // No winner: time ran out, an operator stopped it, or it was called off before the start.
             if (how.startsWith("Time ran out")) return new Title("Draw", "Time ran out", Cue.DRAW);
             if (how.equals("Stopped")) return new Title("Stopped", "No winner", Cue.DRAW);
             if (how.startsWith("Every runner")) return new Title("Race over", how, Cue.DRAW);
             return new Title("Called off", how, Cue.DRAW);
         }
-        if (match.winner().equals(viewer)) return new Title("Victory", subtitle(match, names), Cue.WIN);
+        if (match.won(viewer)) return new Title("Victory", subtitle(match, names), Cue.WIN);
         if (match.participant(viewer)) return new Title("Defeat", subtitle(match, names), Cue.LOSE);
+        if (match.mode() == MatchRegistry.Mode.MANHUNT) {
+            return new Title(match.winners().stream().anyMatch(match.runners()::contains) ? "The runners win" : "The hunters win", subtitle(match, names), Cue.WIN);
+        }
         return new Title(names.apply(match.winner()) + " wins", how, Cue.WIN);
     }
 
@@ -59,7 +69,9 @@ public final class MatchPresentation {
      * time left, emptying; a race shows the time since the start, filling as its leader reaches each split.
      */
     public static Bar bar(MatchRegistry.Match match, long tick, Function<UUID, String> names, float progress) {
-        String who = match.invited().stream().map(names).collect(Collectors.joining(" vs "));
+        String who = match.mode() == MatchRegistry.Mode.MANHUNT
+                ? side(match, true, names) + " vs " + side(match, false, names)
+                : match.invited().stream().map(names).collect(Collectors.joining(" vs "));
         String mode = match.mode().label();
         return switch (match.state()) {
             case LOBBY -> new Bar(mode + ": " + who + " - waiting for players", 1f);
@@ -87,7 +99,20 @@ public final class MatchPresentation {
 
     private static long seconds(long ticks) { return Math.max(0, (ticks + 19) / 20); }
 
+    /** A manhunt's runners, or its hunters, by name. */
+    private static String side(MatchRegistry.Match match, boolean runners, Function<UUID, String> names) {
+        return match.invited().stream().filter(p -> match.runners().contains(p) == runners).map(names).collect(Collectors.joining(", "));
+    }
+
     private static String subtitle(MatchRegistry.Match match, Function<UUID, String> names) {
+        String how = match.result() == null ? "" : match.result();
+        if (match.mode() == MatchRegistry.Mode.MANHUNT) {
+            if (how.equals("finished")) return names.apply(match.winner()) + " freed the End: the runners win";
+            if (how.equals("hunted")) return "The hunters caught " + side(match, true, names);
+            if (how.startsWith("Every runner")) return "The runners gave up";
+            if (how.startsWith("Every hunter")) return "The hunters gave up";
+            return how;
+        }
         String winner = names.apply(match.winner());
         return switch (match.result() == null ? "" : match.result()) {
             case "finished" -> winner + " freed the End first";

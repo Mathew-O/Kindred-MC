@@ -76,7 +76,7 @@ final class MatchPresenter {
     /** A match changed state: the fight's start or each player's result. */
     void changed(MatchRegistry.Match match, Function<UUID, String> names) {
         switch (match.state()) {
-            case RUNNING -> { for (UUID invited : match.invited()) show(invited, MatchPresentation.start()); }
+            case RUNNING -> { for (UUID invited : match.invited()) show(invited, MatchPresentation.start(match, invited)); }
             case ENDED -> {
                 for (UUID invited : match.invited()) show(invited, MatchPresentation.result(match, invited, names));
                 var bar = bars.remove(match.id());

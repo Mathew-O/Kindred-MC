@@ -71,6 +71,7 @@ final class PortalRunCampaign {
             PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT);
     private static final int DIAMOND_TOP = -52, DIAMOND_TARGET = -58;
 
+    private boolean huntersKit;
     private final WorldKnowledge knowledge = new WorldKnowledge();
     private final Set<Long> ownWorkstations = new HashSet<>();
     private final Map<Long, Long> blockedUntil = new HashMap<>();
@@ -368,6 +369,11 @@ final class PortalRunCampaign {
         BlockPos inside = portalSite.at(1, 1);
         return world.isChunkLoaded(inside) && world.getBlockState(inside).isOf(Blocks.NETHER_PORTAL) ? Optional.of(inside) : Optional.empty();
     }
+
+    /** Whether the player is a manhunt hunter still making its kit (M-02a): its follow-ups ask for the kit first. */
+    boolean huntersKit() { return huntersKit; }
+
+    void huntersKit(boolean gearing) { huntersKit = gearing; }
 
     long lastTick() { return lastTick; }
 

@@ -145,4 +145,62 @@ class MatchRegistryTest {
         assertNull(over.winner());
         assertEquals("Every runner left the game", over.result());
     }
+
+    private static MatchRegistry.Match manhunt(MatchRegistry registry, List<UUID> runners, List<UUID> hunters, long tick) {
+        var match = registry.proposeManhunt(runners, hunters).match().orElseThrow();
+        for (UUID player : match.invited()) registry.join(match.id(), player);
+        registry.start(match.id(), tick);
+        return registry.tick(tick + MatchRegistry.COUNTDOWN_TICKS).getFirst();
+    }
+
+    @Test
+    void inAManhuntOnlyARunnerAndAHunterMayStrikeOneAnother() {
+        var registry = new MatchRegistry();
+        assertFalse(registry.propose(MatchRegistry.Mode.MANHUNT, List.of(ada, bram)).accepted(), "a manhunt names its runners");
+        assertFalse(registry.proposeManhunt(List.of(ada), List.of()).accepted(), "at least one hunter");
+        var dee = UUID.randomUUID();
+        var match = manhunt(registry, List.of(ada), List.of(bram, cy), 0);
+        assertTrue(match.hunter(bram) && !match.hunter(ada));
+        assertTrue(registry.mayAttack(bram, ada) && registry.mayAttack(ada, cy), "across the sides, both ways");
+        assertFalse(registry.mayAttack(bram, cy), "never a hunter on a hunter");
+        assertFalse(registry.mayAttack(ada, dee), "never anyone outside it");
+        assertTrue(registry.tick(10_000_000).isEmpty(), "no time limit");
+    }
+
+    @Test
+    void theHuntersWinWhenTheLastRunnerFallsAndTheRunnersWhenOneFreesTheEnd() {
+        var registry = new MatchRegistry();
+        var dee = UUID.randomUUID();
+        manhunt(registry, List.of(ada, dee), List.of(bram, cy), 0);
+        assertTrue(registry.fallen(bram).isEmpty(), "a hunter only respawns");
+        var one = registry.fallen(ada).orElseThrow();
+        assertEquals(MatchRegistry.State.RUNNING, one.state(), "another runner runs on");
+        assertFalse(registry.mayAttack(bram, ada), "a fallen runner is out");
+        var hunted = registry.fallen(dee).orElseThrow();
+        assertEquals("hunted", hunted.result());
+        assertTrue(hunted.won(bram) && hunted.won(cy) && !hunted.won(ada) && !hunted.won(dee), "the hunters' side wins");
+        assertNull(hunted.winner(), "no one player");
+
+        var again = new MatchRegistry();
+        manhunt(again, List.of(ada, dee), List.of(bram), 100);
+        assertTrue(again.finished(bram).isEmpty(), "a hunter does not finish");
+        var freed = again.finished(dee).orElseThrow();
+        assertEquals(dee, freed.winner());
+        assertTrue(freed.won(ada) && freed.won(dee) && !freed.won(bram), "the runners' side wins");
+    }
+
+    @Test
+    void aSideThatGivesUpLosesTheManhunt() {
+        var registry = new MatchRegistry();
+        var match = manhunt(registry, List.of(ada), List.of(bram, cy), 0);
+        registry.leave(match.id(), bram);
+        assertEquals(MatchRegistry.State.RUNNING, registry.get(match.id()).orElseThrow().state(), "Cy hunts on");
+        var over = registry.departed(cy).orElseThrow();
+        assertEquals("Every hunter left the game", over.result());
+        assertTrue(over.won(ada), "the runner wins once no hunter is left");
+        var other = new MatchRegistry();
+        var second = manhunt(other, List.of(ada), List.of(bram), 0);
+        var forfeit = other.leave(second.id(), ada).match().orElseThrow();
+        assertTrue(forfeit.won(bram) && forfeit.result().startsWith("Every runner"), "the hunter wins once the runner gives up");
+    }
 }

@@ -31,7 +31,7 @@ class MatchPresentationTest {
         assertEquals("1", MatchPresentation.countdown(counting, 140).orElseThrow().title());
         assertTrue(MatchPresentation.countdown(counting, 160).isEmpty(), "none at zero: the fight's own title instead");
         assertEquals(MatchPresentation.Cue.COUNT, MatchPresentation.countdown(counting, 120).orElseThrow().cue());
-        assertEquals("Fight!", MatchPresentation.start().title());
+        assertEquals("Fight!", MatchPresentation.start(counting, ada).title());
         assertEquals("Duel: Ada vs Bram - starting in 3", MatchPresentation.bar(counting, 100, names).text());
         assertEquals("Duel: Ada vs Bram - starting in 1", MatchPresentation.bar(counting, 141, names).text(), "rounded up");
     }
@@ -90,5 +90,22 @@ class MatchPresentationTest {
         assertEquals("Victory", MatchPresentation.result(won, bram, names).title());
         assertEquals("Bram freed the End first", MatchPresentation.result(won, ada, names).subtitle());
         assertEquals("Defeat", MatchPresentation.result(won, ada, names).title());
+    }
+
+    @Test
+    void aManhuntShowsItsSidesAndTheWinningSide() {
+        var registry = new MatchRegistry();
+        var match = registry.proposeManhunt(List.of(ada), List.of(bram, cy)).match().orElseThrow();
+        for (UUID player : match.invited()) registry.join(match.id(), player);
+        registry.start(match.id(), 0);
+        var running = registry.tick(MatchRegistry.COUNTDOWN_TICKS).getFirst();
+        assertEquals("Manhunt: Ada vs Bram, Cy - 0:10", MatchPresentation.bar(running, MatchRegistry.COUNTDOWN_TICKS + 200, names).text());
+        assertEquals("Run!", MatchPresentation.start(running, ada).title(), "the runner's start");
+        assertEquals("Hunt!", MatchPresentation.start(running, bram).title(), "a hunter's");
+        var hunted = registry.fallen(ada).orElseThrow();
+        assertEquals("Victory", MatchPresentation.result(hunted, cy, names).title());
+        assertEquals("The hunters caught Ada", MatchPresentation.result(hunted, cy, names).subtitle());
+        assertEquals("Defeat", MatchPresentation.result(hunted, ada, names).title());
+        assertEquals("The hunters win", MatchPresentation.result(hunted, UUID.randomUUID(), names).title(), "an onlooker");
     }
 }

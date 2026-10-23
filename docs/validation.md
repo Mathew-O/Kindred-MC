@@ -4,6 +4,14 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-02a (manhunts), on top of `52c50cb`.
+  - New JUnit: three manhunt tests in `MatchRegistryTest`, `aManhuntShowsItsSidesAndTheWinningSide`.
+  - New native fixtures:
+    - `aHunterFollowsItsCompassToTheRunnerAndTheHuntersWinAtItsFall`: the tracking compass handed out at the start, cursed to vanish and pointing at the runner. The hunter follows it round a wall to the runner and fights it (three critical hits). The runner's fall wins it for the hunters, the compass is taken back, and the hunter's own pace comes back.
+    - `aHunterMakesItsKitFromItsIronBeforeItHunts`: with three iron ingots, sticks and planks, the hunter makes a crafting table, places it and crafts an iron sword and a shield, then hunts the runner down.
+  - Four hand controls, each failing as expected: the needle not followed (the hunter went off on its own goal), no compass handed out, no compass taken back, no kit wanted (it went on branch mining for the route's iron).
+  - `runGametest` passed 292/292 twice. `./gradlew build` passed: 513 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `87b987e5aee4edcee90fca99abc0d6cbc0fb883a70dbe633bc703697fd9477d9`.
 - M-00b (a match shown to ordinary clients) and M-03a (speedrun races), on top of `8c69eba`.
   - New JUnit: `MatchPresentationTest` (4), `SpeedrunSplitsTest` (3), two speedrun tests in `MatchRegistryTest`.
   - New native fixture: `anAiRunnerRacesFromAFreshStartTimedByVanillaAdvancements`. A runner carrying an item is refused, and so is one without the dragon fight's leave. The race starts with the server's PvP off, which it does not need. The runner is set to the dragon goal at speedrun pace. Two advancements granted in vanilla's place: the iron split timed at 0:00.10 and Free the End at 0:01.10, which finishes it. Its own pace back, and refused again once it has the splits. The duel fixture now also checks what each player was shown: both on the boss bar, Ada 3, 2, 1, Fight!, Victory and Bram the same with Defeat, the bar taken down.

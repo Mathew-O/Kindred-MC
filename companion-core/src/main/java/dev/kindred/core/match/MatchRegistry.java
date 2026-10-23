@@ -23,7 +23,12 @@ public final class MatchRegistry {
         /** Two players fight until one falls: the only mode whose players may strike one another. */
         DUEL(2, 2, true, 6000),
         /** One to eight runners race to the dragon (M-03a): nobody strikes anybody, and a fall is only a setback. */
-        SPEEDRUN(1, 8, false, 0);
+        SPEEDRUN(1, 8, false, 0),
+        /**
+         * Runners make for the dragon while hunters hunt them (M-02a): a runner and a hunter may strike one another, never
+         * two on the same side. A runner's fall puts it out; a hunter's is only a setback.
+         */
+        MANHUNT(2, 8, true, 0);
 
         public final int minPlayers, maxPlayers;
         /** Whether its players may strike one another while it runs. */
@@ -44,15 +49,19 @@ public final class MatchRegistry {
     public enum State { LOBBY, COUNTDOWN, RUNNING, ENDED }
 
     /**
-     * A match as it stands: who was invited, who has joined, who has dropped out since its start (a runner who forfeited
-     * or left a race the others run on), where it is in its life, and how it ended.
+     * A match as it stands: who was invited and which of them run (every player in a speedrun, the runners of a
+     * manhunt, nobody in a duel), who has joined, who has dropped out since its start (a runner who forfeited or fell,
+     * where the others play on), where it is in its life, and how it ended: the player who won it, if one did, and
+     * everyone on the winning side.
      */
-    public record Match(UUID id, Mode mode, List<UUID> invited, Set<UUID> joined, Set<UUID> out, State state, long countdownEnds,
-                        long endsAt, UUID winner, String result) {
+    public record Match(UUID id, Mode mode, List<UUID> invited, Set<UUID> runners, Set<UUID> joined, Set<UUID> out, State state,
+                        long countdownEnds, long endsAt, UUID winner, Set<UUID> winners, String result) {
         public Match {
             invited = List.copyOf(invited);
+            runners = Set.copyOf(runners);
             joined = Set.copyOf(joined);
             out = Set.copyOf(out);
+            winners = Set.copyOf(winners);
         }
 
         /** Joined, whether or not still in it. */
@@ -61,11 +70,19 @@ public final class MatchRegistry {
         /** Joined and not dropped out. */
         public boolean playing(UUID player) { return joined.contains(player) && !out.contains(player); }
 
-        Match with(Set<UUID> joined) { return new Match(id, mode, invited, joined, out, state, countdownEnds, endsAt, winner, result); }
-        Match without(Set<UUID> out) { return new Match(id, mode, invited, joined, out, state, countdownEnds, endsAt, winner, result); }
-        Match counting(long until) { return new Match(id, mode, invited, joined, out, State.COUNTDOWN, until, endsAt, winner, result); }
-        Match running(long until) { return new Match(id, mode, invited, joined, out, State.RUNNING, countdownEnds, until, winner, result); }
-        Match ended(UUID winner, String result) { return new Match(id, mode, invited, joined, out, State.ENDED, countdownEnds, endsAt, winner, result); }
+        /** A manhunt's hunter: in it, and not a runner. */
+        public boolean hunter(UUID player) { return mode == Mode.MANHUNT && invited.contains(player) && !runners.contains(player); }
+
+        /** On the winning side of a match that ended. */
+        public boolean won(UUID player) { return state == State.ENDED && winners.contains(player); }
+
+        Match with(Set<UUID> joined) { return new Match(id, mode, invited, runners, joined, out, state, countdownEnds, endsAt, winner, winners, result); }
+        Match without(Set<UUID> out) { return new Match(id, mode, invited, runners, joined, out, state, countdownEnds, endsAt, winner, winners, result); }
+        Match counting(long until) { return new Match(id, mode, invited, runners, joined, out, State.COUNTDOWN, until, endsAt, winner, winners, result); }
+        Match running(long until) { return new Match(id, mode, invited, runners, joined, out, State.RUNNING, countdownEnds, until, winner, winners, result); }
+        Match ended(UUID winner, Set<UUID> winners, String result) {
+            return new Match(id, mode, invited, runners, joined, out, State.ENDED, countdownEnds, endsAt, winner, winners, result);
+        }
     }
 
     /** A request's outcome: the match as it now is, or why it was refused. */
@@ -86,6 +103,19 @@ public final class MatchRegistry {
 
     /** A match proposed between its players, none of them joined yet: two for a duel, one to eight runners for a speedrun. */
     public Result propose(Mode mode, List<UUID> invited) {
+        if (mode == Mode.MANHUNT) return Result.refused("A manhunt names its runners");
+        return propose(mode, invited, mode == Mode.SPEEDRUN ? Set.copyOf(invited) : Set.of());
+    }
+
+    /** A manhunt proposed: its runners, and the hunters after them, two to eight players in all. */
+    public Result proposeManhunt(List<UUID> runners, List<UUID> hunters) {
+        if (runners.isEmpty() || hunters.isEmpty()) return Result.refused("A manhunt has at least one runner and one hunter");
+        var invited = new ArrayList<UUID>(runners);
+        invited.addAll(hunters);
+        return propose(Mode.MANHUNT, invited, Set.copyOf(runners));
+    }
+
+    private Result propose(Mode mode, List<UUID> invited, Set<UUID> runners) {
         Objects.requireNonNull(mode);
         if (new LinkedHashSet<>(invited).size() != invited.size()) return Result.refused("Each player is invited once");
         if (invited.size() < mode.minPlayers || invited.size() > mode.maxPlayers) {
@@ -95,7 +125,7 @@ public final class MatchRegistry {
         for (UUID player : invited) {
             if (active(player).isPresent()) return Result.refused("A player invited is already in a match");
         }
-        var match = new Match(UUID.randomUUID(), mode, invited, Set.of(), Set.of(), State.LOBBY, -1, -1, null, "");
+        var match = new Match(UUID.randomUUID(), mode, invited, runners, Set.of(), Set.of(), State.LOBBY, -1, -1, null, Set.of(), "");
         matches.put(match.id(), match);
         prune();
         return Result.ok(match, "Proposed; each player must join");
@@ -133,7 +163,7 @@ public final class MatchRegistry {
             if (match.state() == State.COUNTDOWN && tick >= match.countdownEnds()) {
                 match = match.running(match.mode().ticks > 0 ? tick + match.mode().ticks : Long.MAX_VALUE);
             } else if (match.state() == State.RUNNING && match.mode().ticks > 0 && tick >= match.endsAt()) {
-                match = match.ended(null, "Time ran out: a draw");
+                match = match.ended(null, Set.of(), "Time ran out: a draw");
             } else {
                 continue;
             }
@@ -143,14 +173,24 @@ public final class MatchRegistry {
         return changed;
     }
 
-    /** {@code player} fell: in a running duel, the other wins. In a race a fall is only a setback. */
+    /**
+     * {@code player} fell. In a running duel, the other wins. In a manhunt a runner who falls is out, and with no runner
+     * left the hunters have won; a hunter only respawns. In a race a fall is only a setback.
+     */
     public Optional<Match> fallen(UUID player) {
-        return running(player).filter(match -> match.mode() == Mode.DUEL).map(match -> end(match, other(match, player), "fell"));
+        var match = running(player).orElse(null);
+        if (match == null) return Optional.empty();
+        if (match.mode() == Mode.DUEL) return Optional.of(end(match, other(match, player), "fell"));
+        if (match.mode() == Mode.MANHUNT && match.runners().contains(player)) return Optional.of(dropOut(match, player, "fell"));
+        return Optional.empty();
     }
 
-    /** {@code player} finished a running speedrun: the first to finish wins, and the race is over. */
+    /**
+     * {@code player} finished: the first runner to free the End wins a speedrun, and in a manhunt its side has won.
+     * Either way the match is over.
+     */
     public Optional<Match> finished(UUID player) {
-        return running(player).filter(match -> match.mode() == Mode.SPEEDRUN).map(match -> end(match, player, "finished"));
+        return running(player).filter(match -> match.runners().contains(player)).map(match -> end(match, player, "finished"));
     }
 
     /** {@code player} leaves: before the start it simply leaves; once started, it forfeits. */
@@ -182,16 +222,32 @@ public final class MatchRegistry {
 
     /**
      * {@code player} drops out of a started match. In a duel the other wins. In a race the rest run on, and only when
-     * nobody is left running does it end, with no winner.
+     * nobody is left running does it end, with no winner. In a manhunt, once no runner is left the hunters have won,
+     * and once no hunter is left the runners have.
      */
     private Match dropOut(Match match, UUID player, String how) {
         if (match.mode() == Mode.DUEL) return end(match, other(match, player), how);
         var out = new LinkedHashSet<>(match.out());
         out.add(player);
-        match = match.without(out);
-        if (out.containsAll(match.joined())) return end(match, null, "Every runner " + how);
-        matches.put(match.id(), match);
-        return match;
+        Match left = match.without(out);
+        var still = new LinkedHashSet<>(left.joined());
+        still.removeAll(out);
+        if (left.mode() == Mode.MANHUNT) {
+            boolean runners = still.stream().anyMatch(left.runners()::contains), hunters = still.stream().anyMatch(p -> !left.runners().contains(p));
+            if (!runners) return end(left, null, side(left, false), how.equals("fell") ? "hunted" : "Every runner " + how);
+            if (!hunters) return end(left, null, side(left, true), "Every hunter " + how);
+        } else if (still.isEmpty()) {
+            return end(left, null, Set.of(), "Every runner " + how);
+        }
+        matches.put(left.id(), left);
+        return left;
+    }
+
+    /** A manhunt's runners, or its hunters, among the players who joined it. */
+    private static Set<UUID> side(Match match, boolean runners) {
+        var side = new LinkedHashSet<UUID>();
+        for (UUID player : match.joined()) if (match.runners().contains(player) == runners) side.add(player);
+        return side;
     }
 
     /** Stopped by an operator: no winner, and the leave to attack ends now. */
@@ -199,7 +255,7 @@ public final class MatchRegistry {
         Match match = matches.get(matchId);
         if (match == null) return Result.refused("No such match");
         if (match.state() == State.ENDED) return Result.refused("The match has ended");
-        match = match.ended(null, "Stopped");
+        match = match.ended(null, Set.of(), "Stopped");
         matches.put(matchId, match);
         return Result.ok(match, "Stopped");
     }
@@ -207,14 +263,15 @@ public final class MatchRegistry {
     /** Every match stopped, as when the server stops. */
     public void stopAll() {
         for (var entry : matches.entrySet()) {
-            if (entry.getValue().state() != State.ENDED) entry.setValue(entry.getValue().ended(null, "Stopped"));
+            if (entry.getValue().state() != State.ENDED) entry.setValue(entry.getValue().ended(null, Set.of(), "Stopped"));
         }
     }
 
-    /** Only players still in the same running duel may attack one another. */
+    /** Only players still in the same running duel, or a runner and a hunter of the same manhunt, may attack one another. */
     public boolean mayAttack(UUID attacker, UUID target) {
         if (attacker == null || target == null || attacker.equals(target)) return false;
-        return running(attacker).filter(match -> match.mode().pvp && match.playing(target)).isPresent();
+        return running(attacker).filter(match -> match.mode().pvp && match.playing(target)
+                && (match.mode() != Mode.MANHUNT || match.runners().contains(attacker) != match.runners().contains(target))).isPresent();
     }
 
     /** The running match {@code player} is still in. */
@@ -249,8 +306,14 @@ public final class MatchRegistry {
         return null;
     }
 
+    /** Ended with {@code winner} the one who won it: in a manhunt with the whole of its side, otherwise alone. */
     private Match end(Match match, UUID winner, String how) {
-        Match ended = match.ended(winner, how);
+        Set<UUID> winners = winner == null ? Set.of() : match.mode() == Mode.MANHUNT ? side(match, match.runners().contains(winner)) : Set.of(winner);
+        return end(match, winner, winners, how);
+    }
+
+    private Match end(Match match, UUID winner, Set<UUID> winners, String how) {
+        Match ended = match.ended(winner, winners, how);
         matches.put(match.id(), ended);
         return ended;
     }

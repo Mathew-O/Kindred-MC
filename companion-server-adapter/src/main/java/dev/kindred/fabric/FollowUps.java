@@ -97,6 +97,9 @@ final class FollowUps {
         held.put(Need.GOLD_ARMOR, gold);
         held.put(Need.SHIELD, p.shields());
         held.put(Need.FOOD, p.edibleFood());
+        int swords = 0;
+        for (int slot = 0; slot < inventory.size(); slot++) if (ironOrBetter(inventory.getStack(slot))) swords++;
+        held.put(Need.IRON_SWORD, swords);
         return held;
     }
 
@@ -110,6 +113,11 @@ final class FollowUps {
         // gathered before going through (a staying-alive want has no gate), gold from the Nether's own ore.
         if (ahead.contains(Objective.NETHER_TRIP)) {
             wants.add(new Want(Need.GOLD_ARMOR, 1, Objective.SURVIVAL, "a piece of gold worn keeps piglins from attacking"));
+        }
+        // A manhunt's hunter makes its kit first (M-02a): an iron sword and a shield, then the hunt.
+        if (campaign.huntersKit()) {
+            wants.add(new Want(Need.IRON_SWORD, 1, Objective.SURVIVAL, "a hunter's kit: an iron sword"));
+            wants.add(new Want(Need.SHIELD, 1, Objective.SURVIVAL, "a hunter's kit: a shield"));
         }
         if (ahead.contains(Objective.NETHER_TRIP) && campaign.preferences().has(PlanPreferences.Habit.MORE_FOOD)) {
             wants.add(new Want(Need.FOOD, StrongholdRunPlanner.PREP_FOOD + PlanPreferences.EXTRA_FOOD, Objective.NETHER_TRIP,
@@ -213,6 +221,11 @@ final class FollowUps {
 
     static final Set<Item> GOLDEN = Set.of(Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS);
 
+    /** A sword of iron or better: what a hunter's kit asks for. */
+    static boolean ironOrBetter(ItemStack stack) {
+        return stack.isOf(Items.IRON_SWORD) || stack.isOf(Items.DIAMOND_SWORD) || stack.isOf(Items.NETHERITE_SWORD);
+    }
+
     static boolean golden(ItemStack stack) {
         return GOLDEN.contains(stack.getItem());
     }
@@ -278,6 +291,7 @@ final class FollowUps {
                     if (!onTheWay && wood(player) >= keep + 2) at.add(Need.STICKS);
                 }
                 case SHIELD -> { if (!onTheWay && p.ironIngots() >= 1 && wood(player) >= 6) at.add(Need.SHIELD); }
+                case IRON_SWORD -> { if (!onTheWay && p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1) at.add(Need.IRON_SWORD); }
                 // Nether gold ore close by with a pickaxe to mine it, or nuggets enough for an ingot: in any dimension.
                 // Not ore with a piglin about, which mining gold would turn on the player.
                 case GOLD -> {
@@ -319,6 +333,7 @@ final class FollowUps {
             // A table is set down or made only for a craft whose inputs are in hand.
             case BOW, ARROWS -> !craftable(need) ? Optional.empty() : craftAtTable(body, need == Need.BOW ? "bow" : "arrow");
             case SHIELD -> p.ironIngots() >= 1 && wood >= 6 ? craftAtTable(body, "shield") : Optional.empty();
+            case IRON_SWORD -> p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1 ? craftAtTable(body, "iron_sword") : Optional.empty();
             case STICKS -> p.planks() >= 2 ? campaign.craft(body, "stick") : p.logs() > 0 ? campaign.craft(body, "planks") : Optional.empty();
             case FEATHERS -> !ashore ? Optional.empty() : campaign.huntFor(player, ChickenEntity.class, "chicken for feathers")
                     .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy) : Optional.empty());
@@ -353,7 +368,8 @@ final class FollowUps {
      */
     Optional<PortalRunCampaign.Task> onTheWay(NativePlayerBody body, PortalRunSnapshot p, EditPolicy.ServerPolicy policy, Set<Objective> ahead) {
         var player = body.entity();
-        assess(player, p, ahead, Set.of(), p.swordTier(), true);
+        // A hunter's kit comes before the portal route's own iron and wood: it is what the hunter is gearing up for.
+        assess(player, p, ahead, Set.of(), p.swordTier(), !campaign.huntersKit());
         for (var chunk : provisions.chunks()) {
             if (!provisions.now(chunk)) continue;
             Optional<PortalRunCampaign.Task> task = realize(chunk.need(), chunk.count(), false, "", p, body, policy, p.swordTier());

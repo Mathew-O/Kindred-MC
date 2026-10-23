@@ -23,6 +23,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer build list                 the generators and schematics on offer
 /aiplayer match duel <first> <second>  propose a duel between two players (AI players or humans online)
 /aiplayer match speedrun <runner...> propose a speedrun race to the dragon for one to eight runners
+/aiplayer match manhunt <runners> vs <hunters>  propose a manhunt: runners make for the dragon, hunters hunt them
 /aiplayer match join <match>         join a match you were invited to (a human joins only for itself)
 /aiplayer match start|stop <match>   start a match everyone joined, or stop it (a player in it forfeits)
 /aiplayer match list                 matches, their state and results
@@ -140,6 +141,13 @@ Each player in it sees the match as a minigame server shows one, on an ordinary 
 - **The finish.** The first runner to free the End wins and the race is over. A runner who forfeits or leaves is out, and the rest run on.
 
 See [M-03a](evidence/M-03a.md).
+
+**Manhunts (M-02a; in development).** `/aiplayer match manhunt <runner...> vs <hunter...>` proposes a manhunt between two and eight players, AI players or humans online, joined and started like any match.
+- **Fair game only once joined.** A runner and a hunter may strike one another; two on the same side never may. A human is fair game only once it has joined (D7).
+- **Everyone starts with nothing.** It needs the server's PvP on. An AI player in it needs `/aiplayer edits on`, and an AI runner `/aiplayer dragonfight on` as well.
+- **The runners** make for the dragon: an AI runner plays the dragon goal at speedrun pace. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
+- **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see.
+- **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Every one is taken back when the hunt ends. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
 
 When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 

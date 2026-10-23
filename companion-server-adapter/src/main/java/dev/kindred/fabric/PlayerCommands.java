@@ -164,6 +164,30 @@ public final class PlayerCommands {
                             }
                             return runtime.proposeSpeedrun(context.getSource(), runners);
                         })))
+                // A manhunt (M-02a): the runners' names, then "vs", then the hunters'.
+                .then(CommandManager.literal("manhunt").then(CommandManager.argument("players", StringArgumentType.greedyString())
+                        .suggests((context, builder) -> suggestPlayers(context,
+                                builder.createOffset(builder.getStart() + builder.getRemaining().lastIndexOf(' ') + 1)))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String[] sides = StringArgumentType.getString(context, "players").trim().split("\\s+vs\\s+");
+                            if (sides.length != 2) {
+                                context.getSource().sendError(Text.literal("Name the runners, then 'vs', then the hunters: /aiplayer match manhunt Ada vs Bram Cy"));
+                                return 0;
+                            }
+                            var runners = new java.util.ArrayList<UUID>();
+                            var hunters = new java.util.ArrayList<UUID>();
+                            for (int side = 0; side < 2; side++) for (String name : sides[side].trim().split("\\s+")) {
+                                UUID player = runtime.matchPlayerId(name);
+                                if (player == null) {
+                                    context.getSource().sendError(Text.literal("No such player online: '" + name + "'."));
+                                    return 0;
+                                }
+                                (side == 0 ? runners : hunters).add(player);
+                            }
+                            return runtime.proposeManhunt(context.getSource(), runners, hunters);
+                        })))
                 .then(CommandManager.literal("join").then(CommandManager.argument("match", StringArgumentType.string())
                         .executes(context -> matchCommand(context, (runtime, id) -> runtime.joinMatch(context.getSource(), id)))))
                 .then(CommandManager.literal("start").then(CommandManager.argument("match", StringArgumentType.string())

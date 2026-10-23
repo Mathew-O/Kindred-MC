@@ -81,7 +81,7 @@ public final class StrategistPrompt {
     public static final String RETIRE = "A habit kept in this world (listed in the report) that is no longer worth keeping, or NONE.";
     public static final String QUEUE = "Up to three follow-ups for the player's queue: needs a task ahead will want that the queue lacks, "
             + "or an empty list. The player gathers and crafts them itself, when the chance comes and before the task.";
-    public static final String QUEUE_NEED = "What is needed: BOW, ARROWS, SHIELD, WATER_BUCKET, BED, STRING, FEATHERS, WOOL, FLINT, STICKS, BLOCKS, FOOD, GOLD_ARMOR or GOLD.";
+    public static final String QUEUE_NEED = "What is needed: BOW, ARROWS, SHIELD, WATER_BUCKET, BED, STRING, FEATHERS, WOOL, FLINT, STICKS, BLOCKS, FOOD, GOLD_ARMOR, GOLD or IRON_SWORD.";
     public static final String QUEUE_COUNT = "How many to have in hand, at least.";
     public static final String QUEUE_FOR = "The task it is for: NETHER_PORTAL, NETHER_TRIP, STRONGHOLD, END_FIGHT or SURVIVAL.";
     public static final String APPROACH = "A way to take for a part of the run, or NONE: CAST_FRAME, MINE_OBSIDIAN or RUINED_PORTAL "

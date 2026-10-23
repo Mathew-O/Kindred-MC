@@ -25,7 +25,9 @@ public enum Need {
     /** One piece of gold armour worn keeps piglins from attacking (E-07e); gold does not calm hoglins. */
     GOLD_ARMOR("piece of gold armour", 1),
     /** Gold ingots: nether gold ore mined with any pickaxe gives nuggets, nine to an ingot. */
-    GOLD("gold ingot", 16);
+    GOLD("gold ingot", 16),
+    /** A manhunt hunter's weapon (M-02a): two iron ingots and a stick, from what the run's iron gives. */
+    IRON_SWORD("iron sword", 1);
 
     private final String word;
     private final int cap;

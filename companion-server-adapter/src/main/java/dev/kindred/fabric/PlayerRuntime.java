@@ -210,6 +210,12 @@ final class PlayerRuntime {
     private final Map<UUID, dev.kindred.core.match.SpeedrunSplits> races = new HashMap<>();
     /** The pace each AI runner had before its race, given back when it is out of it. */
     private final Map<UUID, PlaystyleProfile> racePace = new HashMap<>();
+    /** The goal a race or a hunt set each AI player in it, ended when it is out of it. */
+    private final Map<UUID, dev.kindred.core.survival.SurvivalGoal> raceGoal = new HashMap<>();
+    /** Manhunts begun, by match (M-02a). */
+    private final Set<UUID> hunts = new HashSet<>();
+    /** Where each runner was last seen in each world: where a hunter's compass points once the runner has left it. */
+    private final Map<UUID, Map<net.minecraft.registry.RegistryKey<net.minecraft.world.World>, BlockPos>> trails = new HashMap<>();
     public TeamCoordinator teamCoordinator() { return teamCoordinator; }
 
     public ExpeditionState getExpeditionState(UUID id) {
@@ -1767,6 +1773,7 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
         if (tick % 20 == 7) pollRaces();
+        if (tick % 20 == 13) pollHunts();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
         presenter.tick(matches.list(), tick, this::playerName, this::raceProgress);
 
@@ -2657,6 +2664,8 @@ final class PlayerRuntime {
         // In a running match it joined, the fight comes first (M-00a): no goal, build or team task goes on meanwhile.
         var duel = duelCandidates(body);
         if (duel != null) return duel;
+        var hunt = huntCandidates(body);
+        if (hunt != null) return hunt;
 
         // 0. Team project task candidates (TEAM-01, TEAM-02)
         java.util.Optional<SharedTask> currentSharedTask = teamCoordinator.getPlayerCurrentTask(entry.data.id());
@@ -3384,6 +3393,7 @@ final class PlayerRuntime {
         keepMemory(entry);
         entry.campaign.pursue(entry.goal);
         entry.campaign.dragonAllowed(dragonFight);
+        entry.campaign.huntersKit(gearingHunter(body));
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
         var task = entry.campaign.next(body, edits, server.getTicks());
@@ -5532,9 +5542,18 @@ final class PlayerRuntime {
             Entry entry = entries.get(raced.getKey());
             if (entry == null) continue;
             entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(raced.getValue());
-            if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) entry.goal = dev.kindred.core.survival.SurvivalGoal.NONE;
+            if (entry.goal == raceGoal.get(raced.getKey())) entry.goal = dev.kindred.core.survival.SurvivalGoal.NONE;
         }
         racePace.clear();
+        raceGoal.clear();
+        // A hunt's compasses go with the hunt (D6).
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) continue;
+            for (UUID invited : match.invited()) {
+                var player = server.getPlayerManager().getPlayer(invited);
+                if (player != null) HuntCompass.takeBack(player, match.id());
+            }
+        }
         for (Entry entry : entries.values()) {
             entry.pendingConnection = null;
             entry.nativePending = false;
@@ -5813,14 +5832,17 @@ final class PlayerRuntime {
         String what = switch (match.state()) {
             case LOBBY -> "waiting for every player to join";
             case COUNTDOWN -> "starting in three seconds";
-            case RUNNING -> race ? "go!" : "fight!";
+            case RUNNING -> race ? "go!" : match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT ? "the hunt is on!" : "fight!";
             case ENDED -> match.winner() != null ? playerName(match.winner()) + " wins (" + match.result() + ")" : match.result();
         };
         String line = match.mode().label() + " " + who(match) + ": " + what;
         KindredMod.LOGGER.info(line);
         presenter.changed(match, this::playerName);
-        if (race && match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && !races.containsKey(match.id())) startRace(match);
-        if (race) leaveRace(match);
+        boolean hunt = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT;
+        if ((race || hunt) && match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && !races.containsKey(match.id())
+                && !hunts.contains(match.id())) startRace(match);
+        if (race || hunt) leaveRace(match);
+        takeBackCompasses(match);
         for (UUID invited : match.invited()) {
             var player = server.getPlayerManager().getPlayer(invited);
             if (player != null) player.sendMessage(Text.literal(line), false);
@@ -5871,8 +5893,12 @@ final class PlayerRuntime {
             if (human == null) continue;
             String others = match.invited().stream().filter(other -> !other.equals(player)).map(this::playerName)
                     .collect(java.util.stream.Collectors.joining(", "));
-            String what = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL ? "a duel against " + others
-                    : "a speedrun race" + (others.isEmpty() ? "" : " against " + others);
+            String what = switch (match.mode()) {
+                case DUEL -> "a duel against " + others;
+                case SPEEDRUN -> "a speedrun race" + (others.isEmpty() ? "" : " against " + others);
+                case MANHUNT -> "a manhunt, as " + (match.runners().contains(player) ? "a runner" : "a hunter") + " (" + who(match)
+                        + "); once you join, the other side may attack you";
+            };
             String join = "/aiplayer match join " + dev.kindred.core.match.MatchRegistry.shortId(match.id());
             human.sendMessage(Text.literal("You are invited to " + what + ". To play in it: ").append(Text.literal("[Join]")
                     .styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
@@ -5884,6 +5910,11 @@ final class PlayerRuntime {
 
     /** A match's players as its announcements name them. */
     private String who(dev.kindred.core.match.MatchRegistry.Match match) {
+        if (match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) {
+            return match.invited().stream().filter(match.runners()::contains).map(this::playerName).collect(java.util.stream.Collectors.joining(", "))
+                    + " hunted by " + match.invited().stream().filter(p -> !match.runners().contains(p)).map(this::playerName)
+                    .collect(java.util.stream.Collectors.joining(", "));
+        }
         return match.invited().stream().map(this::playerName).collect(java.util.stream.Collectors.joining(
                 match.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL ? " against " : ", "));
     }
@@ -5918,22 +5949,69 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * A manhunt proposed (M-02a): runners make for the dragon while hunters hunt them, two to eight players in all.
+     * Everyone starts with nothing, as in a race. An AI player in it is entered by its administrator and needs the
+     * server's leave for AI world edits; an AI runner, the dragon fight's too. A human joins for itself, and only then is
+     * it fair game (D7).
+     */
+    int proposeManhunt(ServerCommandSource source, List<UUID> runners, List<UUID> hunters) {
+        requireThread();
+        if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no manhunt can be played.");
+        var everyone = new ArrayList<UUID>(runners);
+        everyone.addAll(hunters);
+        for (UUID player : everyone) {
+            Entry entry = entryForPlayer(player);
+            var online = server.getPlayerManager().getPlayer(player);
+            if (online == null) return reject(source, "No such player online.");
+            if (entry != null) {
+                if (!nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an AI player in a manhunt needs them (/aiplayer edits on).");
+                if (runners.contains(player) && !dragonFight) return reject(source, "The dragon fight is off on this server; an AI runner needs it (/aiplayer dragonfight on).");
+            }
+            if (!online.getInventory().isEmpty()) return reject(source, playerName(player) + " is not at a fresh start: it carries items.");
+        }
+        var result = matches.proposeManhunt(runners, hunters);
+        if (!result.accepted()) return reject(source, result.reason());
+        var match = enter(result.match().orElseThrow());
+        feedback(source, "Manhunt " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
+                + "; " + match.joined().size() + " of " + match.invited().size() + " joined.");
+        return 1;
+    }
+
     /** Whether vanilla has given {@code player} the split's advancement. */
     private boolean reached(ServerPlayerEntity player, dev.kindred.core.match.SpeedrunSplits.Split split) {
         var advancement = server.getAdvancementLoader().get(net.minecraft.util.Identifier.of(split.advancement()));
         return advancement != null && player.getAdvancementTracker().getProgress(advancement).isDone();
     }
 
-    /** A race begins: each AI runner set to the dragon goal at speedrun pace, its own pace kept to give back. */
+    /**
+     * A race or a hunt begins: each AI runner set to the dragon goal at speedrun pace; each AI hunter to the run's own
+     * route, which earns its tools and the iron for its kit (M-02a). Their own pace is kept to give back.
+     */
     private void startRace(dev.kindred.core.match.MatchRegistry.Match match) {
-        races.put(match.id(), new dev.kindred.core.match.SpeedrunSplits(server.getTicks()));
-        for (UUID runner : match.joined()) {
-            Entry entry = entryForPlayer(runner);
+        boolean hunt = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT;
+        if (hunt) hunts.add(match.id());
+        else races.put(match.id(), new dev.kindred.core.match.SpeedrunSplits(server.getTicks()));
+        for (UUID player : match.joined()) {
+            Entry entry = entryForPlayer(player);
             if (entry == null) continue;
             racePace.put(entry.data.id(), entry.runtimeSettings.playstyleProfile());
-            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.SPEEDRUN_ANY_PERCENT);
-            beginGoal(entry, dev.kindred.core.survival.SurvivalGoal.DRAGON);
+            var goal = match.runners().contains(player) ? dev.kindred.core.survival.SurvivalGoal.DRAGON : dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
+            if (match.runners().contains(player)) entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.SPEEDRUN_ANY_PERCENT);
+            raceGoal.put(entry.data.id(), goal);
+            beginGoal(entry, goal);
             if (entry.snapshot().stopLatched()) nativeLifecycle(server.getCommandSource(), "resume", entry.data.id());
+        }
+        if (hunt) {
+            // The one item the hunt hands out, announced before it is, the same for every hunter (D6).
+            String rule = "Rule: every hunter holds a tracking compass. It points at the nearest runner in the hunter's world, or where a "
+                    + "runner last left it; it vanishes when its hunter dies and is given again, and every one is taken back when the hunt ends.";
+            for (UUID invited : match.invited()) {
+                var player = server.getPlayerManager().getPlayer(invited);
+                if (player != null) player.sendMessage(Text.literal(rule).formatted(net.minecraft.util.Formatting.GOLD), false);
+            }
+            pollHunts();
         }
     }
 
@@ -5945,7 +6023,7 @@ final class PlayerRuntime {
             if (entry == null) continue;
             var pace = racePace.remove(entry.data.id());
             if (pace == null) continue;
-            if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
+            if (entry.goal == raceGoal.remove(entry.data.id())) {
                 entry.goal = dev.kindred.core.survival.SurvivalGoal.NONE;
                 entry.goalProgress = "";
                 if (entry.nativeBody != null) entry.nativeBody.setPortalTravelAuthorized(false);
@@ -5954,6 +6032,108 @@ final class PlayerRuntime {
             }
             entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(pace);
         }
+    }
+
+    /** The compasses a hunt handed out, taken back from each player out of it, all of them once it is over (D6). */
+    private void takeBackCompasses(dev.kindred.core.match.MatchRegistry.Match match) {
+        if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) return;
+        boolean over = match.state() == dev.kindred.core.match.MatchRegistry.State.ENDED;
+        for (UUID invited : match.invited()) {
+            if (!over && match.playing(invited)) continue;
+            var player = server.getPlayerManager().getPlayer(invited);
+            if (player != null && HuntCompass.takeBack(player, match.id()) > 0) {
+                KindredMod.LOGGER.info("Manhunt {}: the tracking compass taken back from {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(invited));
+            }
+        }
+        if (over) {
+            hunts.remove(match.id());
+            for (UUID runner : match.runners()) trails.remove(runner);
+        }
+    }
+
+    /**
+     * Once a second, each running hunt's compasses: every runner's place noted in its world, and every hunter's compass
+     * set to the nearest runner in the hunter's world, or failing one, the nearest place a runner last left it. A hunter
+     * with none (a new one, or one on its feet after a death took it) is handed one.
+     */
+    private void pollHunts() {
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING) continue;
+            var runners = new ArrayList<ServerPlayerEntity>();
+            for (UUID runner : match.runners()) {
+                var player = match.playing(runner) ? server.getPlayerManager().getPlayer(runner) : null;
+                if (player == null || !player.isAlive()) continue;
+                runners.add(player);
+                trails.computeIfAbsent(runner, id -> new HashMap<>()).put(player.getWorld().getRegistryKey(), player.getBlockPos());
+            }
+            for (UUID hunterId : match.joined()) {
+                if (match.runners().contains(hunterId) || !match.playing(hunterId)) continue;
+                var hunter = server.getPlayerManager().getPlayer(hunterId);
+                if (hunter == null) continue;
+                var world = hunter.getWorld().getRegistryKey();
+                BlockPos at = runners.stream().filter(r -> r.getWorld().getRegistryKey() == world)
+                        .min(java.util.Comparator.comparingDouble(hunter::squaredDistanceTo)).map(ServerPlayerEntity::getBlockPos)
+                        .orElseGet(() -> match.runners().stream().filter(match::playing).map(trails::get).filter(java.util.Objects::nonNull)
+                                .map(trail -> trail.get(world)).filter(java.util.Objects::nonNull)
+                                .min(java.util.Comparator.comparingDouble(pos -> pos.getSquaredDistance(hunter.getPos()))).orElse(null));
+                var target = at == null ? java.util.Optional.<net.minecraft.util.math.GlobalPos>empty() : java.util.Optional.of(net.minecraft.util.math.GlobalPos.create(world, at));
+                if (HuntCompass.point(hunter, match.id(), target) > 0) {
+                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass handed to {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(hunterId));
+                }
+            }
+        }
+    }
+
+    /** A hunter's kit, ready for the hunt: a sword of iron or better and a shield (M-02a). */
+    static boolean huntReady(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        boolean sword = false, shield = player.getOffHandStack().isOf(Items.SHIELD);
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            sword |= FollowUps.ironOrBetter(stack);
+            shield |= stack.isOf(Items.SHIELD);
+        }
+        return sword && shield;
+    }
+
+    /** A manhunt's hunter still making its kit, whose follow-ups ask for the kit first. */
+    private boolean gearingHunter(NativePlayerBody body) {
+        var player = body.entity();
+        if (player == null) return false;
+        return matches.running(player.getUuid()).filter(m -> m.hunter(player.getUuid())).isPresent() && !huntReady(player);
+    }
+
+    /**
+     * What a hunter in a running manhunt does (M-02a): a runner it can see within a chase's reach is fought, kit or none,
+     * as the chance comes. Kitted, it follows its compass's needle, as a player does, never told where the runner is.
+     * Null when the player hunts nobody, or is still making its kit with no runner in sight (its goal's own work).
+     */
+    private List<NativeTaskCandidate> huntCandidates(NativePlayerBody body) {
+        var player = body.entity();
+        var match = matches.running(player.getUuid()).filter(m -> m.hunter(player.getUuid())).orElse(null);
+        if (match == null) return null;
+        UUID taskId = UUID.nameUUIDFromBytes(("hunt:" + match.id() + ":" + player.getUuid()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ServerPlayerEntity prey = null;
+        for (UUID runner : match.runners()) {
+            var target = match.playing(runner) ? server.getPlayerManager().getPlayer(runner) : null;
+            if (target == null || !target.isAlive() || target.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(target) > 24 * 24
+                    || !player.canSee(target)) continue;
+            if (prey == null || player.squaredDistanceTo(target) < player.squaredDistanceTo(prey)) prey = target;
+        }
+        if (prey != null) {
+            var fight = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, prey), true).map(Weapons.Held::slot).orElse(-1);
+            return List.of(new NativeTaskCandidate(fight, "native_fight", Map.of("target", prey.getUuid().toString(), "slot", String.valueOf(slot))));
+        }
+        if (!huntReady(player)) return null;
+        var bearing = HuntCompass.bearing(player, match.id());
+        if (bearing.isEmpty()) return null;
+        BlockPos toward = HuntCompass.along(player.getBlockPos(), bearing.get(), 16);
+        var follow = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(follow, "native_goto", Map.of("x", String.valueOf(toward.getX()), "y", String.valueOf(toward.getY()),
+                "z", String.valueOf(toward.getZ()), "range", "3", "partial", "true", "sprint", "true")));
     }
 
     /** Once a second: each running race's runners checked for the splits vanilla has given them since. */
