@@ -544,7 +544,8 @@ final class NativePlayerBody implements BodyAdapter {
         if (!(entity instanceof LivingEntity target) || !target.isAlive() || target.isRemoved()) return false;
         if (target == player) return false;
         if (target instanceof PlayerEntity) return false; // Default safe player privacy
-        if (player.squaredDistanceTo(target) > 16.0) return false;
+        // A client's reach (E-41a): three blocks from the eyes to the target's hitbox, as the Dragon strike has it.
+        if (!player.canInteractWithEntity(target, 0)) return false;
         if (!player.canSee(target)) return false;
         return execute(lease, Intent.ATTACK, null, () -> {
             if (slot >= 0 && slot < 9 && player.getInventory().selectedSlot != slot) {
@@ -632,6 +633,8 @@ final class NativePlayerBody implements BodyAdapter {
             hand = Hand.MAIN_HAND;
         }
         if (hand == null) return false;
+        // A shield an axe has put out of use cannot be raised, as vanilla refuses a player any item cooling down (E-41a).
+        if (player.getItemCooldownManager().isCoolingDown(player.getStackInHand(hand).getItem())) return false;
         final Hand blockHand = hand;
         return execute(lease, Intent.BLOCK, null, () -> player.setCurrentHand(blockHand));
     }

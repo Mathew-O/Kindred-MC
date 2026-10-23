@@ -2047,7 +2047,7 @@ final class PlayerRuntime {
                         UUID targetId = UUID.fromString(targetStr);
                         var target = world.getEntity(targetId);
                         yield target instanceof net.minecraft.entity.LivingEntity living && living.isAlive()
-                                && player.squaredDistanceTo(living) <= 16.0 && player.canSee(living);
+                                && player.canInteractWithEntity(living, 0) && player.canSee(living);
                     } catch (Exception ignored) {
                         yield false;
                     }
@@ -2239,7 +2239,7 @@ final class PlayerRuntime {
                     if (!"minecraft:blaze".equals(mob.entityType()) || mob.distance() > 4.0) continue;
                     var entity = world.getEntity(mob.entityId());
                     if (!(entity instanceof net.minecraft.entity.LivingEntity living) || !living.isAlive()
-                            || player.squaredDistanceTo(living) > 16.0 || !player.canSee(living)) continue;
+                            || !player.canInteractWithEntity(living, 0) || !player.canSee(living)) continue;
                     UUID taskId = UUID.nameUUIDFromBytes(("blaze_rod_attack:" + entry.data.id() + ":" + mob.entityId()
                             + ":" + weaponSlot).getBytes(StandardCharsets.UTF_8));
                     var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId,
@@ -2291,7 +2291,7 @@ final class PlayerRuntime {
                             && (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
                             && (mob.getTarget() != player || player.squaredDistanceTo(mob) > 3.0 * 3.0);
                     if (targetId != null && !hoglinLeftAlone && world.getEntity(targetId) instanceof net.minecraft.entity.LivingEntity living
-                            && player.squaredDistanceTo(living) <= 16.0 && player.canSee(living)) {
+                            && player.canInteractWithEntity(living, 0) && player.canSee(living)) {
                         double need = option.outcome().primaryObjective() == dev.kindred.core.tactics.TacticalObjective.RESOLVE_IMMEDIATE_SERIOUS_HARM
                                 ? 96.0 : 90.0;
                         int weaponSlot = weapon != null && weapon.slot() >= 0 && weapon.slot() < 9 ? weapon.slot() : player.getInventory().selectedSlot;

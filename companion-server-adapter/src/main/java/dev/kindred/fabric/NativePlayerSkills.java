@@ -758,8 +758,8 @@ final class NativePlayerSkills {
             if (!(target instanceof LivingEntity living) || !living.isAlive() || living.isRemoved()) {
                 return Step.blocked("Target entity not found or dead", true);
             }
-            if (player.squaredDistanceTo(living) > 16.0) {
-                return Step.blocked("Target entity out of reach (> 4.0 blocks)", true);
+            if (!player.canInteractWithEntity(living, 0)) {
+                return Step.blocked("Target entity out of reach (more than 3 blocks from the eyes to its hitbox)", true);
             }
             if (!player.canSee(living)) {
                 return Step.blocked("Target entity not in line of sight", true);

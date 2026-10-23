@@ -4,6 +4,14 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-41a (the combat ruleset and adapter, Milestone 0 of the owner's combat design, in progress), on top of `417473e`.
+  - New JUnit: `CombatRulesetTest` (5).
+  - New native fixtures (`NativeRulesetGameTests`): `aSwingChargesTickByTickAsTheRulesetSays`, `aShieldBlocksOnlyOnceHeldUpFiveTicks`, `anAxeOnARaisedShieldPutsItOutOfUseForAHundredTicks`, `aSecondHitWithinTheImmunityLandsOnlyItsExcess` and `aStrikeReachesThreeBlocksToTheHitboxAndNoFurther`.
+  - Hand controls: under the old four-block rule the far pig was struck; without the cooldown check a shield the axe had disabled was raised and blocking for 49 ticks.
+  - Found on the way: a game-test step that fails is tried again the next tick, so the first versions' per-tick checks passed their controls. They now keep the first violation. And the test context's `spawnMob` clears a mob's goals: a zombie spawned with it never swung.
+  - The manifest's counts had fallen behind (272 fixtures, 475 JUnit passed); they are brought up to date, and its list of native skills now names all 39 registered (fourteen, `native_stair` and `native_pillar` among them, were missing).
+  - `runGametest` passed 285/285 twice on the final tree. `./gradlew build` passed: 485 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `39954f49062c4439e264d67bb866dda5af23a50ebfd104c3a27ce4626d000236`.
 - F-10h (a staircase built up as it walks, in progress), on top of `fa05d18`.
   - New native fixtures (`NativeStairGameTests`): `aWallTenHighIsClimbedByAStaircaseInOneMovement` and `inTheOpenEachStepIsSetOnAFillerBlock`. They passed 4 of 4 and 5 of 5 alone on the final tree, the same each time: the wall in 79 ticks, never still more than a tick; the open climb in 43, never still. Each block was its own verified record, in one task.
   - Hand control, with stairs taken out of the route planner: the wall was climbed by a pillar in 138 ticks and the open climb by a pillar and a bridge in 163, standing still up to 8 and 11 ticks at a time.
