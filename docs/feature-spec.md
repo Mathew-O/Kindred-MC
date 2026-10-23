@@ -25,6 +25,21 @@ Direction recorded 2026-10-23: the owner introduces no further specs. Work sharp
   - **Builds.** Huts serve for tests. The north star is detailed houses, bunkers and builds: several floors and, above all, functional.
   - **Staged progression (M-01).** A base starts small, to get the world started and give the player a place to store resources, and keeps improving: three stages, from a small base to bigger and better. The same staging holds for farms and other functional builds. Mob-spawner farms are rare, so each is a one-off functional build for grinding and resources.
 - **Factions (M-06, optional)** is the same natural survival progression, but each AI player plays as an independent, unfriendly to the other players and AI players in it. It calls for more strategy: hidden bunkers, concealed resource farms, defences and scouting. D7 holds: only players who joined it are fair game.
+- **Notes recorded later still on 2026-10-23 (owner):**
+  - **Factions bases and bunkers in five stages (M-06a, M-06b).**
+    - *The base.* A walled-in mini civilization that the player expands as its resource needs grow. Its farms, cattle, house and the rest are all enclosed in a walled, restricted, castle-like area. One of the later stages adds a moat and bridge.
+    - *The bunker.* It follows the same five-stage, expanding logic: multi-level and multi-room, an underground mini civilization that grows as the game goes on.
+    - *For both:* walls are always lined with something, and entrances are discreet.
+  - **Redstone (M-01d).** Farms and other builds use working redstone mechanics.
+  - **Repair (E-31a).** A player keeps what it built whole. A broken chest is replaced; what is blown up or destroyed is fixed. There is never a graveyard build left behind.
+  - **One weighted list for everything it does (F-25c9).**
+    - *Life first.* When hunger is low it gets food, enough to last. At night it sleeps.
+    - *Builds near the bottom.* Ongoing builds come near the bottom of the list.
+    - *A bed at home.* Home-like builds have beds, so the player's spawn is set there.
+  - **Staying alive while evading (M-02c).**
+    - *Keeping itself going.* While evading another player or a threat, a player queues what keeps it alive and gets it to safety as its hunger runs down. It eats at a safe distance to recover health, or changes course.
+    - *Not leading them home.* In a world where others are unfriendly, it goes somewhere else rather than back to its base, which would give the base away.
+  - **Builds grown from a seed block (E-29a).** The owner's idea, still being worked on: a player given a seed block (cherry wood, say) builds whatever it builds round that block. Builds come in different shapes and sizes, never the same static build repeated across worlds.
 
 Recommended order: finish the survival core (F-25c4, then E-07 combat and caves, E-15 portal travel); then build M-00; M-04 can proceed in parallel because creative play does not depend on survival. After that come M-03, M-02 (built on the M-03 runner plus PvP), and the remainder of M-01 (schematic builds, enchanting, farms).
 
@@ -112,6 +127,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] F-25c6 — On from the lit portal to the End portal: the Nether's blaze rods and pearls, eyes of ender, and the stronghold found by following them. In progress; [evidence](evidence/F-25c6.md).
 - [ ] F-25c7 — What a larger task needs, assessed ahead and queued: the End fight's bow, arrows and the rest broken into gathering and crafting, done on the way and before the stronghold. In progress; [evidence](evidence/F-25c7.md).
 - [ ] F-25c8 — The ways of doing each part of the run, chosen by cost, with a speedrun pace and the strategist's advice. In progress; [evidence](evidence/F-25c8.md).
+- [ ] F-25c9 — One weighted list for everything it does: food enough to last when hunger is low, sleep at night in its own bed (home-like builds have beds to set its spawn), ongoing builds near the bottom (owner, 2026-10-23).
 - [x] FND-01 — Native entity registration, villager fallback, legacy creation and basic command foundation. Completed 2026-10-13; [evidence and limitations](validation.md), [adapter source](../companion-server-adapter/src/main/java/dev/kindred/fabric/PlayerRuntime.java). Live acceptance remains F-01.
 - [x] FND-02 — Exclusive leases, hard-stop revocation, epoch/revision fencing and cancellation settlement barrier. Completed 2026-10-13; [evidence](validation.md), [arbiter](../companion-core/src/main/java/dev/kindred/core/ActionArbiter.java). Full checkpointed skills remain F-04.
 - [x] FND-03 — Ordered async SQLite identity/profile persistence, optimistic revisions and migrations through schema 3 (schema 4 mannerism profiles added later the same day under E-32). Completed 2026-10-13; [evidence](validation.md), [store](../companion-persistence/src/main/java/dev/kindred/persistence/SqliteCompanionStore.java). No world-action ledger is claimed.
@@ -234,15 +250,19 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
   - [ ] M-01a — A ranch: a pen of the player's own wood, a pair of animals led in by their food, shut in and bred. In progress; [evidence](evidence/M-01a.md).
   - [ ] M-01b — Bases in three stages: a cabin to start the world, a two-floor house, a manor with an enchanting room; detailed, multi-floor and functional. In progress; [evidence](evidence/M-01b.md).
   - [ ] M-01c — A player's own base: the next stage chosen, sited near home and built from what it gathers, under the operator's leave. In progress; [evidence](evidence/M-01c.md).
+  - [ ] M-01d — Redstone in farms and builds: farms and other functional builds with working redstone mechanics (owner, 2026-10-23).
 - [ ] M-02 — Manhunt mode.
   - [ ] M-02a — Manhunt matches: runners and hunters, strikes only across sides, the announced tracking compass (D6), AI hunters' kit then pursuit. In progress; [evidence](evidence/M-02a.md).
   - [ ] M-02b — Manhunt roles: runners at a reliable pace that keep their distance and fight only once caught; hunters that gear up as the hunt goes on. In progress; [evidence](evidence/M-02b.md).
+  - [ ] M-02c — Staying alive while evading: what keeps it alive and gets it to safety queued while it evades a player or threat; food eaten at a safe distance; in an unfriendly world, somewhere other than its base, never leading pursuers home (owner, 2026-10-23).
 - [ ] M-03 — Speedrun mode (random-seed any% glitchless).
   - [ ] M-03a — Speedrun races: runners from a fresh start, timed by the game and split at vanilla's advancements, the first to free the End the winner. In progress; [evidence](evidence/M-03a.md).
 - [ ] M-04 — Builder mode (creative build battle).
   - [ ] M-04a — Build battles: plots, a theme, a timed build in creative (free blocks in Builder only), AI builders' designs, a vote by every builder, the results. In progress; [evidence](evidence/M-04a.md).
 - [ ] M-05 — Schematic library: import, bill of materials, placement order and attribution. In progress; [evidence](evidence/M-05.md).
 - [ ] M-06 — Factions mode (optional): survival progression with each AI player an independent, unfriendly to the other players who joined; bunkers, hidden farms and strategy.
+  - [ ] M-06a — A walled base in five stages: a walled, restricted, castle-like compound enclosing the house, farms and cattle, expanded as its needs grow, with a moat and bridge in a later stage; walls lined and entrances discreet (owner, 2026-10-23).
+  - [ ] M-06b — A bunker in five stages: multi-level and multi-room, an underground mini civilization grown as the game goes on; walls lined and entrances discreet (owner, 2026-10-23).
 - [ ] E-18 — Saved maturity presets, expression controls and command/profile editing.
 - [ ] E-19 — Recipient preferences, audience limits and reply invalidation.
 - [ ] E-20 — Contextual dialogue styles and native delivery qualification.
@@ -256,8 +276,10 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] E-27 — Shared adventure invitations, bounded outings and participation memories.
 - [ ] E-28 — Editable hobbies, gradual interests and physical collections/keepsakes.
 - [ ] E-29 — Persistent architectural taste, tested building grammar and bounded design generation.
+  - [ ] E-29a — Builds grown from a seed block: palette, shape and size drawn from the block a player is given and from its world, so no two worlds get the same static build (owner's idea, 2026-10-23).
 - [ ] E-30 — Canonical/semantic design comparison and durable uniqueness reservations.
 - [ ] E-31 — Native distinct-build construction, repair and recovery qualification.
+  - [ ] E-31a — Repair: a player keeps what it built whole; a broken chest replaced, what is blown up or destroyed fixed; never a graveyard build left behind (owner, 2026-10-23).
 - [ ] E-32 — Persistent quirk profile, deterministic `auto` resolution and sprint-jump/lively/steady movement habits.
 - [ ] E-33 — Notice-and-return attention pauses during interruptible work, with bounded remarks.
 - [ ] E-34 — Habit feedback: character-dependent keep/accommodate replies, bounded temporary accommodation and authorized durable edits.
