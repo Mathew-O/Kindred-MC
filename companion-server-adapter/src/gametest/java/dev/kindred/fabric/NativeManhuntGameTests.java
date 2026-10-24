@@ -315,6 +315,108 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Staying alive while evading (M-02c): a hurt, hungry runner with bread in its pack runs from a hunter in sight but
+     * not toward its home, the bed its spawn is set by, which lies straight away from the hunter; it eats nothing
+     * while the hunter is in sight within twenty blocks, and eats once it is clear.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "manhuntEvadeHome", tickLimit = 2400)
+    public void aChasedRunnerNeverRunsTowardItsHomeAndEatsOnlyOnceClear(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2200);
+        var server = context.getWorld().getServer();
+        boolean pvp = server.isPvpEnabled();
+        UUID[] ids = new UUID[2], players = new UUID[2], match = new UUID[1];
+        double[] wayHome = {2}, ateAt = {-1};
+        int[] breadAtStart = {-1};
+        Vec3d[] start = {null};
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos home = o.add(5, 2, 28);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    // Open ground walled round, wide enough to get clear of the hunter either way across it.
+                    var world = context.getWorld();
+                    for (int x = -30; x <= 40; x++) for (int z = -20; z <= 34; z++) {
+                        boolean edge = x == -30 || x == 40 || z == -20 || z == 34;
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 8; y++) world.setBlockState(o.add(x, y, z), edge && y <= 4 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                    }
+                    for (int cx = (o.getX() - 30) >> 4; cx <= (o.getX() + 40) >> 4; cx++) {
+                        for (int cz = (o.getZ() - 20) >> 4; cz <= (o.getZ() + 34) >> 4; cz++) world.setChunkForced(cx, cz, true);
+                    }
+                    f.runtime.createNative(f.source, "Hal");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Hal allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Rue"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(st -> st.phase() == StoredNativePlayer.Phase.ESTABLISHED && st.connected()),
+                            "Both established");
+                    for (var status : statuses) {
+                        int i = player(f, status.nativeId()).getName().getString().equals("Hal") ? 0 : 1;
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    var hal = player(f, players[0]);
+                    var rue = player(f, players[1]);
+                    // Hal to the north, Rue south of it: straight away from Hal is south, where Rue's home lies.
+                    hal.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 2, o.getZ() + 0.5, 0, 0);
+                    rue.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 2, o.getZ() + 8.5, 180, 0);
+                    hal.getInventory().clear();
+                    rue.getInventory().clear();
+                    rue.setSpawnPoint(context.getWorld().getRegistryKey(), home, 0, true, false);
+                    server.setPvpEnabled(true);
+                    f.runtime.setDragonFightForTest(true);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.proposeManhunt(f.source, java.util.List.of(players[1]), java.util.List.of(players[0])) == 1, "Proposed");
+                    match[0] = f.runtime.matches().getFirst().id();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.startMatch(f.source, match[0]) == 1, "Started"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().state() == MatchRegistry.State.RUNNING, "Running");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", ids[0]) == 1, "Hal held");
+                    // Hurt and hungry once the hunt is on, with bread in its hotbar: nothing to eat before it began.
+                    var rue = player(f, players[1]);
+                    rue.getInventory().setStack(0, new ItemStack(Items.BREAD, 6));
+                    rue.setHealth(12);
+                    rue.getHungerManager().setFoodLevel(10);
+                    rue.getHungerManager().setSaturationLevel(0);
+                    breadAtStart[0] = rue.getInventory().count(Items.BREAD);
+                    context.assertTrue(rue.canSee(player(f, players[0])), "Rue sees Hal");
+                    start[0] = rue.getPos();
+                })
+                .createAndAdd(() -> {
+                    var hal = player(f, players[0]);
+                    var rue = player(f, players[1]);
+                    double apart = rue.distanceTo(hal);
+                    // Where it was when it first ate, taken at that tick: how far off Hal was, and its way off from where
+                    // it stood against the way home.
+                    if (ateAt[0] < 0 && rue.getInventory().count(Items.BREAD) < breadAtStart[0]) {
+                        ateAt[0] = apart;
+                        Vec3d moved = rue.getPos().subtract(start[0]).multiply(1, 0, 1);
+                        Vec3d toHome = Vec3d.ofBottomCenter(home).subtract(start[0]).multiply(1, 0, 1);
+                        wayHome[0] = moved.normalize().dotProduct(toHome.normalize());
+                        KindredMod.LOGGER.info("Manhunt evasion home: Rue ran {} blocks at {} degrees from the way home, ate {} blocks off, {} bread left",
+                                String.format("%.1f", moved.length()), String.format("%.0f", Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, wayHome[0]))))),
+                                String.format("%.1f", apart), rue.getInventory().count(Items.BREAD));
+                    }
+                    context.assertTrue(ateAt[0] >= 0, "Rue fed: " + String.format("%.1f", apart) + " blocks off, " + rue.getInventory().count(Items.BREAD) + " bread left");
+                })
+                .createAndAdd(() -> {
+                    // Nothing eaten with Hal in sight within twenty blocks: it ate once clear.
+                    context.assertTrue(ateAt[0] >= 20, "Ate with Hal " + String.format("%.1f", ateAt[0]) + " blocks off");
+                    // It ran across, not home: its way off more than sixty degrees from the way home.
+                    context.assertTrue(wayHome[0] < 0.5, "Not toward home: " + String.format("%.2f", wayHome[0]));
+                    server.setPvpEnabled(pvp);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     private static ItemStack compass(ServerPlayerEntity player, UUID match) {
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.size(); slot++) if (HuntCompass.of(inventory.getStack(slot), match)) return inventory.getStack(slot);

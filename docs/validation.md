@@ -4,6 +4,22 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-02c (staying alive while evading), with the fixes below, on top of `342c1bc`.
+  - New JUnit: `EvasionCourseTest` (3).
+  - New native fixture `aChasedRunnerNeverRunsTowardItsHomeAndEatsOnlyOnceClear`: a hurt, hungry runner whose home lies straight away from a hunter in sight runs off across, not home, eats nothing while the hunter is within twenty blocks and eats once clear. With each of two controls (no home kept; eating weighed above running) it fails.
+  - Full `runGametest` runs with the fixes below: run 19 passed 305/310 and run 20 307/310; this slice's fixtures passed in both, the failures set out below.
+  - JAR SHA-256: `e04fe6bf680a4e7555e11af59012c755a5493a734908e0adacdd3222c477048b`.
+- Three fixes from the full runs, on top of `342c1bc`.
+  - M-01a: a cow hung on the fence beside the pen's gate is brought round in line with it again from outside, twice at most, before it is given up. New JUnit: `RanchTest.oneHungOnTheFenceBesideTheGateIsBroughtRoundInLineWithItAgainFromOutside`.
+  - Builds (M-01c's trip, every build): a stone trip with no way on tunnels away from the site, else waits for its set-aside spots, before ending without its stone; and when all else is built, a build goes back once to the cells it gave up on as it went.
+  - Full `runGametest` runs, with M-02c's change: run 19 passed 305/310 and run 20 307/310. Nothing else ran on the machine during run 20; the keep's pure test (M-06a, not in this tree) ran beside part of run 19. The failures:
+    - **The portal cast** (both runs): `goalCastsAWholePortalFrameFromALavaPoolWithoutDiamonds`, the cast frame not made in time, as in run 17.
+    - **The distant log** (both runs): `autonomousApproachAndMineDistantScopedLog`. One more fixture moved where each test stands, and this one now stood 26 blocks east of the seven by nine cabin fixture of E-29a, which had just run, inside the ground that fixture lays (stone and dirt up to six above the test's floor) and leaves behind. In run 18 it stood 78 blocks off and passed. It passed alone, and with the manhunt class (12/12).
+    - **The ranch** (both runs): in run 20, the player went after a cow standing on ground another fixture had left five blocks above the pen, and a cow not of its pair ended in the pen ("Both cows penned: 2" failed on which cows). In run 19 the ranch ended at once with "No cows in sight to bring in" as it drew the cows from inside, no cow given up, though the look at its end saw both just outside the gate; why is not yet known. The re-line below came into neither run.
+    - **Run 19 only:** the build-needs fixture set out for logs with 77 of the 79 blocks it held placed, the rest not traced; the nine by seven cabin stopped stuck on its roof with no walkable way down at 272 of 276.
+    - This change's other fixtures (the cabin of M-01c, the life fixtures, the build classes) and M-02c's passed in both runs.
+  - `./gradlew build` passed: 555 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `e04fe6bf680a4e7555e11af59012c755a5493a734908e0adacdd3222c477048b`.
 - E-29a (builds grown from a seed block), on top of `85507e4`.
   - New JUnit: `BuildStyleTest` (6).
   - New native fixtures (`NativeSeedBuildGameTests`, six):

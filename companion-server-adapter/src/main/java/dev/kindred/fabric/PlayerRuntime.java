@@ -2738,7 +2738,7 @@ final class PlayerRuntime {
         if (duel != null) return duel;
         var hunt = huntCandidates(entry, body);
         if (hunt != null) return hunt;
-        var evade = evadeCandidates(body);
+        var evade = evadeCandidates(entry, body);
         if (evade != null) return evade;
 
         // 0. Team project task candidates (TEAM-01, TEAM-02)
@@ -7159,15 +7159,37 @@ final class PlayerRuntime {
         return evasions.getOrDefault(player, 0);
     }
 
-    /** How near a hunter a runner sees before it moves off, and how near it is caught and fights back. */
-    private static final double EVADE = 20, CAUGHT = 3.2;
+    /**
+     * How near a hunter a runner sees before it moves off, how near it is caught and fights back, and how far off a
+     * home it still keeps its hunters from.
+     */
+    private static final double EVADE = 20, CAUGHT = 3.2, HOME_KEPT = 160;
+
+    /**
+     * The home a chased player keeps its pursuers from (M-02c): its first base in this world, else the bed its spawn
+     * is set by; none when it has neither here.
+     */
+    private static BlockPos homeToKeep(Entry entry, ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        String dimension = world.getRegistryKey().getValue().toString();
+        if (entry.bases != null) {
+            for (var base : entry.bases.built) {
+                if (!base.dimension().equals(dimension)) continue;
+                var span = footprint(base);
+                return new BlockPos((span.minX() + span.maxX()) / 2, base.y(), (span.minZ() + span.maxZ()) / 2);
+            }
+        }
+        var spawn = player.getSpawnPointPosition();
+        return spawn != null && player.getSpawnPointDimension() == world.getRegistryKey() ? spawn : null;
+    }
 
     /**
      * An AI runner in a running manhunt, a hunter in sight (M-02b): it keeps its distance, at a run, away from the
-     * nearest hunter it can see, and fights only once caught. Null when no hunter is in sight, or the player runs from
-     * nobody; its goal goes on.
+     * nearest hunter it can see but never toward its home while another way is open (M-02c), and fights only once
+     * caught. Running weighs more than eating, so it eats once clear, at a safe distance. Null when no hunter is in
+     * sight, or the player runs from nobody; its goal goes on.
      */
-    private List<NativeTaskCandidate> evadeCandidates(NativePlayerBody body) {
+    private List<NativeTaskCandidate> evadeCandidates(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         var match = matches.running(player.getUuid())
                 .filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT && m.runners().contains(player.getUuid())).orElse(null);
@@ -7180,7 +7202,10 @@ final class PlayerRuntime {
                     || !player.canSee(seen)) continue;
             if (hunter == null || player.squaredDistanceTo(seen) < player.squaredDistanceTo(hunter)) hunter = seen;
         }
-        if (hunter == null) return null;
+        if (hunter == null) {
+            if (evadingTo.remove(player.getUuid()) != null) KindredMod.LOGGER.info("{} is clear of its hunters", player.getName().getString());
+            return null;
+        }
         UUID taskId = UUID.nameUUIDFromBytes(("evade:" + match.id() + ":" + player.getUuid()).getBytes(StandardCharsets.UTF_8));
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
@@ -7195,7 +7220,12 @@ final class PlayerRuntime {
         away = away.normalize();
         var navigator = new NativeNavigator(player.getServerWorld());
         BlockPos feet = player.getBlockPos(), target = null;
-        for (double turn : new double[] {0, 45, -45, 90, -90}) {
+        // Never toward its own home, its base or the bed it sleeps in: a chased player does not lead its pursuers there
+        // (M-02c). Only when every way off is toward home does it run that way all the same.
+        BlockPos home = homeToKeep(entry, player);
+        double homeX = home == null ? 0 : home.getX() + 0.5 - player.getX(), homeZ = home == null ? 0 : home.getZ() + 0.5 - player.getZ();
+        if (homeX * homeX + homeZ * homeZ > HOME_KEPT * HOME_KEPT) homeX = homeZ = 0;
+        for (double turn : dev.kindred.core.match.EvasionCourse.turns(away.x, away.z, homeX, homeZ)) {
             Vec3d way = away.rotateY((float) Math.toRadians(turn));
             BlockPos at = BlockPos.ofFloored(feet.getX() + 0.5 + way.x * 16, feet.getY(), feet.getZ() + 0.5 + way.z * 16);
             for (int dy : new int[] {0, 1, -1, 2, -2}) {

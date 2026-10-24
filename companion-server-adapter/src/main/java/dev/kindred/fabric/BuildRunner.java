@@ -60,6 +60,8 @@ final class BuildRunner {
     private final Map<Pos, Integer> wrong = new HashMap<>();
     private final Set<Pos> givenUp = new HashSet<>();
     private final Map<Pos, Integer> refused = new HashMap<>();
+    /** Whether it has gone back once, all else built, to what it gave up on as it went. */
+    private boolean retriedGivenUp;
     /** Spots where the server refused a step the plan thought sound; avoided until the build gets on again. */
     private final Set<Pos> shunned = new HashSet<>();
     /** Where the feet stood for the place or break last given. */
@@ -221,6 +223,12 @@ final class BuildRunner {
     /** One-second waits for a way up out of where it dug, before it gives the rest of the build up. */
     private int belowWaits;
     private static final int BELOW_WAITS = 30;
+    /**
+     * Times it has waited, with no way on to stone, for the spots it set aside to come free (about a minute's worth)
+     * before the build ends without its stone.
+     */
+    private int stoneWaits;
+    private static final int STONE_WAITS = 60;
 
     private boolean complete;
 
@@ -326,6 +334,17 @@ final class BuildRunner {
         }
         return switch (step.kind()) {
             case DONE -> {
+                // What it gave up on as it went (a break refused while its own scaffold stood on the cell, a placement
+                // refused while it stood in it) is tried once more when all else is built: what was in the way is
+                // likely gone. A cabin's floor plank so left had kept a base unfinished until its retry five minutes on.
+                if (!givenUp.isEmpty() && !retriedGivenUp && tally.placed() < tally.total()) {
+                    retriedGivenUp = true;
+                    givenUp.clear();
+                    refused.clear();
+                    wrong.clear();
+                    progress = blueprint.name() + ": " + tally.placed() + "/" + tally.total() + " placed - once more at what it gave up on";
+                    yield Optional.of(wait("Once more at what it gave up on"));
+                }
                 done = true;
                 complete = tally.placed() == tally.total();
                 progress = blueprint.name() + ": built, " + tally.placed() + "/" + tally.total() + " blocks"
@@ -443,6 +462,20 @@ final class BuildRunner {
                     // Never the steps it stood on going down: they are its way back up.
                     if (feet.y() < siteFloor()) stood.add(feet.down());
                     var dig = supply.campaign().stoneFor(body, siteFloor() - STONE_DEPTH, p -> !onSite(pos(p)) && !stood.contains(pos(p)));
+                    // No way on from here, every stone in sight walled off from walking and every step down refused: a
+                    // tunnel straight on away from the site, else a wait for the spots it set aside to come free, before
+                    // the build ends without its stone (a cabin ended so with 61 of its 62 cobblestone in hand).
+                    if (dig.isEmpty() && feet.y() < siteFloor()) {
+                        onSite(feet);
+                        int dx = feet.x() - (box[0] + box[3]) / 2, dz = feet.z() - (box[2] + box[5]) / 2;
+                        Direction away = Math.abs(dx) >= Math.abs(dz) ? (dx >= 0 ? Direction.EAST : Direction.WEST) : (dz >= 0 ? Direction.SOUTH : Direction.NORTH);
+                        dig = supply.campaign().tunnelAlong(body, away, "Dig for stone");
+                    }
+                    if (dig.isEmpty() && ++stoneWaits < STONE_WAITS) {
+                        needsNote = "Finding a way on to stone";
+                        return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Finding a way on to stone"));
+                    }
+                    if (dig.isPresent()) stoneWaits = 0;
                     if (dig.isEmpty()) {
                         needsNote = "No way to stone from here for the rest of the build";
                         wanting = missing;

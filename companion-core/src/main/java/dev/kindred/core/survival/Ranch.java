@@ -93,6 +93,8 @@ public final class Ranch {
     static final long DRAW = 60;
     /** Ticks it waits for animals to move off the gate before opening it to go out anyway. */
     static final long CLEAR = 200;
+    /** Times it goes back out for one animal hung on the fence beside the gate, to bring it round in line again. */
+    static final int RELINES = 2;
     /** Within this of an animal it feeds it (a player reaches three blocks to an entity's box). */
     static final double FEEDING = 2.5;
     /** Within this of the gate it works it. */
@@ -108,6 +110,7 @@ public final class Ranch {
     private final Kind kind;
     private Phase phase = Phase.BUILD;
     private UUID leading;
+    private int relined;
     private long waitingSince = -1, clearSince = -1;
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
@@ -279,6 +282,7 @@ public final class Ranch {
             leading = animal.id();
             waitingSince = -1;
             lined = false;
+            relined = 0;
         }
         double apart = Math.sqrt(animal.at().distanceSquared(seen.feet()));
         if (in) lined = false;
@@ -290,6 +294,16 @@ public final class Ranch {
             }
             // Following: across the pen for it to come in. One that will not come in is left, and another fetched.
             if (waitingSince < 0) waitingSince = seen.tick();
+            // One hung on the fence beside the gate, after a while drawn from inside, is brought round in line with
+            // the gate again from outside, a couple of times, rather than given up: following the food it had walked
+            // into the fence there and stayed (the ranch fixture, about one suite run in three).
+            boolean beside = animal.at().z() == outside().z() && animal.at().x() != outside().x()
+                    && Math.abs(animal.at().x() - outside().x()) <= 2;
+            if (beside && seen.tick() - waitingSince > 2 * DRAW && relined < RELINES) {
+                relined++;
+                waitingSince = -1;
+                return out(seen, "Open the gate", "Out to bring the " + kind.noun() + " round to the gate");
+            }
             if (seen.tick() - waitingSince > COME_IN) {
                 givenUp.add(animal.id());
                 leading = null;

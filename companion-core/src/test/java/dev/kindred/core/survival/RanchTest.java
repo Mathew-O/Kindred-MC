@@ -110,6 +110,27 @@ class RanchTest {
     }
 
     @Test
+    void oneHungOnTheFenceBesideTheGateIsBroughtRoundInLineWithItAgainFromOutside() {
+        var ranch = ranch();
+        ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 2, 7)));
+        // Bess follows to the fence beside the gate and stays there: drawn from inside a while first.
+        assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(3, 1, true, 8, 30, cow(DAISY, 3, 3), cow(BESS, 2, 7))));
+        // Then out through the gate, the food put away, to bring her round.
+        var out = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 1, true, 8, 130, cow(DAISY, 3, 3), cow(BESS, 2, 7))));
+        assertEquals(new Pos(3, 64, 7), out.target());
+        assertEquals("Out to bring the cow round to the gate", out.why());
+        assertFalse(out.holdFood());
+        // Outside: round to the front of the gate with the food, for her to come up behind it in line.
+        var round = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 7, true, 8, 140, cow(DAISY, 3, 3), cow(BESS, 2, 8))));
+        assertEquals(new Pos(3, 64, 10), round.target());
+        assertTrue(round.holdFood());
+        // In line with the gate, as one that will not come in, she is in the end given up as before.
+        var stubborn = ranch();
+        stubborn.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 3, 7)));
+        assertInstanceOf(Ranch.Step.Wait.class, stubborn.next(seen(3, 1, true, 8, 130, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
+    }
+
+    @Test
     void oneThatSlipsOutAsItLeavesIsBroughtBackIn() {
         var ranch = ranch();
         var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(2, 64, 2), true, false, false);
