@@ -24,6 +24,25 @@ class SocialBrainTest {
     }
 
     @Test
+    void aWordToTheTeamIsSaidUnderTheSameAllowanceAndNotAgainForFiveMinutes() {
+        SocialBrain brain = new SocialBrain();
+        brain.observe(snapshot(true, false, null), profile, 0);
+        brain.team("I'll go to the Nether for blaze rods.", "part:NETHER", profile, 0);
+        var said = brain.observe(snapshot(true, false, null), profile, 0).orElseThrow();
+        assertEquals(SocialBrain.Topic.TEAM, said.topic());
+        assertEquals("I'll go to the Nether for blaze rods.", said.text());
+        brain.didSpeak(said, profile, 0);
+        // Reckoned again each step, the same part is not said again.
+        brain.team("I'll go to the Nether for blaze rods.", "part:NETHER", profile, 200_000);
+        assertTrue(brain.observe(snapshot(true, false, null), profile, 200_000).isEmpty());
+        // Silenced, nothing.
+        SocialBrain quiet = new SocialBrain();
+        quiet.observe(snapshot(true, false, null), profile, 0);
+        quiet.team("I'll get food.", "part:GATHERING", profile.withAmbient(false), 0);
+        assertTrue(quiet.observe(snapshot(true, false, null), profile, 0).isEmpty());
+    }
+
+    @Test
     void privateConversationDoesNotGreetOtherPlayersOrCompanions() {
         for (var kind : List.of(SocialSnapshot.Kind.PLAYER, SocialSnapshot.Kind.COMPANION)) {
             SocialBrain brain = new SocialBrain();

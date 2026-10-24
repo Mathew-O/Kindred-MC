@@ -47,8 +47,8 @@ public final class RunDivision {
         }
     }
 
-    /** What a player is to do, and why, in words it can say. */
-    public record Part(ShareOut.Work work, String why) { }
+    /** What a player is to do, why, and what it says of it to the team as it takes it up. */
+    public record Part(ShareOut.Work work, String why, String says) { }
 
     /** Each player's part, in the team's order. */
     public static Map<UUID, Part> divide(List<Player> team, Run run) {
@@ -57,37 +57,42 @@ public final class RunDivision {
         var byId = new ArrayList<>(team);
         byId.sort(Comparator.comparing(Player::id));
         if (run.strongholdFound() && run.readyForEnd()) {
-            for (Player p : byId) parts.put(p.id(), new Part(ShareOut.Work.STRONGHOLD, "To the stronghold, to meet for the End"));
+            for (Player p : byId) parts.put(p.id(), new Part(ShareOut.Work.STRONGHOLD, "To the stronghold, to meet for the End",
+                    "Heading to the stronghold for the End."));
             return parts;
         }
         if (!run.portalLit()) {
             Player digger = best(byId, Comparator.comparing(Player::pickaxe));
             for (Player p : byId) {
-                parts.put(p.id(), p == digger ? new Part(ShareOut.Work.GATHERING, "Obsidian for the portal, with the best pickaxe")
-                        : new Part(ShareOut.Work.GATHERING, "Iron, food and wood for the run"));
+                parts.put(p.id(), p == digger ? new Part(ShareOut.Work.GATHERING, "Obsidian for the portal, with the best pickaxe",
+                        "I've got the best pickaxe; I'll dig the obsidian for the portal.")
+                        : new Part(ShareOut.Work.GATHERING, "Iron, food and wood for the run", "I'll get iron, food and wood."));
             }
             return parts;
         }
         boolean eyesEnough = run.eyes() >= EYES;
         if (!eyesEnough && (run.blazeRods() < RODS || run.enderPearls() < PEARLS)) {
             Player nether = best(byId, Comparator.comparingInt(Player::protection));
-            parts.put(nether.id(), new Part(ShareOut.Work.NETHER, run.blazeRods() < RODS
-                    ? "Blaze rods from a fortress, the best protected" : "Pearls, the best protected"));
+            parts.put(nether.id(), run.blazeRods() < RODS
+                    ? new Part(ShareOut.Work.NETHER, "Blaze rods from a fortress, the best protected", "I'll go to the Nether for blaze rods.")
+                    : new Part(ShareOut.Work.NETHER, "Pearls, the best protected", "I'll go to the Nether for pearls."));
             for (Player p : byId) {
                 if (parts.containsKey(p.id())) continue;
                 // A second to the Nether, for pearls from piglins, only with gold to trade and pearls short.
                 boolean barter = byId.size() >= 3 && p.gold() >= 8 && run.enderPearls() < PEARLS
                         && parts.values().stream().filter(part -> part.work() == ShareOut.Work.NETHER).count() < 2;
-                parts.put(p.id(), barter ? new Part(ShareOut.Work.NETHER, "Pearls from piglins, with gold to trade")
-                        : new Part(ShareOut.Work.GATHERING, "Food, wool for beds, and arrows for the End"));
+                parts.put(p.id(), barter ? new Part(ShareOut.Work.NETHER, "Pearls from piglins, with gold to trade",
+                        "I've got gold; I'll trade with the piglins for pearls.")
+                        : new Part(ShareOut.Work.GATHERING, "Food, wool for beds, and arrows for the End", "I'll get food, wool for beds, and arrows."));
             }
             return parts;
         }
         Player finder = best(byId, Comparator.comparingInt(Player::eyes));
         for (Player p : byId) {
-            parts.put(p.id(), p == finder ? new Part(ShareOut.Work.STRONGHOLD, run.strongholdFound()
-                    ? "At the stronghold, the others coming" : "The stronghold, with the most eyes")
-                    : new Part(ShareOut.Work.GATHERING, "Beds, arrows and blocks for the End"));
+            parts.put(p.id(), p == finder ? (run.strongholdFound()
+                    ? new Part(ShareOut.Work.STRONGHOLD, "At the stronghold, the others coming", "I'm at the stronghold. Come when you're ready.")
+                    : new Part(ShareOut.Work.STRONGHOLD, "The stronghold, with the most eyes", "I've got the most eyes; I'll find the stronghold."))
+                    : new Part(ShareOut.Work.GATHERING, "Beds, arrows and blocks for the End", "I'll get beds, arrows and blocks for the End."));
         }
         return parts;
     }

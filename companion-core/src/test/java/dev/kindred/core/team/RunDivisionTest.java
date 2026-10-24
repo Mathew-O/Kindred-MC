@@ -30,6 +30,8 @@ class RunDivisionTest {
         var parts = RunDivision.divide(List.of(wren, mason, rue), new Run(true, 0, 0, 0, false, false));
         assertEquals(Work.NETHER, parts.get(WREN).work(), "the best protected: " + parts);
         assertTrue(parts.get(WREN).why().startsWith("Blaze rods"));
+        assertEquals("I'll go to the Nether for blaze rods.", parts.get(WREN).says());
+        assertEquals("I've got gold; I'll trade with the piglins for pearls.", parts.get(RUE).says());
         assertEquals(Work.NETHER, parts.get(RUE).work(), "with gold to trade: " + parts);
         assertEquals(Work.GATHERING, parts.get(MASON).work());
         // Two of them: no second to the Nether, whatever gold it holds.
