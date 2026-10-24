@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
  *       2).</li>
  *   <li><b>Recovery.</b> A stuck spell: the same task ending the same way eight times running. Recovered if a task
  *       of another label is completed after it (target: 90%).</li>
+ *   <li><b>Walks in vain.</b> Walks that found no way, a minute, and the longest run of them with no task done between:
+ *       one target after another from a place it cannot leave, which no measure of one target sees.</li>
  * </ul>
  * Run with the log's path: {@code ./gradlew :companion-testkit:runMetrics --args=<log>}.
  */
@@ -55,6 +57,8 @@ public final class RunMetrics {
         int switches;
         long first = -1, last = -1;
         int stuckSpells, recovered;
+        int walksInVain, longestVainRun;
+        private int vainRun;
 
         // Working state.
         private final Map<String, Long> lastFailure = new HashMap<>();
@@ -91,12 +95,23 @@ public final class RunMetrics {
 
         public int recovered() { return recovered; }
 
+        public int walksInVain() { return walksInVain; }
+
+        public int longestVainRun() { return longestVainRun; }
+
+        /** Walks that found no way, a minute of the run. */
+        public double walksInVainPerMinute() {
+            return walksInVain / (Math.max(1, last - first) / 60.0);
+        }
+
         @Override
         public String toString() {
             return String.format(Locale.ROOT, "%s: %d tasks done, %d blocked, %d cut short; failure repeats within 10 min: worst %d%s;"
-                            + " interruptions %d, work resumed %d (%.0f%%); work changes %.2f a minute; stuck %d, recovered %d (%.0f%%)",
+                            + " interruptions %d, work resumed %d (%.0f%%); work changes %.2f a minute; stuck %d, recovered %d (%.0f%%);"
+                            + " walks in vain %d (%.1f a minute), at most %d running",
                     name, completed, blocked, cancelled, worstRepeats, worstFailure.isEmpty() ? "" : " (" + worstFailure + ")",
-                    interruptions, resumed, 100 * resumedShare(), switchesPerMinute(), stuckSpells, recovered, 100 * recoveredShare());
+                    interruptions, resumed, 100 * resumedShare(), switchesPerMinute(), stuckSpells, recovered, 100 * recoveredShare(),
+                    walksInVain, walksInVainPerMinute(), longestVainRun);
         }
     }
 
@@ -144,6 +159,12 @@ public final class RunMetrics {
             case "COMPLETED" -> p.completed++;
             case "BLOCKED" -> p.blocked++;
             default -> p.cancelled++;
+        }
+        if (state.equals("BLOCKED") && skill.equals("native_goto") && (reason.startsWith("No walkable route") || reason.startsWith("Route to"))) {
+            p.walksInVain++;
+            p.longestVainRun = Math.max(p.longestVainRun, ++p.vainRun);
+        } else if (state.equals("COMPLETED")) {
+            p.vainRun = 0;
         }
         if (state.equals("BLOCKED")) {
             String key = skill + ": " + reason + " [" + label + "]";

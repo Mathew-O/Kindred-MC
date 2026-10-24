@@ -70,6 +70,21 @@ class RunMetricsTest {
     }
 
     @Test
+    void walksInVainAreCountedAndTheLongestRunOfThemWithNothingDoneBetween() {
+        var lines = List.of(
+                at(0, 0, "Kindred native_goto BLOCKED: No walkable route toward 1, 2, 3 [Walk to logs at 1, 2, 3]"),
+                at(0, 1, "Kindred native_goto BLOCKED: No walkable route toward 4, 5, 6 [Walk to logs at 4, 5, 6]"),
+                at(0, 2, "Kindred native_goto BLOCKED: Route to 7, 8, 9 is blocked [Walk to logs at 7, 8, 9]"),
+                at(0, 3, "Kindred native_break COMPLETED [Climb toward the surface for logs: clear 1, 2, 3]"),
+                at(2, 0, "Kindred native_goto BLOCKED: No walkable route toward 1, 2, 3 [Walk to logs at 1, 2, 3]"),
+                at(2, 1, "Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Seal]"));
+        var kindred = RunMetrics.of(lines).players().get("Kindred");
+        assertEquals(4, kindred.walksInVain(), "walks only, not a placement");
+        assertEquals(3, kindred.longestVainRun(), "three running before the dig");
+        assertEquals(4 / (121 / 60.0), kindred.walksInVainPerMinute(), 1e-9, "over the two minutes and a second the log spans");
+    }
+
+    @Test
     void aRunPastMidnightKeepsItsOrder() {
         var lines = List.of(
                 "[23:59:50] [Server thread/INFO] (Kindred) Wren native_goto BLOCKED: No walkable route toward 1, 2, 3 [Walk]",
