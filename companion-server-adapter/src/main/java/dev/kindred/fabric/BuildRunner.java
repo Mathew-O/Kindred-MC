@@ -76,6 +76,8 @@ final class BuildRunner {
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
     private Pos lastStance;
     private int stanceWalks;
+    /** Walks in a row to one spot to place from, never there by the plan's reckoning, before that spot is avoided. */
+    private static final int WALKS_TO_A_SPOT = 12;
     /** Waits in a row for a landing before it looks for a way round a block it cannot reach. */
     private int airWaits;
     private int failures;
@@ -184,6 +186,39 @@ final class BuildRunner {
     private PortalRunCampaign.Task outside(Pos spot, String reason) {
         progress = blueprint.name() + ": " + reason;
         return new PortalRunCampaign.Task("native_goto", Map.of("x", str(spot.x()), "y", str(spot.y()), "z", str(spot.z()), "range", "1.0"), reason);
+    }
+
+    /**
+     * Ground to stand on outside the build near {@code at}: the spot two blocks out from the side nearest it, at the
+     * floor's height, or where that is no place to stand (a tree's trunk, a fence, water), the nearest place round it
+     * that is, a block up or down at most. Aimed at a spot no one could stand on, the walk was "no walkable route" eight
+     * times, and a cabin in the woods stopped short of its roof (a seed fixture, in a suite run).
+     */
+    private Pos groundBeside(Pos at, ServerWorld world) {
+        Pos want = groundBeside(at);
+        for (int r = 0; r <= 3; r++) {
+            Pos best = null;
+            for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+                if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                for (int dy : new int[] {0, 1, -1}) {
+                    Pos p = want.add(dx, dy, dz);
+                    if (onSite(p) || !standable(world, blockPos(p))) continue;
+                    if (best == null || flat(p, want) < flat(best, want)) best = p;
+                    break;
+                }
+            }
+            if (best != null) return best;
+        }
+        return want;
+    }
+
+    /** Ground with a full top under {@code feet}, and room for a player's body above it. */
+    private static boolean standable(ServerWorld world, BlockPos feet) {
+        if (!world.isChunkLoaded(feet)) return false;
+        BlockPos below = feet.down();
+        return world.getBlockState(below).isSideSolidFullSquare(world, below, net.minecraft.util.math.Direction.UP)
+                && world.getBlockState(feet).getCollisionShape(world, feet).isEmpty() && world.getFluidState(feet).isEmpty()
+                && world.getBlockState(feet.up()).getCollisionShape(world, feet.up()).isEmpty();
     }
 
     /** The ground two blocks outside the build nearest {@code at}, clear of scaffolds against its walls, at the floor's height. */
@@ -410,9 +445,9 @@ final class BuildRunner {
             // and the nine by seven cabin in full run 19).
             case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(wait("Landing first"))
                     : step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
-                    ? Optional.of(outside(groundBeside(step.target()), step.reason() + "; over to it from " + feet))
+                    ? Optional.of(outside(groundBeside(step.target(), world), step.reason() + "; over to it from " + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
-                    ? Optional.of(outside(groundBeside(feet), step.reason() + "; down off the build first"))
+                    ? Optional.of(outside(groundBeside(feet, world), step.reason() + "; down off the build first"))
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
                 if (!at(player, step.stance())) {
@@ -450,6 +485,15 @@ final class BuildRunner {
                 if (!walkedThere && !at(player, step.stance())) {
                     stanceWalks = step.stance().equals(lastStance) ? stanceWalks + 1 : 1;
                     lastStance = step.stance();
+                    // Walked to the same spot a dozen times and never there by the plan's reckoning (the hut's last
+                    // stair from its scaffold, in a suite run): that spot is avoided until the build gets on, and
+                    // another found to place from.
+                    if (stanceWalks > WALKS_TO_A_SPOT) {
+                        shunned.add(step.stance());
+                        stanceWalks = 0;
+                        lastStance = null;
+                        yield Optional.of(wait("Another spot to place " + shortName(step.spec()) + " from, not " + step.stance()));
+                    }
                     // Set out again for the block it set out for two walks ago, another between: it walks to and fro,
                     // and this time places it where it walks to. Committed to every placement walked to, the keep's
                     // last roof blocks, and a cabin's, came to be left where no scaffold reached them. Asked again for
@@ -459,7 +503,7 @@ final class BuildRunner {
                         placeToBefore = lastPlaceTo;
                         lastPlaceTo = step.target();
                     }
-                    yield Optional.of(go(step.stance(), "To a spot to place " + shortName(step.spec()) + " at " + step.target() + " from " + feet));
+                    yield Optional.of(go(step.stance(), "To " + step.stance() + " to place " + shortName(step.spec()) + " at " + step.target() + " from " + feet));
                 }
                 lastStance = null;
                 stanceWalks = 0;
