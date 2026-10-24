@@ -69,6 +69,13 @@ final class BuildRunner {
     /** A break it is walking to, and where from: broken on arriving, not planned again from there. */
     private Pos breakTarget, breakStance;
     private int breakWalks;
+    /** A placement it walked over to make, to be made there, as it was planned when it set out. */
+    private ConstructionPlanner.Step placeStep;
+    /** The last two blocks it set out to place, to see it walk to and fro between them. */
+    private Pos lastPlaceTo, placeToBefore;
+    /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
+    private Pos lastStance;
+    private int stanceWalks;
     /** Waits in a row for a landing before it looks for a way round a block it cannot reach. */
     private int airWaits;
     private int failures;
@@ -189,10 +196,12 @@ final class BuildRunner {
         else if (least == east) x = box[3] + 2;
         else if (least == north) z = box[2] - 2;
         else z = box[5] + 2;
-        return new Pos(x, box[1], z);
+        // At the floor's height, not its lowest block's: a tower's foundation is a course under the ground, and its walk
+        // over to a block aimed into the ground, "no walkable route", eight times, and stopped (the hall's south-east
+        // tower, M-06a).
+        return new Pos(x, siteFloor(), z);
     }
 
-    /** The height of the build's lowest blocks. */
     /**
      * The height of the build's floor: its lowest course, or its origin's height where it goes below that, as the
      * keep's way in under its wall does (M-06a). Measured from its lowest block, a player on a scaffold beside the
@@ -341,7 +350,8 @@ final class BuildRunner {
             }
             breakTarget = breakStance = null;
         }
-        var step = ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
+        var walkedTo = placeWalkedTo(player, site);
+        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
         if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
             var fetch = fetch(body, supply, wanted, site, step);
             if (fetch.isPresent()) {
@@ -431,7 +441,28 @@ final class BuildRunner {
                         PROP + step.target()));
             }
             case PLACE -> {
-                if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To a spot to place " + shortName(step.spec()) + " from " + feet));
+                // Walked to the same spot three times over, its feet in that spot's own block but never standing just
+                // there (on a stair it had just placed, the walk called it there and the runner did not, 7040 times, in
+                // the hall): placed from where it stands, the placement aimed from its own eyes. Short of the block, it
+                // walks on as before.
+                boolean walkedThere = step.stance().equals(lastStance) && stanceWalks >= 3 && player.isOnGround()
+                        && standing(player).equals(step.stance());
+                if (!walkedThere && !at(player, step.stance())) {
+                    stanceWalks = step.stance().equals(lastStance) ? stanceWalks + 1 : 1;
+                    lastStance = step.stance();
+                    // Set out again for the block it set out for two walks ago, another between: it walks to and fro,
+                    // and this time places it where it walks to. Committed to every placement walked to, the keep's
+                    // last roof blocks, and a cabin's, came to be left where no scaffold reached them. Asked again for
+                    // the same walk before it set out, as the runtime may ask, nothing changes.
+                    if (!step.target().equals(lastPlaceTo)) {
+                        if (step.target().equals(placeToBefore)) placeStep = step;
+                        placeToBefore = lastPlaceTo;
+                        lastPlaceTo = step.target();
+                    }
+                    yield Optional.of(go(step.stance(), "To a spot to place " + shortName(step.spec()) + " at " + step.target() + " from " + feet));
+                }
+                lastStance = null;
+                stanceWalks = 0;
                 Item item = Registries.ITEM.get(Identifier.of(step.item()));
                 int slot = slotOf(player, item);
                 if (slot < 0) yield Optional.of(wait("No " + shortName(step.spec()) + " in hand"));
@@ -746,9 +777,36 @@ final class BuildRunner {
         return new PortalRunCampaign.Task("native_break", Map.copyOf(args), reason + " at " + target);
     }
 
+    /**
+     * The placement it walked over to make, as planned when it set out, if it stands in the spot it set out for and the
+     * block is still to be placed; else null, to plan the whole build again. Planned again with the rest, the nearest
+     * block from the spot for a plank was a stone whose spot was back where it came from, and from there the plank's
+     * again: it walked to and fro placing neither (the farm ward's own way in, M-06a). Planned again for the plank
+     * alone, it found another spot for it, and walked on. Kept while it is not yet there: the runtime may ask for the
+     * next step again before the walk starts, and taken then, the commitment was gone before it set out.
+     */
+    private ConstructionPlanner.Step placeWalkedTo(ServerPlayerEntity player, BuildSite site) {
+        var step = placeStep;
+        if (step == null) return null;
+        boolean placed = site.cell(step.target()).map(c -> c.state() != null && c.state().sameAs(step.spec())).orElse(false);
+        if (placed) placeStep = null;
+        if (placed || !at(player, step.stance())) return null;
+        placeStep = null;
+        return step;
+    }
+
     private static boolean at(ServerPlayerEntity player, Pos stance) {
-        return player.getBlockX() == stance.x() && player.getBlockY() == stance.y() && player.getBlockZ() == stance.z()
+        return standing(player).equals(stance)
                 && Math.hypot(player.getX() - (stance.x() + 0.5), player.getZ() - (stance.z() + 0.5)) < 0.45 && player.isOnGround();
+    }
+
+    /**
+     * The block it stands in as a plan reckons it, on top of whatever it stands on: on a stair's step, a slab or
+     * farmland, the block above that, not the stair's own. Stood on a stair it had just placed in the hall's house,
+     * half a block up, it was never "at" the spot on top of the stair it walked to, and walked there again more than 4700 times.
+     */
+    private static Pos standing(ServerPlayerEntity player) {
+        return new Pos(player.getBlockX(), net.minecraft.util.math.MathHelper.floor(player.getY() + 0.5), player.getBlockZ());
     }
 
     private static PortalRunCampaign.Task go(Pos stance, String label) {

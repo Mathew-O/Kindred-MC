@@ -91,6 +91,23 @@ public final class PlayerCommands {
                                 .then(CommandManager.argument("target", StringArgumentType.string())
                                         .suggests((context, builder) -> suggestBots(builder))
                                         .executes(context -> ranch(context, true, true))))));
+        root.then(CommandManager.literal("pasture")
+                .then(CommandManager.argument("animal", StringArgumentType.word())
+                        .suggests((context, builder) -> { for (var kind : dev.kindred.core.survival.Ranch.Kind.values()) builder.suggest(kind.noun()); return builder.buildFuture(); })
+                        .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                                .executes(context -> pasture(context, false))
+                                .then(CommandManager.argument("target", StringArgumentType.string())
+                                        .suggests((context, builder) -> suggestBots(builder))
+                                        .executes(context -> pasture(context, true))))));
+        root.then(CommandManager.literal("field")
+                .then(CommandManager.literal("stop").executes(context -> field(context, false, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> field(context, false, true))))
+                .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                        .executes(context -> field(context, true, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> field(context, true, true)))));
         root.then(CommandManager.literal("skin")
                 .then(CommandManager.literal("list").executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
@@ -1091,6 +1108,36 @@ public final class PlayerCommands {
             return 0;
         }
         return runtime.startRanch(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "at"), kind.get());
+    }
+
+    /** A pair brought into the pasture ward of the keep at {@code at} by its doorway, and bred (M-06a). */
+    private static int pasture(CommandContext<ServerCommandSource> context, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        String animal = StringArgumentType.getString(context, "animal").toUpperCase(java.util.Locale.ROOT);
+        var kind = java.util.Arrays.stream(dev.kindred.core.survival.Ranch.Kind.values()).filter(k -> k.name().equals(animal)).findFirst();
+        if (kind.isEmpty()) {
+            context.getSource().sendError(Text.literal("A pasture is for cows, sheep, pigs or chickens: cow, sheep, pig, chicken"));
+            return 0;
+        }
+        return runtime.startPasture(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "at"), kind.get());
+    }
+
+    /** The farm ward's field of the keep at {@code at}, watered, tilled and sown (M-06a); or stopped. */
+    private static int field(CommandContext<ServerCommandSource> context, boolean start, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        return runtime.startField(context.getSource(), id, start ? BlockPosArgumentType.getBlockPos(context, "at") : null);
     }
 
     private static int unavailable(ServerCommandSource source) {

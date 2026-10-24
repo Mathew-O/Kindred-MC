@@ -108,6 +108,12 @@ public final class Ranch {
     private final Pos origin;
     private final int width, depth;
     private final Kind kind;
+    /**
+     * Where the pen is walled in (M-06a's pasture ward): the spot two out from the doorway in the wall, in line with
+     * it, that a led animal is brought up to from outside; null in the open.
+     */
+    private final Pos approach;
+    private long alignSince = -1;
     private Phase phase = Phase.BUILD;
     private UUID leading;
     private int relined;
@@ -123,6 +129,11 @@ public final class Ranch {
     private int returns;
 
     public Ranch(Pos origin, int width, int depth, Kind kind) {
+        this(origin, width, depth, kind, null);
+    }
+
+    /** A pen walled in, its animals led in by a doorway, from {@code approach} two out from it (or null, in the open). */
+    public Ranch(Pos origin, int width, int depth, Kind kind, Pos approach) {
         if (width < 5 || depth < 5 || width > 15 || depth > 15 || width % 2 == 0) {
             throw new IllegalArgumentException("A pen 5 to 15 blocks a side, an odd width so its gate is in the middle");
         }
@@ -130,6 +141,7 @@ public final class Ranch {
         this.width = width;
         this.depth = depth;
         this.kind = kind;
+        this.approach = approach;
     }
 
     public Kind kind() { return kind; }
@@ -329,6 +341,22 @@ public final class Ranch {
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
         if (apart > LAGGING) return new Step.Wait(true, "Let the " + kind.noun() + " catch up");
+        // Walled in, from outside: up to the doorway, the animal brought up behind in line with it, then straight
+        // through without stopping in it. Stopped to let it catch up there, the player stood in the doorway and the
+        // animal could not pass it (the pasture fixture, 2026-10-24); led straight for the food, it walked into the wall.
+        if (approach != null && seen.feet().z() >= approach.z() - 1) {
+            if (Math.sqrt(approach.distanceSquared(seen.feet())) > 1.5) {
+                alignSince = -1;
+                return go(approach, 1, true, LEG, "Lead the " + kind.noun() + " up to the doorway");
+            }
+            boolean behind = Math.abs(animal.at().x() - approach.x()) <= 1 && animal.at().z() > approach.z();
+            if (alignSince < 0) alignSince = seen.tick();
+            if (!behind && seen.tick() - alignSince <= DRAW) return new Step.Wait(true, "Let the " + kind.noun() + " come up behind, in line with the doorway");
+            // The wait is not begun again here: asked again before the walk through has run, it is the same walk. Begun
+            // again, the second asking waited, and the walk was never made (the pasture fixture, 2026-10-24).
+            lined = false;
+            return go(front(), 1, true, 0, "Through the doorway, the " + kind.noun() + " behind");
+        }
         // Round to the front of the gate first, so the animal comes up behind it in line with the gate rather than
         // along the fence, where going straight for the food walks it into the fence.
         if (!lined) {

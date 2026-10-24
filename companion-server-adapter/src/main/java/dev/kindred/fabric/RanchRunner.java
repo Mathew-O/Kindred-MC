@@ -18,6 +18,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,12 +37,36 @@ final class RanchRunner {
     private String progress = "Starting";
     private String outcome;
     private boolean done;
+    /**
+     * A pasture's doorway (M-06a), where it has one: opened, its blocks dug out from outside it, before the animals
+     * are brought in, and shut again behind them with the blocks it dug, as the plan {@code shut} placed at {@code at}.
+     */
+    private final List<BlockPos> doorway;
+    private final Blueprint shut;
+    private final BlockPos at;
+    private BuildRunner shutting;
+    private boolean opened;
+    private int openFailures;
+    private String ranched;
 
     RanchRunner(BlockPos origin, Ranch.Kind kind, String wood) {
+        this(origin, kind, wood, null, null);
+    }
+
+    /** A ranch whose animals come in by a doorway, the plan {@code shut} of it placed at {@code at}. */
+    RanchRunner(BlockPos origin, Ranch.Kind kind, String wood, Blueprint shut, BlockPos at) {
         this.origin = origin.toImmutable();
         this.wood = wood;
         this.pen = Generators.pen(7, 7, wood);
-        this.ranch = new Ranch(new Pos(origin.getX(), origin.getY(), origin.getZ()), 7, 7, kind);
+        this.shut = shut;
+        this.at = at == null ? null : at.toImmutable();
+        this.doorway = shut == null ? List.of() : shut.placed(new Pos(at.getX(), at.getY(), at.getZ()), 0).stream().map(b -> pos(b.at()))
+                // Outside first, from the top: the wall's stone, then the lining's planks behind it.
+                .sorted(java.util.Comparator.comparingInt(BlockPos::getZ).reversed().thenComparing(java.util.Comparator.comparingInt(BlockPos::getY).reversed()))
+                .toList();
+        // Its animals brought up to two out from the doorway, in line with it, the wall's own south face.
+        Pos approach = doorway.isEmpty() ? null : new Pos(doorway.getFirst().getX(), origin.getY(), doorway.getFirst().getZ() + 2);
+        this.ranch = new Ranch(new Pos(origin.getX(), origin.getY(), origin.getZ()), 7, 7, kind, approach);
     }
 
     String progress() { return progress; }
@@ -67,6 +92,39 @@ final class RanchRunner {
 
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body, PortalRunCampaign campaign) {
         if (done) return Optional.empty();
+        // Its animals in: the doorway shut behind them, from the blocks it dug out of it.
+        if (ranched != null) {
+            if (shutting == null) shutting = new BuildRunner(shut, at, 0);
+            var task = shutting.next(body);
+            progress = "Shutting the doorway: " + shutting.progress();
+            if (task.isPresent()) return task;
+            done = true;
+            outcome = ranched + (shutting.complete() ? "; the doorway shut behind them" : "; the doorway not shut: " + shutting.progress());
+            progress = outcome;
+            return Optional.empty();
+        }
+        // The doorway opened first, once the pen stands, from the ground just outside it.
+        if (!doorway.isEmpty() && !opened && built(body.entity().getServerWorld())) {
+            var world = body.entity().getServerWorld();
+            var left = doorway.stream().filter(p -> !world.getBlockState(p).isAir()).toList();
+            if (left.isEmpty()) opened = true;
+            else if (openFailures >= 6) {
+                done = true;
+                outcome = "The doorway could not be opened";
+                progress = outcome;
+                return Optional.empty();
+            } else {
+                BlockPos stand = doorway.getFirst().withY(at.getY()).south();
+                progress = "Opening the doorway";
+                if (!body.entity().getBlockPos().equals(stand)) {
+                    return Optional.of(new PortalRunCampaign.Task("native_goto", Map.of("x", str(stand.getX()), "y", str(stand.getY()), "z", str(stand.getZ()),
+                            "range", "0.5"), "To the doorway"));
+                }
+                BlockPos next = left.getFirst();
+                return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(next.getX()), "y", str(next.getY()), "z", str(next.getZ()),
+                        "collect", "true"), "Open the doorway"));
+            }
+        }
         var player = body.entity();
         var world = player.getServerWorld();
         var seen = observe(player, world);
@@ -99,6 +157,10 @@ final class RanchRunner {
             }
             case Ranch.Step.Wait wait -> Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), wait.why()));
             case Ranch.Step.Done d -> {
+                if (shut != null) {
+                    ranched = d.outcome();
+                    yield next(body, campaign);
+                }
                 done = true;
                 outcome = d.outcome();
                 progress = d.outcome();
@@ -109,7 +171,10 @@ final class RanchRunner {
 
     /** A task the build runner gave, when it finished; the pen's own build hears of it. */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
-        if (build != null && !build.done()) build.finished(task, completed, reason, world);
+        if (shutting != null && !shutting.done()) shutting.finished(task, completed, reason, world);
+        else if (!doorway.isEmpty() && !opened && (task.label().equals("Open the doorway") || task.label().equals("To the doorway"))) {
+            if (!completed) openFailures++;
+        } else if (build != null && !build.done()) build.finished(task, completed, reason, world);
     }
 
     private Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {

@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward", "pastureward", "hall", "walltower");
 
     private Generators() { }
 
@@ -194,7 +194,18 @@ public final class Generators {
             case "keep" -> Compounds.keep(new BuildStyle("", "oak", "cobblestone", 0, 0));
             // Its second: a farm ward east of the keep, built at the keep's own spot.
             case "farmward" -> Compounds.farmWard(new BuildStyle("", "oak", "cobblestone", 0, 0));
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward");
+            // Its third: a pasture ward round a pen, south of the farm ward, built at the keep's own spot.
+            case "pastureward" -> Compounds.pastureWard(new BuildStyle("", "oak", "cobblestone", 0, 0));
+            // Its fourth: the hall in its own ward south of the keep, and towers at the compound's outer corners.
+            case "hall" -> Compounds.hall(new BuildStyle("", "oak", "cobblestone", 0, 0));
+            // And a tower at one of the compound's outer corners, from the north-west round: walltower-1 to walltower-5.
+            case "walltower" -> {
+                var towers = Compounds.towers(new BuildStyle("", "oak", "cobblestone", 0, 0));
+                int corner = sizes.isEmpty() ? 1 : sizes.get(0);
+                if (corner < 1 || corner > towers.size()) throw new IllegalArgumentException("A wall tower at corner 1 to " + towers.size() + ", from the north-west round");
+                yield towers.get(corner - 1);
+            }
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward, pastureward, hall, walltower");
         };
     }
 }

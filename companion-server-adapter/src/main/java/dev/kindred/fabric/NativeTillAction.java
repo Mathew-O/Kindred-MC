@@ -36,6 +36,8 @@ final class NativeTillAction extends NativeRecordedAction {
     private final Consumer<Runnable> dispatch;
     private final BlockPos target;
     private final int slot;
+    /** Without an assigned area, till under the server's roaming policy: a field of the player's own (M-06a). */
+    private final boolean roam;
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -51,6 +53,13 @@ final class NativeTillAction extends NativeRecordedAction {
                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer,
                      Consumer<Runnable> dispatch, BlockPos target, int slot) {
+        this(body, lease, worldId, setup, policy, claims, writer, dispatch, target, slot, false);
+    }
+
+    NativeTillAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
+                     Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
+                     ClaimRegistry claims, ActionAdmission.Writer writer,
+                     Consumer<Runnable> dispatch, BlockPos target, int slot, boolean roam) {
         this.body = body;
         this.lease = lease;
         this.worldId = worldId;
@@ -61,9 +70,10 @@ final class NativeTillAction extends NativeRecordedAction {
         this.dispatch = dispatch;
         this.target = target.toImmutable();
         this.slot = slot;
+        this.roam = roam;
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Tilling needs an owned hotbar slot 0..8");
         var s = setup.get();
-        if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
+        if (!roam && (s == null || s.area() == null)) throw new IllegalArgumentException("No work area is assigned.");
     }
 
     @Override
@@ -99,13 +109,12 @@ final class NativeTillAction extends NativeRecordedAction {
             }
 
             var currentSetup = setup.get();
-            if (currentSetup == null || currentSetup.area() == null) {
+            if (!roam && (currentSetup == null || currentSetup.area() == null)) {
                 return Step.blocked("No work area is assigned.", true);
             }
-            setupRevision = currentSetup.revision();
+            setupRevision = currentSetup != null ? currentSetup.revision() : 0;
             dimensionKey = world.getRegistryKey().getValue().toString();
-            var point = new WorkSetup.BlockPoint(target.getX(), target.getY(), target.getZ());
-            var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, "minecraft:farmland", policy.get());
+            var decision = decide(currentSetup);
             if (!decision.allowed()) {
                 return Step.blocked(decision.reason(), true);
             }
@@ -203,12 +212,20 @@ final class NativeTillAction extends NativeRecordedAction {
         if (currentSlotStack.isEmpty() || !(currentSlotStack.getItem() instanceof HoeItem)) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
-        var point = new WorkSetup.BlockPoint(target.getX(), target.getY(), target.getZ());
-        var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, "minecraft:farmland", policy.get());
-        if (!decision.allowed()) return false;
+        if ((currentSetup != null ? currentSetup.revision() : 0) != setupRevision) return false;
+        if (!roam && (currentSetup == null || currentSetup.area() == null)) return false;
+        if (!decide(currentSetup).allowed()) return false;
 
         return claim != null && claims.holdsAll(claim, System.currentTimeMillis());
+    }
+
+    /** The assigned area's rules for farmland there; roaming without one, the server's roaming policy. */
+    private EditPolicy.Decision decide(WorkSetup currentSetup) {
+        if (currentSetup != null && currentSetup.area() != null) {
+            var point = new WorkSetup.BlockPoint(target.getX(), target.getY(), target.getZ());
+            return EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, "minecraft:farmland", policy.get());
+        }
+        return NativeEdits.farm(body.entity(), target, policy.get());
     }
 
     private boolean verifyConservation(InventoryEvidence before, InventoryEvidence after) {

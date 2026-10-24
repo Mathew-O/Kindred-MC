@@ -86,10 +86,10 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
             case "native_block" -> new SkillDescriptor(id, Set.of(), Set.of("ticks"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
-            case "native_till" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(),
+            case "native_till" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("roam"),
                     Set.of("till"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_plant" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("item"),
+            case "native_plant" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("item", "roam"),
                     Set.of("plant"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_harvest" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("slot", "replant"),

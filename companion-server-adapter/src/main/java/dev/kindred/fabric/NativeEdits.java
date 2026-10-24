@@ -27,6 +27,16 @@ final class NativeEdits {
                 : new EditPolicy.Decision(EditPolicy.Verdict.OUTSIDE_AREA, denial);
     }
 
+    /**
+     * Soil tilled, or a seed sown, by a player without an assigned area, in a field of its own (M-06a): the server's
+     * roaming policy for that block.
+     */
+    static EditPolicy.Decision farm(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
+        String denial = RoamingEdits.workstationDenial(player, pos, policy);
+        return denial == null ? new EditPolicy.Decision(EditPolicy.Verdict.ALLOWED, "Roaming survival edit under server policy")
+                : new EditPolicy.Decision(EditPolicy.Verdict.OUTSIDE_AREA, denial);
+    }
+
     /** Using a workstation (loading or emptying a furnace) the player can reach and edit. */
     static EditPolicy.Decision useWorkstation(ServerPlayerEntity player, WorkSetup setup, BlockPos pos, String blockId,
                                               EditPolicy.ServerPolicy policy) {

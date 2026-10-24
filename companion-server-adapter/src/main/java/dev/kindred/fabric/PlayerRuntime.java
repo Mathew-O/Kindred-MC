@@ -1389,12 +1389,12 @@ final class PlayerRuntime {
                 task = new NativeTillAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
-                        Integer.parseInt(arguments.get("slot")));
+                        Integer.parseInt(arguments.get("slot")), Boolean.parseBoolean(arguments.getOrDefault("roam", "false")));
             } else if (skill.equals("native_plant")) {
                 task = new NativePlantAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
-                        Integer.parseInt(arguments.get("slot")));
+                        Integer.parseInt(arguments.get("slot")), Boolean.parseBoolean(arguments.getOrDefault("roam", "false")));
             } else if (skill.equals("native_harvest")) {
                 int harvestSlot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : -1;
                 boolean replant = Boolean.parseBoolean(arguments.getOrDefault("replant", "true"));
@@ -2775,7 +2775,7 @@ final class PlayerRuntime {
         // to last when hunger is low. A running goal weighs food and the night itself; the routine work of a work
         // area keeps its own order for now.
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
-                && (entry.ranch != null || entry.build != null || bases && worldEditsEnabled())) {
+                && (entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled())) {
             var life = lifeCandidates(entry, body);
             if (!life.isEmpty()) {
                 candidates.addAll(life);
@@ -2785,6 +2785,10 @@ final class PlayerRuntime {
 
         if (entry.ranch != null) {
             candidates.addAll(ranchCandidates(entry, body));
+            return candidates;
+        }
+        if (entry.field != null) {
+            candidates.addAll(fieldCandidates(entry, body));
             return candidates;
         }
         if (entry.build != null) {
@@ -3639,6 +3643,35 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
+    /** The field's next step, as one project candidate; survival needs still outrank it (M-06a). */
+    private List<NativeTaskCandidate> fieldCandidates(Entry entry, NativePlayerBody body) {
+        var field = entry.field;
+        var task = field.next(body);
+        entry.goalProgress = "Field: " + field.progress();
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} field: {}", entry.data.displayName(), field.progress());
+        }
+        if (task.isEmpty()) {
+            if (field.done()) {
+                entry.field = null;
+                entry.buildTasks.clear();
+                server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + field.outcome()
+                        + " (the field at " + field.corner.getX() + ", " + field.corner.getY() + ", " + field.corner.getZ() + ")."), false);
+                entry.routineRefreshPending = true;
+            }
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("field:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
     private void buildTaskFinished(Entry entry, SkillRunner.State state) {
         var task = entry.activeBuildTask;
         entry.activeBuildTask = null;
@@ -3657,6 +3690,15 @@ final class PlayerRuntime {
                 }
             }
             entry.campaign.taskFinished(task, completed, server.getTicks());
+        }
+        if (task != null && entry.field != null) {
+            boolean completed = state == SkillRunner.State.COMPLETED;
+            if (!completed) KindredMod.LOGGER.info("{} field step did not complete: {} [{}]", entry.data.displayName(),
+                    entry.runner.reason().orElse(""), task.label());
+            entry.field.finished(task, completed);
+            entry.routineRefreshPending = true;
+            entry.cachedRoutineCandidates = List.of();
+            return;
         }
         if (task != null && entry.ranch != null && entry.nativeBody != null) {
             var world = entry.nativeBody.entity().getServerWorld();
@@ -3742,7 +3784,7 @@ final class PlayerRuntime {
      */
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.snapshot().stopLatched()) return false;
+                || entry.ranch != null || entry.field != null || entry.snapshot().stopLatched()) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4232,10 +4274,86 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * Starts the ranch of a pasture ward (M-06a): the ward of the keep whose plan stands at {@code keep}, as
+     * {@code /aiplayer build pastureward} builds it. Its doorway is opened, a pair of {@code kind} led in through it into
+     * the ward's pen and bred there, and the doorway shut behind them with the blocks it dug out of it. Stopped as a
+     * ranch is.
+     */
+    int startPasture(ServerCommandSource source, UUID id, BlockPos keep, dev.kindred.core.survival.Ranch.Kind kind) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || entry.nativeBody == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
+        var style = new dev.kindred.core.construction.BuildStyle("", "oak", "cobblestone", 0, 0);
+        var pen = dev.kindred.core.construction.Compounds.pen(style);
+        BlockPos origin = keep.add(pen.x(), pen.y(), pen.z());
+        entry.build = null;
+        entry.field = null;
+        entry.ranch = new RanchRunner(origin, kind, style.wood(), dev.kindred.core.construction.Compounds.doorwayShut(style), keep);
+        entry.goalProgress = "Ranch: starting";
+        if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+        }
+        entry.manualHoldUntilTick = Long.MIN_VALUE;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
+        feedback(source, entry.data.displayName() + ": " + kind.noun() + "s brought into the pasture ward's pen at " + origin.toShortString()
+                + " by its doorway.");
+        return 1;
+    }
+
     /** What the ranch is doing, if there is one. */
     Optional<String> ranchStatus(UUID id) {
         Entry entry = entries.get(id);
         return entry == null || entry.ranch == null ? Optional.empty() : Optional.of(entry.ranch.progress());
+    }
+
+    /**
+     * Starts the field of a farm ward (M-06a): the ward of the keep whose plan stands at {@code keep}, as
+     * {@code /aiplayer build farmward} builds it, its channel watered from a bucket the player holds, its soil tilled
+     * with its own hoe and sown with its own seeds. Null stops it; what is tilled and sown stays.
+     */
+    int startField(ServerCommandSource source, UUID id, BlockPos keep) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || entry.nativeBody == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (keep == null) {
+            entry.field = null;
+            entry.buildTasks.clear();
+            entry.goalProgress = "";
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+            feedback(source, entry.data.displayName() + ": the field is stopped; what is tilled and sown stays.");
+            return 1;
+        }
+        if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
+        var plan = dev.kindred.core.construction.Compounds.field(new dev.kindred.core.construction.BuildStyle("", "oak", "cobblestone", 0, 0));
+        BlockPos corner = keep.add(plan.west(), -1, plan.north());
+        entry.build = null;
+        entry.ranch = null;
+        entry.field = new FieldRunner(corner, plan.size());
+        entry.goalProgress = "Field: starting";
+        if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+        }
+        entry.manualHoldUntilTick = Long.MIN_VALUE;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
+        feedback(source, entry.data.displayName() + ": the farm ward's field, " + plan.size() + " square from " + corner.toShortString() + ".");
+        return 1;
+    }
+
+    /** What the field is doing, if there is one. */
+    Optional<String> fieldStatus(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.field == null ? Optional.empty() : Optional.of(entry.field.progress());
     }
 
     /** The schematics operators put in {@code config/kindred/schematics} (M-05). */
@@ -4678,10 +4796,11 @@ final class PlayerRuntime {
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     entry.activeCampaignTask = res == 1 ? entry.campaignTasks.get(chosen.id()) : null;
                     entry.activeBuildTask = res == 1 ? entry.buildTasks.get(chosen.id()) : null;
-                    if (res != 1 && (entry.build != null || entry.ranch != null) && entry.buildTasks.containsKey(chosen.id())) {
+                    if (res != 1 && (entry.build != null || entry.ranch != null || entry.field != null) && entry.buildTasks.containsKey(chosen.id())) {
                         var refusedTask = entry.buildTasks.get(chosen.id());
                         KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker, refusedTask.label());
-                        if (entry.ranch != null) entry.ranch.finished(refusedTask, false, String.valueOf(entry.blocker), body.entity().getServerWorld());
+                        if (entry.field != null) entry.field.finished(refusedTask, false);
+                        else if (entry.ranch != null) entry.ranch.finished(refusedTask, false, String.valueOf(entry.blocker), body.entity().getServerWorld());
                         else entry.build.finished(refusedTask, false, String.valueOf(entry.blocker), body.entity().getServerWorld());
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
@@ -7543,6 +7662,8 @@ final class PlayerRuntime {
         PortalRunCampaign.Task activeBuildTask;
         /** A ranch in progress (M-01a): the pen, the pair led in and bred. Its build and its steps run as the build's do. */
         RanchRunner ranch;
+        /** A field being watered, tilled and sown (M-06a's farm ward). Its steps run as the build's do. */
+        FieldRunner field;
         /**
          * The player's own bases (M-01c), once read; the build that is its base's; when it next looks to its base, how
          * often its base's build has ended short, and what it last decided.

@@ -176,6 +176,30 @@ class RanchTest {
     }
 
     @Test
+    void walledInItLeadsTheAnimalUpToTheDoorwayInLineThenThroughItWithoutStopping() {
+        // The pen in a ward walled at z 12, its doorway at x 3; the spot two out from it at z 14.
+        var ranch = new Ranch(new Pos(0, 64, 0), 7, 7, Ranch.Kind.COW, new Pos(3, 64, 14));
+        var up = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 20, false, 8, 0, cow(DAISY, 3, 23))));
+        assertEquals(new Pos(3, 64, 14), up.target());
+        assertTrue(up.holdFood());
+        // There, the cow off to one side: it waits for it to come up behind, in line.
+        assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(3, 14, false, 8, 10, cow(DAISY, 5, 17))));
+        // In line behind: through the doorway in one walk, not a leg at a time.
+        var through = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 14, false, 8, 20, cow(DAISY, 3, 16))));
+        assertEquals(ranch.front(), through.target());
+        assertEquals(0, through.leg(), "no stop in the doorway");
+        // Inside, the cow following: the gate opened for it, as in the open.
+        var gate = ranch.next(seen(3, 10, false, 8, 30, cow(DAISY, 3, 13)));
+        assertTrue(gate instanceof Ranch.Step.Gate || gate instanceof Ranch.Step.Go go && go.why().startsWith("To the gate"), "the gate next: " + gate);
+        // One that will not come into line is not waited on for ever, and asked again before it has gone, the same walk.
+        var stubborn = new Ranch(new Pos(0, 64, 0), 7, 7, Ranch.Kind.COW, new Pos(3, 64, 14));
+        stubborn.next(seen(3, 14, false, 8, 0, cow(DAISY, 6, 16)));
+        var go = assertInstanceOf(Ranch.Step.Go.class, stubborn.next(seen(3, 14, false, 8, 100, cow(DAISY, 6, 16))));
+        assertEquals(go, stubborn.next(seen(3, 14, false, 8, 100, cow(DAISY, 6, 16))));
+        assertEquals(go, stubborn.next(seen(3, 14, false, 8, 120, cow(DAISY, 6, 16))));
+    }
+
+    @Test
     void itOpensTheGateToLeaveOnlyOnceNoAnimalStandsJustInsideIt() {
         var ranch = ranch();
         var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 4), true, false, false);

@@ -11,7 +11,9 @@ import java.util.Set;
  * A walled base for an unfriendly world (M-06a, the owner's note of 2026-10-23): a walled, restricted, castle-like
  * compound that a player grows in five stages as its needs grow, enclosing its house, farms and cattle, its walls
  * always lined and its way in discreet. Its first stage is the keep: the cabin of its style inside a walled yard. Its
- * second is a farm ward east of the keep, sharing its east wall ({@link #farmWard}).
+ * second is a farm ward east of the keep, sharing its east wall ({@link #farmWard}); its third a pasture ward south of
+ * the farm ward round a pen for its cattle ({@link #pastureWard}); its fourth the hall, the two-floor house in its own
+ * ward south of the keep ({@link #hall}), with towers at the compound's outer corners ({@link #towers}).
  * <ul>
  *   <li><b>The wall.</b> A stone course four high from a foundation in the ground, three above it, too high to jump
  *   and high enough to hide a player standing behind it.</li>
@@ -123,6 +125,15 @@ public final class Compounds {
         public int channel() { return west + size / 2; }
     }
 
+    /**
+     * The row of the farm ward's own way in, under its east wall: against its south lining, the row past the field's
+     * south end clear of it. Three in from the south wall, as the keep's is, the stone along its stair took the
+     * field's two south-east cells.
+     */
+    public static int farmWayIn(BuildStyle style) {
+        return farmWall(style).south() - 2;
+    }
+
     public static Field field(BuildStyle style) {
         var ward = farmWall(style);
         return new Field(ward.west() + 6, ward.north() + 3, 9);
@@ -154,7 +165,7 @@ public final class Compounds {
         // way in from outside, under its east wall, as discreet as the keep's. Built from outside, its walls shut a
         // player out of the ward a layer at a time, and the way round through the keep was too far for it to find.
         passage(at, open, keep.east() - 1, keep.east() + 1, keep.wayIn(), s);
-        passage(at, open, ward.east() - 1, ward.east(), ward.wayIn(), s);
+        passage(at, open, ward.east() - 1, ward.east(), farmWayIn(style), s);
         // The channel down the field's middle.
         var field = field(style);
         var stoneSpec = BlockSpec.parse(s);
@@ -178,6 +189,181 @@ public final class Compounds {
         String variant = style.variant() == 0 ? "" : "&variant=" + style.variant();
         return new Blueprint(wood + " farm ward", Generators.SOURCE + "compound?stage=farm&wood=" + wood + "&stone=" + s + variant, "Kindred",
                 "Kindred's own", blocks, clear);
+    }
+
+    /**
+     * The pasture ward's wall (M-06a's third stage): south of the farm ward, its north face the farm ward's south wall,
+     * room inside for a pen seven square with a margin round it, and the rows south of the pen its cattle come in by.
+     */
+    public static Wall pastureWall(BuildStyle style) {
+        var farm = farmWall(style);
+        return new Wall(farm.west(), farm.east(), farm.south(), farm.south() + 14);
+    }
+
+    /** The pasture's pen: its north-west corner, seven square, its gate in the middle of its south side. */
+    public static Pos pen(BuildStyle style) {
+        var ward = pastureWall(style);
+        return new Pos(ward.west() + (ward.east() - ward.west()) / 2 - 3, 0, ward.north() + 2);
+    }
+
+    /**
+     * The cattle's doorway: two high through the pasture's south wall and its lining, in line with the pen's gate. It
+     * is built shut, of the wall's own stone and lining, so that nothing shows where it is; it is opened only to bring
+     * animals in, and shut behind them.
+     */
+    public static List<Pos> doorway(BuildStyle style) {
+        var ward = pastureWall(style);
+        int x = pen(style).x() + 3;
+        return List.of(new Pos(x, 0, ward.south() - 1), new Pos(x, 1, ward.south() - 1), new Pos(x, 0, ward.south()), new Pos(x, 1, ward.south()));
+    }
+
+    /** The doorway shut again: the pasture ward's own blocks there, its lining's planks and its wall's stone. */
+    public static Blueprint doorwayShut(BuildStyle style) {
+        var ward = Blueprint.byPosition(pastureWard(style).blocks());
+        var blocks = doorway(style).stream().map(p -> new Blueprint.Block(p, ward.get(p))).toList();
+        return new Blueprint(style.wood() + " pasture doorway shut", Generators.SOURCE + "compound?stage=pasture-doorway-shut", "Kindred",
+                "Kindred's own", blocks);
+    }
+
+    /** The row of the pasture ward's own way in, under its east wall, against its south lining. */
+    public static int pastureWayIn(BuildStyle style) {
+        return pastureWall(style).south() - 2;
+    }
+
+    /**
+     * The pasture ward in a style's materials, built onto its farm ward ({@link #farmWard}): walled in stone and lined
+     * as the other wards are, sharing the farm ward's south wall; its pen of the style's wood inside; the cattle's
+     * doorway built shut in its south wall ({@link #doorway}); and its own way in for the player under its east wall,
+     * as discreet as the others. The farm ward's blocks are not in it, but for the stone of the shared wall it lines.
+     */
+    public static Blueprint pastureWard(BuildStyle style) {
+        String wood = style.wood(), stone = style.stone();
+        if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
+        String s = stone.contains(":") ? stone : "minecraft:" + stone;
+        String planks = "minecraft:" + wood + "_planks";
+        var ward = pastureWall(style);
+        var at = new LinkedHashMap<Pos, BlockSpec>();
+        var open = new LinkedHashSet<Pos>();
+        // Its own three walls and their lining; its north wall is the farm ward's.
+        for (int x = ward.west(); x <= ward.east(); x++) for (int z = ward.north() + 1; z <= ward.south(); z++) {
+            if (ward.on(x, z)) for (int y = -1; y < HEIGHT; y++) at.put(new Pos(x, y, z), BlockSpec.parse(s));
+            else if (ward.lining(x, z)) for (int y = 0; y < HEIGHT; y++) at.put(new Pos(x, y, z), BlockSpec.parse(planks));
+        }
+        passage(at, open, ward.east() - 1, ward.east(), pastureWayIn(style), s);
+        var pen = pen(style);
+        for (var b : Generators.pen(7, 7, wood).blocks()) at.put(b.at().add(pen.x(), 0, pen.z()), b.spec());
+        torches(at, open, ward);
+        // The ward kept open, three high, but for its pen.
+        for (int x = ward.west() + 2; x <= ward.east() - 2; x++) for (int z = ward.north() + 2; z <= ward.south() - 2; z++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                var p = new Pos(x, y, z);
+                if (!at.containsKey(p)) open.add(p);
+            }
+        }
+        var blocks = new ArrayList<Blueprint.Block>();
+        for (var e : at.entrySet()) blocks.add(new Blueprint.Block(e.getKey(), e.getValue()));
+        var clear = open.stream().filter(p -> !at.containsKey(p)).toList();
+        String variant = style.variant() == 0 ? "" : "&variant=" + style.variant();
+        return new Blueprint(wood + " pasture ward", Generators.SOURCE + "compound?stage=pasture&wood=" + wood + "&stone=" + s + variant, "Kindred",
+                "Kindred's own", blocks, clear);
+    }
+
+    /**
+     * The hall's ward (M-06a's fourth stage): south of the keep, its north face the keep's south wall and its east face,
+     * as far as the pasture runs, the pasture's west wall; as wide as the keep, which leaves the two-floor house two
+     * blocks each side for a scaffold, and as deep as the house with room north of it and three rows south of it for
+     * its door and the way in.
+     */
+    public static Wall hallWall(BuildStyle style) {
+        var keep = wall(style);
+        var house = Houses.shape(Houses.Stage.HOUSE, style.variant());
+        return new Wall(keep.west(), keep.east(), keep.south(), keep.south() + house.depth() + 8);
+    }
+
+    /** How high a tower stands above the yard's floor: three above the wall. */
+    static final int TOWER = HEIGHT + 3;
+
+    /**
+     * The hall in a style's materials, built onto its keep, farm ward and pasture ward: its ward walled and lined as the
+     * others, sharing the keep's south wall and the pasture's west wall; the base's two-floor house (M-01b) inside it;
+     * and its own way in under its west wall in the south of the ward, as the keep's is. None of the other wards' blocks
+     * are in it.
+     */
+    public static Blueprint hall(BuildStyle style) {
+        String wood = style.wood(), stone = style.stone();
+        if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
+        String s = stone.contains(":") ? stone : "minecraft:" + stone;
+        String planks = "minecraft:" + wood + "_planks";
+        var ward = hallWall(style);
+        var pasture = pastureWall(style);
+        var at = new LinkedHashMap<Pos, BlockSpec>();
+        var open = new LinkedHashSet<Pos>();
+        // Its own walls and their lining; its north wall is the keep's, and its east wall the pasture's as far as that runs.
+        for (int x = ward.west(); x <= ward.east(); x++) for (int z = ward.north() + 1; z <= ward.south(); z++) {
+            if (x == ward.east() && z <= pasture.south()) continue;
+            if (ward.on(x, z)) for (int y = -1; y < HEIGHT; y++) at.put(new Pos(x, y, z), BlockSpec.parse(s));
+            else if (ward.lining(x, z)) for (int y = 0; y < HEIGHT; y++) at.put(new Pos(x, y, z), BlockSpec.parse(planks));
+        }
+        // The house, two in from the lining west and east and north, three rows south of it.
+        var house = Houses.of(Houses.Stage.HOUSE, style);
+        int hx = ward.west() + 4, hz = ward.north() + 4;
+        for (var b : house.blocks()) at.put(b.at().add(hx, 0, hz), b.spec());
+        for (var p : house.clear()) open.add(p.add(hx, 0, hz));
+        passage(at, open, ward.west(), ward.west() + 1, ward.wayIn(), s);
+        torches(at, open, ward);
+        for (int x = ward.west() + 2; x <= ward.east() - 2; x++) for (int z = ward.north() + 2; z <= ward.south() - 2; z++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                var p = new Pos(x, y, z);
+                if (!at.containsKey(p)) open.add(p);
+            }
+        }
+        var blocks = new ArrayList<Blueprint.Block>();
+        for (var e : at.entrySet()) blocks.add(new Blueprint.Block(e.getKey(), e.getValue()));
+        var clear = open.stream().filter(p -> !at.containsKey(p)).toList();
+        String variant = style.variant() == 0 ? "" : "&variant=" + style.variant();
+        return new Blueprint(wood + " hall", Generators.SOURCE + "compound?stage=hall&wood=" + wood + "&stone=" + s + variant, "Kindred",
+                "Kindred's own", blocks, clear);
+    }
+
+    /**
+     * A tower at each of the compound's outer corners, once its hall stands: three by three out from the corner, from
+     * the foundation to three above the wall, its top crenellated. Each is a build of its own, as one plan reaching
+     * every corner covered the whole compound, and every step of its build looked over all of it. Each holds the
+     * corner of the wall it rises from, which agrees with the ward's.
+     */
+    public static List<Blueprint> towers(BuildStyle style) {
+        String stone = style.stone();
+        if (!stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a stone");
+        String s = stone.contains(":") ? stone : "minecraft:" + stone;
+        var keep = wall(style);
+        var farm = farmWall(style);
+        var pasture = pastureWall(style);
+        var hall = hallWall(style);
+        int[][] corners = {{keep.west(), keep.north(), -1, -1}, {farm.east(), farm.north(), 1, -1}, {pasture.east(), pasture.south(), 1, 1},
+                {hall.east(), hall.south(), 1, 1}, {hall.west(), hall.south(), -1, 1}};
+        String[] names = {"north-west", "north-east", "south-east", "south", "south-west"};
+        var towers = new ArrayList<Blueprint>();
+        for (int i = 0; i < corners.length; i++) {
+            var at = new LinkedHashMap<Pos, BlockSpec>();
+            tower(at, corners[i][0], corners[i][1], corners[i][2], corners[i][3], s);
+            var blocks = at.entrySet().stream().map(e -> new Blueprint.Block(e.getKey(), e.getValue())).toList();
+            towers.add(new Blueprint(names[i] + " tower", Generators.SOURCE + "compound?stage=tower&corner=" + names[i] + "&stone=" + s, "Kindred",
+                    "Kindred's own", blocks));
+        }
+        return towers;
+    }
+
+    /**
+     * A tower three by three from the corner {@code (x, z)} out the way {@code (dx, dz)}: stone from the foundation up to
+     * {@link #TOWER} above the floor, its four corners a block higher still.
+     */
+    private static void tower(Map<Pos, BlockSpec> at, int x, int z, int dx, int dz, String stone) {
+        var s = BlockSpec.parse(stone);
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
+            int tx = x + dx * i, tz = z + dz * j;
+            for (int y = -1; y < TOWER; y++) at.put(new Pos(tx, y, tz), s);
+            if ((i == 0 || i == 2) && (j == 0 || j == 2)) at.put(new Pos(tx, TOWER, tz), s);
+        }
     }
 
     /** Wall torches on the lining's inside face, every fourth block along each side, where the yard is open there. */
