@@ -19,6 +19,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
 /aiplayer build cabin|house|manor <x y z> [turns] [bot]  build a stage of a base there, of oak and cobblestone
+/aiplayer build keep <x y z> [turns] [bot]  build a walled keep there, the first stage of a Factions base (M-06a)
 /aiplayer bases on|off               server-wide leave for AI players to choose, site and build their own bases (default off)
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
@@ -145,6 +146,13 @@ Doors and beds now have a placement rule: each is placed by its first half, and 
 - **Stopping one.** `/aiplayer build stop` on a base's build puts it off for five minutes.
 - **Grown, not stamped (E-29a).** Each stage is grown from a seed block and its world: the same stage comes out a different size, laid out the other way about, with its ridge and windows otherwise, and facing another way in another world or for another player. Give a player a seed block with `/aiplayer seed <block> [player]` (`/aiplayer seed clear` takes it back): a wood seed, a cherry log say, sets the wood it builds in. Without one it builds in the wood it carries most of, else that of the nearest tree it knows. A build cuts only logs of its own wood.
 - **Not yet:** the base's chests do not become its storage, and its walls are cobblestone whatever the seed.
+
+**A walled keep (M-06a; in development).** `/aiplayer build keep <x y z> [quarter turns] [player]` builds the first stage of a walled base for a Factions world, of oak and cobblestone. The wall's north-west corner stands four blocks east of that spot, leaving room for the stair down outside its west wall. It is the cabin inside a walled yard, the wall 17 blocks west to east and 16 north to south, 687 blocks in all:
+- **The wall:** stone, four high from a foundation in the ground, three above the yard, lined inside with planks its whole height. Torches on the lining light the yard.
+- **No gate.** The way in is a stair down beside the west wall, three blocks in from its south end; a passage under the wall, three below the yard; and a stair up into the yard. The stair and passage are lined with stone, and nothing in the wall shows where the way in is.
+- **Inside:** the cabin, with its bed, table, furnace and chests.
+
+The farm and pasture wards, the hall, and the moat and bridge are to come, as is a keep a player chooses and builds for itself in a Factions match.
 
 **Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
 

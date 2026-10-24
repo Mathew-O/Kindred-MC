@@ -70,9 +70,13 @@ final class RanchRunner {
         var player = body.entity();
         var world = player.getServerWorld();
         var seen = observe(player, world);
+        String before = ranch.phase();
         var step = ranch.next(seen);
-        if (step instanceof Ranch.Step.Done) {
-            KindredMod.LOGGER.info("Ranch done at {}: {}; it saw {}", origin.toShortString(), ranch.phase(), seen.animals().stream()
+        // What it saw as it gave up fetching, as well as at the end: the ranch fixture once left with cows at the gate
+        // that the look at its end saw.
+        if (step instanceof Ranch.Step.Done || !before.equals(ranch.phase()) && ranch.phase().equals("leaving the pen")) {
+            KindredMod.LOGGER.info("Ranch {} at {}: {}; standing at {}, it saw {}", step instanceof Ranch.Step.Done ? "done" : "leaving", origin.toShortString(),
+                    ranch.phase(), seen.feet(), seen.animals().stream()
                     .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList());
         }
         progress = ranch.phase();

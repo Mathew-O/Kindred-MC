@@ -67,6 +67,9 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                     rue.getInventory().clear();
                     context.assertTrue(!hal.canSee(rue), "The wall hides the runner");
                     server.setPvpEnabled(true);
+                    // In the morning: a hunter waits for daylight before it goes up for logs, and the test server keeps
+                    // its day cycle running from test to test.
+                    context.getWorld().setTimeOfDay(1000);
                     f.runtime.setDragonFightForTest(true);
                     pace[0] = bot(f, ids[0]).playstyle();
                 })
@@ -165,6 +168,9 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                     smith.getInventory().clear();
                     fox.getInventory().clear();
                     server.setPvpEnabled(true);
+                    // In the morning: a hunter waits for daylight before it goes up for logs, and the test server keeps
+                    // its day cycle running from test to test.
+                    context.getWorld().setTimeOfDay(1000);
                     f.runtime.setDragonFightForTest(true);
                 })
                 .createAndAdd(() -> {
@@ -225,7 +231,7 @@ public final class NativeManhuntGameTests implements FabricGameTest {
      * still ten blocks off across open ground, rather than cut the tree beside it that its goal wants first; then, with
      * Hal kept at its heels, it turns and strikes.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "manhuntEvade", tickLimit = 2400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "manhuntEvade", tickLimit = 2400)
     public void aRunnerKeepsItsDistanceFromAHunterInSightAndFightsOnlyWhenCaught(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2200);
         var server = context.getWorld().getServer();
@@ -233,12 +239,13 @@ public final class NativeManhuntGameTests implements FabricGameTest {
         UUID[] ids = new UUID[2], players = new UUID[2], match = new UUID[1];
         double[] farthest = {0};
         long[] started = {-1};
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = context.getAbsolutePos(new BlockPos(20, 0, 20));
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
                     // Open ground walled round.
                     var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-20, 1, -20), o.add(30, 8, 30));
                     for (int x = -20; x <= 30; x++) for (int z = -20; z <= 30; z++) {
                         boolean edge = x == -20 || x == 30 || z == -20 || z == 30;
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
@@ -312,6 +319,7 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 
@@ -320,7 +328,7 @@ public final class NativeManhuntGameTests implements FabricGameTest {
      * not toward its home, the bed its spawn is set by, which lies straight away from the hunter; it eats nothing
      * while the hunter is in sight within twenty blocks, and eats once it is clear.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "manhuntEvadeHome", tickLimit = 2400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "manhuntEvadeHome", tickLimit = 2400)
     public void aChasedRunnerNeverRunsTowardItsHomeAndEatsOnlyOnceClear(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2200);
         var server = context.getWorld().getServer();
@@ -329,13 +337,14 @@ public final class NativeManhuntGameTests implements FabricGameTest {
         double[] wayHome = {2}, ateAt = {-1};
         int[] breadAtStart = {-1};
         Vec3d[] start = {null};
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = context.getAbsolutePos(new BlockPos(30, 0, 20));
         BlockPos home = o.add(5, 2, 28);
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
                     // Open ground walled round, wide enough to get clear of the hunter either way across it.
                     var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-30, 1, -20), o.add(40, 8, 34));
                     for (int x = -30; x <= 40; x++) for (int z = -20; z <= 34; z++) {
                         boolean edge = x == -30 || x == 40 || z == -20 || z == 34;
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
@@ -414,6 +423,7 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 

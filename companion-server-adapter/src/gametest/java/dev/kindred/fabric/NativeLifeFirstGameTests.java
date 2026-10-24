@@ -24,12 +24,12 @@ import net.minecraft.util.math.Box;
  * </ul>
  */
 public final class NativeLifeFirstGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "life-night", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-night", tickLimit = 30000)
     public void atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
         var hut = Generators.hut(5, 5, 3);
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(40, 7, 4), o.add(40, 7, 40)};
         BlockPos home = o.add(16, 7, 16), hutAt = o.add(14, 7, 30);
         BlockPos[] bed = {null};
@@ -109,14 +109,15 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "life-food", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-food", tickLimit = 30000)
     public void hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(40, 7, 4), o.add(40, 7, 40)};
         BlockPos home = o.add(16, 7, 16);
         int[] stockAtBase = {-1};
@@ -178,6 +179,7 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 

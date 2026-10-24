@@ -17,11 +17,11 @@ import net.minecraft.util.math.BlockPos;
  * cuts the logs and mines the stone the rest takes, and finishes the cabin. Then, with no iron tools, it waits.
  */
 public final class NativeBaseGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "base", tickLimit = 40000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "base", tickLimit = 40000)
     public void aPlayerWithStoneToolsSitesAndBuildsItsOwnCabinThenWaitsForIron(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 39500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
         BlockPos home = o.add(16, 7, 16);
         int[] trips = {-1}, stoneLeft = {0};
@@ -96,6 +96,7 @@ public final class NativeBaseGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 
@@ -108,9 +109,17 @@ public final class NativeBaseGameTests implements FabricGameTest {
      * only its tests' own chunks. A base out of loaded ground is not judged for repair, and cows out of ticking ground
      * freeze. The test framework lets every forced chunk go when the batch ends.
      */
+    /** The origin of a fixture on {@link #ground}: in from its wide structure's corner as far as the stone runs. */
+    static BlockPos origin(TestContext context) {
+        return context.getAbsolutePos(new BlockPos(40, 0, 40));
+    }
+
     static void ground(TestContext context, BlockPos[] trunks) {
         var world = context.getWorld();
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = origin(context);
+        // Put back at the fixture's end, with a few below for what it digs: the next test placed here finds the
+        // test world as it was (FixtureGround).
+        FixtureGround.keep(context, o.add(-40, -4, -40), o.add(72, 24, 72));
         for (int cx = (o.getX() - 40) >> 4; cx <= (o.getX() + 72) >> 4; cx++) {
             for (int cz = (o.getZ() - 40) >> 4; cz <= (o.getZ() + 72) >> 4; cz++) world.setChunkForced(cx, cz, true);
         }

@@ -243,6 +243,9 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.runtime.createNative(f.source, "ApproachMiner"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
+                    // In the morning: at nightfall a player out working turns back for shelter, and the test server keeps
+                    // its day cycle running from test to test (full runs 19 and 20 on 2026-10-24).
+                    context.getWorld().setTimeOfDay(1000);
                     BlockPos p = f.player().getBlockPos();
                     distantLog[0] = p.east(5);
                     for (int dx = 0; dx <= 6; dx++) {
@@ -299,7 +302,17 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {
-                    context.assertTrue(context.getWorld().getBlockState(distantLog[0]).isAir(), "Distant log autonomously approached and broken");
+                    if (!context.getWorld().getBlockState(distantLog[0]).isAir()) {
+                        // What lay between it and the log, for a failure in a full run (runs 19 and 20 on 2026-10-24).
+                        var player = f.player();
+                        var around = new StringBuilder();
+                        for (int dx = -1; dx <= 6; dx++) for (int dy = -1; dy <= 2; dy++) {
+                            var state = context.getWorld().getBlockState(distantLog[0].west(5).add(dx, dy, 0));
+                            if (!state.isAir()) around.append(dx).append(',').append(dy).append('=').append(net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath()).append(' ');
+                        }
+                        context.assertTrue(false, "Distant log autonomously approached and broken: at " + (player == null ? "gone" : player.getPos())
+                                + ", log at " + distantLog[0].toShortString() + "; around: " + around + "/ " + f.runtime.nativeLastResult(f.id));
+                    }
                     context.assertTrue(f.player().getInventory().getStack(0).getDamage() >= 1, "Axe tool durability damaged once");
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(action != null && action.state() == ActionRecord.State.VERIFIED

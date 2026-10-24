@@ -22,33 +22,33 @@ import java.util.TreeMap;
  * no seed it grows it in the wood it has to hand.
  */
 public final class NativeSeedBuildGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "seed-build", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-build", tickLimit = 30000)
     public void givenACherrySeedItGrowsACherryCabinOfItsWorldsOwnPlanAndBuildsItExact(TestContext context) {
         grows(context, "cherry", "minecraft:cherry_log", null);
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "seed-build-at-hand", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-build-at-hand", tickLimit = 30000)
     public void withNoSeedItGrowsItsCabinInTheWoodItHasToHand(TestContext context) {
         grows(context, "spruce", null, null);
     }
 
     // Every cabin shape built, whichever a world draws: each fixed here, turned a different way.
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "seed-shape-9x9", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-shape-9x9", tickLimit = 30000)
     public void aNineByNineCabinIsBuiltUnderItsFlatRoof(TestContext context) {
         grows(context, "birch", null, new BuildStyle("", "birch", "cobblestone", 3, 1));
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "seed-shape-9x7", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-shape-9x7", tickLimit = 30000)
     public void aNineBySevenCabinIsBuiltWithItsRidgeAlongItsLength(TestContext context) {
         grows(context, "oak", null, new BuildStyle("", "oak", "cobblestone", 1, 2));
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "seed-shape-7x9", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-shape-7x9", tickLimit = 30000)
     public void aSevenByNineCabinIsBuiltWithTwoWindowsASide(TestContext context) {
         grows(context, "spruce", null, new BuildStyle("", "spruce", "cobblestone", 18, 3));
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "seed-shape-mirrored", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-shape-mirrored", tickLimit = 30000)
     public void aCabinLaidOutTheOtherWayAboutIsBuilt(TestContext context) {
         grows(context, "dark_oak", null, new BuildStyle("", "dark_oak", "cobblestone", 28, 0));
     }
@@ -59,7 +59,7 @@ public final class NativeSeedBuildGameTests implements FabricGameTest {
      */
     private static void grows(TestContext context, String wood, String seed, BuildStyle fixed) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(40, 7, 4), o.add(40, 7, 40)};
         BlockPos home = o.add(16, 7, 16);
         context.createTimedTaskRunner()
@@ -133,6 +133,7 @@ public final class NativeSeedBuildGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 }

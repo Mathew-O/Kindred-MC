@@ -66,8 +66,20 @@ final class BuildRunner {
     private final Set<Pos> shunned = new HashSet<>();
     /** Where the feet stood for the place or break last given. */
     private Pos issuedFrom;
+    /** A break it is walking to, and where from: broken on arriving, not planned again from there. */
+    private Pos breakTarget, breakStance;
+    private int breakWalks;
+    /** Waits in a row for a landing before it looks for a way round a block it cannot reach. */
+    private int airWaits;
     private int failures;
     private String lastFailure = "";
+    /**
+     * After a step fails, a second's pause before the next, so that eight failures in a row take eight seconds at
+     * least: tried again every tick, eight route searches failed within a second of its coming down off its scaffold,
+     * and stopped a cabin short of its roof (the seed fixtures, 2026-10-24). The pause is no step of its own.
+     */
+    private static final String PAUSE = "A moment before trying again";
+    private boolean pause;
     /** The scaffold being put up: its foot and how high it is to go. */
     private Pos column;
     private int columnTop;
@@ -155,7 +167,7 @@ final class BuildRunner {
     /** Up off the ground on the build: over its floor by more than a step, within its box. */
     private boolean up(Pos feet) {
         onSite(feet);
-        return feet.y() > box[1] + 1 && feet.x() >= box[0] && feet.x() <= box[3] && feet.z() >= box[2] && feet.z() <= box[5];
+        return feet.y() > siteFloor() + 1 && feet.x() >= box[0] && feet.x() <= box[3] && feet.z() >= box[2] && feet.z() <= box[5];
     }
 
     /**
@@ -181,9 +193,14 @@ final class BuildRunner {
     }
 
     /** The height of the build's lowest blocks. */
+    /**
+     * The height of the build's floor: its lowest course, or its origin's height where it goes below that, as the
+     * keep's way in under its wall does (M-06a). Measured from its lowest block, a player on a scaffold beside the
+     * keep's cabin was "up on the build" and waited there rather than walk round to a roof stair it could not reach.
+     */
     private int siteFloor() {
         onSite(new Pos(0, 0, 0));
-        return box[1];
+        return Math.max(box[1], origin.getY());
     }
 
     /** Within a few blocks of the site, where a staircase dug down for stone could run under it. */
@@ -268,8 +285,13 @@ final class BuildRunner {
             progress = blueprint.name() + ": stopped, " + STUCK + " steps failed one after another (last: " + lastFailure + ")";
             return Optional.empty();
         }
+        if (pause) {
+            pause = false;
+            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), PAUSE));
+        }
         var player = body.entity();
         var world = player.getServerWorld();
+        if (player.isOnGround()) airWaits = 0;
         var site = snapshot(world);
         Pos feet = standing(player, site);
         // Scaffolding it no longer finds standing (broken by another, or a pillar step that did not land) is forgotten.
@@ -300,6 +322,24 @@ final class BuildRunner {
                 progress = blueprint.name() + ": climbing out to the build";
                 return out;
             }
+        }
+        // A break it set out for is walked to the end and made there, not planned again on the way. Planned again, the
+        // block underfoot came first, to be broken from the far end of a passage it was digging: it walked there, and
+        // there the block underfoot came first again, back at the other end, so it walked to and fro breaking neither
+        // (the keep, M-06a). Arrived is standing in the spot, as the plan reckons where it stands.
+        if (breakTarget != null) {
+            Pos target = breakTarget, from = breakStance;
+            boolean there = !world.getBlockState(blockPos(target)).isAir();
+            if (there && feet.equals(from) && player.isOnGround()) {
+                breakTarget = breakStance = null;
+                issuedFrom = from;
+                return Optional.of(breakTask(target, feet, "The break it walked over to"));
+            }
+            if (there && ++breakWalks <= 8) {
+                return Optional.of(player.isOnGround() ? go(from, "To break " + target + " from " + feet)
+                        : new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Landing to break " + target));
+            }
+            breakTarget = breakStance = null;
         }
         var step = ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
         if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
@@ -355,18 +395,23 @@ final class BuildRunner {
             // from beside it. Anything else is waited out.
             // Over to the ground beside it, never onto the build itself (a walk to a roof's cell walks onto the roof); and
             // stuck up on the build, back down to the ground beside it.
-            case BLOCKED -> step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
+            // In the air (just down off its scaffold), it lands first: every route looked for from mid-fall was "no
+            // walkable route", and eight in a row within a second stopped a cabin short of its roof (a seed fixture,
+            // and the nine by seven cabin in full run 19).
+            case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(wait("Landing first"))
+                    : step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
                     ? Optional.of(outside(groundBeside(step.target()), step.reason() + "; over to it"))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet), step.reason() + "; down off the build first"))
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
-                if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To break " + step.target() + " from " + feet));
-                boolean underfoot = step.target().equals(feet.down());
-                var args = new HashMap<String, String>(Map.of("x", str(step.target().x()), "y", str(step.target().y()), "z", str(step.target().z()),
-                        "collect", "true"));
-                if (underfoot) args.put("underfoot", "true");
-                yield Optional.of(new PortalRunCampaign.Task("native_break", Map.copyOf(args), step.reason() + " at " + step.target()));
+                if (!at(player, step.stance())) {
+                    breakTarget = step.target();
+                    breakStance = step.stance();
+                    breakWalks = 0;
+                    yield Optional.of(go(step.stance(), "To break " + step.target() + " from " + feet));
+                }
+                yield Optional.of(breakTask(step.target(), feet, step.reason()));
             }
             case SCAFFOLD -> {
                 if (!at(player, step.stance())) yield Optional.of(go(step.stance(), "To the foot of a scaffold from " + feet));
@@ -552,10 +597,12 @@ final class BuildRunner {
             if (completed) failures = 0;
             return;
         }
+        if (PAUSE.equals(task.label())) return;
         if (completed) {
             failures = 0;
         } else if (!"native_wait".equals(task.skill())) {
             failures++;
+            pause = true;
             lastFailure = task.label() + (reason.isEmpty() ? "" : ": " + reason);
         }
         boolean placing = "native_place".equals(task.skill()), breaking = "native_break".equals(task.skill());
@@ -692,6 +739,13 @@ final class BuildRunner {
     }
 
     /** On the spot, near its middle (the walk there stops within 0.4 of it). */
+    /** Break {@code target}, collecting the drop; the block it stands on with the leave to step down onto what is below. */
+    private static PortalRunCampaign.Task breakTask(Pos target, Pos feet, String reason) {
+        var args = new HashMap<String, String>(Map.of("x", str(target.x()), "y", str(target.y()), "z", str(target.z()), "collect", "true"));
+        if (target.equals(feet.down())) args.put("underfoot", "true");
+        return new PortalRunCampaign.Task("native_break", Map.copyOf(args), reason + " at " + target);
+    }
+
     private static boolean at(ServerPlayerEntity player, Pos stance) {
         return player.getBlockX() == stance.x() && player.getBlockY() == stance.y() && player.getBlockZ() == stance.z()
                 && Math.hypot(player.getX() - (stance.x() + 0.5), player.getZ() - (stance.z() + 0.5)) < 0.45 && player.isOnGround();

@@ -24,12 +24,12 @@ import java.util.UUID;
  * feeds them, and leaves with the gate shut once the calf is born: two wheat spent, the cows still penned after.
  */
 public final class NativeRanchGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "ranch", tickLimit = 6000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "ranch", tickLimit = 6000)
     public void anAiPlayerPensAPairOfCowsWithItsOwnWoodAndBreedsThem(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5800);
         UUID[] id = new UUID[1], player = new UUID[1], cows = new UUID[2];
         long[] doneAt = {-1};
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = context.getAbsolutePos(new BlockPos(4, 0, 4));
         // The pen's north-west post; its gate in the middle of the south side.
         BlockPos pen = o.add(4, 2, 2), gate = pen.add(3, 0, 6);
         context.createTimedTaskRunner()
@@ -38,6 +38,7 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     // A field of grass walled in, so the cows wander only so far.
                     var world = context.getWorld();
                     forceChunks(world, o, true);
+                    FixtureGround.keep(context, o.add(-4, 0, -4), o.add(34, 12, 24));
                     for (int x = -4; x <= 34; x++) for (int z = -4; z <= 24; z++) {
                         boolean edge = x == -4 || x == 34 || z == -4 || z == 24;
                         world.setBlockState(o.add(x, 1, z), Blocks.GRASS_BLOCK.getDefaultState());
@@ -61,8 +62,8 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     // As though cut and grown: fourteen logs and eight wheat.
                     wren.getInventory().insertStack(new ItemStack(Items.OAK_LOG, 14));
                     wren.getInventory().insertStack(new ItemStack(Items.WHEAT, 8));
-                    var daisy = context.spawnEntity(EntityType.COW, new BlockPos(24, 2, 6));
-                    var bess = context.spawnEntity(EntityType.COW, new BlockPos(25, 2, 9));
+                    var daisy = context.spawnEntity(EntityType.COW, new BlockPos(28, 2, 10));
+                    var bess = context.spawnEntity(EntityType.COW, new BlockPos(29, 2, 13));
                     cows[0] = daisy.getUuid();
                     cows[1] = bess.getUuid();
                     context.assertTrue(f.runtime.startRanch(f.source, id[0], pen, Ranch.Kind.COW) == 1, "Ranch started");
@@ -104,6 +105,7 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 

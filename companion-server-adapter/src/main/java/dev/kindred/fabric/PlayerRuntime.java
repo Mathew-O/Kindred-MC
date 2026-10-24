@@ -3398,12 +3398,14 @@ final class PlayerRuntime {
                         int dz = distantTarget.getZ() - center.getZ();
                         String dir = null;
                         int dist = 0;
+                        // Up to the block beside it, never onto it: two off, a walk of two stepped up onto the log it was
+                        // to mine, where it could not break what it stood on (the distant-log fixture, 2026-10-24).
                         if (Math.abs(dx) >= Math.abs(dz) && dx != 0) {
                             dir = dx > 0 ? "east" : "west";
-                            dist = Math.min(3, Math.abs(dx));
+                            dist = Math.min(3, Math.abs(dx) - 1);
                         } else if (dz != 0) {
                             dir = dz > 0 ? "south" : "north";
-                            dist = Math.min(3, Math.abs(dz));
+                            dist = Math.min(3, Math.abs(dz) - 1);
                         }
                         if (dir != null && dist > 0) {
                             UUID taskId = UUID.nameUUIDFromBytes(("traverse_approach:" + entry.data.id() + ":" + distantTarget.asLong() + ":" + dir).getBytes(java.nio.charset.StandardCharsets.UTF_8));

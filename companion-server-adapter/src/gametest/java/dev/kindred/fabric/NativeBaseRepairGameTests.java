@@ -15,11 +15,11 @@ import net.minecraft.util.math.BlockPos;
  * cabin's own plan, with what it holds, what the blast dropped and a chest it crafts from planks.
  */
 public final class NativeBaseRepairGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "base-repair", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "base-repair", tickLimit = 30000)
     public void aPlayerRepairsItsOwnCabinWhenAChestIsBrokenAndAWallBlownOut(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
         BlockPos home = o.add(16, 7, 16);
         BlockPos[] origin = {null};
@@ -91,6 +91,7 @@ public final class NativeBaseRepairGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 }
