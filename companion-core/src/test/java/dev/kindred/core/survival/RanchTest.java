@@ -216,6 +216,7 @@ class RanchTest {
         var back = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 4, 13))));
         assertEquals(new Pos(3, 64, 14), back.target(), "out to the doorway's approach");
         assertTrue(back.why().startsWith("Back out through the doorway"), back.why());
+        assertEquals(0, back.leg(), "all the way out, not in legs");
         assertTrue(back.holdFood(), "with the food in hand, to draw it on");
         // Asked again before the walk, the same walk; caught up, the wait begins afresh another time.
         assertEquals(back, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 3, 13))));

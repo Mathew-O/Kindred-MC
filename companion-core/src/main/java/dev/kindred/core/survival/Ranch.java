@@ -351,9 +351,11 @@ public final class Ranch {
             // for the food straight into the wall): back out through the doorway, to bring it up in line and through
             // again. Walked back to it across the wall, the player went on to the gate without it, again and again (the
             // cattle fixture, a cow a block beside the doorway outside).
+            // One walk, all the way out: in legs, the first ended by the front of the gate, where it took the animal
+            // for lined up again and went back to the gate without it.
             if (approach != null && animal.at().z() >= approach.z() - 2 && seen.feet().z() < approach.z() - 2) {
                 lined = false;
-                return go(approach, 1, true, LEG, "Back out through the doorway for the " + kind.noun());
+                return go(approach, 1, true, 0, "Back out through the doorway for the " + kind.noun());
             }
             return go(animal.at(), 2, true, 0, "Back to the " + kind.noun() + ", which has stopped following");
         }
