@@ -1993,7 +1993,8 @@ final class PortalRunCampaign {
         for (int slot = 0; slot < inventory.size() && !pickaxe; slot++) pickaxe = inventory.getStack(slot).isIn(ItemTags.PICKAXES);
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
-        if (!pickaxe) return stranded() ? climb(body, label).or(() -> pillarOut(body, label))
+        // Stranded, no walk back: a pillar if boxed in (quicker than a stair by hand), else the stair.
+        if (!pickaxe) return stranded() ? pillarOut(body, label).or(() -> climb(body, label))
                 : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         int surface = player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ());
