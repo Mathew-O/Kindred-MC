@@ -186,11 +186,11 @@ public final class NativeSurvivalGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.runtimeSettings(f.id).playstyleProfile().isIdleObserving(), "Still idle");
                     f.player().getInventory().setStack(0, new ItemStack(Items.APPLE, 2));
-                    f.player().getHungerManager().setFoodLevel(16);
+                    f.player().getHungerManager().setFoodLevel(14);
                     f.player().getHungerManager().setSaturationLevel(0);
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1
-                        && f.player().getHungerManager().getFoodLevel() == 20, "Idle, it ate one apple: " + f.player().getInventory().getStack(0)))
+                        && f.player().getHungerManager().getFoodLevel() == 18, "Idle, it ate one apple: " + f.player().getInventory().getStack(0)))
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.runtimeSettings(f.id).playstyleProfile().isIdleObserving(), "Still idle after eating");
                     context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1, "No more food eaten than the one");

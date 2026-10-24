@@ -15,6 +15,21 @@ final class SurvivalPolicyTest {
             .withTrait(Personality.Trait.INITIATIVE, 85);
 
     @Test
+    void aHealthyPlayerEatsOnlyWhatFillsWhatIsMissingAHurtOneTopsUp() {
+        // An apple (4): from 14 it eats; at 18 it waits; at 17, one point over, it eats.
+        assertTrue(SurvivalPolicy.worthEating(14, 4, false));
+        assertFalse(SurvivalPolicy.worthEating(18, 4, false));
+        assertTrue(SurvivalPolicy.worthEating(17, 4, false));
+        // A steak (8) waits until 13.
+        assertFalse(SurvivalPolicy.worthEating(14, 8, false));
+        assertTrue(SurvivalPolicy.worthEating(13, 8, false));
+        // Hurt, it tops up for the healing; too hungry to sprint, it eats anything; full, nothing.
+        assertTrue(SurvivalPolicy.worthEating(19, 8, true));
+        assertTrue(SurvivalPolicy.worthEating(6, 20, false));
+        assertFalse(SurvivalPolicy.worthEating(20, 4, true));
+    }
+
+    @Test
     void shouldEatOnlyWhenInjuredAndCooldownElapsed() {
         // Full health -> should not eat
         assertFalse(SurvivalPolicy.shouldEat(20.0f, 20.0f, 5, 0L, 5000L));

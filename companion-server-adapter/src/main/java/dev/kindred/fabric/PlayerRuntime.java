@@ -2270,12 +2270,18 @@ final class PlayerRuntime {
         int foodLevel = player.getHungerManager().getFoodLevel();
         boolean needsHealth = currentHealth < maxHealth;
         boolean canEatVanilla = player.canConsume(false);
+        // As a person eats: only food that fills what is missing, unless hurt or too hungry to sprint (SurvivalPolicy).
+        java.util.function.Predicate<ItemStack> worth = stack -> {
+            var food = stack.get(DataComponentTypes.FOOD);
+            return food != null && (dev.kindred.core.SurvivalPolicy.worthEating(foodLevel, food.nutrition(), needsHealth)
+                    || needsHealth && food.canAlwaysEat());
+        };
         if (canEatVanilla || needsHealth) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {
                 var stack = player.getInventory().getStack(slot);
-                if (isEligibleFood(stack, canEatVanilla, needsHealth)) {
+                if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
                     double score = foodQualityScore(stack, needsHealth);
                     if (score > bestFoodScore) {
                         bestFoodScore = score;
@@ -2288,7 +2294,7 @@ final class PlayerRuntime {
                 double bestInvScore = Double.NEGATIVE_INFINITY;
                 for (int slot = 9; slot < 36; slot++) {
                     var stack = player.getInventory().getStack(slot);
-                    if (isEligibleFood(stack, canEatVanilla, needsHealth)) {
+                    if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
                         double score = foodQualityScore(stack, needsHealth);
                         if (score > bestInvScore) {
                             bestInvScore = score;
@@ -2299,7 +2305,7 @@ final class PlayerRuntime {
                 if (invFoodSlot != -1) {
                     int slot = invFoodSlot;
                     var stack = player.getInventory().getStack(slot);
-                    if (isEligibleFood(stack, canEatVanilla, needsHealth)) {
+                    if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
                         int targetH = -1;
                         for (int h = 0; h < 9; h++) {
                             if (player.getInventory().getStack(h).isEmpty()) {

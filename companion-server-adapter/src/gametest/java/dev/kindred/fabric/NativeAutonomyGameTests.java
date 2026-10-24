@@ -135,14 +135,13 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(!f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Patch acknowledged"))
                 .createAndAdd(() -> {
                     f.player().getInventory().setStack(0, new ItemStack(Items.APPLE, 2));
-                    // One apple's worth from full: it eats while short of full, as before.
-                    f.player().getHungerManager().setFoodLevel(16);
+                    f.player().getHungerManager().setFoodLevel(14);
                     f.player().getInventory().setStack(10, new ItemStack(Items.IRON_CHESTPLATE));
                     f.player().getInventory().setStack(1, new ItemStack(Items.IRON_AXE));
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1
-                        && f.player().getHungerManager().getFoodLevel() == 20, "One apple eaten, edits off: " + f.player().getInventory().getStack(0)))
+                        && f.player().getHungerManager().getFoodLevel() == 18, "One apple eaten, edits off: " + f.player().getInventory().getStack(0)))
                 .createAndAdd(() -> {
                     var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
                     context.assertTrue(status.explanation().contains("Autonomous progression awaits qualified body, skills and activity admission"),
