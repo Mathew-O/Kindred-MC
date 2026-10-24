@@ -4,6 +4,16 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-29a (builds grown from a seed block), on top of `85507e4`.
+  - New JUnit: `BuildStyleTest` (6).
+  - New native fixtures (`NativeSeedBuildGameTests`, six):
+    - `givenACherrySeedItGrowsACherryCabinOfItsWorldsOwnPlanAndBuildsItExact`: given a cherry log as its seed and as much of each block as any cherry cabin takes, Mason grows its cabin in cherry on its world's own plan and facing, not the first plan, and builds it exact; its own repair check finds it whole.
+    - `withNoSeedItGrowsItsCabinInTheWoodItHasToHand`: with no seed, holding spruce, it grows a spruce cabin.
+    - Four fixed shapes, each turned another way: nine by nine under a flat roof, nine by seven, seven by nine with two windows a side, seven by seven laid out the other way about.
+  - Found on the way: a nine by nine cabin's gable stopped short of its last ridge slabs, out of reach from the builder's scaffold. No gable now spans more than seven, and a cabin nine by nine is roofed flat.
+  - The base, repair and life fixtures build the first plan in oak, as their bills are made for.
+  - Full `runGametest` runs: run 18 passed 308/309 and run 17 307/309; the three failures, none in this slice's code, are set out in [E-29a](evidence/E-29a.md). `./gradlew build` passed: 551 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `a797ab283fb69f6c6406cce0a86da4167ce4ec3de18b965249ea62df19167a8b`.
 - F-25c9 (one weighted list, life first), on top of `cac6f4c`.
   - New JUnit: `LifeFirstTest` (5).
   - New native fixtures:

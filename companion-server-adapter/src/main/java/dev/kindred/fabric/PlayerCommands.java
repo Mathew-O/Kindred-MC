@@ -149,6 +149,11 @@ public final class PlayerCommands {
                     String raw = StringArgumentType.getString(context, "enabled");
                     return runtime.setBases(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                 })));
+        // The seed block a player grows its builds from (E-29a): /aiplayer seed <block> [player], /aiplayer seed clear [player].
+        root.then(CommandManager.literal("seed")
+                .then(withOptionalId(CommandManager.literal("clear"), (runtime, context, id) -> runtime.setSeedBlock(context.getSource(), id, null)))
+                .then(withOptionalId(CommandManager.argument("block", IdentifierArgumentType.identifier()), (runtime, context, id) ->
+                        runtime.setSeedBlock(context.getSource(), id, IdentifierArgumentType.getIdentifier(context, "block").toString()))));
         root.then(CommandManager.literal("gui").executes(context -> {
             PlayerRuntime runtime = KindredMod.runtime();
             if (runtime == null) return unavailable(context.getSource());

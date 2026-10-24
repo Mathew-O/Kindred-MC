@@ -58,6 +58,8 @@ public final class NativeBaseGameTests implements FabricGameTest {
                     // Playing, not looking on (a new player only watches until it is set to play), with the leave for bases.
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
+                    // Its base on the first plan in oak, as this fixture's bill is made for, not grown (E-29a).
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
                 .createAndAdd(() -> {
                     trips[0] = Math.max(trips[0], f.runtime.buildTrips(f.id));

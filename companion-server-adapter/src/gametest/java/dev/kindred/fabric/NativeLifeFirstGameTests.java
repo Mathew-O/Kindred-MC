@@ -60,6 +60,8 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                     player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
+                    // Its base on the first plan in oak, as this fixture's bill is made for, not grown (E-29a).
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
                 .createAndAdd(() -> {
                     var base = f.runtime.currentBase(f.id);
@@ -154,6 +156,8 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                     player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
+                    // Its base on the first plan in oak, as this fixture's bill is made for, not grown (E-29a).
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
                 .createAndAdd(() -> {
                     if (f.runtime.lifeNote(f.id).startsWith("Hungry")) noted[0] = true;

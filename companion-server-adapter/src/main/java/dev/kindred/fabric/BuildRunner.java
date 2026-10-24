@@ -464,7 +464,11 @@ final class BuildRunner {
                         return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Finding a way up for " + what));
                     }
                 }
-                var task = supply.campaign().gather(body, kind, 64, what, p -> !onSite(pos(p)));
+                // Logs of its own wood: a cherry build is not made of the oak beside it (E-29a).
+                String log = g.item();
+                var world = player.getServerWorld();
+                var task = supply.campaign().gather(body, kind, 64, what, p -> !onSite(pos(p)) && (kind != WorldKnowledge.Kind.LOG
+                        || net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(p).getBlock()).toString().equals(log)));
                 // None in sight: out over the ground to look, a few times, before the build ends without them.
                 if (task.isEmpty() && looks < LOOKS) {
                     task = supply.campaign().lookFor(body, what);

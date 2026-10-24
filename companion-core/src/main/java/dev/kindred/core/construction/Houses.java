@@ -17,7 +17,9 @@ import java.util.Set;
  *   <li>{@link Stage#MANOR}: two floors on a larger plan. Below, a storage hall, a workshop and an enchanting room, the
  *   table ringed by fifteen bookshelves; above, bedrooms and a library.</li>
  * </ul>
- * Windows are open, glass coming later. Pure.
+ * Windows are open, glass coming later. Each stage comes in variants (E-29a): its first plan, and others a few blocks
+ * wider or deeper, laid out the other way about, the cabin's roof another way and its side walls with two windows,
+ * so a build grown from a seed block ({@link BuildStyle}) is not the same in every world. Pure.
  */
 public final class Houses {
     public enum Stage {
@@ -54,29 +56,95 @@ public final class Houses {
 
     private Houses() { }
 
+    /**
+     * A variant's plan: its width (west to east) and depth (north to south), whether it is laid out the other way about
+     * (west for east), its roof, and the windows in each side wall.
+     */
+    public record Shape(int width, int depth, boolean mirrored, Roof roof, int sideWindows) { }
+
+    /**
+     * A cabin's roof: gabled with its ridge east to west or north to south, or flat. A gable spans seven blocks at
+     * most: across nine, the middle of its ridge is out of the builder's reach from its scaffold (a nine by nine cabin
+     * stopped short of its last ridge slabs). A flat roof it stands on as it lays it, as the house's.
+     */
+    public enum Roof { RIDGE_EAST_WEST, RIDGE_NORTH_SOUTH, FLAT }
+
+    /** The shape of {@code stage}'s plan {@code variant}: 0 its first plan, others drawn from the variant's bits. */
+    public static Shape shape(Stage stage, int variant) {
+        if (variant < 0 || variant > BuildStyle.VARIANTS) throw new IllegalArgumentException("No such variant: " + variant);
+        if (variant == 0) return new Shape(stage.width, stage.depth, false, stage == Stage.CABIN ? Roof.RIDGE_EAST_WEST : Roof.FLAT, 1);
+        int v = variant;
+        boolean mirrored = (v >> 2 & 1) == 1;
+        return switch (stage) {
+            case CABIN -> {
+                int width = 7 + 2 * (v & 1), depth = 7 + 2 * (v >> 1 & 1);
+                // The ridge along the long side, so the gable spans seven; square, either way; nine by nine, flat.
+                Roof roof = width == 9 && depth == 9 ? Roof.FLAT : width == 9 ? Roof.RIDGE_EAST_WEST : depth == 9 ? Roof.RIDGE_NORTH_SOUTH
+                        : (v >> 3 & 1) == 1 ? Roof.RIDGE_NORTH_SOUTH : Roof.RIDGE_EAST_WEST;
+                yield new Shape(width, depth, mirrored, roof, 1 + (v >> 4 & 1));
+            }
+            case HOUSE -> new Shape(9 + 2 * (v & 1), 11 + 2 * (v >> 1 & 1), mirrored, Roof.FLAT, 1);
+            case MANOR -> new Shape(13 + 2 * (v & 1), 15 + 2 * (v >> 1 & 1), mirrored, Roof.FLAT, 1);
+        };
+    }
+
+    /** The ground a plan covers once turned: its span west to east, then north to south. */
+    public static int[] span(Shape shape, int turns) {
+        return Math.floorMod(turns, 2) == 0 ? new int[] {shape.width(), shape.depth()} : new int[] {shape.depth(), shape.width()};
+    }
+
+    /**
+     * Where a plan's origin goes for it, turned {@code turns} quarters clockwise, to cover the ground from
+     * {@code corner}, its north-west corner, as far as its {@link #span}: a plan turns about its origin.
+     */
+    public static Pos originFor(Pos corner, Shape shape, int turns) {
+        return switch (Math.floorMod(turns, 4)) {
+            case 1 -> corner.add(shape.depth() - 1, 0, 0);
+            case 2 -> corner.add(shape.width() - 1, 0, shape.depth() - 1);
+            case 3 -> corner.add(0, 0, shape.width() - 1);
+            default -> corner;
+        };
+    }
+
     public static Blueprint of(Stage stage, String wood, String stone) {
+        return of(stage, new BuildStyle("", wood, stone, 0, 0));
+    }
+
+    /** {@code stage}'s plan in a style's materials and variant; its turns are for placing it. */
+    public static Blueprint of(Stage stage, BuildStyle style) {
+        String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
         String s = stone.contains(":") ? stone : "minecraft:" + stone;
-        var b = new Builder(stage.width, stage.depth, wood, s);
+        var shape = shape(stage, style.variant());
+        var b = new Builder(shape.width(), shape.depth(), wood, s);
         switch (stage) {
-            case CABIN -> cabin(b);
+            case CABIN -> cabin(b, shape);
             case HOUSE -> house(b);
             case MANOR -> manor(b);
         }
-        return new Blueprint(wood + " " + stage.noun, Generators.SOURCE + "house?stage=" + stage.noun + "&wood=" + wood + "&stone=" + s,
+        if (shape.mirrored()) b.mirror();
+        String variant = style.variant() == 0 ? "" : "&variant=" + style.variant();
+        return new Blueprint(wood + " " + stage.noun, Generators.SOURCE + "house?stage=" + stage.noun + "&wood=" + wood + "&stone=" + s + variant,
                 "Kindred", "Kindred's own", b.blocks(), b.clear());
     }
 
     /** One room: walls three high under a gabled roof, a bed, a table, a furnace, two chests and torches. */
-    private static void cabin(Builder b) {
+    private static void cabin(Builder b, Shape shape) {
         b.floor(0);
         b.walls(1, 3);
         b.door(b.width / 2, 1, b.depth - 1);
         b.window(1, 2, 0);
         b.window(b.width - 2, 2, 0);
-        b.window(0, 2, b.depth / 2);
-        b.window(b.width - 1, 2, b.depth / 2);
-        b.gableRoof(4);
+        // The side walls' windows: one in the middle, or two apart.
+        for (int z : shape.sideWindows() == 1 ? new int[] {b.depth / 2} : new int[] {2, b.depth - 3}) {
+            b.window(0, 2, z);
+            b.window(b.width - 1, 2, z);
+        }
+        switch (shape.roof()) {
+            case RIDGE_EAST_WEST -> b.gableRoof(4);
+            case RIDGE_NORTH_SOUTH -> b.gableRoofAlongZ(4);
+            case FLAT -> b.flatRoof(4);
+        }
         // Furniture along the walls, nothing in the way of the door.
         b.bed(1, 1, 2, "north");
         b.put(b.width - 2, 1, 1, "minecraft:crafting_table");
@@ -280,6 +348,58 @@ public final class Houses {
                 }
                 if (south - north <= 2) break;
             }
+        }
+
+        /** As {@link #gableRoof}, the ridge running north to south: stairs along the west and east eaves facing in. */
+        void gableRoofAlongZ(int eaves) {
+            String stair = "minecraft:" + wood + "_stairs[facing=%s,half=bottom]", slab = "minecraft:" + wood + "_slab[type=bottom]";
+            for (int z = 0; z < depth; z++) {
+                put(0, eaves, z, stair.formatted("east"));
+                put(width - 1, eaves, z, stair.formatted("west"));
+                for (int x = 1; x < width - 1; x++) put(x, eaves, z, planks());
+            }
+            for (int k = 1; ; k++) {
+                int west = k, east = width - 1 - k, y = eaves + k;
+                if (east < west) break;
+                for (int z = 0; z < depth; z++) {
+                    if (east == west) {
+                        put(west, y, z, slab);
+                        continue;
+                    }
+                    put(west, y, z, stair.formatted("east"));
+                    put(east, y, z, stair.formatted("west"));
+                    if (east - west == 2) put(west + 1, y, z, slab);
+                    else if (east - west > 2) {
+                        put(west + 1, y, z, planks());
+                        put(east - 1, y, z, planks());
+                    }
+                }
+                if (east - west <= 2) break;
+            }
+        }
+
+        /**
+         * The plan laid out the other way about: west for east, each block turned to match (a stair or chest facing east
+         * faces west, a door hung on its left is hung on its right).
+         */
+        void mirror() {
+            var mirrored = new LinkedHashMap<Pos, BlockSpec>();
+            for (var e : at.entrySet()) {
+                var p = e.getKey();
+                var spec = e.getValue();
+                String facing = spec.property("facing");
+                if ("east".equals(facing)) spec = spec.with("facing", "west");
+                else if ("west".equals(facing)) spec = spec.with("facing", "east");
+                String hinge = spec.property("hinge");
+                if (hinge != null) spec = spec.with("hinge", hinge.equals("left") ? "right" : "left");
+                mirrored.put(new Pos(width - 1 - p.x(), p.y(), p.z()), spec);
+            }
+            at.clear();
+            at.putAll(mirrored);
+            var flipped = new ArrayList<Pos>(open.size());
+            for (Pos p : open) flipped.add(new Pos(width - 1 - p.x(), p.y(), p.z()));
+            open.clear();
+            open.addAll(flipped);
         }
 
         /** Every cell inside the walls from {@code from} to {@code to} not taken is kept clear. */

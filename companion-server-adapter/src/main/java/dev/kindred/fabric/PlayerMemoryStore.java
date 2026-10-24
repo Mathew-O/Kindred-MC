@@ -45,14 +45,26 @@ final class PlayerMemoryStore implements AutoCloseable {
 
     /**
      * A base the player built or is building (M-01c): its stage ({@code cabin}, {@code house}, {@code manor}), where
-     * its floor's north-west corner is, and whether it stands whole.
+     * its plan's origin is, whether it stands whole, and the style it was grown in (E-29a): the seed block, its wood,
+     * its plan's variant and its quarter turns. A base recorded before E-29a has no wood: it is the first plan, in oak,
+     * its origin its floor's north-west corner.
      */
-    record Base(String stage, String dimension, int x, int y, int z, boolean complete) { }
+    record Base(String stage, String dimension, int x, int y, int z, boolean complete, String seed, String wood, int variant, int turns) {
+        Base(String stage, String dimension, int x, int y, int z, boolean complete) {
+            this(stage, dimension, x, y, z, complete, null, null, 0, 0);
+        }
+
+        Base finished() {
+            return new Base(stage, dimension, x, y, z, true, seed, wood, variant, turns);
+        }
+    }
 
     /** The player's bases in one world, oldest first, and the place the first was sited by. Game thread only. */
     static final class Bases {
         String player = "";
         Place anchor;
+        /** The seed block it was given to grow its builds from (E-29a), or none. */
+        String seed;
         List<Base> built = new ArrayList<>();
     }
 

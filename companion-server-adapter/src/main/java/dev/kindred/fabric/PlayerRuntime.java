@@ -3754,7 +3754,10 @@ final class PlayerRuntime {
                     if (!running || entries.get(id) != entry) return;
                     entry.bases = loaded != null ? loaded : new PlayerMemoryStore.Bases();
                     // A record it cannot read as one of its stages (an edited file, a stage since renamed) is left out.
-                    entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null);
+                    entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null
+                            || base.wood() != null && !dev.kindred.core.construction.BuildNeeds.WOODS.contains(base.wood())
+                            || base.variant() < 0 || base.variant() > dev.kindred.core.construction.BuildStyle.VARIANTS);
+                    if (entry.seedBlock != null) entry.bases.seed = entry.seedBlock;
                     entry.basesLoading = false;
                 }));
             }
@@ -3766,7 +3769,7 @@ final class PlayerRuntime {
         var last = record.built.isEmpty() ? null : record.built.get(record.built.size() - 1);
         if (last != null && !last.dimension().equals(dimension)) return false;
         if (last != null && !last.complete()) {
-            return startBase(entry, stageOf(last), new BlockPos(last.x(), last.y(), last.z()), "Back to its " + last.stage());
+            return startBase(entry, last, "Back to its " + last.stage());
         }
         // What it built it keeps whole (E-31a): a stage with blocks gone or out of place (a chest broken, a wall blown
         // out) is built again on its own plan, which places only what is missing, its blocks fetched as any build's.
@@ -3776,7 +3779,7 @@ final class PlayerRuntime {
             if (damage > 0) {
                 String why = "Repairing its " + base.stage() + ", " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
                 noteBase(entry, why);
-                if (!startBase(entry, stageOf(base), new BlockPos(base.x(), base.y(), base.z()), why)) return false;
+                if (!startBase(entry, base, why)) return false;
                 entry.baseRepair = base;
                 return true;
             }
@@ -3792,35 +3795,130 @@ final class PlayerRuntime {
         }
         int anchorX = record.anchor.x(), anchorZ = record.anchor.z();
         if (last != null) {
-            var before = stageOf(last);
-            anchorX = last.x() + before.width / 2;
-            anchorZ = last.z() + before.depth / 2;
+            var before = footprint(last);
+            anchorX = (before.minX() + before.maxX()) / 2;
+            anchorZ = (before.minZ() + before.maxZ()) / 2;
         }
         var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
-        for (var base : record.built) {
-            var built = stageOf(base);
-            avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(base.x(), base.z(), base.x() + built.width - 1, base.z() + built.depth - 1));
-        }
-        var site = dev.kindred.core.construction.BaseSite.choose(ground(world), anchorX, anchorZ, BASE_RADIUS, stage.width, stage.depth,
-                stageHeight(stage), avoid);
+        for (var base : record.built) avoid.add(footprint(base));
+        // Its style grown from its seed block, or the wood it has to hand, and its world (E-29a): this world's stage
+        // is not the next world's.
+        var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : dev.kindred.core.construction.BuildStyle.grown(record.seed,
+                woodAtHand(entry, body), world.getSeed() ^ id.getMostSignificantBits() ^ id.getLeastSignificantBits() * 31 + stage.ordinal());
+        var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
+        int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
+        var plan = dev.kindred.core.construction.Houses.of(stage, style);
+        var site = dev.kindred.core.construction.BaseSite.choose(ground(world), anchorX, anchorZ, BASE_RADIUS, span[0], span[1],
+                height(plan), avoid);
         if (site.isEmpty()) {
             entry.baseCheckAt = now + BASE_NO_SITE;
             noteBase(entry, "No flat open ground for a " + stage.noun + " within " + BASE_RADIUS + " blocks of " + anchorX + ", " + anchorZ);
             return false;
         }
-        var origin = new BlockPos(site.get().x(), site.get().y(), site.get().z());
-        record.built.add(new PlayerMemoryStore.Base(stage.noun, dimension, origin.getX(), origin.getY(), origin.getZ(), false));
+        var origin = dev.kindred.core.construction.Houses.originFor(site.get(), shape, style.turns());
+        var base = new PlayerMemoryStore.Base(stage.noun, dimension, origin.x(), origin.y(), origin.z(), false,
+                style.seed().isEmpty() ? null : style.seed(), style.wood(), style.variant(), style.turns());
+        record.built.add(base);
         memories.saveBases(id, record);
-        return startBase(entry, stage, origin, decision.why());
+        return startBase(entry, base, decision.why());
     }
 
-    private boolean startBase(Entry entry, dev.kindred.core.construction.Houses.Stage stage, BlockPos origin, String why) {
-        var blueprint = dev.kindred.core.construction.Houses.of(stage, "oak", "cobblestone");
-        if (startBuild(server.getCommandSource(), entry.data.id(), blueprint, origin, 0) != 1) return false;
+    private boolean startBase(Entry entry, PlayerMemoryStore.Base base, String why) {
+        var style = styleOf(base);
+        if (startBuild(server.getCommandSource(), entry.data.id(), planOf(base), new BlockPos(base.x(), base.y(), base.z()), style.turns()) != 1) {
+            return false;
+        }
         entry.baseBuild = entry.build;
-        server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + why + ": a " + stage.noun + " at "
-                + origin.getX() + ", " + origin.getY() + ", " + origin.getZ() + "."), false);
+        var span = footprint(base);
+        server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + why + ": a " + style.wood().replace('_', ' ')
+                + " " + base.stage() + " at " + span.minX() + ", " + base.y() + ", " + span.minZ() + "."), false);
         return true;
+    }
+
+    /** The style a base was built in: its own, or for a base recorded before E-29a the first plan in oak. */
+    private static dev.kindred.core.construction.BuildStyle styleOf(PlayerMemoryStore.Base base) {
+        if (base.wood() == null) return dev.kindred.core.construction.BuildStyle.CLASSIC;
+        return new dev.kindred.core.construction.BuildStyle(base.seed(), base.wood(), "cobblestone", base.variant(), base.turns());
+    }
+
+    /** A base's plan, in its own style. */
+    private static dev.kindred.core.construction.Blueprint planOf(PlayerMemoryStore.Base base) {
+        return dev.kindred.core.construction.Houses.of(stageOf(base), styleOf(base));
+    }
+
+    /** A base's blocks as the world holds them: its plan turned and placed at its origin. */
+    private static List<dev.kindred.core.construction.Blueprint.Block> placedOf(PlayerMemoryStore.Base base) {
+        return planOf(base).placed(new dev.kindred.core.construction.Pos(base.x(), base.y(), base.z()), styleOf(base).turns());
+    }
+
+    /** The ground a base covers. */
+    private static dev.kindred.core.construction.BaseSite.Footprint footprint(PlayerMemoryStore.Base base) {
+        int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (var block : placedOf(base)) {
+            minX = Math.min(minX, block.at().x());
+            minZ = Math.min(minZ, block.at().z());
+            maxX = Math.max(maxX, block.at().x());
+            maxZ = Math.max(maxZ, block.at().z());
+        }
+        return new dev.kindred.core.construction.BaseSite.Footprint(minX, minZ, maxX, maxZ);
+    }
+
+    /**
+     * The wood a player has to hand for a base grown with no seed block (E-29a): the wood it carries most of, as
+     * planks or logs, else that of the nearest tree it knows, else none.
+     */
+    private static String woodAtHand(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var count = new HashMap<String, Integer>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            String id = Registries.ITEM.getId(stack.getItem()).getPath();
+            String wood = id.endsWith("_planks") || id.endsWith("_log") ? dev.kindred.core.construction.BuildStyle.woodOf(id) : null;
+            if (wood != null) count.merge(wood, stack.getCount() * (id.endsWith("_log") ? 4 : 1), Integer::sum);
+        }
+        var held = count.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
+        if (held.isPresent()) return held.get();
+        if (entry.campaign == null) return null;
+        var world = player.getServerWorld();
+        return entry.campaign.knowledge().nearest(world, WorldKnowledge.Kind.LOG, player.getBlockPos(), p -> true)
+                .map(p -> dev.kindred.core.construction.BuildStyle.woodOf(Registries.BLOCK.getId(world.getBlockState(p).getBlock()).getPath()))
+                .orElse(null);
+    }
+
+    /**
+     * The seed block a player grows its builds from (E-29a), as given: a block it builds round, its wood for the
+     * walls' trim if it is wood. It takes effect for the next stage it builds. Null clears it.
+     */
+    int setSeedBlock(ServerCommandSource source, UUID id, String block) {
+        requireThread();
+        if (id == null) id = defaultBotId();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        String seed = null;
+        if (block != null) {
+            var parsed = Identifier.tryParse(block.contains(":") ? block : "minecraft:" + block);
+            if (parsed == null || !Registries.BLOCK.containsId(parsed)) return reject(source, "No such block: " + block);
+            seed = parsed.toString();
+        }
+        entry.seedBlock = seed;
+        if (entry.bases != null) {
+            entry.bases.seed = seed;
+            memories.saveBases(entry.data.id(), entry.bases);
+        }
+        String wood = dev.kindred.core.construction.BuildStyle.woodOf(seed);
+        feedback(source, seed == null ? entry.data.displayName() + " grows its builds from the wood it has to hand."
+                : entry.data.displayName() + " grows its next builds from " + seed + (wood == null ? ", in the wood it has to hand." : ", in " + wood.replace('_', ' ') + "."));
+        return 1;
+    }
+
+    /** A fixture's hook: every base this player begins from now on is built in {@code style}, not grown. */
+    void fixBaseStyle(UUID id, dev.kindred.core.construction.BuildStyle style) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.fixedBaseStyle = style;
     }
 
     /** A base's build has ended: whole, or after its last try as far as it goes, it is the player's base now. */
@@ -3847,7 +3945,7 @@ final class PlayerRuntime {
         entry.baseTries = 0;
         // As far as it goes, it is its base now; what it still lacks is a repair, tried later rather than at once.
         if (!build.complete()) entry.baseCheckAt = server.getTicks() + BASE_RETRY;
-        record.built.set(at, new PlayerMemoryStore.Base(last.stage(), last.dimension(), last.x(), last.y(), last.z(), true));
+        record.built.set(at, last.finished());
         memories.saveBases(entry.data.id(), record);
         noteBase(entry, "Its " + last.stage() + " stands" + (build.complete() ? "" : " as far as it goes (" + build.progress() + ")"));
     }
@@ -3961,8 +4059,7 @@ final class PlayerRuntime {
         var beds = new java.util.ArrayList<BlockPos>();
         for (var base : entry.bases.built) {
             if (!base.dimension().equals(dimension)) continue;
-            var blueprint = dev.kindred.core.construction.Houses.of(stageOf(base), "oak", "cobblestone");
-            for (var block : blueprint.placed(new dev.kindred.core.construction.Pos(base.x(), base.y(), base.z()), 0)) {
+            for (var block : placedOf(base)) {
                 if (block.spec().block().endsWith("_bed") && "head".equals(block.spec().property("part"))) beds.add(BuildRunner.blockPos(block.at()));
             }
         }
@@ -3987,10 +4084,8 @@ final class PlayerRuntime {
      * the like count as in place); none when any of it is out of loaded ground.
      */
     private static int baseDamage(ServerWorld world, PlayerMemoryStore.Base base) {
-        var stage = stageOf(base);
-        var blueprint = dev.kindred.core.construction.Houses.of(stage, "oak", "cobblestone");
         int damage = 0;
-        for (var block : blueprint.placed(new dev.kindred.core.construction.Pos(base.x(), base.y(), base.z()), 0)) {
+        for (var block : placedOf(base)) {
             BlockPos at = BuildRunner.blockPos(block.at());
             if (!world.isChunkLoaded(at)) return 0;
             if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
@@ -4015,10 +4110,10 @@ final class PlayerRuntime {
         return null;
     }
 
-    /** A stage's height over its floor, roof included. */
-    private static int stageHeight(dev.kindred.core.construction.Houses.Stage stage) {
+    /** A plan's height over its floor, roof included. */
+    private static int height(dev.kindred.core.construction.Blueprint plan) {
         int top = 0;
-        for (var b : dev.kindred.core.construction.Houses.of(stage, "oak", "cobblestone").blocks()) top = Math.max(top, b.at().y());
+        for (var b : plan.blocks()) top = Math.max(top, b.at().y());
         return top + 1;
     }
 
@@ -4043,9 +4138,9 @@ final class PlayerRuntime {
         int free = 0, slots = 0;
         var world = player.getServerWorld();
         if (last != null) {
-            var stage = stageOf(last);
-            int height = stageHeight(stage);
-            for (BlockPos pos : BlockPos.iterate(last.x(), last.y(), last.z(), last.x() + stage.width - 1, last.y() + height, last.z() + stage.depth - 1)) {
+            for (var block : placedOf(last)) {
+                if (!block.spec().block().equals("minecraft:chest")) continue;
+                BlockPos pos = BuildRunner.blockPos(block.at());
                 if (!world.isChunkLoaded(pos) || !(world.getBlockEntity(pos) instanceof net.minecraft.block.entity.ChestBlockEntity chest)) continue;
                 slots += chest.size();
                 for (int slot = 0; slot < chest.size(); slot++) if (chest.getStack(slot).isEmpty()) free++;
@@ -7425,6 +7520,9 @@ final class PlayerRuntime {
         BuildRunner baseBuild;
         /** The base the build in hand repairs (E-31a), if it is a repair. */
         PlayerMemoryStore.Base baseRepair;
+        /** The seed block it was given (E-29a), until its bases are read; and a fixture's fixed style for its bases. */
+        String seedBlock;
+        dev.kindred.core.construction.BuildStyle fixedBaseStyle;
         /**
          * Life first (F-25c9): whether it is out getting food to last, until when a look for food that came to nothing
          * holds, the walks it has taken to look, when it may try its bed again after a sleep that did not take, the

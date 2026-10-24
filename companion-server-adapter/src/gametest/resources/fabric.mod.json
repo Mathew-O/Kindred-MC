@@ -70,7 +70,8 @@
       "dev.kindred.fabric.NativeHouseGameTests",
       "dev.kindred.fabric.NativeBaseGameTests",
       "dev.kindred.fabric.NativeBaseRepairGameTests",
-      "dev.kindred.fabric.NativeLifeFirstGameTests"
+      "dev.kindred.fabric.NativeLifeFirstGameTests",
+      "dev.kindred.fabric.NativeSeedBuildGameTests"
     ]
   },
   "depends": {
