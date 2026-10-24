@@ -483,12 +483,10 @@ final class BuildRunner {
                 boolean walkedThere = step.stance().equals(lastStance) && stanceWalks >= 3 && player.isOnGround()
                         && standing(player).equals(step.stance());
                 if (!walkedThere && !at(player, step.stance())) {
-                    stanceWalks = step.stance().equals(lastStance) ? stanceWalks + 1 : 1;
-                    lastStance = step.stance();
                     // Walked to the same spot a dozen times and never there by the plan's reckoning (the hut's last
                     // stair from its scaffold, in a suite run): that spot is avoided until the build gets on, and
                     // another found to place from.
-                    if (stanceWalks > WALKS_TO_A_SPOT) {
+                    if (step.stance().equals(lastStance) && stanceWalks > WALKS_TO_A_SPOT) {
                         shunned.add(step.stance());
                         stanceWalks = 0;
                         lastStance = null;
@@ -673,6 +671,14 @@ final class BuildRunner {
             return;
         }
         if (PAUSE.equals(task.label())) return;
+        // A walk to a spot to place from is counted when it ends, not when it is asked for: the runtime may ask for the
+        // next step more than once before it sets out, and a count kept there passed a dozen in two walks, in the farm
+        // ward's first course, and gave up every spot round a block it could reach.
+        if ("native_goto".equals(task.skill()) && task.label().startsWith("To ") && task.label().contains(" to place ")) {
+            Pos to = new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
+            stanceWalks = to.equals(lastStance) ? stanceWalks + 1 : 1;
+            lastStance = to;
+        }
         if (completed) {
             failures = 0;
         } else if (!"native_wait".equals(task.skill())) {

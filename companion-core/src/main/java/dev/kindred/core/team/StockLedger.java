@@ -109,6 +109,17 @@ public class StockLedger {
         }
     }
 
+    /**
+     * A reservation held across a restart, as saved: active again, its items counted as in stock, since they were when
+     * it was made. Known already, it is left as it is.
+     */
+    public synchronized void restore(StockReservation reservation) {
+        Objects.requireNonNull(reservation, "reservation");
+        if (reservation.status() != StockReservation.ReservationStatus.ACTIVE || reservations.containsKey(reservation.reservationId())) return;
+        reservations.put(reservation.reservationId(), reservation);
+        totalStock.merge(reservation.itemId(), reservation.quantity(), Integer::sum);
+    }
+
     public synchronized Optional<StockReservation> getReservation(UUID reservationId) {
         return Optional.ofNullable(reservations.get(reservationId));
     }

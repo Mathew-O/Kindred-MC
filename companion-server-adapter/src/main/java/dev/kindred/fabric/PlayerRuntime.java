@@ -204,6 +204,8 @@ final class PlayerRuntime {
     int blocksScannedThisTick() { return blocksScannedThisTick; }
 
     private final TeamCoordinator teamCoordinator = new TeamCoordinator();
+    /** The shared projects the store holds, whose every change is saved; a project only in memory (a fixture's) is not. */
+    private final Set<ProjectId> storedProjects = new HashSet<>();
     /** Matches, and who may attack whom in them (M-00a, D7). */
     private final dev.kindred.core.match.MatchRegistry matches = new dev.kindred.core.match.MatchRegistry();
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -367,6 +369,7 @@ final class PlayerRuntime {
             }
         });
         this.attentionScheduler = new AttentionWorkScheduler(this.runtimeSession, AttentionSchedulePolicy.defaultPolicy());
+        teamCoordinator.onChange(this::saveTeamChange);
     }
 
     private static long now() { return System.nanoTime() / 1_000_000; }
@@ -513,6 +516,7 @@ final class PlayerRuntime {
                         if (err == null && loadedProjects != null) {
                             server.execute(() -> {
                                 for (SharedProject proj : loadedProjects) {
+                                    storedProjects.add(proj.id());
                                     teamCoordinator.registerProject(proj);
                                 }
                             });
@@ -4760,10 +4764,9 @@ final class PlayerRuntime {
         // 2. Scheduled routine candidates (cached from scheduler slices)
         List<NativeTaskCandidate> routineCandidates = autonomyAdmitted ? entry.cachedRoutineCandidates : List.of();
 
+        // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
-        if (!autonomyAdmitted) {
-            taskCandidates = List.of();
-        } else if (routineCandidates.isEmpty()) {
+        if (routineCandidates.isEmpty()) {
             taskCandidates = essentialCandidates;
         } else if (essentialCandidates.isEmpty()) {
             taskCandidates = routineCandidates;
@@ -4813,6 +4816,8 @@ final class PlayerRuntime {
                                 entry.currentTaskId = null;
                                 return;
                             }
+                            // What it holds of the task's output now, so that its completion credits what it made.
+                            entry.teamBaselines.put(tId, produced(entry, claimed.get()));
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
@@ -5392,11 +5397,21 @@ final class PlayerRuntime {
         UUID companionId = entry.data.id();
         switch (state) {
             case COMPLETED -> {
+                var finishedLease = entry.lease;
                 if (entry.lease != null) claims.releaseTask(entry.lease.taskId());
                 entry.lease = null;
                 entry.blocker = "Completed " + entry.skillId + ": " + entry.runner.checkpoint().map(Checkpoint::progress).orElse(Map.of()) + ".";
                 if (finishedTaskId != null) {
-                    teamCoordinator.completeTask(TaskId.of(finishedTaskId), entry.data.id(), entry.blocker);
+                    // A shared task's completion names the action it came of and credits what its player now holds
+                    // more of its output than when it took the task up: what was made, not what was planned (E-11).
+                    var tId = TaskId.of(finishedTaskId);
+                    Map<String, Integer> observed = teamCoordinator.findTask(tId).map(task -> {
+                        String item = task.arguments().get("produces_item");
+                        Integer before = entry.teamBaselines.remove(tId);
+                        return item == null || before == null ? Map.<String, Integer>of() : Map.of(item, Math.max(0, produced(entry, task) - before));
+                    }).orElse(Map.of());
+                    teamCoordinator.completeTask(tId, entry.data.id(), entry.blocker
+                            + (finishedLease != null ? " (action " + finishedLease.actionId() + ")" : ""), observed);
                 }
                 if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId)
                         || "native_stair".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
@@ -5991,6 +6006,9 @@ final class PlayerRuntime {
         Entry entry = authorizedEntry(source, requestedId, "recover this companion");
         if (entry == null) return 0;
         if (entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "A removed companion cannot be recovered.");
+        // A shared task held for it through a restart, its action uncertain, is free again for any player once an
+        // operator has recovered it, and its reservation released.
+        teamCoordinator.handlePlayerStop(entry.data.id());
         entry.metadataFault = false;
         entry.reconciliationBlocked = false;
         entry.data = entry.data.withLifecycle(LifecycleState.SLEEPING).withStopLatched(false);
@@ -6240,6 +6258,54 @@ final class PlayerRuntime {
         return new CompanionSocials.Participant(entry.data.id(), entry.data.ownerId(), entry.data.displayName(),
                 entry.body, entry.profile, working && !entry.snapshot().stopLatched()
                 && entry.lease != null && entry.arbiter.isCurrent(entry.lease));
+    }
+
+    /**
+     * A new shared project: saved to the store, then known to the coordinator on the server thread, its every change
+     * saved after it (E-11). Completes once the coordinator knows it.
+     */
+    java.util.concurrent.CompletableFuture<SharedProject> createSharedProject(SharedProject project) {
+        requireThread();
+        var known = new java.util.concurrent.CompletableFuture<SharedProject>();
+        store.createProject(project).whenComplete((saved, failure) -> server.execute(() -> {
+            if (failure != null) { known.completeExceptionally(failure); return; }
+            storedProjects.add(saved.id());
+            teamCoordinator.registerProject(saved);
+            known.complete(saved);
+        }));
+        return known;
+    }
+
+    /** A shared project as the store holds it now. */
+    java.util.concurrent.CompletableFuture<Optional<SharedProject>> savedSharedProject(ProjectId id) {
+        return store.findProject(id);
+    }
+
+    /** How many of a shared task's output its player holds now; none for a task with no output or a player out of its body. */
+    private static int produced(Entry entry, SharedTask task) {
+        String item = task.arguments().get("produces_item");
+        if (item == null || entry.nativeBody == null || !entry.nativeBody.connected()) return 0;
+        var kind = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(item));
+        return entry.nativeBody.entity().getInventory().count(kind);
+    }
+
+    /**
+     * Saves a change to a shared project through the store's one ordered writer, as the coordinator made it: the
+     * project, each task that changed, and each reservation they hold or held (E-11). A project the store does not hold
+     * is left in memory.
+     */
+    private void saveTeamChange(SharedProject before, SharedProject after, List<StockReservation> reservations) {
+        if (store == null || !storedProjects.contains(after.id())) return;
+        java.util.function.BiConsumer<Object, Throwable> logged = (ignored, failure) -> {
+            if (failure != null) KindredMod.LOGGER.warn("Shared project {} change not saved: {}", after.id(), failure.toString());
+        };
+        store.saveProject(after, before.revision()).whenComplete(logged);
+        for (SharedTask task : after.tasks().values()) {
+            SharedTask was = before.tasks().get(task.id());
+            if (task.equals(was)) continue;
+            store.saveTask(task, was == null ? 0 : was.revision()).whenComplete(logged);
+        }
+        for (StockReservation reservation : reservations) store.saveReservation(reservation).whenComplete(logged);
     }
 
     /** The AI player a body belongs to, either body; null for a person or anything else. */
@@ -7722,6 +7788,8 @@ final class PlayerRuntime {
         /** A build the player is on (E-08b), ahead of its standing goal until it is done. */
         BuildRunner build;
         final Map<UUID, PortalRunCampaign.Task> buildTasks = new HashMap<>();
+        /** How much of each shared task's output it held when it took the task up (E-11). */
+        final Map<TaskId, Integer> teamBaselines = new HashMap<>();
         PortalRunCampaign.Task activeBuildTask;
         /** A ranch in progress (M-01a): the pen, the pair led in and bred. Its build and its steps run as the build's do. */
         RanchRunner ranch;

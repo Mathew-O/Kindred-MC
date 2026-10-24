@@ -220,6 +220,39 @@ class TeamCoordinatorTest {
     }
 
     @Test
+    void everyChangeIsReportedInOrderWithTheReservationsOfTheTasksThatChanged() {
+        record Change(long before, long after, java.util.List<StockReservation> reservations) { }
+        var changes = new java.util.ArrayList<Change>();
+        coordinator.onChange((before, after, reservations) -> changes.add(new Change(before.revision(), after.revision(), reservations)));
+        stockLedger.addStock("minecraft:iron_ingot", 5);
+        TaskId smelt = TaskId.random(), forge = TaskId.random();
+        coordinator.addTask(projectId, SharedTask.open(smelt, projectId, "Smelt", "native_smelt",
+                Map.of("reserved_item", "minecraft:iron_ingot", "reserved_count", "3"), Set.of()));
+        coordinator.addTask(projectId, SharedTask.open(forge, projectId, "Forge", "native_craft",
+                Map.of("reserved_item", "minecraft:iron_ingot", "reserved_count", "2"), Set.of()));
+        assertTrue(coordinator.claimTask(smelt, player1, 0L, 100L).isPresent());
+        assertEquals(StockReservation.ReservationStatus.ACTIVE, changes.getLast().reservations().getFirst().status(), "the claim's reservation, active");
+        assertTrue(coordinator.startTask(smelt, player1).isPresent());
+        assertTrue(coordinator.completeTask(smelt, player1, "smelted"));
+        assertEquals(StockReservation.ReservationStatus.FULFILLED, changes.getLast().reservations().getFirst().status(), "spent on completion");
+        assertTrue(coordinator.claimTask(forge, player2, 0L, 100L).isPresent());
+        coordinator.handlePlayerStop(player2);
+        assertEquals(StockReservation.ReservationStatus.RELEASED, changes.getLast().reservations().getFirst().status(), "released on stop");
+        // Two task additions, a claim, a start, a completion, a claim and a stop; each from the revision the last left.
+        assertEquals(7, changes.size());
+        for (int i = 1; i < changes.size(); i++) assertEquals(changes.get(i - 1).after(), changes.get(i).before(), "change " + i + " follows the one before");
+        // A project as it stands, loaded, is no change; a reservation it still holds is active in the ledger again.
+        int before = changes.size();
+        var loadedId = ProjectId.of("loaded");
+        var held = StockReservation.active(java.util.UUID.randomUUID(), TaskId.random(), loadedId, player1, "minecraft:diamond", 2, null);
+        coordinator.registerProject(SharedProject.create(loadedId, "Loaded", "From the store").withTask(new SharedTask(held.taskId(), loadedId, "Held",
+                "native_craft", Map.of(), Set.of(), player1, SharedTask.TaskState.IN_PROGRESS, java.util.Optional.of(held), 1L, 0L, 100L, null)));
+        assertEquals(before, changes.size());
+        assertEquals(2, stockLedger.reservedCount("minecraft:diamond"));
+        assertEquals(0, stockLedger.unreservedCount("minecraft:diamond"), "held for its player, for no one else");
+    }
+
+    @Test
     void aCancelledOrFinishedProjectsTaskCannotBeClaimedDirectly() {
         TaskId task1 = TaskId.random();
         var cancelled = ProjectId.of("cancelled");

@@ -1,5 +1,7 @@
 package dev.kindred.persistence;
 
+import dev.kindred.core.ActionLease;
+import dev.kindred.core.ActionRecord;
 import dev.kindred.core.team.ProjectId;
 import dev.kindred.core.team.SharedProject;
 import dev.kindred.core.team.SharedTask;
@@ -119,6 +121,42 @@ class SharedProjectStoreTest {
 
         // Stale update with revision 0
         assertThrows(CompletionException.class, () -> store.saveTask(claimed.start(), 0).join());
+    }
+
+    @Test
+    void startupHoldsTheTaskAndReservationOfAPlayerWhoseActionIsUncertain() {
+        UUID uncertainPlayer = store.create(new CreationRequest(UUID.randomUUID(), UUID.randomUUID(), "Juniper", UUID.randomUUID(), "minecraft:overworld"))
+                .join().companion().id();
+        UUID settledPlayer = UUID.randomUUID();
+        // Its craft was under way when the process ended: its outcome is unknown.
+        var lease = new ActionLease(uncertainPlayer, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, 1, 1);
+        store.prepareAction(ActionRecord.prepare(UUID.randomUUID(), lease, "craft", "iron pickaxe from 3 ingots")).join();
+        ProjectId pid = ProjectId.of("held_test");
+        TaskId held = TaskId.random(), reopened = TaskId.random();
+        var heldRes = StockReservation.active(UUID.randomUUID(), held, pid, uncertainPlayer, "minecraft:iron_ingot", 3, "chest:1,64,1");
+        var freedRes = StockReservation.active(UUID.randomUUID(), reopened, pid, settledPlayer, "minecraft:iron_ingot", 2, "chest:1,64,1");
+        var project = SharedProject.create(pid, "Held", "Desc")
+                .withTask(new SharedTask(held, pid, "Craft Pickaxe", "native_craft", Map.of(), Set.of(), uncertainPlayer,
+                        SharedTask.TaskState.IN_PROGRESS, Optional.of(heldRes), 2L, 50L, 200L, null))
+                .withTask(new SharedTask(reopened, pid, "Craft Shield", "native_craft", Map.of(), Set.of(), settledPlayer,
+                        SharedTask.TaskState.CLAIMED, Optional.of(freedRes), 1L, 50L, 200L, null));
+        store.createProject(project).join();
+        store.closeAsync().join();
+
+        SqliteCompanionStore reopenedStore = SqliteCompanionStore.open(dbPath, 10).join();
+        try {
+            SharedProject loaded = reopenedStore.findProject(pid).join().orElseThrow();
+            SharedTask stillHeld = loaded.getTask(held).orElseThrow();
+            assertEquals(SharedTask.TaskState.IN_PROGRESS, stillHeld.state(), "held, not reopened for another to take");
+            assertEquals(uncertainPlayer, stillHeld.assignedPlayerId());
+            assertEquals(heldRes.reservationId(), stillHeld.stockReservation().orElseThrow().reservationId(), "its reservation held with it");
+            SharedTask other = loaded.getTask(reopened).orElseThrow();
+            assertEquals(SharedTask.TaskState.OPEN, other.state(), "a task whose player has nothing uncertain is reopened");
+            assertTrue(other.stockReservation().isEmpty(), "and its reservation released");
+            assertTrue(reopenedStore.eventsSince(uncertainPlayer, 0, 100).join().stream().anyMatch(e -> e.type().equals("TEAM_TASK_HELD")));
+        } finally {
+            reopenedStore.closeAsync().join();
+        }
     }
 
     @Test
