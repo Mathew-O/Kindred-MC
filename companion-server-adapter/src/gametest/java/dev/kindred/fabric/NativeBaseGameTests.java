@@ -35,7 +35,9 @@ public final class NativeBaseGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     ground(context, trunks);
-                    for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) for (int y = 0; y <= 3; y++) {
+                    // By day: the suite's clock runs on, and at night a player with a bed of its own sleeps (F-25c9).
+                    context.getWorld().setTimeOfDay(1000);
+                    for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) for (int y = 0; y <= 3; y++) {
                         if (world.getBlockState(o.add(x, y, z)).isOf(Blocks.STONE)) stoneLeft[0]++;
                     }
                     var player = f.player();
@@ -74,7 +76,7 @@ public final class NativeBaseGameTests implements FabricGameTest {
                     exact(context, cabin, origin);
                     int logsLeft = 0, stone = 0;
                     for (BlockPos trunk : trunks) for (int y = 0; y < 6; y++) if (world.getBlockState(trunk.up(y)).isOf(Blocks.OAK_LOG)) logsLeft++;
-                    for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) for (int y = 0; y <= 3; y++) {
+                    for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) for (int y = 0; y <= 3; y++) {
                         if (world.getBlockState(o.add(x, y, z)).isOf(Blocks.STONE)) stone++;
                     }
                     KindredMod.LOGGER.info("Base: a cabin at {} in {} trip(s); {} stone mined, {} of 12 logs left", origin.toShortString(), trips[0],
@@ -95,10 +97,24 @@ public final class NativeBaseGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    /** Ground as it lies: grass on two of dirt over four of stone, no stone in sight; two trees of six logs. */
+    /**
+     * Ground as it lies: grass on two of dirt over four of stone, no stone in sight; two trees of six logs. The stone
+     * runs on 28 blocks past the field every way, as it does in a world: a tunnel dug for stone that ran off the
+     * field's edge walked out onto the open test world, where there was no stone to find, and never stopped (suite run
+     * 13, on 2026-10-24).
+     * <p>The whole of it is kept loaded and ticking, as a server keeps a player's surroundings: the test server keeps
+     * only its tests' own chunks. A base out of loaded ground is not judged for repair, and cows out of ticking ground
+     * freeze. The test framework lets every forced chunk go when the batch ends.
+     */
     static void ground(TestContext context, BlockPos[] trunks) {
         var world = context.getWorld();
         BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        for (int cx = (o.getX() - 40) >> 4; cx <= (o.getX() + 72) >> 4; cx++) {
+            for (int cz = (o.getZ() - 40) >> 4; cz <= (o.getZ() + 72) >> 4; cz++) world.setChunkForced(cx, cz, true);
+        }
+        for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) {
+            for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+        }
         for (int x = -12; x <= 44; x++) for (int z = -12; z <= 44; z++) {
             for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
             for (int y = 4; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.DIRT.getDefaultState());

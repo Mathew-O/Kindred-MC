@@ -1405,7 +1405,8 @@ final class PlayerRuntime {
             } else if (skill.equals("native_sleep")) {
                 task = new NativeSleepAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup,
                         claims, nativeActionWriter(), server::execute,
-                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        bed -> ownBed(entry, entry.nativeBody.entity().getServerWorld(), bed));
             } else if (skill.equals("native_ignite_portal")) {
                 task = new NativeIgnitePortalAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
@@ -2770,6 +2771,18 @@ final class PlayerRuntime {
             return candidates;
         }
 
+        // What keeps it alive comes before its ranch, its build or its base (F-25c9): its own bed at night, food enough
+        // to last when hunger is low. A running goal weighs food and the night itself; the routine work of a work
+        // area keeps its own order for now.
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
+                && (entry.ranch != null || entry.build != null || bases && worldEditsEnabled())) {
+            var life = lifeCandidates(entry, body);
+            if (!life.isEmpty()) {
+                candidates.addAll(life);
+                return candidates;
+            }
+        }
+
         if (entry.ranch != null) {
             candidates.addAll(ranchCandidates(entry, body));
             return candidates;
@@ -3837,6 +3850,136 @@ final class PlayerRuntime {
         record.built.set(at, new PlayerMemoryStore.Base(last.stage(), last.dimension(), last.x(), last.y(), last.z(), true));
         memories.saveBases(entry.data.id(), record);
         noteBase(entry, "Its " + last.stage() + " stands" + (build.complete() ? "" : " as far as it goes (" + build.progress() + ")"));
+    }
+
+    private static final int FOOD_LOOKS = 3, FOOD_RETRY = 6000, SLEEP_RETRY = 600, BED_REACH = 96;
+
+    /**
+     * What keeps the player alive, ahead of its ranch, build or base (F-25c9), as {@link dev.kindred.core.survival.LifeFirst}
+     * weighs it: at night, to a bed of its own and to sleep there, which sets its spawn; when hunger is low, food until
+     * it has enough to last, hunted as the goal hunts and looked for a few walks out before it gives up for a while.
+     * Empty when nothing comes before its work.
+     */
+    private List<NativeTaskCandidate> lifeCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        long now = server.getTicks();
+        long time = world.getTimeOfDay() % 24000L;
+        boolean sleepTime = world.isNight() || world.isThundering() || time >= 12542L && time <= 23460L;
+        BlockPos bed = player.isSleeping() ? player.getSleepingPosition().orElse(null)
+                : sleepTime && now >= entry.sleepRetryAt ? nearestOwnBed(entry, world, player.getBlockPos()) : null;
+        int hunger = player.getHungerManager().getFoodLevel();
+        int carried = foodCarried(player);
+        var decision = dev.kindred.core.survival.LifeFirst.next(new dev.kindred.core.survival.LifeFirst.State(hunger, carried, sleepTime,
+                bed != null, entry.gettingFood, now < entry.foodSoughtUntil));
+        if (decision.need().isEmpty()) {
+            if (entry.gettingFood) {
+                entry.gettingFood = false;
+                entry.foodLooks = 0;
+                noteLife(entry, "Food enough to last: " + (hunger + carried) + " in its body and its pack");
+            }
+            return List.of();
+        }
+        noteLife(entry, decision.why());
+        PortalRunCampaign.Task task;
+        if (decision.need().get() == dev.kindred.core.survival.LifeFirst.Need.SLEEP) {
+            if (player.isSleeping()) task = new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Asleep in its bed");
+            else if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(bed)) > 3.5 * 3.5) task = PortalRunCampaign.go(bed, 2.0, false, "To its bed for the night");
+            else task = new PortalRunCampaign.Task("native_sleep", Map.of("x", String.valueOf(bed.getX()), "y", String.valueOf(bed.getY()),
+                    "z", String.valueOf(bed.getZ())), "Sleep in its own bed");
+        } else {
+            entry.gettingFood = true;
+            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+            entry.campaign.policy(edits);
+            // Never the kind of animal its ranch is penning: those are its pair to breed.
+            var ranch = entry.ranch;
+            var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
+                    net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
+            if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
+            if (found.isEmpty()) {
+                entry.gettingFood = false;
+                entry.foodLooks = 0;
+                entry.foodSoughtUntil = now + FOOD_RETRY;
+                noteLife(entry, "No food to be had about here for now: back to its work, and it looks again later");
+                return List.of();
+            }
+            task = found.get();
+        }
+        UUID id = UUID.nameUUIDFromBytes(("life:" + entry.data.id() + ":" + task.skill() + ":" + new java.util.TreeMap<>(task.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.lifeTaskId = id;
+        entry.lifeTask = task;
+        // Its hunt is the goal's own, so the goal's record of how its steps went keeps it from the same dead end again.
+        if (decision.need().get() == dev.kindred.core.survival.LifeFirst.Need.FOOD) {
+            entry.campaignTasks.clear();
+            entry.campaignTasks.put(id, task);
+        }
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, decision.weight(),
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, task.skill(), task.args()));
+    }
+
+    /** The food points of the safe food it carries, as it would eat it. */
+    private static int foodCarried(ServerPlayerEntity player) {
+        int points = 0;
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            if (!isEligibleFood(stack, true, false)) continue;
+            points += stack.get(DataComponentTypes.FOOD).nutrition() * stack.getCount();
+        }
+        return points;
+    }
+
+    /** The nearest bed of its own bases in this world, free and within a walk of {@code from}, or null (F-25c9). */
+    private static BlockPos nearestOwnBed(Entry entry, ServerWorld world, BlockPos from) {
+        BlockPos best = null;
+        for (BlockPos bed : ownBeds(entry, world)) {
+            if (!world.isChunkLoaded(bed)) continue;
+            var state = world.getBlockState(bed);
+            if (!state.isIn(BlockTags.BEDS) || state.get(net.minecraft.block.BedBlock.OCCUPIED)) continue;
+            double d = bed.getSquaredDistance(from);
+            if (d > BED_REACH * BED_REACH) continue;
+            if (best == null || d < best.getSquaredDistance(from)) best = bed;
+        }
+        return best;
+    }
+
+    /** Whether {@code at} is either half of a bed of its own bases. */
+    private static boolean ownBed(Entry entry, ServerWorld world, BlockPos at) {
+        var state = world.getBlockState(at);
+        if (!state.isIn(BlockTags.BEDS)) return false;
+        BlockPos head = state.get(net.minecraft.block.BedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? at
+                : at.offset(state.get(net.minecraft.block.BedBlock.FACING));
+        return ownBeds(entry, world).contains(head);
+    }
+
+    /** Where the heads of the beds of its bases in this world stand, by their plans. */
+    private static List<BlockPos> ownBeds(Entry entry, ServerWorld world) {
+        if (entry.bases == null) return List.of();
+        String dimension = world.getRegistryKey().getValue().toString();
+        var beds = new java.util.ArrayList<BlockPos>();
+        for (var base : entry.bases.built) {
+            if (!base.dimension().equals(dimension)) continue;
+            var blueprint = dev.kindred.core.construction.Houses.of(stageOf(base), "oak", "cobblestone");
+            for (var block : blueprint.placed(new dev.kindred.core.construction.Pos(base.x(), base.y(), base.z()), 0)) {
+                if (block.spec().block().endsWith("_bed") && "head".equals(block.spec().property("part"))) beds.add(BuildRunner.blockPos(block.at()));
+            }
+        }
+        return beds;
+    }
+
+    private static void noteLife(Entry entry, String why) {
+        if (why.equals(entry.lifeNote)) return;
+        entry.lifeNote = why;
+        KindredMod.LOGGER.info("{} life: {}", entry.data.displayName(), why);
+    }
+
+    /** What the player last said of what keeps it alive (F-25c9), for fixtures and status. */
+    String lifeNote(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? "" : entry.lifeNote;
     }
 
     /**
@@ -4977,6 +5120,16 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.waterEscapeTaskId)) {
             entry.waterEscapeRetryTick = server.getTicks() + 200; // That shore is out of reach; try again in a while.
+        }
+        if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
+            var life = entry.lifeTask;
+            entry.lifeTaskId = null;
+            entry.lifeTask = null;
+            // A bed it could not sleep in (mobs about, someone in it) is tried again in a while, not at once (F-25c9).
+            if ("native_sleep".equals(life.skill()) && state != SkillRunner.State.COMPLETED) entry.sleepRetryAt = server.getTicks() + SLEEP_RETRY;
+            if ("native_goto".equals(life.skill()) && life.label().startsWith("Explore")) entry.foodLooks++;
+            entry.routineRefreshPending = true;
+            entry.cachedRoutineCandidates = List.of();
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED)) {
@@ -7272,6 +7425,18 @@ final class PlayerRuntime {
         BuildRunner baseBuild;
         /** The base the build in hand repairs (E-31a), if it is a repair. */
         PlayerMemoryStore.Base baseRepair;
+        /**
+         * Life first (F-25c9): whether it is out getting food to last, until when a look for food that came to nothing
+         * holds, the walks it has taken to look, when it may try its bed again after a sleep that did not take, the
+         * life task in hand, and what it last said of it.
+         */
+        boolean gettingFood;
+        long foodSoughtUntil;
+        int foodLooks;
+        long sleepRetryAt;
+        UUID lifeTaskId;
+        PortalRunCampaign.Task lifeTask;
+        String lifeNote = "";
         long baseCheckAt;
         int baseTries;
         String baseNote = "";

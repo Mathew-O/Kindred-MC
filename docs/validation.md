@@ -4,6 +4,17 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- F-25c9 (one weighted list, life first), on top of `cac6f4c`.
+  - New JUnit: `LifeFirstTest` (5).
+  - New native fixtures:
+    - `atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning`: with its cabin built and a hut under way, night falls; Mason walks to its cabin's bed, sleeps, its spawn set there, places nothing asleep, wakes as its sleep passes the night, and finishes the hut exact.
+    - `hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase`: hungry (8) with one loaf among eight cows, it hunts before it begins its base, until a full bar and the reserve are in hand, then builds its cabin exact.
+  - Three hand controls, as in [F-25c9](evidence/F-25c9.md): no life list, food only to the next mouthful, sleep only in a work area's bed.
+  - Found on the way: the test server keeps loaded and ticking only its tests' own chunks. Cows beyond them froze and shrugged off every blow after the first; a cabin beyond them unloaded and was never judged for repair. The ground the base fixtures share is now kept loaded, and its stone runs on past the field, after a tunnel dug for stone walked off its edge.
+  - Suite runs 13 and 14, before those fixes, failed the cabin fixture twice, the repair fixture once and the ranch fixture once; the ranch's failure (cows that would not come through the gate) is the one seen before this slice.
+  - The base and repair fixtures now begin by day.
+  - Full `runGametest` runs: run 16 passed 303/303; run 15 passed 302/303, its one failure the ranch fixture's known intermittent one (M-01a); runs 13 and 14, before the two fixture fixes above, failed as described. `./gradlew build` passed: 545 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `d49d4ff2a748c16c5c985bfd4f945dc617960321a840744ec9d9fc935e34912d`.
 - E-31a (repair of a player's own base), on top of `6f9b4a9`.
   - New native fixture: `aPlayerRepairsItsOwnCabinWhenAChestIsBrokenAndAWallBlownOut`.
     - Mason builds its cabin as its base from the whole bill, as though gathered, with some left over and no spare chest.

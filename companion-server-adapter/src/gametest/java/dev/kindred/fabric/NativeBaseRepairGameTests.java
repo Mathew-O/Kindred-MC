@@ -32,6 +32,8 @@ public final class NativeBaseRepairGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     NativeBaseGameTests.ground(context, trunks);
+                    // By day: the suite's clock runs on, and at night a player with a bed of its own sleeps (F-25c9).
+                    context.getWorld().setTimeOfDay(1000);
                     var player = f.player();
                     var inventory = player.getInventory();
                     inventory.clear();

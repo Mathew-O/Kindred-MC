@@ -140,6 +140,7 @@ Doors and beds now have a placement rule: each is placed by its first half, and 
 - **Where.** On the nearest flat, open, natural ground within 24 blocks of its home, or of where it stood when it first looked. Each later stage goes beside the last. It says why and where as it starts.
 - **Building it.** It builds through the needs queue. For stone it digs a staircase down off its site, and it climbs out after.
 - **Remembered.** Its bases are kept across restarts in `kindred/memory/<player>.bases.json`. A stage it did not finish is taken up again where it stands.
+- **Life first (F-25c9).** A player with work of its own (a build, a ranch, or its base) puts its life first. At night it goes to a bed of its own base, sleeps there, which sets its spawn, and goes back to its work in the morning. When its hunger is down to seven shanks and it does not carry enough to last, it hunts for food until it has a full bar and a reserve, sparing the animals its ranch is penning. With no food about, it goes back to its work and looks again after five minutes.
 - **Kept whole (E-31a).** When it looks to its base it checks what it built against the plan. A chest broken, a wall blown out or any block gone or out of place is built back as any build is, from what it holds or fetches; a chest is crafted again from planks. A repair that ends short is tried again after five minutes.
 - **Stopping one.** `/aiplayer build stop` on a base's build puts it off for five minutes.
 - **Not yet:** the base's chests do not become its storage, and it builds only in oak.

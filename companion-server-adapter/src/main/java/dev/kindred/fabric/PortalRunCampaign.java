@@ -3926,7 +3926,19 @@ final class PortalRunCampaign {
         return Optional.of(go(nearest.getBlockPos(), 2.0, false, "Approach " + what));
     }
 
+    /**
+     * Food dropped or animals in sight, as the goal hunts for its stock: a player's food to last (F-25c9), sparing the
+     * animals {@code spare} names (those it is penning).
+     */
+    Optional<Task> huntFood(NativePlayerBody body, java.util.function.Predicate<PassiveEntity> spare) {
+        return hunt(body.entity(), spare);
+    }
+
     private Optional<Task> hunt(ServerPlayerEntity player) {
+        return hunt(player, animal -> false);
+    }
+
+    private Optional<Task> hunt(ServerPlayerEntity player, java.util.function.Predicate<PassiveEntity> spare) {
         var world = player.getServerWorld();
         Box area = player.getBoundingBox().expand(24, 8, 24);
         var drops = world.getEntitiesByClass(ItemEntity.class, area.contract(16, 4, 16),
@@ -3937,6 +3949,7 @@ final class PortalRunCampaign {
             return Optional.of(go(drop.getBlockPos(), 0.6, false, "Pick up food"));
         }
         var animals = world.getEntitiesByClass(PassiveEntity.class, area, animal -> animal.isAlive() && !animal.isBaby() && !blocked(animal.getBlockPos())
+                && !spare.test(animal)
                 && (animal instanceof CowEntity || animal instanceof PigEntity || animal instanceof SheepEntity
                 || animal instanceof ChickenEntity || animal instanceof RabbitEntity) && player.canSee(animal));
         if (animals.isEmpty()) return Optional.empty();
