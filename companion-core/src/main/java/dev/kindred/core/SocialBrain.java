@@ -53,7 +53,7 @@ public final class SocialBrain {
                     "threat"), now, 100);
         }
         if (snapshot.hurt() && (previous == null || !previous.hurt())) {
-            queue(new Speech(Topic.HURT, null, pick("Ouch. I just took a hit.", "That hurt. Let's be careful here."), "hurt"), now, 90);
+            queue(new Speech(Topic.HURT, null, hurt(snapshot.harm()), "hurt"), now, 90);
         }
         if (snapshot.raining() && (previous == null || !previous.raining())) {
             queue(new Speech(Topic.RAIN, null, profile.personality().humor() >= 65
@@ -150,6 +150,19 @@ public final class SocialBrain {
             case NIGHT -> snapshot.night();
             case HURT -> snapshot.hurt();
             case WORK_COMPLETED, WORK_BLOCKED -> true;
+        };
+    }
+
+    /**
+     * A word on being hurt, of what the game says hurt it and nothing more: a player is named only when the damage was
+     * theirs, and a fall or a burn blames nobody.
+     */
+    private String hurt(SocialSnapshot.Harm harm) {
+        if (harm == null) return pick("Ouch. I just took a hit.", "That hurt. Let's be careful here.");
+        return switch (harm.source()) {
+            case PLAYER -> pick("Hey, " + harm.name() + ", watch it!", "Ow! That was you, " + harm.name() + ".");
+            case MOB -> pick("Ouch, a " + harm.name() + " got me.", "That " + harm.name() + " hit me. Careful.");
+            case WORLD -> pick("Ouch. " + harm.name() + ".", "That hurt: " + harm.name() + ".");
         };
     }
 

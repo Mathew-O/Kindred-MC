@@ -84,6 +84,64 @@ public final class NativeSurvivalGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Its reflexes need neither the server's AI world edits nor its work: with edits off, and again with the player
+     * idle (the playstyle a new player starts in), it steps off magma, and idle it eats when hungry. Neither changes a
+     * block; with edits off, before, it stood on the magma.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "reflexesEditsOff", tickLimit = 400)
+    public void withEditsOffItStillStepsOffMagma(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 390);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> f.awaitReady(context))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "EditsOff"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    context.getWorld().setBlockState(f.player().getBlockPos().down(), Blocks.MAGMA_BLOCK.getDefaultState());
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeActivityStatus(Actor.console(), f.id).work().startsWith("Completed native_retreat"),
+                        "Stepped off the magma: " + f.runtime.nativeActivityStatus(Actor.console(), f.id).work()))
+                .createAndAdd(() -> {
+                    var ground = context.getWorld().getBlockState(f.player().getBlockPos().down());
+                    context.assertTrue(ground.isOf(Blocks.STONE), "On stone now, not magma: " + ground);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "reflexesIdle", tickLimit = 600)
+    public void anIdlePlayerStillStepsOffMagmaAndEatsWhenHungry(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 590);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Idler"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.IDLE_OBSERVING) == 1,
+                            "Idle, as a new player starts");
+                    context.getWorld().setBlockState(f.player().getBlockPos().down(), Blocks.MAGMA_BLOCK.getDefaultState());
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeActivityStatus(Actor.console(), f.id).work().startsWith("Completed native_retreat"),
+                        "Idle, it stepped off the magma: " + f.runtime.nativeActivityStatus(Actor.console(), f.id).work()))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.runtimeSettings(f.id).playstyleProfile().isIdleObserving(), "Still idle");
+                    f.player().getInventory().setStack(0, new ItemStack(Items.APPLE, 2));
+                    f.player().getHungerManager().setFoodLevel(14);
+                    f.player().getHungerManager().setSaturationLevel(0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1
+                        && f.player().getHungerManager().getFoodLevel() >= 18, "Idle, it ate one apple: " + f.player().getInventory().getStack(0)))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.runtimeSettings(f.id).playstyleProfile().isIdleObserving(), "Still idle after eating");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 280)
     public void operatorRetreatSkillMovesAndSettles(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context);

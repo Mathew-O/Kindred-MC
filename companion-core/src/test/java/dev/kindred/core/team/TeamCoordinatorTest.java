@@ -49,7 +49,7 @@ class TeamCoordinatorTest {
         // Player 1 claims and completes Task 1
         var claimed = coordinator.claimTask(task1, player1, 100L, 200L);
         assertTrue(claimed.isPresent());
-        coordinator.completeTask(task1, player1, "Gathered 4 oak logs");
+        coordinator.completeTask(task1, player1, "Gathered 4 oak logs", Map.of("minecraft:oak_log", 4));
 
         // Now Task 2 should become eligible
         var eligibleAfter = coordinator.findEligibleTasks(player2);
@@ -195,6 +195,38 @@ class TeamCoordinatorTest {
         var claim2 = coordinator.claimTask(task1, player2, 165L, 50L);
         assertTrue(claim2.isPresent());
         assertEquals(player2, claim2.get().assignedPlayerId());
+    }
+
+    @Test
+    void completionCreditsOnlyWhatWasObservedNeverTheDeclaredCount() {
+        TaskId none = TaskId.random(), part = TaskId.random(), over = TaskId.random();
+        for (TaskId id : new TaskId[] {none, part, over}) {
+            coordinator.addTask(projectId, SharedTask.open(id, projectId, "Gather", "native_gather",
+                    Map.of("produces_item", "minecraft:oak_log", "produces_count", "4"), Set.of()));
+            assertTrue(coordinator.claimTask(id, player1, 0L, 100L).isPresent());
+        }
+        // Nothing observed: done, and nothing credited.
+        assertTrue(coordinator.completeTask(none, player1, "said it gathered"));
+        assertEquals(0, stockLedger.totalStock("minecraft:oak_log"));
+        // Partial output: what was seen.
+        assertTrue(coordinator.completeTask(part, player1, "gathered some", Map.of("minecraft:oak_log", 3)));
+        assertEquals(3, stockLedger.totalStock("minecraft:oak_log"));
+        // More seen than declared: no more than declared.
+        assertTrue(coordinator.completeTask(over, player1, "gathered", Map.of("minecraft:oak_log", 9)));
+        assertEquals(7, stockLedger.totalStock("minecraft:oak_log"));
+        // A second completion of the same task credits nothing again; nor does the wrong player.
+        assertFalse(coordinator.completeTask(part, player1, "again", Map.of("minecraft:oak_log", 3)));
+        assertEquals(7, stockLedger.totalStock("minecraft:oak_log"));
+    }
+
+    @Test
+    void aCancelledOrFinishedProjectsTaskCannotBeClaimedDirectly() {
+        TaskId task1 = TaskId.random();
+        var cancelled = ProjectId.of("cancelled");
+        coordinator.registerProject(SharedProject.create(cancelled, "Abandoned", "No longer wanted").withState(SharedProject.ProjectState.CANCELLED));
+        coordinator.addTask(cancelled, SharedTask.open(task1, cancelled, "Mine", "native_mine", Map.of(), Set.of()));
+        assertTrue(coordinator.findEligibleTasks(player1).stream().noneMatch(t -> t.id().equals(task1)), "not offered");
+        assertTrue(coordinator.claimTask(task1, player1, 0L, 100L).isEmpty(), "nor claimed when asked for directly");
     }
 
     @Test

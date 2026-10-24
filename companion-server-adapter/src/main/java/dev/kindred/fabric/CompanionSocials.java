@@ -8,6 +8,8 @@ import dev.kindred.core.SpeechTiming;
 import dev.kindred.core.SocialDialogue;
 import dev.kindred.core.SocialProfile;
 import dev.kindred.core.SocialSnapshot;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -24,9 +26,12 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 
-/** Server-thread social lane. No task mutation, navigation, memory invention or model requests. */
+/**
+ * Server-thread social lane. No task mutation, navigation, memory invention or model requests. Its speakers are AI
+ * players in either body, the legacy companion's or the native player's.
+ */
 final class CompanionSocials {
-    record Participant(UUID id, UUID owner, String name, CompanionEntity body, SocialProfile profile, boolean active) { }
+    record Participant(UUID id, UUID owner, String name, LivingEntity body, SocialProfile profile, boolean active) { }
 
     interface PeerConferenceHandler {
         void onConference(Participant speaker, Participant peer, PeerProgressDialogue.Exchange exchange);
@@ -66,6 +71,10 @@ final class CompanionSocials {
     private final Map<UUID, Long> directSpeakers = new LinkedHashMap<>();
     private final Map<UUID, Long> listeners = new LinkedHashMap<>();
     private final Map<UUID, Long> recentDamage = new HashMap<>();
+    /** What last hurt each speaker, as the game recorded it, kept with {@link #recentDamage}. */
+    private final Map<UUID, SocialSnapshot.Harm> recentHarm = new HashMap<>();
+    /** The AI player a body belongs to, or null for a person or anything else. */
+    private final Function<Entity, UUID> aiPlayer;
     private final Map<String, Long> peerCooldowns = new HashMap<>();
     private final List<Pending> pending = new ArrayList<>();
     private long nextAmbient = Long.MIN_VALUE;
@@ -84,10 +93,16 @@ final class CompanionSocials {
 
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output, Habits habits) {
+        this(lookup, clock, output, habits, SocialPerception::companionOf);
+    }
+
+    CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
+                     BiConsumer<ServerPlayerEntity, Text> output, Habits habits, Function<Entity, UUID> aiPlayer) {
         this.lookup = lookup;
         this.clock = clock;
         this.output = output;
         this.habits = habits;
+        this.aiPlayer = aiPlayer;
     }
 
     void reset(UUID id) {
@@ -96,6 +111,7 @@ final class CompanionSocials {
         AttentionPolicy policy = attention.get(id);
         if (policy != null) policy.clear();
         recentDamage.remove(id);
+        recentHarm.remove(id);
         pending.removeIf(p -> p.speaker().id().equals(id) && !p.direct());
     }
 
@@ -117,30 +133,37 @@ final class CompanionSocials {
     void tick(Participant speaker) {
         if (!speaker.active()) return;
         long now = clock.getAsLong();
-        if (speaker.body().hurtTime > 0) recentDamage.put(speaker.id(), now + 10_000);
+        if (speaker.body().hurtTime > 0) {
+            recentDamage.put(speaker.id(), now + 10_000);
+            var harm = SocialPerception.harm(speaker.body().getRecentDamageSource(), aiPlayer);
+            if (harm != null) recentHarm.put(speaker.id(), harm);
+        }
         // Stagger social checks across ticks by companion ID so 10 concurrent bots don't all scan on the same tick
         if ((speaker.body().age + Math.floorMod(speaker.id().hashCode(), 20)) % 20 != 0) return;
         notice(speaker, now);
         maybePeerConference(speaker, now);
-        List<ServerPlayerEntity> audience = SocialPerception.listeners(speaker.body(), speaker.profile());
+        List<ServerPlayerEntity> audience = SocialPerception.listeners(speaker.body(), speaker.owner(), speaker.profile(), aiPlayer);
         if (audience.isEmpty()) {
             // Nobody to talk to: drop pending remarks, but keep knowing who is already standing here.
             SocialBrain brain = brains.get(speaker.id());
             if (brain != null) brain.clearObservations();
             recentDamage.remove(speaker.id());
+            recentHarm.remove(speaker.id());
             return;
         }
-        var observed = withRecentDamage(speaker.id(), now, SocialPerception.observe(speaker.body(), speaker.profile(), true, body -> {
-            Participant other = lookup.apply(body.companionId());
-            return eligiblePartner(speaker, other) && brain(other.id()).canSpeak(other.profile(), now);
-        }));
+        var observed = withRecentDamage(speaker.id(), now, SocialPerception.observe(speaker.body(), speaker.owner(), speaker.profile(), true,
+                aiPlayer, body -> {
+                    UUID id = aiPlayer.apply(body);
+                    Participant other = id == null ? null : lookup.apply(id);
+                    return eligiblePartner(speaker, other) && brain(other.id()).canSpeak(other.profile(), now);
+                }));
         react(speaker, observed, audience, now);
     }
 
     private void maybePeerConference(Participant speaker, long now) {
         if (conferenceHandler == null) return;
         if (speaker.body().age % 100 != Math.floorMod(speaker.id().hashCode(), 100)) return;
-        List<SocialSnapshot.Contact> contacts = SocialPerception.noticeable(speaker.body());
+        List<SocialSnapshot.Contact> contacts = SocialPerception.noticeable(speaker.body(), speaker.owner(), aiPlayer);
         for (var contact : contacts) {
             if (contact.kind() != SocialSnapshot.Kind.COMPANION) continue;
             Participant peer = lookup.apply(contact.id());
@@ -170,7 +193,7 @@ final class CompanionSocials {
     private void notice(Participant speaker, long now) {
         AttentionPolicy.Phase phase = habits.phase(speaker.id());
         if (phase == null) return;
-        List<SocialSnapshot.Contact> people = SocialPerception.noticeable(speaker.body());
+        List<SocialSnapshot.Contact> people = SocialPerception.noticeable(speaker.body(), speaker.owner(), aiPlayer);
         Set<UUID> ids = new HashSet<>();
         for (var contact : people) ids.add(contact.id());
         var glance = attention.computeIfAbsent(speaker.id(), ignored -> new AttentionPolicy()).observe(ids, phase, true,
@@ -239,7 +262,7 @@ final class CompanionSocials {
         Optional<String> habitReply = habits.feedback(player, companion, message, now);
         String spoken = habitReply.orElseGet(() -> {
             var observed = withRecentDamage(companion.id(), now,
-                    SocialPerception.observe(companion.body(), companion.profile(), companion.active(), ignored -> false));
+                    SocialPerception.observe(companion.body(), companion.owner(), companion.profile(), companion.active(), aiPlayer, ignored -> false));
             return SocialDialogue.reply(message, observed, companion.profile());
         });
         schedule(companion, player, spoken, now + SpeechTiming.delayMillis(spoken), true);
@@ -261,8 +284,9 @@ final class CompanionSocials {
     private SocialBrain brain(UUID id) { return brains.computeIfAbsent(id, ignored -> new SocialBrain()); }
 
     private SocialSnapshot withRecentDamage(UUID id, long now, SocialSnapshot snapshot) {
-        return new SocialSnapshot(snapshot.active(), snapshot.raining(), snapshot.night(),
-                snapshot.hurt() || now < recentDamage.getOrDefault(id, Long.MIN_VALUE), snapshot.visibleThreat(), snapshot.contacts());
+        boolean recent = now < recentDamage.getOrDefault(id, Long.MIN_VALUE);
+        return new SocialSnapshot(snapshot.active(), snapshot.raining(), snapshot.night(), snapshot.hurt() || recent, snapshot.visibleThreat(),
+                snapshot.contacts(), snapshot.harm() != null ? snapshot.harm() : recent ? recentHarm.get(id) : null);
     }
 
     void workCompleted(UUID companionId, String skill, String detail) {

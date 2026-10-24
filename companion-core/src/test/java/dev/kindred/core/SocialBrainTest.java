@@ -125,6 +125,34 @@ class SocialBrainTest {
         assertTrue(quiet.observe(snapshot(true, false, null, owner, visitor), mute, 0).isEmpty());
     }
 
+    @Test
+    void hurtSpeechNamesOnlyWhatTheGameSaysHurtItAndDoesNotRepeatWhileTheHurtLasts() {
+        var steve = new SocialSnapshot.Contact(UUID.randomUUID(), "Steve", SocialSnapshot.Kind.PLAYER);
+        // A fall with a person standing by: the fall is said, and nobody is blamed.
+        var fell = new SocialBrain().observe(hurt(new SocialSnapshot.Harm(SocialSnapshot.Harm.Source.WORLD, "a fall"), steve), profile, 0).orElseThrow();
+        assertEquals(SocialBrain.Topic.HURT, fell.topic());
+        assertTrue(fell.text().contains("a fall"), fell.text());
+        assertFalse(fell.text().contains("Steve"), fell.text());
+        // Nothing known of it: no one named.
+        var unknown = new SocialBrain().observe(hurt(null, steve), profile, 0).orElseThrow();
+        assertFalse(unknown.text().contains("Steve"), unknown.text());
+        // Struck by a player, as the game recorded it: that player, by name.
+        var struck = new SocialBrain().observe(hurt(new SocialSnapshot.Harm(SocialSnapshot.Harm.Source.PLAYER, "Steve"), steve), profile, 0).orElseThrow();
+        assertTrue(struck.text().contains("Steve"), struck.text());
+        var bitten = new SocialBrain().observe(hurt(new SocialSnapshot.Harm(SocialSnapshot.Harm.Source.MOB, "Zombie"), owner), profile, 0).orElseThrow();
+        assertTrue(bitten.text().contains("Zombie") && !bitten.text().contains("Owner"), bitten.text());
+        // Burning for a minute: one remark, not one every hit.
+        var brain = new SocialBrain();
+        var burning = hurt(new SocialSnapshot.Harm(SocialSnapshot.Harm.Source.WORLD, "fire"));
+        var first = brain.observe(burning, profile, 0).orElseThrow();
+        brain.didSpeak(first, profile, 0);
+        for (long t = 1_000; t <= 60_000; t += 1_000) assertTrue(brain.observe(burning, profile, t).isEmpty(), "again at " + t);
+    }
+
+    private static SocialSnapshot hurt(SocialSnapshot.Harm harm, SocialSnapshot.Contact... contacts) {
+        return new SocialSnapshot(true, false, false, true, null, List.of(contacts), harm);
+    }
+
     private static SocialSnapshot snapshot(boolean active, boolean rain, String threat, SocialSnapshot.Contact... contacts) {
         return new SocialSnapshot(active, rain, false, false, threat, List.of(contacts));
     }

@@ -354,7 +354,7 @@ final class PlayerRuntime {
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
         socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now,
-                (player, message) -> player.sendMessage(message, false), new HabitHooks());
+                (player, message) -> player.sendMessage(message, false), new HabitHooks(), this::aiPlayerOf);
         socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {
             @Override
             public void onConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
@@ -646,6 +646,14 @@ final class PlayerRuntime {
             Actor actor = nativeActor(source);
             return continueSkillEntry(source, entry, actor != null ? actor : Actor.console());
         } else if (verb.equals("resume")) {
+            if (entry.nativeBody == null || !entry.nativeBody.connected()) {
+                if (!entry.reconciliationBlocked && !entry.metadataFault && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR) {
+                    feedback(source, "Connecting " + entry.data.displayName() + " before resuming...");
+                    connectNative(source, entry, false);
+                    return 1;
+                }
+                return reject(source, "Connect a reconciled native body before resuming.");
+            }
             if (entry.nativePending || entry.nativeSetupPending || entry.setupWrite.isCompletedExceptionally()
                     || entry.reconciliationBlocked || entry.metadataFault || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR || entry.arbiter == null) {
                 return reject(source, "Connect a reconciled native body before resuming.");
@@ -664,7 +672,7 @@ final class PlayerRuntime {
             }
             entry.arbiter.resume(Actor.console());
             entry.data = entry.arbiter.snapshot();
-            entry.blocker = "Resumed; bounded native wait/eat may be requested. Automatic progression remains disabled.";
+            entry.blocker = "Resumed; autonomous progression active (" + entry.runtimeSettings.playstyleProfile() + ").";
             persist(entry);
         } else return reject(source, "Native bodies currently support status, stop, pause, continue, resume, connect and disconnect only.");
         feedback(source, entry.explanation());
@@ -855,6 +863,7 @@ final class PlayerRuntime {
         // A body taken out of the game leaves its match as any player who leaves does.
         if (entry.nativeBody != null && entry.nativeBody.entity() != null) matches.departed(entry.nativeBody.entity().getUuid()).ifPresent(this::announce);
         if (entry.nativeBody != null) entry.nativeBody.disconnect();
+        socials.discard(entry.data.id());
         entry.data = entry.snapshot();
         entry.nativeBody = null;
         entry.arbiter = null;
@@ -2157,13 +2166,19 @@ final class PlayerRuntime {
         };
     }
 
-    private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body) {
+    /**
+     * Its survival needs this tick. With {@code admitted} false (the server's edits off, or the player idle) only its
+     * reflexes, none of which changes a block: eating, getting out of a hazard, deep water or a creeper's blast, and
+     * defending itself from a mob that is on it. A fall is broken with water only where it may edit ({@code mayEdit});
+     * a barricade, the Nether's blazes and an expedition's return are its work, and need {@code admitted}.
+     */
+    private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body, boolean admitted, boolean mayEdit) {
         var candidates = new java.util.ArrayList<NativeTaskCandidate>();
         var player = body.entity();
         var world = player.getServerWorld();
         // 00. A long fall with a water bucket in the hotbar: broken with water before anything else (E-07d).
         int clutchSlot = clutchSlot(player);
-        if (clutchSlot >= 0) {
+        if (clutchSlot >= 0 && mayEdit) {
             UUID taskId = UUID.nameUUIDFromBytes(("clutch:" + entry.data.id() + ":" + server.getTicks()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 100.0,
                     dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
@@ -2318,7 +2333,7 @@ final class PlayerRuntime {
         // native_attack path: this creates no item and does not assume a fortress or
         // a drop exists.  Vanilla loot and normal collision pickup remain the only
         // way a Blaze Rod can enter the inventory.
-        if (entry.lastProgressionObservation != null && entry.lastProgressionObservation.isInNether()
+        if (admitted && entry.lastProgressionObservation != null && entry.lastProgressionObservation.isInNether()
                 && milestoneSeeking(entry, MilestoneId.GATHER_BLAZE_RODS)
                 && entry.lastTacticalObservation != null) {
             int weaponSlot = -1;
@@ -2385,7 +2400,9 @@ final class PlayerRuntime {
                     boolean hoglinLeftAlone = targetId != null && world.getEntity(targetId) instanceof net.minecraft.entity.mob.MobEntity mob
                             && (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
                             && (mob.getTarget() != player || player.squaredDistanceTo(mob) > 3.0 * 3.0);
-                    if (targetId != null && !hoglinLeftAlone && world.getEntity(targetId) instanceof net.minecraft.entity.LivingEntity living
+                    // Its reflexes alone strike only what is after it: defending itself, not hunting.
+                    boolean onIt = world.getEntity(targetId) instanceof net.minecraft.entity.mob.MobEntity attacker && attacker.getTarget() == player;
+                    if (targetId != null && !hoglinLeftAlone && (admitted || onIt) && world.getEntity(targetId) instanceof net.minecraft.entity.LivingEntity living
                             && player.canInteractWithEntity(living, 0) && player.canSee(living)) {
                         double need = option.outcome().primaryObjective() == dev.kindred.core.tactics.TacticalObjective.RESOLVE_IMMEDIATE_SERIOUS_HARM
                                 ? 96.0 : 90.0;
@@ -2425,7 +2442,7 @@ final class PlayerRuntime {
         // 4. Emergency night shelter / barricade placement (URGENT 95.0)
         // One barricade per threat: walling in again after every step back would spend the whole stock.
         boolean barricadeRested = server.getTicks() - entry.lastBarricadeTick >= 200 || player.hurtTime > 0;
-        if (world.isNight() && barricadeRested && entry.setup != null && entry.setup.area() != null
+        if (admitted && world.isNight() && barricadeRested && entry.setup != null && entry.setup.area() != null
                 && entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()) {
             int blockSlot = -1;
             for (int s = 0; s < 9; s++) {
@@ -2470,8 +2487,8 @@ final class PlayerRuntime {
         }
 
         // 4. Urgent nightfall, thunderstorm, or low-health expedition return to shelter (URGENT 92.0)
-        ensureExpeditionState(entry, body);
-        if (entry.expeditionState != null) {
+        if (admitted) ensureExpeditionState(entry, body);
+        if (admitted && entry.expeditionState != null) {
             ExpeditionObservation expObs = observeExpedition(entry, body);
             if (entry.expeditionState.status() == ExpeditionStatus.EXPLORING_OUTWARD) {
                 ReturnReason trigger = ExpeditionPlanner.evaluateReturnTriggers(entry.expeditionState, expObs);
@@ -3513,8 +3530,7 @@ final class PlayerRuntime {
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
             var pos = body.entity().getBlockPos();
-            server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I built and lit a Nether portal near "
-                    + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "!"), false);
+            say(entry, "I built and lit a Nether portal!", "near " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
             entry.goalProgress = "Done: the Nether portal is built and lit";
         }
         var endPortal = entry.campaign.stronghold().endPortal();
@@ -3522,12 +3538,11 @@ final class PlayerRuntime {
                 && endPortal.isPresent() && !entry.endPortalAnnounced) {
             entry.endPortalAnnounced = true;
             var at = endPortal.get();
-            server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> I found the End portal near "
-                    + at.getX() + ", " + at.getY() + ", " + at.getZ() + "!"), false);
+            say(entry, "I found the End portal!", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
         }
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && entry.campaign.stronghold().endFight().dragonKilled() && !entry.dragonAnnounced) {
             entry.dragonAnnounced = true;
-            server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> The Ender Dragon is dead. I beat the game!"), false);
+            say(entry, "The Ender Dragon is dead. I beat the game!", "");
         }
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
             entry.loggedGoalProgress = entry.goalProgress;
@@ -3597,8 +3612,7 @@ final class PlayerRuntime {
                 if (build == entry.baseBuild) baseBuilt(entry, build);
                 entry.build = null;
                 entry.buildTasks.clear();
-                server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + build.progress()
-                        + " at " + build.origin.getX() + ", " + build.origin.getY() + ", " + build.origin.getZ() + "."), false);
+                say(entry, build.progress() + ".", "at " + build.origin.getX() + ", " + build.origin.getY() + ", " + build.origin.getZ());
                 entry.routineRefreshPending = true;
             }
             return List.of();
@@ -3627,8 +3641,7 @@ final class PlayerRuntime {
             if (ranch.done()) {
                 entry.ranch = null;
                 entry.buildTasks.clear();
-                server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + ranch.outcome()
-                        + " (the pen at " + ranch.origin.getX() + ", " + ranch.origin.getY() + ", " + ranch.origin.getZ() + ")."), false);
+                say(entry, ranch.outcome() + ".", "the pen at " + ranch.origin.getX() + ", " + ranch.origin.getY() + ", " + ranch.origin.getZ());
                 entry.routineRefreshPending = true;
             }
             return List.of();
@@ -3656,8 +3669,7 @@ final class PlayerRuntime {
             if (field.done()) {
                 entry.field = null;
                 entry.buildTasks.clear();
-                server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + field.outcome()
-                        + " (the field at " + field.corner.getX() + ", " + field.corner.getY() + ", " + field.corner.getZ() + ")."), false);
+                say(entry, field.outcome() + ".", "the field at " + field.corner.getX() + ", " + field.corner.getY() + ", " + field.corner.getZ());
                 entry.routineRefreshPending = true;
             }
             return List.of();
@@ -3874,8 +3886,7 @@ final class PlayerRuntime {
         }
         entry.baseBuild = entry.build;
         var span = footprint(base);
-        server.getPlayerManager().broadcast(Text.literal("<" + entry.data.displayName() + "> " + why + ": a " + style.wood().replace('_', ' ')
-                + " " + base.stage() + " at " + span.minX() + ", " + base.y() + ", " + span.minZ() + "."), false);
+        say(entry, why + ": a " + style.wood().replace('_', ' ') + " " + base.stage() + ".", "at " + span.minX() + ", " + base.y() + ", " + span.minZ());
         return true;
     }
 
@@ -4415,7 +4426,7 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> evaluateNativeCandidates(Entry entry, NativePlayerBody body) {
         bindBodyBlockScanBudget(body);
         var list = new java.util.ArrayList<NativeTaskCandidate>();
-        list.addAll(evaluateEssentialSurvivalCandidates(entry, body));
+        list.addAll(evaluateEssentialSurvivalCandidates(entry, body, true, true));
         list.addAll(evaluateScheduledRoutineCandidates(entry, body));
         return list;
     }
@@ -4651,8 +4662,14 @@ final class PlayerRuntime {
             }
         }
 
-        if (usable && entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+        if (usable && !entry.snapshot().stopLatched() && entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
             applyIdleObservation(entry, body, server.getTicks());
+        }
+        // Its social lane: what it sees and says, to the listeners its profile allows (SocialBrain).
+        if (usable && body.entity() != null) {
+            socials.deliverDue(entry.data.id(), now());
+            CompanionSocials.Participant participant = socialParticipant(entry.data.id());
+            if (participant != null) socials.tick(participant);
         }
 
         boolean creeperThreat = false;
@@ -4714,19 +4731,25 @@ final class PlayerRuntime {
 
         // A running match the player was entered into is an instruction to fight, as a goal is (M-00a).
         boolean dueling = body.entity() != null && matches.running(body.entity().getUuid()).isPresent();
-        boolean autonomyAdmitted = usable && !entry.snapshot().stopLatched() && !busy
-                && (!entry.runtimeSettings.playstyleProfile().isIdleObserving() || dueling)
+        // Whether it may choose anything now: running, not stopped, nothing of its own in flight or being settled.
+        boolean mayDecide = usable && !entry.snapshot().stopLatched() && !busy
                 && (entry.runner == null || entry.runner.state() != SkillRunner.State.PAUSED)
                 && !entry.nativeWorkPending && !entry.nativeSetupPending
                 && entry.activityFlush.isDone() && !entry.nativeActionPending && entry.nativeActionFlush.isDone()
                 && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)
                 && !entry.arbiter.cancellationPending()
                 // A fall to break is a reflex: it does not wait out the hold that follows a commanded task (E-07d).
-                && (server.getTicks() >= entry.manualHoldUntilTick || clutchSlot(body.entity()) >= 0)
-                && edits.autonomousEditsEnabled() && edits.protectionCompatibilityKnown();
+                && (server.getTicks() >= entry.manualHoldUntilTick || clutchSlot(body.entity()) >= 0);
+        // Whether it may change the world: the server's switch for AI world edits (D4).
+        boolean mayEdit = edits.autonomousEditsEnabled() && edits.protectionCompatibilityKnown();
+        // Its work and progression: both, and not idle (unless in a match it was entered into).
+        boolean autonomyAdmitted = mayDecide && mayEdit && (!entry.runtimeSettings.playstyleProfile().isIdleObserving() || dueling);
 
-        // 1. Cheap immediate survival candidates (evaluated every tick, even with zero optional budget)
-        List<NativeTaskCandidate> essentialCandidates = autonomyAdmitted ? evaluateEssentialSurvivalCandidates(entry, body) : List.of();
+        // 1. Cheap immediate survival candidates (evaluated every tick, even with zero optional budget). Its reflexes
+        // need only that it may decide, edits off or idle: eating, getting out of fire, lava or deep water, clear of a
+        // hissing creeper, and defending itself, none of which changes a block. Each edit action checks the edit policy
+        // itself as well.
+        List<NativeTaskCandidate> essentialCandidates = mayDecide ? evaluateEssentialSurvivalCandidates(entry, body, autonomyAdmitted, mayEdit) : List.of();
 
         if (autonomyAdmitted && (entry.routineRefreshPending || entry.cachedRoutineCandidates.isEmpty())) {
             bindBodyBlockScanBudget(body);
@@ -4752,8 +4775,10 @@ final class PlayerRuntime {
 
         List<dev.kindred.core.TaskPreferences.Candidate> candidates = taskCandidates.stream().map(NativeTaskCandidate::candidate).toList();
 
+        // A reflex to act on admits a decision without its work being admitted; nothing to do, and it waits as before.
         var decision = entry.mind.decide(new dev.kindred.core.PlayerDecisionLoop.Frame(usable, entry.snapshot().stopLatched(),
-                busy, false, false, autonomyAdmitted, entry.currentTaskId, candidates), entry.profile.personality());
+                busy, false, false, autonomyAdmitted || mayDecide && !essentialCandidates.isEmpty(), entry.currentTaskId, candidates),
+                entry.profile.personality());
         entry.mindStatus = decision.reason();
         if (!candidates.isEmpty() || decision.action() != dev.kindred.core.PlayerDecisionLoop.Action.WAIT) {
             KindredMod.LOGGER.debug("Autonomy tick for {}: state={}, usable={}, stopLatched={}, busy={}, autonomyAdmitted={}, candidates={}, decision={}",
@@ -4921,11 +4946,9 @@ final class PlayerRuntime {
         }
         Entry entry = requestedId != null ? entries.get(requestedId) : byOwner(playerId);
         if (entry == null && requestedId == null) {
-            var active = entries.values().stream()
-                    .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
-                    .toList();
-            if (active.size() == 1) {
-                entry = active.get(0);
+            UUID defId = defaultBotId();
+            if (defId != null) {
+                entry = entries.get(defId);
             }
         }
         if (entry == null) return reject(source, "No companion found. Use /aiplayer create <name>, or supply its name/UUID.");
@@ -5387,7 +5410,7 @@ final class PlayerRuntime {
                 checkpointWrite(entry, store.clearCheckpoint(companionId).thenApply(ignored -> null));
                 persist(entry);
                 reply(entry.data.ownerId(), entry.data.displayName() + ": " + entry.blocker);
-                socials.workCompleted(companionId, entry.skillId, entry.blocker);
+                if (entry.body != null) socials.workCompleted(companionId, entry.skillId, entry.blocker);
                 reconcileExpeditionArrival(entry);
             }
             case BLOCKED, CANCELLED -> {
@@ -5405,7 +5428,7 @@ final class PlayerRuntime {
                 }
                 persist(entry);
                 reply(entry.data.ownerId(), entry.data.displayName() + ": " + entry.blocker);
-                if (state == SkillRunner.State.BLOCKED) socials.workBlocked(companionId, entry.skillId, entry.blocker);
+                if (state == SkillRunner.State.BLOCKED && entry.body != null) socials.workBlocked(companionId, entry.skillId, entry.blocker);
                 entry.hazardInterrupted = false;
             }
             case PAUSED -> {
@@ -6202,13 +6225,54 @@ final class PlayerRuntime {
 
     private CompanionSocials.Participant socialParticipant(UUID id) {
         Entry entry = entries.get(id);
-        if (!running || !ready || entry == null || entry.body == null || !entry.body.isAlive()
-                || entry.metadataFault || entry.reconciliationBlocked
+        if (!running || !ready || entry == null || entry.metadataFault || entry.reconciliationBlocked
                 || entry.snapshot().lifecycle() == LifecycleState.FAULTED || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return null;
+        // A native player takes part as itself whenever it is in the world and not stopped, working or not: it is a
+        // player standing there, not a body that speaks only while a task holds it.
+        if (entry.body == null) {
+            var player = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+            if (player == null || !player.isAlive() || entry.nativeState == null || entry.nativeState.phase() != StoredNativePlayer.Phase.ESTABLISHED) return null;
+            return new CompanionSocials.Participant(entry.data.id(), entry.data.ownerId(), entry.data.displayName(), player, entry.profile,
+                    !entry.snapshot().stopLatched());
+        }
+        if (!entry.body.isAlive()) return null;
         boolean working = entry.following || (entry.runner != null && runnerBusy(entry));
         return new CompanionSocials.Participant(entry.data.id(), entry.data.ownerId(), entry.data.displayName(),
                 entry.body, entry.profile, working && !entry.snapshot().stopLatched()
                 && entry.lease != null && entry.arbiter.isCurrent(entry.lease));
+    }
+
+    /** The AI player a body belongs to, either body; null for a person or anything else. */
+    private UUID aiPlayerOf(net.minecraft.entity.Entity entity) {
+        if (entity instanceof CompanionEntity companion) return companion.companionId();
+        if (!(entity instanceof ServerPlayerEntity player)) return null;
+        for (Entry entry : entries.values()) {
+            if (entry.nativeBody != null && entry.nativeBody.entity() == player) return entry.data.id();
+        }
+        return null;
+    }
+
+    /**
+     * What a player says of its own doing (a portal lit, a build done): to whoever may control it, with {@code where}
+     * it is; to others only when it talks in public, within earshot, without the place, and never to an opponent in a
+     * match it is in. Not the whole server: where its portal or its base is is its own to tell. The log keeps it all.
+     */
+    private void say(Entry entry, String text, String where) {
+        String line = "<" + entry.data.displayName() + "> " + text;
+        String placed = where.isEmpty() ? line : line + " (" + where + ")";
+        KindredMod.LOGGER.info("{}", placed);
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) {
+            if (listener == self || aiPlayerOf(listener) != null) continue;
+            boolean controls = listener.getUuid().equals(entry.data.ownerId()) || entry.nativeState != null
+                    && entry.nativeState.access().mayControl(new Actor(listener.getUuid(), listener.hasPermissionLevel(2)));
+            if (controls) {
+                listener.sendMessage(Text.literal(placed), false);
+            } else if (entry.profile.publicConversation() && self != null && listener.getWorld() == self.getWorld()
+                    && listener.squaredDistanceTo(self) <= 64.0 * 64.0 && !matches.mayAttack(self.getUuid(), listener.getUuid())) {
+                listener.sendMessage(Text.literal(line), false);
+            }
+        }
     }
 
     private void handlePeerConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
@@ -7647,7 +7711,6 @@ final class PlayerRuntime {
         CanonicalRoster.RuntimeSettings runtimeSettings = CanonicalRoster.RuntimeSettings.defaultsForNewPlayer();
         BlockPos idleAnchorPos = null;
         UUID lastGazeHumanId = null;
-        long lastHurtRemarkTick = -600L;
         long idleNextWanderTick = 0L;
         BlockPos portalFrameInterior = null;
         long manualHoldUntilTick = Long.MIN_VALUE;
@@ -7946,8 +8009,8 @@ final class PlayerRuntime {
     }
 
     /**
-     * Idle observation is presentation only: gaze, glances and a hurt remark. It never moves the body; any
-     * movement goes through the arbiter as an ordinary task, so it cannot race a pending or running skill.
+     * Idle observation is presentation only: gaze and glances. It never moves the body; any movement goes through
+     * the arbiter as an ordinary task, so it cannot race a pending or running skill. Not while stopped.
      */
     private void applyIdleObservation(Entry entry, NativePlayerBody body, long tick) {
         var bot = body.entity();
@@ -7959,23 +8022,11 @@ final class PlayerRuntime {
             entry.idleAnchorPos = bot.getBlockPos().toImmutable();
         }
 
+        // Hurt, it stops holding anyone's eye. What it says of the hurt, if anything, is its social lane's, from the
+        // game's own record of what hurt it: blaming whoever stood nearby for a fall or a burn was no way to talk.
         if (bot.hurtTime > 0) {
             entry.lastGazeHumanId = null;
             bot.setSneaking(false);
-            if (tick - entry.lastHurtRemarkTick > 40L) {
-                entry.lastHurtRemarkTick = tick;
-                String[] remarks = new String[]{
-                        "Ouch! Hey, watch it!",
-                        "Hey! Why are you hitting me?!",
-                        "Ow! That hurt!",
-                        "Careful there, we're on the same team!"
-                };
-                String remark = remarks[(int) Math.abs(tick % remarks.length)];
-                var players = bot.getServerWorld().getPlayers(p -> p.squaredDistanceTo(bot) < 256.0);
-                for (var p : players) {
-                    p.sendMessage(Text.literal("<" + entry.data.displayName() + "> " + remark));
-                }
-            }
             return;
         }
 
@@ -8383,7 +8434,14 @@ final class PlayerRuntime {
         if (name == null || name.isBlank()) return null;
         String clean = name.trim();
         for (Entry entry : entries.values()) {
-            if (entry.data.displayName().equalsIgnoreCase(clean)) {
+            if (entry.data.displayName().equalsIgnoreCase(clean)
+                    && entry.nativeBody != null && entry.nativeBody.connected()) {
+                return entry.data.id();
+            }
+        }
+        for (Entry entry : entries.values()) {
+            if (entry.data.displayName().equalsIgnoreCase(clean)
+                    && entry.snapshot().lifecycle() != LifecycleState.REMOVED) {
                 return entry.data.id();
             }
         }
@@ -8413,6 +8471,12 @@ final class PlayerRuntime {
 
     UUID defaultBotId() {
         requireThread();
+        var connected = entries.values().stream()
+                .filter(e -> e.nativeBody != null && e.nativeBody.connected())
+                .toList();
+        if (connected.size() == 1) {
+            return connected.get(0).data.id();
+        }
         var active = entries.values().stream()
                 .filter(e -> e.snapshot().lifecycle() != LifecycleState.REMOVED)
                 .toList();
@@ -8435,25 +8499,40 @@ final class PlayerRuntime {
             }
             // One player of each name, as with the whole roster: a second "Kindred" would be another player with the
             // same name (a staged run asked for one while the first was alive in the Overworld).
-            if (rosterExists(preset.name())) return reject(source, preset.name() + " is already created.");
+            // A saved one not in the world is reconnected (main's 4cb2b33).
+            var existing = rosterEntry(preset.name());
+            if (existing != null) {
+                if (existing.nativeBody != null && existing.nativeBody.connected()) {
+                    feedback(source, preset.name() + " is already active in the world.");
+                    return 1;
+                }
+                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                connectNative(source, existing, false);
+                return 1;
+            }
             return createNative(source, preset.name());
         }
         int spawned = 0;
         for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
-            if (!rosterExists(preset.name())) {
+            var existing = rosterEntry(preset.name());
+            if (existing == null) {
                 createNative(source, preset.name());
+                spawned++;
+            } else if (existing.nativeBody == null || !existing.nativeBody.connected()) {
+                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                connectNative(source, existing, false);
                 spawned++;
             }
         }
         if (spawned == 0) {
-            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already created.");
+            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already active in the world.");
         }
         return 1;
     }
 
-    private boolean rosterExists(String name) {
-        return entries.values().stream().anyMatch(e -> e.data.displayName().equalsIgnoreCase(name)
-                && e.snapshot().lifecycle() != LifecycleState.REMOVED);
+    private Entry rosterEntry(String name) {
+        return entries.values().stream().filter(e -> e.data.displayName().equalsIgnoreCase(name)
+                && e.snapshot().lifecycle() != LifecycleState.REMOVED).findFirst().orElse(null);
     }
 
     private static final class NativeBody implements BodyAdapter {

@@ -113,8 +113,13 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The server's AI world edits off (its default, D4): the player still eats when it is hungry, a reflex that changes
+     * no block; but it equips nothing, mines nothing and starts no work. Before the reflexes were separated from the
+     * edit switch, it went hungry too.
+     */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "autonomyDisabled", tickLimit = 480)
-    public void defaultPolicyKeepsAutonomyDisabled(TestContext context) {
+    public void withEditsOffItStillEatsButEquipsAndMinesNothing(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 470); // default edits disabled
         BlockPos target = target(context);
         context.createTimedTaskRunner()
@@ -135,18 +140,19 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                     f.player().getInventory().setStack(1, new ItemStack(Items.IRON_AXE));
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
+                .createAndAdd(() -> context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1
+                        && f.player().getHungerManager().getFoodLevel() >= 18, "One apple eaten, edits off: " + f.player().getInventory().getStack(0)))
                 .createAndAdd(() -> {
                     var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
                     context.assertTrue(status.explanation().contains("Autonomous progression awaits qualified body, skills and activity admission"),
-                            "Decision loop reports autonomy awaits qualification");
-                    context.assertTrue(f.player().getInventory().getStack(0).getCount() == 2, "Food not consumed");
-                    context.assertTrue(f.player().getHungerManager().getFoodLevel() == 14, "Hunger not changed");
+                            "Decision loop reports its work awaits qualification: " + status.explanation());
+                    context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1, "No more food eaten than the one");
                     context.assertTrue(f.player().getInventory().getStack(10).isOf(Items.IRON_CHESTPLATE), "Armor remains in inventory");
                     context.assertTrue(f.player().getEquippedStack(EquipmentSlot.CHEST).isEmpty(), "Chest slot empty");
                     context.assertTrue(context.getWorld().getBlockState(target).isOf(Blocks.OAK_LOG), "Log remains intact");
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     context.assertTrue((activity.phase().equals("UNLOADED") || activity.phase().equals("IDLE"))
-                            && !activity.work().startsWith("Running"), "No activity session started");
+                            && !activity.work().startsWith("Running"), "No activity running after the meal");
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
