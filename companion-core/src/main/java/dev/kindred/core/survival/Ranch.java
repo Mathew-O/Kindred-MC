@@ -114,6 +114,8 @@ public final class Ranch {
      */
     private final Pos approach;
     private long alignSince = -1;
+    /** When it began to wait for the animal it leads to catch up; -1 while it is close enough. */
+    private long catchSince = -1;
     private Phase phase = Phase.BUILD;
     private UUID leading;
     private int relined;
@@ -340,7 +342,14 @@ public final class Ranch {
             if (seen.gateOpen() && adultsIn > 0) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
-        if (apart > LAGGING) return new Step.Wait(true, "Let the " + kind.noun() + " catch up");
+        if (apart > LAGGING) {
+            // Waited for a while, at most: an animal that stops just out of reach (in the pasture's doorway, behind the
+            // player that went on through it) was waited on until the fixture ran out, 382 times. Back to it, then.
+            if (catchSince < 0) catchSince = seen.tick();
+            if (seen.tick() - catchSince <= 2 * DRAW) return new Step.Wait(true, "Let the " + kind.noun() + " catch up");
+            return go(animal.at(), 2, true, 0, "Back to the " + kind.noun() + ", which has stopped following");
+        }
+        catchSince = -1;
         // Walled in, from outside: up to the doorway, the animal brought up behind in line with it, then straight
         // through without stopping in it. Stopped to let it catch up there, the player stood in the doorway and the
         // animal could not pass it (the pasture fixture, 2026-10-24); led straight for the food, it walked into the wall.

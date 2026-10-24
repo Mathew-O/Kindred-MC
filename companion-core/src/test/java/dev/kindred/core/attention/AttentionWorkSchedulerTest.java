@@ -150,14 +150,17 @@ class AttentionWorkSchedulerTest {
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true),
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player2, tick, 1, 1, AttentionState.ROUTINE, true)
         ));
-        scheduler.beginTick(tick, System.nanoTime());
+        // One clock reading, as the test above: on a loaded machine (a suite's build beside another compile) the
+        // tick's soft time budget ran out after the first slice, and the slice cap went untested.
+        long now = System.nanoTime();
+        scheduler.beginTick(tick, now);
 
         // Default policy allows at most 6 slices per tick
         int started = 0;
         while (true) {
             var opt = scheduler.selectNext();
             if (opt.isEmpty()) break;
-            if (scheduler.tryStart(opt.get(), System.nanoTime())) {
+            if (scheduler.tryStart(opt.get(), now)) {
                 started++;
             }
         }

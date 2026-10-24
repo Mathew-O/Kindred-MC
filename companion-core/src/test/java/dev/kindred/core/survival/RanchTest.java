@@ -200,6 +200,21 @@ class RanchTest {
     }
 
     @Test
+    void anAnimalThatStopsJustOutOfReachIsWaitedForAWhileThenGoneBackFor() {
+        // Through the doorway to the front of the gate, the cow stopped five behind, in the doorway.
+        var ranch = new Ranch(new Pos(0, 64, 0), 7, 7, Ranch.Kind.COW, new Pos(3, 64, 14));
+        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 0, cow(DAISY, 3, 13))));
+        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 100, cow(DAISY, 3, 13))));
+        var back = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 3, 13))));
+        assertEquals(new Pos(3, 64, 13), back.target());
+        assertTrue(back.holdFood(), "with the food in hand, to draw it on");
+        // Asked again before the walk, the same walk; caught up, the wait begins afresh another time.
+        assertEquals(back, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 3, 13))));
+        ranch.next(seen(3, 11, false, 8, 140, cow(DAISY, 3, 13)));
+        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 150, cow(DAISY, 3, 13))));
+    }
+
+    @Test
     void itOpensTheGateToLeaveOnlyOnceNoAnimalStandsJustInsideIt() {
         var ranch = ranch();
         var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 4), true, false, false);
