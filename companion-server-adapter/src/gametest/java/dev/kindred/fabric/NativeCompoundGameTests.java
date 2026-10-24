@@ -270,6 +270,12 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                         }
                         context.assertTrue(wet && sown >= 12 && f.runtime.fieldStatus(f.id).isPresent(), "The channel wet and a dozen sown, the field not done: " + sown);
                         KindredMod.LOGGER.info("Compound: {} cells of the field sown before the restart", sown);
+                    })
+                    .createAndAdd(() -> {
+                        // Between its steps, as an administrator stops it (see the hut's restart).
+                        var activity = f.runtime.nativeActivityStatus(dev.kindred.core.Actor.console(), f.id);
+                        context.assertTrue((activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED")) && !activity.work().startsWith("Running"),
+                            "Between its steps: " + activity.phase() + " " + activity.work());
                         f.runtime.nativeLifecycle(f.source, "stop", f.id);
                     })
                     .createAndAdd(() -> {
@@ -487,7 +493,8 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     var status = f.runtime.ranchStatus(f.id);
                     if (status.isEmpty()) return;
                     // Where they stand, from the pen's gate, if it runs out: the log says what it did, not where.
-                    var where = new StringBuilder("; from the gate, the player at ").append(f.player().getBlockPos().subtract(gate).toShortString());
+                    var player = f.player();
+                    var where = new StringBuilder("; from the gate, the player at ").append(player == null ? "none" : player.getBlockPos().subtract(gate).toShortString());
                     for (UUID cow : cows) {
                         var entity = context.getWorld().getEntity(cow);
                         where.append(", a cow at ").append(entity == null ? "none" : entity.getBlockPos().subtract(gate).toShortString());

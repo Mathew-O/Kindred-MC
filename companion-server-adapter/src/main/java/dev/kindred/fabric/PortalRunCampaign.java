@@ -83,6 +83,15 @@ final class PortalRunCampaign {
     private final Map<Long, Integer> failures = new HashMap<>();
     private final Map<Long, Integer> approaches = new HashMap<>();
     private final Map<Task, Integer> repeatFailures = new HashMap<>();
+    /**
+     * Where its walks last found no way from, and how many in a row did, whatever they were for. After {@link
+     * #STRANDED} it is the place, not the targets: from y=61 below its trees, live run 69 walked for one tree after
+     * another, four a second, 974 in all, and for a way back up 293 times.
+     */
+    private BlockPos strandedAt;
+    private int strandedWalks;
+    private long strandedTick;
+    static final int STRANDED = 3;
     private final Map<Task, Long> setAside = new HashMap<>();
     private Direction digDirection = Direction.NORTH;
     private Direction exploreHeading;
@@ -387,6 +396,18 @@ final class PortalRunCampaign {
 
     void taskFinished(Task task, boolean completed, long tick) {
         if (task != null) stronghold.taskFinished(task, completed, tick);
+        // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
+        // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
+        // has failed for a minute, it is stranded no longer.
+        if (task != null && "native_goto".equals(task.skill()) && !completed) {
+            if (strandedAt != null && strandedAt.getSquaredDistance(lastFeet) <= 3 * 3 && tick - strandedTick <= STRANDED_FOR) {
+                strandedWalks++;
+            } else {
+                strandedAt = lastFeet;
+                strandedWalks = 1;
+            }
+            strandedTick = tick;
+        }
         if (task != null && !completed && task.equals(lastRouteEdit) && position(task.args()) != null) {
             // A dig, bridge or pillar on a made way that did not happen (a jump capped by a ceiling, a block that would
             // not place): not there again for a minute, so the next plan goes another way. A flight of stairs that set
@@ -589,6 +610,18 @@ final class PortalRunCampaign {
             unreachableFrom.put(key, lastFeet);
         }
     }
+
+    /**
+     * Walks in a row have found no way from about here: until it has moved, it takes what is in reach and digs its own
+     * way on, as a player boxed in does, rather than set out for one target after another.
+     */
+    boolean stranded() {
+        return strandedWalks >= STRANDED && strandedAt != null && strandedAt.getSquaredDistance(lastFeet) <= 3 * 3
+                && lastTick - strandedTick <= STRANDED_FOR;
+    }
+
+    /** How long a stranding lasts with no walk failing again. */
+    private static final long STRANDED_FOR = 1200;
 
     /** Skipped until its back-off ends and the player has moved well away from where the walk failed. */
     boolean unreachable(BlockPos pos) {
@@ -1370,7 +1403,7 @@ final class PortalRunCampaign {
             // Advised wood first: a tree in sight, and nothing more; looking for one is the route's own step.
             case CUT_TREES -> gather(body, WorldKnowledge.Kind.LOG, 32, "logs");
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
-                    .or(() -> underground(player) ? wayUp(body, "Climb toward the surface for logs")
+                    .or(() -> underground(player) || stranded() ? wayUp(body, "Climb toward the surface for logs")
                             // Not when already there: that walk ends where it starts, over and over.
                             .or(() -> home == null || home.getSquaredDistance(lastFeet) <= 4 * 4 ? Optional.empty()
                                     : Optional.of(go(home, 3, true, "Head back up toward home")))
@@ -1499,7 +1532,8 @@ final class PortalRunCampaign {
         boolean shield = shielded(body.entity());
         if (!shield && !quietAround(world, lastFeet)) return Optional.empty();
         // Not hurt, either: players heal before going into a cave, not after. Nor while advised to play safe.
-        if (body.entity().getHealth() < 14 || stance() == StrategyAdvice.Stance.PLAY_SAFE || habits.contains(PlanPreferences.Habit.NO_CAVES)) {
+        if (body.entity().getHealth() < 14 || stance() == StrategyAdvice.Stance.PLAY_SAFE || habits.contains(PlanPreferences.Habit.NO_CAVES)
+                || stranded()) {
             return Optional.empty();
         }
         BlockPos feet = lastFeet;
@@ -1722,6 +1756,8 @@ final class PortalRunCampaign {
             }
             var cover = obstruction(body, pos);
             if (cover.isPresent()) return Optional.of(breakAt(cover.get(), "Clear the way to " + what + " at " + pos.toShortString()));
+            // Stranded, nothing it would have to walk to: the plan digs its own way on instead.
+            if (stranded()) return Optional.empty();
             // Plans are re-evaluated often; only finished walks count as approaches. A walk that ended in reach without
             // a view of it (ore it cannot harvest yet in the way) closes in square beside it the second time.
             int tries = approaches.getOrDefault(pos.asLong(), 0);
@@ -1957,8 +1993,9 @@ final class PortalRunCampaign {
         for (int slot = 0; slot < inventory.size() && !pickaxe; slot++) pickaxe = inventory.getStack(slot).isIn(ItemTags.PICKAXES);
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
-        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
-        if (boxedIn(player.getServerWorld(), player.getBlockPos())) return climb(body, label).or(() -> pillarOut(body, label));
+        if (!pickaxe) return stranded() ? climb(body, label).or(() -> pillarOut(body, label))
+                : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
+        if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         int surface = player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ());
         int depth = Math.max(1, surface - player.getBlockY());
         // A step of the way back costs about a third of a staircase step (three blocks dug per block climbed).
@@ -2032,7 +2069,8 @@ final class PortalRunCampaign {
         boolean targetSky = false;
         for (int i = index - 1; i >= 0; i--) {
             BlockPos cell = cells.get(i);
-            if (cell.getSquaredDistance(lastFeet) > 20 * 20 || blocked(cell) || dangerous(cell)) continue;
+            // The way back up never leads down: climbing out of where it was shut in, the way it came was back into it.
+            if (cell.getSquaredDistance(lastFeet) > 20 * 20 || blocked(cell) || dangerous(cell) || cell.getY() < lastFeet.getY()) continue;
             boolean sky = world.isSkyVisible(cell.up());
             // Open sky first, then height; between equals, the one further back along the way in.
             boolean better = target == null || sky && !targetSky || sky == targetSky && cell.getY() >= target.getY();
@@ -2098,7 +2136,26 @@ final class PortalRunCampaign {
             if (!refused) return Optional.of(go(landing, 0.4, false, label + ": step up"));
             digDirection = digDirection.rotateYClockwise();
         }
-        return Optional.empty();
+        // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
+        // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square).
+        Direction toWall = null;
+        int nearest = Integer.MAX_VALUE;
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            for (int n = 1; n <= 4 && n < nearest; n++) {
+                BlockPos cell = feet.offset(side, n);
+                if (!passable(world, cell)) {
+                    if (n > 1) {
+                        nearest = n;
+                        toWall = side;
+                    }
+                    break;
+                }
+                if (!passable(world, cell.up()) || passable(world, cell.down())) break;
+            }
+        }
+        if (toWall == null) return Optional.empty();
+        digDirection = toWall;
+        return Optional.of(go(feet.offset(toWall, nearest - 1), 0.4, false, label + ": to the wall"));
     }
 
     /** A two-high tunnel forward along {@code digDirection}; walls it exposes are scanned for ores. */

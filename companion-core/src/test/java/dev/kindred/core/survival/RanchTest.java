@@ -201,12 +201,21 @@ class RanchTest {
 
     @Test
     void anAnimalThatStopsJustOutOfReachIsWaitedForAWhileThenGoneBackFor() {
-        // Through the doorway to the front of the gate, the cow stopped five behind, in the doorway.
+        // In the open, the cow stopped five behind: waited for a while, then gone back to.
+        var open = ranch();
+        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), open.next(seen(3, 12, false, 8, 0, cow(DAISY, 3, 17))));
+        var to = assertInstanceOf(Ranch.Step.Go.class, open.next(seen(3, 12, false, 8, 121, cow(DAISY, 3, 17))));
+        assertEquals(new Pos(3, 64, 17), to.target());
+        assertTrue(to.why().startsWith("Back to the cow"), to.why());
+        // Walled in: through the doorway to the front of the gate, the cow stopped outside the wall, in line with the
+        // doorway or a block beside it. Waited for, then gone back out for through the doorway, to bring it up in line
+        // again, not walked to across the wall.
         var ranch = new Ranch(new Pos(0, 64, 0), 7, 7, Ranch.Kind.COW, new Pos(3, 64, 14));
-        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 0, cow(DAISY, 3, 13))));
-        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 100, cow(DAISY, 3, 13))));
-        var back = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 3, 13))));
-        assertEquals(new Pos(3, 64, 13), back.target());
+        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 0, cow(DAISY, 4, 13))));
+        assertEquals(new Ranch.Step.Wait(true, "Let the cow catch up"), ranch.next(seen(3, 8, false, 8, 100, cow(DAISY, 4, 13))));
+        var back = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 4, 13))));
+        assertEquals(new Pos(3, 64, 14), back.target(), "out to the doorway's approach");
+        assertTrue(back.why().startsWith("Back out through the doorway"), back.why());
         assertTrue(back.holdFood(), "with the food in hand, to draw it on");
         // Asked again before the walk, the same walk; caught up, the wait begins afresh another time.
         assertEquals(back, ranch.next(seen(3, 8, false, 8, 121, cow(DAISY, 3, 13))));

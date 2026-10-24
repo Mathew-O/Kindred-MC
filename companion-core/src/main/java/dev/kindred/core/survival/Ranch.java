@@ -347,6 +347,14 @@ public final class Ranch {
             // player that went on through it) was waited on until the fixture ran out, 382 times. Back to it, then.
             if (catchSince < 0) catchSince = seen.tick();
             if (seen.tick() - catchSince <= 2 * DRAW) return new Step.Wait(true, "Let the " + kind.noun() + " catch up");
+            // Still outside a walled pasture after that, in line with its doorway or at the wall's foot beside it (gone
+            // for the food straight into the wall): back out through the doorway, to bring it up in line and through
+            // again. Walked back to it across the wall, the player went on to the gate without it, again and again (the
+            // cattle fixture, a cow a block beside the doorway outside).
+            if (approach != null && animal.at().z() >= approach.z() - 2 && seen.feet().z() < approach.z() - 2) {
+                lined = false;
+                return go(approach, 1, true, LEG, "Back out through the doorway for the " + kind.noun());
+            }
             return go(animal.at(), 2, true, 0, "Back to the " + kind.noun() + ", which has stopped following");
         }
         catchSince = -1;

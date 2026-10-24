@@ -88,6 +88,13 @@ public final class NativeWorkRestartGameTests implements FabricGameTest {
                         if (BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at()))).sameAs(b.spec())) placed++;
                     }
                     placedBefore[0] = placed;
+                })
+                .createAndAdd(() -> {
+                    // Stopped between its steps, as an administrator stops it: a stop in the middle of a step that
+                    // may have placed a block leaves an outcome to reconcile, and the player is held for that instead.
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue((activity.phase().equals("IDLE") || activity.phase().equals("UNLOADED")) && !activity.work().startsWith("Running"),
+                            "Between its steps: " + activity.phase() + " " + activity.work());
                     f.runtime.nativeLifecycle(f.source, "stop", f.id);
                 })
                 .createAndAdd(() -> {

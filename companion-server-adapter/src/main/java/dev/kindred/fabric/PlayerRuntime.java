@@ -4571,6 +4571,13 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /** Walks of its own that found no way, since the player came into play; -1 for no such player. */
+    int walksFailed(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null ? -1 : entry.walksFailed;
+    }
+
     /** How many trips the build in progress has made for its shortfall (E-08c); -1 with no build. */
     int buildTrips(UUID id) {
         requireThread();
@@ -5546,6 +5553,7 @@ final class PlayerRuntime {
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED)) {
+            if (state == SkillRunner.State.BLOCKED && "native_goto".equals(entry.skillId)) entry.walksFailed++;
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
                     entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
@@ -7831,6 +7839,8 @@ final class PlayerRuntime {
         private UUID currentTaskId;
         private UUID waterEscapeTaskId;
         private long waterEscapeRetryTick;
+        /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
+        private int walksFailed;
         /** The shore its way out of deep water makes for, and those it could not reach, until when each is passed over. */
         private BlockPos waterEscapeShore;
         private final Map<Long, Long> unreachedShores = new HashMap<>();

@@ -1884,6 +1884,78 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Live run 69 at y=61 under its trees: a player in a chamber four below the ground, sealed in dirt, with ten trees
+     * above it that it knows of and no way to walk to any. Three walks find no way from there, and it is the place, not
+     * the trees: it stops setting out for one tree after another, digs its way up by hand, and takes logs on the
+     * surface. Before, it walked for every tree it knew from there, four a second, before it looked for a way up (974
+     * such walks in the run, 293 more for a way back up).
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "stranded", tickLimit = 3000)
+    public void goalDigsUpOutOfAChamberAfterAFewWalksFindNoWayToItsTrees(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2900);
+        BlockPos o = context.getAbsolutePos(new BlockPos(20, 0, 20));
+        int feetY = o.getY() + 11;
+        int[] failedBeforeUp = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Stranded"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-16, 0, -16), o.add(16, 24, 16));
+                    // Stone, then dirt from nine up, grass at fourteen, open sky above.
+                    for (int x = -16; x <= 16; x++) for (int z = -16; z <= 16; z++) for (int y = 0; y <= 24; y++) {
+                        var state = y < 9 ? Blocks.STONE.getDefaultState() : y < 14 ? Blocks.DIRT.getDefaultState()
+                                : y == 14 ? Blocks.GRASS_BLOCK.getDefaultState() : Blocks.AIR.getDefaultState();
+                        world.setBlockState(o.add(x, y, z), state);
+                    }
+                    // The chamber, three square and two high, lit, its feet four below the grass's.
+                    for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) for (int y = 11; y <= 12; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    world.setBlockState(o.add(1, 11, 1), Blocks.TORCH.getDefaultState());
+                    // Ten trees in a ring round it, eight to eleven out.
+                    int[][] trees = {{9, 0}, {-9, 0}, {0, 9}, {0, -9}, {7, 7}, {-7, -7}, {7, -7}, {-7, 7}, {11, 4}, {-4, 11}};
+                    for (int[] t : trees) {
+                        for (int y = 15; y <= 19; y++) world.setBlockState(o.add(t[0], y, t[1]), Blocks.OAK_LOG.getDefaultState());
+                        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int y = 18; y <= 20; y++) {
+                            if ((dx != 0 || dz != 0 || y == 20) && world.getBlockState(o.add(t[0] + dx, y, t[1] + dz)).isAir()) {
+                                world.setBlockState(o.add(t[0] + dx, y, t[1] + dz), Blocks.OAK_LEAVES.getDefaultState()
+                                        .with(net.minecraft.block.LeavesBlock.PERSISTENT, true));
+                            }
+                        }
+                    }
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(o.getX() + 0.5, feetY, o.getZ() + 0.5, 0, 0);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    if (failedBeforeUp[0] < 0 && f.player().getBlockY() > feetY) failedBeforeUp[0] = f.runtime.walksFailed(f.id);
+                    context.assertTrue(failedBeforeUp[0] >= 0, "On its way up: at " + f.player().getBlockPos().subtract(o).toShortString()
+                            + " after " + f.runtime.walksFailed(f.id) + " walks in vain - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    context.assertTrue(failedBeforeUp[0] <= PortalRunCampaign.STRANDED + 1,
+                            "No more than a few walks in vain before it dug its way up: " + failedBeforeUp[0]);
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    context.assertTrue(ItemMoves.count(player.getInventory(), Items.OAK_LOG) > 0,
+                            "Logs taken on the surface: at " + player.getBlockPos().subtract(o).toShortString() + " - "
+                                    + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    KindredMod.LOGGER.info("Stranded: up out of its chamber after {} walks in vain, logs taken", failedBeforeUp[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The staircase above with a pit two deep under the iron ore: the drop falls into it, the player follows it down
      * as its pickaxe breaks, and the way it came is a two-block step up it cannot walk. Before, the walk back up
      * completed at once without moving and was asked for again until the no-progress rule moved the player on three

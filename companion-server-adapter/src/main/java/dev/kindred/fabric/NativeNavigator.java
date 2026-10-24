@@ -104,7 +104,21 @@ final class NativeNavigator {
         BlockPos origin = start.toImmutable();
         if (!standable(origin) && !swimmable(origin)) {
             // A body mid-jump or on a slab edge: search from the block below if that is where it really stands.
-            if (standable(origin.down())) origin = origin.down();
+            if (standable(origin.down())) {
+                origin = origin.down();
+            } else {
+                // On something lower than a full block that no route starts from (its bed, woken on it): from the
+                // cell beside it it would step off into. Woken on its bed in its cabin, every walk out of it was "no
+                // walkable route", and its scaffold outside was never taken down (suite run 33).
+                for (Direction side : Direction.Type.HORIZONTAL) {
+                    BlockPos off = origin.offset(side);
+                    BlockPos stand = standable(off) ? off : standable(off.down()) ? off.down() : null;
+                    if (stand != null) {
+                        origin = stand;
+                        break;
+                    }
+                }
+            }
         }
         record Node(BlockPos pos, double g, double f) { }
         var open = new PriorityQueue<Node>((a, b) -> Double.compare(a.f(), b.f()));
