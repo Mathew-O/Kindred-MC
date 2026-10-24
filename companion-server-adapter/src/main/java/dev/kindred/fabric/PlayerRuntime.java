@@ -2224,9 +2224,19 @@ final class PlayerRuntime {
         boolean shortOfBreath = player.getAir() < player.getMaxAir() / 2;
         boolean goalSurfaces = entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
         if (candidates.isEmpty() && !goalSurfaces && inDeepWater(player) && (server.getTicks() >= entry.waterEscapeRetryTick || shortOfBreath)) {
-            var shore = new NativeNavigator(world).nearestDryStand(feetPos, 16, 4);
+            // A shore it could not reach is passed over for a minute, and dry ground looked for along the ways it can
+            // swim: the nearest by distance, behind a wall, was made for again at once while short of breath, nineteen
+            // times in ten minutes (live run 69).
+            long now = server.getTicks();
+            entry.unreachedShores.values().removeIf(until -> until <= now);
+            var navigator = new NativeNavigator(world);
+            var shore = navigator.nearestDryStand(feetPos, 16, 4).filter(p -> !entry.unreachedShores.containsKey(p.asLong()));
+            if (shore.isEmpty() && !entry.unreachedShores.isEmpty()) {
+                shore = navigator.nearestReachableDryStand(feetPos, 1500, 16).filter(p -> !entry.unreachedShores.containsKey(p.asLong()));
+            }
             if (shore.isPresent()) {
                 BlockPos dry = shore.get();
+                entry.waterEscapeShore = dry;
                 UUID taskId = UUID.nameUUIDFromBytes(("water_escape:" + entry.data.id() + ":" + dry.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 97.0,
                         dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
@@ -3606,6 +3616,16 @@ final class PlayerRuntime {
         var storage = entry.setup == null || entry.setup.storage() == null ? null : new BlockPos(entry.setup.storage().position().x(),
                 entry.setup.storage().position().y(), entry.setup.storage().position().z());
         var task = build.next(body, new BuildRunner.Supply(entry.campaign, storage));
+        // Its scaffold kept with its work as it changes, to take down as its own after a restart (F-13).
+        if (entry.keptWork != null && "build".equals(entry.keptWork.kind())) {
+            var scaffold = build.scaffold();
+            if (!scaffold.equals(entry.keptScaffold)) {
+                entry.keptScaffold = scaffold;
+                var w = entry.keptWork;
+                keepWork(entry, new PlayerMemoryStore.Work(w.kind(), w.plan(), w.dimension(), w.x(), w.y(), w.z(), w.turns(),
+                        scaffold.stream().map(p -> new int[] {p.x(), p.y(), p.z()}).toList()));
+            }
+        }
         entry.goalProgress = build.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
             entry.loggedGoalProgress = entry.goalProgress;
@@ -3616,6 +3636,7 @@ final class PlayerRuntime {
                 if (build == entry.baseBuild) baseBuilt(entry, build);
                 entry.build = null;
                 entry.buildTasks.clear();
+                keepWork(entry, null);
                 say(entry, build.progress() + ".", "at " + build.origin.getX() + ", " + build.origin.getY() + ", " + build.origin.getZ());
                 entry.routineRefreshPending = true;
             }
@@ -3673,6 +3694,7 @@ final class PlayerRuntime {
             if (field.done()) {
                 entry.field = null;
                 entry.buildTasks.clear();
+                keepWork(entry, null);
                 say(entry, field.outcome() + ".", "the field at " + field.corner.getX() + ", " + field.corner.getY() + ", " + field.corner.getZ());
                 entry.routineRefreshPending = true;
             }
@@ -3747,6 +3769,15 @@ final class PlayerRuntime {
      * {@code turns} quarters, built from the player's own blocks ahead of its standing goal. Null stops the build.
      */
     int startBuild(ServerCommandSource source, UUID id, dev.kindred.core.construction.Blueprint blueprint, BlockPos origin, int turns) {
+        return startBuild(source, id, blueprint, origin, turns, null);
+    }
+
+    /**
+     * As {@link #startBuild(ServerCommandSource, UUID, dev.kindred.core.construction.Blueprint, BlockPos, int)}, the
+     * build kept for a restart under {@code plan}, the name the command gave it (F-13); with none it is not kept (a
+     * base's build has its own record, a build battle's ends with the match).
+     */
+    int startBuild(ServerCommandSource source, UUID id, dev.kindred.core.construction.Blueprint blueprint, BlockPos origin, int turns, String plan) {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
         if (entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
@@ -3761,6 +3792,7 @@ final class PlayerRuntime {
             }
             entry.build = null;
             entry.buildTasks.clear();
+            keepWork(entry, null);
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -3769,6 +3801,9 @@ final class PlayerRuntime {
         }
         if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
         entry.build = new BuildRunner(blueprint, origin, turns);
+        entry.keptScaffold = Set.of();
+        keepWork(entry, plan == null || entry.nativeBody == null ? null : new PlayerMemoryStore.Work("build", plan,
+                entry.nativeBody.entity().getServerWorld().getRegistryKey().getValue().toString(), origin.getX(), origin.getY(), origin.getZ(), turns, List.of()));
         entry.goalProgress = "Starting: " + blueprint.name();
         if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
             entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
@@ -3799,8 +3834,9 @@ final class PlayerRuntime {
      * build like any other, its blocks fetched through its needs (E-08c). Whether it started a build.
      */
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
+        // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
         if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.field != null || entry.snapshot().stopLatched()) return false;
+                || entry.ranch != null || entry.field != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4276,6 +4312,7 @@ final class PlayerRuntime {
         String wood = RanchRunner.woodOf(entry.nativeBody.entity());
         if (wood == null) return reject(source, entry.data.displayName() + " carries no wood for a pen's fences.");
         entry.build = null;
+        keepWork(entry, null);
         entry.ranch = new RanchRunner(origin, kind, wood);
         entry.goalProgress = "Ranch: starting";
         if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
@@ -4307,6 +4344,7 @@ final class PlayerRuntime {
         BlockPos origin = keep.add(pen.x(), pen.y(), pen.z());
         entry.build = null;
         entry.field = null;
+        keepWork(entry, null);
         entry.ranch = new RanchRunner(origin, kind, style.wood(), dev.kindred.core.construction.Compounds.doorwayShut(style), keep);
         entry.goalProgress = "Ranch: starting";
         if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
@@ -4341,6 +4379,7 @@ final class PlayerRuntime {
         if (keep == null) {
             entry.field = null;
             entry.buildTasks.clear();
+            keepWork(entry, null);
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -4352,7 +4391,9 @@ final class PlayerRuntime {
         BlockPos corner = keep.add(plan.west(), -1, plan.north());
         entry.build = null;
         entry.ranch = null;
-        entry.field = new FieldRunner(corner, plan.size());
+        entry.field = fieldRunner(keep);
+        keepWork(entry, new PlayerMemoryStore.Work("field", null, entry.nativeBody.entity().getServerWorld().getRegistryKey().getValue().toString(),
+                keep.getX(), keep.getY(), keep.getZ(), 0, List.of()));
         entry.goalProgress = "Field: starting";
         if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
             entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
@@ -4363,6 +4404,117 @@ final class PlayerRuntime {
         if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
         feedback(source, entry.data.displayName() + ": the farm ward's field, " + plan.size() + " square from " + corner.toShortString() + ".");
         return 1;
+    }
+
+    /** The field of the farm ward of the keep whose plan stands at {@code keep}. */
+    private static FieldRunner fieldRunner(BlockPos keep) {
+        var plan = dev.kindred.core.construction.Compounds.field(new dev.kindred.core.construction.BuildStyle("", "oak", "cobblestone", 0, 0));
+        return new FieldRunner(keep.add(plan.west(), -1, plan.north()), plan.size());
+    }
+
+    /** Keeps {@code work} as what the player is at, for a restart (F-13); null keeps nothing, and what was kept is cleared. */
+    private void keepWork(Entry entry, PlayerMemoryStore.Work work) {
+        entry.keptWork = work;
+        if (work == null) {
+            entry.keptScaffold = Set.of();
+            memories.clearWork(entry.data.id(), entry.data.displayName());
+        } else {
+            memories.saveWork(entry.data.id(), entry.data.displayName(), work);
+        }
+    }
+
+    /** Whether what a player was at before a restart has been read, and taken up (F-13). */
+    private enum WorkRead { UNREAD, READING, READ, TAKEN }
+
+    /**
+     * The work an operator set it to before a restart (F-13), read once when it first comes into play and taken up
+     * again if it has been set to nothing else since: a build at its origin, the scaffold it had put up its own to take
+     * down; a farm ward's field. What it built, tilled or sown is read from the world, so nothing is placed or spent
+     * twice. Only in the world the work is in; elsewhere it waits until the player is there. Taking it up neither
+     * resumes the player nor changes its playstyle: a stopped player stays stopped until its administrator resumes it.
+     */
+    private void takeUpWork(Entry entry, NativePlayerBody body) {
+        if (entry.workRead == WorkRead.TAKEN || entry.workRead == WorkRead.READING) return;
+        UUID id = entry.data.id();
+        String name = entry.data.displayName();
+        if (entry.workRead == WorkRead.UNREAD) {
+            entry.workRead = WorkRead.READING;
+            memories.loadWork(id, name).whenComplete((work, failure) -> server.execute(() -> {
+                if (!running || entries.get(id) != entry) return;
+                entry.savedWork = work;
+                entry.workRead = WorkRead.READ;
+            }));
+            return;
+        }
+        var work = entry.savedWork;
+        if (work == null || entry.build != null || entry.ranch != null || entry.field != null) {
+            entry.workRead = WorkRead.TAKEN;
+            entry.savedWork = null;
+            return;
+        }
+        // Taken up in another world, a build would go up there.
+        if (!body.entity().getServerWorld().getRegistryKey().getValue().toString().equals(work.dimension())) return;
+        entry.workRead = WorkRead.TAKEN;
+        entry.savedWork = null;
+        BlockPos at = new BlockPos(work.x(), work.y(), work.z());
+        if ("field".equals(work.kind())) {
+            entry.field = fieldRunner(at);
+            entry.keptWork = work;
+            entry.goalProgress = "Field: taken up again";
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+            KindredMod.LOGGER.info("{} takes up its field again, by the keep at {}, as it was before the restart", name, at.toShortString());
+            return;
+        }
+        if (!"build".equals(work.kind()) || work.plan() == null) {
+            KindredMod.LOGGER.warn("{} was at work it cannot take up again ({}); none taken up", name, work.kind());
+            return;
+        }
+        dev.kindred.core.construction.Blueprint generated;
+        try {
+            generated = generated(work.plan());
+        } catch (IllegalArgumentException invalid) {
+            KindredMod.LOGGER.warn("{} was building {}, which is no blueprint now; none taken up", name, work.plan());
+            return;
+        }
+        if (generated != null) {
+            takeUpBuild(entry, work, generated);
+            return;
+        }
+        schematics.load(work.plan()).whenComplete((loaded, failure) -> server.execute(() -> {
+            if (!running || entries.get(id) != entry || entry.build != null || entry.ranch != null || entry.field != null) return;
+            if (failure != null || loaded == null) {
+                KindredMod.LOGGER.warn("{} was building the schematic {}, which could not be read again; none taken up", name, work.plan());
+                return;
+            }
+            takeUpBuild(entry, work, loaded.blueprint());
+        }));
+    }
+
+    private void takeUpBuild(Entry entry, PlayerMemoryStore.Work work, dev.kindred.core.construction.Blueprint blueprint) {
+        BlockPos origin = new BlockPos(work.x(), work.y(), work.z());
+        entry.build = new BuildRunner(blueprint, origin, work.turns());
+        var scaffold = new HashSet<dev.kindred.core.construction.Pos>();
+        if (work.scaffold() != null) {
+            for (int[] p : work.scaffold()) if (p != null && p.length == 3) scaffold.add(new dev.kindred.core.construction.Pos(p[0], p[1], p[2]));
+        }
+        entry.build.restoreScaffold(scaffold);
+        entry.keptWork = work;
+        entry.keptScaffold = Set.copyOf(scaffold);
+        entry.goalProgress = "Taken up again: " + blueprint.name();
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        KindredMod.LOGGER.info("{} takes up its build of {} again at {}, as it was before the restart, {} scaffold blocks its own",
+                entry.data.displayName(), blueprint.name(), origin.toShortString(), scaffold.size());
+    }
+
+    /** The generator's blueprint a build command names ({@code hut-5x5x3}, {@code walltower-3}), or null for a schematic. */
+    static dev.kindred.core.construction.Blueprint generated(String name) {
+        var parts = name.split("-", 2);
+        if (!dev.kindred.core.construction.Generators.NAMES.contains(parts[0])) return null;
+        var sizes = new ArrayList<Integer>();
+        if (parts.length > 1) for (String size : parts[1].split("x")) sizes.add(Integer.parseInt(size));
+        return dev.kindred.core.construction.Generators.named(parts[0], sizes);
     }
 
     /** What the field is doing, if there is one. */
@@ -4398,7 +4550,7 @@ final class PlayerRuntime {
                 return;
             }
             for (String note : loaded.notes()) feedback(source, name + ": " + note);
-            startBuild(source, id, loaded.blueprint(), origin, turns);
+            startBuild(source, id, loaded.blueprint(), origin, turns, name);
         }));
         feedback(source, "Reading " + name + " from " + schematics.directory() + "...");
         return 1;
@@ -4658,6 +4810,7 @@ final class PlayerRuntime {
         }
 
         if (usable && body.entity() != null) {
+            takeUpWork(entry, body);
             refreshTacticalObservation(entry, server.getTicks());
             // A goal looks around as it goes, and so does a build, for the trees and stone its needs may send it to (E-08c).
             if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null) {
@@ -5364,6 +5517,16 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.waterEscapeTaskId)) {
             entry.waterEscapeRetryTick = server.getTicks() + 200; // That shore is out of reach; try again in a while.
+            if (entry.waterEscapeShore != null && entry.unreachedShores.size() < 64) {
+                entry.unreachedShores.put(entry.waterEscapeShore.asLong(), server.getTicks() + 1200L);
+            }
+        }
+        // A way out that ended short of its shore, still in deep water (as near as a route went to dry ground walled
+        // off from it), did not reach it either.
+        if (state == SkillRunner.State.COMPLETED && finishedTaskId != null && finishedTaskId.equals(entry.waterEscapeTaskId)
+                && entry.waterEscapeShore != null && entry.nativeBody != null && entry.nativeBody.entity() != null
+                && inDeepWater(entry.nativeBody.entity()) && entry.unreachedShores.size() < 64) {
+            entry.unreachedShores.put(entry.waterEscapeShore.asLong(), server.getTicks() + 1200L);
         }
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
@@ -7662,6 +7825,9 @@ final class PlayerRuntime {
         private UUID currentTaskId;
         private UUID waterEscapeTaskId;
         private long waterEscapeRetryTick;
+        /** The shore its way out of deep water makes for, and those it could not reach, until when each is passed over. */
+        private BlockPos waterEscapeShore;
+        private final Map<Long, Long> unreachedShores = new HashMap<>();
         private boolean awaitingRespawn;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;
@@ -7795,6 +7961,14 @@ final class PlayerRuntime {
         RanchRunner ranch;
         /** A field being watered, tilled and sown (M-06a's farm ward). Its steps run as the build's do. */
         FieldRunner field;
+        /**
+         * The work an operator set it to, as kept for a restart (F-13), and the scaffold last kept with it; whether
+         * what it was at before the restart has been read and taken up, and what was read.
+         */
+        PlayerMemoryStore.Work keptWork;
+        Set<dev.kindred.core.construction.Pos> keptScaffold = Set.of();
+        WorkRead workRead = WorkRead.UNREAD;
+        PlayerMemoryStore.Work savedWork;
         /**
          * The player's own bases (M-01c), once read; the build that is its base's; when it next looks to its base, how
          * often its base's build has ended short, and what it last decided.

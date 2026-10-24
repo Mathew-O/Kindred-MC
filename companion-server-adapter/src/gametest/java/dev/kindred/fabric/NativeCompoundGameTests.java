@@ -203,7 +203,15 @@ public final class NativeCompoundGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundField", tickLimit = 12000)
     public void withItsWardStandingAPlayerWatersTillsAndSowsItsField(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 11500);
+        field(context, false);
+    }
+
+    /**
+     * The field watered, tilled and sown; with {@code restart}, the server's runtime is shut down and started again part
+     * way ({@link NativeWorkRestartGameTests}).
+     */
+    static void field(TestContext context, boolean restart) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, restart ? 13500 : 11500);
         var style = new BuildStyle("", "oak", "cobblestone", 0, 0);
         var keep = Compounds.keep(style);
         var ward = Compounds.farmWard(style);
@@ -213,8 +221,8 @@ public final class NativeCompoundGameTests implements FabricGameTest {
         BlockPos origin = o.add(4, 7, 4);
         BlockPos corner = origin.add(field.west(), -1, field.north());
         int[] seeds = {80};
-        context.createTimedTaskRunner()
-                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+        var runner = context.createTimedTaskRunner();
+        runner.createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
@@ -250,8 +258,44 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     player.refreshPositionAndAngles(origin.getX() + farm.west() + 3.5, origin.getY(), origin.getZ() + farm.wayIn() - 1.5, 0, 0);
                     world.setTimeOfDay(1000);
                     context.assertTrue(f.runtime.startField(f.source, f.id, origin) == 1, "Field started");
-                })
-                .createAndAdd(() -> context.assertTrue(f.runtime.fieldStatus(f.id).isEmpty(), "Field done: " + f.runtime.fieldStatus(f.id).orElse("")
+                });
+        if (restart) {
+            runner.createAndAdd(() -> {
+                        var world = context.getWorld();
+                        int sown = 0;
+                        boolean wet = false;
+                        for (int x = 0; x < field.size(); x++) for (int z = 0; z < field.size(); z++) {
+                            if (world.getBlockState(corner.add(x, 1, z)).isOf(Blocks.WHEAT)) sown++;
+                            if (x == field.size() / 2 && world.getFluidState(corner.add(x, 0, z)).isIn(net.minecraft.registry.tag.FluidTags.WATER)) wet = true;
+                        }
+                        context.assertTrue(wet && sown >= 12 && f.runtime.fieldStatus(f.id).isPresent(), "The channel wet and a dozen sown, the field not done: " + sown);
+                        KindredMod.LOGGER.info("Compound: {} cells of the field sown before the restart", sown);
+                        f.runtime.nativeLifecycle(f.source, "stop", f.id);
+                    })
+                    .createAndAdd(() -> {
+                        var activity = f.runtime.nativeActivityStatus(dev.kindred.core.Actor.console(), f.id);
+                        context.assertTrue((activity.phase().equals("UNLOADED") || activity.phase().equals("IDLE")) && !activity.work().startsWith("Running"),
+                                "Stopped and settled before the restart: " + activity.phase() + " " + activity.work());
+                        f.runtime.stop();
+                    })
+                    .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "The runtime shut down"))
+                    .createAndAdd(() -> {
+                        f.runtime = new PlayerRuntime(context.getWorld().getServer(), f.directory);
+                        f.runtime.start();
+                    })
+                    .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Started again"))
+                    .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 1, "Reconnect requested"))
+                    .createAndAdd(() -> {
+                        var statuses = f.runtime.nativeStatuses(dev.kindred.core.Actor.console());
+                        context.assertTrue(statuses.size() == 1 && statuses.getFirst().connected() && f.player() != null, "Reconnected");
+                    })
+                    .createAndAdd(() -> {
+                        context.assertTrue(f.runtime.fieldStatus(f.id).isPresent(), "The field taken up again by itself");
+                        context.assertTrue(f.runtime.nativeStatuses(dev.kindred.core.Actor.console()).getFirst().stopped(), "Still stopped: taking its work up does not resume it");
+                        f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    });
+        }
+        runner.createAndAdd(() -> context.assertTrue(f.runtime.fieldStatus(f.id).isEmpty(), "Field done: " + f.runtime.fieldStatus(f.id).orElse("")
                         + " / " + f.runtime.nativeLastResult(f.id)))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
@@ -441,7 +485,14 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var status = f.runtime.ranchStatus(f.id);
-                    context.assertTrue(status.isEmpty(), "Pasture done: " + status.orElse("") + "; " + f.runtime.nativeLastResult(f.id));
+                    if (status.isEmpty()) return;
+                    // Where they stand, from the pen's gate, if it runs out: the log says what it did, not where.
+                    var where = new StringBuilder("; from the gate, the player at ").append(f.player().getBlockPos().subtract(gate).toShortString());
+                    for (UUID cow : cows) {
+                        var entity = context.getWorld().getEntity(cow);
+                        where.append(", a cow at ").append(entity == null ? "none" : entity.getBlockPos().subtract(gate).toShortString());
+                    }
+                    context.assertTrue(false, "Pasture done: " + status.orElse("") + "; " + f.runtime.nativeLastResult(f.id) + where);
                 })
                 .createAndAdd(() -> {
                     var world = context.getWorld();

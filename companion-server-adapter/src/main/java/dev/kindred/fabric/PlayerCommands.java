@@ -1078,18 +1078,15 @@ public final class PlayerCommands {
         String name = StringArgumentType.getString(context, "blueprint");
         BlockPos at = BlockPosArgumentType.getBlockPos(context, "at");
         int turns = turned ? IntegerArgumentType.getInteger(context, "turns") : 0;
-        var parts = name.split("-", 2);
-        if (!dev.kindred.core.construction.Generators.NAMES.contains(parts[0])) return runtime.startSchematicBuild(context.getSource(), id, name, at, turns);
         dev.kindred.core.construction.Blueprint blueprint;
         try {
-            var sizes = new java.util.ArrayList<Integer>();
-            if (parts.length > 1) for (String size : parts[1].split("x")) sizes.add(Integer.parseInt(size));
-            blueprint = dev.kindred.core.construction.Generators.named(parts[0], sizes);
+            blueprint = PlayerRuntime.generated(name);
         } catch (IllegalArgumentException invalid) {
             context.getSource().sendError(Text.literal(invalid.getMessage() == null ? "Not a blueprint: " + name : invalid.getMessage()));
             return 0;
         }
-        return runtime.startBuild(context.getSource(), id, blueprint, at, turns);
+        if (blueprint == null) return runtime.startSchematicBuild(context.getSource(), id, name, at, turns);
+        return runtime.startBuild(context.getSource(), id, blueprint, at, turns, name);
     }
 
     private static int ranch(CommandContext<ServerCommandSource> context, boolean start, boolean named) {

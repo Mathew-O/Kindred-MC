@@ -312,6 +312,15 @@ final class BuildRunner {
     /** How many trips it has set out on for the build's shortfall. */
     int trips() { return trips; }
 
+    /** The scaffold it put up and has still to take down, as it stands now. */
+    Set<Pos> scaffold() { return Set.copyOf(scaffold); }
+
+    /**
+     * Scaffold it put up before a restart, to take down as its own when the build is done (F-13). A block no longer
+     * standing there is dropped at the next step, as one taken down is.
+     */
+    void restoreScaffold(Set<Pos> standing) { scaffold.addAll(standing); }
+
     /** The next task, or empty when the build is done. */
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body) {
         return next(body, null);

@@ -68,6 +68,14 @@ final class PlayerMemoryStore implements AutoCloseable {
         List<Base> built = new ArrayList<>();
     }
 
+    /**
+     * The work an operator set the player to, kept so that it is taken up again after a restart (F-13): a build
+     * ({@code build}, its plan by the name the command gave it: {@code hut-5x5x3}, {@code walltower-3}, a schematic's
+     * name) at its origin, turned so many quarters, with the scaffold blocks it put up and has still to take down; or a
+     * farm ward's field ({@code field}) by its keep's spot. What it has built, tilled or sown is read from the world.
+     */
+    record Work(String kind, String plan, String dimension, int x, int y, int z, int turns, List<int[]> scaffold) { }
+
     private final Path folder;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final ExecutorService io = Executors.newSingleThreadExecutor(task -> {
@@ -83,6 +91,36 @@ final class PlayerMemoryStore implements AutoCloseable {
     private Path file(UUID id) { return folder.resolve(id + ".json"); }
 
     private Path basesFile(UUID id) { return folder.resolve(id + ".bases.json"); }
+
+    private Path workFile(UUID id) { return folder.resolve(id + ".work.json"); }
+
+    /** The work this player was at in this world, or null; read off the game thread. */
+    CompletableFuture<Work> loadWork(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (Files.isRegularFile(workFile(id))) return gson.fromJson(Files.readString(workFile(id), StandardCharsets.UTF_8), Work.class);
+            } catch (IOException | RuntimeException unreadable) {
+                KindredMod.LOGGER.warn("The work of {} could not be read; none taken up: {}", name, unreadable.toString());
+            }
+            return null;
+        }, io);
+    }
+
+    /** Write the work taken now on the game thread; the write itself happens off it, after any before it. */
+    void saveWork(UUID id, String name, Work work) {
+        write(id, workFile(id), gson.toJson(work), name);
+    }
+
+    /** The work is over: nothing is taken up after a restart. In order with the writes before it. */
+    void clearWork(UUID id, String name) {
+        io.execute(() -> {
+            try {
+                Files.deleteIfExists(workFile(id));
+            } catch (IOException failed) {
+                KindredMod.LOGGER.warn("The work of {} could not be cleared: {}", name, failed.toString());
+            }
+        });
+    }
 
     /** This player's bases in this world, or none; read off the game thread. */
     CompletableFuture<Bases> loadBases(UUID id, String name) {

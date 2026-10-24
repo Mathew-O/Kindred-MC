@@ -111,6 +111,63 @@ public final class NativeSurvivalGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * In deep water with the server's edits off, a player swims to a shore it can reach (F-25c9's reflexes). The nearest
+     * dry ground is a pocket sealed behind the pool's wall, three blocks off: it makes for it, gets no nearer than the
+     * wall, and passes it over for a shore it can reach, eight blocks off up a step. Before, it made for the nearest
+     * spot again and again (live run 69: nineteen times in ten minutes).
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "reflexesWater", tickLimit = 900)
+    public void inDeepWaterItSwimsToAShoreItCanReachNotTheNearestSealedOff(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 880);
+        BlockPos o = context.getAbsolutePos(new BlockPos(12, 0, 12));
+        BlockPos pocket = o.add(-2, 2, 4), shore = o.add(9, 5, 4);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> f.awaitReady(context))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Swimmer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-10, 0, -10), o.add(20, 12, 20));
+                    // Rock to nine up all round; a pool nine square, water four deep, open to the sky above it.
+                    for (int x = -10; x <= 20; x++) for (int z = -10; z <= 20; z++) {
+                        boolean pool = x >= 0 && x <= 8 && z >= 0 && z <= 8;
+                        for (int y = 0; y <= 12; y++) {
+                            var state = y == 0 ? Blocks.STONE.getDefaultState()
+                                    : pool ? (y <= 4 ? Blocks.WATER.getDefaultState() : Blocks.AIR.getDefaultState())
+                                    : y <= 9 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState();
+                            world.setBlockState(o.add(x, y, z), state);
+                        }
+                    }
+                    // The sealed pocket behind the west wall, and the step up out of the pool in its east wall.
+                    world.setBlockState(pocket, Blocks.AIR.getDefaultState());
+                    world.setBlockState(pocket.up(), Blocks.AIR.getDefaultState());
+                    world.setBlockState(shore, Blocks.AIR.getDefaultState());
+                    world.setBlockState(shore.up(), Blocks.AIR.getDefaultState());
+                    for (int y = 6; y <= 9; y++) world.setBlockState(shore.withY(o.getY() + y), Blocks.AIR.getDefaultState());
+                    var player = f.player();
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(o.getX() + 1.5, o.getY() + 1, o.getZ() + 4.5, 0, 0);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isOnGround() && !player.isTouchingWater() && player.getBlockPos().equals(shore),
+                            "Out of the water on the shore it could reach: at " + player.getBlockPos().subtract(o).toShortString()
+                                    + ", " + f.runtime.nativeActivityStatus(Actor.console(), f.id).work());
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(world.getBlockState(pocket).isAir() && world.getBlockState(o.add(-1, 2, 4)).isOf(Blocks.STONE),
+                            "The wall to the pocket left standing, edits off");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "reflexesIdle", tickLimit = 600)
     public void anIdlePlayerStillStepsOffMagmaAndEatsWhenHungry(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 590);
@@ -129,13 +186,14 @@ public final class NativeSurvivalGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.runtimeSettings(f.id).playstyleProfile().isIdleObserving(), "Still idle");
                     f.player().getInventory().setStack(0, new ItemStack(Items.APPLE, 2));
-                    f.player().getHungerManager().setFoodLevel(14);
+                    f.player().getHungerManager().setFoodLevel(16);
                     f.player().getHungerManager().setSaturationLevel(0);
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1
-                        && f.player().getHungerManager().getFoodLevel() >= 18, "Idle, it ate one apple: " + f.player().getInventory().getStack(0)))
+                        && f.player().getHungerManager().getFoodLevel() == 20, "Idle, it ate one apple: " + f.player().getInventory().getStack(0)))
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.runtimeSettings(f.id).playstyleProfile().isIdleObserving(), "Still idle after eating");
+                    context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1, "No more food eaten than the one");
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
