@@ -400,7 +400,7 @@ final class BuildRunner {
             // and the nine by seven cabin in full run 19).
             case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(wait("Landing first"))
                     : step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
-                    ? Optional.of(outside(groundBeside(step.target()), step.reason() + "; over to it"))
+                    ? Optional.of(outside(groundBeside(step.target()), step.reason() + "; over to it from " + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet), step.reason() + "; down off the build first"))
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));

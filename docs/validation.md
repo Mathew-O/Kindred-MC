@@ -4,6 +4,15 @@
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- M-06a's second stage (the farm ward), on top of `b473cd5`.
+  - New JUnit in `CompoundsTest` (3): the ward's own walls whole and lined, its channel; the field reached under its own east wall, or through the keep and under the shared wall, and no other way; the whole ward built by the planner onto a standing keep. The keep's way in is now the same passage helper, with the same blocks.
+  - New native fixture `withItsKeepStandingAPlayerBuildsItsFarmWardAndWalksInUnderTheSharedWall`. Pass, alone or with its class five times in a row (the first runs, before the ward had its own way in, left the player shut outside its walls at 411 of 437 blocks), every touched class together twice, and full runs 23 and 24
+  - Builds (`BuildRunner`): a block it cannot reach says, as it goes over to it, where it stood. (A break's stance walked to the end only where it was not up on the build was tried and taken out: standing on a scaffold column it then planned its next break again, found it out of reach and waited, 94 times in one run against 13 before, and the life-first night fixture's cabin finished after nightfall.)
+  - M-01a (`Ranch`): outside the pen to shut it again (one that slipped out no longer out within reach), it goes two in from the gate, not one: within a block of the cell just inside, it stood in the gateway, not in the pen, and walked there again and again until the fixture's time ran out. New JUnit `RanchTest.oneThatWalksBackInOnItsOwnWhileItIsOutsideIsShutInFromInsideThePen`.
+  - Every class this change touches together (eleven classes, 31 tests), twice: the first run failed the life-first night fixture (the break-stance change, since taken out) and the ranch fixture (the gateway); the second, after both fixes, passed 31/31.
+  - Full `runGametest` runs 23 and 24 passed 312/312 each. A narrow game-test run of the compound class (the next slice's fixtures) ran on the machine alongside part of each.
+  - `./gradlew build` passed: 562 JUnit results, four skipped (the opt-in live model tests).
+  - JAR SHA-256: `227d0b3bf3e659841265dec3f20a8337d8c664926c0dc2323cf97bcb7be3f5ee`.
 - M-06a (a walled base: the keep) and fixtures that clean up after themselves, on top of `4d7f19a`.
   - New JUnit: `CompoundsTest` (3: the wall whole and lined; the only way in under it; the whole keep built by the planner, three variants turned three ways).
   - New native fixture `anAiPlayerBuildsItsKeepWalledLinedAndEnteredOnlyUnderTheWallThenWalksIn`: the keep built from the blocks it holds, every block exact, then walked into from outside by the passage, three below the yard, the keep still exact. Pass: alone (the fifth run, after four that led to the fixes), in two of three runs of every class this change touches together (the third 30/30), and in both full runs (310/311 twice, their failures elsewhere)

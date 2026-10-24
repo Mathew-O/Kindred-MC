@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward");
 
     private Generators() { }
 
@@ -192,7 +192,9 @@ public final class Generators {
             case "manor" -> Houses.of(Houses.Stage.MANOR, "oak", "cobblestone");
             // The first stage of a walled base (M-06a): the cabin in a walled yard.
             case "keep" -> Compounds.keep(new BuildStyle("", "oak", "cobblestone", 0, 0));
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep");
+            // Its second: a farm ward east of the keep, built at the keep's own spot.
+            case "farmward" -> Compounds.farmWard(new BuildStyle("", "oak", "cobblestone", 0, 0));
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward");
         };
     }
 }

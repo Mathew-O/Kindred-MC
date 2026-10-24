@@ -211,7 +211,10 @@ public final class Ranch {
             if (!in) {
                 // Pushed out, or the pair walked in on its own: in through the gate first.
                 if (!seen.gateOpen()) return gate(seen, true, outside(), false, "Open the gate");
-                return go(inner(), 1, false, 0, "Into the pen");
+                // Two in from the gate: within a block of the cell just inside it, it stood in the gateway, not in the
+                // pen, and walked there again and again (one brought back that walked in on its own, the ranch
+                // fixture on 2026-10-24).
+                return go(inner().add(0, 0, -1), 1, false, 0, "Into the pen");
             }
             // Food put away first, so the animals stop following it to the gate.
             if (seen.gateOpen()) return gate(seen, false, inner(), false, "Shut the " + kind.noun() + "s in");

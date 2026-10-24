@@ -20,6 +20,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
 /aiplayer build cabin|house|manor <x y z> [turns] [bot]  build a stage of a base there, of oak and cobblestone
 /aiplayer build keep <x y z> [turns] [bot]  build a walled keep there, the first stage of a Factions base (M-06a)
+/aiplayer build farmward <x y z> [turns] [bot]  build the keep's farm ward east of it, at the keep's own spot
 /aiplayer bases on|off               server-wide leave for AI players to choose, site and build their own bases (default off)
 /aiplayer build stop [bot]           stop building; what is built stays
 /aiplayer build <schematic> <x y z> [turns] [bot]  build a schematic from config/kindred/schematics
@@ -152,7 +153,7 @@ Doors and beds now have a placement rule: each is placed by its first half, and 
 - **No gate.** The way in is a stair down beside the west wall, three blocks in from its south end; a passage under the wall, three below the yard; and a stair up into the yard. The stair and passage are lined with stone, and nothing in the wall shows where the way in is.
 - **Inside:** the cabin, with its bed, table, furnace and chests.
 
-The farm and pasture wards, the hall, and the moat and bridge are to come, as is a keep a player chooses and builds for itself in a Factions match.
+`/aiplayer build farmward <x y z>`, at the keep's own spot, builds its second stage: a farm ward east of the keep, sharing its east wall, its own three walls lined as the keep's, reached from the keep's yard by a way under the shared wall and from outside by its own way under its east wall, and a field nine square with a stone-lined channel down its middle for water. Watering, tilling and sowing the field, the pasture ward, the hall, and the moat and bridge are to come, as is a compound a player chooses and builds for itself in a Factions match.
 
 **Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
 

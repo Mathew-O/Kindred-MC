@@ -97,4 +97,106 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A walled base's second stage (M-06a): the farm ward. With the keep standing, a player on the open ground south of
+     * it builds the ward east of the keep from the blocks it holds: its own three walls, lined, sharing the keep's east
+     * wall; a way under that wall from the keep's yard and its own way in under its east wall; a channel dug and lined
+     * down the middle of its field. Every block of the ward ends exact and the keep's still are. Then it walks from
+     * the keep's yard into the field, under the shared wall.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundFarm", tickLimit = 48000)
+    public void withItsKeepStandingAPlayerBuildsItsFarmWardAndWalksInUnderTheSharedWall(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 47500);
+        var style = new BuildStyle("", "oak", "cobblestone", 0, 0);
+        var keep = Compounds.keep(style);
+        var ward = Compounds.farmWard(style);
+        var wall = Compounds.wall(style);
+        var field = Compounds.field(style);
+        BlockPos o = context.getAbsolutePos(new BlockPos(12, 0, 12));
+        BlockPos origin = o.add(4, 7, 4);
+        BlockPos yard = origin.add(wall.west() + 6, 0, wall.wayIn()), inField = origin.add(field.west(), 0, field.north());
+        boolean[] under = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 36));
+                    for (int cx = (o.getX() - 12) >> 4; cx <= (o.getX() + 60) >> 4; cx++) {
+                        for (int cz = (o.getZ() - 12) >> 4; cz <= (o.getZ() + 36) >> 4; cz++) world.setChunkForced(cx, cz, true);
+                    }
+                    for (int x = -12; x <= 60; x++) for (int z = -12; z <= 36; z++) {
+                        for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 4; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.DIRT.getDefaultState());
+                        world.setBlockState(o.add(x, 6, z), Blocks.GRASS_BLOCK.getDefaultState());
+                        for (int y = 7; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    // The keep as it stands, built before (its own fixture builds it).
+                    for (var p : keep.placedClear(BuildRunner.pos(origin), 0)) world.setBlockState(BuildRunner.blockPos(p), Blocks.AIR.getDefaultState());
+                    for (var b : keep.placed(BuildRunner.pos(origin), 0)) {
+                        world.setBlockState(BuildRunner.blockPos(b.at()), state(b.spec()), net.minecraft.block.Block.NOTIFY_LISTENERS | net.minecraft.block.Block.FORCE_STATE);
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    // The ward's bill, as though gathered, with stone tools to dig its way through and its channel, dirt
+                    // to scaffold with and bread.
+                    ItemStack[] bill = {
+                            new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_SHOVEL),
+                            new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 64),
+                            new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 44),
+                            new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 40),
+                            new ItemStack(Items.TORCH, 12), new ItemStack(Items.DIRT, 64), new ItemStack(Items.BREAD, 16)};
+                    for (int slot = 0; slot < bill.length; slot++) inventory.setStack(slot, bill[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    // On the open ground south of where the ward goes: from inside the keep, its site lay beyond the
+                    // keep's east wall, the way under it not yet dug, and the way round out of the keep too far to find.
+                    var farm = Compounds.farmWall(style);
+                    player.refreshPositionAndAngles(origin.getX() + farm.west() + 9.5, origin.getY(), origin.getZ() + farm.south() + 4.5, 0, 0);
+                    world.setTimeOfDay(1000);
+                    context.assertTrue(f.runtime.startBuild(f.source, f.id, ward, origin, 0) == 1, "Build started");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(), "Built: " + f.runtime.buildStatus(f.id).orElse("")
+                        + " / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> {
+                    NativeBaseGameTests.exact(context, ward, origin);
+                    NativeBaseGameTests.exact(context, keep, origin);
+                    // From the keep's yard into the field.
+                    var player = f.player();
+                    player.refreshPositionAndAngles(yard.getX() + 0.5, yard.getY(), yard.getZ() + 0.5, 270, 0);
+                    context.assertTrue(f.runtime.nativeGoto(f.source, f.id, inField, 0.5) == 1, "Walk to the field");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Mason in the world, short of the field");
+                    var feet = player.getBlockPos();
+                    // Through the way under the shared wall, not out of the keep and round by the ward's own way in.
+                    under[0] |= feet.getX() == origin.getX() + wall.east() && feet.getY() == origin.getY() - 3;
+                    context.assertTrue(feet.equals(inField), "In the field: at " + feet + " / " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(under[0], "Under the shared wall on its way from the keep's yard");
+                    NativeBaseGameTests.exact(context, ward, origin);
+                    NativeBaseGameTests.exact(context, keep, origin);
+                    KindredMod.LOGGER.info("Compound: the farm ward built, {} blocks, its field reached from the keep's yard under the shared wall", ward.blocks().size());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /** The block a plan's spec names, in its state. */
+    private static net.minecraft.block.BlockState state(dev.kindred.core.construction.BlockSpec spec) {
+        try {
+            return net.minecraft.command.argument.BlockArgumentParser.block(net.minecraft.registry.Registries.BLOCK.getReadOnlyWrapper(), spec.toString(), false)
+                    .blockState();
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }

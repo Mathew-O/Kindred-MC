@@ -154,6 +154,28 @@ class RanchTest {
     }
 
     @Test
+    void oneThatWalksBackInOnItsOwnWhileItIsOutsideIsShutInFromInsideThePen() {
+        var ranch = ranch();
+        var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(2, 64, 2), true, false, false);
+        var bess = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(4, 64, 2), true, false, false);
+        var calf = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 2), false, false, false);
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 8, List.of(daisy, bess, calf), 0));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calf), 10));
+        var calfOut = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(10, 64, 12), false, false, false);
+        assertInstanceOf(Ranch.Step.Go.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, calfOut), 20)));
+        // The calf back in on its own while it was outside: the gate opened, then in past the gateway to shut it.
+        var calfIn = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 3), false, false, false);
+        assertEquals(new Ranch.Step.Gate(true, "Open the gate"),
+                ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, calfIn), 30)));
+        var into = assertInstanceOf(Ranch.Step.Go.class,
+                ranch.next(new Ranch.Observation(new Pos(3, 64, 6), true, true, 8, List.of(daisy, bess, calfIn), 40)));
+        assertTrue(ranch.inside(into.target()), "in the pen: " + into);
+        assertTrue(Math.sqrt(into.target().distanceSquared(ranch.gate())) > into.range(), "standing in the gateway is not in: " + into);
+        assertEquals(new Ranch.Step.Gate(false, "Shut the cows in"),
+                ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calfIn), 50)));
+    }
+
+    @Test
     void itOpensTheGateToLeaveOnlyOnceNoAnimalStandsJustInsideIt() {
         var ranch = ranch();
         var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 4), true, false, false);
