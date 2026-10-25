@@ -310,6 +310,18 @@ public final class MatchRegistry {
                 && (match.mode() != Mode.MANHUNT || match.runners().contains(attacker) != match.runners().contains(target))).isPresent();
     }
 
+    /**
+     * Whether {@code owner} is {@code player}'s opponent in the running match {@code player} is still in (E-44): the
+     * same sides as may attack one another, the other player of a duel or the other side of a manhunt, the owner having
+     * joined it, whether or not still in it. Never in a match whose players are not opponents (a speedrun, a build
+     * battle), and never outside one.
+     */
+    public boolean opponents(UUID player, UUID owner) {
+        if (player == null || owner == null || player.equals(owner)) return false;
+        return running(player).filter(match -> match.mode().pvp && match.participant(owner)
+                && (match.mode() != Mode.MANHUNT || match.runners().contains(player) != match.runners().contains(owner))).isPresent();
+    }
+
     /** The running match {@code player} is still in. */
     public Optional<Match> running(UUID player) {
         return matches.values().stream().filter(m -> m.state() == State.RUNNING && m.playing(player)).findFirst();

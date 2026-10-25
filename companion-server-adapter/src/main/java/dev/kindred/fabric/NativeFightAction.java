@@ -283,11 +283,14 @@ final class NativeFightAction extends NativeRecordedAction {
         return body.move(issuedLease, 0, 0, false, false, away);
     }
 
-    /** Lost nothing but weapon or armor wear (a worn-out weapon may break); anything gained was picked up. */
+    /**
+     * Lost nothing but weapon or armor wear (a worn-out weapon may break); anything gained was picked up. A hunt's
+     * compass is the match's: taken back when the fight ends the hunt, it was never the player's to lose.
+     */
     private boolean conserved(InventoryEvidence after) {
         Map<Item, Integer> lost = new HashMap<>();
-        for (ItemStack stack : before.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), stack.getCount(), Integer::sum);
-        for (ItemStack stack : after.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
+        for (ItemStack stack : before.stacks()) if (!stack.isEmpty() && !HuntCompass.handed(stack)) lost.merge(stack.getItem(), stack.getCount(), Integer::sum);
+        for (ItemStack stack : after.stacks()) if (!stack.isEmpty() && !HuntCompass.handed(stack)) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
         for (var entry : lost.entrySet()) {
             if (entry.getValue() <= 0) continue;
             boolean brokenWeapon = entry.getValue() == 1 && slot >= 0 && slot < before.stacks().length

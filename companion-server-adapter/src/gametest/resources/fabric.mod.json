@@ -77,7 +77,8 @@
       "dev.kindred.fabric.NativeGazeGameTests",
       "dev.kindred.fabric.NativeTeamShareGameTests",
       "dev.kindred.fabric.NativeTeamPortalGameTests",
-      "dev.kindred.fabric.NativeLootGameTests"
+      "dev.kindred.fabric.NativeLootGameTests",
+      "dev.kindred.fabric.NativeRaidGameTests"
     ]
   },
   "depends": {

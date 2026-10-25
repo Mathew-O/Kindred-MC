@@ -45,6 +45,16 @@ final class HuntCompass {
         return stack;
     }
 
+    /**
+     * Whether {@code stack} is a tracking compass of any hunt: the match's rule hands it and takes it back, so it is
+     * never the player's own to count as kept or lost.
+     */
+    static boolean handed(ItemStack stack) {
+        if (!stack.isOf(Items.COMPASS)) return false;
+        var data = stack.get(DataComponentTypes.CUSTOM_DATA);
+        return data != null && data.contains(KEY);
+    }
+
     /** Whether {@code stack} is a tracking compass of {@code match}. */
     static boolean of(ItemStack stack, UUID match) {
         if (!stack.isOf(Items.COMPASS)) return false;

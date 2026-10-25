@@ -83,6 +83,109 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         }
     }
 
+    @Override
+    public CompletableFuture<Answer> ask(Question question) {
+        Objects.requireNonNull(question);
+        return CompletableFuture.supplyAsync(() -> askCall(question), executor);
+    }
+
+    private Answer askCall(Question question) {
+        long started = System.nanoTime();
+        try {
+            boolean schema = choice.provider().shape() == StrategistProvider.Shape.JSON_SCHEMA;
+            HttpResponse<String> response = send(askRequest(question, schema), started);
+            if (schema && response.statusCode() == 400 && mentionsShape(response.body())) {
+                response = send(askRequest(question, false), started); // The one repair, as for advice.
+            }
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            if (response.statusCode() == 429) return Answer.failed("rate limited", millis);
+            if (response.statusCode() / 100 != 2) return Answer.failed("service error " + response.statusCode(), millis);
+            return answer(question, JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+        } catch (java.net.http.HttpTimeoutException late) {
+            return Answer.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return Answer.failed("interrupted", (System.nanoTime() - started) / 1_000_000);
+        } catch (Exception other) {
+            return Answer.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
+        }
+    }
+
+    /** A question's request: its own instructions, the question, and the reply's three fields. */
+    String askRequest(Question question, boolean schema) {
+        var body = new JsonObject();
+        body.addProperty("model", choice.model());
+        var messages = new JsonArray();
+        String words = "Reply with one JSON object and nothing else, with exactly these fields: \"choice\" ("
+                + (question.choices().isEmpty() ? "an empty string" : "one of " + String.join(", ", question.choices())) + "), \"text\" ("
+                + (question.maxText() > 0 ? "the name asked for, at most " + question.maxText() + " characters" : "an empty string")
+                + ") and \"reason\" (one sentence: why).";
+        messages.add(message("system", schema ? question.system() : question.system() + "\n\n" + words));
+        messages.add(message("user", question.text()));
+        body.add("messages", messages);
+        body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", ASK_MAX_OUTPUT_TOKENS);
+        var format = new JsonObject();
+        if (schema) {
+            var properties = new JsonObject();
+            var picked = stringField("Exactly one of the choices the question lists, as written; an empty string when it lists none.");
+            if (!question.choices().isEmpty()) {
+                var names = new JsonArray();
+                for (String offered : question.choices()) names.add(offered);
+                picked.add("enum", names);
+            }
+            properties.add("choice", picked);
+            properties.add("text", stringField("The name the question asks for; an empty string when it asks for none."));
+            properties.add("reason", stringField("One sentence: why."));
+            var all = new JsonArray();
+            for (String name : properties.keySet()) all.add(name);
+            var shape = new JsonObject();
+            shape.addProperty("type", "object");
+            shape.addProperty("additionalProperties", false);
+            shape.add("properties", properties);
+            shape.add("required", all);
+            format.addProperty("type", "json_schema");
+            var spec = new JsonObject();
+            spec.addProperty("name", "answer");
+            spec.addProperty("strict", true);
+            spec.add("schema", shape);
+            format.add("json_schema", spec);
+        } else {
+            format.addProperty("type", "json_object");
+        }
+        body.add("response_format", format);
+        return body.toString();
+    }
+
+    /** A question's completion, checked against what was asked. */
+    static Answer answer(Question question, JsonObject completion, long millis) {
+        long in = 0, cached = 0, out = 0;
+        if (completion.has("usage") && completion.get("usage").isJsonObject()) {
+            var usage = completion.getAsJsonObject("usage");
+            in = number(usage, "prompt_tokens");
+            out = number(usage, "completion_tokens");
+            if (usage.has("prompt_tokens_details") && usage.get("prompt_tokens_details").isJsonObject()) {
+                cached = number(usage.getAsJsonObject("prompt_tokens_details"), "cached_tokens");
+            }
+        }
+        var choices = completion.has("choices") && completion.get("choices").isJsonArray() ? completion.getAsJsonArray("choices") : new JsonArray();
+        if (choices.isEmpty()) return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("no reply"));
+        var first = choices.get(0).getAsJsonObject();
+        String finish = text(first, "finish_reason");
+        if (finish != null && !finish.equals("stop")) {
+            return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("stopped: " + finish));
+        }
+        var message = first.has("message") && first.get("message").isJsonObject() ? first.getAsJsonObject("message") : new JsonObject();
+        String content = text(message, "content");
+        if (content == null || content.isBlank()) return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("no reply text"));
+        JsonObject reply;
+        try {
+            reply = JsonParser.parseString(stripFence(content)).getAsJsonObject();
+        } catch (RuntimeException unreadable) {
+            return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("unreadable reply"));
+        }
+        return Answer.checked(question, text(reply, "choice"), text(reply, "text"), text(reply, "reason"), in, cached, out, millis);
+    }
+
     private HttpResponse<String> send(String body, long started) throws Exception {
         long left = DEADLINE.toMillis() - (System.nanoTime() - started) / 1_000_000;
         if (left <= 0) throw new java.net.http.HttpTimeoutException("deadline passed");

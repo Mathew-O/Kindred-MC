@@ -156,7 +156,7 @@ final class PlayerRuntime {
     private final MinecraftServer server;
     private final Path metadataDirectory;
     /** The optional model strategist for goals (F-19b), when switched on and a key is set. */
-    private final Optional<StrategistBridge> strategist;
+    private Optional<StrategistBridge> strategist;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
     private final NativePlayerSaves.Reader nativeSaveReader;
@@ -1382,8 +1382,15 @@ final class PlayerRuntime {
                 BlockPos chest = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))) : null;
                 UUID cart = arguments.containsKey("cart") ? UUID.fromString(arguments.get("cart")) : null;
-                task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
-                        server::execute, chest, cart, () -> lootWanted(entry));
+                if (arguments.containsKey("raid")) {
+                    UUID owner = UUID.fromString(arguments.get("raid"));
+                    UUID self = entry.nativeBody.entity().getUuid();
+                    task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
+                            server::execute, chest, cart, () -> lootWanted(entry), owner, () -> matches.opponents(self, owner));
+                } else {
+                    task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
+                            server::execute, chest, cart, () -> lootWanted(entry));
+                }
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -2822,6 +2829,8 @@ final class PlayerRuntime {
         if (hunt != null) return hunt;
         var evade = evadeCandidates(entry, body);
         if (evade != null) return evade;
+        var raid = raidCandidates(entry, body);
+        if (raid != null) return raid;
 
         // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
         shareOutFinds(entry, body);
@@ -4851,6 +4860,7 @@ final class PlayerRuntime {
         if (body.entity() != null) {
             applyDimensionTransit(entry, body);
             reconcileExpeditionArrival(entry);
+            if (server.getTicks() % 10 == 0) noteChestUse(entry, body.entity());
         }
 
         if (attentionScheduler.currentTick() != server.getTicks()) {
@@ -5604,6 +5614,7 @@ final class PlayerRuntime {
             entry.unreachedShores.put(entry.waterEscapeShore.asLong(), server.getTicks() + 1200L);
         }
         if (finishedTaskId != null && finishedTaskId.equals(entry.handOverStepId)) handOverStepEnded(entry, state);
+        if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
@@ -6785,6 +6796,220 @@ final class PlayerRuntime {
         }
     }
 
+    // ------------------------------------------------------------------ raids in a match (E-44)
+
+    /** A chest a player was seen using: where, whose (their name as seen), and when. */
+    private record ChestUse(BlockPos pos, UUID owner, String ownerName, long tick) { }
+
+    /**
+     * What a player decided of an opponent's chest, until when it holds, why, whether the model said so, and whether it
+     * has since raided it.
+     */
+    private record RaidDecision(dev.kindred.core.match.Raid.Choice choice, long until, String why, boolean byModel, boolean raided) { }
+
+    /**
+     * Chests it sees a player use, while it is in a match whose sides are opponents: one open beside them within their
+     * reach, in its own sight. That is all it knows of whose a chest is; nothing else makes a chest anyone's.
+     */
+    private void noteChestUse(Entry entry, ServerPlayerEntity self) {
+        if (self == null || matches.running(self.getUuid()).filter(m -> m.mode().pvp).isEmpty()) return;
+        var world = self.getServerWorld();
+        for (ServerPlayerEntity other : world.getPlayers()) {
+            if (other == self || !other.isAlive() || other.isSpectator() || self.squaredDistanceTo(other) > 32 * 32 || !self.canSee(other)) continue;
+            BlockPos at = other.getBlockPos();
+            for (BlockPos pos : BlockPos.iterate(at.add(-4, -2, -4), at.add(4, 3, 4))) {
+                if (!world.isChunkLoaded(pos) || other.getEyePos().squaredDistanceTo(net.minecraft.util.math.Vec3d.ofCenter(pos)) > 4.5 * 4.5) continue;
+                var state = world.getBlockState(pos);
+                boolean open = state.isOf(net.minecraft.block.Blocks.BARREL) ? state.get(net.minecraft.block.BarrelBlock.OPEN)
+                        : (state.isOf(net.minecraft.block.Blocks.CHEST) || state.isOf(net.minecraft.block.Blocks.TRAPPED_CHEST))
+                        && net.minecraft.block.entity.ChestBlockEntity.getPlayersLookingInChestCount(world, pos) > 0;
+                if (!open || !seesBlock(self, pos)) continue;
+                if (entry.chestsUsed.size() >= 32 && !entry.chestsUsed.containsKey(pos.asLong())) continue;
+                var seen = entry.chestsUsed.put(pos.asLong(), new ChestUse(pos.toImmutable(), other.getUuid(), other.getName().getString(), server.getTicks()));
+                if (seen == null || !seen.owner().equals(other.getUuid())) {
+                    // Used again after it raided it: something new may be in it, and it thinks again.
+                    entry.raids.computeIfPresent(pos.asLong(), (key, decided) -> decided.raided() ? null : decided);
+                    entry.routineRefreshPending = true;
+                }
+            }
+        }
+    }
+
+    private static boolean seesBlock(ServerPlayerEntity player, BlockPos pos) {
+        var hit = player.getServerWorld().raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), net.minecraft.util.math.Vec3d.ofCenter(pos),
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        return hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS || hit.getBlockPos().equals(pos);
+    }
+
+    /**
+     * An opponent's chest it saw them use, in the match it is in (E-44): the model asked whether to raid it, or its own
+     * rule without one; then, its answer RAID, walked to and raided. Nothing for a chest whose owner is not its
+     * opponent in a running match, or that is gone.
+     */
+    private List<NativeTaskCandidate> raidCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var match = matches.running(player.getUuid()).filter(m -> m.mode().pvp).orElse(null);
+        if (match == null || entry.chestsUsed.isEmpty()) return null;
+        var world = player.getServerWorld();
+        long now = server.getTicks();
+        ChestUse target = null;
+        for (ChestUse use : List.copyOf(entry.chestsUsed.values())) {
+            if (!matches.opponents(player.getUuid(), use.owner())) continue;
+            if (!world.isChunkLoaded(use.pos()) || !(world.getBlockEntity(use.pos()) instanceof net.minecraft.inventory.Inventory)) {
+                entry.chestsUsed.remove(use.pos().asLong());
+                continue;
+            }
+            int distance = (int) Math.round(Math.sqrt(player.getBlockPos().getSquaredDistance(use.pos())));
+            if (distance > 64) continue;
+            var decided = entry.raids.get(use.pos().asLong());
+            if (decided == null || decided.until() <= now) {
+                if (!entry.raidAsking) askRaid(entry, player, match, use, distance);
+                continue;
+            }
+            // Not while an opponent it can see is at the chest: it raids what they left, not under their eyes.
+            if (decided.raided() || opponentAt(player, use.pos())) continue;
+            if (decided.choice() == dev.kindred.core.match.Raid.Choice.RAID && (target == null
+                    || player.getBlockPos().getSquaredDistance(use.pos()) < player.getBlockPos().getSquaredDistance(target.pos()))) target = use;
+        }
+        if (target == null) return null;
+        BlockPos pos = target.pos();
+        UUID taskId = UUID.nameUUIDFromBytes(("raid:" + match.id() + ":" + pos.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        var raid = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 93.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        var at = Map.of("x", String.valueOf(pos.getX()), "y", String.valueOf(pos.getY()), "z", String.valueOf(pos.getZ()));
+        if (player.getEyePos().squaredDistanceTo(net.minecraft.util.math.Vec3d.ofCenter(pos)) <= 4.5 * 4.5) {
+            var args = new HashMap<>(at);
+            args.put("raid", target.owner().toString());
+            return List.of(new NativeTaskCandidate(raid, "native_loot", Map.copyOf(args)));
+        }
+        var args = new HashMap<>(at);
+        args.put("range", "2.5");
+        return List.of(new NativeTaskCandidate(raid, "native_goto", Map.copyOf(args)));
+    }
+
+    /** An opponent of its, alive and in its sight, within six blocks of {@code pos}. */
+    private boolean opponentAt(ServerPlayerEntity player, BlockPos pos) {
+        for (ServerPlayerEntity other : player.getServerWorld().getPlayers()) {
+            if (other != player && other.isAlive() && !other.isSpectator() && other.getBlockPos().getSquaredDistance(pos) <= 36
+                    && matches.opponents(player.getUuid(), other.getUuid()) && player.canSee(other)) return true;
+        }
+        return false;
+    }
+
+    /** The question about an opponent's chest: to the model if one is set up, else, or with no usable answer, its own rule. */
+    private void askRaid(Entry entry, ServerPlayerEntity player, dev.kindred.core.match.MatchRegistry.Match match, ChestUse use, int distance) {
+        var facts = raidFacts(entry, player, match, use, distance);
+        if (strategist.isEmpty()) {
+            var choice = dev.kindred.core.match.Raid.local(facts);
+            decideRaid(entry, use, choice, dev.kindred.core.match.Raid.why(choice, facts), false);
+            return;
+        }
+        entry.raidAsking = true;
+        var question = new dev.kindred.model.Strategist.Question(dev.kindred.core.match.Raid.SYSTEM, dev.kindred.core.match.Raid.question(facts),
+                dev.kindred.core.match.Raid.choices(), 0);
+        strategist.get().ask(entry.data.id(), entry.data.displayName(), question, server).whenComplete((answer, failure) -> {
+            entry.raidAsking = false;
+            var choice = answer == null ? java.util.Optional.<dev.kindred.core.match.Raid.Choice>empty()
+                    : answer.flatMap(a -> a.choice()).flatMap(dev.kindred.core.match.Raid::parse);
+            if (choice.isPresent()) {
+                decideRaid(entry, use, choice.get(), answer.get().reason(), true);
+            } else {
+                var own = dev.kindred.core.match.Raid.local(facts);
+                decideRaid(entry, use, own, dev.kindred.core.match.Raid.why(own, facts), false);
+            }
+        });
+    }
+
+    private dev.kindred.core.match.Raid.Facts raidFacts(Entry entry, ServerPlayerEntity player, dev.kindred.core.match.MatchRegistry.Match match, ChestUse use, int distance) {
+        String side = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT ? (match.runners().contains(player.getUuid()) ? "runner" : "hunter") : "duelist";
+        String ownerSide = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT ? (match.runners().contains(use.owner()) ? "runner" : "hunter") : "duelist";
+        java.util.OptionalInt nearest = java.util.OptionalInt.empty();
+        for (ServerPlayerEntity other : player.getServerWorld().getPlayers()) {
+            if (other == player || !other.isAlive() || !matches.opponents(player.getUuid(), other.getUuid()) || !player.canSee(other)) continue;
+            int away = (int) Math.round(Math.sqrt(player.squaredDistanceTo(other)));
+            if (away <= 64 && (nearest.isEmpty() || away < nearest.getAsInt())) nearest = java.util.OptionalInt.of(away);
+        }
+        // What of note it holds, worth most first, and what its run wants, as it would say them.
+        var holding = Valuables.holding(player, lootWanted(entry));
+        var held = new ArrayList<java.util.Map.Entry<String, Double>>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            double worth = Valuables.judge(stack, holding).worth();
+            if (worth >= 0.5) held.add(Map.entry(dev.kindred.core.team.Missing.items(Map.of(Valuables.id(stack), stack.getCount())), worth));
+        }
+        held.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+        var holds = held.stream().limit(6).map(Map.Entry::getKey).toList();
+        var wants = entry.campaign == null ? List.<String>of() : entry.campaign.lootWanted(player).keySet().stream()
+                .filter(item -> item.startsWith("minecraft:")).map(item -> item.substring(10).replace('_', ' ')).sorted().limit(4).toList();
+        return new dev.kindred.core.match.Raid.Facts(entry.data.displayName(), match.mode(), side, use.ownerName(), ownerSide,
+                (int) ((server.getTicks() - use.tick()) / 20), distance, nearest, player.getHealth(), holds, wants);
+    }
+
+    private void decideRaid(Entry entry, ChestUse use, dev.kindred.core.match.Raid.Choice choice, String why, boolean byModel) {
+        long now = server.getTicks();
+        long until = now + switch (choice) {
+            case RAID -> 2400; // Two minutes to get there and do it, then it thinks again.
+            case LEAVE -> 12_000;
+            case WATCH -> 2400;
+        };
+        entry.raids.put(use.pos().asLong(), new RaidDecision(choice, until, why, byModel, false));
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        KindredMod.LOGGER.info("{} on {}'s chest at {}: {} ({}) - {}", entry.data.displayName(), use.ownerName(), use.pos().toShortString(), choice,
+                byModel ? "the model's call" : "its own rule", why);
+    }
+
+    /** A raid done or not: what it took told to its own side only, and the chest let be until it sees it used again. */
+    private void raidEnded(Entry entry, NativeLootAction loot, SkillRunner.State state) {
+        var self = entry.nativeBody == null ? null : entry.nativeBody.entity();
+        String owner = loot.raidOwner().toString();
+        for (ChestUse use : List.copyOf(entry.chestsUsed.values())) {
+            if (!use.owner().equals(loot.raidOwner())) continue;
+            owner = use.ownerName();
+            if (state == SkillRunner.State.COMPLETED && self != null && self.getBlockPos().getSquaredDistance(use.pos()) <= 36) {
+                entry.chestsUsed.remove(use.pos().asLong());
+                var decided = entry.raids.get(use.pos().asLong());
+                entry.raids.put(use.pos().asLong(), decided == null ? new RaidDecision(dev.kindred.core.match.Raid.Choice.RAID, server.getTicks() + 12_000, "raided", false, true)
+                        : new RaidDecision(decided.choice(), server.getTicks() + 12_000, decided.why(), decided.byModel(), true));
+            }
+        }
+        if (state == SkillRunner.State.COMPLETED) sayToSide(entry, dev.kindred.core.match.Raid.told(owner, loot.took()));
+    }
+
+    /**
+     * Said to its own side only (E-44): those it plays for and the players on its side of its match, never an opponent
+     * of its in it, however near.
+     */
+    private void sayToSide(Entry entry, String text) {
+        entry.lastSaid = text;
+        String line = "<" + entry.data.displayName() + "> " + text;
+        KindredMod.LOGGER.info("{} (to its side)", line);
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (self == null) return;
+        var match = matches.running(self.getUuid()).orElse(null);
+        for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) {
+            if (listener == self || aiPlayerOf(listener) != null || matches.opponents(self.getUuid(), listener.getUuid())) continue;
+            boolean controls = listener.getUuid().equals(entry.data.ownerId()) || entry.nativeState != null
+                    && entry.nativeState.access().mayControl(new Actor(listener.getUuid(), listener.hasPermissionLevel(2)));
+            if (controls || match != null && match.participant(listener.getUuid())) listener.sendMessage(Text.literal(line), false);
+        }
+    }
+
+    /** What it decided of an opponent's chest at {@code pos}, for fixtures: the choice and whether the model made it. */
+    String raidDecision(UUID id, BlockPos pos) {
+        Entry entry = entries.get(id);
+        var decided = entry == null ? null : entry.raids.get(pos.asLong());
+        return decided == null ? null : decided.choice() + (decided.byModel() ? " (the model's call)" : " (its own rule)");
+    }
+
+    /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
+    void strategistForFixtures(dev.kindred.model.Strategist given) {
+        strategist.ifPresent(StrategistBridge::close);
+        strategist = Optional.of(StrategistBridge.of(given, metadataDirectory));
+    }
+
     /** What it last told its team of a find, for fixtures (E-40a). */
     String teamLine(UUID id) {
         Entry entry = entries.get(id);
@@ -7885,6 +8110,9 @@ final class PlayerRuntime {
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, prey), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(fight, "native_fight", Map.of("target", prey.getUuid().toString(), "slot", String.valueOf(slot))));
         }
+        // A runner's chest it saw them use, raided at the model's call or its own rule's (E-44), before it gears up.
+        var raid = raidCandidates(entry, body);
+        if (raid != null) return raid;
         if (!huntReady(player)) return null;
         // Gearing up as the hunt goes on (M-02b): iron armour it carries put on, and the next piece made from the iron in
         // hand, before the needle is followed on.
@@ -8217,6 +8445,10 @@ final class PlayerRuntime {
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
+        /** Chests it saw a player use, by place (E-44); what it decided of each opponent's, and until when; a question out. */
+        private final Map<Long, ChestUse> chestsUsed = new HashMap<>();
+        private final Map<Long, RaidDecision> raids = new HashMap<>();
+        private boolean raidAsking;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
         private final List<String> partsTaken = new ArrayList<>();

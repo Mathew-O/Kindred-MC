@@ -42,6 +42,10 @@ final class NativeLootAction extends NativeRecordedAction {
     private final BlockPos chestPos;
     private final UUID cart;
     private final Supplier<Map<String, Integer>> wanted;
+    /** For a raid (E-44): whose storage it is, and whether they are still the player's opponent in its match. */
+    private final UUID raidOwner;
+    private final java.util.function.BooleanSupplier opponents;
+    private Map<String, Integer> took = Map.of();
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -53,7 +57,16 @@ final class NativeLootAction extends NativeRecordedAction {
     NativeLootAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos chestPos, UUID cart,
                      Supplier<Map<String, Integer>> wanted) {
+        this(body, lease, worldId, policy, claims, writer, dispatch, chestPos, cart, wanted, null, () -> false);
+    }
+
+    /** A raid of {@code raidOwner}'s storage at {@code chestPos}, in a match, while {@code opponents} holds (E-44). */
+    NativeLootAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
+                     ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos chestPos, UUID cart,
+                     Supplier<Map<String, Integer>> wanted, UUID raidOwner, java.util.function.BooleanSupplier opponents) {
         if ((chestPos == null) == (cart == null)) throw new IllegalArgumentException("Loot a container at a place, or a cart");
+        this.raidOwner = raidOwner;
+        this.opponents = opponents;
         this.body = body;
         this.lease = lease;
         this.worldId = worldId;
@@ -94,7 +107,7 @@ final class NativeLootAction extends NativeRecordedAction {
             BlockPos at = where();
             if (at == null) return Step.blocked("No such cart in the world", true);
             if (!inReach()) return Step.blocked("The container is out of reach", true);
-            String denial = RoamingEdits.lootDenial(player, at, unrolled(), policy.get());
+            String denial = denial(at);
             if (denial != null) return Step.blocked("Container policy denied: " + denial, true);
             String key = cart != null ? "entity:" + worldId + ":" + cart
                     : "block:" + worldId + ":" + player.getServerWorld().getRegistryKey().getValue() + ":" + chestPos.toShortString();
@@ -102,7 +115,8 @@ final class NativeLootAction extends NativeRecordedAction {
             if (claim == null) return Step.blocked("Another task holds this resource claim", true);
             before = InventoryEvidence.capture(body);
             admission = new ActionAdmission(ActionRecord.prepare(UUID.randomUUID(), lease.get(), "native_loot",
-                    (cart != null ? "cart=" + cart : "container=" + chestPos.toShortString()) + "; unopened structure loot"),
+                    (cart != null ? "cart=" + cart : "container=" + chestPos.toShortString())
+                            + (raidOwner != null ? "; raid of opponent " + raidOwner + "'s storage in a match" : "; unopened structure loot")),
                     before.description(), writer, dispatch);
         }
         if (admission.phase() == ActionAdmission.Phase.BLOCKED) {
@@ -159,9 +173,12 @@ final class NativeLootAction extends NativeRecordedAction {
             return waiting();
         }
         String words = words(taken);
+        var byItem = new LinkedHashMap<String, Integer>();
+        taken.forEach((key, count) -> byItem.merge(key.substring(0, key.indexOf('|')), count, Integer::sum));
+        took = Map.copyOf(byItem);
         var left = new LinkedHashMap<String, Integer>();
         for (ItemStack stack : looted.shut()) if (!stack.isEmpty()) left.merge(key(stack), stack.getCount(), Integer::sum);
-        KindredMod.LOGGER.info("{} looted {}: took {}; left {}", player.getName().getString(),
+        KindredMod.LOGGER.info("{} {} {}: took {}; left {}", player.getName().getString(), raidOwner != null ? "raided" : "looted",
                 cart != null ? "a chest minecart" : "the container at " + chestPos.toShortString(),
                 taken.isEmpty() ? "nothing" : words, left.isEmpty() ? "nothing" : words(left));
         result = Step.completed(Map.of("taken", words, "count", String.valueOf(taken.values().stream().mapToInt(Integer::intValue).sum())));
@@ -235,11 +252,24 @@ final class NativeLootAction extends NativeRecordedAction {
         return String.join(", ", parts);
     }
 
+    /** The rule for this container: a structure's, never opened; or for a raid, an opponent's in the match. */
+    private String denial(BlockPos at) {
+        var player = body.entity();
+        return raidOwner == null ? RoamingEdits.lootDenial(player, at, unrolled(), policy.get())
+                : RoamingEdits.raidDenial(player, at, opponents.getAsBoolean(), policy.get());
+    }
+
+    /** Whose storage a raid is of, or null for a structure's loot. */
+    UUID raidOwner() { return raidOwner; }
+
+    /** What it took, item by item ("minecraft:diamond"), once verified. */
+    Map<String, Integer> took() { return took; }
+
     private boolean valid() {
         var player = body.entity();
         if (!body.connected() || !player.isAlive() || !inReach() || !before.matches(body)) return false;
         BlockPos at = where();
-        if (at == null || RoamingEdits.lootDenial(player, at, unrolled(), policy.get()) != null) return false;
+        if (at == null || denial(at) != null) return false;
         return claim != null && claims.holdsAll(claim, System.currentTimeMillis());
     }
 

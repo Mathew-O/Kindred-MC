@@ -101,6 +101,43 @@ class OpenAiCompatibleStrategistTest {
         }
     }
 
+    private static final Strategist.Question RAID = new Strategist.Question("You decide for a player in a match.",
+            "You saw Steve, a runner, use a chest 20 blocks off. Raid it?", List.of("RAID", "LEAVE", "WATCH"), 0);
+
+    @Test
+    void aQuestionsAnswerIsOneOfTheChoicesOfferedWithItsReason() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"choice\":\"leave\",\"text\":\"\",\"reason\":\"Steve is still close by.\"}", "stop"));
+            var answer = strategist.ask(RAID).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("LEAVE"), answer.choice(), "As offered, whatever its case: " + answer.failure());
+            assertEquals("Steve is still close by.", answer.reason());
+            assertTrue(answer.text().isEmpty());
+            assertEquals(1900, answer.inputTokens());
+            var body = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals(Strategist.ASK_MAX_OUTPUT_TOKENS, body.get("max_completion_tokens").getAsInt());
+            var schema = body.getAsJsonObject("response_format").getAsJsonObject("json_schema").getAsJsonObject("schema");
+            assertEquals("[\"RAID\",\"LEAVE\",\"WATCH\"]", schema.getAsJsonObject("properties").getAsJsonObject("choice").get("enum").toString());
+            var messages = body.getAsJsonArray("messages");
+            assertEquals("You decide for a player in a match.", messages.get(0).getAsJsonObject().get("content").getAsString(), "Its own instructions, not the guide");
+            assertEquals(RAID.text(), messages.get(1).getAsJsonObject().get("content").getAsString());
+        }
+    }
+
+    @Test
+    void aChoiceNotOfferedOrANameTooLongIsNoAnswer() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"choice\":\"BURN_IT\",\"text\":\"\",\"reason\":\"Why not.\"}", "stop"));
+            var burned = strategist.ask(RAID).get(10, TimeUnit.SECONDS);
+            assertTrue(burned.choice().isEmpty());
+            assertTrue(burned.failure().orElse("").startsWith("not one of the choices"), burned.failure().toString());
+            var name = new Strategist.Question("Name a player's sword.", "A diamond sword, enchanted.", List.of(), 32);
+            replies.add(completion("{\"choice\":\"\",\"text\":\"The Unbelievably Long Name Of Doom Itself\",\"reason\":\"Grand.\"}", "stop"));
+            assertEquals(java.util.Optional.of("no usable text"), strategist.ask(name).get(10, TimeUnit.SECONDS).failure());
+            replies.add(completion("{\"choice\":\"\",\"text\":\" Emberfang \",\"reason\":\"It burns.\"}", "stop"));
+            assertEquals(java.util.Optional.of("Emberfang"), strategist.ask(name).get(10, TimeUnit.SECONDS).text());
+        }
+    }
+
     @Test
     void aSchemaTheProviderRefusesIsAskedOnceMoreInJsonMode() throws Exception {
         try (var strategist = start(StrategistProvider.Provider.GROQ, "gsk_test")) {

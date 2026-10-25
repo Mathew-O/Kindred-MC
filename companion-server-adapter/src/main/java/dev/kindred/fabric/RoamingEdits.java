@@ -141,6 +141,16 @@ final class RoamingEdits {
         return unrolled ? null : "Only a structure's container nobody has opened is looted; this one has been opened";
     }
 
+    /**
+     * An opponent's storage, raided in a match (E-44): only while the player is in a running match whose other side the
+     * container's owner is on, a chest it saw them use; never a teammate's, never outside a match, never in co-op.
+     */
+    static String raidDenial(ServerPlayerEntity player, BlockPos pos, boolean opponents, EditPolicy.ServerPolicy policy) {
+        String common = common(player, pos, policy);
+        if (common != null) return common;
+        return opponents ? null : "Only an opponent's storage, in a running match both joined, is raided";
+    }
+
     static String workstationDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
         return common(player, pos, policy);
     }

@@ -115,7 +115,7 @@ public final class Missing {
             "glass", "glowstone dust", "rotten flesh", "lapis lazuli", "cooked beef", "beef");
 
     /** "5 iron ingots, 3 bread and a diamond". */
-    static String items(Map<String, Integer> items) {
+    public static String items(Map<String, Integer> items) {
         var parts = new ArrayList<String>();
         items.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
             String name = entry.getKey().substring(entry.getKey().indexOf(':') + 1).replace('_', ' ');

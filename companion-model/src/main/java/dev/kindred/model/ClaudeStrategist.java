@@ -48,6 +48,12 @@ public final class ClaudeStrategist implements Strategist {
 
     public record Spot(int x, int y, int z) { }
 
+    /** A question's reply as the model is constrained to write it (E-44, E-16d). */
+    public record AskReply(
+            @JsonPropertyDescription("Exactly one of the choices the question lists, as written; an empty string when it lists none.") String choice,
+            @JsonPropertyDescription("The name the question asks for; an empty string when it asks for none.") String text,
+            @JsonPropertyDescription("One sentence: why.") String reason) { }
+
     /** A follow-up for the player's queue (F-19e). */
     public record FollowUp(
             @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) Need need,
@@ -156,6 +162,43 @@ public final class ClaudeStrategist implements Strategist {
             return Outcome.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
         } catch (RuntimeException other) {
             return Outcome.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
+        }
+    }
+
+    @Override
+    public CompletableFuture<Answer> ask(Question question) {
+        Objects.requireNonNull(question);
+        return CompletableFuture.supplyAsync(() -> askCall(question), executor);
+    }
+
+    private Answer askCall(Question question) {
+        var builder = MessageCreateParams.builder()
+                .model(model)
+                .maxTokens(ASK_MAX_OUTPUT_TOKENS)
+                .systemOfTextBlockParams(List.of(TextBlockParam.builder().text(question.system()).build()))
+                .outputConfig(StructuredOutputConfig.<AskReply>builder().format(AskReply.class).effort(Optional.ofNullable(effort)).build())
+                .addUserMessage(question.text());
+        builder.thinking(ThinkingConfigDisabled.builder().build());
+        long started = System.nanoTime();
+        try {
+            var message = client.messages().create(builder.build());
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            var usage = message.usage();
+            long cached = usage.cacheReadInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            String stop = message.stopReason().map(Object::toString).orElse("none");
+            if (!stop.equalsIgnoreCase("end_turn")) {
+                return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("stopped: " + stop));
+            }
+            Optional<AskReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
+            if (reply.isEmpty()) return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("no reply text"));
+            return Answer.checked(question, reply.get().choice(), reply.get().text(), reply.get().reason(), in, cached, out, millis);
+        } catch (RateLimitException limited) {
+            return Answer.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
+        } catch (AnthropicServiceException service) {
+            return Answer.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
+        } catch (RuntimeException other) {
+            return Answer.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
         }
     }
 

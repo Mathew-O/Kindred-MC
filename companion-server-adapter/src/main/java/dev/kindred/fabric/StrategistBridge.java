@@ -53,7 +53,7 @@ final class StrategistBridge implements AutoCloseable {
 
     private static final class State {
         ModelContextStore.PlayerContext context;
-        boolean loading, inFlight;
+        boolean loading, inFlight, asking;
         long lastAt, tokensToday;
         int deaths = -1, stuck = -1, deathsRecorded, events = -1;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
@@ -118,6 +118,45 @@ final class StrategistBridge implements AutoCloseable {
         KindredMod.LOGGER.info("Kindred strategist on: {} model {} ({}), pace {}, daily token budgets {} a player and {} in all",
                 strategist.get().provider(), strategist.get().model(), strategist.get().pace(), pace.name().toLowerCase(java.util.Locale.ROOT), playerDaily, daily);
         return Optional.of(new StrategistBridge(strategist.get(), new ModelContextStore(worldKindredFolder), pace, playerDaily, daily));
+    }
+
+    /** A bridge to a strategist given here, for fixtures: the steady pace and its budgets. */
+    static StrategistBridge of(Strategist strategist, Path worldKindredFolder) {
+        return new StrategistBridge(strategist, new ModelContextStore(worldKindredFolder), Pace.STEADY, Pace.STEADY.playerDailyTokens,
+                Pace.STEADY.dailyTokens);
+    }
+
+    /**
+     * Ask one question for a player (E-44, E-16d), on the game thread: within the same rates and daily budgets as its
+     * advice, one question at a time for each player, off the game thread, the answer handed back on it. Nothing, at
+     * once, when the budgets or rates leave no room or a question of its is already out: the player then answers by
+     * its own rule.
+     */
+    java.util.concurrent.CompletableFuture<Optional<Strategist.Answer>> ask(UUID id, String name, Strategist.Question question, MinecraftServer server) {
+        State state = states.computeIfAbsent(id, key -> new State());
+        var answered = new java.util.concurrent.CompletableFuture<Optional<Strategist.Answer>>();
+        long reserved = Strategist.reservation(question);
+        if (state.asking || !admit(System.currentTimeMillis(), state, reserved)) {
+            answered.complete(Optional.empty());
+            return answered;
+        }
+        state.asking = true;
+        strategist.ask(question).whenComplete((answer, failure) -> server.execute(() -> {
+            state.asking = false;
+            if (failure != null || answer == null) { // The reservation stands: it may still have been billed.
+                KindredMod.LOGGER.warn("{} strategist: question failed: {}", name, String.valueOf(failure));
+                answered.complete(Optional.empty());
+                return;
+            }
+            long used = answer.inputTokens() - answer.cachedTokens() + (answer.cachedTokens() + 9) / 10 + answer.outputTokens();
+            if (used > 0) {
+                tokensToday = Math.max(0, tokensToday + used - reserved);
+                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
+            }
+            if (answer.failure().isPresent()) KindredMod.LOGGER.info("{} strategist: no answer ({})", name, answer.failure().get());
+            answered.complete(answer.failure().isPresent() ? Optional.empty() : Optional.of(answer));
+        }));
+        return answered;
     }
 
     /** Called on the game thread after a goal's step was chosen; cheap when nothing changed. */
