@@ -131,6 +131,16 @@ final class RoamingEdits {
     }
 
     /**
+     * A store of its own (E-43): the storage its administrator assigned it, or a chest of a base it built, while it is
+     * still one; never anybody else's.
+     */
+    static String ownStoreDenial(ServerPlayerEntity player, BlockPos pos, boolean own, EditPolicy.ServerPolicy policy) {
+        String common = common(player, pos, policy);
+        if (common != null) return common;
+        return own ? null : "Only a store of its own: its assigned storage, or a chest of a base it built";
+    }
+
+    /**
      * A structure's container, looted by a player out in the world (E-42): one nobody has opened since the world made it,
      * which still holds its loot table. Storage anyone has opened, a player's own or another's, never has one, and is
      * never looted; a cart's position is where it stands.

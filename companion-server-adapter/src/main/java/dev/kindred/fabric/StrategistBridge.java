@@ -161,6 +161,14 @@ final class StrategistBridge implements AutoCloseable {
 
     /** Called on the game thread after a goal's step was chosen; cheap when nothing changed. */
     void tick(UUID id, String name, PortalRunCampaign campaign, ServerPlayerEntity player, MinecraftServer server) {
+        tick(id, name, campaign, player, server, "");
+    }
+
+    /**
+     * As {@link #tick(UUID, String, PortalRunCampaign, ServerPlayerEntity, MinecraftServer)}, with what it has stored in
+     * its chests as it knows it ("3 diamonds and a saddle"), told with what it holds (E-42, E-43).
+     */
+    void tick(UUID id, String name, PortalRunCampaign campaign, ServerPlayerEntity player, MinecraftServer server, String stored) {
         State state = states.computeIfAbsent(id, key -> new State());
         if (state.campaign != campaign) { // A new goal: everything is new to it.
             state.campaign = campaign;
@@ -207,7 +215,8 @@ final class StrategistBridge implements AutoCloseable {
                 || pace.onEvents && campaign.eventCount() != state.events
                 || now - state.lastAt > pace.periodMs && !campaign.progress().equals(state.progress);
         if (!changed || now - state.lastAt < pace.minGapMs) return;
-        String report = campaign.strategyReport(player, name, state.context.noteTexts());
+        String report = campaign.strategyReport(player, name, state.context.noteTexts())
+                + (stored.isEmpty() ? "" : "Stored in its chests, as it last counted: " + stored + ".\n");
         long reserved = Strategist.reservation(report);
         if (!admit(now, state, reserved)) {
             state.lastAt = now; // Not again before the gap is over.

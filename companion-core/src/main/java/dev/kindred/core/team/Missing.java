@@ -98,6 +98,25 @@ public final class Missing {
                 Audience.TEAM, false, false);
     }
 
+    /** The words a teammate owns up with, asked who took something: said alone ("me", "I did"), or to begin with ("I took them"). */
+    private static final List<String> OWNED_ALONE = List.of("me", "i did", "that was me", "it was me", "yes me", "yeah me");
+    private static final List<String> OWNED_FIRST = List.of("i took", "i have them", "i've got them", "i have it", "i've got it", "i grabbed",
+            "i used them", "i used it");
+
+    /** Whether a reply to its question owns up to the taking: plain words only, nothing read into them. */
+    public static boolean ownsUp(String reply) {
+        if (reply == null) return false;
+        String said = reply.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z' ]", " ").replaceAll("\\s+", " ").strip();
+        if (OWNED_ALONE.contains(said)) return true;
+        for (String owned : OWNED_FIRST) if (said.equals(owned) || said.startsWith(owned + " ")) return true;
+        return false;
+    }
+
+    /** Its answer to a teammate who owned up: their word taken, no more said of it. */
+    public static String thanked(String who) {
+        return "Thanks, " + Objects.requireNonNull(who) + ". I've counted them out.";
+    }
+
     private static String where(Storage.Look look) {
         String place = look.place().words();
         return look.whose() == Storage.Whose.TEAM ? place.replaceFirst("^the ", "our ") : place.replaceFirst("^the ", "my ");

@@ -131,4 +131,21 @@ class WorthTest {
         var dinner = List.of(new Stack("minecraft:bread", 3));
         assertTrue(Worth.makeRoom(dinner, diamond, new Holding(Map.of("minecraft:bread", 3), Map.of(), Map.of(Worth.FOOD, 6))).isEmpty());
     }
+
+    @Test
+    void whatItPutsAwayIsWhatItKeepsForLaterNeverWhatItUsesAsItGoes() {
+        var held = Map.of("minecraft:saddle", 1, "minecraft:name_tag", 1, "minecraft:enchanted_book", 1, "minecraft:rail", 7,
+                "minecraft:diamond", 3, "minecraft:bread", 12, "minecraft:cobblestone", 40, "minecraft:iron_pickaxe", 1,
+                "minecraft:torch", 20, "minecraft:water_bucket", 1);
+        var kit = Map.of(Slot.PICKAXE, new Piece(Material.IRON, 0));
+        assertEquals(Map.of("minecraft:saddle", 1, "minecraft:name_tag", 1, "minecraft:enchanted_book", 1, "minecraft:rail", 7),
+                Worth.stow(held, new Holding(held, kit, Map.of("minecraft:diamond", 3)), false),
+                "Its run's diamonds, its food, its blocks, its pickaxe, torches and bucket stay on it");
+        assertTrue(Worth.stow(held, new Holding(held, kit, Map.of()), false).containsKey("minecraft:diamond"),
+                "With no run on and nothing more wanted of them, its diamonds are put away too");
+        assertEquals(Map.of("minecraft:saddle", 1, "minecraft:name_tag", 1, "minecraft:enchanted_book", 1, "minecraft:rail", 7),
+                Worth.stow(held, new Holding(held, kit, Map.of()), true), "On a run, its diamonds stay with it, wanted now or not");
+        assertEquals(Map.of(), Worth.stow(Map.of("minecraft:rotten_flesh", 3, "minecraft:cobweb", 2), Holding.of(Map.of(), Map.of()), false),
+                "Nothing not worth a slot");
+    }
 }

@@ -306,6 +306,41 @@ public final class Worth {
         return 0.6 * levels;
     }
 
+    /** What a player keeps on it wherever it is, to use as it goes: never put away. */
+    private static final java.util.Set<String> KEPT_ON = java.util.Set.of("bucket", "water_bucket", "lava_bucket", "flint_and_steel",
+            "shield", "bow", "crossbow", "arrow", "spectral_arrow", "tipped_arrow", "torch", "compass", "clock", "ender_pearl",
+            "totem_of_undying", "trident").stream().map(item -> "minecraft:" + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
+
+    /** What no run to the dragon uses, kept only for later: what a player on its run puts away when it passes its store. */
+    private static final java.util.Set<String> FOR_LATER = java.util.Set.of("enchanted_book", "book", "saddle", "name_tag", "lead",
+            "rail", "powered_rail", "diamond_horse_armor", "golden_horse_armor", "iron_horse_armor", "heart_of_the_sea", "nautilus_shell",
+            "experience_bottle", "emerald").stream().map(item -> "minecraft:" + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
+
+    /**
+     * What of what it holds a player puts away in its storage (E-43), item by item and all of each: what it keeps for
+     * later and has no use for as it goes (an enchanted book, a saddle, rails; and with no run on, the diamonds and gold
+     * it has no want of now). On a run, only what no run uses: what it carries for the run, short of it or not, stays
+     * with it. Never its kit, its food, blocks it builds and climbs with, nor what it keeps on it to use as it goes (a
+     * bucket, its bow and arrows, torches, pearls); nothing not worth a slot either.
+     */
+    public static Map<String, Integer> stow(Map<String, Integer> held, Holding holding, boolean onRun) {
+        var out = new java.util.TreeMap<String, Integer>();
+        for (var entry : held.entrySet()) {
+            String item = id(entry.getKey());
+            if (entry.getValue() <= 0 || kit(item) != null || KEPT_ON.contains(item)) continue;
+            Info unit = info(item);
+            if (onRun && (unit == null || !FOR_LATER.contains(unit.unit()))) continue;
+            Info info = info(item);
+            if (info == null || FOOD.equals(info.group()) || BLOCKS.equals(info.group())) continue;
+            if (holding.wanted().containsKey(item) || holding.wanted().containsKey(info.unit())
+                    || info.group() != null && holding.wanted().containsKey(info.group())) continue;
+            // Judged as what it holds, not as one more on top of it.
+            var stack = new Stack(item, entry.getValue());
+            if (judge(stack, holding.without(stack)).keep() == Keep.STORE) out.put(item, entry.getValue());
+        }
+        return out;
+    }
+
     /** What a stack is worth to the player as it stands, and what it does with it. */
     public static Judgement judge(Stack stack, Holding holding) {
         Objects.requireNonNull(stack);

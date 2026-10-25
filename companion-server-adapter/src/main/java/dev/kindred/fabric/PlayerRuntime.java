@@ -1391,6 +1391,13 @@ final class PlayerRuntime {
                     task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
                             server::execute, chest, cart, () -> lootWanted(entry));
                 }
+            } else if (skill.equals("native_store")) {
+                BlockPos chest = new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
+                boolean out = "all".equals(arguments.get("take"));
+                var items = out ? Set.<String>of() : Set.of(arguments.getOrDefault("items", "").split(","));
+                task = new NativeStoreAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
+                        server::execute, chest, items, out,
+                        () -> entry.nativeBody != null && entry.nativeBody.connected() && ownStore(entry, entry.nativeBody.entity(), chest) != null);
             } else if (skill.equals("native_rename")) {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
                         nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
@@ -1628,6 +1635,7 @@ final class PlayerRuntime {
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
+                    || ("native_store".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
                     || (("native_bucket".equals(entry.skillId) || "native_cast".equals(entry.skillId))
@@ -2903,6 +2911,10 @@ final class PlayerRuntime {
             return candidates;
         }
 
+        // What it keeps for later put away in a store of its own, and a store it no longer trusts emptied (E-43).
+        var storing = storeCandidates(entry, body);
+        if (storing != null) return storing;
+
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
             candidates.addAll(campaignCandidates(entry, body));
@@ -3616,7 +3628,7 @@ final class PlayerRuntime {
         body.setPortalTravelAuthorized(mayTravel && (task.filter(PortalRunCampaign::throughPortal).isPresent()
                 || PortalRunCampaign.throughPortal(entry.activeCampaignTask)));
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
-        strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server));
+        strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry)));
         entry.goalProgress = entry.campaign.progress();
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
@@ -4869,7 +4881,10 @@ final class PlayerRuntime {
         if (body.entity() != null) {
             applyDimensionTransit(entry, body);
             reconcileExpeditionArrival(entry);
-            if (server.getTicks() % 10 == 0) noteChestUse(entry, body.entity());
+            if (server.getTicks() % 10 == 0) {
+                noteChestUse(entry, body.entity());
+                storageAskLapsed(entry);
+            }
         }
 
         if (attentionScheduler.currentTick() != server.getTicks()) {
@@ -5625,6 +5640,8 @@ final class PlayerRuntime {
         if (finishedTaskId != null && finishedTaskId.equals(entry.handOverStepId)) handOverStepEnded(entry, state);
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
+        if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
+        if (entry.nativeTask instanceof NativeTakeAction take) takeEnded(entry, take, state);
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
@@ -6488,6 +6505,8 @@ final class PlayerRuntime {
         if (!ready || !running || message.length() > 256) return;
         ServerPlayerEntity player = server.getPlayerManager().getPlayer(senderId);
         if (player == null) return;
+        // A word on what it asked of its team, of what is gone from a store (E-43).
+        for (Entry entry : entries.values()) storageAnswered(entry, player, message);
         CompanionSocials.Participant matched = null;
         Entry spokenTo = null;
         String addressed = null;
@@ -6819,21 +6838,37 @@ final class PlayerRuntime {
 
     /**
      * Chests it sees a player use, while it is in a match whose sides are opponents: one open beside them within their
-     * reach, in its own sight. That is all it knows of whose a chest is; nothing else makes a chest anyone's.
+     * reach, in its own sight. That is all it knows of whose a chest is; nothing else makes a chest anyone's. And in any
+     * mode, whoever it sees open a store of its own (E-43).
      */
     private void noteChestUse(Entry entry, ServerPlayerEntity self) {
-        if (self == null || matches.running(self.getUuid()).filter(m -> m.mode().pvp).isEmpty()) return;
+        if (self == null) return;
+        boolean match = matches.running(self.getUuid()).filter(m -> m.mode().pvp).isPresent();
+        var stores = ownStores(entry, self);
+        if (!match && stores.isEmpty()) return;
         var world = self.getServerWorld();
         for (ServerPlayerEntity other : world.getPlayers()) {
             if (other == self || !other.isAlive() || other.isSpectator() || self.squaredDistanceTo(other) > 32 * 32 || !self.canSee(other)) continue;
             BlockPos at = other.getBlockPos();
-            for (BlockPos pos : BlockPos.iterate(at.add(-4, -2, -4), at.add(4, 3, 4))) {
+            var near = new ArrayList<BlockPos>();
+            if (match) {
+                for (BlockPos pos : BlockPos.iterate(at.add(-4, -2, -4), at.add(4, 3, 4))) near.add(pos.toImmutable());
+            } else {
+                for (var store : stores) if (store.pos().getSquaredDistance(at) <= 36) near.add(store.pos());
+            }
+            for (BlockPos pos : near) {
                 if (!world.isChunkLoaded(pos) || other.getEyePos().squaredDistanceTo(net.minecraft.util.math.Vec3d.ofCenter(pos)) > 4.5 * 4.5) continue;
                 var state = world.getBlockState(pos);
                 boolean open = state.isOf(net.minecraft.block.Blocks.BARREL) ? state.get(net.minecraft.block.BarrelBlock.OPEN)
                         : (state.isOf(net.minecraft.block.Blocks.CHEST) || state.isOf(net.minecraft.block.Blocks.TRAPPED_CHEST))
                         && net.minecraft.block.entity.ChestBlockEntity.getPlayersLookingInChestCount(world, pos) > 0;
                 if (!open || !seesBlock(self, pos)) continue;
+                // At a store of its own: who it saw there, so that what is gone from it has a name if anyone's.
+                if (stores.stream().anyMatch(store -> store.pos().equals(pos))) {
+                    entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), teammateOf(entry, self, other), server.getTicks()));
+                    continue;
+                }
+                if (!match) continue;
                 if (entry.chestsUsed.size() >= 32 && !entry.chestsUsed.containsKey(pos.asLong())) continue;
                 var seen = entry.chestsUsed.put(pos.asLong(), new ChestUse(pos.toImmutable(), other.getUuid(), other.getName().getString(), server.getTicks()));
                 if (seen == null || !seen.owner().equals(other.getUuid())) {
@@ -6994,6 +7029,7 @@ final class PlayerRuntime {
      */
     private void sayToSide(Entry entry, String text) {
         entry.lastSaid = text;
+        entry.said(text);
         String line = "<" + entry.data.displayName() + "> " + text;
         KindredMod.LOGGER.info("{} (to its side)", line);
         var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
@@ -7012,6 +7048,327 @@ final class PlayerRuntime {
         Entry entry = entries.get(id);
         var decided = entry == null ? null : entry.raids.get(pos.asLong());
         return decided == null ? null : decided.choice() + (decided.byModel() ? " (the model's call)" : " (its own rule)");
+    }
+
+    // ------------------------------------------------------------------ extended inventory (E-43)
+
+    /** A store of its own: where, and whose, its own or its team's. */
+    private record OwnStore(BlockPos pos, dev.kindred.core.team.Storage.Whose whose) { }
+
+    /** Someone it saw open a store of its own: who, whether on its side, and when. */
+    private record SeenAtStore(String name, boolean teammate, long tick) { }
+
+    /** What it asked its team of what is gone from a store, and until when it waits for a word. */
+    private record StorageAsk(dev.kindred.core.team.Storage.Look look, long until) { }
+
+    /** How long it waits for a teammate's word on what is gone: thirty seconds. */
+    static final long STORAGE_ASK_WAIT = 600;
+
+    private static dev.kindred.core.team.Storage.Place storePlace(ServerPlayerEntity player, BlockPos pos) {
+        return new dev.kindred.core.team.Storage.Place(player.getServerWorld().getRegistryKey().getValue().toString(), pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    /**
+     * Its stores: the storage its administrator assigned it, its team's when the same chest is a teammate's assigned
+     * storage too, else its own; and the chests of the bases it built, its own. Reckoned again every ten seconds.
+     */
+    private List<OwnStore> ownStores(Entry entry, ServerPlayerEntity player) {
+        long now = server.getTicks();
+        if (entry.ownStores != null && now < entry.ownStoresAt) return entry.ownStores;
+        var out = new ArrayList<OwnStore>();
+        String dimension = player.getServerWorld().getRegistryKey().getValue().toString();
+        var assigned = entry.setup == null || !dimension.equals(entry.setup.dimension()) ? null : entry.setup.storage();
+        if (assigned != null) {
+            boolean shared = false;
+            for (Entry other : entries.values()) {
+                if (other != entry && other.setup != null && other.setup.storage() != null && dimension.equals(other.setup.dimension())
+                        && other.setup.storage().position().equals(assigned.position())) shared = true;
+            }
+            out.add(new OwnStore(new BlockPos(assigned.position().x(), assigned.position().y(), assigned.position().z()),
+                    shared ? dev.kindred.core.team.Storage.Whose.TEAM : dev.kindred.core.team.Storage.Whose.OWN));
+        }
+        if (entry.bases != null) {
+            for (var base : entry.bases.built) {
+                if (!dimension.equals(base.dimension())) continue;
+                for (var block : placedOf(base)) {
+                    if (block.spec().block().equals("minecraft:chest")) out.add(new OwnStore(BuildRunner.blockPos(block.at()), dev.kindred.core.team.Storage.Whose.OWN));
+                }
+            }
+        }
+        entry.ownStores = List.copyOf(out);
+        entry.ownStoresAt = now + 200;
+        return entry.ownStores;
+    }
+
+    private OwnStore ownStore(Entry entry, ServerPlayerEntity player, BlockPos pos) {
+        for (var store : ownStores(entry, player)) if (store.pos().equals(pos)) return store;
+        return null;
+    }
+
+    /** Whether {@code other} is on its side: a player that controls it, or another AI player out of any match, as co-op is. */
+    private boolean teammateOf(Entry entry, ServerPlayerEntity self, ServerPlayerEntity other) {
+        if (matches.opponents(self.getUuid(), other.getUuid())) return false;
+        if (aiPlayerOf(other) != null) return matches.running(other.getUuid()).isEmpty() && matches.running(self.getUuid()).isEmpty();
+        return other.getUuid().equals(entry.data.ownerId()) || entry.nativeState != null
+                && entry.nativeState.access().mayControl(new Actor(other.getUuid(), other.hasPermissionLevel(2)));
+    }
+
+    /** Its teammates sharing a store with it: those whose assigned storage the same chest is. */
+    private List<Entry> sharers(Entry entry, ServerPlayerEntity player, BlockPos pos) {
+        var out = new ArrayList<Entry>();
+        String dimension = player.getServerWorld().getRegistryKey().getValue().toString();
+        for (Entry other : entries.values()) {
+            var storage = other == entry || other.setup == null ? null : other.setup.storage();
+            if (storage != null && dimension.equals(other.setup.dimension()) && storage.position().equals(new WorkSetup.BlockPoint(pos.getX(), pos.getY(), pos.getZ()))) {
+                out.add(other);
+            }
+        }
+        return out;
+    }
+
+    /** Whether it plays with others where it is: in a match, with a team (a shared store, or other AI players in co-op), or alone. */
+    private dev.kindred.core.team.Missing.Mode storageMode(Entry entry, ServerPlayerEntity player, OwnStore store) {
+        if (matches.running(player.getUuid()).filter(m -> m.mode().pvp).isPresent()) return dev.kindred.core.team.Missing.Mode.MATCH;
+        if (store.whose() == dev.kindred.core.team.Storage.Whose.TEAM) return dev.kindred.core.team.Missing.Mode.TEAM;
+        for (Entry other : entries.values()) {
+            var mate = other == entry || other.nativeBody == null || !other.nativeBody.connected() ? null : other.nativeBody.entity();
+            if (mate != null && mate.getWorld() == player.getWorld() && matches.running(mate.getUuid()).isEmpty()) return dev.kindred.core.team.Missing.Mode.TEAM;
+        }
+        return dev.kindred.core.team.Missing.Mode.ALONE;
+    }
+
+    /**
+     * What it keeps for later put away (E-43): when a store of its own is within 24 blocks, out of any match, what the
+     * value model says it keeps for later and has no use for as it goes is walked to its store and put in. A store it
+     * no longer trusts, raided or robbed, it empties first and uses no more.
+     */
+    private List<NativeTaskCandidate> storeCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (!worldEditsEnabled() || now < entry.storeAt && entry.emptying == null) return null;
+        var world = player.getServerWorld();
+        BlockPos target;
+        Map<String, String> what;
+        String skill = "native_store";
+        var fetch = entry.emptying == null ? fetchFor(entry, player) : null;
+        if (fetch != null) {
+            // What its run wants that it has stored, fetched before it sets out to find more.
+            target = fetch.getKey();
+            what = fetch.getValue();
+            skill = "native_take";
+        } else if (entry.emptying != null) {
+            target = entry.emptying;
+            what = Map.of("take", "all");
+        } else {
+            if (matches.running(player.getUuid()).isPresent()) return null;
+            var held = new HashMap<String, Integer>();
+            var inventory = player.getInventory();
+            for (int slot = 0; slot < 36; slot++) {
+                var stack = inventory.getStack(slot);
+                if (!stack.isEmpty()) held.merge(Valuables.id(stack), stack.getCount(), Integer::sum);
+            }
+            var stow = dev.kindred.core.guide.Worth.stow(held, Valuables.holding(player, lootWanted(entry)),
+                    entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE);
+            target = null;
+            for (var store : ownStores(entry, player)) {
+                if (entry.untrustedStores.contains(store.pos().asLong()) || !world.isChunkLoaded(store.pos())
+                        || !(world.getBlockEntity(store.pos()) instanceof net.minecraft.inventory.Inventory)) continue;
+                if (player.getBlockPos().getSquaredDistance(store.pos()) > 24 * 24) continue;
+                if (target == null || player.getBlockPos().getSquaredDistance(store.pos()) < player.getBlockPos().getSquaredDistance(target)) target = store.pos();
+            }
+            if (stow.isEmpty() || target == null) {
+                entry.storeAt = now + 600;
+                return null;
+            }
+            what = Map.of("items", String.join(",", stow.keySet()));
+        }
+        UUID taskId = UUID.nameUUIDFromBytes(("store:" + entry.data.id() + ":" + target.asLong()).getBytes(StandardCharsets.UTF_8));
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 58.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        var args = new HashMap<String, String>(Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()), "z", String.valueOf(target.getZ())));
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(target)) <= 4.5 * 4.5) {
+            if (skill.equals("native_take")) args.clear();
+            args.putAll(what);
+            return List.of(new NativeTaskCandidate(task, skill, Map.copyOf(args)));
+        }
+        args.put("range", "2.5");
+        return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+    }
+
+    /**
+     * On a run, what the run wants that it knows it has in its assigned storage within 48 blocks, as many as the run
+     * wants or the store holds: the store, and the take. None when the run wants nothing it has stored there.
+     */
+    private Map.Entry<BlockPos, Map<String, String>> fetchFor(Entry entry, ServerPlayerEntity player) {
+        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE || entry.setup == null || entry.setup.storage() == null) return null;
+        var assigned = entry.setup.storage().position();
+        BlockPos pos = new BlockPos(assigned.x(), assigned.y(), assigned.z());
+        if (ownStore(entry, player, pos) == null || entry.untrustedStores.contains(pos.asLong())
+                || player.getBlockPos().getSquaredDistance(pos) > 48 * 48) return null;
+        var known = entry.storage.store(storePlace(player, pos)).orElse(null);
+        if (known == null) return null;
+        for (var want : new java.util.TreeMap<>(lootWanted(entry)).entrySet()) {
+            int have = known.count(want.getKey());
+            if (!want.getKey().startsWith("minecraft:") || have <= 0 || want.getValue() <= 0) continue;
+            return Map.entry(pos, Map.of("item", want.getKey(), "count", String.valueOf(Math.min(have, want.getValue()))));
+        }
+        return null;
+    }
+
+    /**
+     * What it saw in a store of its own as it opened it, against what it knew (E-43): the counts set to what it saw, and
+     * if anything it knew was there is not, what it does about it by how it plays, from what it counted and saw only.
+     */
+    private void lookedInto(Entry entry, ServerPlayerEntity player, OwnStore own, Map<String, Integer> seen) {
+        long now = server.getTicks();
+        var place = storePlace(player, own.pos());
+        var look = entry.storage.looked(place, own.whose(), seen, now);
+        var since = entry.seenAtStores.remove(own.pos().asLong());
+        if (!look.isShort()) return;
+        var holding = Valuables.holding(player, lootWanted(entry));
+        double left = 0;
+        for (var each : seen.entrySet()) {
+            if (each.getValue() > 0) left += dev.kindred.core.guide.Worth.judge(new dev.kindred.core.guide.Worth.Stack(each.getKey(), each.getValue()), holding).worth();
+        }
+        var mode = storageMode(entry, player, own);
+        var response = dev.kindred.core.team.Missing.respond(mode, look,
+                since == null ? Optional.empty() : Optional.of(new dev.kindred.core.team.Missing.Seen(since.name(), since.teammate())), left);
+        KindredMod.LOGGER.info("{} found {} gone from {} ({}{}): {}", entry.data.displayName(), dev.kindred.core.team.Missing.items(look.gone()),
+                place.words(), mode, since == null ? ", nobody seen at it" : ", saw " + since.name() + " at it", response.say());
+        if (response.say() != null) {
+            if (response.to() == dev.kindred.core.team.Missing.Audience.TEAM) sayToTeam(entry, response.say());
+            else if (response.to() == dev.kindred.core.team.Missing.Audience.OWN) say(entry, response.say(), "");
+        }
+        if (response.ask()) entry.storageAsk = new StorageAsk(look, now + STORAGE_ASK_WAIT);
+        if (response.moveRest()) {
+            entry.untrustedStores.add(own.pos().asLong());
+            entry.emptying = own.pos();
+        }
+        if (store != null) {
+            store.addMemory(new MemoryNote(UUID.randomUUID(), entry.data.id(), MemoryNote.Kind.FACT,
+                    "Found " + dev.kindred.core.team.Missing.items(look.gone()) + " gone from " + place.words(), "storage_look", 0));
+        }
+    }
+
+    /** A question of what is gone that nobody answered in time: the items reckoned lost, said as a count, nobody blamed. */
+    private void storageAskLapsed(Entry entry) {
+        var ask = entry.storageAsk;
+        if (ask == null || server.getTicks() <= ask.until()) return;
+        entry.storageAsk = null;
+        var response = dev.kindred.core.team.Missing.unanswered(ask.look());
+        if (response.say() != null) sayToTeam(entry, response.say());
+    }
+
+    /** A teammate owning up to what it asked of: their word taken. */
+    private boolean storageAnswered(Entry entry, ServerPlayerEntity speaker, String message) {
+        var ask = entry.storageAsk;
+        if (ask == null || server.getTicks() > ask.until() || !dev.kindred.core.team.Missing.ownsUp(message)) return false;
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (self == null || !teammateOf(entry, self, speaker)) return false;
+        entry.storageAsk = null;
+        KindredMod.LOGGER.info("{} takes {}'s word for {}", entry.data.displayName(), speaker.getName().getString(),
+                dev.kindred.core.team.Missing.items(ask.look().gone()));
+        sayToTeam(entry, dev.kindred.core.team.Missing.thanked(speaker.getName().getString()));
+        return true;
+    }
+
+    /** What it put in or took out of a store its team shares, told to its team; their counts change with it. */
+    private void toldTeam(Entry entry, ServerPlayerEntity player, BlockPos pos, boolean put, Map<String, Integer> items) {
+        if (items.isEmpty()) return;
+        long now = server.getTicks();
+        var place = storePlace(player, pos);
+        sayToTeam(entry, dev.kindred.core.team.TeamTalk.stored(put, place, items));
+        for (Entry mate : sharers(entry, player, pos)) {
+            for (var each : items.entrySet()) {
+                if (put) mate.storage.put(place, dev.kindred.core.team.Storage.Whose.TEAM, each.getKey(), each.getValue(), now);
+                else mate.storage.took(place, each.getKey(), each.getValue(), now);
+            }
+        }
+    }
+
+    /** A store's use done: its look, its counts, and its team told; or not done, and storing let be a while. */
+    private void storeEnded(Entry entry, NativeStoreAction stored, SkillRunner.State state) {
+        long now = server.getTicks();
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (state != SkillRunner.State.COMPLETED || self == null) {
+            if (state == SkillRunner.State.BLOCKED || state == SkillRunner.State.CANCELLED) {
+                entry.storeAt = now + 1200;
+                if (stored.takesOut()) entry.emptying = null;
+            }
+            return;
+        }
+        var own = ownStore(entry, self, stored.chest());
+        if (own == null) own = new OwnStore(stored.chest(), dev.kindred.core.team.Storage.Whose.OWN);
+        var place = storePlace(self, stored.chest());
+        lookedInto(entry, self, own, stored.seen());
+        for (var each : stored.moved().entrySet()) {
+            if (stored.takesOut()) entry.storage.took(place, each.getKey(), each.getValue(), now);
+            else entry.storage.put(place, own.whose(), each.getKey(), each.getValue(), now);
+        }
+        if (own.whose() == dev.kindred.core.team.Storage.Whose.TEAM) toldTeam(entry, self, stored.chest(), !stored.takesOut(), stored.moved());
+        if (stored.takesOut()) entry.emptying = null;
+        // Nothing to put in, or no room for it: let be a while; else straight on to the next.
+        entry.storeAt = stored.moved().isEmpty() ? now + 2400 : now;
+        entry.routineRefreshPending = true;
+    }
+
+    /** A take from its storage done (E-08c): its look, its count, and its team told when the store is theirs too. */
+    private void takeEnded(Entry entry, NativeTakeAction take, SkillRunner.State state) {
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (state != SkillRunner.State.COMPLETED || self == null || take.chest() == null || take.taken() <= 0) {
+            if (state == SkillRunner.State.BLOCKED) entry.storeAt = server.getTicks() + 1200;
+            return;
+        }
+        var own = ownStore(entry, self, take.chest());
+        if (own == null) return;
+        lookedInto(entry, self, own, take.seen());
+        entry.storage.took(storePlace(self, take.chest()), take.item(), take.taken(), server.getTicks());
+        if (own.whose() == dev.kindred.core.team.Storage.Whose.TEAM) toldTeam(entry, self, take.chest(), false, Map.of(take.item(), take.taken()));
+    }
+
+    /**
+     * Said to its team (E-43): to whoever controls it or a teammate of its, as players tell their own; never to an
+     * opponent of its in a match.
+     */
+    private void sayToTeam(Entry entry, String text) {
+        entry.lastSaid = text;
+        entry.said(text);
+        String line = "<" + entry.data.displayName() + "> " + text;
+        KindredMod.LOGGER.info("{} (to its team)", line);
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (self == null) return;
+        var told = new HashSet<UUID>();
+        for (Entry mate : entries.values()) {
+            var mateBody = mate.nativeBody != null && mate.nativeBody.connected() ? mate.nativeBody.entity() : null;
+            if (mate != entry && (mateBody == null || !teammateOf(entry, self, mateBody))) continue;
+            for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) {
+                if (aiPlayerOf(listener) != null || matches.opponents(self.getUuid(), listener.getUuid()) || told.contains(listener.getUuid())) continue;
+                boolean controls = listener.getUuid().equals(mate.data.ownerId()) || mate.nativeState != null
+                        && mate.nativeState.access().mayControl(new Actor(listener.getUuid(), listener.hasPermissionLevel(2)));
+                if (controls && told.add(listener.getUuid())) listener.sendMessage(Text.literal(line), false);
+            }
+        }
+    }
+
+    /** What it has stored, as it last counted, in words: its twelve most numerous items. */
+    private static String storedWords(Entry entry) {
+        var stored = entry.storage.extended(Map.of());
+        if (stored.isEmpty()) return "";
+        var most = new java.util.LinkedHashMap<String, Integer>();
+        stored.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(12).forEach(each -> most.put(each.getKey(), each.getValue()));
+        return dev.kindred.core.team.Missing.items(most);
+    }
+
+    /** The last few things a player said, oldest first, for fixtures. */
+    List<String> said(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? List.of() : List.copyOf(entry.saidLately);
+    }
+
+    /** How many of an item it has stored, as it knows it, for fixtures. */
+    int storedCount(UUID id, String item) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.storage.stored(item);
     }
 
     // ------------------------------------------------------------------ named kit (E-16d)
@@ -7335,6 +7692,7 @@ final class PlayerRuntime {
      */
     private void say(Entry entry, String text, String where) {
         entry.lastSaid = text;
+        entry.said(text);
         String line = "<" + entry.data.displayName() + "> " + text;
         String placed = where.isEmpty() ? line : line + " (" + where + ")";
         KindredMod.LOGGER.info("{}", placed);
@@ -8712,6 +9070,25 @@ final class PlayerRuntime {
         private final Set<String> kitNamesGiven = new HashSet<>();
         private BlockPos anvil;
         private long kitNamesAt;
+        /**
+         * Its extended inventory (E-43): what it has stored, as it knows it; its stores, as last reckoned; who it saw at
+         * one of them, and when; a question to its team of what is gone, and until when it waits for a word; the stores
+         * it no longer trusts, and one it is emptying; and when it looks to put things away again.
+         */
+        private final dev.kindred.core.team.Storage storage = new dev.kindred.core.team.Storage();
+        /** The last few things it said, oldest first, for fixtures. */
+        private final java.util.ArrayDeque<String> saidLately = new java.util.ArrayDeque<>();
+
+        private void said(String text) {
+            if (saidLately.size() >= 16) saidLately.removeFirst();
+            saidLately.addLast(text);
+        }
+        private List<OwnStore> ownStores;
+        private long ownStoresAt, storeAt;
+        private final Map<Long, SeenAtStore> seenAtStores = new HashMap<>();
+        private StorageAsk storageAsk;
+        private final Set<Long> untrustedStores = new HashSet<>();
+        private BlockPos emptying;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
         private final List<String> partsTaken = new ArrayList<>();

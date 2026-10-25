@@ -7,6 +7,7 @@ import dev.kindred.core.team.Storage.Place;
 import dev.kindred.core.team.Storage.Whose;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -101,5 +102,15 @@ class StorageTest {
         assertEquals("I put 12 iron ingots in our chest at 12, 64, -30.", TeamTalk.stored(true, HOME, Map.of("minecraft:iron_ingot", 12)));
         assertEquals("I took 3 bread and a bucket from our chest at 12, 64, -30.",
                 TeamTalk.stored(false, HOME, Map.of("minecraft:bucket", 1, "minecraft:bread", 3)));
+    }
+
+    @Test
+    void aTeammateOwnsUpInPlainWordsAndItsWordIsTaken() {
+        for (String said : List.of("me", "Me!", "I did.", "that was me", "I took them", "i took the name tag, sorry", "I've got it"))
+            assertTrue(Missing.ownsUp(said), said);
+        for (String said : List.of("not me", "I did not", "me neither", "who knows", "", "I didn't take it"))
+            assertFalse(Missing.ownsUp(said), said);
+        assertFalse(Missing.ownsUp(null));
+        assertEquals("Thanks, Steve. I've counted them out.", Missing.thanked("Steve"));
     }
 }

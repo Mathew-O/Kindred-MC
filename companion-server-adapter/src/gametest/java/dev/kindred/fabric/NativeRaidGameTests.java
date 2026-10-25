@@ -25,8 +25,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Raiding an opponent's storage in a match (E-44): in a manhunt, the hunter Hal sees the runner Rue use a chest, out
  * of the hunter's striking range; Rue goes on its way. With no model, Hal's own rule raids the chest of what is worth
- * taking and tells its own side; a model's LEAVE is followed and nothing taken; and outside a match nothing Rue does
- * at a chest is anything to Hal.
+ * taking and tells its own side; a model's LEAVE is followed and nothing taken; outside a match nothing Rue does at a
+ * chest is anything to Hal; and a fellow hunter's chest is never its to raid.
  */
 public final class NativeRaidGameTests implements FabricGameTest {
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID nativeId) {
@@ -222,5 +222,92 @@ public final class NativeRaidGameTests implements FabricGameTest {
             context.assertTrue(f.runtime.raidDecision(hal[0], context.getAbsolutePos(CHEST)) == null, "No question, no decision");
             context.assertTrue(count(chest(context), Items.DIAMOND) == 4 && count(chest(context), Items.GOLD_INGOT) == 10, "Nothing taken");
         }, ids -> hal[0] = ids[0]);
+    }
+
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "raidMate", tickLimit = 2400)
+    public void aTeammatesChestItSeesUsedIsNeverItsToRaid(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        var server = context.getWorld().getServer();
+        boolean pvp = server.isPvpEnabled();
+        UUID[] ids = new UUID[3], players = new UUID[3];
+        int[] waited = {0};
+        String[] names = {"Hal", "Wren", "Rue"};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -4; x <= 20; x++) for (int z = -4; z <= 40; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 8; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    f.runtime.createNative(f.source, "Hal");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Hal allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wren"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 2, "Wren allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Rue"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 3 && statuses.stream().allMatch(st -> st.phase() == StoredNativePlayer.Phase.ESTABLISHED && st.connected()),
+                            "All three established");
+                    for (var status : statuses) {
+                        int i = java.util.Arrays.asList(names).indexOf(player(f, status.nativeId()).getName().getString());
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    BlockPos hal = context.getAbsolutePos(HAL), wren = context.getAbsolutePos(RUE), rue = context.getAbsolutePos(RUE).add(0, 0, 200);
+                    player(f, players[0]).refreshPositionAndAngles(hal.getX() + 0.5, hal.getY(), hal.getZ() + 0.5, 0, 0);
+                    player(f, players[1]).refreshPositionAndAngles(wren.getX() + 0.5, wren.getY(), wren.getZ() + 0.5, 180, 0);
+                    player(f, players[2]).refreshPositionAndAngles(rue.getX() + 0.5, rue.getY() + 1, rue.getZ() + 0.5, 0, 0);
+                    for (UUID each : players) player(f, each).getInventory().clear();
+                    var world = context.getWorld();
+                    BlockPos chest = context.getAbsolutePos(CHEST);
+                    world.setBlockState(chest, Blocks.CHEST.getDefaultState());
+                    var inside = (ChestBlockEntity) world.getBlockEntity(chest);
+                    inside.setStack(0, new ItemStack(Items.DIAMOND, 4));
+                    inside.setStack(1, new ItemStack(Items.GOLD_INGOT, 10));
+                    world.setTimeOfDay(1000);
+                    server.setPvpEnabled(true);
+                    f.runtime.setDragonFightForTest(true);
+                    context.assertTrue(f.runtime.proposeManhunt(f.source, List.of(players[2]), List.of(players[0], players[1])) == 1, "Proposed");
+                })
+                .createAndAdd(() -> {
+                    var hal = player(f, players[0]);
+                    hal.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    hal.getInventory().setStack(1, new ItemStack(Items.BREAD, 8));
+                    hal.getInventory().selectedSlot = 0;
+                    hal.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                    var match = f.runtime.matches().getFirst().id();
+                    context.assertTrue(f.runtime.startMatch(f.source, match) == 1, "Started");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().state() == MatchRegistry.State.RUNNING, "Running");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", ids[1]) == 1 && f.runtime.nativeLifecycle(f.source, "stop", ids[2]) == 1,
+                            "Wren and Rue held");
+                })
+                .createAndAdd(() -> {
+                    // Wren, Hal's fellow hunter, opens its chest in Hal's sight.
+                    context.assertTrue(player(f, players[0]).canSee(player(f, players[1])), "Hal sees Wren");
+                    player(f, players[1]).openHandledScreen(chest(context));
+                })
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 40, "Wren at its chest for two seconds"))
+                .createAndAdd(() -> {
+                    player(f, players[1]).closeHandledScreen();
+                    waited[0] = 0;
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(++waited[0] >= 200, "Ten seconds after");
+                    context.assertTrue(f.runtime.raidDecision(ids[0], context.getAbsolutePos(CHEST)) == null, "No question, no decision: a teammate's");
+                    context.assertTrue(count(chest(context), Items.DIAMOND) == 4 && count(chest(context), Items.GOLD_INGOT) == 10, "Nothing taken");
+                })
+                .createAndAdd(() -> {
+                    server.setPvpEnabled(pvp);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
     }
 }

@@ -47,7 +47,7 @@ final class NativeTakeAction extends NativeRecordedAction {
     private ChestEvidence chestBefore;
     private ClaimRegistry.Grant claim;
     private long setupRevision;
-    private int chestHadBefore, playerHadBefore;
+    private int chestHadBefore, playerHadBefore, taken;
     private Step result;
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
@@ -138,6 +138,7 @@ final class NativeTakeAction extends NativeRecordedAction {
             result = Step.blocked("Nothing taken: no room, or none left", true);
             admission.noEffect(playerBefore.description() + "; " + chestBefore.description(), result.reason());
         } else if (moved > 0 && chestLost == moved && playerGained == moved && onlyThisMoved(chestAfter)) {
+            taken = moved;
             result = Step.completed(Map.of("item", Registries.ITEM.getId(item).toString(), "taken", String.valueOf(moved)));
             admission.verify(InventoryEvidence.capture(body).description() + "; " + chestAfter.description() + "; " + moved + " " + name()
                     + " taken from the storage at " + chestPos.toShortString(), "Native take verified");
@@ -148,6 +149,21 @@ final class NativeTakeAction extends NativeRecordedAction {
         }
         return waiting();
     }
+
+    /** What was in the storage before it took from it, item by item: its look (E-43). Empty before it looked. */
+    Map<String, Integer> seen() {
+        if (chestBefore == null) return Map.of();
+        var out = new java.util.LinkedHashMap<String, Integer>();
+        for (ItemStack stack : chestBefore.stacks()) if (!stack.isEmpty()) out.merge(Registries.ITEM.getId(stack.getItem()).toString(), stack.getCount(), Integer::sum);
+        return Map.copyOf(out);
+    }
+
+    /** How many it took, once verified; and of what, from where. */
+    int taken() { return taken; }
+
+    String item() { return Registries.ITEM.getId(item).toString(); }
+
+    BlockPos chest() { return chestPos; }
 
     /** The chest lost only this item; every other stack in it is as it was. */
     private boolean onlyThisMoved(ChestEvidence after) {
