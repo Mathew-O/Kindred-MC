@@ -88,7 +88,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1755,6 +1755,20 @@ final class NativePlayerBody implements BodyAdapter {
             player.getInventory().selectedSlot = hotbarSlot;
             look(yaw, pitch);
             player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Turns the head to {@code yaw} and {@code pitch} where it stands, as a player moves its view while it waits (E-33a).
+     * The caller eases the turn; this only sets it, under the task's lease.
+     */
+    boolean glance(ActionLease lease, float yaw, float pitch) {
+        requireThread();
+        if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) throw new IllegalArgumentException("Invalid look");
+        return execute(lease, Intent.LOOK, null, () -> {
+            player.setYaw(yaw);
+            player.setHeadYaw(yaw);
+            player.setPitch(Math.clamp(pitch, -90f, 90f));
         });
     }
 

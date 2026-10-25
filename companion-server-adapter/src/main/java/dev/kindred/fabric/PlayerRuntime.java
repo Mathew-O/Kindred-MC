@@ -1017,6 +1017,35 @@ final class PlayerRuntime {
         return nativeTask(source, id, skill, Map.of(skill.equals("native_wait") ? "seconds" : "slot", String.valueOf(value)));
     }
 
+    /** How soon after it is spoken to a player stops to look, in ticks: a task ending later goes on to the next. */
+    static final int ATTEND_WITHIN = 60;
+
+    /**
+     * Spoken to by name a moment ago by a player in plain sight within twelve blocks: a two-second pause between steps,
+     * in which its wait's gaze turns to the speaker, before it goes on with its work, as a player stops to answer
+     * (E-33a). Once each time it is spoken to; only on its feet on dry ground, not riding, swimming or asleep. Its
+     * place in the work is untouched: the pause comes between one task and the next, never in the middle of one.
+     */
+    private NativeTaskCandidate attentionCandidate(Entry entry, NativePlayerBody body) {
+        if (entry.addressedBy == null || entry.attendedAt == entry.addressedAt || server.getTicks() - entry.addressedAt > ATTEND_WITHIN) return null;
+        ServerPlayerEntity player = body.entity();
+        ServerPlayerEntity speaker = server.getPlayerManager().getPlayer(entry.addressedBy);
+        if (player == null || speaker == null || speaker.getWorld() != player.getWorld()
+                || speaker.squaredDistanceTo(player) > NativeWaitSkill.PEOPLE * NativeWaitSkill.PEOPLE || !player.canSee(speaker)) return null;
+        if (!player.isOnGround() || player.isTouchingWater() || player.isInLava() || player.hasVehicle() || player.isSleeping()) return null;
+        UUID taskId = UUID.nameUUIDFromBytes(("attend:" + entry.data.id() + ":" + entry.addressedAt).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        entry.attentionTaskId = taskId;
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 99.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return new NativeTaskCandidate(candidate, "native_wait", Map.of("seconds", "2"));
+    }
+
+    /** A wait looking at what it waits on, at {@code at} (E-33a). */
+    int nativeWaitAt(ServerCommandSource source, UUID id, int seconds, BlockPos at) {
+        return nativeTask(source, id, "native_wait", Map.of("seconds", String.valueOf(seconds),
+                "x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ())));
+    }
+
     int nativeWalk(ServerCommandSource source, UUID id, String direction, int blocks) {
         return nativeTask(source, id, "native_walk", Map.of("direction", direction, "blocks", String.valueOf(blocks)));
     }
@@ -1556,8 +1585,15 @@ final class PlayerRuntime {
         }));
     }
 
-    private static NativePlayerSkills.NativeMovementHabits nativeMovementHabits(Entry entry) {
-        return new NativePlayerSkills.NativeMovementHabits(entry.mannerisms, entry.profile.personality(), PlayerRuntime::now);
+    private NativePlayerSkills.NativeMovementHabits nativeMovementHabits(Entry entry) {
+        Personality personality = entry.profile.personality();
+        // One gaze for the player, kept from one wait to the next so a look held runs on; made again if its personality changes.
+        if (entry.gaze == null || !personality.equals(entry.gazePersonality)) {
+            entry.gaze = new dev.kindred.core.Gaze(entry.data.id().getLeastSignificantBits() ^ entry.data.id().getMostSignificantBits(), personality);
+            entry.gazePersonality = personality;
+        }
+        return new NativePlayerSkills.NativeMovementHabits(entry.mannerisms, personality, PlayerRuntime::now, entry.gaze,
+                () -> server.getTicks() - entry.addressedAt <= NativeWaitSkill.SPOKEN ? entry.addressedBy : null);
     }
 
     private boolean nativeMutationAllowed(Entry entry, ActionLease lease, NativePlayerBody.Intent intent, BlockPos target) {
@@ -1607,7 +1643,8 @@ final class PlayerRuntime {
                     || ("native_sleep".equals(entry.skillId) && intent == NativePlayerBody.Intent.SLEEP)
                     || ("native_ignite_portal".equals(entry.skillId) && (intent == NativePlayerBody.Intent.IGNITE_PORTAL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_organize_chest".equals(entry.skillId) && intent == NativePlayerBody.Intent.CHEST_ORGANIZE)
-                    || (("native_toss".equals(entry.skillId) || "native_discard".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TOSS))
+                    || (("native_toss".equals(entry.skillId) || "native_discard".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TOSS)
+                    || ("native_wait".equals(entry.skillId) && intent == NativePlayerBody.Intent.LOOK))
                 && NativePlayerSkills.permits(entry.nativeTask, intent, target)
                 && entry.activity != null && entry.activity.paid();
     }
@@ -4920,6 +4957,12 @@ final class PlayerRuntime {
         // hissing creeper, and defending itself, none of which changes a block. Each edit action checks the edit policy
         // itself as well.
         List<NativeTaskCandidate> essentialCandidates = mayDecide ? evaluateEssentialSurvivalCandidates(entry, body, autonomyAdmitted, mayEdit) : List.of();
+        // Spoken to by name, a moment's pause between steps to look at the speaker (E-33a): after its reflexes, before its work.
+        NativeTaskCandidate attention = mayDecide && !dueling ? attentionCandidate(entry, body) : null;
+        if (attention != null) {
+            essentialCandidates = new ArrayList<>(essentialCandidates);
+            essentialCandidates.add(attention);
+        }
 
         if (autonomyAdmitted && (entry.routineRefreshPending || entry.cachedRoutineCandidates.isEmpty())) {
             bindBodyBlockScanBudget(body);
@@ -4990,6 +5033,7 @@ final class PlayerRuntime {
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments());
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
+                    if (res == 1 && chosen.id().equals(entry.attentionTaskId)) entry.attendedAt = entry.addressedAt;
                     entry.activeCampaignTask = res == 1 ? entry.campaignTasks.get(chosen.id()) : null;
                     entry.activeBuildTask = res == 1 ? entry.buildTasks.get(chosen.id()) : null;
                     if (res != 1 && (entry.build != null || entry.ranch != null || entry.field != null) && entry.buildTasks.containsKey(chosen.id())) {
@@ -6405,6 +6449,7 @@ final class PlayerRuntime {
         ServerPlayerEntity player = server.getPlayerManager().getPlayer(senderId);
         if (player == null) return;
         CompanionSocials.Participant matched = null;
+        Entry spokenTo = null;
         String addressed = null;
         for (Entry entry : entries.values()) {
             var candidate = socialParticipant(entry.data.id());
@@ -6413,9 +6458,15 @@ final class PlayerRuntime {
             if (text.isEmpty()) continue;
             if (matched != null) return; // Ambiguous names need /companion talkto <UUID>; never trigger a chorus.
             matched = candidate;
+            spokenTo = entry;
             addressed = text.orElseThrow();
         }
-        if (matched != null) socials.reply(player, matched, addressed);
+        if (matched != null) {
+            // Spoken to by name: it looks at the speaker as it waits (E-33a).
+            spokenTo.addressedBy = senderId;
+            spokenTo.addressedAt = server.getTicks();
+            socials.reply(player, matched, addressed);
+        }
     }
 
     private CompanionSocials.Participant socialParticipant(UUID id) {
@@ -7844,6 +7895,14 @@ final class PlayerRuntime {
         /** The shore its way out of deep water makes for, and those it could not reach, until when each is passed over. */
         private BlockPos waterEscapeShore;
         private final Map<Long, Long> unreachedShores = new HashMap<>();
+        /** Where it looks while it waits, and who last spoke to it, when (server ticks) (E-33a). */
+        private dev.kindred.core.Gaze gaze;
+        private Personality gazePersonality;
+        private UUID addressedBy;
+        private long addressedAt = Long.MIN_VALUE / 2;
+        /** The time spoken to that it has stopped to look for, and the pause's task (E-33a). */
+        private long attendedAt = Long.MIN_VALUE / 2;
+        private UUID attentionTaskId;
         private boolean awaitingRespawn;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;

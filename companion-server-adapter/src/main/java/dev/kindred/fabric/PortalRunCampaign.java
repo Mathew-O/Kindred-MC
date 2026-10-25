@@ -1435,7 +1435,9 @@ final class PortalRunCampaign {
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
             case SMELT -> "log".equals(step.item()) ? charcoal(body) : smelt(body);
-            case AWAIT_SMELT -> Optional.of(new Task("native_wait", Map.of("seconds", "3"), "Wait by the furnace"));
+            // Looking at the furnace as it waits (E-33a).
+            case AWAIT_SMELT -> Optional.of(new Task("native_wait", nearestWorkstation(player, Blocks.FURNACE, 16)
+                    .map(f -> coords(f, Map.of("seconds", "3"))).orElse(Map.of("seconds", "3")), "Wait by the furnace"));
             // Water just poured for obsidian guards the mining: mine what it hardened before taking it back.
             case FILL_WATER -> (obsidianSite != null
                     ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
@@ -3465,7 +3467,7 @@ final class PortalRunCampaign {
         if (state.isOf(Blocks.COBBLESTONE) || state.isOf(Blocks.STONE)) {
             return Optional.of(new Task("native_break", coords(g.cobble(), Map.of("guarded", "true")), "Generator: mine cobblestone"));
         }
-        return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Generator: wait for the cobblestone"));
+        return Optional.of(new Task("native_wait", coords(g.cobble(), Map.of("seconds", "1")), "Generator: wait for the cobblestone"));
     }
 
     private Optional<Task> fillLava(NativePlayerBody body) {
@@ -3621,7 +3623,7 @@ final class PortalRunCampaign {
         var sapling = nearestSapling(player);
         if (sapling.isEmpty()) return Optional.empty();
         if (player.getBlockPos().getSquaredDistance(sapling.get()) > 6 * 6) return Optional.of(go(sapling.get(), 4, true, "Walk back to the saplings"));
-        return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for the sapling at " + sapling.get().toShortString() + " to grow"));
+        return Optional.of(new Task("native_wait", coords(sapling.get(), Map.of("seconds", "4")), "Wait for the sapling at " + sapling.get().toShortString() + " to grow"));
     }
 
     /** Break the nearest leaves in reach for the saplings they drop, picking the drops up. */

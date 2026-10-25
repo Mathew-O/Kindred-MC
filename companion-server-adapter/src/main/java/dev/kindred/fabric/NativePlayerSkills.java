@@ -3,6 +3,7 @@ package dev.kindred.fabric;
 import dev.kindred.core.ActionLease;
 import dev.kindred.core.AuthorizedMovementCadence;
 import dev.kindred.core.Checkpoint;
+import dev.kindred.core.Gaze;
 import dev.kindred.core.MannerismState;
 import dev.kindred.core.Personality;
 import dev.kindred.core.SkillBody;
@@ -29,10 +30,19 @@ import java.util.function.Supplier;
 
 /** Short, explicitly requested native tasks. No replay, inventory mirror or automatic renewal. */
 final class NativePlayerSkills {
-    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis) { }
+    /**
+     * The player's own ways of moving and looking: its mannerisms and personality, and for a wait its gaze and who last
+     * spoke to it (E-33a), when it has them.
+     */
+    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker) {
+        NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis) {
+            this(mannerisms, personality, nowMillis, null, null);
+        }
+    }
     static SkillDescriptor descriptor(String id) {
         return switch (id) {
-            case "native_wait" -> new SkillDescriptor(id, Set.of("seconds"), Set.of(), Set.of(), Set.of(),
+            // The optional point is what it waits on, looked at as it waits (E-33a).
+            case "native_wait" -> new SkillDescriptor(id, Set.of("seconds"), Set.of("x", "y", "z"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_eat" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -189,7 +199,13 @@ final class NativePlayerSkills {
             return new Block(body, lease, ticks);
         }
         int value = Integer.parseInt(arguments.get(id.equals("native_wait") ? "seconds" : "slot"));
-        if (id.equals("native_wait") && value >= 1 && value <= 4) return new MovementSkills.Wait(value);
+        if (id.equals("native_wait") && value >= 1 && value <= 4) {
+            if (habits == null || habits.gaze() == null) return new MovementSkills.Wait(value);
+            Gaze.Point work = arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z")
+                    ? new Gaze.Point(Integer.parseInt(arguments.get("x")) + 0.5, Integer.parseInt(arguments.get("y")) + 0.5,
+                            Integer.parseInt(arguments.get("z")) + 0.5) : null;
+            return new NativeWaitSkill(body, lease, value, habits.gaze(), habits.speaker(), work);
+        }
         if (id.equals("native_eat") && value >= 0 && value <= 8) return new Eat(body, lease, value);
         if (id.equals("native_equip") && value >= 0 && value < 36) {
             return new Equip(body, lease, value, Boolean.parseBoolean(arguments.getOrDefault("swap", "false")));
@@ -214,7 +230,8 @@ final class NativePlayerSkills {
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)
                 || (task instanceof Attack attack && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                || (task instanceof Block block && intent == NativePlayerBody.Intent.BLOCK);
+                || (task instanceof Block block && intent == NativePlayerBody.Intent.BLOCK)
+                || (task instanceof NativeWaitSkill && intent == NativePlayerBody.Intent.LOOK);
     }
 
     static boolean uncertain(SkillBody task) {
