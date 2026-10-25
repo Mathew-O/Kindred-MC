@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -1698,6 +1699,57 @@ final class NativePlayerBody implements BodyAdapter {
             container.markDirty();
         });
         return done ? moved[0] : 0;
+    }
+
+    /** What a container held as it was opened, and as it was shut, slot by slot: copies. */
+    record Looted(List<ItemStack> opened, List<ItemStack> shut) { }
+
+    /**
+     * Opens the container at {@code chest}, or the chest minecart {@code cart}, with a use click, as a player does, which
+     * fills it from its loot table if nobody has opened it before (E-42); shift-clicks out of it the slots {@code choose}
+     * picks from what it sees in it, in that order; and shuts it. Only within a client's reach, and only with nothing else
+     * open; null if it did not open (a block on a chest's lid, say).
+     */
+    Looted loot(ActionLease lease, BlockPos chest, UUID cart, java.util.function.Function<List<ItemStack>, List<Integer>> choose) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
+        net.minecraft.entity.Entity vehicle = cart == null ? null : world.getEntity(cart);
+        if (cart != null) {
+            if (!(vehicle instanceof net.minecraft.entity.vehicle.StorageMinecartEntity) || !vehicle.isAlive()
+                    || !player.canInteractWithEntity(vehicle, 0)) return null;
+        } else if (!world.isChunkLoaded(chest) || !(world.getBlockEntity(chest) instanceof net.minecraft.inventory.Inventory)
+                || player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(chest)) > 4.5 * 4.5) {
+            return null;
+        }
+        Looted[] looted = {null};
+        BlockPos at = vehicle != null ? vehicle.getBlockPos() : chest;
+        boolean done = execute(lease, Intent.TAKE, at, () -> {
+            if (vehicle != null) {
+                face(vehicle.getBoundingBox().getCenter());
+                player.interact(vehicle, Hand.MAIN_HAND);
+            } else {
+                Vec3d top = Vec3d.ofCenter(chest).add(0, 0.4, 0);
+                face(top);
+                player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                        new BlockHitResult(top, Direction.UP, chest, false));
+            }
+            player.swingHand(Hand.MAIN_HAND);
+            var handler = player.currentScreenHandler;
+            if (handler == player.playerScreenHandler) return;
+            // A container's own slots come first in its screen, the player's inventory after them.
+            int size = handler.slots.size() - 36;
+            var opened = new java.util.ArrayList<ItemStack>(size);
+            for (int i = 0; i < size; i++) opened.add(handler.getSlot(i).getStack().copy());
+            for (int index : choose.apply(List.copyOf(opened))) {
+                if (index >= 0 && index < size) handler.onSlotClick(index, 0, net.minecraft.screen.slot.SlotActionType.QUICK_MOVE, player);
+            }
+            var shut = new java.util.ArrayList<ItemStack>(size);
+            for (int i = 0; i < size; i++) shut.add(handler.getSlot(i).getStack().copy());
+            player.closeHandledScreen();
+            looted[0] = new Looted(List.copyOf(opened), List.copyOf(shut));
+        });
+        return done ? looted[0] : null;
     }
 
     /**

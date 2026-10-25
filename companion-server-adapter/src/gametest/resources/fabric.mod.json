@@ -76,7 +76,8 @@
       "dev.kindred.fabric.NativeWorkRestartGameTests",
       "dev.kindred.fabric.NativeGazeGameTests",
       "dev.kindred.fabric.NativeTeamShareGameTests",
-      "dev.kindred.fabric.NativeTeamPortalGameTests"
+      "dev.kindred.fabric.NativeTeamPortalGameTests",
+      "dev.kindred.fabric.NativeLootGameTests"
     ]
   },
   "depends": {

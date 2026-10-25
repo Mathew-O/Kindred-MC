@@ -1378,6 +1378,12 @@ final class PlayerRuntime {
             } else if (skill.equals("native_take")) {
                 task = new NativeTakeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute, arguments.get("item"), Integer.parseInt(arguments.get("count")));
+            } else if (skill.equals("native_loot")) {
+                BlockPos chest = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))) : null;
+                UUID cart = arguments.containsKey("cart") ? UUID.fromString(arguments.get("cart")) : null;
+                task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
+                        server::execute, chest, cart, () -> lootWanted(entry));
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -1609,7 +1615,7 @@ final class PlayerRuntime {
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
                     || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
-                    || ("native_take".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
+                    || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
                     || (("native_bucket".equals(entry.skillId) || "native_cast".equals(entry.skillId))
@@ -6559,6 +6565,12 @@ final class PlayerRuntime {
     String lastSaid(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? null : entry.lastSaid;
+    }
+
+    /** What a player's run wants it to have, for the value model's judgement of what it loots (E-42). */
+    private java.util.Map<String, Integer> lootWanted(Entry entry) {
+        if (entry.campaign == null || entry.nativeBody == null) return java.util.Map.of(dev.kindred.core.guide.Worth.FOOD, 6);
+        return entry.campaign.lootWanted(entry.nativeBody.entity());
     }
 
     /** The parts of the team's run it has taken up, in order, each as said, for fixtures (E-40a). */

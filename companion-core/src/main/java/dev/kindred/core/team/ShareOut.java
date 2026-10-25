@@ -43,7 +43,7 @@ public final class ShareOut {
         /** Ingots or gems for one piece. */
         public int cost() { return cost; }
 
-        boolean armour() { return ordinal() <= BOOTS.ordinal(); }
+        public boolean armour() { return ordinal() <= BOOTS.ordinal(); }
     }
 
     /** What a piece is made of, worst to best. */
@@ -164,7 +164,7 @@ public final class ShareOut {
     }
 
     /** What a piece gains it: armour points, or for a weapon or tool, the step up in tier. */
-    static double gain(Slot slot, Material from, Material to) {
+    public static double gain(Slot slot, Material from, Material to) {
         if (slot.armour()) return armour(slot, to) - armour(slot, from) + toughness(to) - toughness(from);
         return switch (slot) {
             case SWORD -> swordDamage(to) - swordDamage(from);

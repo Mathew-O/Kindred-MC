@@ -130,6 +130,17 @@ final class RoamingEdits {
         return null;
     }
 
+    /**
+     * A structure's container, looted by a player out in the world (E-42): one nobody has opened since the world made it,
+     * which still holds its loot table. Storage anyone has opened, a player's own or another's, never has one, and is
+     * never looted; a cart's position is where it stands.
+     */
+    static String lootDenial(ServerPlayerEntity player, BlockPos pos, boolean unrolled, EditPolicy.ServerPolicy policy) {
+        String common = common(player, pos, policy);
+        if (common != null) return common;
+        return unrolled ? null : "Only a structure's container nobody has opened is looted; this one has been opened";
+    }
+
     static String workstationDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
         return common(player, pos, policy);
     }

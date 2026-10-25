@@ -47,7 +47,11 @@ final class WorldKnowledge {
         /** A cobweb (mineshafts, strongholds): string, broken with a sword. */
         COBWEB,
         /** Nether gold ore: gold nuggets, mined with any pickaxe (E-07e). */
-        NETHER_GOLD_ORE
+        NETHER_GOLD_ORE,
+        /** A chest, trapped chest or barrel: a structure's loot, if nobody has opened it (E-42). */
+        CONTAINER,
+        /** A block of gold, as ruined portals have: nine ingots, mined with an iron pickaxe (E-42). */
+        GOLD_BLOCK
     }
 
     static final int HORIZONTAL_RADIUS = 32;
@@ -86,6 +90,8 @@ final class WorldKnowledge {
         if (state.isOf(Blocks.END_PORTAL_FRAME)) return Kind.END_PORTAL_FRAME;
         if (state.isOf(Blocks.COBWEB)) return Kind.COBWEB;
         if (state.isOf(Blocks.NETHER_GOLD_ORE)) return Kind.NETHER_GOLD_ORE;
+        if (state.isOf(Blocks.CHEST) || state.isOf(Blocks.TRAPPED_CHEST) || state.isOf(Blocks.BARREL)) return Kind.CONTAINER;
+        if (state.isOf(Blocks.GOLD_BLOCK)) return Kind.GOLD_BLOCK;
         var fluid = state.getFluidState();
         if (fluid.isStill() && fluid.isIn(FluidTags.WATER) && state.isOf(Blocks.WATER)) return Kind.WATER;
         if (fluid.isStill() && fluid.isIn(FluidTags.LAVA)) return Kind.LAVA;
@@ -95,7 +101,8 @@ final class WorldKnowledge {
     private static boolean needsSight(Kind kind) {
         return kind == Kind.COAL_ORE || kind == Kind.IRON_ORE || kind == Kind.DIAMOND_ORE || kind == Kind.WATER || kind == Kind.LAVA
                 || kind == Kind.CAVE || kind == Kind.SPAWNER || kind == Kind.STONE_BRICK || kind == Kind.END_PORTAL_FRAME
-                || kind == Kind.NETHER_BRICK || kind == Kind.COBWEB || kind == Kind.NETHER_GOLD_ORE;
+                || kind == Kind.NETHER_BRICK || kind == Kind.COBWEB || kind == Kind.NETHER_GOLD_ORE || kind == Kind.CONTAINER
+                || kind == Kind.GOLD_BLOCK;
     }
 
     /**

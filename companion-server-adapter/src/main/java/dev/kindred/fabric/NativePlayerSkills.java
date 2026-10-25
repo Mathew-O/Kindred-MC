@@ -140,6 +140,9 @@ final class NativePlayerSkills {
             // Items taken out of the player's own assigned storage for a build (E-08c).
             case "native_take" -> new SkillDescriptor(id, Set.of("item", "count"), Set.of(), Set.of("container"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A structure's container nobody has opened, looted of what is worth taking (E-42): at x, y, z, or a cart.
+            case "native_loot" -> new SkillDescriptor(id, Set.of(), Set.of("x", "y", "z", "cart"), Set.of("container"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");
         };
     }

@@ -2,6 +2,7 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.EditPolicy;
 import dev.kindred.core.guide.TaskQueue;
+import dev.kindred.core.guide.Worth;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
@@ -461,6 +462,21 @@ final class PortalRunCampaign {
         }
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploredFrom = lastFeet; // Compared with where the player stands at the next plan.
+        }
+        if (task != null && "native_loot".equals(task.skill())) {
+            // Looted: not gone back to. Not, for whatever reason (it would not open, the inventory changed a moment
+            // before, another task held it): tried again in a minute, and after three tries let be.
+            String key = task.args().containsKey("cart") ? task.args().get("cart") : String.valueOf(position(task.args()));
+            if (completed || lootTries.merge(key, 1, Integer::sum) >= 3) {
+                if (task.args().containsKey("cart")) cartsLooted.add(java.util.UUID.fromString(task.args().get("cart")));
+                else if (position(task.args()) != null) looted.add(position(task.args()).asLong());
+            } else {
+                setAside.put(task, tick + 1200);
+            }
+        }
+        if (task != null && !completed && "native_goto".equals(task.skill()) && task.label().startsWith("Walk to the chest")
+                && position(task.args()) != null) {
+            blockedUntil.merge(position(task.args()).asLong(), tick + 2400, Math::max);
         }
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Walk to")) {
             BlockPos reached = position(task.args());
@@ -1064,6 +1080,14 @@ final class PortalRunCampaign {
         if (loose.isPresent()) {
             progress = stageLabel(stage) + ": " + loose.get().label();
             return loose;
+        }
+        // Valuables in sight, never walked past (E-42): by day, as the night's dangers come first.
+        if (!night) {
+            Optional<Task> loot = lootNearby(body);
+            if (loot.isPresent() && setAside.getOrDefault(loot.get(), Long.MIN_VALUE) <= tick) {
+                progress = stageLabel(stage) + ": valuables - " + loot.get().label();
+                return loot;
+            }
         }
         // What the tasks ahead need, taken as the chance comes on the way (F-25c7): a short detour before the route's step.
         if (!legActive && !night) {
@@ -3988,8 +4012,11 @@ final class PortalRunCampaign {
         // A drop in flowing water, such as the water poured for obsidian, waits until the water is taken back.
         var world = player.getServerWorld();
         boolean saplings = !groundBelow(player);
-        var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(8, 3, 8),
-                drop -> keep(drop.getStack(), saplings) && player.canSee(drop) && !blocked(drop.getBlockPos())
+        var near = player.getBoundingBox().expand(8, 3, 8);
+        var holding = Valuables.holding(player, lootWanted(player));
+        var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(LOOSE_REACH, 4, LOOSE_REACH),
+                drop -> (keep(drop.getStack(), saplings) && near.contains(drop.getPos()) || worthTheWay(player, drop, holding))
+                        && player.canSee(drop) && !blocked(drop.getBlockPos())
                         && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
         if (drops.isEmpty()) {
             // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
@@ -4011,6 +4038,74 @@ final class PortalRunCampaign {
 
     /** When the player started waiting for each drop still in water. */
     private final Map<java.util.UUID, Long> dropWaits = new HashMap<>();
+
+    // ------------------------------------------------------------------ valuables (E-42)
+
+    /** How far it looks for a loose drop worth going for: what lies further is out of mind by the time it gets there. */
+    private static final int LOOSE_REACH = 16;
+    /** How far it looks for a cart in a mineshaft's tunnels, and goes for a gold block it has seen. */
+    private static final int CART_REACH = 32, GOLD_REACH = 32;
+
+    /** Containers and carts it has looted, or could not get into in three tries, so it goes to each once. */
+    private final Set<Long> looted = new HashSet<>();
+    private final Set<java.util.UUID> cartsLooted = new HashSet<>();
+    private final Map<String, Integer> lootTries = new HashMap<>();
+
+    /**
+     * What its run wants it to have, for the value model: what the tasks ahead want (F-25c7), more than it holds, and
+     * food for the run.
+     */
+    Map<String, Integer> lootWanted(ServerPlayerEntity player) {
+        var wants = new HashMap<String, Integer>();
+        var inventory = player.getInventory();
+        for (Item item : wanted) wants.put(Registries.ITEM.getId(item).toString(), inventory.count(item) + 16);
+        wants.put(Worth.FOOD, PortalRunPlanner.RUN_FOOD);
+        return wants;
+    }
+
+    /**
+     * A drop worth the way to it as the value model has it, nobody's throw: something tossed was tossed to someone, or
+     * thrown away by the player itself.
+     */
+    private static boolean worthTheWay(ServerPlayerEntity player, ItemEntity drop, Worth.Holding holding) {
+        if (drop.getOwner() != null) return false;
+        return Worth.detour(Valuables.judge(drop.getStack(), holding)) >= Math.sqrt(player.squaredDistanceTo(drop));
+    }
+
+    /**
+     * Valuables in sight and worth the way to them (E-42), as a player never walks past them: a structure's chest or
+     * barrel nobody has opened, or a chest minecart in a mineshaft's tunnels, walked to and looted of what is worth
+     * taking; and gold blocks, as ruined portals have, mined with an iron pickaxe.
+     */
+    private Optional<Task> lootNearby(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        int cartWay = Worth.detour(Worth.Container.MINESHAFT_CART.expected());
+        var carts = world.getEntitiesByClass(net.minecraft.entity.vehicle.StorageMinecartEntity.class,
+                player.getBoundingBox().expand(CART_REACH, 8, CART_REACH),
+                cart -> !cartsLooted.contains(cart.getUuid()) && Valuables.unrolled(cart) && player.canSee(cart)
+                        && Math.sqrt(player.squaredDistanceTo(cart)) <= cartWay && !blocked(cart.getBlockPos()) && !dangerous(cart.getBlockPos()));
+        var cart = carts.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo));
+        if (cart.isPresent()) {
+            if (player.canInteractWithEntity(cart.get(), 0)) {
+                return Optional.of(new Task("native_loot", Map.of("cart", cart.get().getUuid().toString()), "Loot the chest minecart"));
+            }
+            return Optional.of(go(cart.get().getBlockPos(), 2.0, false, "Walk to the chest minecart at " + cart.get().getBlockPos().toShortString()));
+        }
+        var chest = knowledge.nearest(world, WorldKnowledge.Kind.CONTAINER, feet,
+                pos -> !looted.contains(pos.asLong()) && Valuables.unrolled(world, pos) && !blocked(pos) && !unreachable(pos) && !dangerous(pos)
+                        && Math.sqrt(pos.getSquaredDistance(feet)) <= Worth.detour(Valuables.kind(world, pos).expected()));
+        if (chest.isPresent()) {
+            BlockPos pos = chest.get();
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) <= 4.5 * 4.5) {
+                return Optional.of(new Task("native_loot", coords(pos, Map.of()), "Loot the chest at " + pos.toShortString()));
+            }
+            return Optional.of(go(pos, 2.5, false, "Walk to the chest at " + pos.toShortString()));
+        }
+        // A gold block is nine ingots: worth the way to it as far as it is seen, with a pickaxe that takes it.
+        return gather(body, WorldKnowledge.Kind.GOLD_BLOCK, GOLD_REACH, "gold block");
+    }
 
     // ------------------------------------------------------------------ food
 
