@@ -6506,8 +6506,9 @@ final class PlayerRuntime {
 
     /**
      * A find shared out with the team as it comes (E-40a): when it holds more of a material than at its last reckoning,
-     * what it holds unpromised is shared by {@link ShareOut} between it and its teammates (the native players of the
-     * same controller in its world within {@link #TEAM_RANGE}), and if anyone else is better for some of it, the share-out
+     * what it holds unpromised is shared by {@link ShareOut} between it and its teammates (the other native players in its
+     * world within {@link #TEAM_RANGE}, as all play together in co-op; none while it or they are in a match, whose own rules
+     * hand out items), and if anyone else is better for some of it, the share-out
      * is saved as a project of hand-overs ({@link HandOvers}), each held by it with its material reserved, and it tells
      * its team what it found and who gets what. A first sight of what it holds is no find. Its hand-overs let go by a
      * stop or a lapsed hold are taken up again.
@@ -6528,18 +6529,19 @@ final class PlayerRuntime {
             if (before == null || held != before) teamCoordinator.stockLedger().registerStock(key, held);
             if (before == null || held <= before || entry.sharing.contains(material)) continue;
             int free = held - teamCoordinator.stockLedger().reservedCount(key);
-            if (free <= 0) continue;
+            if (free <= 0 || matches.running(player.getUuid()).isPresent()) continue;
             var members = new ArrayList<ShareOut.Member>();
             members.add(member(self, entry.data.displayName(), player));
             for (Entry other : entries.values()) {
-                if (other == entry || !java.util.Objects.equals(other.data.ownerId(), entry.data.ownerId())) continue;
+                if (other == entry) continue;
                 var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
                 if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
-                        || other.snapshot().stopLatched()) continue;
+                        || other.snapshot().stopLatched() || matches.running(mate.getUuid()).isPresent()) continue;
                 members.add(member(other.data.id(), other.data.displayName(), mate));
             }
-            if (members.size() < 2) continue;
-            var grants = ShareOut.share(members, material, free);
+            var grants = members.size() < 2 ? List.<ShareOut.Grant>of() : ShareOut.share(members, material, free);
+            KindredMod.LOGGER.info("{} found {}: holds {}, {} unpromised; {} teammates by; share-out {}", entry.data.displayName(), item, held, free,
+                    members.size() - 1, grants);
             if (grants.stream().allMatch(g -> g.to().equals(self))) continue; // Nobody else is better for it: its own to use.
             var id = new ProjectId("share:" + self.toString().substring(0, 8) + ":" + material.name().toLowerCase(java.util.Locale.ROOT) + ":" + server.getTicks());
             var project = HandOvers.project(id, self, material, free, grants);
@@ -6597,6 +6599,8 @@ final class PlayerRuntime {
     private java.util.Optional<NativeTaskCandidate> handOverStep(Entry entry, NativePlayerBody body, SharedTask task) {
         long now = server.getTicks();
         if (now < entry.handOversWaitUntil) return java.util.Optional.empty();
+        // A piece being tossed across is out of its pack but not yet handed over: nothing is planned until the toss ends.
+        if ("native_toss".equals(entry.skillId) && runnerBusy(entry)) return java.util.Optional.empty();
         var player = body.entity();
         UUID self = entry.data.id();
         // Every piece it has promised and not yet handed over, in the order promised.
@@ -6627,23 +6631,31 @@ final class PlayerRuntime {
         PortalRunCampaign.Task step = null;
         SharedTask stepTask = toMake != null ? toMake : task;
         if (toMake != null) {
-            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
-            entry.campaign.policy(edits);
-            String recipe = net.minecraft.util.Identifier.of(HandOvers.Piece.of(toMake).piece()).getPath();
-            boolean handled = recipe.endsWith("_sword") || recipe.endsWith("_pickaxe") || recipe.endsWith("_axe");
-            step = handled && player.getInventory().count(net.minecraft.item.Items.STICK) < 2 ? entry.campaign.craft(body, "stick").orElse(null)
-                    : entry.campaign.craft(body, recipe).orElse(null);
+            String piece = net.minecraft.util.Identifier.of(HandOvers.Piece.of(toMake).piece()).getPath();
+            boolean handled = piece.endsWith("_sword") || piece.endsWith("_pickaxe") || piece.endsWith("_axe");
+            String recipe = handled && player.getInventory().count(net.minecraft.item.Items.STICK) < 2 ? "stick" : piece;
+            // At the table found as its routine was reckoned (the tick's scan budget is spent by now), else its own table.
+            primeWorkstationCaches(entry, body);
+            if (body.planCraft(recipe, entry.cachedCraftingTablePos).isPresent()) {
+                step = new PortalRunCampaign.Task("native_craft", Map.of("recipe", recipe), "Make " + toMake.title());
+            } else {
+                if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.policy(edits);
+                step = entry.campaign.craft(body, recipe).orElse(null);
+            }
         } else {
             // All made: the next one carried over to its teammate and tossed across from close by.
             var piece = HandOvers.Piece.of(task);
             Item made = Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.piece()));
             int slot = -1;
             for (int s = 0; s < 36; s++) if (player.getInventory().getStack(s).isOf(made)) { slot = s; break; }
-            var mate = server.getPlayerManager().getPlayer(piece.to());
+            // The teammate by its identity, and its body in the world by the body's own id.
+            Entry mateEntry = entries.get(piece.to());
+            var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
             if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld()) {
-                String name = entries.containsKey(piece.to()) ? entries.get(piece.to()).data.displayName() : mate.getName().getString();
+                String name = mateEntry.data.displayName();
                 step = player.squaredDistanceTo(mate) <= 3 * 3 && player.canSee(mate)
-                        ? new PortalRunCampaign.Task("native_toss", Map.of("slot", String.valueOf(slot), "count", "1", "target", piece.to().toString()),
+                        ? new PortalRunCampaign.Task("native_toss", Map.of("slot", String.valueOf(slot), "count", "1", "target", mate.getUuid().toString()),
                                 "Hand " + task.title())
                         : PortalRunCampaign.go(mate.getBlockPos(), 2.5, true, "To " + name + " with " + task.title());
             }
@@ -6651,6 +6663,12 @@ final class PlayerRuntime {
         if (step == null) {
             // Nothing to make it with here, or its teammate out of its world: it waits a minute.
             entry.handOversWaitUntil = now + 1200;
+            String why = "its teammate not in its world";
+            if (toMake != null) {
+                why = "no table by it to make " + net.minecraft.util.Identifier.of(HandOvers.Piece.of(toMake).piece()).getPath() + " at "
+                        + player.getBlockPos().toShortString();
+            }
+            KindredMod.LOGGER.info("{} cannot go on with {} for now, {}: it waits a minute", entry.data.displayName(), stepTask.title(), why);
             return java.util.Optional.empty();
         }
         UUID stepId = UUID.nameUUIDFromBytes(("handover:" + stepTask.id() + ":" + step.skill() + ":" + new java.util.TreeMap<>(step.args()))

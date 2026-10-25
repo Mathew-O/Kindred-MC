@@ -80,13 +80,16 @@ public final class NativeTeamShareGameTests implements FabricGameTest {
                     BlockPos a = context.getAbsolutePos(new BlockPos(2, 2, 2)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
                     mason.refreshPositionAndAngles(a.getX() + 0.5, a.getY(), a.getZ() + 0.5, 0, 0);
                     wren.refreshPositionAndAngles(b.getX() + 0.5, b.getY(), b.getZ() + 0.5, 180, 0);
-                    f.runtime.nativeLifecycle(f.source, "resume", ids[0]);
-                    f.runtime.nativeLifecycle(f.source, "resume", ids[1]);
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", ids[0]) == 1
+                            && f.runtime.nativeLifecycle(f.source, "resume", ids[1]) == 1, "Both resumed");
                 })
                 // A few seconds of play first: what each holds then is no find.
                 .createAndAdd(() -> context.assertTrue(++waited[0] >= 60, "Settling"))
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.teamLine(ids[0]) == null, "Nothing said before a find");
+                    dev.kindred.fabric.KindredMod.LOGGER.info("Team share: Mason at {}, Wren at {}, the table at {} is {}", player(f, players[0]).getBlockPos().toShortString(),
+                            player(f, players[1]).getBlockPos().toShortString(), context.getAbsolutePos(table).toShortString(),
+                            context.getWorld().getBlockState(context.getAbsolutePos(table)));
                     player(f, players[0]).getInventory().setStack(8, new ItemStack(Items.DIAMOND, 11));
                 })
                 .createAndAdd(() -> context.assertTrue(
