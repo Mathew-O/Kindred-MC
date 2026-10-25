@@ -144,14 +144,15 @@ class AttentionWorkSchedulerTest {
 
     @Test
     void deterministicSliceAndDetailedScanBudgetCaps() {
-        var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
+        // The default caps with a soft time limit a loaded host cannot trip: selection reads the real clock, and in a
+        // suite's build beside another compile the default two milliseconds ran out after three slices.
+        var scheduler = new AttentionWorkScheduler(session, new AttentionSchedulePolicy(AttentionSchedulePolicy.DEFAULT_MAX_SLICES_PER_TICK,
+                AttentionSchedulePolicy.DEFAULT_MAX_DETAILED_SCANS_PER_TICK, 60_000_000L, false));
         long tick = 100;
         scheduler.synchronizeEntries(List.of(
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true),
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player2, tick, 1, 1, AttentionState.ROUTINE, true)
         ));
-        // One clock reading, as the test above: on a loaded machine (a suite's build beside another compile) the
-        // tick's soft time budget ran out after the first slice, and the slice cap went untested.
         long now = System.nanoTime();
         scheduler.beginTick(tick, now);
 
