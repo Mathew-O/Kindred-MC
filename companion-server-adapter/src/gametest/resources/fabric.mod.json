@@ -78,7 +78,8 @@
       "dev.kindred.fabric.NativeTeamShareGameTests",
       "dev.kindred.fabric.NativeTeamPortalGameTests",
       "dev.kindred.fabric.NativeLootGameTests",
-      "dev.kindred.fabric.NativeRaidGameTests"
+      "dev.kindred.fabric.NativeRaidGameTests",
+      "dev.kindred.fabric.NativeKitNameGameTests"
     ]
   },
   "depends": {

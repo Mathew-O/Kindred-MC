@@ -1391,6 +1391,10 @@ final class PlayerRuntime {
                     task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
                             server::execute, chest, cart, () -> lootWanted(entry));
                 }
+            } else if (skill.equals("native_rename")) {
+                task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), arguments.get("name"));
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -1623,6 +1627,7 @@ final class PlayerRuntime {
                     || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
+                    || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
                     || (("native_bucket".equals(entry.skillId) || "native_cast".equals(entry.skillId))
@@ -2880,6 +2885,10 @@ final class PlayerRuntime {
                 return candidates;
             }
         }
+
+        // Its best kit named at an anvil of its own once it has reached the enchanting stage (E-16d), between its work.
+        var naming = kitNameCandidates(entry, body);
+        if (naming != null) return naming;
 
         if (entry.ranch != null) {
             candidates.addAll(ranchCandidates(entry, body));
@@ -5615,6 +5624,7 @@ final class PlayerRuntime {
         }
         if (finishedTaskId != null && finishedTaskId.equals(entry.handOverStepId)) handOverStepEnded(entry, state);
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
+        if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
@@ -7002,6 +7012,250 @@ final class PlayerRuntime {
         Entry entry = entries.get(id);
         var decided = entry == null ? null : entry.raids.get(pos.asLong());
         return decided == null ? null : decided.choice() + (decided.byModel() ? " (the model's call)" : " (its own rule)");
+    }
+
+    // ------------------------------------------------------------------ named kit (E-16d)
+
+    /** A name chosen for a piece, what the piece is ("diamond sword"), and why, for the log. */
+    private record KitName(String name, String noun, String why, boolean byModel) { }
+
+    private static boolean anvilAt(ServerWorld world, BlockPos pos) {
+        return pos != null && world.isChunkLoaded(pos) && world.getBlockState(pos).isIn(net.minecraft.registry.tag.BlockTags.ANVIL);
+    }
+
+    /** Whether it has reached the enchanting stage: an enchanting table of its own, held or standing in a base it built. */
+    private boolean enchantingStage(Entry entry, ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isOf(Items.ENCHANTING_TABLE)) return true;
+        if (entry.bases == null) return false;
+        var world = player.getServerWorld();
+        String dimension = world.getRegistryKey().getValue().toString();
+        for (var base : entry.bases.built) {
+            if (!dimension.equals(base.dimension())) continue;
+            for (var block : placedOf(base)) {
+                if (!block.spec().block().equals("minecraft:enchanting_table")) continue;
+                BlockPos pos = BuildRunner.blockPos(block.at());
+                if (world.isChunkLoaded(pos) && world.getBlockState(pos).isOf(Blocks.ENCHANTING_TABLE)) return true;
+            }
+        }
+        return false;
+    }
+
+    /** The weapons and tools it holds, as the naming rules see them. */
+    private static List<dev.kindred.core.KitNames.Piece> kitPieces(ServerPlayerEntity player) {
+        var out = new ArrayList<dev.kindred.core.KitNames.Piece>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty() || dev.kindred.core.KitNames.Kind.of(Valuables.id(stack)).isEmpty()) continue;
+            var enchanted = new HashMap<String, Integer>();
+            for (var each : stack.getEnchantments().getEnchantmentEntries()) {
+                each.getKey().getKey().ifPresent(key -> enchanted.put(key.getValue().toString(), each.getIntValue()));
+            }
+            var name = stack.get(net.minecraft.component.DataComponentTypes.CUSTOM_NAME);
+            out.add(new dev.kindred.core.KitNames.Piece(slot, Valuables.id(stack), enchanted,
+                    name == null ? Optional.empty() : Optional.of(name.getString()),
+                    stack.getOrDefault(net.minecraft.component.DataComponentTypes.REPAIR_COST, 0)));
+        }
+        return out;
+    }
+
+    /** The names it has given and those on what it holds: none of them is given again. */
+    private static Set<String> kitNamesTaken(Entry entry, ServerPlayerEntity player) {
+        var taken = new HashSet<>(entry.kitNamesGiven);
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var name = inventory.getStack(slot).get(net.minecraft.component.DataComponentTypes.CUSTOM_NAME);
+            if (name != null) taken.add(name.getString());
+        }
+        return taken;
+    }
+
+    private static String pieceKey(dev.kindred.core.KitNames.Piece piece) {
+        return piece.slot() + ":" + piece.item() + ":" + new java.util.TreeMap<>(piece.enchantments());
+    }
+
+    /**
+     * Its best kit named (E-16d) once it has reached the enchanting stage, out of any match, with the levels to pay: a
+     * name chosen for the first piece to name (the model's, asked once, else its own); then its anvil reached and the
+     * piece named there. With no anvil, one it holds is put down beside it, or one is made of iron it can spare (three
+     * blocks of it and four ingots) at a crafting table near it. Nothing when there is no anvil to be had: it fetches no
+     * iron for a name.
+     */
+    private List<NativeTaskCandidate> kitNameCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.kitNamesAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        if (!enchantingStage(entry, player)) {
+            entry.kitNamesAt = now + 1200;
+            return null;
+        }
+        var toName = dev.kindred.core.KitNames.affordable(dev.kindred.core.KitNames.toName(kitPieces(player)), player.experienceLevel);
+        if (toName.isEmpty()) {
+            entry.kitNamesAt = now + 1200;
+            return null;
+        }
+        var piece = toName.getFirst();
+        String key = pieceKey(piece);
+        var chosen = entry.kitNames.get(key);
+        if (chosen == null) {
+            chooseKitName(entry, player, piece, key);
+            chosen = entry.kitNames.get(key);
+            // The model is asked: it thinks of a name a moment, and goes on when the answer comes.
+            if (chosen == null) return entry.kitNameAsking ? List.of() : null;
+        }
+        var world = player.getServerWorld();
+        UUID taskId = UUID.nameUUIDFromBytes(("kit_name:" + entry.data.id() + ":" + key).getBytes(StandardCharsets.UTF_8));
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 60.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (!anvilAt(world, entry.anvil)) entry.anvil = null;
+        if (entry.anvil != null) {
+            BlockPos anvil = entry.anvil;
+            var at = Map.of("x", String.valueOf(anvil.getX()), "y", String.valueOf(anvil.getY()), "z", String.valueOf(anvil.getZ()));
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(anvil)) <= 4.5 * 4.5) {
+                var args = new HashMap<>(at);
+                args.put("slot", String.valueOf(piece.slot()));
+                args.put("name", chosen.name());
+                return List.of(new NativeTaskCandidate(task, "native_rename", Map.copyOf(args)));
+            }
+            // Named when it is by its anvil again, not a trip for it.
+            if (player.getBlockPos().getSquaredDistance(anvil) > 48 * 48) return null;
+            var args = new HashMap<>(at);
+            args.put("range", "2.5");
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+        }
+        var inventory = player.getInventory();
+        int held = -1;
+        for (int slot = 0; slot < 36 && held < 0; slot++) if (inventory.getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.ANVIL)) held = slot;
+        if (held >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
+        }
+        if (held >= 0) {
+            BlockPos spot = anvilSpot(player, entry.setup);
+            if (spot == null) {
+                entry.kitNamesAt = now + 600;
+                return null;
+            }
+            entry.anvil = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
+                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+        }
+        int ingots = 0, blocks = 0;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isOf(Items.IRON_INGOT)) ingots += stack.getCount();
+            if (stack.isOf(Items.IRON_BLOCK)) blocks += stack.getCount();
+        }
+        int spare = blocks * 9 + ingots - lootWanted(entry).getOrDefault("minecraft:iron_ingot", 0);
+        if (spare < 31) {
+            entry.kitNamesAt = now + 2400;
+            return null;
+        }
+        if (locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+            BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 12);
+            if (table == null) {
+                entry.kitNamesAt = now + 2400;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
+                    "z", String.valueOf(table.getZ()), "range", "2.5")));
+        }
+        String recipe = blocks < 3 ? "iron_block" : ingots < 4 ? "iron_ingot_from_iron_block" : "anvil";
+        return List.of(new NativeTaskCandidate(task, "native_craft", Map.of("recipe", recipe)));
+    }
+
+    /**
+     * Where to put its anvil down: on solid ground beside it, open, within reach, and allowed by its work area's rules,
+     * or the server's roaming rules with none.
+     */
+    private BlockPos anvilSpot(ServerPlayerEntity player, WorkSetup setup) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
+            for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
+                if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
+                        || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
+                if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
+                if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, "minecraft:anvil", edits).allowed()) return pos.toImmutable();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * A name for {@code piece}: the model's, if one is set up, answers, and its name passes the naming rules; else its
+     * own, in keeping with its temper.
+     */
+    private void chooseKitName(Entry entry, ServerPlayerEntity player, dev.kindred.core.KitNames.Piece piece, String key) {
+        if (entry.kitNameAsking) return;
+        var taken = kitNamesTaken(entry, player);
+        var personality = entry.profile.personality();
+        String noun = dev.kindred.core.KitNames.noun(piece);
+        Runnable own = () -> dev.kindred.core.KitNames.own(piece, entry.data.id(), personality, taken).ifPresentOrElse(
+                name -> kitNameChosen(entry, key, new KitName(name.text(), noun, "its own, in keeping with its temper", false)),
+                () -> entry.kitNamesAt = server.getTicks() + 24_000);
+        if (strategist.isEmpty()) {
+            own.run();
+            return;
+        }
+        var named = new HashMap<String, String>();
+        for (var held : kitPieces(player)) held.name().ifPresent(name -> named.put(name, dev.kindred.core.KitNames.noun(held)));
+        var question = new dev.kindred.model.Strategist.Question(dev.kindred.core.KitNames.SYSTEM,
+                dev.kindred.core.KitNames.question(entry.data.displayName(), personality, piece, named), List.of(), dev.kindred.core.KitNames.MAX_NAME);
+        entry.kitNameAsking = true;
+        strategist.get().ask(entry.data.id(), entry.data.displayName(), question, server).whenComplete((answer, failure) -> {
+            entry.kitNameAsking = false;
+            var given = answer == null ? Optional.<dev.kindred.core.NameForge.Name>empty()
+                    : answer.flatMap(dev.kindred.model.Strategist.Answer::text).flatMap(text -> dev.kindred.core.KitNames.fromModel(text, taken));
+            if (given.isPresent()) {
+                kitNameChosen(entry, key, new KitName(given.get().text(), noun, answer.get().reason(), true));
+            } else {
+                answer.flatMap(dev.kindred.model.Strategist.Answer::text).ifPresent(text -> KindredMod.LOGGER.info(
+                        "{} strategist: \"{}\" breaks the naming rules or is a name it has used; its own instead", entry.data.displayName(), text));
+                own.run();
+            }
+            entry.routineRefreshPending = true;
+        });
+    }
+
+    private void kitNameChosen(Entry entry, String key, KitName chosen) {
+        entry.kitNames.put(key, chosen);
+        KindredMod.LOGGER.info("{} chose {} for its {} ({}) - {}", entry.data.displayName(), chosen.name(), chosen.noun(),
+                chosen.byModel() ? "the model's name" : "its own name", chosen.why());
+    }
+
+    /** A rename done: said, remembered, and the next piece looked to; or not done, and its kit let be a while. */
+    private void renameEnded(Entry entry, NativeRenameAction rename, SkillRunner.State state) {
+        long now = server.getTicks();
+        if (state != SkillRunner.State.COMPLETED) {
+            if (state == SkillRunner.State.BLOCKED || state == SkillRunner.State.CANCELLED) entry.kitNamesAt = now + 1200;
+            return;
+        }
+        String noun = "kit";
+        for (var it = entry.kitNames.values().iterator(); it.hasNext(); ) {
+            var chosen = it.next();
+            if (!chosen.name().equals(rename.name())) continue;
+            noun = chosen.noun();
+            it.remove();
+        }
+        entry.kitNamesGiven.add(rename.name());
+        entry.kitNamesAt = now + 20;
+        String text = "I named my " + noun + " " + rename.name() + ".";
+        say(entry, text, "");
+        if (store != null) {
+            store.addMemory(new MemoryNote(UUID.randomUUID(), entry.data.id(), MemoryNote.Kind.FACT,
+                    "Named its " + noun + " " + rename.name() + " at an anvil", "kit_name", 0));
+        }
+    }
+
+    /** The name it gave the piece now in {@code slot}, for fixtures: what the piece is called, or null. */
+    String kitName(UUID id, int slot) {
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return null;
+        var name = entry.nativeBody.entity().getInventory().getStack(slot).get(net.minecraft.component.DataComponentTypes.CUSTOM_NAME);
+        return name == null ? null : name.getString();
     }
 
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
@@ -8449,6 +8703,15 @@ final class PlayerRuntime {
         private final Map<Long, ChestUse> chestsUsed = new HashMap<>();
         private final Map<Long, RaidDecision> raids = new HashMap<>();
         private boolean raidAsking;
+        /**
+         * Named kit (E-16d): the name chosen for each piece, by the piece; whether the model has a question of its out;
+         * the names it has given; the anvil it put down; and when it looks to its kit again.
+         */
+        private final Map<String, KitName> kitNames = new HashMap<>();
+        private boolean kitNameAsking;
+        private final Set<String> kitNamesGiven = new HashSet<>();
+        private BlockPos anvil;
+        private long kitNamesAt;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
         private final List<String> partsTaken = new ArrayList<>();

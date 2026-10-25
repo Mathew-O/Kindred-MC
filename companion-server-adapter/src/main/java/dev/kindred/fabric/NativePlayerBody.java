@@ -89,7 +89,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1768,6 +1768,53 @@ final class NativePlayerBody implements BodyAdapter {
             looted[0] = new Looted(List.copyOf(opened), List.copyOf(shut));
         });
         return done ? looted[0] : null;
+    }
+
+    /** An anvil's rename: the piece before and after, the levels before and after, and what the anvil asked. */
+    record Renamed(ItemStack before, ItemStack after, int levelsBefore, int levelsAfter, int cost) { }
+
+    /**
+     * Names the piece in inventory slot {@code slot} (0 to 35) {@code name} at the anvil at {@code anvil}, as a player
+     * does (E-16d): opens it with a use click, clicks the piece into its first slot, types the name, takes the named
+     * piece from the result and puts it back where it was, which costs the levels the anvil asks; and shuts it. Shut
+     * with nothing taken, the anvil gives the piece back. Null when the anvil would not open or the piece is gone.
+     */
+    Renamed rename(ActionLease lease, BlockPos anvil, int slot, String name) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
+        if (slot < 0 || slot >= 36 || !world.isChunkLoaded(anvil) || !world.getBlockState(anvil).isIn(net.minecraft.registry.tag.BlockTags.ANVIL)
+                || player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(anvil)) > 4.5 * 4.5) return null;
+        ItemStack before = player.getInventory().getStack(slot).copy();
+        if (before.isEmpty()) return null;
+        int levels = player.experienceLevel;
+        Renamed[] renamed = {null};
+        boolean done = execute(lease, Intent.RENAME, anvil, () -> {
+            Vec3d top = Vec3d.ofCenter(anvil).add(0, 0.4, 0);
+            face(top);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(top, Direction.UP, anvil, false));
+            player.swingHand(Hand.MAIN_HAND);
+            if (!(player.currentScreenHandler instanceof net.minecraft.screen.AnvilScreenHandler handler)) {
+                if (player.currentScreenHandler != player.playerScreenHandler) player.closeHandledScreen();
+                return;
+            }
+            // The anvil's three slots come first (the piece, what goes with it, the result), then the inventory: its
+            // three rows, then the hotbar.
+            int index = slot < 9 ? 3 + 27 + slot : 3 + slot - 9;
+            var click = net.minecraft.screen.slot.SlotActionType.PICKUP;
+            handler.onSlotClick(index, 0, click, player);
+            handler.onSlotClick(0, 0, click, player);
+            handler.setNewItemName(name);
+            int cost = handler.getLevelCost();
+            if (handler.getSlot(2).hasStack() && cost > 0 && cost <= player.experienceLevel) {
+                handler.onSlotClick(2, 0, click, player);
+                handler.onSlotClick(index, 0, click, player);
+            }
+            player.closeHandledScreen();
+            renamed[0] = new Renamed(before, player.getInventory().getStack(slot).copy(), levels, player.experienceLevel, cost);
+        });
+        return done ? renamed[0] : null;
     }
 
     /**
