@@ -59,6 +59,8 @@ import dev.kindred.core.idle.IdleObservationController;
 import dev.kindred.core.progression.PlaystyleProfile;
 import dev.kindred.core.logistics.ChestOrganizationPolicy;
 import dev.kindred.core.team.CollaborationMode;
+import dev.kindred.core.team.HandOvers;
+import dev.kindred.core.team.ShareOut;
 import dev.kindred.core.progression.MilestoneGraph;
 import dev.kindred.core.progression.MilestoneId;
 import dev.kindred.core.progression.MilestoneSnapshot;
@@ -2815,9 +2817,15 @@ final class PlayerRuntime {
         var evade = evadeCandidates(entry, body);
         if (evade != null) return evade;
 
+        // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
+        shareOutFinds(entry, body);
+
         // 0. Team project task candidates (TEAM-01, TEAM-02)
         java.util.Optional<SharedTask> currentSharedTask = teamCoordinator.getPlayerCurrentTask(entry.data.id());
-        if (currentSharedTask.isPresent()) {
+        if (currentSharedTask.isPresent() && HandOvers.Piece.of(currentSharedTask.get()) != null) {
+            // A piece it promised from a find of its own: made, carried over and handed across, one step at a time.
+            handOverStep(entry, body, currentSharedTask.get()).ifPresent(candidates::add);
+        } else if (currentSharedTask.isPresent()) {
             SharedTask task = currentSharedTask.get();
             var candidate = new dev.kindred.core.TaskPreferences.Candidate(
                     task.id().id(),
@@ -2830,6 +2838,7 @@ final class PlayerRuntime {
         } else {
             List<SharedTask> eligible = teamCoordinator.findEligibleTasks(entry.data.id());
             for (SharedTask task : eligible) {
+                if (HandOvers.Piece.of(task) != null) continue; // A hand-over is its giver's alone.
                 var candidate = new dev.kindred.core.TaskPreferences.Candidate(
                         task.id().id(),
                         dev.kindred.core.TaskPreferences.Priority.PROJECT,
@@ -5585,6 +5594,7 @@ final class PlayerRuntime {
                 && inDeepWater(entry.nativeBody.entity()) && entry.unreachedShores.size() < 64) {
             entry.unreachedShores.put(entry.waterEscapeShore.asLong(), server.getTicks() + 1200L);
         }
+        if (finishedTaskId != null && finishedTaskId.equals(entry.handOverStepId)) handOverStepEnded(entry, state);
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
@@ -6486,6 +6496,200 @@ final class PlayerRuntime {
         return new CompanionSocials.Participant(entry.data.id(), entry.data.ownerId(), entry.data.displayName(),
                 entry.body, entry.profile, working && !entry.snapshot().stopLatched()
                 && entry.lease != null && entry.arbiter.isCurrent(entry.lease));
+    }
+
+    /** The materials a find of which is shared out with the team (E-40a), as players share their ore. */
+    private static final ShareOut.Material[] SHARED_FINDS = {ShareOut.Material.DIAMOND, ShareOut.Material.IRON, ShareOut.Material.GOLD};
+    /** How far off a teammate may be to share a find with, and how long a hand-over is held for before it is let go. */
+    static final double TEAM_RANGE = 48;
+    static final long HAND_OVER_LEASE = 24_000;
+
+    /**
+     * A find shared out with the team as it comes (E-40a): when it holds more of a material than at its last reckoning,
+     * what it holds unpromised is shared by {@link ShareOut} between it and its teammates (the native players of the
+     * same controller in its world within {@link #TEAM_RANGE}), and if anyone else is better for some of it, the share-out
+     * is saved as a project of hand-overs ({@link HandOvers}), each held by it with its material reserved, and it tells
+     * its team what it found and who gets what. A first sight of what it holds is no find. Its hand-overs let go by a
+     * stop or a lapsed hold are taken up again.
+     */
+    private void shareOutFinds(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        UUID self = entry.data.id();
+        for (var task : teamCoordinator.listProjects().stream().flatMap(p -> p.tasks().values().stream()).toList()) {
+            if (HandOvers.givenBy(task, self) && (task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED)) {
+                teamCoordinator.claimTask(task.id(), self, server.getTicks(), HAND_OVER_LEASE);
+            }
+        }
+        for (var material : SHARED_FINDS) {
+            String item = HandOvers.materialItem(material);
+            int held = player.getInventory().count(Registries.ITEM.get(net.minecraft.util.Identifier.of(item)));
+            Integer before = entry.heldFinds.put(material, held);
+            String key = HandOvers.held(self, item);
+            if (before == null || held != before) teamCoordinator.stockLedger().registerStock(key, held);
+            if (before == null || held <= before || entry.sharing.contains(material)) continue;
+            int free = held - teamCoordinator.stockLedger().reservedCount(key);
+            if (free <= 0) continue;
+            var members = new ArrayList<ShareOut.Member>();
+            members.add(member(self, entry.data.displayName(), player));
+            for (Entry other : entries.values()) {
+                if (other == entry || !java.util.Objects.equals(other.data.ownerId(), entry.data.ownerId())) continue;
+                var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
+                if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
+                        || other.snapshot().stopLatched()) continue;
+                members.add(member(other.data.id(), other.data.displayName(), mate));
+            }
+            if (members.size() < 2) continue;
+            var grants = ShareOut.share(members, material, free);
+            if (grants.stream().allMatch(g -> g.to().equals(self))) continue; // Nobody else is better for it: its own to use.
+            var id = new ProjectId("share:" + self.toString().substring(0, 8) + ":" + material.name().toLowerCase(java.util.Locale.ROOT) + ":" + server.getTicks());
+            var project = HandOvers.project(id, self, material, free, grants);
+            entry.sharing.add(material);
+            createSharedProject(project).whenComplete((saved, failure) -> {
+                entry.sharing.remove(material);
+                if (failure != null || !running || entries.get(self) != entry) return;
+                for (var task : saved.tasks().values()) teamCoordinator.claimTask(task.id(), self, server.getTicks(), HAND_OVER_LEASE);
+                entry.teamLine = saved.description();
+                say(entry, saved.description(), "");
+                entry.cachedRoutineCandidates = List.of();
+                entry.routineRefreshPending = true;
+            });
+        }
+    }
+
+    /** A player as a share-out sees it: the armour it wears and the best sword, pickaxe and axe it has. */
+    private static ShareOut.Member member(UUID id, String name, ServerPlayerEntity player) {
+        var kit = new java.util.EnumMap<ShareOut.Slot, ShareOut.Material>(ShareOut.Slot.class);
+        kit.put(ShareOut.Slot.HELMET, material(player.getEquippedStack(net.minecraft.entity.EquipmentSlot.HEAD)));
+        kit.put(ShareOut.Slot.CHESTPLATE, material(player.getEquippedStack(net.minecraft.entity.EquipmentSlot.CHEST)));
+        kit.put(ShareOut.Slot.LEGGINGS, material(player.getEquippedStack(net.minecraft.entity.EquipmentSlot.LEGS)));
+        kit.put(ShareOut.Slot.BOOTS, material(player.getEquippedStack(net.minecraft.entity.EquipmentSlot.FEET)));
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            String path = Registries.ITEM.getId(stack.getItem()).getPath();
+            ShareOut.Slot tool = path.endsWith("_pickaxe") ? ShareOut.Slot.PICKAXE : path.endsWith("_sword") ? ShareOut.Slot.SWORD
+                    : path.endsWith("_axe") ? ShareOut.Slot.AXE : null;
+            if (tool != null && material(stack).compareTo(kit.getOrDefault(tool, ShareOut.Material.NONE)) > 0) kit.put(tool, material(stack));
+        }
+        return new ShareOut.Member(id, name, kit, ShareOut.Work.GATHERING);
+    }
+
+    /** What a piece of kit is made of; wood and stone count as nothing better. */
+    private static ShareOut.Material material(ItemStack stack) {
+        if (stack.isEmpty()) return ShareOut.Material.NONE;
+        String path = Registries.ITEM.getId(stack.getItem()).getPath();
+        if (path.startsWith("netherite_")) return ShareOut.Material.NETHERITE;
+        if (path.startsWith("diamond_")) return ShareOut.Material.DIAMOND;
+        if (path.startsWith("iron_")) return ShareOut.Material.IRON;
+        if (path.startsWith("chainmail_")) return ShareOut.Material.CHAIN;
+        if (path.startsWith("golden_")) return ShareOut.Material.GOLD;
+        if (path.startsWith("leather_")) return ShareOut.Material.LEATHER;
+        return ShareOut.Material.NONE;
+    }
+
+    /**
+     * The next step of the pieces it promised from a find (E-40a): each made first at a table while it is by one
+     * (sticks first for a tool or weapon), then carried to its teammate and tossed across from close by, each step an
+     * ordinary recorded task; a piece for itself is done once made. Nothing to make one with here, or a teammate out of
+     * its world, and it waits a minute; after six failed steps the hand-over is let go, its material free again.
+     */
+    private java.util.Optional<NativeTaskCandidate> handOverStep(Entry entry, NativePlayerBody body, SharedTask task) {
+        long now = server.getTicks();
+        if (now < entry.handOversWaitUntil) return java.util.Optional.empty();
+        var player = body.entity();
+        UUID self = entry.data.id();
+        // Every piece it has promised and not yet handed over, in the order promised.
+        var mine = teamCoordinator.listProjects().stream().flatMap(p -> p.tasks().values().stream())
+                .filter(t -> HandOvers.givenBy(t, self) && self.equals(t.assignedPlayerId())
+                        && (t.state() == SharedTask.TaskState.CLAIMED || t.state() == SharedTask.TaskState.IN_PROGRESS))
+                .toList();
+        // Its own pieces once made are done; worn counts as made.
+        for (var t : mine) {
+            var piece = HandOvers.Piece.of(t);
+            Item made = Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.piece()));
+            if (piece.to().equals(self) && (player.getInventory().count(made) > 0
+                    || java.util.stream.StreamSupport.stream(player.getArmorItems().spliterator(), false).anyMatch(s -> s.isOf(made)))) {
+                teamCoordinator.completeTask(t.id(), self, "Made " + t.title());
+                entry.cachedRoutineCandidates = List.of();
+                entry.routineRefreshPending = true;
+                return java.util.Optional.empty();
+            }
+        }
+        // Each piece made first, while it is by its table: as many of each as it has promised and does not hold.
+        var promised = new java.util.HashMap<Item, Integer>();
+        SharedTask toMake = null;
+        for (var t : mine) {
+            Item made = Registries.ITEM.get(net.minecraft.util.Identifier.of(HandOvers.Piece.of(t).piece()));
+            int wanted = promised.merge(made, 1, Integer::sum);
+            if (toMake == null && player.getInventory().count(made) < wanted) toMake = t;
+        }
+        PortalRunCampaign.Task step = null;
+        SharedTask stepTask = toMake != null ? toMake : task;
+        if (toMake != null) {
+            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+            entry.campaign.policy(edits);
+            String recipe = net.minecraft.util.Identifier.of(HandOvers.Piece.of(toMake).piece()).getPath();
+            boolean handled = recipe.endsWith("_sword") || recipe.endsWith("_pickaxe") || recipe.endsWith("_axe");
+            step = handled && player.getInventory().count(net.minecraft.item.Items.STICK) < 2 ? entry.campaign.craft(body, "stick").orElse(null)
+                    : entry.campaign.craft(body, recipe).orElse(null);
+        } else {
+            // All made: the next one carried over to its teammate and tossed across from close by.
+            var piece = HandOvers.Piece.of(task);
+            Item made = Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.piece()));
+            int slot = -1;
+            for (int s = 0; s < 36; s++) if (player.getInventory().getStack(s).isOf(made)) { slot = s; break; }
+            var mate = server.getPlayerManager().getPlayer(piece.to());
+            if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld()) {
+                String name = entries.containsKey(piece.to()) ? entries.get(piece.to()).data.displayName() : mate.getName().getString();
+                step = player.squaredDistanceTo(mate) <= 3 * 3 && player.canSee(mate)
+                        ? new PortalRunCampaign.Task("native_toss", Map.of("slot", String.valueOf(slot), "count", "1", "target", piece.to().toString()),
+                                "Hand " + task.title())
+                        : PortalRunCampaign.go(mate.getBlockPos(), 2.5, true, "To " + name + " with " + task.title());
+            }
+        }
+        if (step == null) {
+            // Nothing to make it with here, or its teammate out of its world: it waits a minute.
+            entry.handOversWaitUntil = now + 1200;
+            return java.util.Optional.empty();
+        }
+        UUID stepId = UUID.nameUUIDFromBytes(("handover:" + stepTask.id() + ":" + step.skill() + ":" + new java.util.TreeMap<>(step.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.handOverStepId = stepId;
+        entry.handOverTask = stepTask.id();
+        entry.handOverStepSkill = step.skill();
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(stepId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 78.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return java.util.Optional.of(new NativeTaskCandidate(candidate, step.skill(), step.args()));
+    }
+
+    /** A hand-over's step ended: the toss done is the hand-over done; a failed step counts against it (E-40a). */
+    private void handOverStepEnded(Entry entry, SkillRunner.State state) {
+        TaskId taskId = entry.handOverTask;
+        String skill = entry.handOverStepSkill;
+        entry.handOverStepId = null;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        if (taskId == null) return;
+        var task = teamCoordinator.findTask(taskId).orElse(null);
+        if (task == null || HandOvers.Piece.of(task) == null) return;
+        if (state == SkillRunner.State.COMPLETED) {
+            entry.handOverFailures = 0;
+            if ("native_toss".equals(skill)) {
+                teamCoordinator.completeTask(taskId, entry.data.id(), "Handed over " + task.title());
+                KindredMod.LOGGER.info("{} handed over {}", entry.data.displayName(), task.title());
+            }
+        } else if (state == SkillRunner.State.BLOCKED && ++entry.handOverFailures >= 6) {
+            entry.handOverFailures = 0;
+            teamCoordinator.revokeTask(taskId, "Six steps of the hand-over failed");
+            entry.handOversWaitUntil = server.getTicks() + 1200;
+        }
+    }
+
+    /** What it last told its team of a find, for fixtures (E-40a). */
+    String teamLine(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.teamLine;
     }
 
     /**
@@ -7900,6 +8104,17 @@ final class PlayerRuntime {
         private Personality gazePersonality;
         private UUID addressedBy;
         private long addressedAt = Long.MIN_VALUE / 2;
+        /** What it held of each material shared out at its last reckoning: more since is a find to share (E-40a). */
+        private final Map<ShareOut.Material, Integer> heldFinds = new java.util.EnumMap<>(ShareOut.Material.class);
+        /** Materials whose share-out is being saved, not to be reckoned again meanwhile. */
+        private final java.util.Set<ShareOut.Material> sharing = java.util.EnumSet.noneOf(ShareOut.Material.class);
+        /** The hand-over step dispatched and the task it is a step of; until when its hand-overs wait; what it told its team. */
+        private UUID handOverStepId;
+        private TaskId handOverTask;
+        private String handOverStepSkill;
+        private long handOversWaitUntil;
+        private int handOverFailures;
+        private String teamLine;
         /** The time spoken to that it has stopped to look for, and the pause's task (E-33a). */
         private long attendedAt = Long.MIN_VALUE / 2;
         private UUID attentionTaskId;
