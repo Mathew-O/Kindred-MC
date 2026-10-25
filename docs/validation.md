@@ -10,6 +10,17 @@ Linux x64 / OpenJDK 21.0.2 standalone validation: **64 support tests in 22 class
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- E-43 (extended inventory) in play, `fd789ed` on top of `2cc3040`.
+  - New native fixtures `NativeStorageGameTests` (2): three runs alone with `NativeRaidGameTests` (6 of 6 each), then `NativeBuildNeedsGameTests`, `NativeLootGameTests`, `NativeKitNameGameTests` and `NativeTeamShareGameTests` with this work, 7 of 7. `WorthTest` and `StorageTest`, 7 of 7 each, one new in each. Not yet in a full suite.
+  - New recorded action `native_store`; a store of its own under the roaming rule (`RoamingEdits.ownStoreDenial`); the strategist's report says what it has stored.
+- E-16d (named kit), `2cc3040` on top of `52aab8f`.
+  - New JUnit `KitNamesTest` (4); with `NameForgeTest`, 8 of 8. New native fixtures `NativeKitNameGameTests` (3): the first run failed two (a player with no work area found nowhere to put its anvil down; the spot is now judged by the one edit decision), then three runs of three alone, then 8 of 8 with the loot and raid classes, and passed in full suite run 39 on `2cc3040`.
+  - New recorded action `native_rename`: only the piece's name changes, and exactly the anvil's cost in levels is spent.
+- E-44 (raiding in a match), `52aab8f` on top of `4007eec`.
+  - New JUnit `RaidTest` (4); `OpenAiCompatibleStrategistTest` 10 of 10 with two new. New native fixtures `NativeRaidGameTests` (3): three runs of three alone, then 18 of 18 with `NativeManhuntGameTests`, `NativeMatchGameTests`, `NativeCombatGameTests` and `NativeEdgeFightGameTests`, and passed in full suite run 39 on `2cc3040`.
+  - A fourth fixture, a fellow hunter's chest it sees used never its to raid, in `fd789ed`: three runs alone, with the storage fixtures, 6 of 6 each.
+  - Found by its first fixture and fixed: a hunter whose fight ended the hunt was held for reconciliation, as the match took back its tracking compass mid-fight; a hunt's compass is the match's, not counted by the fight.
+- Full suite run 39 on `2cc3040`, Linux x64 OpenJDK 21: 337 of 338. Failed only the pasture's cattle, two cows left outside the pen by its doorway (as in runs 33 and 38; open). The hall's south-east tower, which failed in run 38 (#82), passed. `./gradlew build` on `2cc3040`: 702 JUnit results, four skipped (the opt-in live model tests); JAR SHA-256 `7c23feba6ca37fa603f2fad4edc54e9d42da1e0568990e503dfcbf5e319d151a`.
 - E-42 (valuables), its first slice, `baa841b` on top of `7ae84d4`.
   - New JUnit `WorthTest` (6). New native fixtures `NativeLootGameTests` (2): passed alone and in full suite run 38 on `7a2738c`. Found by them and fixed: a loot table spreads items over slots, so a container's contents are judged item by item, all of each there is.
   - New recorded action `native_loot`; the roaming rule for containers takes only a structure's container nobody has opened (`RoamingEdits.lootDenial`).
