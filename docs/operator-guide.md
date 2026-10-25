@@ -283,3 +283,7 @@ Legacy owner/mode/scope fields preserve access and saves; they are not the new p
 Inference is optional and currently disconnected. Planned Claude/OpenAI keys/budgets belong in private operator configuration, never memory/logs/source. No Jev.
 
 Report exact build, seed/difficulty, IDs, commands and native before/after evidence. Stop and snapshot ambiguous actions; do not recreate missing items.
+
+## Offline support reports and evidence
+
+Use the [support CLI](../tools/support-batch-01/README.md) for test summaries, before/after regressions, repeated runs, explicit sanitized evidence bundles and static documentation/manifest/JAR checks. Python and its standard library are sufficient; these commands never start Minecraft, run builds or call providers. The [reconstructed support handoff](../tools/support-batch-05/HANDOFF.md) lists the two ModelGateway fixes and the bounded verification scope.
