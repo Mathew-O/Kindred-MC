@@ -1711,6 +1711,16 @@ final class NativePlayerBody implements BodyAdapter {
      * open; null if it did not open (a block on a chest's lid, say).
      */
     Looted loot(ActionLease lease, BlockPos chest, UUID cart, java.util.function.Function<List<ItemStack>, List<Integer>> choose) {
+        return useContainer(lease, chest, cart, choose, contents -> List.of());
+    }
+
+    /**
+     * Opens the container at {@code chest}, or the chest minecart {@code cart}, with a use click, as {@link #loot} does;
+     * shift-clicks out of it the container slots {@code out} picks, then into it the inventory slots (0 to 35)
+     * {@code in} picks, as a player stores things in its own chest (E-43); and shuts it.
+     */
+    Looted useContainer(ActionLease lease, BlockPos chest, UUID cart, java.util.function.Function<List<ItemStack>, List<Integer>> out,
+                        java.util.function.Function<List<ItemStack>, List<Integer>> in) {
         requireThread();
         var world = player.getServerWorld();
         if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
@@ -1741,8 +1751,16 @@ final class NativePlayerBody implements BodyAdapter {
             int size = handler.slots.size() - 36;
             var opened = new java.util.ArrayList<ItemStack>(size);
             for (int i = 0; i < size; i++) opened.add(handler.getSlot(i).getStack().copy());
-            for (int index : choose.apply(List.copyOf(opened))) {
+            for (int index : out.apply(List.copyOf(opened))) {
                 if (index >= 0 && index < size) handler.onSlotClick(index, 0, net.minecraft.screen.slot.SlotActionType.QUICK_MOVE, player);
+            }
+            // The inventory follows the container's slots in its screen: the three rows above, then the hotbar.
+            var held = new java.util.ArrayList<ItemStack>(36);
+            for (int slot = 0; slot < 36; slot++) held.add(player.getInventory().getStack(slot).copy());
+            for (int slot : in.apply(List.copyOf(held))) {
+                if (slot < 0 || slot >= 36) continue;
+                int index = slot < 9 ? size + 27 + slot : size + slot - 9;
+                if (index < handler.slots.size()) handler.onSlotClick(index, 0, net.minecraft.screen.slot.SlotActionType.QUICK_MOVE, player);
             }
             var shut = new java.util.ArrayList<ItemStack>(size);
             for (int i = 0; i < size; i++) shut.add(handler.getSlot(i).getStack().copy());
