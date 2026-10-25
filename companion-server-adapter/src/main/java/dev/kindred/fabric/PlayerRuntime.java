@@ -6549,6 +6549,7 @@ final class PlayerRuntime {
         entry.campaign.team(new dev.kindred.core.survival.PortalRunPlanner.Team(role == dev.kindred.core.team.RunDivision.Role.PROVISIONS));
         if (steered && (entry.runPart == null || entry.runPart.role() != role)) {
             say(entry, part.says(), "");
+            if (entry.partsTaken.size() < 16) entry.partsTaken.add(role + ": " + part.says());
             KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
         }
         entry.runPart = steered ? part : null;
@@ -6560,10 +6561,10 @@ final class PlayerRuntime {
         return entry == null ? null : entry.lastSaid;
     }
 
-    /** Its part of the team's run, as it last took it up, for fixtures (E-40a). */
-    String runPart(UUID id) {
+    /** The parts of the team's run it has taken up, in order, each as said, for fixtures (E-40a). */
+    List<String> partsTaken(UUID id) {
         Entry entry = entries.get(id);
-        return entry == null || entry.runPart == null ? null : entry.runPart.role() + ": " + entry.runPart.says();
+        return entry == null ? List.of() : List.copyOf(entry.partsTaken);
     }
 
     /** The materials a find of which is shared out with the team (E-40a), as players share their ore. */
@@ -8204,8 +8205,9 @@ final class PlayerRuntime {
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
-        /** Its part of the team's run as it last took it up, said once (E-40a). */
+        /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
+        private final List<String> partsTaken = new ArrayList<>();
         /** The time spoken to that it has stopped to look for, and the pause's task (E-33a). */
         private long attendedAt = Long.MIN_VALUE / 2;
         private UUID attentionTaskId;

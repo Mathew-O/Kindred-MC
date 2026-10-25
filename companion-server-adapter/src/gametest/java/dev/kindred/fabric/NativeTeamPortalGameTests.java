@@ -75,6 +75,7 @@ public final class NativeTeamPortalGameTests implements FabricGameTest {
                     w.setStack(2, new ItemStack(Items.BUCKET, 2));
                     w.setStack(3, new ItemStack(Items.BREAD, 12));
                     w.setStack(4, new ItemStack(Items.OAK_LOG, 8));
+                    w.setStack(40, new ItemStack(Items.SHIELD));
                     wren.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
                     BlockPos a = context.getAbsolutePos(new BlockPos(2, 2, 2)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
                     mason.refreshPositionAndAngles(a.getX() + 0.5, a.getY(), a.getZ() + 0.5, 0, 0);
@@ -83,9 +84,12 @@ public final class NativeTeamPortalGameTests implements FabricGameTest {
                             && f.runtime.startGoal(f.source, ids[1], SurvivalGoal.NETHER_PORTAL) == 1, "Both on the goal");
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue("PORTAL: I've got the best pickaxe; I'll dig the obsidian for the portal.".equals(f.runtime.runPart(ids[0]))
-                            && "PROVISIONS: I'll get iron, food and wood.".equals(f.runtime.runPart(ids[1])),
-                            "Each took up its part: " + f.runtime.runPart(ids[0]) + " / " + f.runtime.runPart(ids[1]));
+                    // Mason says it has the best pickaxe, or, its site already chosen before Wren was on the goal, that it is building it.
+                    var masons = f.runtime.partsTaken(ids[0]);
+                    context.assertTrue(masons.size() == 1 && (masons.getFirst().equals("PORTAL: I've got the best pickaxe; I'll dig the obsidian for the portal.")
+                                    || masons.getFirst().equals("PORTAL: I'm building the portal."))
+                            && f.runtime.partsTaken(ids[1]).equals(java.util.List.of("PROVISIONS: I'll get iron, food and wood.")),
+                            "Each took up its part, once: " + masons + " / " + f.runtime.partsTaken(ids[1]));
                 })
                 .createAndAdd(() -> {
                     if (progress(f, ids[1]).contains("Wait for the team's portal")) waited[0] = true;

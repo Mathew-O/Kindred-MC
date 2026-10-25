@@ -1148,8 +1148,16 @@ final class PortalRunCampaign {
         }
         // Head under and breath short: straight up first. With the head out, breath comes back by itself.
         boolean shortOfBreath = player.isSubmergedInWater() && player.getAir() < player.getMaxAir() / 2;
-        if (shortOfBreath && above != null && !above.equals(feet)) return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
-        var dry = new NativeNavigator(world).nearestReachableDryStand(feet, 4000, 16);
+        var navigator = new NativeNavigator(world);
+        if (shortOfBreath && above != null && !above.equals(feet)) {
+            // Its face at the surface already, a block below it at most, and dry ground a few steps off: it climbs out.
+            // Bobbing under on the way out and sent up for air again, it cut short each climb out of a flooded shaft's
+            // top, and drowned there.
+            var ashore = above.getY() - feet.getY() <= 1 ? navigator.nearestReachableDryStand(feet, 400, 3) : Optional.<BlockPos>empty();
+            if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
+            return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
+        }
+        var dry = navigator.nearestReachableDryStand(feet, 4000, 16);
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
@@ -1511,6 +1519,8 @@ final class PortalRunCampaign {
             WorldFacts.Source.CAVE, WorldKnowledge.Kind.CAVE, WorldFacts.Source.LEAVES, WorldKnowledge.Kind.LEAVES);
     private WorldFacts facts;
     private long factsTick = Long.MIN_VALUE;
+    /** How far off a tree is still on the island it stands on, where nothing is under the player but the void. */
+    static final int ISLAND_TREES = 12;
 
     /**
      * What the planner may choose from: the nearest source of each kind the player has seen (not set aside), and
@@ -1522,6 +1532,8 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         var nearest = new java.util.EnumMap<WorldFacts.Source, Integer>(WorldFacts.Source.class);
         boolean below = underground(player);
+        // On an island (nothing under it but the void) a tree far off is on another island: across the void, not in reach.
+        boolean island = !groundBelow(player);
         for (var source : SOURCES.entrySet()) {
             // Trees count only from up among them: from below ground, getting back up to them is a trip, not a detour.
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
@@ -1529,7 +1541,7 @@ final class PortalRunCampaign {
             // nor are logs left hanging out of reach (sky-island run 12 explored the void for nine minutes for those).
             boolean tree = source.getKey() == WorldFacts.Source.TREE;
             knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
-                            && (!tree || trunkFoot(world, p).isPresent()))
+                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         // A generator counts from the moment its water is in: the lava that finishes it is already in hand.

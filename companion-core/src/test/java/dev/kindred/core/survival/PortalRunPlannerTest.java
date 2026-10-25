@@ -589,6 +589,10 @@ class PortalRunPlannerTest {
         assertEquals(PortalRunPlanner.Stage.PORTAL, PortalRunPlanner.stage(sim.snapshot(), WorldFacts.ordinary(), team));
         sim.food = PortalRunPlanner.FOOD_STOCK + PortalRunPlanner.RUN_FOOD;
         sim.logs = PortalRunPlanner.RUN_WOOD / 4;
+        // With the wood for one in hand, its shield is its own gear still to make; no flint and steel is: that is the portal's.
+        var shieldFirst = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE, team);
+        assertTrue(shieldFirst.stream().noneMatch(st -> st.action() == Action.AWAIT_TEAM_PORTAL), "its shield first: " + shieldFirst);
+        sim.shields = 1;
         assertEquals(List.of(Action.AWAIT_TEAM_PORTAL), PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE, team)
                 .stream().map(PortalRunPlanner.Step::action).toList(), "stocked: it waits");
         // Alone, the same player makes its own portal.

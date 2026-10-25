@@ -157,7 +157,7 @@ public final class PortalRunPlanner {
             steps.add(Step.of(Action.DONE, Stage.DONE, "The Nether portal is built and lit"));
             return steps;
         }
-        if (team.portalByTeammate() && stage(s, facts).ordinal() > Stage.IRON.ordinal()) {
+        if (team.portalByTeammate() && gearIn(s, facts)) {
             int food = FOOD_STOCK + RUN_FOOD - s.edibleFood();
             if (food > 0) {
                 steps.add(new Step(Action.HUNT, "", food, Stage.PORTAL, "Food for the run, while a teammate builds the portal"));
@@ -213,10 +213,21 @@ public final class PortalRunPlanner {
         return stage(s, WorldFacts.ordinary());
     }
 
-    /** As {@link #stage(PortalRunSnapshot, WorldFacts)}; past its own iron, a player whose teammate builds the portal is at it too. */
+    /** As {@link #stage(PortalRunSnapshot, WorldFacts)}; its own gear made, a player whose teammate builds the portal is at it too. */
     public static Stage stage(PortalRunSnapshot s, WorldFacts facts, Team team) {
         Stage own = stage(s, facts);
-        return team.portalByTeammate() && own.ordinal() > Stage.IRON.ordinal() && own != Stage.DONE ? Stage.PORTAL : own;
+        return team.portalByTeammate() && own != Stage.DONE && gearIn(s, facts) ? Stage.PORTAL : own;
+    }
+
+    /**
+     * Its own iron gear made, as a player whose teammate builds the portal reckons it (E-40a): an iron pickaxe, the
+     * chestplate where there are caves to go down into, a shield when the wood for it is in hand. The buckets and the
+     * flint and steel are the portal's, its builder's to make.
+     */
+    static boolean gearIn(PortalRunSnapshot s, WorldFacts facts) {
+        if (s.pickaxeTier() < 3) return false;
+        if (caves(facts) && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return false;
+        return s.shields() > 0 || s.woodUnits() < SHIELD_PLANKS;
     }
 
     public static Stage stage(PortalRunSnapshot s, WorldFacts facts) {
