@@ -102,6 +102,9 @@ final class PortalRunCampaign {
     private ObsidianSite obsidianSite;
     private int pourWaits;
     private PortalSite portalSite;
+    /** Its place in a team's run (E-40a), and whether its portal is a teammate's, taken as its own once lit. */
+    private PortalRunPlanner.Team team = PortalRunPlanner.Team.ALONE;
+    private boolean portalAdopted;
     private SurvivalGoal goal = SurvivalGoal.NETHER_PORTAL;
     /** The progress line's stage name while the leg past the portal runs; null for the portal's own. */
     private String legLabel;
@@ -141,7 +144,7 @@ final class PortalRunCampaign {
     private record ObsidianSite(BlockPos lava, BlockPos water, BlockPos stand) { }
 
     /** Origin is the frame's bottom-left corner; the frame spans origin..origin+3 along {@code axis}, five tall. */
-    private record PortalSite(BlockPos origin, Direction along, Direction toward, BlockPos stand) {
+    record PortalSite(BlockPos origin, Direction along, Direction toward, BlockPos stand) {
         BlockPos at(int across, int up) { return origin.offset(along, across).up(up); }
         /** The cell between the player and the frame plane, which must be open to reach the frame. */
         BlockPos front(int across, int up) { return at(across, up).offset(toward.getOpposite()); }
@@ -370,6 +373,28 @@ final class PortalRunCampaign {
 
     /** The leg past the portal, for the runtime's announcements and the eye throws' results. */
     StrongholdLeg stronghold() { return stronghold; }
+
+    /** Its place in the team's run (E-40a): whether a teammate builds the team's portal. */
+    void team(PortalRunPlanner.Team team) { this.team = team; }
+
+    /** Whether it has a portal of its own under way: a site chosen for one, not a teammate's (E-40a). */
+    boolean portalBegun() { return portalSite != null && !portalAdopted; }
+
+    /** Whether its portal is a teammate's, taken as its own once lit. */
+    boolean portalAdopted() { return portalAdopted; }
+
+    /** The site of its own portal, for a teammate to take up once it is lit. */
+    Optional<PortalSite> portalSite() { return portalAdopted ? Optional.empty() : Optional.ofNullable(portalSite); }
+
+    /**
+     * A teammate's lit portal taken as its own (E-40a): the run's one portal, so its goal is done with it and its way
+     * to the Nether goes through it. Not over a portal of its own already begun.
+     */
+    void adoptPortal(PortalSite site) {
+        if (portalSite != null && !portalAdopted) return;
+        portalSite = site;
+        portalAdopted = true;
+    }
 
     /** A portal block of the player's own lit portal, when it stands in the Overworld and is lit. */
     Optional<BlockPos> litPortal(ServerPlayerEntity player) {
@@ -831,13 +856,13 @@ final class PortalRunCampaign {
         PortalRunSnapshot snapshot = snapshot(body);
         lastSnapshot = snapshot;
         WorldFacts facts = facts(player);
-        stage = PortalRunPlanner.stage(snapshot, facts);
+        stage = PortalRunPlanner.stage(snapshot, facts, team);
         if (loggedStage != stage) {
             if (loggedStage != null) event("stage " + stageLabel(loggedStage) + " -> " + stageLabel(stage));
             loggedStage = stage;
         }
         noteHappenings(player);
-        var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences()));
+        var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences(), team));
         // On the way to the End the portal's plan has nothing left to say, in the Nether least of all: none of the
         // upkeep below that follows its steps (workstations carried along, waiting for daylight to cut logs) applies.
         boolean legActive = endGoal() && stronghold.active(player);
@@ -1402,6 +1427,8 @@ final class PortalRunCampaign {
                     : underground(player) ? wayUp(body, "Climb out to look for animals") : explore(body, "animals");
             // Advised wood first: a tree in sight, and nothing more; looking for one is the route's own step.
             case CUT_TREES -> gather(body, WorldKnowledge.Kind.LOG, 32, "logs");
+            // Stocked for the run while a teammate builds the portal: it waits, looking about (E-40a, E-33a).
+            case AWAIT_TEAM_PORTAL -> Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for the team's portal"));
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
                     .or(() -> underground(player) || stranded() ? wayUp(body, "Climb toward the surface for logs")
                             // Not when already there: that walk ends where it starts, over and over.

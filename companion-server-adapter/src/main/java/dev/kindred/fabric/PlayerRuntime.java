@@ -3582,6 +3582,7 @@ final class PlayerRuntime {
         entry.campaign.huntersKit(gearingHunter(body));
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
+        divideTheRun(entry, body);
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
         // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
@@ -3596,8 +3597,10 @@ final class PlayerRuntime {
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
             var pos = body.entity().getBlockPos();
-            say(entry, "I built and lit a Nether portal!", "near " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
-            entry.goalProgress = "Done: the Nether portal is built and lit";
+            // Its teammate built the run's portal: it says so, and claims none of it (E-40a).
+            say(entry, entry.campaign.portalAdopted() ? "The team's Nether portal is lit." : "I built and lit a Nether portal!",
+                    "near " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
+            entry.goalProgress = entry.campaign.portalAdopted() ? "Done: the team's Nether portal is lit" : "Done: the Nether portal is built and lit";
         }
         var endPortal = entry.campaign.stronghold().endPortal();
         if ((entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON)
@@ -6498,6 +6501,71 @@ final class PlayerRuntime {
                 && entry.lease != null && entry.arbiter.isCurrent(entry.lease));
     }
 
+    /**
+     * The run divided between the players on it (E-40a): the native players with a goal in its world within
+     * {@link #TEAM_RANGE}, none in a match. Before the portal is lit, the one with the best pickaxe (or with a portal
+     * already under way) builds the team's one portal and the rest get iron, food and wood for the run and wait for it;
+     * once a teammate's portal is lit, each takes it as its own. Each says its part as it takes it up, once. Only the
+     * parts before the portal steer play yet; the later ones (the Nether, the End's kit, the stronghold) are neither
+     * acted on nor said, so nothing is promised that is not done. A player alone is left its own route.
+     */
+    private void divideTheRun(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var team = new ArrayList<Entry>();
+        team.add(entry);
+        for (Entry other : entries.values()) {
+            if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
+            var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
+            if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
+                    || other.snapshot().stopLatched() || matches.running(mate.getUuid()).isPresent()) continue;
+            team.add(other);
+        }
+        if (team.size() < 2 || matches.running(player.getUuid()).isPresent()) {
+            entry.campaign.team(dev.kindred.core.survival.PortalRunPlanner.Team.ALONE);
+            entry.runPart = null;
+            return;
+        }
+        // A teammate's lit portal is the run's one portal.
+        boolean lit = false;
+        for (Entry member : team) {
+            var mate = member.nativeBody.entity();
+            if (member.campaign.portalBegun() && member.campaign.litPortal(mate).isPresent()) {
+                lit = true;
+                if (member != entry) member.campaign.portalSite().ifPresent(entry.campaign::adoptPortal);
+            }
+        }
+        var players = new ArrayList<dev.kindred.core.team.RunDivision.Player>();
+        for (Entry member : team) {
+            var mate = member.nativeBody.entity();
+            var kit = member(member.data.id(), member.data.displayName(), mate);
+            players.add(new dev.kindred.core.team.RunDivision.Player(member.data.id(), member.data.displayName(), mate.getArmor(),
+                    kit.kit().get(ShareOut.Slot.PICKAXE), mate.getInventory().count(net.minecraft.item.Items.GOLD_INGOT),
+                    mate.getInventory().count(net.minecraft.item.Items.ENDER_EYE), member.campaign.portalBegun()));
+        }
+        var parts = dev.kindred.core.team.RunDivision.divide(players, new dev.kindred.core.team.RunDivision.Run(lit, 0, 0, 0, false, false));
+        var part = parts.get(entry.data.id());
+        var role = part.role();
+        boolean steered = role == dev.kindred.core.team.RunDivision.Role.PORTAL || role == dev.kindred.core.team.RunDivision.Role.PROVISIONS;
+        entry.campaign.team(new dev.kindred.core.survival.PortalRunPlanner.Team(role == dev.kindred.core.team.RunDivision.Role.PROVISIONS));
+        if (steered && (entry.runPart == null || entry.runPart.role() != role)) {
+            say(entry, part.says(), "");
+            KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
+        }
+        entry.runPart = steered ? part : null;
+    }
+
+    /** What a player last said aloud, for fixtures. */
+    String lastSaid(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.lastSaid;
+    }
+
+    /** Its part of the team's run, as it last took it up, for fixtures (E-40a). */
+    String runPart(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.runPart == null ? null : entry.runPart.role() + ": " + entry.runPart.says();
+    }
+
     /** The materials a find of which is shared out with the team (E-40a), as players share their ore. */
     private static final ShareOut.Material[] SHARED_FINDS = {ShareOut.Material.DIAMOND, ShareOut.Material.IRON, ShareOut.Material.GOLD};
     /** How far off a teammate may be to share a find with, and how long a hand-over is held for before it is let go. */
@@ -6774,6 +6842,7 @@ final class PlayerRuntime {
      * match it is in. Not the whole server: where its portal or its base is is its own to tell. The log keeps it all.
      */
     private void say(Entry entry, String text, String where) {
+        entry.lastSaid = text;
         String line = "<" + entry.data.displayName() + "> " + text;
         String placed = where.isEmpty() ? line : line + " (" + where + ")";
         KindredMod.LOGGER.info("{}", placed);
@@ -8133,6 +8202,10 @@ final class PlayerRuntime {
         private long handOversWaitUntil;
         private int handOverFailures;
         private String teamLine;
+        /** What it last said aloud, for fixtures. */
+        private String lastSaid;
+        /** Its part of the team's run as it last took it up, said once (E-40a). */
+        private dev.kindred.core.team.RunDivision.Part runPart;
         /** The time spoken to that it has stopped to look for, and the pause's task (E-33a). */
         private long attendedAt = Long.MIN_VALUE / 2;
         private UUID attentionTaskId;

@@ -26,6 +26,21 @@ class RunDivisionTest {
     }
 
     @Test
+    void theDiggerBuildsTheTeamsOnePortalTheRestProvisionAndABegunPortalStaysWithItsBuilder() {
+        var parts = RunDivision.divide(List.of(wren, mason, rue), new Run(false, 0, 0, 0, false, false));
+        assertEquals(RunDivision.Role.PORTAL, parts.get(MASON).role(), "the best pickaxe: " + parts);
+        assertEquals(RunDivision.Role.PROVISIONS, parts.get(WREN).role());
+        assertEquals(RunDivision.Role.PROVISIONS, parts.get(RUE).role());
+        assertEquals(1, parts.values().stream().filter(p -> p.role() == RunDivision.Role.PORTAL).count(), "one portal for the team");
+        // Wren has begun a portal with its iron pickaxe; Mason's diamond one does not take it over.
+        var building = new Player(WREN, "Wren", 15, Material.IRON, 0, 0, true);
+        var kept = RunDivision.divide(List.of(building, mason, rue), new Run(false, 0, 0, 0, false, false));
+        assertEquals(RunDivision.Role.PORTAL, kept.get(WREN).role());
+        assertEquals("I'm building the portal.", kept.get(WREN).says());
+        assertEquals(RunDivision.Role.PROVISIONS, kept.get(MASON).role());
+    }
+
+    @Test
     void withThePortalLitTheBestProtectedGoesForRodsAndAThirdWithGoldForPearls() {
         var parts = RunDivision.divide(List.of(wren, mason, rue), new Run(true, 0, 0, 0, false, false));
         assertEquals(Work.NETHER, parts.get(WREN).work(), "the best protected: " + parts);

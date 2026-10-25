@@ -570,6 +570,37 @@ class PortalRunPlannerTest {
 
     private static final WorldFacts TREES = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
 
+    @Test
+    void withATeammateBuildingThePortalAGathererGetsItsIronThenFoodAndWoodForTheRunAndWaitsForTheTeamsPortal() {
+        var team = new PortalRunPlanner.Team(true);
+        // Its own iron not in yet: the route as ever, no waiting on anyone.
+        Sim early = new Sim();
+        early.pick = 2;
+        early.tableNearby = true;
+        var earlySteps = PortalRunPlanner.plan(early.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE, team);
+        assertTrue(earlySteps.stream().noneMatch(st -> st.action() == Action.AWAIT_TEAM_PORTAL), "its own iron first: " + earlySteps);
+        // Past its iron (a diamond pickaxe in hand): food and wood for the run, then the team's portal; no portal of its own.
+        Sim sim = new Sim();
+        sim.pick = 4;
+        sim.chest = 3;
+        var steps = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE, team);
+        assertEquals(List.of(Action.HUNT, Action.SEEK_FOOD, Action.CUT_TREES, Action.AWAIT_TEAM_PORTAL), steps.stream().map(PortalRunPlanner.Step::action).toList());
+        assertTrue(steps.stream().allMatch(st -> st.stage() == PortalRunPlanner.Stage.PORTAL), steps.toString());
+        assertEquals(PortalRunPlanner.Stage.PORTAL, PortalRunPlanner.stage(sim.snapshot(), WorldFacts.ordinary(), team));
+        sim.food = PortalRunPlanner.FOOD_STOCK + PortalRunPlanner.RUN_FOOD;
+        sim.logs = PortalRunPlanner.RUN_WOOD / 4;
+        assertEquals(List.of(Action.AWAIT_TEAM_PORTAL), PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE, team)
+                .stream().map(PortalRunPlanner.Step::action).toList(), "stocked: it waits");
+        // Alone, the same player makes its own portal.
+        var alone = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE);
+        assertTrue(alone.stream().noneMatch(st -> st.action() == Action.AWAIT_TEAM_PORTAL), alone.toString());
+        assertNotEquals(PortalRunPlanner.Stage.PORTAL, PortalRunPlanner.stage(sim.snapshot(), WorldFacts.ordinary()));
+        // Once the team's portal is lit, it is done like any other.
+        sim.lit = true;
+        assertEquals(Action.DONE, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary(), PlanPreferences.NONE, team).getFirst().action());
+        assertEquals(PortalRunPlanner.Stage.DONE, PortalRunPlanner.stage(sim.snapshot(), WorldFacts.ordinary(), team));
+    }
+
     private static PlanPreferences focus(PlanPreferences.Focus focus) { return new PlanPreferences(java.util.Set.of(), focus); }
 
     private static PlanPreferences habit(PlanPreferences.Habit habit) { return new PlanPreferences(java.util.Set.of(habit), PlanPreferences.Focus.NONE); }

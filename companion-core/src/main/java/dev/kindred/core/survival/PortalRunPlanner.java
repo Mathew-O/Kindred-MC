@@ -89,8 +89,21 @@ public final class PortalRunPlanner {
         /** Go and look for animals to hunt (out to the surface by day), when food comes first and none is in sight. */
         SEEK_FOOD,
         /** Cut a tree in sight, when wood comes first; never a search for one, which is the route's own business. */
-        CUT_TREES
+        CUT_TREES,
+        /** Wait for the portal a teammate builds for the team (E-40a). */
+        AWAIT_TEAM_PORTAL
     }
+
+    /**
+     * The player's place in a team's run (E-40a): whether a teammate is building the team's one portal. Alone, or the
+     * builder itself, it is {@link #ALONE} and the route is its own.
+     */
+    public record Team(boolean portalByTeammate) {
+        public static final Team ALONE = new Team(false);
+    }
+
+    /** Food and wood (planks' worth) a player stocks the run with while a teammate builds the portal. */
+    public static final int RUN_FOOD = 6, RUN_WOOD = 32;
 
     /**
      * @param item  recipe result for CRAFT ("planks" means any planks the owned logs make), item to smelt for
@@ -126,12 +139,34 @@ public final class PortalRunPlanner {
      * upkeep; then the single next material step of the route. Habits change how much is packed, never the route.
      */
     public static List<Step> plan(PortalRunSnapshot s, WorldFacts facts, PlanPreferences prefs) {
+        return plan(s, facts, prefs, Team.ALONE);
+    }
+
+    /**
+     * As {@link #plan(PortalRunSnapshot, WorldFacts, PlanPreferences)}, in a team (E-40a): while a teammate builds the
+     * team's one portal, a player gets its own iron as ever, then stocks the run with food and wood for the Nether and
+     * the End instead of building a portal of its own, and waits for the team's.
+     */
+    public static List<Step> plan(PortalRunSnapshot s, WorldFacts facts, PlanPreferences prefs, Team team) {
         Objects.requireNonNull(s);
         Objects.requireNonNull(facts);
         Objects.requireNonNull(prefs);
+        Objects.requireNonNull(team);
         var steps = new ArrayList<Step>();
         if (s.portalLit()) {
             steps.add(Step.of(Action.DONE, Stage.DONE, "The Nether portal is built and lit"));
+            return steps;
+        }
+        if (team.portalByTeammate() && stage(s, facts).ordinal() > Stage.IRON.ordinal()) {
+            int food = FOOD_STOCK + RUN_FOOD - s.edibleFood();
+            if (food > 0) {
+                steps.add(new Step(Action.HUNT, "", food, Stage.PORTAL, "Food for the run, while a teammate builds the portal"));
+                steps.add(new Step(Action.SEEK_FOOD, "", food, Stage.PORTAL, "Food for the run: look for animals"));
+            }
+            if (s.woodUnits() < RUN_WOOD) {
+                steps.add(new Step(Action.CUT_TREES, "", (RUN_WOOD - s.woodUnits() + 3) / 4, Stage.PORTAL, "Wood for the run"));
+            }
+            steps.add(Step.of(Action.AWAIT_TEAM_PORTAL, Stage.PORTAL, "Wait for the team's portal"));
             return steps;
         }
         // There are no animals deep underground: take some food while some are in sight, more before the work below,
@@ -176,6 +211,12 @@ public final class PortalRunPlanner {
 
     public static Stage stage(PortalRunSnapshot s) {
         return stage(s, WorldFacts.ordinary());
+    }
+
+    /** As {@link #stage(PortalRunSnapshot, WorldFacts)}; past its own iron, a player whose teammate builds the portal is at it too. */
+    public static Stage stage(PortalRunSnapshot s, WorldFacts facts, Team team) {
+        Stage own = stage(s, facts);
+        return team.portalByTeammate() && own.ordinal() > Stage.IRON.ordinal() && own != Stage.DONE ? Stage.PORTAL : own;
     }
 
     public static Stage stage(PortalRunSnapshot s, WorldFacts facts) {
