@@ -130,4 +130,22 @@ class TradesTest {
                 Trades.keepWorth(withMending, NOTHING) + " against " + Trades.keepWorth(without, NOTHING));
         assertEquals(0, Trades.keepWorth(List.of(), NOTHING));
     }
+
+    @Test
+    void aLibrarianWithABookWorthKeepingIsKeptOtherwiseRerolledUntilItGivesUp() {
+        var mending = List.of(income("paper", 24, 16), book(12, new Enchant("mending", 1)));
+        var bane = List.of(income("paper", 24, 16), book(40, new Enchant("bane_of_arthropods", 2)));
+        assertTrue(Trades.worthKeeping(mending, NOTHING));
+        assertFalse(Trades.worthKeeping(bane, NOTHING));
+        assertEquals(Trades.Reroll.KEEP, Trades.reroll(mending, NOTHING, 0));
+        assertEquals(Trades.Reroll.REROLL, Trades.reroll(bane, NOTHING, 0));
+        assertEquals(Trades.Reroll.REROLL, Trades.reroll(bane, NOTHING, Trades.MAX_REROLLS - 1));
+        assertEquals(Trades.Reroll.GIVE_UP, Trades.reroll(bane, NOTHING, Trades.MAX_REROLLS));
+        // A farmer's crops alone, income that lasts, are not a cell's worth; an expert cleric's pearls for a run short of them are.
+        var farmer = Trades.expected(Profession.FARMER, 1).stream().map(Trades.Typical::offer).toList();
+        assertFalse(Trades.worthKeeping(farmer, NOTHING));
+        var cleric = Trades.expected(Profession.CLERIC, 4).stream().map(Trades.Typical::offer).toList();
+        var shortOfPearls = new Worth.Holding(Map.of(), Map.of(), Map.of("minecraft:ender_pearl", 12));
+        assertTrue(Trades.keepWorth(cleric, shortOfPearls) > Trades.keepWorth(cleric, NOTHING));
+    }
 }

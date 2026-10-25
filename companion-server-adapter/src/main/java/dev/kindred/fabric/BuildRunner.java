@@ -82,6 +82,9 @@ final class BuildRunner {
     private int airWaits;
     private int failures;
     private String lastFailure = "";
+    /** A walk round to the ground beside what it cannot reach from where it is, and how many such walks in a row found no way. */
+    private static final String OVER = "; over to it from ";
+    private int overFailed;
     /**
      * After a step fails, a second's pause before the next, so that eight failures in a row take eight seconds at
      * least: tried again every tick, eight route searches failed within a second of its coming down off its scaffold,
@@ -195,7 +198,16 @@ final class BuildRunner {
      * times, and a cabin in the woods stopped short of its roof (a seed fixture, in a suite run).
      */
     private Pos groundBeside(Pos at, ServerWorld world) {
-        Pos want = groundBeside(at);
+        return groundBeside(at, world, 0);
+    }
+
+    /**
+     * As {@link #groundBeside(Pos, ServerWorld)}, from the {@code side}-th nearest side of the build (0 the nearest, of
+     * four): a walk round to the nearest side that found no way is tried next at the one after (#82: a cabin's roof
+     * stairs, eight walks in a row to the same spot "no walkable route", in suite runs 40 and 41).
+     */
+    private Pos groundBeside(Pos at, ServerWorld world, int side) {
+        Pos want = groundBeside(at, side);
         for (int r = 0; r <= 3; r++) {
             Pos best = null;
             for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
@@ -223,14 +235,23 @@ final class BuildRunner {
 
     /** The ground two blocks outside the build nearest {@code at}, clear of scaffolds against its walls, at the floor's height. */
     private Pos groundBeside(Pos at) {
+        return groundBeside(at, 0);
+    }
+
+    /** The ground two blocks outside the {@code side}-th nearest side of the build to {@code at} (0 the nearest), at the floor's height. */
+    private Pos groundBeside(Pos at, int side) {
         onSite(at);
         int x = Math.max(box[0], Math.min(box[3], at.x())), z = Math.max(box[2], Math.min(box[5], at.z()));
-        int west = x - box[0], east = box[3] - x, north = z - box[2], south = box[5] - z;
-        int least = Math.min(Math.min(west, east), Math.min(north, south));
-        if (least == west) x = box[0] - 2;
-        else if (least == east) x = box[3] + 2;
-        else if (least == north) z = box[2] - 2;
-        else z = box[5] + 2;
+        // West, east, north and south, by how far each side is from it: the nearest first, ties in that order.
+        int[] far = {x - box[0], box[3] - x, z - box[2], box[5] - z};
+        Integer[] sides = {0, 1, 2, 3};
+        java.util.Arrays.sort(sides, java.util.Comparator.comparingInt(i -> far[i]));
+        switch (sides[Math.floorMod(side, 4)]) {
+            case 0 -> x = box[0] - 2;
+            case 1 -> x = box[3] + 2;
+            case 2 -> z = box[2] - 2;
+            default -> z = box[5] + 2;
+        }
         // At the floor's height, not its lowest block's: a tower's foundation is a course under the ground, and its walk
         // over to a block aimed into the ground, "no walkable route", eight times, and stopped (the hall's south-east
         // tower, M-06a).
@@ -454,7 +475,7 @@ final class BuildRunner {
             // and the nine by seven cabin in full run 19).
             case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(wait("Landing first"))
                     : step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
-                    ? Optional.of(outside(groundBeside(step.target(), world), step.reason() + "; over to it from " + feet))
+                    ? Optional.of(outside(groundBeside(step.target(), world, overFailed), step.reason() + OVER + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet, world), step.reason() + "; down off the build first"))
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
@@ -688,6 +709,7 @@ final class BuildRunner {
             stanceWalks = to.equals(lastStance) ? stanceWalks + 1 : 1;
             lastStance = to;
         }
+        if ("native_goto".equals(task.skill()) && task.label().contains(OVER)) overFailed = completed ? 0 : overFailed + 1;
         if (completed) {
             failures = 0;
         } else if (!"native_wait".equals(task.skill())) {

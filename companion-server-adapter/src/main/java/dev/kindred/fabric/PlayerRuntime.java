@@ -2930,6 +2930,10 @@ final class PlayerRuntime {
         var storing = storeCandidates(entry, body);
         if (storing != null) return storing;
 
+        // A lectern of its own by an unemployed villager, its offers rerolled until it is worth keeping (E-45c).
+        var rerolling = rerollCandidates(entry, body);
+        if (rerolling != null) return rerolling;
+
         // A villager by its way: its offers looked at, and what is worth trading traded (E-45).
         var trading = tradeCandidates(entry, body);
         if (trading != null) return trading;
@@ -5148,6 +5152,13 @@ final class PlayerRuntime {
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
                     }
+                    if (res != 1 && entry.reroll != null && entry.reroll.taskIds.contains(candidateToDispatch.candidate().id())) {
+                        // A reroll's step refused, counted as a failure, so that it is not asked for tick after tick (E-45c).
+                        KindredMod.LOGGER.info("{} reroll {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
+                        entry.reroll.failed++;
+                        entry.routineRefreshPending = true;
+                        entry.cachedRoutineCandidates = List.of();
+                    }
                     if (res != 1) {
                         if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
                             KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(),
@@ -5705,6 +5716,11 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
         if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
+        // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
+        if (entry.reroll != null && state != SkillRunner.State.RUNNING) {
+            entry.reroll.failed = state == SkillRunner.State.BLOCKED ? entry.reroll.failed + 1 : 0;
+            entry.routineRefreshPending = true;
+        }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.tradeTaskId) && entry.tradeVillager != null) {
             entry.villagerVisitAt.put(entry.tradeVillager, (long) server.getTicks() + 1200);
             entry.routineRefreshPending = true;
@@ -7305,6 +7321,8 @@ final class PlayerRuntime {
             var profession = profession(villager);
             if (profession == dev.kindred.core.guide.Trades.Profession.NONE || profession == dev.kindred.core.guide.Trades.Profession.NITWIT) continue;
             if (entry.villagerVisitAt.getOrDefault(villager.getUuid(), 0L) > now) continue;
+            // One it is rerolling is only looked at, never traded with: a trade would lock it to its offers.
+            if (entry.reroll != null && entry.reroll.villager.equals(villager.getUuid())) continue;
             double distance = player.squaredDistanceTo(villager);
             var known = entry.villagers.get(villager.getUuid());
             boolean unseen = known == null;
@@ -7360,6 +7378,10 @@ final class PlayerRuntime {
             entry.villagerVisitAt.put(id, now + 2400);
             return;
         }
+        if (entry.reroll != null && entry.reroll.villager.equals(id) && player != null) {
+            rerollLooked(entry, player, trade.seen());
+            return;
+        }
         var profession = villager == null ? dev.kindred.core.guide.Trades.Profession.NONE : profession(villager);
         entry.villagers.put(id, new Villager(profession, villager == null ? 1 : villager.getVillagerData().getLevel(), trade.seen(), now));
         if (player == null) return;
@@ -7374,6 +7396,272 @@ final class PlayerRuntime {
                         + (best.get().offer().open() ? "once I have what it takes." : "once it has restocked."), "");
             }
         }
+    }
+
+    /** A lectern of its own put down by an unemployed villager, and its offers rerolled by breaking and replacing it (E-45c). */
+    private static final class Reroll {
+        enum Phase { PLACE, TAKE_JOB, LOOK, BREAK, LOSE_JOB }
+
+        final UUID villager;
+        BlockPos lectern;
+        /** Where it stood to begin with, clear of the lectern, to step back to. */
+        BlockPos stand;
+        Phase phase = Phase.PLACE;
+        int tries, failed, nudges;
+        long since;
+        boolean givingUp;
+        /** Each look's offers, in words, for fixtures. */
+        final List<String> looks = new ArrayList<>();
+        /** The ids of the steps it has given, to know its own refusals. */
+        final Set<UUID> taskIds = new HashSet<>();
+
+        Reroll(UUID villager, BlockPos lectern) {
+            this.villager = villager;
+            this.lectern = lectern.toImmutable();
+        }
+    }
+
+    /** How long a villager is given to let the job go before it gives up on it; and to take the lectern up before a nudge. */
+    static final long JOB_WAIT = 1200, JOB_NUDGE = 300;
+
+    /**
+     * A librarian of its own (E-45c), as players make one: by a villager with no job (not a nitwit), within eight
+     * blocks and in sight, it puts down a lectern it holds; once the villager has taken it up, it looks at its offers,
+     * never trading (a trade would lock them); not worth keeping (E-45a's whom to keep), it breaks the lectern, takes
+     * it back, and puts it down again once the villager has let the job go, which rerolls its offers, as vanilla does
+     * for a novice that never traded. It stops when the librarian is worth keeping, or gives up after its tries, the
+     * lectern taken back. Under the server's AI world edits only, never in a match.
+     */
+    private List<NativeTaskCandidate> rerollCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (!worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var world = player.getServerWorld();
+        var r = entry.reroll;
+        if (r == null) {
+            if (now < entry.rerollAt || slotOf(player, Items.LECTERN) < 0) return null;
+            net.minecraft.entity.passive.VillagerEntity jobless = null;
+            for (var villager : world.getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class, player.getBoundingBox().expand(8),
+                    v -> v.isAlive() && !v.isBaby() && !v.isSleeping() && profession(v) == dev.kindred.core.guide.Trades.Profession.NONE
+                            && !entry.rerollGivenUp.contains(v.getUuid()) && player.canSee(v))) {
+                if (jobless == null || player.squaredDistanceTo(villager) < player.squaredDistanceTo(jobless)) jobless = villager;
+            }
+            BlockPos spot = jobless == null ? null : lecternSpot(player, entry.setup, jobless.getBlockPos());
+            if (spot == null) {
+                entry.rerollAt = now + 600;
+                return null;
+            }
+            r = entry.reroll = new Reroll(jobless.getUuid(), spot);
+            r.stand = player.getBlockPos().toImmutable();
+            KindredMod.LOGGER.info("{} reroll: a lectern for the villager {} at {}", entry.data.displayName(), r.villager, spot.toShortString());
+        }
+        var villager = world.getEntity(r.villager) instanceof net.minecraft.entity.passive.VillagerEntity v && v.isAlive() ? v : null;
+        boolean standing = world.getBlockState(r.lectern).isOf(net.minecraft.block.Blocks.LECTERN);
+        if (villager == null && !standing) {
+            entry.reroll = null;
+            return null;
+        }
+        if (villager == null || r.failed >= 3) {
+            // The villager gone, or the same step refused three times over: the lectern taken back, and it is let be.
+            r.givingUp = true;
+            r.phase = Reroll.Phase.BREAK;
+            if (r.failed >= 6) {
+                entry.rerollGivenUp.add(r.villager);
+                entry.reroll = null;
+                return null;
+            }
+        }
+        var task = rerollTask(entry, "step");
+        boolean reach = player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(r.lectern)) <= 4.5 * 4.5;
+        var at = Map.of("x", String.valueOf(r.lectern.getX()), "y", String.valueOf(r.lectern.getY()), "z", String.valueOf(r.lectern.getZ()));
+        switch (r.phase) {
+            case PLACE -> {
+                if (standing) {
+                    r.phase = Reroll.Phase.TAKE_JOB;
+                    r.since = now;
+                    return List.of(waitTask(task, "For the villager to take up the lectern"));
+                }
+                int slot = slotOf(player, Items.LECTERN);
+                if (slot < 0) {
+                    // Just broken: the lectern lies where it fell a moment before it is picked up.
+                    if (r.tries > 0 && now - r.since < 100) return List.of(waitTask(task, "For the lectern to be picked up"));
+                    entry.reroll = null;
+                    return null;
+                }
+                // Something in the way of where it goes (the villager, let go of its job, wandering onto it): another side.
+                // Standing where it goes itself, as picking the lectern up took it there: back to where it stood.
+                if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern))) {
+                    return List.of(new NativeTaskCandidate(rerollTask(entry, "aside"), "native_goto", Map.of("x", String.valueOf(r.stand.getX()),
+                            "y", String.valueOf(r.stand.getY()), "z", String.valueOf(r.stand.getZ()), "range", "0.5", "partial", "true")));
+                }
+                if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(r.lectern)).isEmpty()) {
+                    BlockPos other = villager == null ? null : lecternSpot(player, entry.setup, villager.getBlockPos());
+                    if (other == null || !world.getOtherEntities(null, new net.minecraft.util.math.Box(other)).isEmpty()) {
+                        return List.of(waitTask(task, "For the spot to clear"));
+                    }
+                    r.lectern = other;
+                    return rerollCandidates(entry, body);
+                }
+                if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                if (!reach) return List.of(goNear(task, r.lectern));
+                var args = new HashMap<>(at);
+                args.put("slot", String.valueOf(slot));
+                args.put("side", "up");
+                return List.of(new NativeTaskCandidate(task, "native_place", Map.copyOf(args)));
+            }
+            case TAKE_JOB -> {
+                if (villager != null && profession(villager) == dev.kindred.core.guide.Trades.Profession.LIBRARIAN) {
+                    r.phase = Reroll.Phase.LOOK;
+                } else if (!standing) {
+                    r.phase = Reroll.Phase.PLACE;
+                } else if (now - r.since > JOB_NUDGE && r.nudges < 2) {
+                    // Not taken up: vanilla's villager may have given up on reaching it, for a while. Taken up and put
+                    // down again, which a player does too.
+                    r.nudges++;
+                    r.phase = Reroll.Phase.BREAK;
+                } else if (now - r.since > JOB_NUDGE) {
+                    say(entry, "The villager won't take up my lectern; I've taken it back.", "");
+                    r.givingUp = true;
+                    r.phase = Reroll.Phase.BREAK;
+                } else {
+                    return List.of(waitTask(task, "For the villager to take up the lectern"));
+                }
+                return rerollCandidates(entry, body);
+            }
+            case LOOK -> {
+                if (villager == null) return null;
+                if (!player.canInteractWithEntity(villager, 0)) return List.of(goNear(task, villager.getBlockPos()));
+                return List.of(new NativeTaskCandidate(task, "native_trade", Map.of("target", villager.getUuid().toString(), "look", "true")));
+            }
+            case BREAK -> {
+                if (!standing) {
+                    if (r.givingUp) {
+                        entry.rerollGivenUp.add(r.villager);
+                        entry.reroll = null;
+                        entry.rerollAt = now + 1200;
+                        return null;
+                    }
+                    r.phase = Reroll.Phase.LOSE_JOB;
+                    r.since = now;
+                    return List.of(waitTask(task, "For the villager to let the job go"));
+                }
+                if (!reach) return List.of(goNear(task, r.lectern));
+                var args = new HashMap<>(at);
+                args.put("collect", "true");
+                return List.of(new NativeTaskCandidate(task, "native_break", Map.copyOf(args)));
+            }
+            case LOSE_JOB -> {
+                if (villager != null && profession(villager) == dev.kindred.core.guide.Trades.Profession.NONE) {
+                    r.tries++;
+                    r.phase = Reroll.Phase.PLACE;
+                    r.since = now;
+                    return rerollCandidates(entry, body);
+                }
+                if (now - r.since > JOB_WAIT) {
+                    // Locked to its offers after all: it keeps the job, and this villager is let be.
+                    entry.rerollGivenUp.add(r.villager);
+                    entry.reroll = null;
+                    return null;
+                }
+                return List.of(waitTask(task, "For the villager to let the job go"));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The reroll's step as a task, its id its own for each phase, try and kind of step, so that a wait after a refused
+     * placement is not the placement's id held back; the reroll keeps the last one given, to know its own refusals.
+     */
+    private static dev.kindred.core.TaskPreferences.Candidate rerollTask(Entry entry, String kind) {
+        var r = entry.reroll;
+        UUID id = UUID.nameUUIDFromBytes(("reroll:" + entry.data.id() + ":" + r.villager + ":" + r.phase + ":" + r.tries + ":" + kind)
+                .getBytes(StandardCharsets.UTF_8));
+        r.taskIds.add(id);
+        return new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+    }
+
+    private static NativeTaskCandidate waitTask(dev.kindred.core.TaskPreferences.Candidate task, String why) {
+        return new NativeTaskCandidate(new dev.kindred.core.TaskPreferences.Candidate(UUID.nameUUIDFromBytes((task.id() + ":wait")
+                .getBytes(StandardCharsets.UTF_8)), task.priority(), task.needScore(), task.affinities(), task.eligibility()),
+                "native_wait", Map.of("seconds", "1"));
+    }
+
+    private static NativeTaskCandidate goNear(dev.kindred.core.TaskPreferences.Candidate task, BlockPos at) {
+        return new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                "z", String.valueOf(at.getZ()), "range", "2.5", "partial", "true"));
+    }
+
+    private static int slotOf(ServerPlayerEntity player, Item item) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) if (inventory.getStack(slot).isOf(item)) return slot;
+        return -1;
+    }
+
+    /** A spot beside a villager to put a lectern down: open, on solid ground, within reach and allowed by the edit policy. */
+    private BlockPos lecternSpot(ServerPlayerEntity player, WorkSetup setup, BlockPos villager) {
+        var world = player.getServerWorld();
+        for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
+            BlockPos pos = villager.offset(side);
+            if (!world.isChunkLoaded(pos) || !world.getBlockState(pos).isReplaceable() || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 4.5 * 4.5) continue;
+            if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(pos)).isEmpty()) continue;
+            if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, "minecraft:lectern", edits).allowed()) return pos.toImmutable();
+        }
+        return null;
+    }
+
+    /** A look at the librarian it is rerolling: kept when worth it, else the lectern broken for another roll, or given up. */
+    private void rerollLooked(Entry entry, ServerPlayerEntity player, List<dev.kindred.core.guide.Trades.Offer> seen) {
+        var r = entry.reroll;
+        var holding = Valuables.holding(player, lootWanted(entry));
+        var best = dev.kindred.core.guide.Trades.best(seen, holding);
+        r.looks.add(best.map(d -> dev.kindred.core.guide.Trades.sells(d.offer())).orElse("nothing worth it")
+                + " / " + seen.stream().map(o -> dev.kindred.core.guide.Trades.sells(o)).toList());
+        entry.rerollLooks.add(seen.stream().map(o -> dev.kindred.core.guide.Trades.sells(o)).toList().toString());
+        var verdict = dev.kindred.core.guide.Trades.reroll(seen, holding, r.tries);
+        r.nudges = 0;
+        KindredMod.LOGGER.info("{} reroll {}: {}; {}", entry.data.displayName(), r.tries, r.looks.getLast(), verdict);
+        switch (verdict) {
+            case KEEP -> {
+                say(entry, "This librarian sells " + best.map(d -> dev.kindred.core.guide.Trades.sells(d.offer())).orElse("what I wanted")
+                        + ": I'll keep it.", "");
+                entry.rerollKept.add(r.villager);
+                entry.reroll = null;
+            }
+            case REROLL -> r.phase = Reroll.Phase.BREAK;
+            case GIVE_UP -> {
+                say(entry, "No book worth keeping from this librarian in " + (r.tries + 1) + " tries.", "");
+                r.givingUp = true;
+                r.phase = Reroll.Phase.BREAK;
+            }
+        }
+    }
+
+    /** A player's lectern reroll as it stands, for fixtures: its tries, its phase and each look; null with none. */
+    String reroll(UUID id) {
+        Entry entry = entries.get(id);
+        var r = entry == null ? null : entry.reroll;
+        return r == null ? null : r.phase + " after " + r.tries + " tries: " + r.looks;
+    }
+
+    /** Every look at a librarian it rerolled, its offers in words, oldest first, for fixtures. */
+    List<String> rerollLooks(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? List.of() : List.copyOf(entry.rerollLooks);
+    }
+
+    /** Villagers it gave up rerolling, for fixtures. */
+    int rerollsGivenUp(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.rerollGivenUp.size();
+    }
+
+    /** Villagers it rerolled until worth keeping, for fixtures. */
+    int rerollsKept(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.rerollKept.size();
     }
 
     /** The villagers a player has looked at, for fixtures. */
@@ -9481,6 +9769,11 @@ final class PlayerRuntime {
         private final Set<UUID> villagersTold = new HashSet<>();
         private UUID tradeTaskId, tradeVillager;
         private long tradeAt;
+        /** The lectern reroll under way (E-45c), the villagers kept and given up on, and when it next looks for one. */
+        private Reroll reroll;
+        private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
+        private final List<String> rerollLooks = new ArrayList<>();
+        private long rerollAt;
         /**
          * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to
          * it; the hardest hit each player has dealt it, after armour; and when it last said so.

@@ -47,7 +47,7 @@ final class RoamingEdits {
         BlockState state = world.getBlockState(pos);
         if (state.isAir() || !state.getFluidState().isEmpty() && state.getCollisionShape(world, pos).isEmpty()) return "Nothing solid to break";
         if (state.getHardness(world, pos) < 0) return "Unbreakable block";
-        if (state.hasBlockEntity() && !emptyFurnace(player, pos, state)) return "Containers and block entities are not broken autonomously";
+        if (state.hasBlockEntity() && !emptyFurnace(player, pos, state) && !emptyLectern(state)) return "Containers and block entities are not broken autonomously";
         if (state.isOf(Blocks.SPAWNER) || state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL_FRAME)) return "Protected structure block";
         if (state.isIn(BlockTags.GUARDED_BY_PIGLINS) && piglinsAbout(player)) return "A piglin nearby would turn on the player for it";
         BlockPos support = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
@@ -172,6 +172,11 @@ final class RoamingEdits {
         if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getWorldBorder().contains(pos)) return "Outside the loaded world";
         if (!world.canPlayerModifyAt(player, pos)) return "Protected area (spawn protection)";
         return null;
+    }
+
+    /** A lectern with no book on it: breaking it loses nothing, as a player rerolling a librarian breaks it (E-45c). */
+    private static boolean emptyLectern(BlockState state) {
+        return state.isOf(Blocks.LECTERN) && !state.get(net.minecraft.block.LecternBlock.HAS_BOOK);
     }
 
     private static boolean emptyFurnace(ServerPlayerEntity player, BlockPos pos, BlockState state) {

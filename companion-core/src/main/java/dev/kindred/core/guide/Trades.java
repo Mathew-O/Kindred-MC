@@ -391,8 +391,9 @@ public final class Trades {
 
     /**
      * What a villager's offers are worth keeping it for, in minutes: the profit of each of its purchases worth making,
-     * once (a second Mending book is worth less than the first), and its renewable income. A librarian with Mending is
-     * worth a cell; a nitwit nothing.
+     * once (a second Mending book is worth less than the first), or as many times as a restock allows of what its run
+     * wants many of (ender pearls for the eyes); and its renewable income. A librarian with Mending is worth a cell; a
+     * nitwit nothing.
      */
     public static double keepWorth(List<Offer> offers, Worth.Holding holding) {
         double emerald = emeraldPrice(offers);
@@ -400,9 +401,38 @@ public final class Trades {
         for (Offer offer : offers) {
             if (offer.income()) continue;
             Deal deal = judge(offer, holding, emerald);
-            if (deal.worthIt()) total += deal.profit();
+            if (!deal.worthIt()) continue;
+            String item = offer.result().item();
+            int shortOf = wanted(holding, item) - holding.held().getOrDefault(item, 0);
+            int times = Math.max(1, Math.min(offer.maxUses(), shortOf / Math.max(1, offer.result().count())));
+            total += deal.profit() * times;
         }
         return total + renewableIncome(offers) * EMERALD_MINED * INCOME_SHARE;
+    }
+
+    // ------------------------------------------------------------------ whom to keep (E-45c)
+
+    /** A villager worth more than this many minutes to keep is worth a cell of its own in its hall. */
+    static final double KEEP_MIN = 10;
+    /** Rerolls of a lectern before it gives up on a librarian. */
+    static final int MAX_REROLLS = 24;
+
+    /** Whether a villager's offers are worth a cell of its own: more than the room and the trip to bring it home. */
+    public static boolean worthKeeping(List<Offer> offers, Worth.Holding holding) {
+        return keepWorth(offers, holding) >= KEEP_MIN;
+    }
+
+    /** What to do with a villager it may still reroll: keep it as it is, reroll its job block, or give it up. */
+    public enum Reroll { KEEP, REROLL, GIVE_UP }
+
+    /**
+     * For a villager that has never traded and is still a novice (vanilla rerolls only such a one's offers, when its
+     * job block is broken and put back): kept when its offers are worth keeping; rerolled while it has tries left; else
+     * given up.
+     */
+    public static Reroll reroll(List<Offer> offers, Worth.Holding holding, int tries) {
+        if (worthKeeping(offers, holding)) return Reroll.KEEP;
+        return tries >= MAX_REROLLS ? Reroll.GIVE_UP : Reroll.REROLL;
     }
 
     // ------------------------------------------------------------------ what each profession buys and sells
