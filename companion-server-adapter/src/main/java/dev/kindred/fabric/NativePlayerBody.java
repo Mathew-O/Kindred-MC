@@ -133,6 +133,9 @@ final class NativePlayerBody implements BodyAdapter {
     /** The beliefs of a viewer that is no native player: every creature at its kind's full health. Read only. */
     private static final dev.kindred.core.tactics.HealthBeliefs NO_BELIEFS = new dev.kindred.core.tactics.HealthBeliefs();
     private Runnable deathHook = () -> { };
+    /** Another player's hit that got through to the body: who, and what it took after armour, absorption included. */
+    interface HitHook { void hit(ServerPlayerEntity by, float taken); }
+    private HitHook hitHook = (by, taken) -> { };
     private boolean respawning;
 
     /** Optional per-tick cap wired from {@link PlayerRuntime#MAX_BLOCK_CHECKS_PER_TICK}. */
@@ -257,6 +260,9 @@ final class NativePlayerBody implements BodyAdapter {
     }
     /** Runs when the body dies, before vanilla drops its inventory, so in-flight work settles against real contents. */
     void onDeath(Runnable hook) { requireThread(); deathHook = Objects.requireNonNull(hook); }
+
+    /** Runs when another player's hit gets through to the body and it lives (E-41g): what the hit took, measured. */
+    void onHitByPlayer(HitHook hook) { requireThread(); hitHook = Objects.requireNonNull(hook); }
 
     /**
      * Vanilla respawn of this dead, still-registered body: the same identity at its spawn point with whatever
@@ -506,7 +512,8 @@ final class NativePlayerBody implements BodyAdapter {
     boolean eat(ActionLease lease) {
         requireThread();
         var stack = player.getMainHandStack();
-        if (!stack.contains(DataComponentTypes.FOOD) || !player.canConsume(false)) return false;
+        var food = stack.get(DataComponentTypes.FOOD);
+        if (food == null || !player.canConsume(food.canAlwaysEat())) return false;
         return execute(lease, Intent.EAT, null, () ->
                 player.interactionManager.interactItem(player, player.getWorld(), stack, Hand.MAIN_HAND));
     }
@@ -2243,6 +2250,19 @@ final class NativePlayerBody implements BodyAdapter {
         }
 
         @Override protected int getPermissionLevel() { return 0; }
+
+        /**
+         * A hit from another player is weighed by what it took, as the health and absorption it cost, after armour,
+         * enchantments and a shield: vanilla's own reckoning, read rather than redone. A killing blow is no hit to answer.
+         */
+        @Override public boolean damage(net.minecraft.entity.damage.DamageSource source, float amount) {
+            float before = getHealth() + getAbsorptionAmount();
+            boolean took = super.damage(source, amount);
+            if (took && this == player && !isDead() && source.getAttacker() instanceof ServerPlayerEntity by && by != this) {
+                hitHook.hit(by, Math.max(0, before - getHealth() - getAbsorptionAmount()));
+            }
+            return took;
+        }
 
         @Override public void onDeath(net.minecraft.entity.damage.DamageSource damageSource) {
             if (this == player) {

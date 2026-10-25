@@ -646,7 +646,9 @@ final class NativePlayerSkills {
             var stack = player.getInventory().getStack(slot);
             if (before == null) {
                 if (checkpoint.isPresent()) return Step.blocked("Food use cannot be replayed from a checkpoint", true);
-                if (!stack.contains(DataComponentTypes.FOOD) || stack.isOf(Items.CHORUS_FRUIT) || !player.canConsume(false)) {
+                // Vanilla's own rule: a golden apple can be eaten full, as a person eats one hurt.
+                var food = stack.get(DataComponentTypes.FOOD);
+                if (food == null || stack.isOf(Items.CHORUS_FRUIT) || !player.canConsume(food.canAlwaysEat())) {
                     return Step.blocked("Selected owned slot is not eligible food, or hunger is full", true);
                 }
                 before = stack.copy(); // Comparison only; never inserted into an inventory.

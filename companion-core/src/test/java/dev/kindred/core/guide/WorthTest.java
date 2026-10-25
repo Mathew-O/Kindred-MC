@@ -147,5 +147,7 @@ class WorthTest {
                 Worth.stow(held, new Holding(held, kit, Map.of()), true), "On a run, its diamonds stay with it, wanted now or not");
         assertEquals(Map.of(), Worth.stow(Map.of("minecraft:rotten_flesh", 3, "minecraft:cobweb", 2), Holding.of(Map.of(), Map.of()), false),
                 "Nothing not worth a slot");
+        assertEquals(Map.of(), Worth.stow(Map.of("minecraft:red_bed", 1, "minecraft:white_bed", 1), Holding.of(Map.of(), Map.of()), false),
+                "Its bed, of any colour, it sleeps in");
     }
 }

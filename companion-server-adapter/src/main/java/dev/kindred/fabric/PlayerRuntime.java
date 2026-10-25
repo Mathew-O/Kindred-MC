@@ -802,6 +802,7 @@ final class PlayerRuntime {
             entry.runner = new SkillRunner(entry.arbiter, PlayerRuntime::nanos);
             body.onTick(() -> beforeNativeTick(entry, body));
             body.onDeath(() -> onNativeDeath(entry, body));
+            body.onHitByPlayer((by, taken) -> hitByPlayer(entry, body.entity(), by, taken));
             body.connect(state, !fresh);
             entry.data = entry.arbiter.snapshot();
             if (fresh) establishNative(source, entry, body, body.saveNow());
@@ -1567,6 +1568,7 @@ final class PlayerRuntime {
                     }
                     try {
                         entry.skillId = skill;
+                        entry.skillArgs = Map.copyOf(arguments);
                         entry.nativeTask = task;
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
@@ -2259,6 +2261,9 @@ final class PlayerRuntime {
             candidates.add(new NativeTaskCandidate(candidate, "native_clutch", Map.of("slot", String.valueOf(clutchSlot))));
             return candidates;
         }
+        // 0. Hit hard by a player (E-41g): defended against, or got away from, before anything but a fall.
+        var aggression = aggressionCandidates(entry, body);
+        if (aggression != null) return new java.util.ArrayList<>(aggression);
 
         // 0. Environmental hazard detection and evasive retreat (URGENT)
         BlockPos feetPos = player.getBlockPos();
@@ -4961,6 +4966,25 @@ final class PlayerRuntime {
             busy = runnerBusy(entry);
         }
 
+        // Hit hard by a player (E-41g): what it was doing gives way to its answer at once, a fall's clutch aside. It stays
+        // owed until its answer is what runs: a task chosen just before the hit and still being admitted starts after it.
+        if (entry.aggressor == null) {
+            entry.aggressionInterrupt = false;
+        } else if (busy && (aggressionTaskId(entry, entry.aggressor.who()).equals(entry.currentTaskId)
+                || entry.aggressor.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND && "native_fight".equals(entry.skillId)
+                && entry.aggressor.who().toString().equals(entry.skillArgs.get("target")))) {
+            // Its answer is what runs: a getaway, or a fight with that attacker (a duel's own, defending as it goes).
+            entry.aggressionInterrupt = false;
+        } else if (usable && busy && entry.aggressionInterrupt && !"native_clutch".equals(entry.skillId)) {
+            entry.aggressionInterrupt = false;
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort("Hit hard by a player: " + entry.aggressor.answer());
+            body.stopInputs();
+            observeRunner(entry);
+            if (entry.runner == null) return;
+            busy = runnerBusy(entry);
+        }
+
         // Someone not on its side seen at a store of its own (E-43): a walk is given up to go and look.
         if (usable && busy && entry.sightingInterrupt && "native_goto".equals(entry.skillId)) {
             entry.sightingInterrupt = false;
@@ -5511,6 +5535,7 @@ final class PlayerRuntime {
             return reject(source, rejected.getMessage());
         }
         entry.skillId = skillId;
+        entry.skillArgs = Map.copyOf(arguments);
         entry.lastRunnerState = SkillRunner.State.RUNNING;
         entry.blocker = "Running " + skillId + " " + arguments + " (two-minute deadline).";
         persist(entry);
@@ -5656,18 +5681,34 @@ final class PlayerRuntime {
             entry.unreachedShores.put(entry.waterEscapeShore.asLong(), server.getTicks() + 1200L);
         }
         if (finishedTaskId != null && finishedTaskId.equals(entry.handOverStepId)) handOverStepEnded(entry, state);
+        // A store or an anvil it could not get to (E-43, E-16d): let be a while, never tried again tick after tick.
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.storeTaskId)) {
+            entry.storeAt = server.getTicks() + 1200;
+            entry.seenAtStores.clear();
+            entry.emptying = null;
+            entry.routineRefreshPending = true;
+        }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.kitTaskId)) {
+            entry.kitNamesAt = server.getTicks() + 1200;
+            entry.routineRefreshPending = true;
+        }
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
         if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
         // Tidied, or nothing to tidy: its chest is let be a while, not looked over again at once.
-        if (entry.nativeTask instanceof NativeChestOrganizeAction && state != SkillRunner.State.RUNNING) entry.organizeAt = server.getTicks() + 2400;
+        if (entry.nativeTask instanceof NativeChestOrganizeAction && state != SkillRunner.State.RUNNING) {
+            entry.organizeAt = server.getTicks() + 2400;
+            entry.routineRefreshPending = true;
+        }
         if (entry.nativeTask instanceof NativeTakeAction take) takeEnded(entry, take, state);
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
             entry.lifeTask = null;
-            // A bed it could not sleep in (mobs about, someone in it) is tried again in a while, not at once (F-25c9).
-            if ("native_sleep".equals(life.skill()) && state != SkillRunner.State.COMPLETED) entry.sleepRetryAt = server.getTicks() + SLEEP_RETRY;
+            // A bed it could not sleep in (mobs about, someone in it), or could not get to (in walls still going up), is
+            // tried again in a while, not at once (F-25c9).
+            if (("native_sleep".equals(life.skill()) || "native_goto".equals(life.skill()) && life.label().startsWith("To its bed"))
+                    && state != SkillRunner.State.COMPLETED) entry.sleepRetryAt = server.getTicks() + SLEEP_RETRY;
             if ("native_goto".equals(life.skill()) && life.label().startsWith("Explore")) entry.foodLooks++;
             entry.routineRefreshPending = true;
             entry.cachedRoutineCandidates = List.of();
@@ -7074,6 +7115,146 @@ final class PlayerRuntime {
         return decided == null ? null : decided.choice() + (decided.byModel() ? " (the model's call)" : " (its own rule)");
     }
 
+    // ------------------------------------------------------------------ hit hard by a player (E-41g, E-41h)
+
+    /** A player that hit it hard: who, by name, what it does about it, until when, and the odds it saw. */
+    private record Aggressor(UUID who, String name, dev.kindred.core.tactics.FightOdds.Answer answer, long until,
+                             dev.kindred.core.tactics.FightOdds.Odds odds) { }
+
+    /** How long a hard hit holds its answer, each hit after renewing it: ten seconds. */
+    static final long AGGRESSION_HOLD = 200;
+    /** Further than this off, out of its sight, and it has got away. */
+    static final double GOT_AWAY = 24;
+
+    /**
+     * A hit on one of its players from another player (E-41g): the hardest each has dealt it noted; one of more than
+     * three hearts, after armour, is lethal aggression, answered at once by its kit, the odds (E-41h) and
+     * whether it may strike that player at all (D7): defended against, or got away from. It says so to those it plays
+     * for, from what it took and saw.
+     */
+    private void hitByPlayer(Entry entry, ServerPlayerEntity hit, ServerPlayerEntity by, float taken) {
+        if (!running || !ready || entries.get(entry.data.id()) != entry) return;
+        long now = server.getTicks();
+        if (taken > 0) entry.hardestHits.merge(by.getUuid(), (double) taken, Math::max);
+        // Stopped, it decides nothing and says nothing: what the hit took is all it keeps.
+        if (entry.snapshot().stopLatched()) return;
+        var held = entry.aggressor;
+        if (held != null && held.who().equals(by.getUuid())) {
+            entry.aggressor = new Aggressor(held.who(), held.name(), held.answer(), now + AGGRESSION_HOLD, held.odds());
+        }
+        if (!dev.kindred.core.tactics.FightOdds.lethal(taken)) return;
+        var odds = fightOdds(entry, hit, by);
+        boolean mayStrike = matches.mayAttack(hit.getUuid(), by.getUuid());
+        boolean equipped = Weapons.choose(hit, NativePlayerBody.believedHealth(hit, by), false)
+                .filter(w -> w.weapon().kind() != dev.kindred.core.tactics.DamageModel.Kind.HAND).isPresent();
+        boolean cornered = openWayFrom(entry, hit, by) == null;
+        var answer = dev.kindred.core.tactics.FightOdds.answer(mayStrike, equipped, odds, cornered);
+        boolean fresh = held == null || !held.who().equals(by.getUuid()) || held.answer() != answer;
+        entry.aggressor = new Aggressor(by.getUuid(), by.getName().getString(), answer, now + AGGRESSION_HOLD, odds);
+        entry.aggressionInterrupt = true;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        String hearts = String.format(java.util.Locale.ROOT, "%.1f hearts", taken / 2.0).replace(".0 ", " ");
+        KindredMod.LOGGER.info("{} hit by {} for {} after armour: lethal aggression; {} (may strike {}, equipped {}, cornered {}; odds {} {}/{})",
+                entry.data.displayName(), by.getName().getString(), hearts, answer, mayStrike, equipped, cornered, odds.verdict(),
+                String.format(java.util.Locale.ROOT, "%.2f", odds.best()), String.format(java.util.Locale.ROOT, "%.2f", odds.worst()));
+        if (fresh || now - entry.aggressionSaidAt > 200) {
+            entry.aggressionSaidAt = now;
+            String why = !mayStrike ? " I'm getting away." : !equipped ? " I've nothing to fight with: I'm getting away."
+                    : " " + odds.words() + (answer == dev.kindred.core.tactics.FightOdds.Answer.DEFEND ? " I'm fighting back." : " I'm getting away.");
+            say(entry, by.getName().getString() + " hit me hard, " + hearts + "." + why, "");
+        }
+    }
+
+    /** The odds of its fight with {@code them} (E-41h): itself as it knows itself, them as it sees and believes them. */
+    private dev.kindred.core.tactics.FightOdds.Odds fightOdds(Entry entry, ServerPlayerEntity self, ServerPlayerEntity them) {
+        return dev.kindred.core.tactics.FightOdds.of(fightSide(entry, self, null), fightSide(entry, them, self));
+    }
+
+    /**
+     * A side of a fight as {@code viewer} can know it: itself exactly ({@code viewer} null), its best weapon, its
+     * Protection, its golden apples; another as seen (the armour it wears and the weapon in its hand, glints unread, no
+     * Sharpness known) and believed (its health), with the hardest hit it has dealt the player.
+     */
+    private dev.kindred.core.tactics.FightOdds.Side fightSide(Entry entry, ServerPlayerEntity p, ServerPlayerEntity viewer) {
+        boolean own = viewer == null;
+        double health = own ? p.getHealth() + p.getAbsorptionAmount() : NativePlayerBody.believedHealth(viewer, p);
+        int protection = 0;
+        boolean armourGlints = false;
+        for (var slot : new net.minecraft.entity.EquipmentSlot[] {net.minecraft.entity.EquipmentSlot.HEAD, net.minecraft.entity.EquipmentSlot.CHEST,
+                net.minecraft.entity.EquipmentSlot.LEGS, net.minecraft.entity.EquipmentSlot.FEET}) {
+            var worn = p.getEquippedStack(slot);
+            if (worn.isEmpty()) continue;
+            if (!own) {
+                armourGlints |= worn.hasGlint();
+                continue;
+            }
+            for (var each : worn.getEnchantments().getEnchantmentEntries()) {
+                if (each.getKey().matchesKey(net.minecraft.enchantment.Enchantments.PROTECTION)) protection += each.getIntValue();
+            }
+        }
+        var hand = p.getMainHandStack();
+        var weapon = own ? Weapons.choose(p, 20, true).map(Weapons.Held::weapon).orElse(dev.kindred.core.tactics.DamageModel.Weapon.HAND)
+                : Weapons.of(hand).map(w -> new dev.kindred.core.tactics.DamageModel.Weapon(w.kind(), w.tier(), 0))
+                        .orElse(dev.kindred.core.tactics.DamageModel.Weapon.HAND);
+        boolean shield = p.getOffHandStack().isOf(Items.SHIELD);
+        double healing = 0;
+        if (own) {
+            var inventory = p.getInventory();
+            for (int slot = 0; slot < inventory.size(); slot++) {
+                var stack = inventory.getStack(slot);
+                if (stack.isOf(Items.GOLDEN_APPLE)) healing += 6.0 * stack.getCount();
+                if (stack.isOf(Items.ENCHANTED_GOLDEN_APPLE)) healing += 20.0 * stack.getCount();
+            }
+        }
+        double hardest = own ? 0 : entry.hardestHits.getOrDefault(p.getUuid(), 0.0);
+        return new dev.kindred.core.tactics.FightOdds.Side(Math.min(60, health), Math.min(30, p.getArmor()),
+                Math.min(20, p.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ARMOR_TOUGHNESS)), Math.min(20, protection),
+                armourGlints, weapon, !own && hand.hasGlint(), own, shield, Math.min(200, healing), hardest);
+    }
+
+    /**
+     * Its answer to a hard hit while it holds (E-41g): the attacker fought where it may be and the fight is winnable;
+     * otherwise run from, at a sprint, away and never toward home, until it is far off and out of its sight. Once away,
+     * or the attacker gone, it goes back to what it was doing: it never seeks them out after.
+     */
+    private List<NativeTaskCandidate> aggressionCandidates(Entry entry, NativePlayerBody body) {
+        var held = entry.aggressor;
+        if (held == null) return null;
+        var player = body.entity();
+        long now = server.getTicks();
+        var attacker = server.getPlayerManager().getPlayer(held.who());
+        boolean gone = attacker == null || !attacker.isAlive() || attacker.isSpectator() || attacker.getServerWorld() != player.getServerWorld();
+        // Far off, and out of its sight or with no hit for a while: on open ground a player can be seen a long way.
+        boolean away = !gone && player.distanceTo(attacker) > GOT_AWAY && (!player.canSee(attacker) || now > held.until());
+        if (gone || away || now > held.until() && held.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND) {
+            entry.aggressor = null;
+            KindredMod.LOGGER.info("{} done with {}'s aggression: {}", entry.data.displayName(), held.name(), gone ? "they are gone" : away ? "got away" : "the fight is over");
+            return null;
+        }
+        UUID taskId = aggressionTaskId(entry, held.who());
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.9,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (held.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND && matches.mayAttack(player.getUuid(), attacker.getUuid())) {
+            int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, attacker), true).map(Weapons.Held::slot).orElse(-1);
+            return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", attacker.getUuid().toString(), "slot", String.valueOf(slot))));
+        }
+        BlockPos to = awayFrom(entry, player, attacker);
+        return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                "z", String.valueOf(to.getZ()), "range", "3", "partial", "true", "sprint", "true")));
+    }
+
+    private static UUID aggressionTaskId(Entry entry, UUID who) {
+        return UUID.nameUUIDFromBytes(("aggressor:" + entry.data.id() + ":" + who).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Its answer to a hard hit, while it holds, for fixtures: "GET_AWAY from Rue", or null. */
+    String aggression(UUID id) {
+        Entry entry = entries.get(id);
+        var held = entry == null ? null : entry.aggressor;
+        return held == null ? null : held.answer() + " from " + held.name();
+    }
+
     // ------------------------------------------------------------------ extended inventory (E-43)
 
     /** A store of its own: where, and whose, its own or its team's. */
@@ -7113,7 +7294,8 @@ final class PlayerRuntime {
         }
         if (entry.bases != null) {
             for (var base : entry.bases.built) {
-                if (!dimension.equals(base.dimension())) continue;
+                // A base's chests are its stores once the base is built: not while they stand in walls still going up.
+                if (!dimension.equals(base.dimension()) || !base.complete()) continue;
                 for (var block : placedOf(base)) {
                     if (block.spec().block().equals("minecraft:chest")) out.add(new OwnStore(BuildRunner.blockPos(block.at()), dev.kindred.core.team.Storage.Whose.OWN));
                 }
@@ -7213,6 +7395,7 @@ final class PlayerRuntime {
             what = Map.of("items", String.join(",", stow.keySet()));
         }
         UUID taskId = UUID.nameUUIDFromBytes(("store:" + entry.data.id() + ":" + target.asLong()).getBytes(StandardCharsets.UTF_8));
+        entry.storeTaskId = taskId;
         var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 58.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         var args = new HashMap<String, String>(Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()), "z", String.valueOf(target.getZ())));
@@ -7505,6 +7688,7 @@ final class PlayerRuntime {
         }
         var world = player.getServerWorld();
         UUID taskId = UUID.nameUUIDFromBytes(("kit_name:" + entry.data.id() + ":" + key).getBytes(StandardCharsets.UTF_8));
+        entry.kitTaskId = taskId;
         var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 60.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         if (!anvilAt(world, entry.anvil)) entry.anvil = null;
@@ -8879,26 +9063,7 @@ final class PlayerRuntime {
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, hunter), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", hunter.getUuid().toString(), "slot", String.valueOf(slot))));
         }
-        // Away from the hunter, or at an angle to it where the way straight off is shut.
-        Vec3d away = player.getPos().subtract(hunter.getPos()).multiply(1, 0, 1);
-        if (away.lengthSquared() < 1e-4) away = new Vec3d(1, 0, 0);
-        away = away.normalize();
-        var navigator = new NativeNavigator(player.getServerWorld());
-        BlockPos feet = player.getBlockPos(), target = null;
-        // Never toward its own home, its base or the bed it sleeps in: a chased player does not lead its pursuers there
-        // (M-02c). Only when every way off is toward home does it run that way all the same.
-        BlockPos home = homeToKeep(entry, player);
-        double homeX = home == null ? 0 : home.getX() + 0.5 - player.getX(), homeZ = home == null ? 0 : home.getZ() + 0.5 - player.getZ();
-        if (homeX * homeX + homeZ * homeZ > HOME_KEPT * HOME_KEPT) homeX = homeZ = 0;
-        for (double turn : dev.kindred.core.match.EvasionCourse.turns(away.x, away.z, homeX, homeZ)) {
-            Vec3d way = away.rotateY((float) Math.toRadians(turn));
-            BlockPos at = BlockPos.ofFloored(feet.getX() + 0.5 + way.x * 16, feet.getY(), feet.getZ() + 0.5 + way.z * 16);
-            for (int dy : new int[] {0, 1, -1, 2, -2}) {
-                if (navigator.standable(at.up(dy))) { target = at.up(dy); break; }
-            }
-            if (target != null) break;
-        }
-        if (target == null) target = BlockPos.ofFloored(feet.getX() + 0.5 + away.x * 16, feet.getY(), feet.getZ() + 0.5 + away.z * 16);
+        BlockPos target = awayFrom(entry, player, hunter);
         var last = evadingTo.get(player.getUuid());
         if (last == null || last.getSquaredDistance(target) > 16) {
             evadingTo.put(player.getUuid(), target.toImmutable());
@@ -8908,6 +9073,45 @@ final class PlayerRuntime {
         }
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
                 "z", String.valueOf(target.getZ()), "range", "3", "partial", "true", "sprint", "true")));
+    }
+
+    /**
+     * Where it runs to from {@code threat}: sixteen blocks away from it, or at an angle where the way straight off is
+     * shut, never toward its own home, its base or its bed while another way is open (M-02c); straight away when no way
+     * is open.
+     */
+    private BlockPos awayFrom(Entry entry, ServerPlayerEntity player, ServerPlayerEntity threat) {
+        BlockPos open = openWayFrom(entry, player, threat);
+        if (open != null) return open;
+        Vec3d away = awayDirection(player, threat);
+        BlockPos feet = player.getBlockPos();
+        return BlockPos.ofFloored(feet.getX() + 0.5 + away.x * 16, feet.getY(), feet.getZ() + 0.5 + away.z * 16);
+    }
+
+    private static Vec3d awayDirection(ServerPlayerEntity player, ServerPlayerEntity threat) {
+        Vec3d away = player.getPos().subtract(threat.getPos()).multiply(1, 0, 1);
+        if (away.lengthSquared() < 1e-4) away = new Vec3d(1, 0, 0);
+        return away.normalize();
+    }
+
+    /** A way off from {@code threat} with ground to stand on, as {@link #awayFrom} picks it; null when none is open. */
+    private BlockPos openWayFrom(Entry entry, ServerPlayerEntity player, ServerPlayerEntity threat) {
+        Vec3d away = awayDirection(player, threat);
+        var navigator = new NativeNavigator(player.getServerWorld());
+        BlockPos feet = player.getBlockPos();
+        // Never toward its own home, its base or the bed it sleeps in: a chased player does not lead its pursuers there
+        // (M-02c). Only when every way off is toward home does it run that way all the same.
+        BlockPos home = homeToKeep(entry, player);
+        double homeX = home == null ? 0 : home.getX() + 0.5 - player.getX(), homeZ = home == null ? 0 : home.getZ() + 0.5 - player.getZ();
+        if (homeX * homeX + homeZ * homeZ > HOME_KEPT * HOME_KEPT) homeX = homeZ = 0;
+        for (double turn : dev.kindred.core.match.EvasionCourse.turns(away.x, away.z, homeX, homeZ)) {
+            Vec3d way = away.rotateY((float) Math.toRadians(turn));
+            BlockPos at = BlockPos.ofFloored(feet.getX() + 0.5 + way.x * 16, feet.getY(), feet.getZ() + 0.5 + way.z * 16);
+            for (int dy : new int[] {0, 1, -1, 2, -2}) {
+                if (navigator.standable(at.up(dy))) return at.up(dy).toImmutable();
+            }
+        }
+        return null;
     }
 
     /** Once a second: each running race's runners checked for the splits vanilla has given them since. */
@@ -9137,6 +9341,16 @@ final class PlayerRuntime {
         private boolean sightingInterrupt;
         /** When it next looks over its storage to tidy it. */
         private long organizeAt;
+        /** The task of its latest walk to or use of a store, and to its anvil: let be a while if it could not get there. */
+        private UUID storeTaskId, kitTaskId;
+        /**
+         * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to
+         * it; the hardest hit each player has dealt it, after armour; and when it last said so.
+         */
+        private Aggressor aggressor;
+        private boolean aggressionInterrupt;
+        private final Map<UUID, Double> hardestHits = new HashMap<>();
+        private long aggressionSaidAt = -1_000_000;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
         private final List<String> partsTaken = new ArrayList<>();
@@ -9219,6 +9433,8 @@ final class PlayerRuntime {
         }
         private SkillRunner.State lastRunnerState = SkillRunner.State.IDLE;
         private String skillId;
+        /** The running skill's arguments, as it was started with them. */
+        private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
         private int glanceUntilAge;
         private BlockPerception perception;

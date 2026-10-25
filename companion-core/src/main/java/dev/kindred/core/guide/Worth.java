@@ -306,10 +306,10 @@ public final class Worth {
         return 0.6 * levels;
     }
 
-    /** What a player keeps on it wherever it is, to use as it goes: never put away. */
+    /** What a player keeps on it wherever it is, to use as it goes: never put away. A bed of any colour too: it sleeps in it. */
     private static final java.util.Set<String> KEPT_ON = java.util.Set.of("bucket", "water_bucket", "lava_bucket", "flint_and_steel",
             "shield", "bow", "crossbow", "arrow", "spectral_arrow", "tipped_arrow", "torch", "compass", "clock", "ender_pearl",
-            "totem_of_undying", "trident").stream().map(item -> "minecraft:" + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
+            "totem_of_undying", "trident", "white_bed").stream().map(item -> "minecraft:" + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
 
     /** What no run to the dragon uses, kept only for later: what a player on its run puts away when it passes its store. */
     private static final java.util.Set<String> FOR_LATER = java.util.Set.of("enchanted_book", "book", "saddle", "name_tag", "lead",
@@ -327,8 +327,8 @@ public final class Worth {
         var out = new java.util.TreeMap<String, Integer>();
         for (var entry : held.entrySet()) {
             String item = id(entry.getKey());
-            if (entry.getValue() <= 0 || kit(item) != null || KEPT_ON.contains(item)) continue;
             Info unit = info(item);
+            if (entry.getValue() <= 0 || kit(item) != null || KEPT_ON.contains(item) || unit != null && KEPT_ON.contains(unit.unit())) continue;
             if (onRun && (unit == null || !FOR_LATER.contains(unit.unit()))) continue;
             Info info = info(item);
             if (info == null || FOOD.equals(info.group()) || BLOCKS.equals(info.group())) continue;
