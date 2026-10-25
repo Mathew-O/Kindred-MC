@@ -1,0 +1,89 @@
+{
+  "base": "fa8c3ac",
+  "branch": "codex/rebuild-support-integration",
+  "date": "2026-10-24",
+  "java": "OpenJDK 21.0.2 Linux x64",
+  "original": {
+    "error": 0,
+    "failure": 0,
+    "passed": 145,
+    "seconds": 1.027,
+    "skipped": 0,
+    "tests": 145
+  },
+  "python": {
+    "passed": 34,
+    "skipped": 0
+  },
+  "regression": {
+    "added": [],
+    "fixed": [
+      "dev.kindred.model.SupportBatch03GatewayRegressionTest::cancelledCallerStillReleasesCapacityWhenProviderCompletes()",
+      "dev.kindred.model.SupportBatch03GatewayRegressionTest::concurrentExtremeUsageCannotWrapTokenCountersAndReopenAdmission()"
+    ],
+    "missing": [],
+    "newly_skipped": [],
+    "regressed": []
+  },
+  "scope": "Bounded standalone JDK 21/JUnit 5.11.4/SQLite 3.50.3.0 checks; no full Gradle, provider SDK transport, native GameTests or live gameplay qualification.",
+  "support": {
+    "error": 0,
+    "failure": 0,
+    "passed": 64,
+    "seconds": 0.378,
+    "skipped": 0,
+    "tests": 64
+  },
+  "supportClasses": {
+    "dev.kindred.core.SupportBatch03AccessTest": 2,
+    "dev.kindred.core.SupportBatch03ActionRecordTest": 3,
+    "dev.kindred.core.SupportBatch03AdmissionTest": 2,
+    "dev.kindred.core.SupportBatch03ArbiterTest": 2,
+    "dev.kindred.core.SupportBatch03CheckpointTest": 2,
+    "dev.kindred.core.SupportBatch03ClaimsTest": 3,
+    "dev.kindred.core.SupportBatch03RunnerTest": 3,
+    "dev.kindred.core.SupportBatch03WorkSetupTest": 3,
+    "dev.kindred.core.SupportBatch04AdmissionBoardTest": 2,
+    "dev.kindred.core.SupportBatch04ObservationsTest": 3,
+    "dev.kindred.core.SupportBatch04PerceptionTest": 4,
+    "dev.kindred.core.SupportBatch04SectionTest": 3,
+    "dev.kindred.core.SupportBatch04SkillProposalTest": 2,
+    "dev.kindred.core.SupportBatch04SkinTest": 5,
+    "dev.kindred.core.SupportBatch04SnapshotTest": 2,
+    "dev.kindred.model.SupportBatch02ModelGatewayTest": 6,
+    "dev.kindred.model.SupportBatch03GatewayRegressionTest": 2,
+    "dev.kindred.persistence.SupportBatch02LedgerTest": 2,
+    "dev.kindred.persistence.SupportBatch02NativeIdentityTest": 2,
+    "dev.kindred.scheduler.SupportBatch02BudgetTest": 4,
+    "dev.kindred.scheduler.SupportBatch02PaidSessionTest": 3,
+    "dev.kindred.scheduler.SupportBatch02ScheduleTest": 4
+  },
+  "testedSourceSha256": {
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03AccessTest.java": "129ace6d88a6401bd19ef66675ddaf2347265ed510de713b01047ef13e636aea",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03ActionRecordTest.java": "f0e6cdef32bfb63574bded66541ced4079aa89935bb56bd7efd96388f51d2fef",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03AdmissionTest.java": "f6a269ba872d21442f4648ca34d9724c95d2fa44eccf6caff4515ffbac157040",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03ArbiterTest.java": "8a7b938adfe041de2e649b614e861115b39da1879bf426547a1cf9b67ac9a887",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03CheckpointTest.java": "03ab4c4a2814c36b5c8f4469daa1ef5a85b922c9b3732fde7fee41292f13dc15",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03ClaimsTest.java": "b4e0401c7b8e743dbb1275cd986752dbef5895831394e04fb07f4a3e9df935b7",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03RunnerTest.java": "bac3b5e8077bdca9a889b3268ec09f829d5895a8c026fbc1bb6907b5e5c5558a",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch03WorkSetupTest.java": "974d37881ec71616f2fe427bc56802af47e67da6a79cc77eb746aac8bab59171",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04AdmissionBoardTest.java": "fb91537db227307541ec25d3f8e56451281091fd541334e24c373a852e206208",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04ObservationsTest.java": "a3eea1f182edd018b4ba1e837104b47817305a26c86f7aa96bbc2d6fbea1e0aa",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04PerceptionTest.java": "8a07ec0c33ce27526f226fcd80211dd08cf6555906f5e29ba346c77771547b05",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04SectionTest.java": "cdfbec5cba735c448ba029df31a7d06344f75794eda9c4fb0027245c4c7871a7",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04SkillProposalTest.java": "96af972a92e44a6a5e88a56d81285ddd3bb3c3ba2d986c5cf3522cd4434fa38a",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04SkinTest.java": "8f8d892e7c39fcb084a81c8a091be07b1df764057b20e7722053547bb4e23cde",
+    "companion-core/src/test/java/dev/kindred/core/SupportBatch04SnapshotTest.java": "881a3d235ed40eeacfda0a08f423c5b7cf5db06a44c7c170af7e404604f74805",
+    "companion-model/src/main/java/dev/kindred/model/ModelGateway.java": "ff05c6ccbbfac3b3e184dc4bfaed44b0af9737eee828c4664e8153bb44651f42",
+    "companion-model/src/test/java/dev/kindred/model/SupportBatch02ModelGatewayTest.java": "35308cde77f6269c6fad7caee63a9baa501ebcde7975c7821a65cefc416a7175",
+    "companion-model/src/test/java/dev/kindred/model/SupportBatch03GatewayRegressionTest.java": "9a41df86f979fb9d858d443fd039e165d44fe70c18da4897c269e994476e5ca4",
+    "companion-persistence/src/test/java/dev/kindred/persistence/SupportBatch02LedgerTest.java": "b9e77b0f17d8e82f8efb302b60794db56a96b44ad3f6056fc366e0f57902074a",
+    "companion-persistence/src/test/java/dev/kindred/persistence/SupportBatch02NativeIdentityTest.java": "7fdb6ca31b2d0c5ea1ddee0a200e4659054fc31541c19ae0e7b6c25d1c52118d",
+    "companion-scheduler/src/test/java/dev/kindred/scheduler/SupportBatch02BudgetTest.java": "4bd2a39db0aa6512d99b06000c5dd263497def9b77cd337ce5c18d5eeb95c73b",
+    "companion-scheduler/src/test/java/dev/kindred/scheduler/SupportBatch02PaidSessionTest.java": "01b75c3cea4e9a60059d5616332482d15acbc0f22c7933749863f71cee8ef566",
+    "companion-scheduler/src/test/java/dev/kindred/scheduler/SupportBatch02ScheduleTest.java": "803014a0e0c96ecefa5c1d75137cbc49cdc1381883d3bc37815e0079db49cdef",
+    "tools/support-batch-01/support.py": "9657368fc5d0f74b46ef3386d19c6f55025eb0659754e1d472e415c90c75795d",
+    "tools/support-batch-01/test_support.py": "960e7a8aa473cad48e59f6f73ba3383a53db47675dede88e3598def975bd1156",
+    "tools/support-batch-05/run_checks.py": "1810e523db24ce4ec734a7f0a7ffd297f081b87e42878436dec4254e781e49c3"
+  }
+}

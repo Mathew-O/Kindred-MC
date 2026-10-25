@@ -1,5 +1,11 @@
 # AI-player development validation
 
+## Support reconstruction — 24 October 2026
+
+On base `fa8c3ac` (`claude/modest-faraday-r3spro`), reconstructed the lost support-batch scope on `codex/rebuild-support-integration`. The only production changes fix ModelGateway cleanup after caller cancellation and overflow-safe token accounting. Both dedicated regression tests fail on the unchanged base gateway and pass after the fixes.
+
+Linux x64 / OpenJDK 21.0.2 standalone validation: **64 support tests in 22 classes + 145 selected original Java tests; 34 Python checks; zero skips**. The real SQLite migration resources are included. File and directory symlink rejection is exercised without a permission skip. [Sanitized XML, source hashes, commands and limitations](../tools/support-batch-05/HANDOFF.md) are retained. This is a new bounded run, not reuse of the missing commit's historical totals. Full Gradle/provider SDK/native/client/playthrough qualification was not completed; no release gate or parent checkbox is advanced.
+
 ## Current regression — 22 October 2026
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
