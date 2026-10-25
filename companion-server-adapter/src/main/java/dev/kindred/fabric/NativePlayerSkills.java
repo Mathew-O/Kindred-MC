@@ -145,8 +145,8 @@ final class NativePlayerSkills {
             case "native_loot" -> new SkillDescriptor(id, Set.of(), Set.of("x", "y", "z", "cart", "raid"), Set.of("container"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // What it keeps for later put away in a store of its own, all of each of "items"; or with "take" all, the store
-            // emptied into its inventory (E-43).
-            case "native_store" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("items", "take"), Set.of("container"),
+            // emptied into its inventory; or with "look", the store only opened to see what is in it (E-43).
+            case "native_store" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("items", "take", "look"), Set.of("container"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // A weapon or tool named at an anvil, a level or more of its own (E-16d).
             case "native_rename" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "name"), Set.of(), Set.of("anvil"),

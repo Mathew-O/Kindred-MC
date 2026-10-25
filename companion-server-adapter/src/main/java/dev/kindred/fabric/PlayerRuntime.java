@@ -1015,6 +1015,11 @@ final class PlayerRuntime {
                     session.snapshot().observedActiveMillis(), entry.blocker);
     }
 
+    /** A native task with its arguments, as the commands start one, for fixtures. */
+    int nativeTaskForFixtures(ServerCommandSource source, UUID id, String skill, Map<String, String> arguments) {
+        return nativeTask(source, id, skill, arguments);
+    }
+
     int nativeSkill(ServerCommandSource source, UUID id, String skill, int value) {
         return nativeTask(source, id, skill, Map.of(skill.equals("native_wait") ? "seconds" : "slot", String.valueOf(value)));
     }
@@ -1394,7 +1399,7 @@ final class PlayerRuntime {
             } else if (skill.equals("native_store")) {
                 BlockPos chest = new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
                 boolean out = "all".equals(arguments.get("take"));
-                var items = out ? Set.<String>of() : Set.of(arguments.getOrDefault("items", "").split(","));
+                var items = out || arguments.containsKey("look") ? Set.<String>of() : Set.of(arguments.getOrDefault("items", "").split(","));
                 task = new NativeStoreAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
                         server::execute, chest, items, out,
                         () -> entry.nativeBody != null && entry.nativeBody.connected() && ownStore(entry, entry.nativeBody.entity(), chest) != null);
@@ -4956,6 +4961,19 @@ final class PlayerRuntime {
             busy = runnerBusy(entry);
         }
 
+        // Someone not on its side seen at a store of its own (E-43): a walk is given up to go and look.
+        if (usable && busy && entry.sightingInterrupt && "native_goto".equals(entry.skillId)) {
+            entry.sightingInterrupt = false;
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort("Someone at its chest: going to look");
+            body.stopInputs();
+            observeRunner(entry);
+            if (entry.runner == null) return;
+            busy = runnerBusy(entry);
+        } else if (!busy) {
+            entry.sightingInterrupt = false;
+        }
+
         boolean escapingWater = !creeperThreat && (entry.waterEscapeTaskId != null && entry.waterEscapeTaskId.equals(entry.currentTaskId)
                 || PortalRunCampaign.surfacing(entry.activeCampaignTask) && !body.entity().isInLava() && !body.entity().isOnFire());
         // A goal's creeper work or walling-in, and any recorded fight, deals with a hissing creeper by itself (a wall,
@@ -5641,6 +5659,8 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
         if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
+        // Tidied, or nothing to tidy: its chest is let be a while, not looked over again at once.
+        if (entry.nativeTask instanceof NativeChestOrganizeAction && state != SkillRunner.State.RUNNING) entry.organizeAt = server.getTicks() + 2400;
         if (entry.nativeTask instanceof NativeTakeAction take) takeEnded(entry, take, state);
         if (finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null) {
             var life = entry.lifeTask;
@@ -6865,7 +6885,11 @@ final class PlayerRuntime {
                 if (!open || !seesBlock(self, pos)) continue;
                 // At a store of its own: who it saw there, so that what is gone from it has a name if anyone's.
                 if (stores.stream().anyMatch(store -> store.pos().equals(pos))) {
-                    entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), teammateOf(entry, self, other), server.getTicks()));
+                    boolean mate = teammateOf(entry, self, other);
+                    var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks()));
+                    // Someone not on its side at its chest: it gives up a walk to go and look.
+                    if (before == null && !mate) entry.sightingInterrupt = true;
+                    entry.routineRefreshPending = true;
                     continue;
                 }
                 if (!match) continue;
@@ -7145,7 +7169,7 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> storeCandidates(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         long now = server.getTicks();
-        if (!worldEditsEnabled() || now < entry.storeAt && entry.emptying == null) return null;
+        if (!worldEditsEnabled() || now < entry.storeAt && entry.emptying == null && entry.seenAtStores.isEmpty()) return null;
         var world = player.getServerWorld();
         BlockPos target;
         Map<String, String> what;
@@ -7159,6 +7183,9 @@ final class PlayerRuntime {
         } else if (entry.emptying != null) {
             target = entry.emptying;
             what = Map.of("take", "all");
+        } else if ((target = sighted(entry, player)) != null) {
+            // Someone it saw at a store of its own: it goes to see what is in it, in any mode.
+            what = Map.of("look", "true");
         } else {
             if (matches.running(player.getUuid()).isPresent()) return null;
             var held = new HashMap<String, Integer>();
@@ -7167,6 +7194,9 @@ final class PlayerRuntime {
                 var stack = inventory.getStack(slot);
                 if (!stack.isEmpty()) held.merge(Valuables.id(stack), stack.getCount(), Integer::sum);
             }
+            // What it took out a while ago it took for a reason: not put straight back.
+            entry.recentlyTaken.values().removeIf(at -> now - at > 6000);
+            held.keySet().removeAll(entry.recentlyTaken.keySet());
             var stow = dev.kindred.core.guide.Worth.stow(held, Valuables.holding(player, lootWanted(entry)),
                     entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE);
             target = null;
@@ -7193,6 +7223,17 @@ final class PlayerRuntime {
         }
         args.put("range", "2.5");
         return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+    }
+
+    /** A store of its own it saw someone open while it was away, within 48 blocks: where it goes to look. */
+    private BlockPos sighted(Entry entry, ServerPlayerEntity player) {
+        BlockPos nearest = null;
+        for (var store : ownStores(entry, player)) {
+            if (!entry.seenAtStores.containsKey(store.pos().asLong()) || entry.untrustedStores.contains(store.pos().asLong())
+                    || player.getBlockPos().getSquaredDistance(store.pos()) > 48 * 48) continue;
+            if (nearest == null || player.getBlockPos().getSquaredDistance(store.pos()) < player.getBlockPos().getSquaredDistance(nearest)) nearest = store.pos();
+        }
+        return nearest;
     }
 
     /**
@@ -7323,6 +7364,7 @@ final class PlayerRuntime {
         if (own == null) return;
         lookedInto(entry, self, own, take.seen());
         entry.storage.took(storePlace(self, take.chest()), take.item(), take.taken(), server.getTicks());
+        entry.recentlyTaken.put(take.item(), (long) server.getTicks());
         if (own.whose() == dev.kindred.core.team.Storage.Whose.TEAM) toldTeam(entry, self, take.chest(), false, Map.of(take.item(), take.taken()));
     }
 
@@ -9089,6 +9131,12 @@ final class PlayerRuntime {
         private StorageAsk storageAsk;
         private final Set<Long> untrustedStores = new HashSet<>();
         private BlockPos emptying;
+        /** What it took out of a store of its own lately, and when: not put straight back. */
+        private final Map<String, Long> recentlyTaken = new HashMap<>();
+        /** Whether it saw someone not on its side at a store of its own, and has not yet gone to look. */
+        private boolean sightingInterrupt;
+        /** When it next looks over its storage to tidy it. */
+        private long organizeAt;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
         private final List<String> partsTaken = new ArrayList<>();
@@ -9454,7 +9502,7 @@ final class PlayerRuntime {
     }
 
     private void appendChestOrganizeCandidate(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
-        if (entry.setup == null || entry.setup.storage() == null) return;
+        if (entry.setup == null || entry.setup.storage() == null || server.getTicks() < entry.organizeAt) return;
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos chestPos = new BlockPos(

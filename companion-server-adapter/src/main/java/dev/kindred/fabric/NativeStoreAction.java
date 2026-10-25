@@ -25,7 +25,8 @@ import java.util.function.Supplier;
 /**
  * Puts things away in a store of its own (E-43), as a player does at its chest: opened with a use click, every stack
  * of the items it puts away shift-clicked in, and shut. Or, moving what is left of a store it no longer trusts, every
- * stack in it shift-clicked out into its inventory. What it saw in the chest as it opened it is kept: its look. Exactly
+ * stack in it shift-clicked out into its inventory. Or, with nothing to put in or take out, only opened and shut, to see
+ * what is in it. What it saw in the chest as it opened it is kept: its look. Exactly
  * what left one side arrives in the other, recorded in the durable ledger; nothing else of either moves. Only its own
  * stores: the storage its administrator assigned it, or a chest of a base it built.
  */
@@ -38,7 +39,7 @@ final class NativeStoreAction extends NativeRecordedAction {
     private final ActionAdmission.Writer writer;
     private final Consumer<Runnable> dispatch;
     private final BlockPos chestPos;
-    /** The items it puts away, all of each; none when it takes everything out. */
+    /** The items it puts away, all of each; none when it takes everything out, or only looks. */
     private final Set<String> items;
     private final boolean takeOut;
     /** Whether the chest is still a store of its own. */
@@ -55,7 +56,7 @@ final class NativeStoreAction extends NativeRecordedAction {
     NativeStoreAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos chestPos,
                       Set<String> items, boolean takeOut, BooleanSupplier own) {
-        if (takeOut != items.isEmpty()) throw new IllegalArgumentException("Put items away, or take everything out");
+        if (takeOut && !items.isEmpty()) throw new IllegalArgumentException("Put items away, or take everything out, not both");
         this.body = body;
         this.lease = lease;
         this.worldId = worldId;
@@ -90,7 +91,8 @@ final class NativeStoreAction extends NativeRecordedAction {
             if (claim == null) return Step.blocked("Another task holds this resource claim", true);
             before = InventoryEvidence.capture(body);
             admission = new ActionAdmission(ActionRecord.prepare(UUID.randomUUID(), lease.get(), "native_store",
-                    "store=" + chestPos.toShortString() + (takeOut ? "; everything taken out" : "; put away " + String.join(",", new java.util.TreeSet<>(items)))),
+                    "store=" + chestPos.toShortString() + (takeOut ? "; everything taken out" : items.isEmpty() ? "; a look"
+                            : "; put away " + String.join(",", new java.util.TreeSet<>(items)))),
                     before.description(), writer, dispatch);
         }
         if (admission.phase() == ActionAdmission.Phase.BLOCKED) {
@@ -155,7 +157,7 @@ final class NativeStoreAction extends NativeRecordedAction {
         chestChange.forEach((key, count) -> byItem.merge(key.substring(0, key.indexOf('|')), Math.abs(count), Integer::sum));
         moved = Map.copyOf(byItem);
         String words = words(byItem);
-        KindredMod.LOGGER.info("{} {} its chest at {}: {}", player.getName().getString(), takeOut ? "emptied" : "put away in",
+        KindredMod.LOGGER.info("{} {} its chest at {}: {}", player.getName().getString(), takeOut ? "emptied" : items.isEmpty() ? "looked in" : "put away in",
                 chestPos.toShortString(), byItem.isEmpty() ? "nothing" : words);
         result = Step.completed(Map.of("moved", words, "count", String.valueOf(byItem.values().stream().mapToInt(Integer::intValue).sum())));
         admission.verify(after.description() + "; " + (byItem.isEmpty() ? "nothing moved" : words + (takeOut ? " taken out of" : " put in"))
