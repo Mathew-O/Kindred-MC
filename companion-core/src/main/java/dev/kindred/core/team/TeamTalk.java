@@ -31,6 +31,16 @@ public final class TeamTalk {
         return got + ": " + list(parts) + ".";
     }
 
+    /**
+     * What a player tells its team when it puts something into, or takes something out of, the team's storage (E-43),
+     * from the counts before and after: "I put 12 iron ingots in our chest at 12, 64, -30.", "I took a bucket from our
+     * chest at 12, 64, -30." So every teammate's count of what the team has stored stays true.
+     */
+    public static String stored(boolean put, Storage.Place place, Map<String, Integer> items) {
+        String where = place.words().replaceFirst("^the ", "our ");
+        return "I " + (put ? "put " : "took ") + Missing.items(items) + (put ? " in " : " from ") + where + ".";
+    }
+
     /** "11 diamonds", "an iron ingot", "4 gold ingots". */
     static String of(ShareOut.Material material, int count) {
         String one = switch (material) {
