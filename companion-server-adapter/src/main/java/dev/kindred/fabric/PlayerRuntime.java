@@ -1404,6 +1404,10 @@ final class PlayerRuntime {
                 task = new NativeStoreAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
                         server::execute, chest, items, out,
                         () -> entry.nativeBody != null && entry.nativeBody.connected() && ownStore(entry, entry.nativeBody.entity(), chest) != null);
+            } else if (skill.equals("native_trade")) {
+                task = new NativeTradeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), claims, nativeActionWriter(), server::execute,
+                        UUID.fromString(arguments.get("target")), arguments.containsKey("look"),
+                        () -> Valuables.holding(entry.nativeBody.entity(), lootWanted(entry)));
             } else if (skill.equals("native_rename")) {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
                         nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
@@ -1642,6 +1646,7 @@ final class PlayerRuntime {
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
+                    || ("native_trade".equals(entry.skillId) && intent == NativePlayerBody.Intent.TRADE)
                     || ("native_store".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
@@ -2924,6 +2929,10 @@ final class PlayerRuntime {
         // What it keeps for later put away in a store of its own, and a store it no longer trusts emptied (E-43).
         var storing = storeCandidates(entry, body);
         if (storing != null) return storing;
+
+        // A villager by its way: its offers looked at, and what is worth trading traded (E-45).
+        var trading = tradeCandidates(entry, body);
+        if (trading != null) return trading;
 
         if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
@@ -5683,9 +5692,9 @@ final class PlayerRuntime {
         if (finishedTaskId != null && finishedTaskId.equals(entry.handOverStepId)) handOverStepEnded(entry, state);
         // A store or an anvil it could not get to (E-43, E-16d): let be a while, never tried again tick after tick.
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.storeTaskId)) {
-            entry.storeAt = server.getTicks() + 1200;
-            entry.seenAtStores.clear();
-            entry.emptying = null;
+            // A look, or the rest moved out, is tried again soon, what it saw kept; putting away waits a minute.
+            if (entry.emptying != null || !entry.seenAtStores.isEmpty()) entry.lookAt = server.getTicks() + 200;
+            else entry.storeAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.kitTaskId)) {
@@ -5695,6 +5704,11 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
         if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
+        if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.tradeTaskId) && entry.tradeVillager != null) {
+            entry.villagerVisitAt.put(entry.tradeVillager, (long) server.getTicks() + 1200);
+            entry.routineRefreshPending = true;
+        }
         // Tidied, or nothing to tidy: its chest is let be a while, not looked over again at once.
         if (entry.nativeTask instanceof NativeChestOrganizeAction && state != SkillRunner.State.RUNNING) {
             entry.organizeAt = server.getTicks() + 2400;
@@ -7255,6 +7269,119 @@ final class PlayerRuntime {
         return held == null ? null : held.answer() + " from " + held.name();
     }
 
+    // ------------------------------------------------------------------ villagers (E-45)
+
+    /** A villager it has looked at: its profession and level, and its offers as its screen showed them. */
+    private record Villager(dev.kindred.core.guide.Trades.Profession profession, int level, List<dev.kindred.core.guide.Trades.Offer> offers,
+                            long seenAt) { }
+
+    /** How near a villager it has not looked at must be to be looked at in passing; and one worth trading with, to go to. */
+    static final int LOOK_RANGE = 16, TRADE_RANGE = 48;
+    /** A villager with nothing worth trading is let be until it has restocked: half a day. */
+    static final long RESTOCK = 12000;
+
+    private static dev.kindred.core.guide.Trades.Profession profession(net.minecraft.entity.passive.VillagerEntity villager) {
+        var key = net.minecraft.registry.Registries.VILLAGER_PROFESSION.getId(villager.getVillagerData().getProfession());
+        return dev.kindred.core.guide.Trades.Profession.of(key.toString());
+    }
+
+    /**
+     * A villager by its way (E-45): one it has not looked at, close by, has its trading screen opened to see what it
+     * offers, as a player does; one whose offers it knows and has something worth trading for, within reach of a walk,
+     * is gone to and traded with as planned. Never a villager asleep, a child, one trading with someone, a nitwit or the
+     * jobless; never in a match. Each villager is let be after: until it restocks when nothing it offers is worth it.
+     */
+    private List<NativeTaskCandidate> tradeCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.tradeAt || matches.running(player.getUuid()).isPresent()) return null;
+        var holding = Valuables.holding(player, lootWanted(entry));
+        int emeralds = holding.held().getOrDefault(dev.kindred.core.guide.Trades.EMERALD, 0);
+        net.minecraft.entity.passive.VillagerEntity chosen = null;
+        boolean look = false;
+        double nearest = Double.MAX_VALUE;
+        for (var villager : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class,
+                player.getBoundingBox().expand(TRADE_RANGE), v -> v.isAlive() && !v.isBaby() && !v.isSleeping() && !v.hasCustomer())) {
+            var profession = profession(villager);
+            if (profession == dev.kindred.core.guide.Trades.Profession.NONE || profession == dev.kindred.core.guide.Trades.Profession.NITWIT) continue;
+            if (entry.villagerVisitAt.getOrDefault(villager.getUuid(), 0L) > now) continue;
+            double distance = player.squaredDistanceTo(villager);
+            var known = entry.villagers.get(villager.getUuid());
+            boolean unseen = known == null;
+            if (unseen && (distance > LOOK_RANGE * LOOK_RANGE || !player.canSee(villager))) continue;
+            if (!unseen && dev.kindred.core.guide.Trades.plan(known.offers(), holding, emeralds).empty()) {
+                entry.villagerVisitAt.put(villager.getUuid(), now + RESTOCK);
+                continue;
+            }
+            if (distance < nearest) {
+                nearest = distance;
+                chosen = villager;
+                look = unseen;
+            }
+        }
+        if (chosen == null) {
+            entry.tradeAt = now + 200;
+            return null;
+        }
+        UUID taskId = UUID.nameUUIDFromBytes(("trade:" + entry.data.id() + ":" + chosen.getUuid()).getBytes(StandardCharsets.UTF_8));
+        entry.tradeTaskId = taskId;
+        entry.tradeVillager = chosen.getUuid();
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 55.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (player.canInteractWithEntity(chosen, 0)) {
+            var args = new HashMap<String, String>();
+            args.put("target", chosen.getUuid().toString());
+            if (look) args.put("look", "true");
+            return List.of(new NativeTaskCandidate(task, "native_trade", Map.copyOf(args)));
+        }
+        BlockPos at = chosen.getBlockPos();
+        return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                "z", String.valueOf(at.getZ()), "range", "2", "partial", "true")));
+    }
+
+    /**
+     * A look or a trade done (E-45): what it saw kept; what it traded said; a villager with something worth buying it
+     * cannot yet pay for told of once; each villager let be a while after.
+     */
+    private void tradeEnded(Entry entry, NativeTradeAction trade, SkillRunner.State state) {
+        long now = server.getTicks();
+        UUID id = trade.villager();
+        entry.routineRefreshPending = true;
+        if (state != SkillRunner.State.COMPLETED) {
+            entry.villagerVisitAt.put(id, now + 1200);
+            return;
+        }
+        var player = entry.nativeBody == null ? null : entry.nativeBody.entity();
+        var villager = player != null && player.getServerWorld().getEntity(id) instanceof net.minecraft.entity.passive.VillagerEntity v ? v : null;
+        if (!trade.looked()) {
+            if (!trade.made().isEmpty()) say(entry, dev.kindred.core.guide.Trades.told(trade.made()), "");
+            // Its offers have moved on with the trades: looked at again next time.
+            entry.villagers.remove(id);
+            entry.villagerVisitAt.put(id, now + 2400);
+            return;
+        }
+        var profession = villager == null ? dev.kindred.core.guide.Trades.Profession.NONE : profession(villager);
+        entry.villagers.put(id, new Villager(profession, villager == null ? 1 : villager.getVillagerData().getLevel(), trade.seen(), now));
+        if (player == null) return;
+        var holding = Valuables.holding(player, lootWanted(entry));
+        int emeralds = holding.held().getOrDefault(dev.kindred.core.guide.Trades.EMERALD, 0);
+        if (dev.kindred.core.guide.Trades.plan(trade.seen(), holding, emeralds).empty()) {
+            entry.villagerVisitAt.put(id, now + RESTOCK);
+            var best = dev.kindred.core.guide.Trades.best(trade.seen(), holding);
+            if (best.isPresent() && entry.villagersTold.add(id)) {
+                say(entry, "The " + profession.name().toLowerCase(java.util.Locale.ROOT) + " here sells "
+                        + dev.kindred.core.guide.Trades.sells(best.get().offer()) + ": worth it, "
+                        + (best.get().offer().open() ? "once I have what it takes." : "once it has restocked."), "");
+            }
+        }
+    }
+
+    /** The villagers a player has looked at, for fixtures. */
+    int villagersKnown(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.villagers.size();
+    }
+
     // ------------------------------------------------------------------ extended inventory (E-43)
 
     /** A store of its own: where, and whose, its own or its team's. */
@@ -7351,7 +7478,11 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> storeCandidates(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         long now = server.getTicks();
-        if (!worldEditsEnabled() || now < entry.storeAt && entry.emptying == null && entry.seenAtStores.isEmpty()) return null;
+        if (!worldEditsEnabled()) return null;
+        // Going to look, or moving the rest out, keeps its own short wait; putting away and fetching the longer one.
+        entry.seenAtStores.values().removeIf(seen -> now - seen.tick() > 6000);
+        boolean looking = entry.emptying != null || !entry.seenAtStores.isEmpty();
+        if (looking ? now < entry.lookAt : now < entry.storeAt) return null;
         var world = player.getServerWorld();
         BlockPos target;
         Map<String, String> what;
@@ -9343,6 +9474,13 @@ final class PlayerRuntime {
         private long organizeAt;
         /** The task of its latest walk to or use of a store, and to its anvil: let be a while if it could not get there. */
         private UUID storeTaskId, kitTaskId;
+        private long lookAt;
+        /** Villagers it has looked at, their offers as it saw them (E-45); when it next visits each; the one it is going to. */
+        private final Map<UUID, Villager> villagers = new HashMap<>();
+        private final Map<UUID, Long> villagerVisitAt = new HashMap<>();
+        private final Set<UUID> villagersTold = new HashSet<>();
+        private UUID tradeTaskId, tradeVillager;
+        private long tradeAt;
         /**
          * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to
          * it; the hardest hit each player has dealt it, after armour; and when it last said so.

@@ -89,7 +89,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1775,6 +1775,69 @@ final class NativePlayerBody implements BodyAdapter {
             looted[0] = new Looted(List.copyOf(opened), List.copyOf(shut));
         });
         return done ? looted[0] : null;
+    }
+
+    /** A villager's offers as its trading screen showed them on opening, and how many times each was made, by its index, in order. */
+    record Traded(List<net.minecraft.village.TradeOffer> offers, java.util.Map<Integer, Integer> made) { }
+
+    /**
+     * Trades with the villager {@code villager} as a player does (E-45b): opens its trading screen with a use click; for
+     * each trade {@code choose} picks from the offers it sees (its index and how many times), selects it, as a client's
+     * click on the offer does, which fills its slots from the inventory, and takes what it yields from the result slot
+     * into the inventory, one trade at a time, stopping when the offer yields nothing more (out of stock, or not paid
+     * for) or there is no room; and shuts it, which gives back what is left in its slots. Only a grown villager within a
+     * client's reach, with nothing else open; null if its screen did not open (asleep, trading with someone, no offers).
+     */
+    Traded trade(ActionLease lease, UUID villager, java.util.function.Function<List<net.minecraft.village.TradeOffer>, List<int[]>> choose) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
+        if (!(world.getEntity(villager) instanceof net.minecraft.entity.passive.VillagerEntity trader) || !trader.isAlive() || trader.isBaby()
+                || !player.canInteractWithEntity(trader, 0)) return null;
+        Traded[] traded = {null};
+        boolean done = execute(lease, Intent.TRADE, trader.getBlockPos(), () -> {
+            face(trader.getEyePos());
+            player.interact(trader, Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+            if (!(player.currentScreenHandler instanceof net.minecraft.screen.MerchantScreenHandler screen)) return;
+            var offers = new java.util.ArrayList<net.minecraft.village.TradeOffer>();
+            for (var offer : screen.getRecipes()) offers.add(offer.copy());
+            var made = new java.util.LinkedHashMap<Integer, Integer>();
+            for (int[] step : choose.apply(List.copyOf(offers))) {
+                int index = step[0];
+                if (index < 0 || index >= screen.getRecipes().size()) continue;
+                for (int time = 0; time < step[1]; time++) {
+                    screen.setRecipeIndex(index);
+                    screen.switchTo(index);
+                    ItemStack yields = screen.getSlot(2).getStack();
+                    if (yields.isEmpty()) break;
+                    int into = roomFor(screen, yields);
+                    if (into < 0) break;
+                    screen.onSlotClick(2, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, player);
+                    if (screen.getCursorStack().isEmpty()) break;
+                    screen.onSlotClick(into, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, player);
+                    made.merge(index, 1, Integer::sum);
+                    if (!screen.getCursorStack().isEmpty()) break;
+                }
+            }
+            player.closeHandledScreen();
+            traded[0] = new Traded(List.copyOf(offers), java.util.Collections.unmodifiableMap(made)); // In the order made.
+        });
+        return done ? traded[0] : null;
+    }
+
+    /** A slot of the trading screen's inventory (3 to 38) that takes all of {@code stack}: the same item with room, or empty. */
+    private static int roomFor(net.minecraft.screen.MerchantScreenHandler screen, ItemStack stack) {
+        int empty = -1;
+        for (int i = 3; i < 39; i++) {
+            ItemStack there = screen.getSlot(i).getStack();
+            if (there.isEmpty()) {
+                if (empty < 0) empty = i;
+            } else if (ItemStack.areItemsAndComponentsEqual(there, stack) && there.getCount() + stack.getCount() <= there.getMaxCount()) {
+                return i;
+            }
+        }
+        return empty;
     }
 
     /** An anvil's rename: the piece before and after, the levels before and after, and what the anvil asked. */

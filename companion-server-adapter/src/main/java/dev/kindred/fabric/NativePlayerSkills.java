@@ -148,6 +148,10 @@ final class NativePlayerSkills {
             // emptied into its inventory; or with "look", the store only opened to see what is in it (E-43).
             case "native_store" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("items", "take", "look"), Set.of("container"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A villager traded with at its screen, as planned by what its trades are worth (E-45b); with "look", only its
+            // offers seen.
+            case "native_trade" -> new SkillDescriptor(id, Set.of("target"), Set.of("look"), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // A weapon or tool named at an anvil, a level or more of its own (E-16d).
             case "native_rename" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "name"), Set.of(), Set.of("anvil"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

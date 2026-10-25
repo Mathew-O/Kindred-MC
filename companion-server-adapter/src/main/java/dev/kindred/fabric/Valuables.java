@@ -71,6 +71,32 @@ final class Valuables {
         if (gain > 0 || gain == 0 && piece.enchantments() > own.enchantments()) kit.put(slot.get(), piece);
     }
 
+    /**
+     * A villager's offer as its trading screen shows it (E-45a): its asks at the price it shows, the villager's own,
+     * what it yields and the enchantments on it, and its uses.
+     */
+    static dev.kindred.core.guide.Trades.Offer offer(net.minecraft.village.TradeOffer offer) {
+        var first = goods(offer.getDisplayedFirstBuyItem());
+        var secondStack = offer.getDisplayedSecondBuyItem();
+        var second = secondStack.isEmpty() ? null : goods(secondStack);
+        ItemStack sold = offer.getSellItem();
+        var enchants = new java.util.ArrayList<dev.kindred.core.guide.Trades.Enchant>();
+        for (var entry : sold.getEnchantments().getEnchantmentEntries()) enchants.add(enchant(entry.getKey(), entry.getIntValue()));
+        var stored = sold.getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+        for (var entry : stored.getEnchantmentEntries()) enchants.add(enchant(entry.getKey(), entry.getIntValue()));
+        int maxUses = Math.max(1, offer.getMaxUses());
+        return new dev.kindred.core.guide.Trades.Offer(first, second, goods(sold), enchants, Math.max(0, Math.min(offer.getUses(), maxUses)), maxUses);
+    }
+
+    private static dev.kindred.core.guide.Trades.Goods goods(ItemStack stack) {
+        return new dev.kindred.core.guide.Trades.Goods(id(stack), Math.max(1, stack.getCount()));
+    }
+
+    private static dev.kindred.core.guide.Trades.Enchant enchant(net.minecraft.registry.entry.RegistryEntry<net.minecraft.enchantment.Enchantment> key,
+                                                                 int level) {
+        return new dev.kindred.core.guide.Trades.Enchant(key.getKey().map(k -> k.getValue().toString()).orElse("minecraft:unknown"), Math.max(1, level));
+    }
+
     static Worth.Judgement judge(ItemStack stack, Worth.Holding holding) {
         return Worth.judge(stack(stack), holding);
     }
