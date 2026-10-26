@@ -7492,10 +7492,17 @@ final class PlayerRuntime {
                     return null;
                 }
                 // Something in the way of where it goes (the villager, let go of its job, wandering onto it): another side.
-                // Standing where it goes itself, as picking the lectern up took it there: back to where it stood.
+                // Standing where it goes itself, as picking the lectern up took it there: another side clear of it, or
+                // off it to the middle of a block beside (a body half a block over the edge of where it stood was still
+                // in the way, and stepped back to where it already was without end).
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern))) {
-                    return List.of(new NativeTaskCandidate(rerollTask(entry, "aside"), "native_goto", Map.of("x", String.valueOf(r.stand.getX()),
-                            "y", String.valueOf(r.stand.getY()), "z", String.valueOf(r.stand.getZ()), "range", "0.5", "partial", "true")));
+                    BlockPos other = villager == null ? null : lecternSpot(player, entry.setup, villager.getBlockPos());
+                    if (other != null && !other.equals(r.lectern)) {
+                        r.lectern = other;
+                        return rerollCandidates(entry, body);
+                    }
+                    var off = offTheLectern(entry, world, r);
+                    return off == null ? List.of(waitTask(task, "For room beside the villager")) : List.of(off);
                 }
                 if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(r.lectern)).isEmpty()) {
                     BlockPos other = villager == null ? null : lecternSpot(player, entry.setup, villager.getBlockPos());
@@ -7549,6 +7556,12 @@ final class PlayerRuntime {
                     return List.of(waitTask(task, "For the villager to let the job go"));
                 }
                 if (!reach) return List.of(goNear(task, r.lectern));
+                // Standing on it, as a small pen leaves a player stepping up onto it: off it first (a break of the block
+                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground).
+                if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern).stretch(0, 1, 0))) {
+                    var off = offTheLectern(entry, world, r);
+                    if (off != null) return List.of(off);
+                }
                 var args = new HashMap<>(at);
                 args.put("collect", "true");
                 return List.of(new NativeTaskCandidate(task, "native_break", Map.copyOf(args)));
@@ -7562,14 +7575,18 @@ final class PlayerRuntime {
                 }
                 if (now - r.since > JOB_WAIT) {
                     // Locked to its offers after all: it keeps the job, and this villager is let be.
-                    KindredMod.LOGGER.info("{} reroll: the villager {} kept its job ({}, experience {}, its job site {}, {} there, a site {}, customer {}, asleep {}, AI {}, age {}, entities ticking there {}); let be",
+                    KindredMod.LOGGER.info("{} reroll: the villager {} kept its job ({}, experience {}, its job site {}, {} there, a site {}, customer {}, asleep {}, AI {}, entity {} age {} at {} riding {} removed {}, entities ticking there {} and at it {}, forced {}); let be",
                             entry.data.displayName(), r.villager, villager == null ? "gone" : villager.getVillagerData().getProfession(),
                             villager == null ? 0 : villager.getExperience(), villager == null ? "unknown"
                                     : villager.getBrain().getOptionalRegisteredMemory(net.minecraft.entity.ai.brain.MemoryModuleType.JOB_SITE)
                                             .map(site -> site.pos().toShortString()).orElse("none"),
                             world.getBlockState(r.lectern).getBlock(), world.getPointOfInterestStorage().getType(r.lectern).map(t -> t.getIdAsString()).orElse("none"),
                             villager != null && villager.hasCustomer(), villager != null && villager.isSleeping(), villager != null && !villager.isAiDisabled(),
-                            villager == null ? -1 : villager.age, world.shouldTickEntity(r.lectern));
+                            villager == null ? -1 : villager.getId(), villager == null ? -1 : villager.age,
+                            villager == null ? "-" : villager.getBlockPos().toShortString(), villager != null && villager.hasVehicle(),
+                            villager == null ? "-" : String.valueOf(villager.getRemovalReason()), world.shouldTickEntity(r.lectern),
+                            villager != null && world.shouldTickEntity(villager.getBlockPos()),
+                            world.getForcedChunks().contains(new net.minecraft.util.math.ChunkPos(r.lectern).toLong()));
                     entry.rerollGivenUp.add(r.villager);
                     entry.reroll = null;
                     return null;
@@ -7597,6 +7614,25 @@ final class PlayerRuntime {
         return new NativeTaskCandidate(new dev.kindred.core.TaskPreferences.Candidate(UUID.nameUUIDFromBytes((task.id() + ":wait")
                 .getBytes(StandardCharsets.UTF_8)), task.priority(), task.needScore(), task.affinities(), task.eligibility()),
                 "native_wait", Map.of("seconds", "1"));
+    }
+
+    /**
+     * A walk off the lectern's block to the middle of one beside it, clear of it: where it stood to begin with, else
+     * any side of the lectern with room to stand; or null when there is none.
+     */
+    private static NativeTaskCandidate offTheLectern(Entry entry, net.minecraft.server.world.ServerWorld world, Reroll r) {
+        var sides = new ArrayList<BlockPos>();
+        sides.add(r.stand);
+        for (Direction side : Direction.Type.HORIZONTAL) sides.add(r.lectern.offset(side));
+        for (BlockPos at : sides) {
+            if (at.equals(r.lectern) || !world.getBlockState(at).getCollisionShape(world, at).isEmpty()
+                    || !world.getBlockState(at.up()).getCollisionShape(world, at.up()).isEmpty()
+                    || !world.getBlockState(at.down()).isSolidBlock(world, at.down())) continue;
+            if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(at), e -> !(e instanceof ServerPlayerEntity)).isEmpty()) continue;
+            return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
+                    "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+        }
+        return null;
     }
 
     private static NativeTaskCandidate goNear(dev.kindred.core.TaskPreferences.Candidate task, BlockPos at) {
@@ -7633,7 +7669,9 @@ final class PlayerRuntime {
         entry.rerollLooks.add(seen.stream().map(o -> dev.kindred.core.guide.Trades.sells(o)).toList().toString());
         var verdict = dev.kindred.core.guide.Trades.reroll(seen, holding, r.tries);
         r.nudges = 0;
-        KindredMod.LOGGER.info("{} reroll {}: {}; {}", entry.data.displayName(), r.tries, r.looks.getLast(), verdict);
+        var looked = player.getServerWorld().getEntity(r.villager);
+        KindredMod.LOGGER.info("{} reroll {}: {}; {} (entity {} age {})", entry.data.displayName(), r.tries, r.looks.getLast(), verdict,
+                looked == null ? -1 : looked.getId(), looked == null ? -1 : looked.age);
         switch (verdict) {
             case KEEP -> {
                 say(entry, "This librarian sells " + best.map(d -> dev.kindred.core.guide.Trades.sells(d.offer())).orElse("what I wanted")
