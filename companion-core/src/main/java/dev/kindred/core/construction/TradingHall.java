@@ -26,6 +26,15 @@ public final class TradingHall {
     /** North to south: the back wall, the bed's head and foot, the villager's floor, the cell's front, the corridor, the front wall. */
     static final int BACK = 0, BED_HEAD = 1, BED_FOOT = 2, FLOOR = 3, FRONT = 4, CORRIDOR = 5, FRONT_WALL = 7, ROOF = 4;
 
+    /** A hall's ground north to south, and its height from its floor to its roof, for siting it (E-45d). */
+    public static final int DEPTH = FRONT_WALL + 1, HEIGHT = ROOF + 1;
+
+    /** A hall's ground west to east: a wall either side of each cell, shared. */
+    public static int width(int cells) {
+        check(cells);
+        return 2 * cells + 1;
+    }
+
     /**
      * A cell of the hall: where the villager stands (its floor, before its bed), where its job block goes (across its
      * front, at its feet), and the block open above that, where the player trades across, from the corridor's side.
@@ -47,7 +56,7 @@ public final class TradingHall {
     public static Blueprint of(int cells, String wood, String stone) {
         check(cells);
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_]+")) throw new IllegalArgumentException("Not a material: " + wood + ", " + stone);
-        int width = 2 * cells + 1;
+        int width = width(cells);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var clear = new ArrayList<Pos>();
         BlockSpec planks = BlockSpec.of("minecraft:" + wood + "_planks"), wall = BlockSpec.of("minecraft:" + stone);

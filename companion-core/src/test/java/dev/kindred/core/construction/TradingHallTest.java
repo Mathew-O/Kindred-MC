@@ -47,7 +47,12 @@ class TradingHallTest {
     void theCorridorIsWalledLitAndShutByADoorInItsMiddleTheCellsRoofed() {
         var hall = TradingHall.of(4, "spruce", "stone_bricks");
         var at = blocks(hall);
-        int width = 2 * 4 + 1;
+        int width = TradingHall.width(4);
+        // What it covers is what it is sited by: its width, depth and height.
+        for (var b : hall.blocks()) {
+            assertTrue(b.at().x() >= 0 && b.at().x() < width && b.at().z() >= 0 && b.at().z() < TradingHall.DEPTH
+                    && b.at().y() >= 0 && b.at().y() < TradingHall.HEIGHT, "Within its site: " + b.at());
+        }
         assertEquals("minecraft:spruce_door", at.get(new Pos(width / 2, 1, 7)).block());
         assertEquals("upper", at.get(new Pos(width / 2, 2, 7)).properties().get("half"));
         long torches = at.values().stream().filter(s -> s.block().equals("minecraft:wall_torch")).count();

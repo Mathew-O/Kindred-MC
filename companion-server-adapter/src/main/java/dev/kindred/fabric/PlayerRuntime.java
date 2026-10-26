@@ -3748,6 +3748,7 @@ final class PlayerRuntime {
         if (task.isEmpty()) {
             if (build.done()) {
                 if (build == entry.baseBuild) baseBuilt(entry, build);
+                if (build == entry.hallBuild) hallBuilt(entry, build);
                 entry.build = null;
                 entry.buildTasks.clear();
                 keepWork(entry, null);
@@ -3899,9 +3900,10 @@ final class PlayerRuntime {
         }
         if (blueprint == null) {
             // A base's build stopped by its administrator is not taken up again at once (M-01c).
-            if (entry.build != null && entry.build == entry.baseBuild) {
+            if (entry.build != null && (entry.build == entry.baseBuild || entry.build == entry.hallBuild)) {
                 entry.baseBuild = null;
                 entry.baseRepair = null;
+                entry.hallBuild = null;
                 entry.baseCheckAt = server.getTicks() + BASE_RETRY;
             }
             entry.build = null;
@@ -3967,6 +3969,12 @@ final class PlayerRuntime {
                     entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null
                             || base.wood() != null && !dev.kindred.core.construction.BuildNeeds.WOODS.contains(base.wood())
                             || base.variant() < 0 || base.variant() > dev.kindred.core.construction.BuildStyle.VARIANTS);
+                    // A hall it cannot build again as recorded (an edited file) is left out, as a base is.
+                    var hall = entry.bases.hall;
+                    if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.BuildNeeds.WOODS.contains(hall.wood())
+                            || hall.cells() < dev.kindred.core.construction.TradingHall.MIN_CELLS || hall.cells() > dev.kindred.core.construction.TradingHall.MAX_CELLS)) {
+                        entry.bases.hall = null;
+                    }
                     if (entry.seedBlock != null) entry.bases.seed = entry.seedBlock;
                     entry.basesLoading = false;
                 }));
@@ -3994,6 +4002,27 @@ final class PlayerRuntime {
                 return true;
             }
         }
+        // A trading hall by its base once it keeps a villager worth a cell (E-45d), ahead of its next stage: one it
+        // began taken up again, else sited on the nearest flat open ground to its base.
+        if (last != null && last.complete()) {
+            var hall = record.hall;
+            if (hall != null && !hall.complete() && hall.dimension().equals(dimension)) return startHall(entry, hall, "Back to its trading hall");
+            if (hall == null && keepsAVillager(entry, body)) {
+                var before = footprint(last);
+                var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
+                for (var base : record.built) avoid.add(footprint(base));
+                var site = dev.kindred.core.construction.BaseSite.choose(ground(world), (before.minX() + before.maxX()) / 2,
+                        (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, dev.kindred.core.construction.TradingHall.width(HALL_CELLS),
+                        dev.kindred.core.construction.TradingHall.DEPTH, dev.kindred.core.construction.TradingHall.HEIGHT, avoid);
+                if (site.isPresent()) {
+                    record.hall = new PlayerMemoryStore.Hall(dimension, site.get().x(), site.get().y(), site.get().z(), HALL_CELLS,
+                            styleOf(last).wood(), false);
+                    memories.saveBases(id, record);
+                    return startHall(entry, record.hall, "A villager worth keeping, and a cell to keep it in");
+                }
+                noteBase(entry, "No flat open ground for a trading hall within " + BASE_RADIUS + " blocks of its " + last.stage());
+            }
+        }
         var decision = dev.kindred.core.construction.BaseProgression.next(baseProgress(body, last));
         noteBase(entry, decision.why());
         if (decision.next().isEmpty()) return false;
@@ -4011,6 +4040,7 @@ final class PlayerRuntime {
         }
         var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
         for (var base : record.built) avoid.add(footprint(base));
+        if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
         // Its style grown from its seed block, or the wood it has to hand, and its world (E-29a): this world's stage
         // is not the next world's.
         var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : dev.kindred.core.construction.BuildStyle.grown(record.seed,
@@ -4042,6 +4072,61 @@ final class PlayerRuntime {
         var span = footprint(base);
         say(entry, why + ": a " + style.wood().replace('_', ' ') + " " + base.stage() + ".", "at " + span.minX() + ", " + base.y() + ", " + span.minZ());
         return true;
+    }
+
+    /** The cells of the trading hall a player builds of its own accord (E-45d). */
+    static final int HALL_CELLS = 3;
+
+    private boolean startHall(Entry entry, PlayerMemoryStore.Hall hall, String why) {
+        var plan = dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+        if (startBuild(server.getCommandSource(), entry.data.id(), plan, new BlockPos(hall.x(), hall.y(), hall.z()), 0) != 1) return false;
+        entry.hallBuild = entry.build;
+        noteBase(entry, why);
+        say(entry, why + ": a trading hall of " + hall.cells() + " cells.", "at " + hall.x() + ", " + hall.y() + ", " + hall.z());
+        return true;
+    }
+
+    /** Its trading hall's build has ended: whole, or after its last try as far as it goes, it stands. */
+    private void hallBuilt(Entry entry, BuildRunner build) {
+        entry.hallBuild = null;
+        var record = entry.bases;
+        if (record == null || record.hall == null) return;
+        if (!build.complete() && ++entry.hallTries < BASE_TRIES) {
+            entry.baseCheckAt = server.getTicks() + BASE_RETRY;
+            noteBase(entry, "Its trading hall ended short (" + build.progress() + "); back to it later");
+            return;
+        }
+        entry.hallTries = 0;
+        record.hall = record.hall.finished();
+        memories.saveBases(entry.data.id(), record);
+        noteBase(entry, "Its trading hall stands" + (build.complete() ? "" : " as far as it goes (" + build.progress() + ")"));
+    }
+
+    /**
+     * Whether it keeps a villager worth a cell of its own (E-45c's whom to keep): a librarian it rerolled and kept, or a
+     * villager it has looked at whose offers are worth keeping to it as it stands.
+     */
+    private boolean keepsAVillager(Entry entry, NativePlayerBody body) {
+        if (!entry.rerollKept.isEmpty()) return true;
+        if (entry.villagers.isEmpty()) return false;
+        var holding = Valuables.holding(body.entity(), lootWanted(entry));
+        for (var villager : entry.villagers.values()) {
+            if (dev.kindred.core.guide.Trades.worthKeeping(villager.offers(), holding)) return true;
+        }
+        return false;
+    }
+
+    /** The ground a trading hall covers. */
+    private static dev.kindred.core.construction.BaseSite.Footprint footprint(PlayerMemoryStore.Hall hall) {
+        return new dev.kindred.core.construction.BaseSite.Footprint(hall.x(), hall.z(),
+                hall.x() + dev.kindred.core.construction.TradingHall.width(hall.cells()) - 1, hall.z() + dev.kindred.core.construction.TradingHall.DEPTH - 1);
+    }
+
+    /** The player's trading hall (E-45d), for fixtures. */
+    Optional<PlayerMemoryStore.Hall> hall(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? Optional.empty() : Optional.ofNullable(entry.bases.hall);
     }
 
     /** The style a base was built in: its own, or for a base recorded before E-29a the first plan in oak. */
@@ -10007,6 +10092,9 @@ final class PlayerRuntime {
         long baseCheckAt;
         int baseTries;
         String baseNote = "";
+        /** Its trading hall's build while it is at it (E-45d), and the times it ended short. */
+        BuildRunner hallBuild;
+        int hallTries;
         boolean goalAnnounced;
         String loggedGoalProgress = "";
         boolean foodTaskAuthorized = false;

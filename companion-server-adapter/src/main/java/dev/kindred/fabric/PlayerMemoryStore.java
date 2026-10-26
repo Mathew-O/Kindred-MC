@@ -59,6 +59,16 @@ final class PlayerMemoryStore implements AutoCloseable {
         }
     }
 
+    /**
+     * The player's trading hall by its base (E-45d): where its origin is (the north-west corner of its floor, never
+     * turned), how many cells it has, its wood, and whether it stands whole. A file from before E-45d has none.
+     */
+    record Hall(String dimension, int x, int y, int z, int cells, String wood, boolean complete) {
+        Hall finished() {
+            return new Hall(dimension, x, y, z, cells, wood, true);
+        }
+    }
+
     /** The player's bases in one world, oldest first, and the place the first was sited by. Game thread only. */
     static final class Bases {
         String player = "";
@@ -66,6 +76,8 @@ final class PlayerMemoryStore implements AutoCloseable {
         /** The seed block it was given to grow its builds from (E-29a), or none. */
         String seed;
         List<Base> built = new ArrayList<>();
+        /** Its trading hall (E-45d), or none. */
+        Hall hall;
     }
 
     /**
