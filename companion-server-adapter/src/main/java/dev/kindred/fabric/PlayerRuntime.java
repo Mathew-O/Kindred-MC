@@ -7611,7 +7611,8 @@ final class PlayerRuntime {
             entry.bring = planBring(entry, body, hall);
             if (entry.bring == null) {
                 if (entry.bringMake == null) return null;
-                entry.bringAt = now + 20;
+                // Planned again at once while it makes them, so that what it makes them of is not spent elsewhere between.
+                entry.bringAt = now;
                 return makeForBring(entry, body, entry.bringMake);
             }
             KindredMod.LOGGER.info("{} bringing the {} {} home: {} rails from {} to its cell at {}", entry.data.displayName(), entry.bring.noun,
@@ -7725,10 +7726,11 @@ final class PlayerRuntime {
             }
             case SHUT -> {
                 // Out of the front first, where a nudge may have left it.
-                if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) return List.of(standAt(bringTask(entry, "out of the front"), b.slot.south()));
+                // Two back, across the corridor: a walk to the block before the front can end with the body over its edge.
+                if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) return List.of(standAt(bringTask(entry, "out of the front"), b.slot.south(2)));
                 var state = world.getBlockState(b.slot);
                 if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
-                    if (!body.miningEligible(b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south()));
+                    if (!body.miningEligible(b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                     return List.of(breakAt(bringTask(entry, "front rail"), b.slot));
                 }
                 if (isShutter(state)) {
@@ -7738,7 +7740,7 @@ final class PlayerRuntime {
                 int slot = shutterSlot(player);
                 if (slot < 0) return giveUp(entry, body, "I've no block to shut the " + b.noun + "'s cell with a moment.");
                 if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
-                if (!reaches(player, b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south()));
+                if (!reaches(player, b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                 return List.of(new NativeTaskCandidate(bringTask(entry, "shut"), "native_place", Map.of("x", String.valueOf(b.slot.getX()),
                         "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
             }
@@ -7748,13 +7750,13 @@ final class PlayerRuntime {
                     b.phase = Bring.Phase.FETCH;
                     return bringCandidates(entry, body);
                 }
-                if (!player.canInteractWithEntity(cart, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south()));
+                if (!player.canInteractWithEntity(cart, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                 return List.of(new NativeTaskCandidate(bringTask(entry, "break cart"), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
             }
             case FETCH -> {
                 var state = world.getBlockState(b.slot);
                 if (isShutter(state)) {
-                    if (!reaches(player, b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south()));
+                    if (!reaches(player, b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                     return List.of(breakAt(bringTask(entry, "unshut"), b.slot));
                 }
                 boolean cartLying = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(b.floor).expand(0.5, 1, 0.5),
@@ -7780,7 +7782,7 @@ final class PlayerRuntime {
                 }
                 // Out of the front, and its job block put there behind the villager.
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
-                    var out = b.slot.south();
+                    var out = b.slot.south(2);
                     return List.of(new NativeTaskCandidate(bringTask(entry, "out"), "native_goto", Map.of("x", String.valueOf(out.getX()),
                             "y", String.valueOf(out.getY()), "z", String.valueOf(out.getZ()), "range", "0", "centre", "true")));
                 }
@@ -7812,6 +7814,12 @@ final class PlayerRuntime {
                 }
                 if (nearest != null) {
                     var take = bringTask(entry, "take up:" + nearest.asLong());
+                    // Standing on it (where a rail climbs, the body's footing can be the rail's own block): onto the next.
+                    if (BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ()).equals(nearest)) {
+                        int at = b.rails.indexOf(nearest);
+                        var next = b.rails.get(at > 0 ? at - 1 : Math.min(at + 1, b.rails.size() - 1));
+                        return List.of(standAt(bringTask(entry, "off:" + nearest.asLong()), next));
+                    }
                     // Where the break would be allowed from, as the break itself judges it: onto the rail itself if not.
                     if (!body.miningEligible(nearest)) return List.of(new NativeTaskCandidate(take, "native_goto", Map.of("x", String.valueOf(nearest.getX()),
                             "y", String.valueOf(nearest.getY()), "z", String.valueOf(nearest.getZ()), "range", "0.5", "partial", "true")));

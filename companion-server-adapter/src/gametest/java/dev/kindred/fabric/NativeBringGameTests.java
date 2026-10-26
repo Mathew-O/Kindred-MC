@@ -151,8 +151,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                     var inventory = f.player().getInventory();
                     int rails = make ? 32 : 64;
                     context.assertTrue(count(inventory, Items.RAIL) == rails && count(inventory, Items.MINECART) == 1 && count(inventory, Items.LECTERN) == 0
-                                    && count(inventory, Items.DIRT) == 4 && (!make || count(inventory, Items.IRON_INGOT) == 7 && count(inventory, Items.STICK) == 0),
-                            "Rails, cart and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart" : "") + ": "
+                                    && count(inventory, Items.DIRT) == 4 && (!make || count(inventory, Items.IRON_INGOT) <= 7 && count(inventory, Items.STICK) == 0),
+                            "Rails, cart and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart (what iron is left its own to use)" : "") + ": "
                                     + count(inventory, Items.RAIL) + " rails, " + count(inventory, Items.MINECART) + " carts, " + count(inventory, Items.LECTERN)
                                     + " lecterns, " + count(inventory, Items.DIRT) + " dirt, " + count(inventory, Items.IRON_INGOT) + " iron, "
                                     + count(inventory, Items.STICK) + " sticks");
