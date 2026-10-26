@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward", "pastureward", "hall", "walltower");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward", "pastureward", "hall", "walltower", "tradinghall");
 
     private Generators() { }
 
@@ -205,7 +205,9 @@ public final class Generators {
                 if (corner < 1 || corner > towers.size()) throw new IllegalArgumentException("A wall tower at corner 1 to " + towers.size() + ", from the north-west round");
                 yield towers.get(corner - 1);
             }
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward, pastureward, hall, walltower");
+            // A trading hall of cells for the villagers kept (E-45d), of oak and cobblestone: tradinghall-<cells>.
+            case "tradinghall" -> TradingHall.of(sizes.isEmpty() ? 3 : sizes.get(0), "oak", "cobblestone");
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward, pastureward, hall, walltower, tradinghall");
         };
     }
 }

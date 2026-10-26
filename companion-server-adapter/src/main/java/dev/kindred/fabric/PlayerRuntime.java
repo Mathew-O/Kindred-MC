@@ -7485,6 +7485,9 @@ final class PlayerRuntime {
                 if (slot < 0) {
                     // Just broken: the lectern lies where it fell a moment before it is picked up.
                     if (r.tries > 0 && now - r.since < 100) return List.of(waitTask(task, "For the lectern to be picked up"));
+                    KindredMod.LOGGER.info("{} reroll: no lectern to put down ({} lying near, entities ticking there {}, the villager's age {}); let be",
+                            entry.data.displayName(), world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                                    item -> item.getStack().isOf(Items.LECTERN)).size(), world.shouldTickEntity(r.lectern), villager == null ? -1 : villager.age);
                     entry.reroll = null;
                     return null;
                 }
@@ -7559,6 +7562,14 @@ final class PlayerRuntime {
                 }
                 if (now - r.since > JOB_WAIT) {
                     // Locked to its offers after all: it keeps the job, and this villager is let be.
+                    KindredMod.LOGGER.info("{} reroll: the villager {} kept its job ({}, experience {}, its job site {}, {} there, a site {}, customer {}, asleep {}, AI {}, age {}, entities ticking there {}); let be",
+                            entry.data.displayName(), r.villager, villager == null ? "gone" : villager.getVillagerData().getProfession(),
+                            villager == null ? 0 : villager.getExperience(), villager == null ? "unknown"
+                                    : villager.getBrain().getOptionalRegisteredMemory(net.minecraft.entity.ai.brain.MemoryModuleType.JOB_SITE)
+                                            .map(site -> site.pos().toShortString()).orElse("none"),
+                            world.getBlockState(r.lectern).getBlock(), world.getPointOfInterestStorage().getType(r.lectern).map(t -> t.getIdAsString()).orElse("none"),
+                            villager != null && villager.hasCustomer(), villager != null && villager.isSleeping(), villager != null && !villager.isAiDisabled(),
+                            villager == null ? -1 : villager.age, world.shouldTickEntity(r.lectern));
                     entry.rerollGivenUp.add(r.villager);
                     entry.reroll = null;
                     return null;
