@@ -89,7 +89,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -2042,6 +2042,37 @@ final class NativePlayerBody implements BodyAdapter {
             player.setYaw(yaw);
             player.setHeadYaw(yaw);
             player.setSneaking(true);
+        });
+    }
+
+    /**
+     * Puts the minecart in {@code hotbarSlot} on the rail at {@code rail}, as a player does: looking at the rail and
+     * using the item on it (E-45e). Vanilla spends the item and sets the cart on the rail.
+     */
+    boolean placeCart(ActionLease lease, int hotbarSlot, BlockPos rail) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || player.hasVehicle()) return false;
+        var world = player.getServerWorld();
+        if (!world.isChunkLoaded(rail) || !world.getBlockState(rail).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) return false;
+        if (!(player.getInventory().getStack(hotbarSlot).getItem() instanceof net.minecraft.item.MinecartItem)) return false;
+        Vec3d top = new Vec3d(rail.getX() + 0.5, rail.getY() + 0.1, rail.getZ() + 0.5);
+        if (player.getEyePos().distanceTo(top) > 4.5) return false;
+        return execute(lease, Intent.CART, rail, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            face(top);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(top, Direction.UP, rail, false));
+        });
+    }
+
+    /** One hit on a minecart within reach, as a player breaks one to take it back; a rider in it is set down (E-45e). */
+    boolean strikeCart(ActionLease lease, net.minecraft.entity.vehicle.AbstractMinecartEntity cart) {
+        requireThread();
+        if (cart == null || !cart.isAlive() || player.hasVehicle() || !player.canInteractWithEntity(cart, 0)) return false;
+        return execute(lease, Intent.CART, cart.getBlockPos(), () -> {
+            face(cart.getPos().add(0, 0.3, 0));
+            player.attack(cart);
+            player.swingHand(Hand.MAIN_HAND);
         });
     }
 

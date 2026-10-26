@@ -38,6 +38,21 @@ final class FixtureGround {
 
     private FixtureGround() { }
 
+    /**
+     * The chunks from {@code min} to {@code max} kept simulated while the test runs. The test server sets no simulation
+     * distance, so a player keeps entities moving only in the chunk it stands in, and the server only the chunk of a
+     * test's own structure: a villager by a chunk's edge stopped ticking when the player beside it stepped over into
+     * the next (it never let go of a job whose lectern was gone), and a minecart rolling out of the player's chunk
+     * stopped dead. A server with a simulation distance of its own keeps them moving. The test server releases what is
+     * forced when the batch ends.
+     */
+    static void simulated(TestContext context, BlockPos min, BlockPos max) {
+        var world = context.getWorld();
+        for (int cx = min.getX() >> 4; cx <= max.getX() >> 4; cx++) {
+            for (int cz = min.getZ() >> 4; cz <= max.getZ() >> 4; cz++) world.setChunkForced(cx, cz, true);
+        }
+    }
+
     /** What lies from {@code min} to {@code max} now, to be put back by {@link #restore}. */
     static void keep(TestContext context, BlockPos min, BlockPos max) {
         var world = context.getWorld();

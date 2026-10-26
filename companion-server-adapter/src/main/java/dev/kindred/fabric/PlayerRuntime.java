@@ -1234,6 +1234,11 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_boat", args);
     }
 
+    /** Pushes the minecart {@code cart} along its rails by walking into it, until it rolls (E-45e). */
+    int nativePush(ServerCommandSource source, UUID id, UUID cart, int seconds) {
+        return nativeTask(source, id, "native_push", Map.of("target", cart.toString(), "seconds", String.valueOf(seconds)));
+    }
+
     /** Rows the boat the native player is in toward {@code x}, {@code z} for at most {@code seconds}. */
     int nativeRow(ServerCommandSource source, UUID id, double x, double z, int seconds) {
         return nativeTask(source, id, "native_row", Map.of("x", String.valueOf(x), "z", String.valueOf(z), "seconds", String.valueOf(seconds)));
@@ -1425,6 +1430,13 @@ final class PlayerRuntime {
                         Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
                 task = new NativeBoatAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), water);
+            } else if (skill.equals("native_cart")) {
+                var mode = NativeCartAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
+                BlockPos rail = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
+                        Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
+                task = new NativeCartAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), rail,
+                        arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null);
             } else if (skill.equals("native_bed")) {
                 task = new NativeBedAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
                         claims, nativeActionWriter(), server::execute,
@@ -1647,6 +1659,7 @@ final class PlayerRuntime {
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
                     || ("native_trade".equals(entry.skillId) && intent == NativePlayerBody.Intent.TRADE)
+                    || ("native_cart".equals(entry.skillId) && intent == NativePlayerBody.Intent.CART)
                     || ("native_store".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_break".equals(entry.skillId) && (intent == NativePlayerBody.Intent.MINE || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.SWAP || intent == NativePlayerBody.Intent.MOVE))
@@ -1670,7 +1683,7 @@ final class PlayerRuntime {
                         || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_boat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.ATTACK))
-                    || ("native_row".equals(entry.skillId) && intent == NativePlayerBody.Intent.MOVE)
+                    || (("native_row".equals(entry.skillId) || "native_push".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -2933,6 +2946,10 @@ final class PlayerRuntime {
         // A lectern of its own by an unemployed villager, its offers rerolled until it is worth keeping (E-45c).
         var rerolling = rerollCandidates(entry, body);
         if (rerolling != null) return rerolling;
+
+        // A villager kept brought home to its cell in the player's trading hall, by minecart (E-45e).
+        var bringing = bringCandidates(entry, body);
+        if (bringing != null) return bringing;
 
         // A villager by its way: its offers looked at, and what is worth trading traded (E-45).
         var trading = tradeCandidates(entry, body);
@@ -5237,6 +5254,12 @@ final class PlayerRuntime {
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
                     }
+                    if (res != 1 && entry.bring != null && entry.bring.taskIds.contains(candidateToDispatch.candidate().id())) {
+                        KindredMod.LOGGER.info("{} bringing {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
+                        entry.bring.failed++;
+                        entry.routineRefreshPending = true;
+                        entry.cachedRoutineCandidates = List.of();
+                    }
                     if (res != 1 && entry.reroll != null && entry.reroll.taskIds.contains(candidateToDispatch.candidate().id())) {
                         // A reroll's step refused, counted as a failure, so that it is not asked for tick after tick (E-45c).
                         KindredMod.LOGGER.info("{} reroll {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
@@ -5804,6 +5827,14 @@ final class PlayerRuntime {
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
         if (entry.reroll != null && state != SkillRunner.State.RUNNING) {
             entry.reroll.failed = state == SkillRunner.State.BLOCKED ? entry.reroll.failed + 1 : 0;
+            entry.routineRefreshPending = true;
+        }
+        // A step of bringing a villager home done, the next one planned from what it did; refused, counted (E-45e).
+        if (entry.bring != null && state != SkillRunner.State.RUNNING && finishedTaskId != null && entry.bring.taskIds.contains(finishedTaskId)) {
+            if (state == SkillRunner.State.BLOCKED) {
+                entry.bring.failed++;
+                KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
+            } else entry.bring.failed = 0;
             entry.routineRefreshPending = true;
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.tradeTaskId) && entry.tradeVillager != null) {
@@ -7481,6 +7512,401 @@ final class PlayerRuntime {
                         + (best.get().offer().open() ? "once I have what it takes." : "once it has restocked."), "");
             }
         }
+    }
+
+    /**
+     * A villager kept brought home to its cell by minecart (E-45e): the rail line found ({@link
+     * dev.kindred.core.construction.RailRoute}), the steps along it, and the cart. The hall's door is taken off for the
+     * line and put back after; the rails it lays it takes up again; nothing owned is left but what holds the villager.
+     */
+    private static final class Bring {
+        enum Phase { DOOR, LAY, CART, PUSH, ROLL, SHUT, FREE, FETCH, CLOSE, TIDY, DOOR_BACK }
+
+        final UUID villager;
+        final String noun;
+        final List<BlockPos> rails;
+        final BlockPos cart, push, floor, slot, door, origin;
+        final int cells;
+        final String wood;
+        final net.minecraft.item.Item jobBlock;
+        Phase phase = Phase.DOOR;
+        UUID cartId;
+        int pushes, failed;
+        long since;
+        final Set<UUID> taskIds = new HashSet<>();
+
+        Bring(UUID villager, String noun, List<BlockPos> rails, BlockPos cart, BlockPos push, BlockPos floor, BlockPos slot, BlockPos door,
+              BlockPos origin, int cells, String wood, net.minecraft.item.Item jobBlock) {
+            this.villager = villager;
+            this.noun = noun;
+            this.rails = List.copyOf(rails);
+            this.cart = cart;
+            this.push = push;
+            this.floor = floor;
+            this.slot = slot;
+            this.door = door;
+            this.origin = origin;
+            this.cells = cells;
+            this.wood = wood;
+            this.jobBlock = jobBlock;
+        }
+    }
+
+    /** How far from its hall a villager kept may be to be brought by rail; and the plain blocks a cell's front is shut with a moment. */
+    static final int BRING_RANGE = 48;
+    private static final net.minecraft.item.Item[] SHUTTERS = {Items.COBBLESTONE, Items.DIRT, Items.STONE, Items.COBBLED_DEEPSLATE};
+
+    /**
+     * A villager kept brought home (E-45e), as players bring one by minecart: with a trading hall of its own standing, a
+     * villager it keeps (whom to keep, E-45c) within {@link #BRING_RANGE} of it and not yet in a cell, its trades locked
+     * (it has traded: a librarian moved before it has would let its job go and its offers with it), and in hand the rails
+     * the line takes, a minecart, the villager's job block and a plain block. It takes the hall's door off, lays the line
+     * from two rails behind the villager to a free cell's floor, puts the cart down behind it and pushes it: rolling, the
+     * cart takes the villager up and runs on into the cell, against its bed (pushed again where it stops short). It shuts
+     * the cell's front with the plain block, breaks the cart through the opening above (the villager set down inside, on
+     * its bed), takes the plain block back, steps into the front for the cart and the floor's rail, steps out and puts the
+     * job block there, which shuts the villager in. Then it takes up its rails and puts the door back. Under the
+     * server's AI world edits only, never in a match.
+     */
+    private List<NativeTaskCandidate> bringCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (!worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var world = player.getServerWorld();
+        if (entry.bring == null) {
+            if (now < entry.bringAt) return null;
+            entry.bringAt = now + 200;
+            var hall = entry.bases == null ? null : entry.bases.hall;
+            if (hall == null || !hall.complete() || !hall.dimension().equals(world.getRegistryKey().getValue().toString())) return null;
+            entry.bring = planBring(entry, body, hall);
+            if (entry.bring == null) return null;
+            KindredMod.LOGGER.info("{} bringing the {} {} home: {} rails from {} to its cell at {}", entry.data.displayName(), entry.bring.noun,
+                    entry.bring.villager, entry.bring.rails.size(), entry.bring.cart.toShortString(), entry.bring.floor.toShortString());
+        }
+        var b = entry.bring;
+        var villager = world.getEntity(b.villager) instanceof net.minecraft.entity.passive.VillagerEntity v && v.isAlive() ? v : null;
+        if (villager == null) return endBring(entry, "The " + b.noun + " I was bringing home is gone.", false);
+        if (b.failed >= 3) return endBring(entry, "I couldn't bring the " + b.noun + " home: " + b.phase.name().toLowerCase(java.util.Locale.ROOT)
+                + " went wrong three times over.", false);
+        var task = bringTask(entry, "step");
+        switch (b.phase) {
+            case DOOR -> {
+                if (!(world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock)) {
+                    b.phase = Bring.Phase.LAY;
+                    return bringCandidates(entry, body);
+                }
+                if (!reaches(player, b.door)) return List.of(goNear(task, b.door.south()));
+                return List.of(breakAt(task, b.door));
+            }
+            case LAY -> {
+                // From the cell's floor back toward the villager, so that it ends by the cart's place.
+                for (int i = b.rails.size() - 1; i >= 0; i--) {
+                    var at = b.rails.get(i);
+                    if (world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) continue;
+                    var rail = bringTask(entry, "rail:" + i);
+                    int slot = slotOf(player, Items.RAIL);
+                    if (slot < 0) return endBring(entry, "I ran out of rails bringing the " + b.noun + " home.", false);
+                    if (slot >= 9) return List.of(new NativeTaskCandidate(rail, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                    if (!reaches(player, at)) return List.of(goNear(rail, at));
+                    return List.of(new NativeTaskCandidate(rail, "native_place", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                            "z", String.valueOf(at.getZ()), "slot", String.valueOf(slot), "side", "up")));
+                }
+                b.phase = Bring.Phase.CART;
+                return bringCandidates(entry, body);
+            }
+            case CART -> {
+                var carts = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, new net.minecraft.util.math.Box(b.cart).expand(0.5),
+                        c -> c.isAlive() && !c.hasPassengers());
+                if (!carts.isEmpty()) {
+                    b.cartId = carts.getFirst().getUuid();
+                    b.phase = Bring.Phase.PUSH;
+                    return bringCandidates(entry, body);
+                }
+                int slot = slotOf(player, Items.MINECART);
+                if (slot < 0) return endBring(entry, "I've no minecart to bring the " + b.noun + " home in.", false);
+                if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                if (!reaches(player, b.cart)) return List.of(goNear(task, b.push));
+                return List.of(new NativeTaskCandidate(task, "native_cart", Map.of("mode", "place", "slot", String.valueOf(slot),
+                        "x", String.valueOf(b.cart.getX()), "y", String.valueOf(b.cart.getY()), "z", String.valueOf(b.cart.getZ()))));
+            }
+            case PUSH -> {
+                var cart = cartOf(world, b);
+                if (cart == null) return endBring(entry, "The cart for the " + b.noun + " is gone.", false);
+                if (villager.getVehicle() == cart) {
+                    b.phase = Bring.Phase.ROLL;
+                    b.since = now;
+                    return bringCandidates(entry, body);
+                }
+                if (cart.getVelocity().horizontalLength() > 0.01) return List.of(waitTask(task, "For the cart"));
+                if (++b.pushes > 4) return endBring(entry, "The cart wouldn't take the " + b.noun + " up.", false);
+                if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) > 0.25) {
+                    b.pushes--;
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "behind:" + b.pushes), "native_goto", Map.of("x", String.valueOf(b.push.getX()),
+                            "y", String.valueOf(b.push.getY()), "z", String.valueOf(b.push.getZ()), "range", "0", "centre", "true")));
+                }
+                return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push",
+                        Map.of("target", cart.getUuid().toString(), "seconds", "10")));
+            }
+            case ROLL -> {
+                var cart = cartOf(world, b);
+                if (cart == null) return endBring(entry, "The cart for the " + b.noun + " is gone.", false);
+                if (villager.getVehicle() != cart) return endBring(entry, "The " + b.noun + " got out of the cart.", false);
+                double speed = cart.getVelocity().horizontalLength();
+                if (cart.getBlockPos().equals(b.floor) && speed < 0.01) {
+                    b.phase = Bring.Phase.SHUT;
+                    return bringCandidates(entry, body);
+                }
+                if (speed > 0.01) {
+                    b.since = now;
+                    return List.of(waitTask(task, "For the cart to roll in"));
+                }
+                if (now - b.since < 40) return List.of(waitTask(task, "For the cart to roll in"));
+                // Stopped short: pushed on again from behind it, along the line.
+                int at = b.rails.indexOf(cart.getBlockPos());
+                if (at < 1 || ++b.pushes > 8) return endBring(entry, "The cart with the " + b.noun + " stopped short of its cell.", false);
+                var behind = b.rails.get(at - 1);
+                var stand = behind.add(behind.getX() - cart.getBlockX(), 0, behind.getZ() - cart.getBlockZ());
+                b.since = now;
+                if (player.getBlockPos().getSquaredDistance(stand) > 1) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
+                            "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "centre", "true")));
+                }
+                return List.of(new NativeTaskCandidate(bringTask(entry, "again:" + b.pushes), "native_push",
+                        Map.of("target", cart.getUuid().toString(), "seconds", "10")));
+            }
+            case SHUT -> {
+                var state = world.getBlockState(b.slot);
+                if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
+                    if (!reaches(player, b.slot)) return List.of(goNear(task, b.slot.south()));
+                    return List.of(breakAt(bringTask(entry, "front rail"), b.slot));
+                }
+                if (isShutter(state)) {
+                    b.phase = Bring.Phase.FREE;
+                    return bringCandidates(entry, body);
+                }
+                int slot = -1;
+                for (var shutter : SHUTTERS) if (slot < 0) slot = slotOf(player, shutter);
+                if (slot < 0) return endBring(entry, "I've no block to shut the " + b.noun + "'s cell with a moment.", false);
+                if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                if (!reaches(player, b.slot)) return List.of(goNear(task, b.slot.south()));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "shut"), "native_place", Map.of("x", String.valueOf(b.slot.getX()),
+                        "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
+            }
+            case FREE -> {
+                var cart = cartOf(world, b);
+                if (cart == null) {
+                    b.phase = Bring.Phase.FETCH;
+                    return bringCandidates(entry, body);
+                }
+                if (!player.canInteractWithEntity(cart, 0)) return List.of(goNear(task, b.slot.south()));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "break cart"), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
+            }
+            case FETCH -> {
+                var state = world.getBlockState(b.slot);
+                if (isShutter(state)) {
+                    if (!reaches(player, b.slot)) return List.of(goNear(task, b.slot.south()));
+                    return List.of(breakAt(bringTask(entry, "unshut"), b.slot));
+                }
+                boolean cartLying = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(b.floor).expand(0.5, 1, 0.5),
+                        item -> item.getStack().isOf(Items.MINECART)).isEmpty();
+                boolean railLeft = world.getBlockState(b.floor).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
+                if (cartLying || railLeft) {
+                    // Into the cell's front for them: the cart picked up where it lies, the floor's rail taken up.
+                    if (!player.getBlockPos().equals(b.slot)) {
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "in"), "native_goto", Map.of("x", String.valueOf(b.slot.getX()),
+                                "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "range", "0", "centre", "true")));
+                    }
+                    if (railLeft) return List.of(breakAt(bringTask(entry, "floor rail"), b.floor));
+                    return List.of(waitTask(task, "For the cart to be picked up"));
+                }
+                b.phase = Bring.Phase.CLOSE;
+                return bringCandidates(entry, body);
+            }
+            case CLOSE -> {
+                var state = world.getBlockState(b.slot);
+                if (state.isOf(net.minecraft.block.Block.getBlockFromItem(b.jobBlock))) {
+                    b.phase = Bring.Phase.TIDY;
+                    return bringCandidates(entry, body);
+                }
+                // Out of the front, and its job block put there behind the villager.
+                if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
+                    var out = b.slot.south();
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "out"), "native_goto", Map.of("x", String.valueOf(out.getX()),
+                            "y", String.valueOf(out.getY()), "z", String.valueOf(out.getZ()), "range", "0", "centre", "true")));
+                }
+                int slot = slotOf(player, b.jobBlock);
+                if (slot < 0) return endBring(entry, "I've lost the " + b.noun + "'s job block.", false);
+                if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "job block"), "native_place", Map.of("x", String.valueOf(b.slot.getX()),
+                        "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
+            }
+            case TIDY -> {
+                // Its rails taken up again, nearest first.
+                BlockPos nearest = null;
+                for (var at : b.rails) {
+                    if (at.equals(b.floor) || at.equals(b.slot) || !world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) continue;
+                    if (nearest == null || player.getBlockPos().getSquaredDistance(at) < player.getBlockPos().getSquaredDistance(nearest)) nearest = at;
+                }
+                if (nearest != null) {
+                    var take = bringTask(entry, "take up:" + nearest.asLong());
+                    if (!reaches(player, nearest)) return List.of(goNear(take, nearest));
+                    return List.of(breakAt(take, nearest));
+                }
+                b.phase = Bring.Phase.DOOR_BACK;
+                return bringCandidates(entry, body);
+            }
+            case DOOR_BACK -> {
+                if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock) {
+                    entry.brought.add(b.villager);
+                    return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall.", true);
+                }
+                // The door put back as the hall's plan has it, by the build runner, which places a door as players do.
+                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone");
+                var door = new ArrayList<dev.kindred.core.construction.Blueprint.Block>();
+                var rel = new dev.kindred.core.construction.Pos(b.door.getX() - b.origin.getX(), b.door.getY() - b.origin.getY(), b.door.getZ() - b.origin.getZ());
+                for (var block : hall.blocks()) if (block.at().x() == rel.x() && block.at().z() == rel.z() && (block.at().y() == rel.y() || block.at().y() == rel.y() + 1)) door.add(block);
+                var plan = new dev.kindred.core.construction.Blueprint("the trading hall's door", hall.source(), hall.creator(), hall.license(), door, List.of());
+                if (++b.pushes > 12 || startBuild(server.getCommandSource(), entry.data.id(), plan, b.origin, 0) != 1) {
+                    return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back.", true);
+                }
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /** The villager to bring and the line to bring it by, or null with why not noted. */
+    private Bring planBring(Entry entry, NativePlayerBody body, PlayerMemoryStore.Hall hall) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos origin = new BlockPos(hall.x(), hall.y(), hall.z());
+        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells());
+        var holding = Valuables.holding(player, lootWanted(entry));
+        var around = new net.minecraft.util.math.Box(origin).expand(BRING_RANGE);
+        for (var villager : world.getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class, around, v -> v.isAlive() && !v.isBaby() && !v.hasVehicle())) {
+            var id = villager.getUuid();
+            if (entry.brought.contains(id) || inCell(villager, origin, cells)) continue;
+            var known = entry.villagers.get(id);
+            boolean kept = entry.rerollKept.contains(id) || known != null && dev.kindred.core.guide.Trades.worthKeeping(known.offers(), holding);
+            if (!kept) continue;
+            var profession = profession(villager);
+            if (profession.jobBlock() == null) continue;
+            String noun = profession.name().toLowerCase(java.util.Locale.ROOT);
+            if (villager.getExperience() <= 0) {
+                noteBring(entry, "The " + noun + " has never traded: moved, it would let its job go");
+                continue;
+            }
+            dev.kindred.core.construction.TradingHall.Cell free = null;
+            for (var cell : cells) {
+                BlockPos floor = origin.add(cell.stand().x(), cell.stand().y(), cell.stand().z());
+                BlockPos slot = origin.add(cell.jobBlock().x(), cell.jobBlock().y(), cell.jobBlock().z());
+                if (world.getBlockState(slot).isAir() && world.getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class,
+                        new net.minecraft.util.math.Box(floor).expand(0, 0, 2), v -> true).isEmpty()) {
+                    free = cell;
+                    break;
+                }
+            }
+            if (free == null) {
+                noteBring(entry, "No cell free in the trading hall");
+                return null;
+            }
+            var route = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
+                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+            if (route.isEmpty()) {
+                noteBring(entry, "No rail line from the " + noun + " to its cell");
+                continue;
+            }
+            var rails = route.get().rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
+            var jobBlock = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(profession.jobBlock()));
+            int railsHeld = 0, carts = 0, jobs = 0, shutters = 0;
+            var inventory = player.getInventory();
+            for (int slot = 0; slot < 36; slot++) {
+                var stack = inventory.getStack(slot);
+                if (stack.isOf(Items.RAIL)) railsHeld += stack.getCount();
+                if (stack.isOf(Items.MINECART)) carts += stack.getCount();
+                if (stack.isOf(jobBlock)) jobs += stack.getCount();
+                for (var shutter : SHUTTERS) if (stack.isOf(shutter)) shutters += stack.getCount();
+            }
+            int railsNeeded = (int) rails.stream().filter(at -> !world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)).count();
+            if (railsHeld < railsNeeded || carts < 1 || jobs < 1 || shutters < 1) {
+                noteBring(entry, "To bring the " + noun + " home: " + railsNeeded + " rails (" + railsHeld + " held), a minecart (" + carts + "), a "
+                        + profession.jobBlock().substring(10).replace('_', ' ') + " (" + jobs + ") and a plain block (" + shutters + ")");
+                return null;
+            }
+            var r = route.get();
+            BlockPos floor = origin.add(free.stand().x(), free.stand().y(), free.stand().z());
+            BlockPos slot = origin.add(free.jobBlock().x(), free.jobBlock().y(), free.jobBlock().z());
+            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells()) / 2, 1, 7);
+            noteBring(entry, "Bringing the " + noun + " home");
+            return new Bring(id, noun, rails, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
+                    floor, slot, door, origin, hall.cells(), hall.wood(), jobBlock);
+        }
+        return null;
+    }
+
+    /** Whether a villager stands in one of the hall's cells: on its floor or its bed. */
+    private static boolean inCell(net.minecraft.entity.passive.VillagerEntity villager, BlockPos origin, List<dev.kindred.core.construction.TradingHall.Cell> cells) {
+        var at = villager.getBlockPos();
+        for (var cell : cells) {
+            if (at.getX() == origin.getX() + cell.stand().x() && Math.abs(at.getY() - origin.getY() - 1) <= 1
+                    && at.getZ() >= origin.getZ() + cell.stand().z() - 2 && at.getZ() <= origin.getZ() + cell.stand().z()) return true;
+        }
+        return false;
+    }
+
+    private static net.minecraft.entity.vehicle.AbstractMinecartEntity cartOf(net.minecraft.server.world.ServerWorld world, Bring b) {
+        return b.cartId != null && world.getEntity(b.cartId) instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity c && c.isAlive() ? c : null;
+    }
+
+    private static boolean isShutter(net.minecraft.block.BlockState state) {
+        for (var shutter : SHUTTERS) if (state.isOf(net.minecraft.block.Block.getBlockFromItem(shutter))) return true;
+        return false;
+    }
+
+    private static boolean reaches(ServerPlayerEntity player, BlockPos at) {
+        return player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(at)) <= 4.5 * 4.5;
+    }
+
+    private static NativeTaskCandidate breakAt(dev.kindred.core.TaskPreferences.Candidate task, BlockPos at) {
+        return new NativeTaskCandidate(task, "native_break", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                "z", String.valueOf(at.getZ()), "collect", "true"));
+    }
+
+    /** Bringing it ended: said, and a while before it looks again for one to bring. */
+    private List<NativeTaskCandidate> endBring(Entry entry, String said, boolean done) {
+        KindredMod.LOGGER.info("{} bringing: {}", entry.data.displayName(), said);
+        say(entry, said, "");
+        noteBring(entry, done ? "Brought home" : said);
+        entry.bring = null;
+        entry.bringAt = server.getTicks() + (done ? 200 : 6000);
+        return null;
+    }
+
+    private static void noteBring(Entry entry, String why) {
+        if (why.equals(entry.bringNote)) return;
+        entry.bringNote = why;
+        KindredMod.LOGGER.info("{} bringing: {}", entry.data.displayName(), why);
+    }
+
+    private static dev.kindred.core.TaskPreferences.Candidate bringTask(Entry entry, String kind) {
+        var b = entry.bring;
+        UUID id = UUID.nameUUIDFromBytes(("bring:" + entry.data.id() + ":" + b.villager + ":" + b.phase + ":" + kind).getBytes(StandardCharsets.UTF_8));
+        b.taskIds.add(id);
+        return new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+    }
+
+    /** Fixtures: the villagers it has brought home, what it last noted, and the step it is at. */
+    Set<UUID> brought(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? Set.of() : Set.copyOf(entry.brought);
+    }
+
+    String bringNote(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? "" : entry.bringNote + (entry.bring == null ? "" : " [" + entry.bring.phase + "]");
     }
 
     /** A lectern of its own put down by an unemployed villager, and its offers rerolled by breaking and replacing it (E-45c). */
@@ -9905,6 +10331,11 @@ final class PlayerRuntime {
         private long tradeAt;
         /** The lectern reroll under way (E-45c), the villagers kept and given up on, and when it next looks for one. */
         private Reroll reroll;
+        /** A kept villager being brought to its cell (E-45e), when it may look again for one to bring, those brought, and why not. */
+        private Bring bring;
+        private long bringAt;
+        private final Set<UUID> brought = new HashSet<>();
+        private String bringNote = "";
         private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
         private final List<String> rerollLooks = new ArrayList<>();
         private long rerollAt;

@@ -53,6 +53,7 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    FixtureGround.simulated(context, o.add(-8, 0, -8), o.add(18, 0, 18));
                     for (int x = -8; x <= 18; x++) for (int z = -8; z <= 18; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 14; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());

@@ -81,6 +81,12 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
             case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(125), Duration.ofSeconds(10), 0);
+            // A minecart put on a rail, or broken to take it back (E-45e).
+            case "native_cart" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target"), Set.of(), Set.of(),
+                    Duration.ofSeconds(15), Duration.ofSeconds(10), 0);
+            // A minecart pushed along its rails by walking into it (E-45e).
+            case "native_push" -> new SkillDescriptor(id, Set.of("target"), Set.of("seconds"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(35), Duration.ofSeconds(5), 0);
             case "native_bed" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "facing"), Set.of(),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -182,6 +188,9 @@ final class NativePlayerSkills {
             return new NativeStepInSkill(body, lease,
                     new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
         }
+        if (id.equals("native_push")) {
+            return new NativePushSkill(body, lease, UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("seconds", "10")));
+        }
         if (id.equals("native_row")) {
             return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),
                     Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")));
@@ -239,7 +248,7 @@ final class NativePlayerSkills {
                 || (task instanceof NativeGoToSkill go && (intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.DOOR
                     || intent == NativePlayerBody.Intent.SELECT_SLOT && go.holds()))
                 || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
-                || (task instanceof NativeRowSkill && intent == NativePlayerBody.Intent.MOVE)
+                || ((task instanceof NativeRowSkill || task instanceof NativePushSkill) && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
