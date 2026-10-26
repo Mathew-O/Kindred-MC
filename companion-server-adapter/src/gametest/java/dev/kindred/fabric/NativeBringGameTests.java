@@ -65,8 +65,23 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, true);
     }
 
+    /**
+     * As the first, with the librarian moved three blocks aside once the cart is down, as a villager wanders off a line
+     * laid to where it stood: Hal lays the line again from where it now is, takes the cart up and puts it down again
+     * behind it, and brings it home; every rail of both lines taken up.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringWandered", tickLimit = 14000)
+    public void aLibrarianOffTheLineIsBroughtHomeFromWhereItStands(TestContext context) {
+        scene(context, false, true);
+    }
+
     private static void scene(TestContext context, boolean make) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, make ? 13500 : 11500);
+        scene(context, make, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, make || wander ? 13500 : 11500);
+        boolean[] moved = {false};
         var hall = TradingHall.of(3, "oak", "cobblestone");
         BlockPos[] origin = new BlockPos[1];
         VillagerEntity[] librarian = new VillagerEntity[1];
@@ -136,8 +151,18 @@ public final class NativeBringGameTests implements FabricGameTest {
                     hal.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Hal playing"))
-                .createAndAdd(() -> context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
-                        "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> {
+                    // Off the line, once the cart is down behind it: three blocks east.
+                    if (wander && !moved[0] && !context.getWorld().getEntitiesByClass(net.minecraft.entity.vehicle.MinecartEntity.class,
+                            new net.minecraft.util.math.Box(origin[0].add(3, 0, 22)).expand(1), c -> true).isEmpty()) {
+                        var at = origin[0].add(6, 0, 20);
+                        librarian[0].refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 180, 0);
+                        moved[0] = true;
+                        KindredMod.LOGGER.info("Bring: the librarian moved off the line, to {}", at.subtract(origin[0]).toShortString());
+                    }
+                    context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
+                            "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
+                })
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     var cell = TradingHall.cells(3).stream().filter(c -> librarian[0].getBlockX() == origin[0].getX() + c.stand().x()).findFirst();

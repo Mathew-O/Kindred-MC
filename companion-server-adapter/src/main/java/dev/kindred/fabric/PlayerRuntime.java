@@ -4491,7 +4491,8 @@ final class PlayerRuntime {
         int open = 0;
         while (open < 24) {
             var above = world.getBlockState(new BlockPos(x, top + 1 + open, z));
-            if (!(above.isAir() || above.isReplaceable() && above.getFluidState().isEmpty())) break;
+            // A rail is no more in the way than air: a line laid again over its own rails (E-45e).
+            if (!(above.isAir() || above.isReplaceable() && above.getFluidState().isEmpty() || above.isIn(net.minecraft.registry.tag.BlockTags.RAILS))) break;
             open++;
         }
         return Optional.of(new dev.kindred.core.construction.BaseSite.Column(top, firm, open));
@@ -7529,13 +7530,18 @@ final class PlayerRuntime {
      * line and put back after; the rails it lays it takes up again; nothing owned is left but what holds the villager.
      */
     private static final class Bring {
-        enum Phase { DOOR, LAY, CART, PUSH, ROLL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, DOOR_BACK }
+        enum Phase { DOOR, LAY, CART, PUSH, RECART, ROLL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, DOOR_BACK }
 
         final UUID villager;
         final String noun;
-        final List<BlockPos> rails;
-        final BlockPos cart, push, floor, slot, door, origin;
-        final int cells;
+        /** The line, and the cart's place and the push's, laid again from where the villager is when it wanders off it. */
+        List<BlockPos> rails;
+        BlockPos cart, push;
+        final BlockPos floor, slot, door, origin;
+        final int cells, cellIndex;
+        /** Every rail it has put down, to take up again; and how often it has laid the line again. */
+        final Set<BlockPos> laid = new HashSet<>();
+        int replans;
         final String wood;
         final net.minecraft.item.Item jobBlock;
         Phase phase = Phase.DOOR;
@@ -7547,7 +7553,7 @@ final class PlayerRuntime {
         final Set<UUID> taskIds = new HashSet<>();
 
         Bring(UUID villager, String noun, List<BlockPos> rails, BlockPos cart, BlockPos push, BlockPos floor, BlockPos slot, BlockPos door,
-              BlockPos origin, int cells, String wood, net.minecraft.item.Item jobBlock) {
+              BlockPos origin, int cells, int cellIndex, String wood, net.minecraft.item.Item jobBlock) {
             this.villager = villager;
             this.noun = noun;
             this.rails = List.copyOf(rails);
@@ -7558,6 +7564,7 @@ final class PlayerRuntime {
             this.door = door;
             this.origin = origin;
             this.cells = cells;
+            this.cellIndex = cellIndex;
             this.wood = wood;
             this.jobBlock = jobBlock;
         }
@@ -7635,6 +7642,22 @@ final class PlayerRuntime {
                 return List.of(breakAt(task, b.door));
             }
             case LAY -> {
+                // Laid again: its rails off the new line taken up first, so that none joins onto it (a rail takes its
+                // shape from the rails beside it).
+                BlockPos stale = null;
+                for (var at : b.laid) {
+                    if (b.rails.contains(at) || !world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) continue;
+                    if (stale == null || player.getBlockPos().getSquaredDistance(at) < player.getBlockPos().getSquaredDistance(stale)) stale = at;
+                }
+                if (stale != null) {
+                    var lift = bringTask(entry, "lift:" + stale.asLong());
+                    if (BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ()).equals(stale)) {
+                        return List.of(standAt(bringTask(entry, "off:" + stale.asLong()), stale.offset(player.getHorizontalFacing().getOpposite())));
+                    }
+                    if (!body.miningEligible(stale)) return List.of(new NativeTaskCandidate(lift, "native_goto", Map.of("x", String.valueOf(stale.getX()),
+                            "y", String.valueOf(stale.getY()), "z", String.valueOf(stale.getZ()), "range", "0.5", "partial", "true")));
+                    return List.of(breakAt(lift, stale));
+                }
                 // From the cell's floor back toward the villager, so that it ends by the cart's place.
                 for (int i = b.rails.size() - 1; i >= 0; i--) {
                     var at = b.rails.get(i);
@@ -7644,6 +7667,7 @@ final class PlayerRuntime {
                     if (slot < 0) return giveUp(entry, body, "I ran out of rails bringing the " + b.noun + " home.");
                     if (slot >= 9) return List.of(new NativeTaskCandidate(rail, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
                     if (!reaches(player, at)) return List.of(goNear(rail, at));
+                    b.laid.add(at);
                     return List.of(new NativeTaskCandidate(rail, "native_place", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
                             "z", String.valueOf(at.getZ()), "slot", String.valueOf(slot), "side", "up")));
                 }
@@ -7659,7 +7683,12 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 int slot = slotOf(player, Items.MINECART);
-                if (slot < 0) return giveUp(entry, body, "I've no minecart to bring the " + b.noun + " home in.");
+                if (slot < 0) {
+                    var near = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, new net.minecraft.util.math.Box(b.cart).expand(6), c -> true);
+                    KindredMod.LOGGER.info("{} bringing: no minecart to put down at {}; carts near: {}", entry.data.displayName(), b.cart.toShortString(),
+                            near.stream().map(c -> c.getBlockPos().toShortString() + (c.hasPassengers() ? " ridden" : "") + (c.isAlive() ? "" : " dead")).toList());
+                    return giveUp(entry, body, "I've no minecart to bring the " + b.noun + " home in.");
+                }
                 if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
                 // Put down from where the push starts, beside it: the rail's top is low to reach from further off.
                 if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) > 0.25) {
@@ -7678,6 +7707,24 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 if (cart.getVelocity().horizontalLength() > 0.01) return List.of(waitTask(task, "For the cart"));
+                // Off the line the cart will run along (wandered, or pushed aside): the line laid again from where it stands.
+                int on = b.rails.indexOf(villager.getBlockPos());
+                if (on < 1 || on > 4) {
+                    if (b.replans >= 4) return giveUp(entry, body, "The " + b.noun + " kept wandering off the line.");
+                    var again = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex));
+                    if (again.isEmpty()) return giveUp(entry, body, "No rail line from where the " + b.noun + " wandered to.");
+                    b.replans++;
+                    var r = again.get();
+                    b.rails = r.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
+                    b.cart = new BlockPos(r.cart().x(), r.cart().y(), r.cart().z());
+                    b.push = new BlockPos(r.push().x(), r.push().y(), r.push().z());
+                    KindredMod.LOGGER.info("{} bringing: the {} off the line; laid again from {}, {} rails", entry.data.displayName(), b.noun,
+                            villager.getBlockPos().toShortString(), b.rails.size());
+                    b.phase = cart.getBlockPos().equals(b.cart) ? Bring.Phase.LAY : Bring.Phase.RECART;
+                    return bringCandidates(entry, body);
+                }
                 if (b.pushes >= 4) return giveUp(entry, body, "The cart wouldn't take the " + b.noun + " up.");
                 // The cart rolled on past and stopped empty: back to its place, for another push.
                 if (!cart.getBlockPos().equals(b.cart)) return giveUp(entry, body, "The cart rolled past the " + b.noun + " without it.");
@@ -7687,6 +7734,21 @@ final class PlayerRuntime {
                 }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push",
                         Map.of("target", cart.getUuid().toString(), "seconds", "10")));
+            }
+            case RECART -> {
+                // The cart taken back, to be put down again where the line now starts.
+                var cart = cartOf(world, b);
+                if (cart == null) {
+                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                            item -> item.getStack().isOf(Items.MINECART));
+                    // Onto where it lies: an item is picked up from a block away at most.
+                    if (!lying.isEmpty()) return List.of(standAt(bringTask(entry, "pick up cart:" + b.replans), lying.getFirst().getBlockPos()));
+                    b.cartId = null;
+                    b.phase = Bring.Phase.LAY;
+                    return bringCandidates(entry, body);
+                }
+                if (!player.canInteractWithEntity(cart, 0)) return List.of(goNear(task, cart.getBlockPos()));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "recart:" + b.replans), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
             }
             case ROLL -> {
                 var cart = cartOf(world, b);
@@ -7714,8 +7776,8 @@ final class PlayerRuntime {
                 // Stopped short: pushed on again from behind it, along the line.
                 int at = b.rails.indexOf(cart.getBlockPos());
                 if (at < 1 || b.pushes >= 8) return giveUp(entry, body, "The cart with the " + b.noun + " stopped short of its cell.");
-                var behind = b.rails.get(at - 1);
-                var stand = behind.add(behind.getX() - cart.getBlockX(), 0, behind.getZ() - cart.getBlockZ());
+                // On the rail behind it: two behind ran through a turn into the corridor's wall.
+                var stand = b.rails.get(at - 1);
                 b.since = now;
                 if (player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
@@ -7808,7 +7870,9 @@ final class PlayerRuntime {
             case TIDY -> {
                 // Its rails taken up again, nearest first: all of them, when it gave up; else those the cell does not keep.
                 BlockPos nearest = null;
-                for (var at : b.rails) {
+                var all = new java.util.LinkedHashSet<BlockPos>(b.rails);
+                all.addAll(b.laid);
+                for (var at : all) {
                     if (b.failure == null && (at.equals(b.floor) || at.equals(b.slot)) || !world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) continue;
                     if (nearest == null || player.getBlockPos().getSquaredDistance(at) < player.getBlockPos().getSquaredDistance(nearest)) nearest = at;
                 }
@@ -7817,7 +7881,8 @@ final class PlayerRuntime {
                     // Standing on it (where a rail climbs, the body's footing can be the rail's own block): onto the next.
                     if (BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ()).equals(nearest)) {
                         int at = b.rails.indexOf(nearest);
-                        var next = b.rails.get(at > 0 ? at - 1 : Math.min(at + 1, b.rails.size() - 1));
+                        var next = at < 0 ? nearest.offset(player.getHorizontalFacing().getOpposite())
+                                : b.rails.get(at > 0 ? at - 1 : Math.min(at + 1, b.rails.size() - 1));
                         return List.of(standAt(bringTask(entry, "off:" + nearest.asLong()), next));
                     }
                     // Where the break would be allowed from, as the break itself judges it: onto the rail itself if not.
@@ -7923,7 +7988,7 @@ final class PlayerRuntime {
             BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells()) / 2, 1, 7);
             noteBring(entry, "Bringing the " + noun + " home");
             return new Bring(id, noun, rails, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
-                    floor, slot, door, origin, hall.cells(), hall.wood(), jobBlock);
+                    floor, slot, door, origin, hall.cells(), cells.indexOf(free), hall.wood(), jobBlock);
         }
         return null;
     }
