@@ -7607,8 +7607,13 @@ final class PlayerRuntime {
             entry.bringAt = now + 200;
             var hall = entry.bases.hall;
             if (hall == null || !hall.complete() || !hall.dimension().equals(world.getRegistryKey().getValue().toString())) return null;
+            entry.bringMake = null;
             entry.bring = planBring(entry, body, hall);
-            if (entry.bring == null) return null;
+            if (entry.bring == null) {
+                if (entry.bringMake == null) return null;
+                entry.bringAt = now + 20;
+                return makeForBring(entry, body, entry.bringMake);
+            }
             KindredMod.LOGGER.info("{} bringing the {} {} home: {} rails from {} to its cell at {}", entry.data.displayName(), entry.bring.noun,
                     entry.bring.villager, entry.bring.rails.size(), entry.bring.cart.toShortString(), entry.bring.floor.toShortString());
         }
@@ -7890,6 +7895,15 @@ final class PlayerRuntime {
                 if (stack.isOf(jobBlock)) jobs += stack.getCount();
             }
             int railsNeeded = (int) rails.stream().filter(at -> !world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)).count();
+            // Short of rails or a minecart: made from its own iron, as a player makes them, where it has the iron to spare.
+            if ((railsHeld < railsNeeded || carts < 1) && jobs >= 1 && shutters >= 1) {
+                String make = toMake(entry, player, railsNeeded - railsHeld, carts < 1);
+                if (make != null) {
+                    entry.bringMake = make;
+                    noteBring(entry, "Making " + make.replace('_', ' ') + " to bring the " + noun + " home");
+                    return null;
+                }
+            }
             if (railsHeld < railsNeeded || carts < 1 || jobs < 1 || shutters < 1) {
                 noteBring(entry, "To bring the " + noun + " home: " + railsNeeded + " rails (" + railsHeld + " held), a minecart (" + carts + "), a "
                         + profession.jobBlock().substring(10).replace('_', ' ') + " (" + jobs + ") and a plain block it can take back (" + shutters + ")");
@@ -7904,6 +7918,58 @@ final class PlayerRuntime {
                     floor, slot, door, origin, hall.cells(), hall.wood(), jobBlock);
         }
         return null;
+    }
+
+    /**
+     * The next thing to make for bringing a villager home from what it holds: rails (sixteen from six iron and a stick),
+     * sticks for them from planks, or a minecart (five iron); or null when its spare iron (what its run does not keep
+     * for itself) will not make all it lacks.
+     */
+    private String toMake(Entry entry, ServerPlayerEntity player, int railsShort, boolean cartShort) {
+        int iron = 0, sticks = 0, planks = 0;
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isOf(Items.IRON_INGOT)) iron += stack.getCount();
+            if (stack.isOf(Items.STICK)) sticks += stack.getCount();
+            if (stack.isIn(net.minecraft.registry.tag.ItemTags.PLANKS)) planks += stack.getCount();
+        }
+        int spare = iron - lootWanted(entry).getOrDefault("minecraft:iron_ingot", 0);
+        int batches = railsShort > 0 ? (railsShort + 15) / 16 : 0;
+        if (spare < batches * 6 + (cartShort ? 5 : 0)) return null;
+        if (batches > 0) {
+            if (sticks >= 1) return "rail";
+            return planks >= 2 ? "stick" : null;
+        }
+        return cartShort ? "minecart" : null;
+    }
+
+    /** What bringing a villager home lacks made at a crafting table near it: walked to, then crafted. */
+    private List<NativeTaskCandidate> makeForBring(Entry entry, NativePlayerBody body, String recipe) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        // Its id from what it holds of what it makes, so that each craft is a step of its own.
+        int held = 0;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = player.getInventory().getStack(slot);
+            if (stack.isOf(Items.RAIL) || stack.isOf(Items.STICK) || stack.isOf(Items.MINECART)) held += stack.getCount() * (stack.isOf(Items.MINECART) ? 1000 : 1);
+        }
+        UUID id = UUID.nameUUIDFromBytes(("bring:make:" + entry.data.id() + ":" + recipe + ":" + held).getBytes(StandardCharsets.UTF_8));
+        var task = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        // Sticks take no table.
+        if (!recipe.equals("stick") && locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+            BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 16);
+            if (table == null) {
+                noteBring(entry, "No crafting table near to make " + recipe.replace('_', ' ') + " at");
+                entry.bringMake = null;
+                entry.bringAt = server.getTicks() + 2400;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
+                    "z", String.valueOf(table.getZ()), "range", "2.5")));
+        }
+        return List.of(new NativeTaskCandidate(task, "native_craft", Map.of("recipe", recipe)));
     }
 
     /** Whether a villager stands in one of the hall's cells: on its floor or its bed. */
@@ -10420,6 +10486,8 @@ final class PlayerRuntime {
         private long bringAt;
         private final Set<UUID> brought = new HashSet<>();
         private String bringNote = "";
+        /** What it makes next for bringing a villager home, from its own iron: rails, a minecart, or sticks for the rails. */
+        private String bringMake;
         private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
         private final List<String> rerollLooks = new ArrayList<>();
         private long rerollAt;

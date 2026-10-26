@@ -52,7 +52,21 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bring", tickLimit = 12000)
     public void aKeptLibrarianIsBroughtHomeByMinecartIntoItsCell(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 11500);
+        scene(context, false);
+    }
+
+    /**
+     * As above, with no rails or minecart to hand but 24 iron ingots, 2 sticks and a crafting table by Hal: it makes the
+     * two stacks of sixteen rails the line takes and a minecart, from 17 of the iron and both sticks, and brings the
+     * librarian home with them, every rail and the cart taken back.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringMade", tickLimit = 14000)
+    public void theRailsAndTheCartAreMadeFromItsOwnIron(TestContext context) {
+        scene(context, true);
+    }
+
+    private static void scene(TestContext context, boolean make) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, make ? 13500 : 11500);
         var hall = TradingHall.of(3, "oak", "cobblestone");
         BlockPos[] origin = new BlockPos[1];
         VillagerEntity[] librarian = new VillagerEntity[1];
@@ -106,8 +120,14 @@ public final class NativeBringGameTests implements FabricGameTest {
                     var inventory = hal.getInventory();
                     inventory.clear();
                     inventory.setStack(0, new ItemStack(Items.BREAD, 8));
-                    inventory.setStack(1, new ItemStack(Items.RAIL, 64));
-                    inventory.setStack(2, new ItemStack(Items.MINECART));
+                    if (make) {
+                        inventory.setStack(1, new ItemStack(Items.IRON_INGOT, 24));
+                        inventory.setStack(2, new ItemStack(Items.STICK, 2));
+                        world.setBlockState(origin[0].add(9, 0, 18), Blocks.CRAFTING_TABLE.getDefaultState());
+                    } else {
+                        inventory.setStack(1, new ItemStack(Items.RAIL, 64));
+                        inventory.setStack(2, new ItemStack(Items.MINECART));
+                    }
                     inventory.setStack(3, new ItemStack(Items.LECTERN));
                     inventory.setStack(4, new ItemStack(Items.DIRT, 4));
                     hal.setHealth(20);
@@ -129,10 +149,13 @@ public final class NativeBringGameTests implements FabricGameTest {
                     BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
                     context.assertTrue(world.getBlockState(door).getBlock() instanceof net.minecraft.block.DoorBlock, "The hall's door back: " + world.getBlockState(door));
                     var inventory = f.player().getInventory();
-                    context.assertTrue(count(inventory, Items.RAIL) == 64 && count(inventory, Items.MINECART) == 1 && count(inventory, Items.LECTERN) == 0
-                                    && count(inventory, Items.DIRT) == 4,
-                            "Rails, cart and dirt all taken back, the lectern spent: " + count(inventory, Items.RAIL) + " rails, "
-                                    + count(inventory, Items.MINECART) + " carts, " + count(inventory, Items.LECTERN) + " lecterns, " + count(inventory, Items.DIRT) + " dirt");
+                    int rails = make ? 32 : 64;
+                    context.assertTrue(count(inventory, Items.RAIL) == rails && count(inventory, Items.MINECART) == 1 && count(inventory, Items.LECTERN) == 0
+                                    && count(inventory, Items.DIRT) == 4 && (!make || count(inventory, Items.IRON_INGOT) == 7 && count(inventory, Items.STICK) == 0),
+                            "Rails, cart and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart" : "") + ": "
+                                    + count(inventory, Items.RAIL) + " rails, " + count(inventory, Items.MINECART) + " carts, " + count(inventory, Items.LECTERN)
+                                    + " lecterns, " + count(inventory, Items.DIRT) + " dirt, " + count(inventory, Items.IRON_INGOT) + " iron, "
+                                    + count(inventory, Items.STICK) + " sticks");
                     context.assertTrue(f.runtime.said(f.id).stream().anyMatch(line -> line.startsWith("I've brought the librarian home")), "Said: " + f.runtime.said(f.id));
                     librarian[0].discard();
                     f.runtime.stop();
