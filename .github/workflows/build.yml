@@ -5,18 +5,64 @@ on:
 permissions:
   contents: read
 jobs:
-  build:
+  support:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test offline validation tools
+        run: python3 -m unittest discover -s tools/support-batch-01 -v
+      - name: Check pinned versions
+        run: python3 tools/support-batch-01/support.py manifest
+      - name: Check tracker IDs and evidence references
+        run: python3 tools/support-batch-01/support.py tracker
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - run: bash ./gradlew --no-daemon clean build
-      - run: bash ./gradlew --no-daemon :companion-testkit:run
-      - run: bash ./gradlew --no-daemon :companion-server-adapter:runGametest
+      - name: Build and run JUnit tests
+        id: build
+        run: bash ./gradlew --no-daemon clean build
+      - name: Run contract demonstration
+        id: testkit
+        run: bash ./gradlew --no-daemon :companion-testkit:run
+      - name: Run native GameTests
+        id: native
+        run: bash ./gradlew --no-daemon :companion-server-adapter:runGametest
+      - name: Summarize this run, including missing or failed tests
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          TESTKIT_OUTCOME: ${{ steps.testkit.outcome }}
+          NATIVE_OUTCOME: ${{ steps.native.outcome }}
+        run: >-
+          python3 tools/support-batch-01/ci_report.py
+          --build-outcome "$BUILD_OUTCOME"
+          --testkit-outcome "$TESTKIT_OUTCOME"
+          --native-outcome "$NATIVE_OUTCOME"
+      - name: Retain test evidence even when validation fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kindred-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/
+            companion-*/build/test-results/test/TEST-*.xml
+            companion-server-adapter/build/gametest-results.xml
+          if-no-files-found: warn
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: kindred-mc-development
