@@ -2205,6 +2205,15 @@ final class NativePlayerBody implements BodyAdapter {
         Vec3d eye = player.getEyePos();
         Vec3d center = Vec3d.ofCenter(target);
         if (sees(world, eye, center, target)) return center;
+        // A block lower than its cell (a rail, a carpet, a pressure plate): the middle of its own shape, which a look at
+        // the cell's middle passes over (E-45e: a rail was never seen to be taken up).
+        var shape = world.getBlockState(target).getOutlineShape(world, target);
+        if (!shape.isEmpty()) {
+            var box = shape.getBoundingBox();
+            Vec3d middle = new Vec3d(target.getX() + (box.minX + box.maxX) / 2, target.getY() + (box.minY + box.maxY) / 2,
+                    target.getZ() + (box.minZ + box.maxZ) / 2);
+            if (sees(world, eye, middle, target)) return middle;
+        }
         for (Direction face : Direction.values()) {
             Vec3d point = center.add(face.getOffsetX() * 0.45, face.getOffsetY() * 0.45, face.getOffsetZ() * 0.45);
             if (point.subtract(eye).dotProduct(Vec3d.of(face.getVector())) >= 0) continue; // Faces away from the eyes.

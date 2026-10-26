@@ -17,7 +17,9 @@ import java.util.function.Supplier;
  * and a player inside its bounds shoves it away from where the player stands. Walked into from behind at a walk, never
  * running or jumping (a body running through a cart pushed it back out again as it passed its middle), until the cart
  * rolls on of itself, as a cart on level rails does a long way loaded and a short way empty. It ends once the cart rolls,
- * the player clear behind it; or when the cart is gone or its time is up.
+ * the player clear behind it; or when the cart is gone or its time is up. Given a block to {@code clear}, it is a nudge:
+ * it ends once the cart has come to rest clear of that block (a cart stopped half in a cell's front, nudged on into the
+ * cell against the bed).
  */
 final class NativePushSkill implements SkillBody {
     /** How fast the cart must roll, blocks a tick, for the push to count: an empty cart this fast picks up a mob it touches. */
@@ -26,14 +28,16 @@ final class NativePushSkill implements SkillBody {
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
     private final UUID cart;
+    private final net.minecraft.util.math.BlockPos clear;
     private final int maxTicks;
     private int ticks;
 
-    NativePushSkill(NativePlayerBody body, Supplier<ActionLease> lease, UUID cart, int seconds) {
+    NativePushSkill(NativePlayerBody body, Supplier<ActionLease> lease, UUID cart, int seconds, net.minecraft.util.math.BlockPos clear) {
         if (seconds < 1 || seconds > 30) throw new IllegalArgumentException("A push lasts 1..30 seconds");
         this.body = body;
         this.lease = lease;
         this.cart = cart;
+        this.clear = clear;
         this.maxTicks = seconds * 20;
     }
 
@@ -46,7 +50,12 @@ final class NativePushSkill implements SkillBody {
         }
         Vec3d at = minecart.getPos(), from = player.getPos(), velocity = minecart.getVelocity();
         double gap = Math.hypot(at.x - from.x, at.z - from.z), speed = velocity.horizontalLength();
-        if (speed >= ROLLING && gap > 1.0) {
+        if (clear != null) {
+            if (speed < 0.02 && !minecart.getBoundingBox().intersects(new net.minecraft.util.math.Box(clear))) {
+                body.stopInputs();
+                return Step.completed(Map.of("ended", "clear"));
+            }
+        } else if (speed >= ROLLING && gap > 1.0) {
             body.stopInputs();
             return Step.completed(Map.of("ended", "rolling", "speed", String.format(Locale.ROOT, "%.2f", speed)));
         }

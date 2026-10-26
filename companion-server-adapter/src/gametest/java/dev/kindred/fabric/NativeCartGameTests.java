@@ -14,10 +14,16 @@ import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerProfession;
 import net.minecraft.village.VillagerType;
 
-/** An experiment (E-45e): a native player pushing a minecart along rails into a villager, and the loaded cart into a cell. */
+/**
+ * A minecart pushed by a player along its rails (E-45e): Hal walks into an empty cart two blocks behind a villager
+ * standing on the line; rolling, the cart takes the villager up and runs on eleven blocks into a cell one block wide,
+ * stopping at the rail's end against the bed. With a lectern put across the cell's front and the cart broken, the
+ * villager is set down inside the cell. The villager's AI is off so that it stands where it was put; the lectern and
+ * the cart's breaking are the fixture's here (bringing a villager home whole is {@link NativeBringGameTests}).
+ */
 public final class NativeCartGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "cartExperiment", tickLimit = 3000)
-    public void experiment(TestContext context) {
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "cartPush", tickLimit = 3000)
+    public void aPushedCartTakesUpAVillagerAndRollsIntoItsCell(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2900);
         MinecartEntity[] cart = new MinecartEntity[1];
         VillagerEntity[] villager = new VillagerEntity[1];
@@ -71,7 +77,8 @@ public final class NativeCartGameTests implements FabricGameTest {
                                 cart[0].getVelocity(), cart[0].getPassengerList().size(), villager[0].hasVehicle(),
                                 f.player().getPos().subtract(o[0].getX(), o[0].getY(), o[0].getZ()), f.runtime.nativeLastResult(f.id));
                     }
-                    context.assertTrue(ticks[0] >= 600, "Pushed for thirty seconds");
+                    context.assertTrue(villager[0].getVehicle() == cart[0] && cart[0].getBlockPos().equals(o[0].add(5, 2, 18))
+                            && cart[0].getVelocity().horizontalLength() < 0.01, "The cart with the villager in it stopped on the cell's floor");
                 })
                 .createAndAdd(() -> {
                     var world = context.getWorld();
@@ -82,6 +89,9 @@ public final class NativeCartGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     KindredMod.LOGGER.info("Cart: broken {}; the villager at {} riding {}", cart[0].isRemoved(),
                             villager[0].getPos().subtract(o[0].getX(), o[0].getY(), o[0].getZ()), villager[0].hasVehicle());
+                    var at = villager[0].getBlockPos().subtract(o[0]);
+                    context.assertTrue(cart[0].isRemoved() && !villager[0].hasVehicle() && at.getX() == 5 && at.getZ() >= 18 && at.getZ() <= 19,
+                            "Set down in the cell: at " + at.toShortString());
                     villager[0].discard();
                     f.runtime.stop();
                 })
