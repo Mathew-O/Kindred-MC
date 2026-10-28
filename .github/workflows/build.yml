@@ -1,3 +1,6 @@
+# On every push and pull request, GitHub builds the mod, runs all the tests (unit tests, the
+# self-check demo and every GameTest in a real Minecraft test world), and keeps the mod jar
+# as a download on the run's page.
 name: Build and test
 on:
   push:

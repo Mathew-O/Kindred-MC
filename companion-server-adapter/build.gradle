@@ -1,3 +1,5 @@
+// The Minecraft mod itself (a Fabric mod for Minecraft 1.21.1). It builds the jar you put in a
+// server's mods folder: companion-server-adapter/build/libs/kindred-mc-<version>.jar
 plugins { id 'fabric-loom' }
 
 base { archivesName = 'kindred-mc' }
@@ -6,6 +8,8 @@ repositories {
     maven { url = 'https://maven.nucleoid.xyz' }
 }
 
+// Minecraft, Fabric and the project's other parts, packed into the one mod jar.
+// Versions come from gradle.properties and are pinned in release-manifest.json.
 dependencies {
     minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
     mappings "net.fabricmc:yarn:${rootProject.yarn_mappings}:v2"
@@ -38,6 +42,8 @@ sourceSets {
     }
 }
 
+// Ways to start the game from here: runClient, runServer, and runGametest, which starts a test
+// server, runs every GameTest in a real world and stops.
 loom {
     mods {
         kindred { sourceSet sourceSets.main }
