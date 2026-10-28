@@ -19,8 +19,8 @@ rnd = random.Random(1210)
 # --- Reading a player skin -------------------------------------------------------------
 
 def slim(skin):
-    # Slim (3-pixel) arms leave the fourth column of the right arm's front transparent.
-    return skin.getpixel((47, 25))[3] == 0 and skin.getpixel((47, 21))[3] == 0
+    """Slim (three-pixel) arms leave the skin's pixels just right of the right arm's top unused."""
+    return all(skin.getpixel((x, y))[3] == 0 for x in (50, 51) for y in range(16, 20))
 
 def part(skin, box):
     return skin.crop(box)
