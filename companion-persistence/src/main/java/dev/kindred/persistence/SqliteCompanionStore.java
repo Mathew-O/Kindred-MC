@@ -432,7 +432,7 @@ public final class SqliteCompanionStore {
                 while (rows.next()) {
                     result.add(new ActivityLimit(UUID.fromString(rows.getString("companion_id")),
                             rows.getLong("cap_ms"), rows.getBoolean("offline_work"),
-                            rows.getString("timezone"), rows.getLong("revision")));
+                            rows.getString("timezone"), rows.getLong("revision"), readWindow(rows)));
                 }
             }
             return List.copyOf(result);
@@ -933,13 +933,16 @@ public final class SqliteCompanionStore {
             requireRevision(previous.revision(), expectedRevision);
             if (limit.revision() != Math.incrementExact(expectedRevision)) throw new IllegalArgumentException("Limit revisions advance by one");
             try (PreparedStatement update = database.prepareStatement(
-                    "UPDATE activity_limits SET cap_ms=?, offline_work=?, timezone=?, revision=? WHERE companion_id=? AND revision=?")) {
+                    "UPDATE activity_limits SET cap_ms=?, offline_work=?, timezone=?, revision=?, window_start=?, window_end=? "
+                            + "WHERE companion_id=? AND revision=?")) {
                 update.setLong(1, limit.capMillis());
                 update.setBoolean(2, limit.offlineWork());
                 update.setString(3, limit.timezone());
                 update.setLong(4, limit.revision());
-                update.setString(5, limit.companionId().toString());
-                update.setLong(6, expectedRevision);
+                update.setString(5, limit.window().map(window -> window.start().toString()).orElse(null));
+                update.setString(6, limit.window().map(window -> window.end().toString()).orElse(null));
+                update.setString(7, limit.companionId().toString());
+                update.setLong(8, expectedRevision);
                 if (update.executeUpdate() != 1) throw new ConcurrentModificationException("Stale limit revision");
             }
             return limit;
@@ -951,9 +954,19 @@ public final class SqliteCompanionStore {
             query.setString(1, companionId.toString());
             try (ResultSet row = query.executeQuery()) {
                 if (!row.next()) return ActivityLimit.defaults(companionId);
-                return new ActivityLimit(companionId, row.getLong("cap_ms"), row.getBoolean("offline_work"), row.getString("timezone"), row.getLong("revision"));
+                return new ActivityLimit(companionId, row.getLong("cap_ms"), row.getBoolean("offline_work"), row.getString("timezone"),
+                        row.getLong("revision"), readWindow(row));
             }
         }
+    }
+
+    /** Both window columns or neither: a half-written window is not read as all day. */
+    private static Optional<ActivityLimit.Window> readWindow(ResultSet row) throws SQLException {
+        String start = row.getString("window_start");
+        String end = row.getString("window_end");
+        if (start == null && end == null) return Optional.empty();
+        if (start == null || end == null) throw new IllegalStateException("Activity window is half saved");
+        return Optional.of(new ActivityLimit.Window(java.time.LocalTime.parse(start), java.time.LocalTime.parse(end)));
     }
 
     public CompletableFuture<SharedProject> createProject(SharedProject project) {
@@ -1408,7 +1421,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 8) {
+            if (schemaVersion < 0 || schemaVersion > 9) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1419,6 +1432,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 6) migrate(6, "V6__intentions.sql");
             if (schemaVersion < 7) migrate(7, "V7__native_players.sql");
             if (schemaVersion < 8) migrate(8, "V8__shared_projects.sql");
+            if (schemaVersion < 9) migrate(9, "V9__activity_windows.sql");
         }
         recover();
     }

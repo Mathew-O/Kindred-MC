@@ -204,6 +204,41 @@ class ScheduleClockTest {
                 Optional.of(period), Optional.of(period.endExclusive())));
     }
 
+    @Test
+    void aWindowIsReadInTheZoneItsPeriodIsKeptIn() {
+        AccountingPeriod period = AccountingPeriod.on(LocalDate.of(2026, 10, 13), NEW_YORK);
+        Optional<ActivityWindow> afternoon = Optional.of(new ActivityWindow(LocalTime.of(14, 0), LocalTime.of(22, 0)));
+        // 19:00Z is 15:00 in New York (EDT): inside the window, whatever zone the limit has been edited to since.
+        TimeInterval open = ScheduleClock.windowInterval(afternoon, period, Instant.parse("2026-10-13T19:00:00Z")).orElseThrow();
+        assertEquals(Instant.parse("2026-10-13T18:00:00Z"), open.startInclusive());
+        assertEquals(Instant.parse("2026-10-14T02:00:00Z"), open.endExclusive());
+        assertTrue(ScheduleClock.windowInterval(afternoon, period, Instant.parse("2026-10-13T17:59:59Z")).isEmpty());
+        assertEquals(new TimeInterval(period.startInclusive(), period.endExclusive()),
+                ScheduleClock.windowInterval(Optional.empty(), period, period.startInclusive()).orElseThrow());
+        assertTrue(ScheduleClock.windowInterval(Optional.empty(), period, period.endExclusive()).isEmpty());
+    }
+
+    @Test
+    void theNextWindowOpensLaterTodayOrTomorrowAndOvernightWindowsSpanMidnight() {
+        ActivityWindow evening = new ActivityWindow(LocalTime.of(18, 0), LocalTime.of(23, 0));
+        assertEquals(Instant.parse("2026-10-13T22:00:00Z"), ScheduleClock.nextWindowStart(evening, NEW_YORK, Instant.parse("2026-10-13T16:00:00Z")));
+        assertEquals(Instant.parse("2026-10-14T22:00:00Z"), ScheduleClock.nextWindowStart(evening, NEW_YORK, Instant.parse("2026-10-14T03:30:00Z")));
+        ActivityWindow overnight = new ActivityWindow(LocalTime.of(22, 0), LocalTime.of(2, 0));
+        AccountingPeriod day = AccountingPeriod.on(LocalDate.of(2026, 10, 14), NEW_YORK);
+        // 05:00Z is 01:00 in New York: inside the window begun the evening before, clipped to the day's start.
+        TimeInterval early = ScheduleClock.windowInterval(Optional.of(overnight), day, Instant.parse("2026-10-14T05:00:00Z")).orElseThrow();
+        assertEquals(day.startInclusive(), early.startInclusive());
+        assertEquals(Instant.parse("2026-10-14T06:00:00Z"), early.endExclusive());
+        assertEquals(Instant.parse("2026-10-15T02:00:00Z"), ScheduleClock.nextWindowStart(overnight, NEW_YORK, Instant.parse("2026-10-14T07:00:00Z")));
+    }
+
+    @Test
+    void aWindowADaylightSavingGapSwallowsOpensTheNextDay() {
+        ActivityWindow inTheGap = new ActivityWindow(LocalTime.of(2, 15), LocalTime.of(2, 45));
+        // 8 March 2026, New York: 02:00 to 03:00 does not exist, so that day's window never opens.
+        assertEquals(Instant.parse("2026-03-09T06:15:00Z"), ScheduleClock.nextWindowStart(inTheGap, NEW_YORK, Instant.parse("2026-03-08T06:00:00Z")));
+    }
+
     private static ActivitySchedule schedule(LocalTime start, LocalTime end) {
         return new ActivitySchedule(NEW_YORK, Optional.of(new ActivityWindow(start, end)),
                 Duration.ofHours(2), Duration.ofHours(4), true);

@@ -1580,12 +1580,28 @@ final class PlayerRuntime {
                 entry.blocker = entry.noPeriodReason;
                 return;
             }
-            entry.noPeriodUntil = null;
             BudgetState budget = prepared.chargeable().budget().orElseThrow();
+            entry.activityLimit = prepared.limit();
+            java.time.Instant now = java.time.Instant.now();
+            var window = activityWindow(prepared.limit());
+            var open = ScheduleClock.windowInterval(window, budget.period(), now);
+            if (open.isEmpty() && window.isPresent()) {
+                // Outside the hours it may be active in: wait until they open, as for a period not yet open (F-11f).
+                entry.nativeWorkPending = false;
+                admission.release(id);
+                entry.noPeriodUntil = ScheduleClock.nextWindowStart(window.orElseThrow(), budget.period().zone(), now);
+                entry.noPeriodReason = "Outside its activity hours (" + describeWindow(prepared.limit()) + "); they open "
+                        + PERIOD_TIME.format(entry.noPeriodUntil.atZone(budget.period().zone())) + ".";
+                entry.blocker = entry.noPeriodReason;
+                return;
+            }
+            entry.noPeriodUntil = null;
+            // A slice never runs past the end of the hours it began in, nor past its period's end.
+            java.time.Instant deadline = open.map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(budget.period().endExclusive());
             try {
                 entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
                         store::saveBudget, server::execute, java.time.Clock.systemUTC(), System::nanoTime);
-                entry.activity.request(budget.period().endExclusive()).whenComplete((paid, error) -> {
+                entry.activity.request(deadline).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
                     if (!running || generation != entry.generation || (actor != null && !entry.nativeState.access().mayControl(actor))
@@ -1645,6 +1661,25 @@ final class PlayerRuntime {
             return prefix + current + (opens.equals(last.endExclusive()) ? "The next follows straight on." : first + " No allowance in between.");
         }
         return prefix + (opens.isAfter(now) ? "No allowance until then. " + first : "The next period is today's local day.");
+    }
+
+    private static java.util.Optional<dev.kindred.scheduler.ActivityWindow> activityWindow(ActivityLimit limit) {
+        return limit.window().map(hours -> new dev.kindred.scheduler.ActivityWindow(hours.start(), hours.end()));
+    }
+
+    private static String describeWindow(ActivityLimit limit) {
+        return limit.window().map(hours -> hours.start() + " to " + hours.end() + " " + limit.timezone()).orElse("all day");
+    }
+
+    /**
+     * A renewal runs to the end of the hours it is in, from the player's latest known limit, and never past its
+     * period's end; outside them (the hours narrowed while it ran) it grants nothing and the slice lapses (F-11f).
+     */
+    private java.time.Instant renewalDeadline(Entry entry) {
+        AccountingPeriod period = entry.activity.snapshot().period();
+        java.time.Instant now = java.time.Instant.now();
+        var window = entry.activityLimit == null ? java.util.Optional.<dev.kindred.scheduler.ActivityWindow>empty() : activityWindow(entry.activityLimit);
+        return ScheduleClock.windowInterval(window, period, now).map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(now);
     }
 
     private void nativeActivityFailure(Entry entry, String reason) {
@@ -5082,7 +5117,7 @@ final class PlayerRuntime {
                 && !entry.snapshot().stopLatched() && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR
                 && !entry.arbiter.cancellationPending() && !entry.hazardInterrupted
                 && entry.nativeBody != null && entry.nativeBody.connected()) {
-            entry.activity.renew(entry.activity.snapshot().period().endExclusive());
+            entry.activity.renew(renewalDeadline(entry));
         }
         if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
@@ -6484,7 +6519,7 @@ final class PlayerRuntime {
             long minutes = (limit.capMillis() % (3600 * 1000)) / (60 * 1000);
             feedback(source, entry.data.displayName() + " schedule limits: daily cap "
                     + hours + "h " + minutes + "m, offline work " + (limit.offlineWork() ? "enabled" : "disabled")
-                    + ", timezone " + limit.timezone() + ".");
+                    + ", timezone " + limit.timezone() + ", active " + describeWindow(limit) + ".");
         }));
         return 1;
     }
@@ -6499,7 +6534,7 @@ final class PlayerRuntime {
                 source.sendError(Text.literal("Could not read current limit."));
                 return;
             }
-            ActivityLimit next = new ActivityLimit(limit.companionId(), capMs, limit.offlineWork(), limit.timezone(), limit.revision() + 1);
+            ActivityLimit next = limit.editCap(capMs);
             store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
                 if (saveFailure != null) source.sendError(Text.literal("Failed to save daily cap."));
                 else feedback(source, entry.data.displayName() + " daily activity cap set to " + hours + " hours.");
@@ -6529,7 +6564,7 @@ final class PlayerRuntime {
                 feedback(source, entry.data.displayName() + " already keeps its activity allowance in " + next.getId() + ".");
                 return;
             }
-            ActivityLimit edited = new ActivityLimit(limit.companionId(), limit.capMillis(), limit.offlineWork(), next.getId(), limit.revision() + 1);
+            ActivityLimit edited = limit.editTimezone(next.getId());
             store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
                 if (saveFailure != null) {
                     source.sendError(Text.literal("Failed to save accounting timezone."));
@@ -6537,6 +6572,50 @@ final class PlayerRuntime {
                 }
                 entry.noPeriodUntil = null; // The next request asks the store again, under the new zone.
                 feedback(source, timezoneChangeReport(entry.data.displayName(), next, read.getValue(), java.time.Instant.now()));
+            }));
+        }));
+        return 1;
+    }
+
+    private static final java.time.format.DateTimeFormatter WINDOW_TIME = java.time.format.DateTimeFormatter.ofPattern("H:mm[:ss]");
+
+    /** `/aiplayer limit window <start> <end>`: 18:00 (quoted), 18.00 or 18; both null clears the hours (F-11f). */
+    int setLimitWindow(ServerCommandSource source, UUID requestedId, String start, String end) {
+        if (start == null || end == null) return setLimitWindow(source, requestedId, java.util.Optional.empty());
+        try {
+            return setLimitWindow(source, requestedId, java.util.Optional.of(new ActivityLimit.Window(windowTime(start), windowTime(end))));
+        } catch (java.time.format.DateTimeParseException invalid) {
+            return reject(source, "Give the hours as 18:00, 18.00 or 18.");
+        } catch (IllegalArgumentException invalid) {
+            return reject(source, invalid.getMessage() + ".");
+        }
+    }
+
+    private static java.time.LocalTime windowTime(String text) {
+        String time = text.trim().replace('.', ':');
+        return java.time.LocalTime.parse(time.contains(":") ? time : time + ":00", WINDOW_TIME);
+    }
+
+    /** The hours a player may be active in, in its accounting timezone; operators only. A request outside them waits. */
+    int setLimitWindow(ServerCommandSource source, UUID requestedId, java.util.Optional<ActivityLimit.Window> hours) {
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may set activity hours.");
+        Entry entry = limitEntry(source, requestedId, "set activity hours");
+        if (entry == null) return 0;
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+            if (failure != null || limit == null) {
+                source.sendError(Text.literal("Could not read current limit."));
+                return;
+            }
+            ActivityLimit edited = limit.editWindow(hours);
+            store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) {
+                    source.sendError(Text.literal("Failed to save activity hours."));
+                    return;
+                }
+                entry.activityLimit = edited;
+                entry.noPeriodUntil = null; // The next request is judged by the new hours.
+                feedback(source, entry.data.displayName() + " may now be active " + describeWindow(edited)
+                        + (hours.isPresent() ? "; a request outside those hours waits until they open, and a running skill stops at their end." : "."));
             }));
         }));
         return 1;
@@ -6551,7 +6630,7 @@ final class PlayerRuntime {
                 source.sendError(Text.literal("Could not read current limit."));
                 return;
             }
-            ActivityLimit next = new ActivityLimit(limit.companionId(), limit.capMillis(), offline, limit.timezone(), limit.revision() + 1);
+            ActivityLimit next = limit.editOfflineWork(offline);
             store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
                 if (saveFailure != null) source.sendError(Text.literal("Failed to save offline work permission."));
                 else feedback(source, entry.data.displayName() + " offline work is now " + (offline ? "enabled" : "disabled") + ".");
@@ -9790,6 +9869,13 @@ final class PlayerRuntime {
         if (entry != null) entry.manualHoldUntilTick = server.getTicks() + ticks;
     }
 
+    /** The limit last read or saved for a player (F-11f); null before any. */
+    ActivityLimit activityLimitForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.activityLimit;
+    }
+
     void setEditsForTest(EditPolicy.ServerPolicy policy) {
         this.edits = policy;
     }
@@ -10925,6 +11011,8 @@ final class PlayerRuntime {
         /** No accounting period opens before this instant, and why (F-11e); null when one may. */
         private java.time.Instant noPeriodUntil;
         private String noPeriodReason;
+        /** The limit last read or saved for this player, whose window bounds a renewal (F-11f); null before any. */
+        private ActivityLimit activityLimit;
         private FollowBehavior follow;
         private SocialProfile profile;
         private CompletableFuture<SocialProfile> profileWrite;
@@ -11642,7 +11730,7 @@ final class PlayerRuntime {
         long capMs = (long) hours * 3600 * 1000;
         store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
             if (failure != null || limit == null) { reject(source, "Could not read the current activity limit."); return; }
-            ActivityLimit next = new ActivityLimit(limit.companionId(), capMs, limit.offlineWork(), limit.timezone(), limit.revision() + 1);
+            ActivityLimit next = limit.editCap(capMs);
             store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
                 if (saveFailure != null) reject(source, "Failed to save the daily cap.");
                 else feedback(source, entry.data.displayName() + " daily activity cap set to " + hours + " hours.");

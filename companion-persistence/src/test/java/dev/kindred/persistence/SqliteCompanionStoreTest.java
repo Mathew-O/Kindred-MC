@@ -2,6 +2,7 @@ package dev.kindred.persistence;
 
 import dev.kindred.core.ActionLease;
 import dev.kindred.core.ActionRecord;
+import dev.kindred.core.ActivityLimit;
 import dev.kindred.core.Checkpoint;
 import dev.kindred.core.Companion;
 import dev.kindred.core.LifecycleState;
@@ -19,6 +20,7 @@ import java.sql.DriverManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -244,6 +246,40 @@ class SqliteCompanionStoreTest {
         store.saveBudget(reserve(fresh, UUID.randomUUID(), local.startInclusive()), 0).join();
         assertCause(IllegalStateException.class, store.chargeableBudget(id, local.endExclusive(), newYork));
         assertThrows(IllegalArgumentException.class, () -> new ChargeableBudget(PeriodTransition.current(period), Optional.empty()));
+    }
+
+    @Test
+    void anActivityWindowIsKeptWithItsLimitAndAnOlderDatabaseUpgradesToAllDay() throws Exception {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        ActivityLimit initial = store.limit(id).join();
+        assertEquals(Optional.empty(), initial.window());
+        var evening = new ActivityLimit.Window(LocalTime.of(18, 0), LocalTime.of(23, 0));
+        ActivityLimit windowed = store.saveLimit(initial.editWindow(Optional.of(evening)), 0).join();
+        assertEquals(windowed, store.limit(id).join());
+        // Editing the cap keeps the window, as every edit keeps the fields it does not name.
+        ActivityLimit capped = store.saveLimit(windowed.editCap(3_600_000), 1).join();
+        assertEquals(Optional.of(evening), store.limit(id).join().window());
+        assertEquals(List.of(capped), store.limits().join());
+        var overnight = new ActivityLimit.Window(LocalTime.of(22, 30), LocalTime.of(2, 0));
+        store.saveLimit(capped.editWindow(Optional.of(overnight)), 2).join();
+        assertEquals(Optional.of(overnight), store.limit(id).join().window());
+        assertThrows(IllegalArgumentException.class, () -> new ActivityLimit.Window(LocalTime.NOON, LocalTime.NOON));
+        store.closeAsync().join();
+        try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE activity_limits DROP COLUMN window_start");
+            statement.execute("ALTER TABLE activity_limits DROP COLUMN window_end");
+            statement.execute("PRAGMA user_version = 8");
+        }
+        SqliteCompanionStore upgraded = open(10);
+        ActivityLimit migrated = upgraded.limit(id).join();
+        assertEquals(new ActivityLimit(id, 3_600_000, false, "UTC", 3), migrated, "a schema 8 limit upgrades to all day, nothing else changed");
+        upgraded.closeAsync().join();
+        try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(9, row.getInt(1)); }
+            statement.execute("UPDATE activity_limits SET window_start = '09:00'");
+        }
+        assertCause(IllegalStateException.class, open(10).limit(id));
     }
 
     @Test
