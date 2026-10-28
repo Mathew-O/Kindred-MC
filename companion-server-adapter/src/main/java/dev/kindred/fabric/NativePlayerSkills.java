@@ -3,6 +3,7 @@ package dev.kindred.fabric;
 import dev.kindred.core.ActionLease;
 import dev.kindred.core.AuthorizedMovementCadence;
 import dev.kindred.core.Checkpoint;
+import dev.kindred.core.Gaze;
 import dev.kindred.core.MannerismState;
 import dev.kindred.core.Personality;
 import dev.kindred.core.SkillBody;
@@ -29,10 +30,19 @@ import java.util.function.Supplier;
 
 /** Short, explicitly requested native tasks. No replay, inventory mirror or automatic renewal. */
 final class NativePlayerSkills {
-    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis) { }
+    /**
+     * The player's own ways of moving and looking: its mannerisms and personality, and for a wait its gaze and who last
+     * spoke to it (E-33a), when it has them.
+     */
+    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker) {
+        NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis) {
+            this(mannerisms, personality, nowMillis, null, null);
+        }
+    }
     static SkillDescriptor descriptor(String id) {
         return switch (id) {
-            case "native_wait" -> new SkillDescriptor(id, Set.of("seconds"), Set.of(), Set.of(), Set.of(),
+            // The optional point is what it waits on, looked at as it waits (E-33a).
+            case "native_wait" -> new SkillDescriptor(id, Set.of("seconds"), Set.of("x", "y", "z"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_eat" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -42,7 +52,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
             case "native_retreat" -> new SkillDescriptor(id, Set.of("direction", "blocks"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
-            case "native_equip" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of(), Set.of(),
+            case "native_equip" -> new SkillDescriptor(id, Set.of("slot"), Set.of("swap"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_mine" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(), Set.of("break"), Set.of(dev.kindred.core.EditPolicy.Kind.BREAK),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -50,7 +60,37 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofMinutes(3), Duration.ofSeconds(15), 2);
             case "native_craft" -> new SkillDescriptor(id, Set.of("recipe"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side"),
+            case "native_pillar" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(), Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A flight of up to twelve steps, a second or so each (F-10h).
+            case "native_stair" -> new SkillDescriptor(id, Set.of("x", "y", "z", "dirs", "slot"), Set.of(), Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
+                    Duration.ofSeconds(20), Duration.ofSeconds(5), 0);
+            case "native_throw_eye" -> new SkillDescriptor(id, Set.of("slot", "yaw"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
+            case "native_pearl" -> new SkillDescriptor(id, Set.of("slot", "yaw", "pitch"), Set.of("x", "y", "z"), Set.of(), Set.of(),
+                    Duration.ofSeconds(12), Duration.ofSeconds(9), 0);
+            case "native_step_in" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(6), Duration.ofSeconds(2), 0);
+            case "native_dragon" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
+                    Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
+            case "native_shoot" -> new SkillDescriptor(id, Set.of("slot", "target"), Set.of("arc"), Set.of(), Set.of(),
+                    Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
+            case "native_fill_frame" -> new SkillDescriptor(id, Set.of("slot", "x", "y", "z"), Set.of(), Set.of("place"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
+                    Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
+            case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(125), Duration.ofSeconds(10), 0);
+            // A minecart put on a rail, or broken to take it back (E-45e).
+            case "native_cart" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target"), Set.of(), Set.of(),
+                    Duration.ofSeconds(15), Duration.ofSeconds(10), 0);
+            // A minecart pushed along its rails by walking into it (E-45e).
+            case "native_push" -> new SkillDescriptor(id, Set.of("target"), Set.of("seconds", "x", "y", "z"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(35), Duration.ofSeconds(5), 0);
+            case "native_bed" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "facing"), Set.of(),
+                    Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_place" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("side", "yaw", "pitch", "hit"),
                     Set.of("place"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_smelt" -> new SkillDescriptor(id, Set.of(), Set.of("x", "y", "z", "action", "fuel_slot", "input_slot", "count"),
@@ -62,15 +102,15 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
             case "native_block" -> new SkillDescriptor(id, Set.of(), Set.of("ticks"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
-            case "native_till" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(),
+            case "native_till" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("roam"),
                     Set.of("till"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_plant" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("item"),
+            case "native_plant" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("item", "roam"),
                     Set.of("plant"), Set.of(dev.kindred.core.EditPolicy.Kind.PLACE),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_harvest" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("slot", "replant"),
-                    Set.of("harvest"), Set.of(),
-                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+                    Set.of("harvest", "pickup"), Set.of(dev.kindred.core.EditPolicy.Kind.BREAK),
+                    Duration.ofSeconds(10), Duration.ofSeconds(6), 0);
             case "native_sleep" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(),
                     Set.of("sleep"), Set.of(),
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
@@ -82,6 +122,45 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
+                    "hold", "leg"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
+            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot"), Set.of("break", "pickup"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
+            case "native_discard" -> new SkillDescriptor(id, Set.of("slot", "count"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_fight" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
+            case "native_bucket" -> new SkillDescriptor(id, Set.of("x", "y", "z", "mode"), Set.of(), Set.of("bucket"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
+            // A fall broken with water (E-07d): poured on the landing block within reach, scooped back up after.
+            case "native_clutch" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of("bucket"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(10), Duration.ofSeconds(10), 0);
+            case "native_cast" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of("bucket"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
+            // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
+            case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_gate" -> new SkillDescriptor(id, Set.of("x", "y", "z", "open"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // Items taken out of the player's own assigned storage for a build (E-08c).
+            case "native_take" -> new SkillDescriptor(id, Set.of("item", "count"), Set.of(), Set.of("container"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A structure's container nobody has opened, looted of what is worth taking (E-42): at x, y, z, or a cart; or an
+            // opponent's storage in a match, raided (E-44): "raid" names whose.
+            case "native_loot" -> new SkillDescriptor(id, Set.of(), Set.of("x", "y", "z", "cart", "raid"), Set.of("container"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // What it keeps for later put away in a store of its own, all of each of "items"; or with "take" all, the store
+            // emptied into its inventory; or with "look", the store only opened to see what is in it (E-43).
+            case "native_store" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("items", "take", "look"), Set.of("container"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A villager traded with at its screen, as planned by what its trades are worth (E-45b); with "look", only its
+            // offers seen.
+            case "native_trade" -> new SkillDescriptor(id, Set.of("target"), Set.of("look"), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A weapon or tool named at an anvil, a level or more of its own (E-16d).
+            case "native_rename" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "name"), Set.of(), Set.of("anvil"),
+                    Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             default -> throw new IllegalArgumentException("Unsupported native skill");
         };
     }
@@ -92,6 +171,36 @@ final class NativePlayerSkills {
 
     static SkillBody body(String id, Map<String, String> arguments, NativePlayerBody body, Supplier<ActionLease> lease,
                           NativeMovementHabits habits) {
+        if (id.equals("native_goto")) {
+            BlockPos target = new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
+            var go = new NativeGoToSkill(body, lease, target, Double.parseDouble(arguments.getOrDefault("range", "1.5")),
+                    Boolean.parseBoolean(arguments.getOrDefault("partial", "false")),
+                    Integer.parseInt(arguments.getOrDefault("nodes", String.valueOf(NativeNavigator.DEFAULT_MAX_NODES))),
+                    Boolean.parseBoolean(arguments.getOrDefault("sprint", "false")),
+                    Integer.parseInt(arguments.getOrDefault("drop", String.valueOf(NativeNavigator.MAX_SAFE_DROP))),
+                    Boolean.parseBoolean(arguments.getOrDefault("avoid", "false"))
+                            ? new java.util.HashSet<>(java.util.Arrays.asList(arguments.getOrDefault("engage", "").split(","))) : null);
+            if (arguments.containsKey("hold")) go.holding(Integer.parseInt(arguments.get("hold")));
+            if (arguments.containsKey("leg")) go.leg(Integer.parseInt(arguments.get("leg")));
+            return Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
+        }
+        if (id.equals("native_step_in")) {
+            return new NativeStepInSkill(body, lease,
+                    new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
+        }
+        if (id.equals("native_push")) {
+            return new NativePushSkill(body, lease, UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("seconds", "10")),
+                    arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                            Integer.parseInt(arguments.get("z"))) : null);
+        }
+        if (id.equals("native_row")) {
+            return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),
+                    Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")));
+        }
+        if (id.equals("native_gate")) {
+            return new Gate(body, lease, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                    Integer.parseInt(arguments.get("z"))), Boolean.parseBoolean(arguments.get("open")));
+        }
         if (id.equals("native_walk")) return new Walk(body, lease, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
         if (id.equals("native_traverse")) {
             return new Traverse(body, lease, habits, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
@@ -116,9 +225,17 @@ final class NativePlayerSkills {
             return new Block(body, lease, ticks);
         }
         int value = Integer.parseInt(arguments.get(id.equals("native_wait") ? "seconds" : "slot"));
-        if (id.equals("native_wait") && value >= 1 && value <= 4) return new MovementSkills.Wait(value);
+        if (id.equals("native_wait") && value >= 1 && value <= 4) {
+            if (habits == null || habits.gaze() == null) return new MovementSkills.Wait(value);
+            Gaze.Point work = arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z")
+                    ? new Gaze.Point(Integer.parseInt(arguments.get("x")) + 0.5, Integer.parseInt(arguments.get("y")) + 0.5,
+                            Integer.parseInt(arguments.get("z")) + 0.5) : null;
+            return new NativeWaitSkill(body, lease, value, habits.gaze(), habits.speaker(), work);
+        }
         if (id.equals("native_eat") && value >= 0 && value <= 8) return new Eat(body, lease, value);
-        if (id.equals("native_equip") && value >= 0 && value < 36) return new Equip(body, lease, value);
+        if (id.equals("native_equip") && value >= 0 && value < 36) {
+            return new Equip(body, lease, value, Boolean.parseBoolean(arguments.getOrDefault("swap", "false")));
+        }
         throw new IllegalArgumentException("Native wait needs 1..4 seconds; eat needs hotbar slot 0..8");
     }
 
@@ -130,11 +247,17 @@ final class NativePlayerSkills {
         return (task instanceof Eat food && food.permits(intent))
                 || (task instanceof Walk walk && intent == NativePlayerBody.Intent.MOVE && walk.safe())
                 || (task instanceof Traverse trav && intent == NativePlayerBody.Intent.MOVE && trav.safe())
+                || (task instanceof NativeGoToSkill go && (intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.DOOR
+                    || intent == NativePlayerBody.Intent.SELECT_SLOT && go.holds()))
+                || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
+                || ((task instanceof NativeRowSkill || task instanceof NativePushSkill) && intent == NativePlayerBody.Intent.MOVE)
+                || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)
                 || (task instanceof Attack attack && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                || (task instanceof Block block && intent == NativePlayerBody.Intent.BLOCK);
+                || (task instanceof Block block && intent == NativePlayerBody.Intent.BLOCK)
+                || (task instanceof NativeWaitSkill && intent == NativePlayerBody.Intent.LOOK);
     }
 
     static boolean uncertain(SkillBody task) {
@@ -148,16 +271,22 @@ final class NativePlayerSkills {
         final int slot;
         final net.minecraft.entity.EquipmentSlot target;
         final ItemStack requested;
+        /** Swapped with the piece worn there (the number-key swap), rather than put into an empty slot. */
+        final boolean swap;
+        final ItemStack worn;
         boolean attempted, uncertain;
-        Equip(NativePlayerBody body, Supplier<ActionLease> lease, int slot) {
-            this.body = body; this.lease = lease; this.slot = slot;
-            target = body.equipmentDestination(slot).orElseThrow(() -> new IllegalArgumentException("Owned armor/shield needs an eligible empty equipment slot and an empty cursor"));
+        Equip(NativePlayerBody body, Supplier<ActionLease> lease, int slot, boolean swap) {
+            this.body = body; this.lease = lease; this.slot = slot; this.swap = swap;
+            target = (swap ? body.wearDestination(slot) : body.equipmentDestination(slot)).orElseThrow(() -> new IllegalArgumentException(swap
+                    ? "A swap needs owned armour in the hotbar for a worn slot it may take off, and an empty cursor"
+                    : "Owned armor/shield needs an eligible empty equipment slot and an empty cursor"));
             requested = body.entity().getInventory().getStack(slot).copy();
+            worn = body.entity().getEquippedStack(target).copy();
         }
         boolean permits() {
             var source = body.entity().getInventory().getStack(slot);
             return !attempted && source.getCount() == requested.getCount() && ItemStack.areItemsAndComponentsEqual(source, requested)
-                    && body.equipmentDestination(slot).filter(target::equals).isPresent();
+                    && (swap ? body.wearDestination(slot) : body.equipmentDestination(slot)).filter(target::equals).isPresent();
         }
         @Override public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
             if (checkpoint.isPresent() || !permits()) return Step.blocked("Equipment source/destination changed; no transfer attempted", true);
@@ -165,13 +294,13 @@ final class NativePlayerSkills {
             ItemStack[] before = new ItemStack[inventory.size()];
             for (int i = 0; i < before.length; i++) before[i] = inventory.getStack(i).copy();
             boolean moved;
-            try { moved = body.equipOwned(lease.get(), slot); }
+            try { moved = swap ? body.wearOwned(lease.get(), slot) : body.equipOwned(lease.get(), slot); }
             catch (RuntimeException failure) { attempted = uncertain = true; return Step.blocked("Native equipment outcome uncertain; reconcile", true); }
             attempted = true;
             if (!moved) return Step.blocked("Equipment authority denied; no transfer attempted", true);
             int destination = target == net.minecraft.entity.EquipmentSlot.OFFHAND ? 40 : 36 + target.getEntitySlotId();
             for (int i = 0; i < before.length; i++) {
-                var expected = i == slot ? ItemStack.EMPTY : i == destination ? requested : before[i];
+                var expected = i == slot ? (swap ? worn : ItemStack.EMPTY) : i == destination ? requested : before[i];
                 var actual = inventory.getStack(i);
                 if (actual.getCount() != expected.getCount() || !ItemStack.areItemsAndComponentsEqual(expected, actual)) {
                     uncertain = true;
@@ -406,6 +535,7 @@ final class NativePlayerSkills {
             double dz = goal.z - current.z;
             double horizontalDist = Math.sqrt(dx * dx + dz * dz);
             double verticalDelta = goal.y - current.y;
+
             boolean descending = goal.y < start.y - 0.25;
             double horizontalTolerance = descending ? 0.45 : 0.20;
             double verticalTolerance = descending ? 0.55 : 0.35;
@@ -458,6 +588,8 @@ final class NativePlayerSkills {
                 sprint = AuthorizedMovementCadence.sprint(gait, striding);
                 jump = AuthorizedMovementCadence.requestJump(stride, gait, striding, player.isOnGround(), player.age + hopPhase, needJump);
             }
+            // Habit hops overshoot a nearby destination and can bounce around it forever; arrive on foot.
+            if (horizontalDist < 1.2) jump = needJump;
             if (!body.move(lease.get(), speed, 0, jump, sprint, yaw)) {
                 return Step.blocked("Movement authority denied", true);
             }
@@ -529,7 +661,9 @@ final class NativePlayerSkills {
             var stack = player.getInventory().getStack(slot);
             if (before == null) {
                 if (checkpoint.isPresent()) return Step.blocked("Food use cannot be replayed from a checkpoint", true);
-                if (!stack.contains(DataComponentTypes.FOOD) || stack.isOf(Items.CHORUS_FRUIT) || !player.canConsume(false)) {
+                // Vanilla's own rule: a golden apple can be eaten full, as a person eats one hurt.
+                var food = stack.get(DataComponentTypes.FOOD);
+                if (food == null || stack.isOf(Items.CHORUS_FRUIT) || !player.canConsume(food.canAlwaysEat())) {
                     return Step.blocked("Selected owned slot is not eligible food, or hunger is full", true);
                 }
                 before = stack.copy(); // Comparison only; never inserted into an inventory.
@@ -686,8 +820,8 @@ final class NativePlayerSkills {
             if (!(target instanceof LivingEntity living) || !living.isAlive() || living.isRemoved()) {
                 return Step.blocked("Target entity not found or dead", true);
             }
-            if (player.squaredDistanceTo(living) > 16.0) {
-                return Step.blocked("Target entity out of reach (> 4.0 blocks)", true);
+            if (!player.canInteractWithEntity(living, 0)) {
+                return Step.blocked("Target entity out of reach (more than 3 blocks from the eyes to its hitbox)", true);
             }
             if (!player.canSee(living)) {
                 return Step.blocked("Target entity not in line of sight", true);
@@ -709,6 +843,50 @@ final class NativePlayerSkills {
 
         @Override public void halt() { body.stopInputs(); }
         @Override public boolean settled() { return true; }
+    }
+
+    /**
+     * Opens or shuts a fence gate within reach (M-01a), a use click on its near side; done once the gate stands as asked,
+     * and nothing is clicked when it already does.
+     */
+    static final class Gate implements SkillBody {
+        private final NativePlayerBody body;
+        private final Supplier<ActionLease> lease;
+        private final BlockPos gate;
+        private final boolean open;
+        private int clicked = -1, ticks;
+
+        Gate(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos gate, boolean open) {
+            this.body = body;
+            this.lease = lease;
+            this.gate = gate.toImmutable();
+            this.open = open;
+        }
+
+        @Override
+        public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
+            if (checkpoint.isPresent()) return Step.blocked("A gate cannot replay a saved step", true);
+            ticks++;
+            BlockState state = body.entity().getServerWorld().getBlockState(gate);
+            if (!(state.getBlock() instanceof net.minecraft.block.FenceGateBlock)) return Step.blocked("No fence gate at " + gate.toShortString(), true);
+            if (state.get(net.minecraft.block.FenceGateBlock.OPEN) == open) {
+                return Step.completed(Map.of("gate", gate.toShortString(), "open", String.valueOf(open)));
+            }
+            if (clicked >= 0) {
+                // Vanilla turns the gate on the click itself; one that has not turned a tick later did not take it.
+                return ticks - clicked < 2 ? Step.running(Map.of("gate", "turning"), false)
+                        : Step.blocked("The gate at " + gate.toShortString() + " did not " + (open ? "open" : "shut"), true);
+            }
+            if (!body.useGate(lease.get(), gate)) return Step.blocked("The gate is out of reach or the click was refused", true);
+            clicked = ticks;
+            return Step.running(Map.of("gate", "clicked"), false);
+        }
+
+        @Override
+        public void halt() { }
+
+        @Override
+        public boolean settled() { return true; }
     }
 
     static final class Block implements SkillBody {

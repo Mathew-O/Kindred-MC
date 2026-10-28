@@ -98,9 +98,7 @@ final class NativeSmeltAction extends NativeRecordedAction {
             }
             furnaceInstance = furnace;
 
-            var point = new WorkSetup.BlockPoint(plan.furnacePos().getX(), plan.furnacePos().getY(), plan.furnacePos().getZ());
-            var decision = EditPolicy.evaluate(setup.get(), EditPolicy.Kind.PLACE,
-                    world.getRegistryKey().getValue().toString(), point, "minecraft:furnace", policy.get());
+            var decision = NativeEdits.useWorkstation(player, setup.get(), plan.furnacePos(), "minecraft:furnace", policy.get());
             if (!decision.allowed()) {
                 return Step.blocked("Furnace edit policy denied: " + decision.reason(), true);
             }
@@ -241,10 +239,8 @@ final class NativeSmeltAction extends NativeRecordedAction {
         if (furnaceBefore != null && !furnaceBefore.matches(furnace)) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
-        var point = new WorkSetup.BlockPoint(plan.furnacePos().getX(), plan.furnacePos().getY(), plan.furnacePos().getZ());
-        var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE,
-                world.getRegistryKey().getValue().toString(), point, "minecraft:furnace", policy.get());
+        if ((currentSetup == null ? -1L : currentSetup.revision()) != setupRevision) return false;
+        var decision = NativeEdits.useWorkstation(player, currentSetup, plan.furnacePos(), "minecraft:furnace", policy.get());
         if (!decision.allowed()) return false;
         if (claim == null || !claims.holdsAll(claim, System.currentTimeMillis())) return false;
 

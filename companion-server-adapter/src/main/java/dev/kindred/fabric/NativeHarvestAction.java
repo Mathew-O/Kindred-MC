@@ -21,10 +21,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native crop harvesting action using the durable action ledger (E-13).
- * Evaluates crop maturity, harvests mature yield, enforces replanting conservation
- * (immediately sowing a seed back onto farmland before keeping surplus food),
- * and verifies complete item conservation.
+ * Recorded native crop harvest (E-13). The mature crop is broken through the ordinary survival break path, so
+ * its own loot table decides the yield; the player then walks over its attributable drops and, when asked,
+ * replants with an owned seed through normal item use. Nothing is added to the inventory except by pickup.
  */
 final class NativeHarvestAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -49,6 +48,13 @@ final class NativeHarvestAction extends NativeRecordedAction {
     private Step result;
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
+    private long priorReceipt;
+    private boolean broken;
+    private int collectTicks;
+    private final java.util.Set<UUID> preExistingDrops = new java.util.HashSet<>();
+    private final java.util.Set<UUID> trackedDrops = new java.util.HashSet<>();
+    private boolean replantAttempted;
+    private static final int COLLECT_TICKS = 80;
 
     NativeHarvestAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                         Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
@@ -139,42 +145,115 @@ final class NativeHarvestAction extends NativeRecordedAction {
             }
             return waiting();
         }
-        if (admission.phase() != ActionAdmission.Phase.READY) return waiting();
-        if (!validAuthorityAndPreconditions()) {
-            result = Step.blocked("Harvest preconditions, claim, or policy no longer valid; no harvest performed", true);
-            flush = admission.close();
+        if (admission.phase() == ActionAdmission.Phase.READY) {
+            if (!validAuthorityAndPreconditions()) {
+                result = Step.blocked("Harvest preconditions, claim, or policy no longer valid; no harvest performed", true);
+                flush = admission.close();
+                return waiting();
+            }
+            if (admission.take().isEmpty()) return waiting();
+            var world = body.entity().getServerWorld();
+            priorReceipt = body.miningReceipt().map(NativePlayerBody.MiningReceipt::sequence).orElse(0L);
+            for (var drop : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(target).expand(3.0), d -> true)) {
+                preExistingDrops.add(drop.getUuid());
+            }
+            boolean started;
+            try {
+                started = body.harvestCrop(lease.get(), slot, target);
+            } catch (RuntimeException failure) {
+                started = false;
+            }
+            if (!started) {
+                if (before.matches(body) && cropIntact()) {
+                    result = Step.blocked("Native harvest controls denied; nothing was broken", true);
+                    admission.noEffect(before.description() + "; crop intact", result.reason());
+                } else {
+                    unknown = true;
+                    result = Step.blocked("Native harvest effect cannot be verified; reconcile", true);
+                    admission.uncertain(result.reason());
+                }
+            }
             return waiting();
         }
-        if (admission.take().isEmpty()) return waiting();
-        try {
-            boolean harvested = body.harvestCrop(lease.get(), slot, target, replant);
-            var world = body.entity().getServerWorld();
-            var targetState = world.getBlockState(target);
-            if (admission.phase() == ActionAdmission.Phase.CLOSED) {
-                unknown = true;
-                result = Step.blocked("Authority ended during harvest; reconcile", true);
-            } else if (harvested && (replant ? (targetState.getBlock() instanceof CropBlock && world.getBlockState(target.down()).isOf(Blocks.FARMLAND))
-                    : (targetState.isAir() || targetState.isReplaceable()))) {
-                var after = InventoryEvidence.capture(body);
-                result = Step.completed(Map.of(
-                        "harvested", cropBlockId,
-                        "pos", target.toShortString(),
-                        "replanted", String.valueOf(replant)));
-                admission.verify(after.description() + "; " + result.progress(), "Native crop harvest verified");
-            } else if (before.matches(body)) {
-                result = Step.blocked("Crop harvest produced no effect", true);
-                admission.noEffect(before.description() + "; all owned slots unchanged", result.reason());
+        if (admission.phase() != ActionAdmission.Phase.ISSUED) return waiting();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!broken) {
+            if (breakReceipt()) {
+                broken = true;
+                body.stopInputs();
+                for (var drop : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(target).expand(3.0), d -> true)) {
+                    if (!preExistingDrops.contains(drop.getUuid())) trackedDrops.add(drop.getUuid());
+                }
+            } else if (cropIntact()) {
+                return waiting();
             } else {
-                unknown = true;
-                result = Step.blocked("Native harvest effect cannot be verified; reconcile", true);
-                admission.uncertain(result.reason());
+                // The crop changed without our attributable break; no drops of ours exist to claim.
+                body.stopInputs();
+                result = Step.blocked("Crop changed before an attributable break; nothing harvested", true);
+                if (before.matches(body)) admission.noEffect(before.description() + "; crop changed externally", result.reason());
+                else { unknown = true; admission.uncertain(result.reason()); }
+                return waiting();
             }
-        } catch (RuntimeException failure) {
-            unknown = true;
-            result = Step.blocked("Harvest action interrupted with an unknown outcome; reconcile", true);
-            if (admission.phase() == ActionAdmission.Phase.ISSUED) admission.uncertain(failure.getMessage());
         }
+        // Walk into ordinary pickup range of our own drops; pickup itself is vanilla collision.
+        net.minecraft.entity.ItemEntity next = null;
+        for (UUID id : trackedDrops) {
+            if (world.getEntity(id) instanceof net.minecraft.entity.ItemEntity drop && drop.isAlive()) { next = drop; break; }
+        }
+        if (next != null && collectTicks++ < COLLECT_TICKS) {
+            double dx = next.getX() - player.getX();
+            double dz = next.getZ() - player.getZ();
+            var ahead = net.minecraft.util.math.BlockPos.ofFloored(player.getX() + Math.signum(dx) * 0.6, player.getY(), player.getZ() + Math.signum(dz) * 0.6);
+            float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            if (dx * dx + dz * dz > 0.36 && world.getFluidState(ahead).isEmpty() && new NativeNavigator(world).safeHeading(player, yaw)) {
+                body.move(lease.get(), 0.6f, 0, false, false, yaw);
+            } else {
+                body.stopInputs();
+            }
+            return waiting();
+        }
+        body.stopInputs();
+        if (replant && !replantAttempted) {
+            replantAttempted = true;
+            int seedSlot = seedHotbarSlot();
+            BlockPos farmland = target.down();
+            if (seedSlot >= 0 && world.getBlockState(farmland).isOf(Blocks.FARMLAND) && world.getBlockState(target).isAir()) {
+                body.plantCrop(lease.get(), seedSlot, farmland);
+            }
+        }
+        boolean replanted = world.getBlockState(target).getBlock() instanceof CropBlock;
+        var after = InventoryEvidence.capture(body);
+        result = Step.completed(Map.of(
+                "harvested", cropBlockId,
+                "pos", target.toShortString(),
+                "replanted", String.valueOf(replanted)));
+        admission.verify(after.description() + "; nativeReceipt=" + priorReceipt + "+; dropsTracked=" + trackedDrops.size()
+                + "; " + result.progress(), "Native crop break with vanilla loot and collision pickup");
         return waiting();
+    }
+
+    private boolean breakReceipt() {
+        return body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)).isPresent();
+    }
+
+    private boolean cropIntact() {
+        var state = body.entity().getServerWorld().getBlockState(target);
+        return state.getBlock() instanceof CropBlock crop && crop.isMature(state);
+    }
+
+    /** Hotbar slot holding the item that replants this crop, or -1. */
+    private int seedHotbarSlot() {
+        var seed = switch (cropBlockId) {
+            case "minecraft:carrots" -> net.minecraft.item.Items.CARROT;
+            case "minecraft:potatoes" -> net.minecraft.item.Items.POTATO;
+            case "minecraft:beetroots" -> net.minecraft.item.Items.BEETROOT_SEEDS;
+            case "minecraft:wheat" -> net.minecraft.item.Items.WHEAT_SEEDS;
+            default -> null;
+        };
+        if (seed == null) return -1;
+        for (int s = 0; s < 9; s++) if (body.entity().getInventory().getStack(s).isOf(seed)) return s;
+        return -1;
     }
 
     private boolean validAuthorityAndPreconditions() {
@@ -201,9 +280,9 @@ final class NativeHarvestAction extends NativeRecordedAction {
     boolean permits(NativePlayerBody.Intent intent, BlockPos targetPos) {
         if (halted || admission == null || admission.phase() != ActionAdmission.Phase.ISSUED) return false;
         if (intent == NativePlayerBody.Intent.SELECT_SLOT) return true;
-        if (intent == NativePlayerBody.Intent.HARVEST || intent == NativePlayerBody.Intent.MINE) {
-            return targetPos == null || target.equals(targetPos);
-        }
+        if (intent == NativePlayerBody.Intent.MINE) return !broken && target.equals(targetPos);
+        if (intent == NativePlayerBody.Intent.MOVE) return broken && !replantAttempted;
+        if (intent == NativePlayerBody.Intent.PLANT) return broken && replantAttempted && target.equals(targetPos);
         return false;
     }
 
@@ -238,7 +317,11 @@ final class NativeHarvestAction extends NativeRecordedAction {
         if (admission != null && admission.phase() == ActionAdmission.Phase.ISSUED) {
             if (result != null && result.status() == Status.COMPLETED && !unknown) {
                 admission.verify(InventoryEvidence.capture(body).description() + "; " + result.progress(), "Native crop harvest verified");
-            } else if (before != null && before.matches(body)) {
+            } else if (broken) {
+                // Our attributable break happened; anything gained since came from vanilla pickup of its drops.
+                admission.verify(InventoryEvidence.capture(body).description() + "; collection interrupted",
+                        "Native crop break observed; drop collection interrupted");
+            } else if (before != null && before.matches(body) && cropIntact()) {
                 admission.noEffect(before.description() + "; all owned slots unchanged", "Harvest cancelled with intact inventory");
             } else {
                 unknown = true;

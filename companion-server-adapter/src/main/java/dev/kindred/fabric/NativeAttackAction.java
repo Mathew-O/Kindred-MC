@@ -89,9 +89,9 @@ final class NativeAttackAction extends NativeRecordedAction {
             admission.noEffect(before.description() + "; target absent or dead", "Target absent or dead");
             return waiting();
         }
-        if (player.squaredDistanceTo(target) > 16.0) {
+        if (!player.canInteractWithEntity(target, 0)) {
             if (admission.take().isEmpty()) return waiting();
-            result = Step.blocked("Target entity out of reach (> 4.0 blocks); no attack issued", true);
+            result = Step.blocked("Target entity out of reach (more than 3 blocks from the eyes to its hitbox); no attack issued", true);
             admission.noEffect(before.description() + "; target out of reach", "Target out of reach");
             return waiting();
         }

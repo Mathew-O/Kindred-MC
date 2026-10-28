@@ -16,6 +16,7 @@ import net.minecraft.command.argument.UuidArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -38,27 +39,265 @@ public final class PlayerCommands {
                     + "suspend [UUID]; recover [UUID]; remove [UUID]; journal [UUID]. Autonomous survival awaits qualification."), false);
             return 1;
         });
-        root.then(CommandManager.literal("gui").executes(context -> {
-            PlayerRuntime runtime = KindredMod.runtime();
-            if (runtime == null) return unavailable(context.getSource());
-            return runtime.openControlGui(context.getSource());
-        }));
-        root.then(CommandManager.literal("settings").then(CommandManager.literal("seedlocator")
-                .then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(context -> {
+        root.then(CommandManager.literal("goal").then(CommandManager.argument("goal", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("nether"); builder.suggest("end"); builder.suggest("dragon"); builder.suggest("none"); return builder.buildFuture(); })
+                .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
                     if (runtime == null) return unavailable(context.getSource());
-                    return runtime.setSeedLocatorEnabled(context.getSource(), null,
-                            BoolArgumentType.getBool(context, "enabled"));
-                }).then(CommandManager.argument("target", StringArgumentType.string())
+                    UUID id = runtime.defaultBotId();
+                    if (id == null) {
+                        context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+                        return 0;
+                    }
+                    return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string())
                         .suggests((context, builder) -> suggestBots(builder))
                         .executes(context -> {
                             PlayerRuntime runtime = KindredMod.runtime();
                             if (runtime == null) return unavailable(context.getSource());
                             UUID id = resolveBotTarget(context, "target", runtime);
                             if (id == null) return 0;
-                            return runtime.setSeedLocatorEnabled(context.getSource(), id,
-                                    BoolArgumentType.getBool(context, "enabled"));
-                        })))));
+                            return runtime.startGoal(context.getSource(), id, goal(StringArgumentType.getString(context, "goal")));
+                        }))));
+        // A build (E-08b, M-05, M-01b): /aiplayer build hut|hut-7x5x3|cabin|house|manor|<schematic> <x y z> [quarter turns] [player];
+        // build stop [player];
+        // build list.
+        root.then(CommandManager.literal("build")
+                .then(CommandManager.literal("list").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.listBlueprints(context.getSource());
+                }))
+                .then(CommandManager.literal("stop").executes(context -> build(context, false, false, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> build(context, false, false, true))))
+                .then(CommandManager.argument("blueprint", StringArgumentType.word())
+                        .suggests((context, builder) -> { for (String s : new String[] {"hut", "hut-7x5x3", "cabin", "house", "manor"}) builder.suggest(s); return builder.buildFuture(); })
+                        .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                                .executes(context -> build(context, true, false, false))
+                                .then(CommandManager.argument("turns", IntegerArgumentType.integer(0, 3))
+                                        .executes(context -> build(context, true, true, false))
+                                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                                .suggests((context, builder) -> suggestBots(builder))
+                                                .executes(context -> build(context, true, true, true)))))));
+        root.then(CommandManager.literal("ranch")
+                .then(CommandManager.literal("stop").executes(context -> ranch(context, false, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> ranch(context, false, true))))
+                .then(CommandManager.argument("animal", StringArgumentType.word())
+                        .suggests((context, builder) -> { for (var kind : dev.kindred.core.survival.Ranch.Kind.values()) builder.suggest(kind.noun()); return builder.buildFuture(); })
+                        .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                                .executes(context -> ranch(context, true, false))
+                                .then(CommandManager.argument("target", StringArgumentType.string())
+                                        .suggests((context, builder) -> suggestBots(builder))
+                                        .executes(context -> ranch(context, true, true))))));
+        root.then(CommandManager.literal("pasture")
+                .then(CommandManager.argument("animal", StringArgumentType.word())
+                        .suggests((context, builder) -> { for (var kind : dev.kindred.core.survival.Ranch.Kind.values()) builder.suggest(kind.noun()); return builder.buildFuture(); })
+                        .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                                .executes(context -> pasture(context, false))
+                                .then(CommandManager.argument("target", StringArgumentType.string())
+                                        .suggests((context, builder) -> suggestBots(builder))
+                                        .executes(context -> pasture(context, true))))));
+        root.then(CommandManager.literal("field")
+                .then(CommandManager.literal("stop").executes(context -> field(context, false, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> field(context, false, true))))
+                .then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                        .executes(context -> field(context, true, false))
+                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> field(context, true, true)))));
+        root.then(CommandManager.literal("skin")
+                .then(CommandManager.literal("list").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    var source = context.getSource();
+                    KindredSkins.list(source.getServer(), message -> source.sendFeedback(() -> Text.literal(message), false));
+                    return 1;
+                }))
+                .then(CommandManager.argument("skin", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            builder.suggest(dev.kindred.core.SkinFiles.DEFAULT_KEY);
+                            KindredSkins.keys().forEach(builder::suggest);
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = runtime.defaultBotId();
+                            if (id == null) {
+                                context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+                                return 0;
+                            }
+                            return runtime.setSkin(context.getSource(), id, StringArgumentType.getString(context, "skin"));
+                        })
+                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> {
+                                    PlayerRuntime runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID id = resolveBotTarget(context, "target", runtime);
+                                    if (id == null) return 0;
+                                    return runtime.setSkin(context.getSource(), id, StringArgumentType.getString(context, "skin"));
+                                }))));
+        root.then(CommandManager.literal("edits").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setWorldEdits(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
+        root.then(CommandManager.literal("dragonfight").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setDragonFight(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
+        // The leave for AI players to build their own bases (M-01c): /aiplayer bases on|off.
+        root.then(CommandManager.literal("bases").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setBases(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
+        // The seed block a player grows its builds from (E-29a): /aiplayer seed <block> [player], /aiplayer seed clear [player].
+        root.then(CommandManager.literal("seed")
+                .then(withOptionalId(CommandManager.literal("clear"), (runtime, context, id) -> runtime.setSeedBlock(context.getSource(), id, null)))
+                .then(withOptionalId(CommandManager.argument("block", IdentifierArgumentType.identifier()), (runtime, context, id) ->
+                        runtime.setSeedBlock(context.getSource(), id, IdentifierArgumentType.getIdentifier(context, "block").toString()))));
+        root.then(CommandManager.literal("gui").executes(context -> {
+            PlayerRuntime runtime = KindredMod.runtime();
+            if (runtime == null) return unavailable(context.getSource());
+            return runtime.openControlGui(context.getSource());
+        }));
+        // Matches (M-00a): an AI player is entered by whoever administers it; a human joins only for itself (D7).
+        root.then(CommandManager.literal("match")
+                .then(CommandManager.literal("duel").then(CommandManager.argument("first", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestPlayers(context, builder))
+                        .then(CommandManager.argument("second", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestPlayers(context, builder))
+                                .executes(context -> {
+                                    PlayerRuntime runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID first = resolveMatchPlayer(context, "first", runtime), second = resolveMatchPlayer(context, "second", runtime);
+                                    if (first == null || second == null) return 0;
+                                    return runtime.proposeDuel(context.getSource(), first, second);
+                                }))))
+                // A race from a fresh start to the dragon (M-03a): the runners' names, one to eight of them.
+                .then(CommandManager.literal("speedrun").then(CommandManager.argument("runners", StringArgumentType.greedyString())
+                        .suggests((context, builder) -> suggestPlayers(context,
+                                builder.createOffset(builder.getStart() + builder.getRemaining().lastIndexOf(' ') + 1)))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            var runners = new java.util.ArrayList<UUID>();
+                            for (String name : StringArgumentType.getString(context, "runners").trim().split("\\s+")) {
+                                UUID runner = runtime.matchPlayerId(name);
+                                if (runner == null) {
+                                    context.getSource().sendError(Text.literal("No such player online: '" + name + "'."));
+                                    return 0;
+                                }
+                                runners.add(runner);
+                            }
+                            return runtime.proposeSpeedrun(context.getSource(), runners);
+                        })))
+                // A manhunt (M-02a): the runners' names, then "vs", then the hunters'.
+                .then(CommandManager.literal("manhunt").then(CommandManager.argument("players", StringArgumentType.greedyString())
+                        .suggests((context, builder) -> suggestPlayers(context,
+                                builder.createOffset(builder.getStart() + builder.getRemaining().lastIndexOf(' ') + 1)))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String[] sides = StringArgumentType.getString(context, "players").trim().split("\\s+vs\\s+");
+                            if (sides.length != 2) {
+                                context.getSource().sendError(Text.literal("Name the runners, then 'vs', then the hunters: /aiplayer match manhunt Ada vs Bram Cy"));
+                                return 0;
+                            }
+                            var runners = new java.util.ArrayList<UUID>();
+                            var hunters = new java.util.ArrayList<UUID>();
+                            for (int side = 0; side < 2; side++) for (String name : sides[side].trim().split("\\s+")) {
+                                UUID player = runtime.matchPlayerId(name);
+                                if (player == null) {
+                                    context.getSource().sendError(Text.literal("No such player online: '" + name + "'."));
+                                    return 0;
+                                }
+                                (side == 0 ? runners : hunters).add(player);
+                            }
+                            return runtime.proposeManhunt(context.getSource(), runners, hunters);
+                        })))
+                // A build battle (M-04a): the builders' names, then optionally "for <seconds>" and "theme <name>".
+                .then(CommandManager.literal("build").then(CommandManager.argument("builders", StringArgumentType.greedyString())
+                        .suggests((context, builder) -> suggestPlayers(context,
+                                builder.createOffset(builder.getStart() + builder.getRemaining().lastIndexOf(' ') + 1)))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            var builders = new java.util.ArrayList<UUID>();
+                            int seconds = 300;
+                            dev.kindred.core.match.BuildBattle.Theme theme = null;
+                            String[] words = StringArgumentType.getString(context, "builders").trim().split("\\s+");
+                            for (int i = 0; i < words.length; i++) {
+                                if (words[i].equalsIgnoreCase("for") && i + 1 < words.length) {
+                                    try {
+                                        seconds = Integer.parseInt(words[++i]);
+                                    } catch (NumberFormatException bad) {
+                                        context.getSource().sendError(Text.literal("'for' takes the build's seconds: for 300"));
+                                        return 0;
+                                    }
+                                    continue;
+                                }
+                                if (words[i].equalsIgnoreCase("theme") && i + 1 < words.length) {
+                                    String name = words[++i].toUpperCase(java.util.Locale.ROOT);
+                                    theme = java.util.Arrays.stream(dev.kindred.core.match.BuildBattle.Theme.values()).filter(t -> t.name().equals(name)).findFirst().orElse(null);
+                                    if (theme == null) {
+                                        context.getSource().sendError(Text.literal("No such theme; there are: cottage, watchtower, pyramid, lighthouse"));
+                                        return 0;
+                                    }
+                                    continue;
+                                }
+                                UUID player = runtime.matchPlayerId(words[i]);
+                                if (player == null) {
+                                    context.getSource().sendError(Text.literal("No such player online: '" + words[i] + "'."));
+                                    return 0;
+                                }
+                                builders.add(player);
+                            }
+                            return runtime.proposeBuildBattle(context.getSource(), builders, seconds * 20, theme);
+                        })))
+                // A builder's vote on another's build, one to five.
+                .then(CommandManager.literal("vote").then(CommandManager.argument("builder", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestPlayers(context, builder))
+                        .then(CommandManager.argument("score", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 5))
+                                .executes(context -> {
+                                    PlayerRuntime runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID builder = resolveMatchPlayer(context, "builder", runtime);
+                                    if (builder == null) return 0;
+                                    return runtime.voteBuild(context.getSource(), builder,
+                                            com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "score"));
+                                }))))
+                .then(CommandManager.literal("join").then(CommandManager.argument("match", StringArgumentType.string())
+                        .executes(context -> matchCommand(context, (runtime, id) -> runtime.joinMatch(context.getSource(), id)))))
+                .then(CommandManager.literal("start").then(CommandManager.argument("match", StringArgumentType.string())
+                        .executes(context -> matchCommand(context, (runtime, id) -> runtime.startMatch(context.getSource(), id)))))
+                .then(CommandManager.literal("stop").then(CommandManager.argument("match", StringArgumentType.string())
+                        .executes(context -> matchCommand(context, (runtime, id) -> runtime.stopMatch(context.getSource(), id)))))
+                .then(CommandManager.literal("list").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    var all = runtime.matches();
+                    if (all.isEmpty()) context.getSource().sendFeedback(() -> Text.literal("No matches."), false);
+                    for (var match : all) context.getSource().sendFeedback(() -> Text.literal(dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " " + match.mode() + " " + match.state()
+                            + " (" + match.joined().size() + " of " + match.invited().size() + " joined)"
+                            + (match.result().isEmpty() ? "" : ": " + match.result())), false);
+                    return all.size();
+                })));
         root.then(CommandManager.literal("mode").then(CommandManager.argument("profile", StringArgumentType.word())
                 .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
@@ -229,6 +468,20 @@ public final class PlayerCommands {
         root.then(area);
         root.then(CommandManager.literal("storage").then(withOptionalId(CommandManager.literal("set"),
                 (runtime, context, id) -> runtime.storageSet(context.getSource(), id))));
+        // A container named by its place rather than looked at (E-08c): for a console or a command block.
+        root.then(CommandManager.literal("storage").then(CommandManager.literal("at").then(CommandManager.argument("at", BlockPosArgumentType.blockPos())
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    return runtime.storageSetAt(context.getSource(), runtime.defaultBotId(), BlockPosArgumentType.getBlockPos(context, "at"));
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            return id == null ? 0 : runtime.storageSetAt(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "at"));
+                        })))));
         root.then(CommandManager.literal("patch").then(CommandManager.literal("set")
                 .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
                 .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
@@ -463,6 +716,36 @@ public final class PlayerCommands {
                                     return runtime.nativeMine(context.getSource(),
                                             id, BlockPosArgumentType.getBlockPos(context, "targetPos"), IntegerArgumentType.getInteger(context, "slot"));
                                 })))));
+        nativePlayers.then(CommandManager.literal("goto").then(CommandManager.argument("targetPos", BlockPosArgumentType.blockPos())
+                .executes(context -> {
+                    var runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.nativeGoto(context.getSource(),
+                            null, BlockPosArgumentType.getBlockPos(context, "targetPos"), 1.5);
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            var runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            if (id == null) return 0;
+                            return runtime.nativeGoto(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "targetPos"), 1.5);
+                        }))));
+        nativePlayers.then(CommandManager.literal("break").then(CommandManager.argument("targetPos", BlockPosArgumentType.blockPos())
+                .executes(context -> {
+                    var runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.nativeBreak(context.getSource(),
+                            null, BlockPosArgumentType.getBlockPos(context, "targetPos"));
+                })
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            var runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            if (id == null) return 0;
+                            return runtime.nativeBreak(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "targetPos"));
+                        }))));
         nativePlayers.then(CommandManager.literal("gather").then(CommandManager.argument("count", IntegerArgumentType.integer(1, 32))
                 .then(CommandManager.argument("slot", IntegerArgumentType.integer(0, 8))
                         .executes(context -> {
@@ -703,6 +986,45 @@ public final class PlayerCommands {
         return builder.buildFuture();
     }
 
+    /** AI players and the humans online, for a match's players. */
+    private static CompletableFuture<Suggestions> suggestPlayers(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining().toLowerCase(java.util.Locale.ROOT);
+        PlayerRuntime runtime = KindredMod.runtime();
+        var names = new java.util.LinkedHashSet<String>();
+        if (runtime != null) names.addAll(runtime.availableBotNames());
+        for (var player : context.getSource().getServer().getPlayerManager().getPlayerList()) names.add(player.getName().getString());
+        for (String name : names) if (name.toLowerCase(java.util.Locale.ROOT).startsWith(remaining)) builder.suggest(name);
+        return builder.buildFuture();
+    }
+
+    /** A match's player by name: an AI player or a human online, as its player id. */
+    private static UUID resolveMatchPlayer(CommandContext<ServerCommandSource> context, String argName, PlayerRuntime runtime) {
+        String raw = StringArgumentType.getString(context, argName);
+        UUID player = runtime.matchPlayerId(raw);
+        if (player == null) context.getSource().sendError(Text.literal("No such player online: '" + raw + "'."));
+        return player;
+    }
+
+    private static int matchCommand(CommandContext<ServerCommandSource> context, java.util.function.BiFunction<PlayerRuntime, UUID, Integer> action) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        var match = runtime.findMatch(StringArgumentType.getString(context, "match"));
+        if (match.isEmpty()) {
+            context.getSource().sendError(Text.literal("No match with that id; /aiplayer match list shows them."));
+            return 0;
+        }
+        return action.apply(runtime, match.get().id());
+    }
+
+    private static dev.kindred.core.survival.SurvivalGoal goal(String raw) {
+        return switch (raw.toLowerCase(java.util.Locale.ROOT)) {
+            case "nether", "portal", "nether_portal" -> dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
+            case "end", "stronghold", "end_portal" -> dev.kindred.core.survival.SurvivalGoal.STRONGHOLD;
+            case "dragon", "ender_dragon", "beat", "beat_the_game" -> dev.kindred.core.survival.SurvivalGoal.DRAGON;
+            default -> dev.kindred.core.survival.SurvivalGoal.NONE;
+        };
+    }
+
     private static UUID resolveBotTarget(CommandContext<ServerCommandSource> context, String argName, PlayerRuntime runtime) {
         try {
             String raw = StringArgumentType.getString(context, argName);
@@ -742,6 +1064,77 @@ public final class PlayerCommands {
                     return handler.run(runtime, context, id);
                 }));
         return node;
+    }
+
+    private static int build(CommandContext<ServerCommandSource> context, boolean start, boolean turned, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        if (!start) return runtime.startBuild(context.getSource(), id, null, null, 0);
+        String name = StringArgumentType.getString(context, "blueprint");
+        BlockPos at = BlockPosArgumentType.getBlockPos(context, "at");
+        int turns = turned ? IntegerArgumentType.getInteger(context, "turns") : 0;
+        dev.kindred.core.construction.Blueprint blueprint;
+        try {
+            blueprint = PlayerRuntime.generated(name);
+        } catch (IllegalArgumentException invalid) {
+            context.getSource().sendError(Text.literal(invalid.getMessage() == null ? "Not a blueprint: " + name : invalid.getMessage()));
+            return 0;
+        }
+        if (blueprint == null) return runtime.startSchematicBuild(context.getSource(), id, name, at, turns);
+        return runtime.startBuild(context.getSource(), id, blueprint, at, turns, name);
+    }
+
+    private static int ranch(CommandContext<ServerCommandSource> context, boolean start, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        if (!start) return runtime.startRanch(context.getSource(), id, null, null);
+        String animal = StringArgumentType.getString(context, "animal").toUpperCase(java.util.Locale.ROOT);
+        var kind = java.util.Arrays.stream(dev.kindred.core.survival.Ranch.Kind.values()).filter(k -> k.name().equals(animal)).findFirst();
+        if (kind.isEmpty()) {
+            context.getSource().sendError(Text.literal("A ranch is for cows, sheep, pigs or chickens: cow, sheep, pig, chicken"));
+            return 0;
+        }
+        return runtime.startRanch(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "at"), kind.get());
+    }
+
+    /** A pair brought into the pasture ward of the keep at {@code at} by its doorway, and bred (M-06a). */
+    private static int pasture(CommandContext<ServerCommandSource> context, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        String animal = StringArgumentType.getString(context, "animal").toUpperCase(java.util.Locale.ROOT);
+        var kind = java.util.Arrays.stream(dev.kindred.core.survival.Ranch.Kind.values()).filter(k -> k.name().equals(animal)).findFirst();
+        if (kind.isEmpty()) {
+            context.getSource().sendError(Text.literal("A pasture is for cows, sheep, pigs or chickens: cow, sheep, pig, chicken"));
+            return 0;
+        }
+        return runtime.startPasture(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "at"), kind.get());
+    }
+
+    /** The farm ward's field of the keep at {@code at}, watered, tilled and sown (M-06a); or stopped. */
+    private static int field(CommandContext<ServerCommandSource> context, boolean start, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        return runtime.startField(context.getSource(), id, start ? BlockPosArgumentType.getBlockPos(context, "at") : null);
     }
 
     private static int unavailable(ServerCommandSource source) {

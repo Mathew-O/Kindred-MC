@@ -26,7 +26,6 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
 
     static final int SLOT_SPEEDRUN = 19;
     static final int SLOT_COLLAB = 21;
-    static final int SLOT_SEED_LOCATOR = 22;
     static final int SLOT_IDLE_RADIUS = 34;
     static final int SLOT_CLOSE = 53;
 
@@ -57,7 +56,6 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
         switch (slotIndex) {
             case SLOT_SPEEDRUN -> runtime.togglePlaystyleForBot(operator.getCommandSource(), selectedBotId);
             case SLOT_COLLAB -> runtime.toggleCollaborationForBot(operator.getCommandSource(), selectedBotId);
-            case SLOT_SEED_LOCATOR -> runtime.toggleSeedLocatorForBot(operator.getCommandSource(), selectedBotId);
             case SLOT_IDLE_RADIUS -> runtime.adjustIdleRadiusForBot(operator.getCommandSource(), selectedBotId, button == 0 ? 4 : -4);
             case 2, 4, 6 -> selectedBotId = runtime.canonicalBotIdForControlSlot(slotIndex).orElse(selectedBotId);
             default -> { }
@@ -101,11 +99,6 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
                     Items.PLAYER_HEAD,
                     "Collaboration",
                     settings.collaborationMode().name());
-            case SLOT_SEED_LOCATOR -> toggleStack(
-                    settings.seedLocatorEnabled(),
-                    Items.MAP,
-                    "Seed Structure Locator",
-                    settings.seedLocatorEnabled() ? "ON (assisted)" : "OFF (unassisted)");
             case SLOT_IDLE_RADIUS -> labeled(Items.COMPASS, "Idle Radius: " + settings.idleRadiusBlocks() + "m",
                     List.of("Left-click +4, right-click -4", "Mode: " + settings.playstyleProfile()));
             case SLOT_CLOSE -> labeled(Items.BARRIER, "Close", List.of());

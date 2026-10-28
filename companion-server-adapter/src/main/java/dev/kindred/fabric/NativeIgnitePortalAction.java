@@ -64,8 +64,6 @@ final class NativeIgnitePortalAction extends NativeRecordedAction {
         this.target = target.toImmutable();
         this.slot = slot;
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Ignition needs an owned hotbar slot 0..8");
-        var s = setup.get();
-        if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
     }
 
     @Override
@@ -105,8 +103,7 @@ final class NativeIgnitePortalAction extends NativeRecordedAction {
             dimensionKey = world.getRegistryKey().getValue().toString();
             setupRevision = setup.get() != null ? setup.get().revision() : 0;
 
-            var point = new WorkSetup.BlockPoint(portalPos.getX(), portalPos.getY(), portalPos.getZ());
-            var decision = EditPolicy.evaluate(setup.get(), EditPolicy.Kind.PLACE, dimensionKey, point, "minecraft:nether_portal", policy.get());
+            var decision = NativeEdits.decide(player, setup.get(), EditPolicy.Kind.PLACE, portalPos, "minecraft:nether_portal", policy.get());
             if (!decision.allowed()) {
                 return Step.blocked(decision.reason(), true);
             }
@@ -202,9 +199,8 @@ final class NativeIgnitePortalAction extends NativeRecordedAction {
         if (currentSlotStack.getItem() != Items.FLINT_AND_STEEL && currentSlotStack.getItem() != Items.FIRE_CHARGE) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
-        var point = new WorkSetup.BlockPoint(portalPos.getX(), portalPos.getY(), portalPos.getZ());
-        var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, "minecraft:nether_portal", policy.get());
+        if ((currentSetup == null ? 0 : currentSetup.revision()) != setupRevision) return false;
+        var decision = NativeEdits.decide(player, currentSetup, EditPolicy.Kind.PLACE, portalPos, "minecraft:nether_portal", policy.get());
         if (!decision.allowed()) return false;
 
         return claim != null && claims.holdsAll(claim, System.currentTimeMillis());

@@ -39,6 +39,7 @@ final class NativePlaceAction extends NativeRecordedAction {
     private final BlockPos target;
     private final Direction side;
     private final int slot;
+    private final NativePlayerBody.PlaceLook aim;
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -58,6 +59,15 @@ final class NativePlaceAction extends NativeRecordedAction {
                       Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer,
                       Consumer<Runnable> dispatch, BlockPos target, Direction side, int slot) {
+        this(body, lease, worldId, setup, policy, claims, writer, dispatch, target, side, slot, null);
+    }
+
+    /** With {@code aim}, the look and the point clicked are the planner's, so the block takes the state it was planned in. */
+    NativePlaceAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
+                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
+                      ClaimRegistry claims, ActionAdmission.Writer writer,
+                      Consumer<Runnable> dispatch, BlockPos target, Direction side, int slot, NativePlayerBody.PlaceLook aim) {
+        this.aim = aim;
         this.body = body;
         this.lease = lease;
         this.worldId = worldId;
@@ -70,8 +80,6 @@ final class NativePlaceAction extends NativeRecordedAction {
         this.side = side != null ? side : Direction.UP;
         this.slot = slot;
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Placement needs an owned hotbar slot 0..8");
-        var s = setup.get();
-        if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
     }
 
     @Override
@@ -117,8 +125,7 @@ final class NativePlaceAction extends NativeRecordedAction {
 
             var point = new WorkSetup.BlockPoint(placedPos.getX(), placedPos.getY(), placedPos.getZ());
             var resource = Registries.BLOCK.getId(blockItem.getBlock()).toString();
-            var decision = EditPolicy.evaluate(setup.get(), EditPolicy.Kind.PLACE,
-                    dimensionKey, point, resource, policy.get());
+            var decision = NativeEdits.decide(player, setup.get(), EditPolicy.Kind.PLACE, placedPos, resource, policy.get());
             if (!decision.allowed()) {
                 return Step.blocked(decision.reason(), true);
             }
@@ -162,16 +169,19 @@ final class NativePlaceAction extends NativeRecordedAction {
         }
         if (admission.take().isEmpty()) return waiting();
         try {
-            boolean placed = body.placeBlock(lease.get(), slot, target, side);
+            boolean placed = body.placeBlock(lease.get(), slot, target, side, aim);
             var world = body.entity().getServerWorld();
+            var state = world.getBlockState(placedPos);
             if (admission.phase() == ActionAdmission.Phase.CLOSED) {
                 unknown = true;
                 result = Step.blocked("Authority ended during block placement; reconcile", true);
-            } else if (placed && world.getBlockState(placedPos).isOf(blockItem.getBlock())) {
+            } else if (placed && (state.isOf(blockItem.getBlock()) || state.getBlock().asItem() == blockItem)) {
+                // The block an item places may be another of its blocks: a torch on a wall is a wall torch.
                 var after = InventoryEvidence.capture(body);
                 if (verifyConservation(before, after, blockItem)) {
                     result = Step.completed(Map.of(
-                            "block", Registries.BLOCK.getId(blockItem.getBlock()).toString(),
+                            "block", Registries.BLOCK.getId(state.getBlock()).toString(),
+                            "state", net.minecraft.command.argument.BlockArgumentParser.stringifyBlockState(state),
                             "pos", placedPos.toShortString()));
                     admission.verify(after.description() + "; " + result.progress(), "Native block placement verified");
                 } else {
@@ -217,10 +227,9 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (currentSlotStack.isEmpty() || !ItemStack.areItemsAndComponentsEqual(currentSlotStack, expectedStack)) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
-        var point = new WorkSetup.BlockPoint(placedPos.getX(), placedPos.getY(), placedPos.getZ());
+        if ((currentSetup == null ? 0 : currentSetup.revision()) != setupRevision) return false;
         var resource = Registries.BLOCK.getId(blockItem.getBlock()).toString();
-        var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, resource, policy.get());
+        var decision = NativeEdits.decide(player, currentSetup, EditPolicy.Kind.PLACE, placedPos, resource, policy.get());
         if (!decision.allowed()) return false;
 
         if (claim == null || !claims.holdsAll(claim, System.currentTimeMillis())) return false;
@@ -229,6 +238,13 @@ final class NativePlaceAction extends NativeRecordedAction {
 
     private boolean verifyConservation(InventoryEvidence before, InventoryEvidence after, BlockItem blockItem) {
         if (before.stacks().length != after.stacks().length) return false;
+        // In creative, which only a build battle gives (M-04a), vanilla places without using the item up: nothing changes.
+        if (body.entity().isCreative()) {
+            for (int i = 0; i < before.stacks().length; i++) {
+                if (!ItemStack.areItemsAndComponentsEqual(before.stacks()[i], after.stacks()[i]) || before.stacks()[i].getCount() != after.stacks()[i].getCount()) return false;
+            }
+            return true;
+        }
         for (int i = 0; i < before.stacks().length; i++) {
             ItemStack b = before.stacks()[i];
             ItemStack a = after.stacks()[i];

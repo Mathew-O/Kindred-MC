@@ -65,7 +65,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertFalse(f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Resource patch acknowledged"))
                 .createAndAdd(() -> {
                     f.runtime.nativeBody(f.id).orElseThrow().setPortalTravelAuthorized(true);
-                    context.assertTrue(f.runtime.nativeBody(f.id).orElseThrow().teleportDimension(nether,
+                    context.assertTrue(fixtureTeleport(f.runtime.nativeBody(f.id).orElseThrow(), nether,
                             new Vec3d(wart.getX() + 0.5, wart.getY(), wart.getZ() + 1.5)), "Fixture places native body in Nether");
                 })
                 .createAndAdd(() -> { })
@@ -141,6 +141,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertFalse(f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Work area acknowledged"))
                 .createAndAdd(() -> {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    // This fixture drives each proposed placement itself; autonomy must not move the body meanwhile.
+                    f.runtime.holdAutonomyForTest(f.id, 8000);
                     var candidate = f.runtime.nativeCandidates(Actor.console(), f.id).stream()
                             .filter(c -> c.skill().equals("native_place") && "2".equals(c.arguments().get("slot")))
                             .findFirst();
@@ -560,7 +562,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     context.assertTrue(netherX == 10 && netherZ == 10, "8:1 coordinate scaling verified");
 
                     // Execute cross-dimension transfer to Nether
-                    boolean transferred = body.teleportDimension(nether, new Vec3d(netherX + 0.5, 64.0, netherZ + 0.5));
+                    boolean transferred = fixtureTeleport(body, nether, new Vec3d(netherX + 0.5, 64.0, netherZ + 0.5));
                     context.assertTrue(transferred, "Teleport to Nether dimension succeeded");
                     f.runtime.syncNativeDimensionAfterTransit(f.id);
                 })
@@ -593,7 +595,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     int returnZ = Waypoint.netherToOverworld(10);
                     context.assertTrue(returnX == 80 && returnZ == 80, "Return coordinate conversion 10*8 = 80 verified");
 
-                    boolean returned = body.teleportDimension(overworld, new Vec3d(returnX + 0.5, 64.0, returnZ + 0.5));
+                    boolean returned = fixtureTeleport(body, overworld, new Vec3d(returnX + 0.5, 64.0, returnZ + 0.5));
                     context.assertTrue(returned, "Return transfer to Overworld succeeded");
                     f.runtime.syncNativeDimensionAfterTransit(f.id);
                 })
@@ -646,7 +648,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     body.setPortalTravelAuthorized(true);
 
                     // Execute transit to Nether
-                    body.teleportDimension(nether, new Vec3d(10.5, 64.0, 10.5));
+                    fixtureTeleport(body, nether, new Vec3d(10.5, 64.0, 10.5));
                     f.runtime.syncNativeDimensionAfterTransit(f.id);
                 })
                 .createAndAdd(() -> {})
@@ -684,5 +686,11 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** Fixture repositioning only: proves dimension bookkeeping, never earned portal travel. */
+    private static boolean fixtureTeleport(NativePlayerBody body, ServerWorld target, Vec3d pos) {
+        var player = body.entity();
+        return player.teleport(target, pos.x, pos.y, pos.z, java.util.Set.of(), player.getYaw(), player.getPitch());
     }
 }

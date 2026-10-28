@@ -83,6 +83,9 @@ public final class NativeDefensivePrerequisitesGameTests implements FabricGameTe
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 360)
     public void hazardArrivalDuringActiveWorkRevokesWorkWithoutOverlappingControllers(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        // The retreat is seen while it runs or once done: the idle player may start another short wait right after
+        // it, before a check of only the latest work would come round (suite on 2026-10-22).
+        boolean[] retreated = {false};
 
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
@@ -102,13 +105,14 @@ public final class NativeDefensivePrerequisitesGameTests implements FabricGameTe
                     context.getWorld().setBlockState(ground, Blocks.MAGMA_BLOCK.getDefaultState());
                 })
                 .createAndAdd(() -> {
-                    // Wait for mid-skill hazard detection and autonomous retreat to complete
+                    // Wait for mid-skill hazard detection and the autonomous retreat to complete.
                     var act = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    if (!act.phase().equals("IDLE")) return;
+                    if (act.work().contains("native_retreat")) retreated[0] = true;
+                    context.assertTrue(retreated[0] && act.phase().equals("IDLE"), "Autonomous retreat after hazard interruption: " + act.work());
                 })
                 .createAndAdd(() -> {
                     var act = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    context.assertTrue(act.phase().equals("IDLE") && act.work().contains("native_retreat"),
+                    context.assertTrue(act.phase().equals("IDLE") && retreated[0],
                             "Autonomous retreat completed after hazard interruption: " + act.work());
                     BlockPos currentGround = f.player().getBlockPos().down();
                     context.assertTrue(!context.getWorld().getBlockState(currentGround).isOf(Blocks.MAGMA_BLOCK),

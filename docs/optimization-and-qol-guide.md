@@ -2025,6 +2025,8 @@ In `PlayerRuntime.java`:
 
 ## 12. Toggable Seed Locator & Fair-Play Speedrunning Community Tech (`SPEED-01`)
 
+> **Seed locator retired 2026-10-20.** The structure locator below was deleted (commit `7f10521`, `SeedStructureLocator` and the `seedLocatorEnabled` setting removed): seed or structure lookups are hidden-resource omniscience, which the player contract rules out. AI players know only what they have seen. Item 1 is kept as history, not as a plan; the speedrun-technique ideas in item 2 remain an unimplemented proposal.
+
 ### Goal
 1. **Toggable Seed-Based Structure Locator (`seedLocatorEnabled`)**:
    - Add a boolean setting `seedLocatorEnabled` (default `false`, togglable in `/aiplayer gui` Slot 22 or `/aiplayer settings seedlocator <on|off>`).
@@ -2413,7 +2415,7 @@ public final class SignatureWeaponPolicy {
 | `WEAP-01` | **P1** | Signature Weapons (`Vesp` Trident, `Sol` Mace/Crossbow, `Kindred` Sword/Axe/Bow) | `SignatureWeaponPolicy.java`, `WeaponProfile.java`, `PlayerRuntime.java` | Distinct weapon identities with dynamic mathematical hot-swapping |
 | `GUI-01` | **P1** | In-Game 9x6 Control Deck GUI (`/aiplayer gui`) | `KindredControlScreenHandler.java`, `PlayerCommands.java` | Clickable vanilla-compatible GUI for Modes, Bosses, Collab, Seed Tool & Traits |
 | `EXEC-02` | **P1** | `PlaystyleProfile`: `IDLE` / `OPTIMAL_SURVIVAL` / `SPEEDRUN_ANY_PERCENT` | `PlaystyleProfile.java`, `ProgressionPolicy.java`, `MilestoneGraph.java` | Non-locked mode switching between Idle, Optimal Survival, and Speedrun |
-| `SPEED-01` | **P1** | Toggable Seed Locator & Fair-Play Speedrun Community Tech | `SpeedrunTechPolicy.java`, `SeedStructureLocator.java` | `(9,9)` treasure, underwater door air, boat clutch, Bastion tech & `(4,4)` stronghold |
+| `SPEED-01` | **P1** | Fair-Play Speedrun Community Tech (seed locator retired 2026-10-20) | `SpeedrunTechPolicy.java` | `(9,9)` treasure, underwater door air, boat clutch, Bastion tech & `(4,4)` stronghold |
 | `WORLD-01` | **P1** | Boss Toggle & "2+ Year Forever World" Civilization Engine | `WorldKaizenDirector.java`, `WorldKaizenStage.java`, `ProgressionPolicy.java` | Home Ranch, Mob Farms, Powered Minecart Rails, Netherite & Playful Builds |
 | `OPT-05..09` | **P1** | Shield 5t warmup, jump crits, deepslate ores, crop loot & SQLite task durability | `StandardCombatPredictor.java`, `NativeAttackAction.java`, `NativePlayerBody.java` | Authentic 1.21.1 survival mechanics & crash-safe Schema 8 persistence |
 | `INT-01..02` | **P1** | Provenance Discovery Atlas, Lectern Sync, Totem/Bucket Clutch & Ally Peel | `DiscoveryAtlas.java`, `TacticalPriorityPolicy.java`, `NativePlayerBody.java` | Non-cheat Bot$\leftrightarrow$Player coordinate sharing & human-grade combat reflexes |

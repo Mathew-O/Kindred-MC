@@ -21,7 +21,8 @@ import java.util.function.Supplier;
 /**
  * Checkpointed native bed sleeping action using the durable action ledger (E-13).
  * Verifies night/thunderstorm condition, checks bed occupancy, initiates sleep,
- * and anchors the native player's respawn point to the home shelter bed.
+ * and anchors the native player's respawn point to the home shelter bed: one in its work area, or one of its own
+ * base's beds (F-25c9).
  */
 final class NativeSleepAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -32,6 +33,7 @@ final class NativeSleepAction extends NativeRecordedAction {
     private final ActionAdmission.Writer writer;
     private final Consumer<Runnable> dispatch;
     private final BlockPos target;
+    private final java.util.function.Predicate<BlockPos> ownBed;
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -46,7 +48,7 @@ final class NativeSleepAction extends NativeRecordedAction {
     NativeSleepAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                      Supplier<WorkSetup> setup, ClaimRegistry claims,
                      ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
-                     BlockPos target) {
+                     BlockPos target, java.util.function.Predicate<BlockPos> ownBed) {
         this.body = body;
         this.lease = lease;
         this.worldId = worldId;
@@ -55,8 +57,9 @@ final class NativeSleepAction extends NativeRecordedAction {
         this.writer = writer;
         this.dispatch = dispatch;
         this.target = target.toImmutable();
+        this.ownBed = ownBed;
         var s = setup.get();
-        if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
+        if ((s == null || s.area() == null) && !ownBed.test(this.target)) throw new IllegalArgumentException("No work area is assigned.");
     }
 
     @Override
@@ -90,15 +93,17 @@ final class NativeSleepAction extends NativeRecordedAction {
             }
 
             var currentSetup = setup.get();
-            if (currentSetup == null || currentSetup.area() == null) {
-                return Step.blocked("No work area is assigned.", true);
-            }
-            var point = new WorkSetup.BlockPoint(target.getX(), target.getY(), target.getZ());
-            if (!currentSetup.area().contains(point)) {
-                return Step.blocked("Bed is outside assigned work area", true);
+            if (!ownBed.test(target)) {
+                if (currentSetup == null || currentSetup.area() == null) {
+                    return Step.blocked("No work area is assigned.", true);
+                }
+                var point = new WorkSetup.BlockPoint(target.getX(), target.getY(), target.getZ());
+                if (!currentSetup.area().contains(point)) {
+                    return Step.blocked("Bed is outside assigned work area", true);
+                }
             }
 
-            setupRevision = currentSetup.revision();
+            setupRevision = currentSetup == null ? -1 : currentSetup.revision();
             dimensionKey = world.getRegistryKey().getValue().toString();
 
             claimKey = "bed:" + worldId + ":" + dimensionKey + ":" + target.toShortString();
@@ -181,7 +186,7 @@ final class NativeSleepAction extends NativeRecordedAction {
         if (player.getEyePos().squaredDistanceTo(target.getX() + 0.5, target.getY() + 0.5, target.getZ() + 0.5) > 25.0) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
+        if ((currentSetup == null ? -1 : currentSetup.revision()) != setupRevision) return false;
 
         return claim != null && claims.holdsAll(claim, System.currentTimeMillis());
     }

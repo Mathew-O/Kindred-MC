@@ -81,7 +81,15 @@ public final class NativeTacticalObserver {
         world.collectEntitiesByType(
                 TypeFilter.instanceOf(LivingEntity.class),
                 player.getBoundingBox().expand(16.0),
-                e -> e != player && e.isAlive() && !(e instanceof PlayerEntity),
+                // Threats only: monsters, or any mob currently targeting this player. Grazing animals are not danger,
+                // and neither is a mob that only fights once angered (an enderman, a zombified piglin) until it is
+                // after this player: striking one provokes it (live run 56 died to an enderman it had hit). Nor is a
+                // piglin not after it, calmed by the gold it wears: one struck turns every piglin about on it (E-07e).
+                e -> e != player && e.isAlive() && !(e instanceof PlayerEntity)
+                        && !(e instanceof net.minecraft.entity.mob.Angerable && !(e instanceof net.minecraft.entity.mob.MobEntity angry && angry.getTarget() == player))
+                        && !(e instanceof net.minecraft.entity.mob.PiglinEntity piglin && piglin.getTarget() != player)
+                        && (e instanceof net.minecraft.entity.mob.Monster
+                        || e instanceof net.minecraft.entity.mob.MobEntity hunter && hunter.getTarget() == player),
                 nearbyLiving,
                 16
         );
@@ -92,7 +100,8 @@ public final class NativeTacticalObserver {
 
             String entityType = Registries.ENTITY_TYPE.getId(mob.getType()).toString();
             double distance = player.distanceTo(mob);
-            float currentHealth = mob.getHealth();
+            // As a player can know it: from the hits it saw land, never the server's number (E-41a).
+            float currentHealth = (float) Math.min(mob.getMaxHealth(), NativePlayerBody.believedHealth(player, mob));
             float maxHealth = mob.getMaxHealth();
             int armor = mob.getArmor();
             double toughness = mob.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);

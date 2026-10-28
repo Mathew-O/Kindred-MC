@@ -45,9 +45,43 @@ public class TeamCoordinator {
         return stockLedger;
     }
 
+    /**
+     * Each change to a shared project, for the runtime to save in order through its one writer: the project as it was
+     * and as it is, and the reservations of the tasks that changed, as they stand now.
+     */
+    public interface Changes {
+        void changed(SharedProject before, SharedProject after, List<StockReservation> reservations);
+    }
+
+    private Changes changes = (before, after, reservations) -> { };
+
+    public synchronized void onChange(Changes listener) {
+        this.changes = Objects.requireNonNull(listener, "listener");
+    }
+
+    /**
+     * A project as it stands, loaded or new; not a change. A reservation its tasks still hold, held across a restart
+     * for a player whose last action is uncertain, is active in the stock ledger again.
+     */
     public synchronized void registerProject(SharedProject project) {
         Objects.requireNonNull(project, "project");
         projects.put(project.id(), project);
+        for (SharedTask task : project.tasks().values()) task.stockReservation().ifPresent(stockLedger::restore);
+    }
+
+    /** Records a change and reports it. */
+    private void put(SharedProject before, SharedProject after) {
+        projects.put(after.id(), after);
+        var touched = new java.util.LinkedHashMap<UUID, StockReservation>();
+        for (SharedTask task : after.tasks().values()) {
+            SharedTask was = before.tasks().get(task.id());
+            if (task.equals(was)) continue;
+            task.stockReservation().ifPresent(r -> touched.putIfAbsent(r.reservationId(), r));
+            if (was != null) was.stockReservation().ifPresent(r -> touched.putIfAbsent(r.reservationId(), r));
+        }
+        var now = new ArrayList<StockReservation>();
+        for (StockReservation r : touched.values()) now.add(stockLedger.getReservation(r.reservationId()).orElse(r));
+        changes.changed(before, after, List.copyOf(now));
     }
 
     public synchronized Optional<SharedProject> getProject(ProjectId id) {
@@ -65,7 +99,7 @@ public class TeamCoordinator {
         if (proj == null) {
             throw new IllegalArgumentException("Unknown project " + projectId);
         }
-        projects.put(projectId, proj.withTask(task));
+        put(proj, proj.withTask(task));
     }
 
     public synchronized Optional<SharedTask> findTask(TaskId taskId) {
@@ -130,6 +164,11 @@ public class TeamCoordinator {
             SharedTask task = proj.tasks().get(taskId);
             if (task == null) continue;
 
+            // A finished or cancelled project's tasks are not to be taken up, as discovery already holds.
+            if (proj.state() == SharedProject.ProjectState.COMPLETED || proj.state() == SharedProject.ProjectState.CANCELLED) {
+                return Optional.empty();
+            }
+
             // Atomic state check
             if (task.state() != SharedTask.TaskState.OPEN && task.state() != SharedTask.TaskState.REVOKED) {
                 return Optional.empty(); // Contention: already claimed
@@ -161,7 +200,7 @@ public class TeamCoordinator {
             if (updatedProj.state() == SharedProject.ProjectState.OPEN) {
                 updatedProj = updatedProj.withState(SharedProject.ProjectState.IN_PROGRESS);
             }
-            projects.put(proj.id(), updatedProj);
+            put(proj, updatedProj);
             return Optional.of(claimed);
         }
         return Optional.empty();
@@ -181,15 +220,25 @@ public class TeamCoordinator {
             }
 
             SharedTask started = task.start();
-            projects.put(proj.id(), proj.withTask(started));
+            put(proj, proj.withTask(started));
             return Optional.of(started);
         }
         return Optional.empty();
     }
 
+    /** Completes a task with nothing observed of its output: the task is done, and no stock is credited for it. */
     public synchronized boolean completeTask(TaskId taskId, UUID playerId, String completionEvidence) {
+        return completeTask(taskId, playerId, completionEvidence, java.util.Map.of());
+    }
+
+    /**
+     * Completes a task, crediting to stock what was observed of its output, never more than it declares it produces:
+     * a declared {@code produces_count} is a plan, not an item. Partial output credits what was seen; none, nothing.
+     */
+    public synchronized boolean completeTask(TaskId taskId, UUID playerId, String completionEvidence, java.util.Map<String, Integer> observed) {
         Objects.requireNonNull(taskId, "taskId");
         Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(observed, "observed");
 
         for (var entry : projects.entrySet()) {
             SharedProject proj = entry.getValue();
@@ -206,11 +255,12 @@ public class TeamCoordinator {
             // Fulfill reservation if present
             task.stockReservation().ifPresent(res -> stockLedger.fulfill(res.reservationId()));
 
-            // If task produced resources, register them
+            // What it produced, as observed, up to what it declares
             if (task.arguments().containsKey("produces_item")) {
                 String producedItem = task.arguments().get("produces_item");
-                int producedCount = Integer.parseInt(task.arguments().getOrDefault("produces_count", "1"));
-                stockLedger.addStock(producedItem, producedCount);
+                int declared = Integer.parseInt(task.arguments().getOrDefault("produces_count", "1"));
+                int seen = Math.max(0, Math.min(declared, observed.getOrDefault(producedItem, 0)));
+                if (seen > 0) stockLedger.addStock(producedItem, seen);
             }
 
             SharedTask completed = task.complete(completionEvidence);
@@ -218,7 +268,7 @@ public class TeamCoordinator {
             if (updatedProj.areAllTasksCompleted()) {
                 updatedProj = updatedProj.withState(SharedProject.ProjectState.COMPLETED);
             }
-            projects.put(proj.id(), updatedProj);
+            put(proj, updatedProj);
             return true;
         }
         return false;
@@ -240,7 +290,7 @@ public class TeamCoordinator {
             task.stockReservation().ifPresent(res -> stockLedger.release(res.reservationId()));
 
             SharedTask revoked = task.reopen();
-            projects.put(proj.id(), proj.withTask(revoked));
+            put(proj, proj.withTask(revoked));
             return true;
         }
         return false;
@@ -266,7 +316,7 @@ public class TeamCoordinator {
                 }
             }
             if (changed) {
-                projects.put(entry.getKey(), current);
+                put(proj, current);
             }
         }
     }
@@ -290,7 +340,7 @@ public class TeamCoordinator {
                 }
             }
             if (changed) {
-                projects.put(entry.getKey(), current);
+                put(proj, current);
             }
         }
     }
@@ -312,7 +362,7 @@ public class TeamCoordinator {
                 }
             }
             if (changed) {
-                projects.put(entry.getKey(), current);
+                put(proj, current);
             }
         }
     }

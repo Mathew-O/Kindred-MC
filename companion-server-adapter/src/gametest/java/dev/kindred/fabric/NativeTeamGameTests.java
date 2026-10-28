@@ -21,6 +21,48 @@ import java.util.UUID;
  */
 public final class NativeTeamGameTests implements FabricGameTest {
 
+    /**
+     * A project the store holds has its every change saved as it happens, through the store's one writer: read back
+     * after a claim and a completion, the task is completed as in memory, at the same revision, its evidence kept, and
+     * only the output observed credited (two logs of a declared four).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "teamSaved", tickLimit = 400)
+    public void aStoredProjectsClaimAndCompletionAreSavedAsTheyHappen(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        ProjectId projId = ProjectId.of("saved-" + UUID.randomUUID());
+        TaskId gather = TaskId.random();
+        java.util.concurrent.CompletableFuture<?>[] created = {null};
+        @SuppressWarnings("unchecked")
+        java.util.concurrent.CompletableFuture<java.util.Optional<SharedProject>>[] read = new java.util.concurrent.CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ledgerer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> created[0] = f.runtime.createSharedProject(SharedProject.create(projId, "Logs", "Gather logs")
+                        .withTask(SharedTask.open(gather, projId, "Gather", "native_gather",
+                                Map.of("produces_item", "minecraft:oak_log", "produces_count", "4"), Set.of()))))
+                .createAndAdd(() -> context.assertTrue(created[0].isDone() && !created[0].isCompletedExceptionally()
+                        && f.runtime.teamCoordinator().getProject(projId).isPresent(), "Created in the store, then known"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.teamCoordinator().claimTask(gather, f.id, 0, 1200).isPresent(), "Claimed");
+                    context.assertTrue(f.runtime.teamCoordinator().completeTask(gather, f.id, "gathered two", Map.of("minecraft:oak_log", 2)), "Completed");
+                    context.assertTrue(f.runtime.teamCoordinator().stockLedger().totalStock("minecraft:oak_log") == 2, "Two credited, as observed");
+                    read[0] = f.runtime.savedSharedProject(projId);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(read[0].isDone(), "Read back");
+                    var saved = read[0].join().orElseThrow().getTask(gather).orElseThrow();
+                    var live = f.runtime.teamCoordinator().findTask(gather).orElseThrow();
+                    context.assertTrue(saved.state() == SharedTask.TaskState.COMPLETED, "Saved completed: " + saved.state());
+                    context.assertTrue(saved.revision() == live.revision(), "Saved at its revision: " + saved.revision() + " for " + live.revision());
+                    context.assertTrue("gathered two".equals(saved.completionEvidence()), "Its evidence kept: " + saved.completionEvidence());
+                    context.assertTrue(f.id.equals(saved.assignedPlayerId()), "By its player");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
     public void cooperativeTeamTaskOrderEnforcedAcrossPeers(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context);

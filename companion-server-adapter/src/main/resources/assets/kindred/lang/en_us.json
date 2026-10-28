@@ -1,3 +1,5 @@
 {
-  "entity.kindred.companion": "Kindred AI Player (Legacy Body)"
+  "entity.kindred.companion": "Kindred AI Player (Legacy Body)",
+  "key.categories.kindred": "Kindred AI Players",
+  "key.kindred.panel": "Open AI player panel"
 }

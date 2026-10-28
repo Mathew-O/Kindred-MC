@@ -30,13 +30,13 @@ class AttentionWorkSchedulerTest {
 
         // First 3 selections must be from 3 distinct players (round-robin)
         var t1 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t1, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t1, tickStart));
 
         var t2 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t2, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t2, tickStart));
 
         var t3 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t3, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t3, tickStart));
 
         // All 3 players served
         var served = java.util.Set.of(t1.playerId(), t2.playerId(), t3.playerId());
@@ -44,7 +44,7 @@ class AttentionWorkSchedulerTest {
 
         // Next turns also round-robin
         var t4 = scheduler.selectNext().orElseThrow();
-        assertTrue(scheduler.tryStart(t4, System.nanoTime()));
+        assertTrue(scheduler.tryStart(t4, tickStart));
         assertEquals(t1.playerId(), t4.playerId(), "Turn must cycle back to first player");
     }
 
@@ -64,7 +64,10 @@ class AttentionWorkSchedulerTest {
         var diag = scheduler.diagnostics();
         assertEquals(20L, diag.invalidationsByKind().get(WorkKind.ROUTINE_GOALS));
 
-        scheduler.beginTick(tick, System.nanoTime());
+        // A tick begun a minute ahead of the clock: however slow or busy the machine, the loop below never spends the
+        // tick's soft time budget (the budget running out is not what this test is about; selectNext reads the clock itself).
+        long now = System.nanoTime() + java.util.concurrent.TimeUnit.MINUTES.toNanos(1);
+        scheduler.beginTick(tick, now);
         WorkToken token = null;
         while (true) {
             var opt = scheduler.selectNext();
@@ -74,7 +77,7 @@ class AttentionWorkSchedulerTest {
                 token = t;
                 break;
             }
-            assertTrue(scheduler.tryStart(t, System.nanoTime()));
+            assertTrue(scheduler.tryStart(t, now));
         }
 
         assertNotNull(token, "ROUTINE_GOALS must be scheduled");
@@ -82,7 +85,7 @@ class AttentionWorkSchedulerTest {
         assertEquals(20L, token.invalidationRevision(), "Invalidation revision must reflect the latest storm count");
 
         // Exactly one slice issued, not 20!
-        assertTrue(scheduler.tryStart(token, System.nanoTime()));
+        assertTrue(scheduler.tryStart(token, now));
     }
 
     @Test
@@ -92,13 +95,14 @@ class AttentionWorkSchedulerTest {
         scheduler.synchronizeEntries(List.of(
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true)
         ));
-        scheduler.beginTick(tick, System.nanoTime());
+        long now = System.nanoTime(); // One clock reading: a slow machine must not spend the tick's soft time budget.
+        scheduler.beginTick(tick, now);
 
         var token = scheduler.selectNext().orElseThrow();
 
         // 1. Cannot start twice
-        assertTrue(scheduler.tryStart(token, System.nanoTime()));
-        assertFalse(scheduler.tryStart(token, System.nanoTime()), "Duplicate tryStart must fail");
+        assertTrue(scheduler.tryStart(token, now));
+        assertFalse(scheduler.tryStart(token, now), "Duplicate tryStart must fail");
 
         // 2. Invalidation while in flight supersedes token
         scheduler.invalidate(player1, token.kind());
@@ -140,20 +144,24 @@ class AttentionWorkSchedulerTest {
 
     @Test
     void deterministicSliceAndDetailedScanBudgetCaps() {
-        var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
+        // The default caps with a soft time limit a loaded host cannot trip: selection reads the real clock, and in a
+        // suite's build beside another compile the default two milliseconds ran out after three slices.
+        var scheduler = new AttentionWorkScheduler(session, new AttentionSchedulePolicy(AttentionSchedulePolicy.DEFAULT_MAX_SLICES_PER_TICK,
+                AttentionSchedulePolicy.DEFAULT_MAX_DETAILED_SCANS_PER_TICK, 60_000_000L, false));
         long tick = 100;
         scheduler.synchronizeEntries(List.of(
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true),
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player2, tick, 1, 1, AttentionState.ROUTINE, true)
         ));
-        scheduler.beginTick(tick, System.nanoTime());
+        long now = System.nanoTime();
+        scheduler.beginTick(tick, now);
 
         // Default policy allows at most 6 slices per tick
         int started = 0;
         while (true) {
             var opt = scheduler.selectNext();
             if (opt.isEmpty()) break;
-            if (scheduler.tryStart(opt.get(), System.nanoTime())) {
+            if (scheduler.tryStart(opt.get(), now)) {
                 started++;
             }
         }

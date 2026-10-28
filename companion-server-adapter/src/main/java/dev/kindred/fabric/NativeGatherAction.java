@@ -391,10 +391,11 @@ final class NativeGatherAction extends NativeRecordedAction {
                 // If tracked drops are still on the ground, move into ordinary collision range
                 if (trackedEntity != null) {
                     double distSq = player.squaredDistanceTo(trackedEntity);
-                    if (distSq > 0.8) {
-                        double dx = trackedEntity.getX() - player.getX();
-                        double dz = trackedEntity.getZ() - player.getZ();
-                        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                    double dx = trackedEntity.getX() - player.getX();
+                    double dz = trackedEntity.getZ() - player.getZ();
+                    float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                    // Never over an edge or into lava after a drop that fell.
+                    if (distSq > 0.8 && new NativeNavigator(player.getServerWorld()).safeHeading(player, yaw)) {
                         body.move(issuedLease, 1.0f, 0.0f, false, false, yaw);
                     } else {
                         body.stopInputs();

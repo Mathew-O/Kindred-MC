@@ -53,6 +53,12 @@ public final class ActivityPermit {
                 && !wall.isBefore(acknowledgedAt) && wall.isBefore(reservation.expiresAt());
     }
 
+    /** Monotonic time left before this permit lapses; zero once it has, or for a backwards sample. */
+    public Duration remainingAt(long nanos) {
+        long elapsed = nanos - startedNanos;
+        return elapsed < 0 ? Duration.ZERO : Duration.ofNanos(Math.max(0, availableNanos - elapsed));
+    }
+
     /** Round known active intervals up; uncertainty must not become a refundable zero. */
     public Optional<Duration> observedUntil(long nanos) {
         long elapsed = nanos - startedNanos;

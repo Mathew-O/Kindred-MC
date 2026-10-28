@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="regression-after" tests="2" failures="0" errors="0" skipped="0">
+  <testcase classname="dev.kindred.model.SupportBatch03GatewayRegressionTest" name="cancelledCallerStillReleasesCapacityWhenProviderCompletes()" time="0.002" />
+  <testcase classname="dev.kindred.model.SupportBatch03GatewayRegressionTest" name="concurrentExtremeUsageCannotWrapTokenCountersAndReopenAdmission()" time="0" />
+</testsuite>

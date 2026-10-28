@@ -39,6 +39,8 @@ final class NativePlantAction extends NativeRecordedAction {
     private final Consumer<Runnable> dispatch;
     private final BlockPos target;
     private final int slot;
+    /** Without an assigned area, sow under the server's roaming policy: a field of the player's own (M-06a). */
+    private final boolean roam;
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -57,6 +59,13 @@ final class NativePlantAction extends NativeRecordedAction {
                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer,
                      Consumer<Runnable> dispatch, BlockPos target, int slot) {
+        this(body, lease, worldId, setup, policy, claims, writer, dispatch, target, slot, false);
+    }
+
+    NativePlantAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
+                     Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
+                     ClaimRegistry claims, ActionAdmission.Writer writer,
+                     Consumer<Runnable> dispatch, BlockPos target, int slot, boolean roam) {
         this.body = body;
         this.lease = lease;
         this.worldId = worldId;
@@ -67,9 +76,10 @@ final class NativePlantAction extends NativeRecordedAction {
         this.dispatch = dispatch;
         this.target = target.toImmutable();
         this.slot = slot;
+        this.roam = roam;
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Planting needs an owned hotbar slot 0..8");
         var s = setup.get();
-        if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
+        if (!roam && (s == null || s.area() == null)) throw new IllegalArgumentException("No work area is assigned.");
     }
 
     @Override
@@ -116,10 +126,10 @@ final class NativePlantAction extends NativeRecordedAction {
             }
 
             var currentSetup = setup.get();
-            if (currentSetup == null || currentSetup.area() == null) {
+            if (!roam && (currentSetup == null || currentSetup.area() == null)) {
                 return Step.blocked("No work area is assigned.", true);
             }
-            setupRevision = currentSetup.revision();
+            setupRevision = currentSetup != null ? currentSetup.revision() : 0;
             dimensionKey = world.getRegistryKey().getValue().toString();
             seedItem = item;
             expectedStack = stack.copy();
@@ -131,8 +141,7 @@ final class NativePlantAction extends NativeRecordedAction {
                     item == Items.MELON_SEEDS ? "minecraft:melon_stem" :
                     "minecraft:wheat";
 
-            var point = new WorkSetup.BlockPoint(cropPos.getX(), cropPos.getY(), cropPos.getZ());
-            var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, cropBlockId, policy.get());
+            var decision = decide(currentSetup, cropBlockId);
             if (!decision.allowed()) {
                 return Step.blocked(decision.reason(), true);
             }
@@ -227,18 +236,26 @@ final class NativePlantAction extends NativeRecordedAction {
         if (currentSlotStack.isEmpty() || !ItemStack.areItemsAndComponentsEqual(currentSlotStack, expectedStack)) return false;
 
         var currentSetup = setup.get();
-        if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
+        if ((currentSetup != null ? currentSetup.revision() : 0) != setupRevision) return false;
+        if (!roam && (currentSetup == null || currentSetup.area() == null)) return false;
         String cropBlockId = seedItem == Items.CARROT ? "minecraft:carrots" :
                 seedItem == Items.POTATO ? "minecraft:potatoes" :
                 seedItem == Items.BEETROOT_SEEDS ? "minecraft:beetroots" :
                 seedItem == Items.PUMPKIN_SEEDS ? "minecraft:pumpkin_stem" :
                 seedItem == Items.MELON_SEEDS ? "minecraft:melon_stem" :
                 "minecraft:wheat";
-        var point = new WorkSetup.BlockPoint(cropPos.getX(), cropPos.getY(), cropPos.getZ());
-        var decision = EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, cropBlockId, policy.get());
-        if (!decision.allowed()) return false;
+        if (!decide(currentSetup, cropBlockId).allowed()) return false;
 
         return claim != null && claims.holdsAll(claim, System.currentTimeMillis());
+    }
+
+    /** The assigned area's rules for the crop there; roaming without one, the server's roaming policy. */
+    private EditPolicy.Decision decide(WorkSetup currentSetup, String cropBlockId) {
+        if (currentSetup != null && currentSetup.area() != null) {
+            var point = new WorkSetup.BlockPoint(cropPos.getX(), cropPos.getY(), cropPos.getZ());
+            return EditPolicy.evaluate(currentSetup, EditPolicy.Kind.PLACE, dimensionKey, point, cropBlockId, policy.get());
+        }
+        return NativeEdits.farm(body.entity(), cropPos, policy.get());
     }
 
     private boolean verifyConservation(InventoryEvidence before, InventoryEvidence after, Item seedItem) {

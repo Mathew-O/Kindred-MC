@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1450,31 +1451,48 @@ public final class SqliteCompanionStore {
                 insertEvent(record.companionId(), Instant.now(), "ACTION_UNCERTAIN", record.kind() + " " + record.actionId() + ": " + uncertain.detail());
             }
 
-            // In-flight shared task and stock reservation recovery (E-11)
+            // In-flight shared task and stock reservation recovery (E-11). A task whose player now has an action of
+            // unknown outcome is held, with its reservation, until that player is reconciled: reopened at once, another
+            // player could spend what the uncertain action may already have spent. Every other task in flight is
+            // reopened and its reservation released, as is any reservation left active by a task no longer in flight.
+            Set<String> uncertain = new HashSet<>();
             try (Statement query = database.createStatement();
-                 ResultSet rows = query.executeQuery("SELECT reservation_id FROM stock_reservations WHERE status = 'ACTIVE'")) {
-                List<String> activeRes = new ArrayList<>();
-                while (rows.next()) activeRes.add(rows.getString("reservation_id"));
-                for (String resId : activeRes) {
-                    try (PreparedStatement update = database.prepareStatement(
-                            "UPDATE stock_reservations SET status='RELEASED', revision=revision+1, updated_at_ms=? WHERE reservation_id=?")) {
-                        update.setLong(1, Instant.now().toEpochMilli());
-                        update.setString(2, resId);
-                        update.executeUpdate();
-                    }
+                 ResultSet rows = query.executeQuery("SELECT DISTINCT companion_id FROM action_ledger WHERE state = 'UNCERTAIN'")) {
+                while (rows.next()) uncertain.add(rows.getString(1));
+            }
+            Set<String> held = new HashSet<>();
+            List<String[]> inFlightTasks = new ArrayList<>();
+            try (Statement query = database.createStatement();
+                 ResultSet rows = query.executeQuery("SELECT task_id, assigned_player_id FROM shared_tasks WHERE status IN ('CLAIMED', 'IN_PROGRESS')")) {
+                while (rows.next()) inFlightTasks.add(new String[] {rows.getString(1), rows.getString(2)});
+            }
+            for (String[] row : inFlightTasks) {
+                String tId = row[0], player = row[1];
+                if (player != null && uncertain.contains(player)) {
+                    held.add(tId);
+                    insertEvent(UUID.fromString(player), Instant.now(), "TEAM_TASK_HELD",
+                            "Shared task " + tId + " held with its reservation: an action of this player's is uncertain");
+                    continue;
+                }
+                try (PreparedStatement update = database.prepareStatement(
+                        "UPDATE shared_tasks SET status='OPEN', assigned_player_id=NULL, revision=revision+1, updated_at_ms=? WHERE task_id=?")) {
+                    update.setLong(1, Instant.now().toEpochMilli());
+                    update.setString(2, tId);
+                    update.executeUpdate();
                 }
             }
+            List<String[]> activeRes = new ArrayList<>();
             try (Statement query = database.createStatement();
-                 ResultSet rows = query.executeQuery("SELECT task_id FROM shared_tasks WHERE status IN ('CLAIMED', 'IN_PROGRESS')")) {
-                List<String> inFlightTasks = new ArrayList<>();
-                while (rows.next()) inFlightTasks.add(rows.getString("task_id"));
-                for (String tId : inFlightTasks) {
-                    try (PreparedStatement update = database.prepareStatement(
-                            "UPDATE shared_tasks SET status='OPEN', assigned_player_id=NULL, revision=revision+1, updated_at_ms=? WHERE task_id=?")) {
-                        update.setLong(1, Instant.now().toEpochMilli());
-                        update.setString(2, tId);
-                        update.executeUpdate();
-                    }
+                 ResultSet rows = query.executeQuery("SELECT reservation_id, task_id FROM stock_reservations WHERE status = 'ACTIVE'")) {
+                while (rows.next()) activeRes.add(new String[] {rows.getString(1), rows.getString(2)});
+            }
+            for (String[] row : activeRes) {
+                if (row[1] != null && held.contains(row[1])) continue;
+                try (PreparedStatement update = database.prepareStatement(
+                        "UPDATE stock_reservations SET status='RELEASED', revision=revision+1, updated_at_ms=? WHERE reservation_id=?")) {
+                    update.setLong(1, Instant.now().toEpochMilli());
+                    update.setString(2, row[0]);
+                    update.executeUpdate();
                 }
             }
             return null;

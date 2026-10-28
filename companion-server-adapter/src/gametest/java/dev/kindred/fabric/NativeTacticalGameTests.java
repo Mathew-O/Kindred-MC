@@ -59,7 +59,9 @@ public final class NativeTacticalGameTests implements FabricGameTest {
                     context.assertTrue(obs.observedMobs().size() == 1, "Exactly one visible mob observed: " + obs.observedMobs().size());
 
                     var mobObs = obs.observedMobs().get(0);
-                    context.assertEquals(14.0, mobObs.currentHealth(), "Exact current health observed: " + mobObs.currentHealth());
+                    // A player cannot see a mob's health: hurt by nothing it saw, the zombie is believed at its kind's full
+                    // twenty, not the fourteen the server keeps (E-41a).
+                    context.assertEquals(20.0, mobObs.currentHealth(), "Health as a player can know it: " + mobObs.currentHealth());
                     context.assertTrue(mobObs.isUndead(), "Zombie identified as undead");
                     context.assertFalse(mobObs.isArthropod(), "Zombie is not arthropod");
                     context.assertTrue(obs.canPerformCritical(), "Player standing in clear air can perform critical jump");

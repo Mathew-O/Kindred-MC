@@ -14,3 +14,9 @@ tasks.register('runPersonalityDemo', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'dev.kindred.testkit.PersonalityDemo'
 }
+
+tasks.register('runMetrics', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.kindred.testkit.RunMetrics'
+}

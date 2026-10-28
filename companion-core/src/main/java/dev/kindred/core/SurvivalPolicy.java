@@ -48,6 +48,18 @@ public final class SurvivalPolicy {
     }
 
     /**
+     * Whether a player eats a food worth {@code nutrition} now, at {@code foodLevel} of 20, as a person does: hurt, while
+     * short of full, for the healing a full bar gives; too hungry to sprint (6 or less), whatever it is; otherwise only
+     * when it fills what is missing, at most a point over. Eating a second apple at 18 of 20, a full one's worth gone to
+     * waste, was no way to play (suite run 33).
+     */
+    public static boolean worthEating(int foodLevel, int nutrition, boolean hurt) {
+        if (foodLevel >= 20) return false;
+        if (hurt || foodLevel <= 6) return true;
+        return foodLevel + nutrition <= 21;
+    }
+
+    /**
      * Calculates urgency for eating food based on health deficit and hunger level.
      */
     public static double eatingNeed(float health, float maxHealth, int foodLevel) {

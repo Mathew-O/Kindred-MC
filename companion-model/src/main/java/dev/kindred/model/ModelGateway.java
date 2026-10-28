@@ -138,10 +138,10 @@ public final class ModelGateway {
         // 4. Token budget check
         int estimatedTokens = lane.reservedTokens();
         int currentCompanionTokens = companionTokenUsage.getOrDefault(companionId, 0);
-        if (currentCompanionTokens + estimatedTokens > COMPANION_DAILY_TOKEN_BUDGET) {
+        if ((long) currentCompanionTokens + estimatedTokens > COMPANION_DAILY_TOKEN_BUDGET) {
             return CompletableFuture.completedFuture(Response.rejected(request.requestId(), "companion daily token budget exhausted"));
         }
-        if (globalTokenUsage + estimatedTokens > GLOBAL_DAILY_TOKEN_BUDGET) {
+        if ((long) globalTokenUsage + estimatedTokens > GLOBAL_DAILY_TOKEN_BUDGET) {
             return CompletableFuture.completedFuture(Response.rejected(request.requestId(), "global daily token budget exhausted"));
         }
 
@@ -174,16 +174,22 @@ public final class ModelGateway {
             return CompletableFuture.completedFuture(Response.rejected(request.requestId(), "provider error: " + t.getMessage()));
         }
 
-        return future.handle((resp, failure) -> {
+        // Keep provider cleanup independent of the caller-visible future. Cancelling a dependent
+        // handle stage can suppress its callback entirely. Cancellation does not prove that a
+        // provider stopped running or billing, so retain capacity/reservation until it terminates.
+        CompletableFuture<Response> result = new CompletableFuture<>();
+        future.whenComplete((resp, failure) -> {
             synchronized (this) {
                 int actualTokens = resp != null && resp.tokensUsed() > 0 ? resp.tokensUsed() : estimatedTokens;
                 release(companionId, lane, estimatedTokens, actualTokens);
                 if (failure != null) {
-                    return Response.rejected(request.requestId(), "model call failed: " + failure.getMessage());
+                    result.complete(Response.rejected(request.requestId(), "model call failed: " + failure.getMessage()));
+                } else {
+                    result.complete(validateResponse(request, resp));
                 }
-                return validateResponse(request, resp);
             }
         });
+        return result;
     }
 
     private Response validateResponse(Request request, Response response) {
@@ -211,12 +217,18 @@ public final class ModelGateway {
             companionActive.remove(lane);
         }
         globalActiveCount = Math.max(0, globalActiveCount - 1);
-        int diff = actualTokens - reservedTokens;
+        long diff = (long) actualTokens - reservedTokens;
         if (diff != 0) {
             int compUsage = companionTokenUsage.getOrDefault(companionId, 0);
-            companionTokenUsage.put(companionId, Math.max(0, compUsage + diff));
-            globalTokenUsage = Math.max(0, globalTokenUsage + diff);
+            companionTokenUsage.put(companionId, boundedUsage((long) compUsage + diff));
+            globalTokenUsage = boundedUsage((long) globalTokenUsage + diff);
         }
+    }
+
+    // Preserve the int diagnostics API, but never let an extreme provider count wrap and
+    // reopen admission. Saturation is conservative: the daily budgets are far below this cap.
+    private static int boundedUsage(long usage) {
+        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, usage));
     }
 
     public synchronized int activeCount() { return globalActiveCount; }

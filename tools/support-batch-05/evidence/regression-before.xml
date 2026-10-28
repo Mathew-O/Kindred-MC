@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="regression-before" tests="2" failures="2" errors="0" skipped="0">
+  <testcase classname="dev.kindred.model.SupportBatch03GatewayRegressionTest" name="cancelledCallerStillReleasesCapacityWhenProviderCompletes()" time="0.035">
+    <failure message="Cancelled dependent must not suppress cleanup ==&gt; expected: &lt;0&gt; but was: &lt;1&gt;" type="org.opentest4j.AssertionFailedError" />
+  </testcase>
+  <testcase classname="dev.kindred.model.SupportBatch03GatewayRegressionTest" name="concurrentExtremeUsageCannotWrapTokenCountersAndReopenAdmission()" time="0.002">
+    <failure message="expected: &lt;2147483647&gt; but was: &lt;0&gt;" type="org.opentest4j.AssertionFailedError" />
+  </testcase>
+</testsuite>

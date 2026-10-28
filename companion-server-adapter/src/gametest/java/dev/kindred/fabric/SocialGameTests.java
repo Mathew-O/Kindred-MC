@@ -145,6 +145,61 @@ public final class SocialGameTests implements FabricGameTest {
         context.complete();
     }
 
+    /**
+     * A native player, a player's own body, speaks through the same lane as a companion: hurt by a fall it says so to its
+     * owner and blames nobody, though a visitor stands beside it; a strike by a player is that player's, by the game's
+     * record of the damage; and it is heard by its owner alone while it does not talk in public.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)
+    public void aNativePlayerHurtSaysWhatHurtItAndBlamesNobodyForAFall(TestContext context) {
+        // A native player of the runtime's own, in the world past the few seconds' grace a player has after joining:
+        // a player made here and never joined keeps that grace, and no fall hurts it.
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        var owner = player(context, "Owner", new Vec3d(1.5, 2, 1));
+        var visitor = player(context, "Visitor", new Vec3d(2.5, 2, 1.5));
+        long[] joined = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Kindred"))
+                .createAndAdd(() -> {
+                    f.established(context);
+                    joined[0] = context.getWorld().getTime();
+                })
+                .createAndAdd(() -> context.assertTrue(context.getWorld().getTime() - joined[0] > 80, "Past a joining player's grace"))
+                .createAndAdd(() -> {
+                    var speaker = f.player();
+                    UUID id = f.id;
+                    var profile = SocialProfile.defaults(id);
+                    var me = new CompanionSocials.Participant(id, owner.getUuid(), "Kindred", speaker, profile, true);
+                    java.util.function.Function<net.minecraft.entity.Entity, UUID> ai = entity -> entity == speaker ? id : null;
+                    List<String> heard = new ArrayList<>();
+                    CompanionSocials socials = new CompanionSocials(ignored -> me, () -> 0,
+                            (recipient, text) -> heard.add(recipient.getName().getString() + ": " + text.getString()), CompanionSocials.Habits.NONE, ai);
+                    context.assertTrue(speaker.damage(context.getWorld().getDamageSources().fall(), 1.0f), "The fall hurts it");
+                    var fell = SocialPerception.observe(speaker, owner.getUuid(), profile, true, ai, ignored -> false);
+                    context.assertTrue(fell.hurt() && fell.harm() != null && fell.harm().source() == SocialSnapshot.Harm.Source.WORLD,
+                            "Hurt by the world, by the game's record: " + fell.harm());
+                    socials.react(me, fell, List.of(owner, visitor), 0);
+                    socials.deliverDue(id, SpeechTiming.MAX_MILLIS);
+                    context.assertEquals(1, heard.size(), "One line: " + heard);
+                    context.assertTrue(heard.getFirst().startsWith("Owner: ") && heard.getFirst().contains("a fall"), "The owner hears of the fall: " + heard);
+                    context.assertFalse(heard.getFirst().contains("Visitor"), "Nobody blamed for a fall: " + heard);
+                    // A strike is the striker's, from the damage's own record; the visitor is not taken for a mob's bite.
+                    var struck = SocialPerception.harm(context.getWorld().getDamageSources().playerAttack(visitor), ai);
+                    context.assertTrue(struck != null && struck.source() == SocialSnapshot.Harm.Source.PLAYER && struck.name().equals("Visitor"), "Struck by: " + struck);
+                    var zombie = context.spawnMob(EntityType.ZOMBIE, new Vec3d(3.5, 2, 3.5));
+                    zombie.setAiDisabled(true);
+                    var bitten = SocialPerception.harm(context.getWorld().getDamageSources().mobAttack(zombie), ai);
+                    context.assertTrue(bitten != null && bitten.source() == SocialSnapshot.Harm.Source.MOB, "Bitten by: " + bitten);
+                    // Another AI player is not a listener, nor a person to greet.
+                    context.assertTrue(SocialPerception.listeners(speaker, owner.getUuid(), profile.withPublic(true), entity -> entity == owner ? UUID.randomUUID() : null)
+                            .stream().noneMatch(p -> p == owner), "An AI player's body is never a listener");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     private static CompanionEntity body(TestContext context, UUID owner, Vec3d relative) {
         CompanionEntity body = KindredMod.COMPANION.create(context.getWorld());
         if (body == null) throw new IllegalStateException("Missing companion factory");

@@ -87,10 +87,10 @@ final class NativeChestOrganizeAction extends NativeRecordedAction {
                 return Step.blocked("Chest is out of reach", true);
             }
 
-            var point = new WorkSetup.BlockPoint(chestPos.getX(), chestPos.getY(), chestPos.getZ());
             var blockId = Registries.BLOCK.getId(world.getBlockState(chestPos).getBlock()).toString();
-            var decision = EditPolicy.evaluate(setup.get(), EditPolicy.Kind.CONTAINER,
-                    world.getRegistryKey().getValue().toString(), point, blockId, policy.get());
+            // The one edit decision: its work area's rules, or with none the server's roaming rules, which let a player
+            // use the storage its administrator assigned it.
+            var decision = NativeEdits.decide(player, setup.get(), EditPolicy.Kind.CONTAINER, chestPos, blockId, policy.get());
             if (!decision.allowed()) {
                 return Step.blocked("Container edit policy denied: " + decision.reason(), true);
             }
@@ -202,6 +202,8 @@ final class NativeChestOrganizeAction extends NativeRecordedAction {
         if (playerBefore != null && !playerBefore.matches(body)) return false;
         var currentSetup = setup.get();
         if (currentSetup == null || currentSetup.revision() != setupRevision) return false;
+        String blockId = Registries.BLOCK.getId(state.getBlock()).toString();
+        if (!NativeEdits.decide(player, currentSetup, EditPolicy.Kind.CONTAINER, chestPos, blockId, policy.get()).allowed()) return false;
         if (claim == null || !claims.holdsAll(claim, System.currentTimeMillis())) return false;
         return true;
     }

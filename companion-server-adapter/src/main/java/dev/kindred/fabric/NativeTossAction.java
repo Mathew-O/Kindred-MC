@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Tosses owned items toward a nearby human teammate (QOL-05). */
+/** Tosses owned items toward a nearby human teammate (QOL-05), or with no recipient drops them at the player's feet. */
 final class NativeTossAction extends NativeRecordedAction {
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -89,8 +89,21 @@ final class NativeTossAction extends NativeRecordedAction {
         try {
             var player = body.entity();
             var world = player.getServerWorld();
-            var target = world.getPlayerByUuid(targetPlayerId);
-            if (!(target instanceof ServerPlayerEntity human) || !human.isAlive()) {
+            var target = targetPlayerId == null ? null : world.getPlayerByUuid(targetPlayerId);
+            if (targetPlayerId == null) {
+                // Dropping surplus where the player stands, as a person clears a full inventory.
+                if (body.discard(lease.get(), sourceSlot, count) && verifyTossConservation(before, InventoryEvidence.capture(body), sourceSlot, count)) {
+                    result = Step.completed(Map.of("dropped", String.valueOf(count), "slot", String.valueOf(sourceSlot)));
+                    admission.verify(InventoryEvidence.capture(body).description() + "; " + result.progress(), "Native drop conservation verified");
+                } else if (before.matches(body)) {
+                    result = Step.blocked("Drop produced no verified effect", true);
+                    admission.noEffect(before.description(), result.reason());
+                } else {
+                    unknown = true;
+                    result = Step.blocked("Drop conservation check failed; reconcile", true);
+                    admission.uncertain(result.reason());
+                }
+            } else if (!(target instanceof ServerPlayerEntity human) || !human.isAlive()) {
                 result = Step.blocked("Target player is not available", true);
                 admission.noEffect(before.description(), result.reason());
             } else if (player.squaredDistanceTo(human) > 16.0) {

@@ -113,8 +113,13 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The server's AI world edits off (its default, D4): the player still eats when it is hungry, a reflex that changes
+     * no block; but it equips nothing, mines nothing and starts no work. Before the reflexes were separated from the
+     * edit switch, it went hungry too.
+     */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "autonomyDisabled", tickLimit = 480)
-    public void defaultPolicyKeepsAutonomyDisabled(TestContext context) {
+    public void withEditsOffItStillEatsButEquipsAndMinesNothing(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 470); // default edits disabled
         BlockPos target = target(context);
         context.createTimedTaskRunner()
@@ -135,18 +140,19 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                     f.player().getInventory().setStack(1, new ItemStack(Items.IRON_AXE));
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
+                .createAndAdd(() -> context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1
+                        && f.player().getHungerManager().getFoodLevel() == 18, "One apple eaten, edits off: " + f.player().getInventory().getStack(0)))
                 .createAndAdd(() -> {
                     var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
                     context.assertTrue(status.explanation().contains("Autonomous progression awaits qualified body, skills and activity admission"),
-                            "Decision loop reports autonomy awaits qualification");
-                    context.assertTrue(f.player().getInventory().getStack(0).getCount() == 2, "Food not consumed");
-                    context.assertTrue(f.player().getHungerManager().getFoodLevel() == 14, "Hunger not changed");
+                            "Decision loop reports its work awaits qualification: " + status.explanation());
+                    context.assertTrue(f.player().getInventory().getStack(0).getCount() == 1, "No more food eaten than the one");
                     context.assertTrue(f.player().getInventory().getStack(10).isOf(Items.IRON_CHESTPLATE), "Armor remains in inventory");
                     context.assertTrue(f.player().getEquippedStack(EquipmentSlot.CHEST).isEmpty(), "Chest slot empty");
                     context.assertTrue(context.getWorld().getBlockState(target).isOf(Blocks.OAK_LOG), "Log remains intact");
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     context.assertTrue((activity.phase().equals("UNLOADED") || activity.phase().equals("IDLE"))
-                            && !activity.work().startsWith("Running"), "No activity session started");
+                            && !activity.work().startsWith("Running"), "No activity running after the meal");
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
@@ -243,6 +249,9 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.runtime.createNative(f.source, "ApproachMiner"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
+                    // In the morning: at nightfall a player out working turns back for shelter, and the test server keeps
+                    // its day cycle running from test to test (full runs 19 and 20 on 2026-10-24).
+                    context.getWorld().setTimeOfDay(1000);
                     BlockPos p = f.player().getBlockPos();
                     distantLog[0] = p.east(5);
                     for (int dx = 0; dx <= 6; dx++) {
@@ -299,7 +308,17 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {
-                    context.assertTrue(context.getWorld().getBlockState(distantLog[0]).isAir(), "Distant log autonomously approached and broken");
+                    if (!context.getWorld().getBlockState(distantLog[0]).isAir()) {
+                        // What lay between it and the log, for a failure in a full run (runs 19 and 20 on 2026-10-24).
+                        var player = f.player();
+                        var around = new StringBuilder();
+                        for (int dx = -1; dx <= 6; dx++) for (int dy = -1; dy <= 2; dy++) {
+                            var state = context.getWorld().getBlockState(distantLog[0].west(5).add(dx, dy, 0));
+                            if (!state.isAir()) around.append(dx).append(',').append(dy).append('=').append(net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath()).append(' ');
+                        }
+                        context.assertTrue(false, "Distant log autonomously approached and broken: at " + (player == null ? "gone" : player.getPos())
+                                + ", log at " + distantLog[0].toShortString() + "; around: " + around + "/ " + f.runtime.nativeLastResult(f.id));
+                    }
                     context.assertTrue(f.player().getInventory().getStack(0).getDamage() >= 1, "Axe tool durability damaged once");
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(action != null && action.state() == ActionRecord.State.VERIFIED
