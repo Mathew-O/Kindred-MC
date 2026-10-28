@@ -124,7 +124,7 @@ public final class Ranch {
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
     /** How many times it has gone back to the animals it gave up on. */
-    private int retried;
+    private int retried, refetched;
     private static final int RETRIES = 2;
     private int youngBefore = -1;
     private String outcome = "";
@@ -251,6 +251,13 @@ public final class Ranch {
             }
             var inLove = adultsIn.stream().filter(Animal::inLove).toList();
             var ready = adultsIn.stream().filter(Animal::ready).sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet()))).toList();
+            // One walked out before the gate shut on the pair: fetched again, twice at most, rather than given up on
+            // as not ready (the cattle fixture: "1 in the pen, 1 ready").
+            if (adultsIn.size() < 2 && inLove.isEmpty() && refetched < RETRIES) {
+                refetched++;
+                phase = Phase.FETCH;
+                return fetch(seen, in, adultsIn.size(), Animal::adult);
+            }
             if (inLove.size() >= 2) {
                 if (waitingSince < 0) waitingSince = seen.tick();
                 if (seen.tick() - waitingSince > BIRTH) return leave(seen, "No young one came");

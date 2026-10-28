@@ -91,7 +91,12 @@
       "dev.kindred.fabric.NativeBrewGameTests",
       "dev.kindred.fabric.NativeNetheriteGameTests",
       "dev.kindred.fabric.NativeBlastGameTests",
-      "dev.kindred.fabric.NativeFishGameTests"
+      "dev.kindred.fabric.NativeFishGameTests",
+      "dev.kindred.fabric.NativeLightGameTests",
+      "dev.kindred.fabric.NativeTreeFarmGameTests",
+      "dev.kindred.fabric.NativePatchMineGameTests",
+      "dev.kindred.fabric.NativeDeliveryGameTests",
+      "dev.kindred.fabric.NativeSmelterGameTests"
     ]
   },
   "depends": {

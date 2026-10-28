@@ -286,6 +286,15 @@ Out of any match, between its work, a player improves its kit as players do, wit
 
 A player out of food with no animal in sight fishes, as players do, at still open water within twelve blocks: with its rod, or one it makes of two string and three sticks at a crafting table. It casts, watches the bobber, reels in when a fish bites and keeps what it catches; a cast that lands off the water it reels back and casts again. On its run it fishes before walking out to look for animals, and only while it has no food; stocking up with food in hand, it hunts. Fishing at a spot you name, as a chore, is not there yet.
 
+## Chores in a work area
+
+A player given a work area or a patch (the native setup commands) does the area's chores as players do, ahead of its own progression, and says when each is done:
+
+- **Lighting.** Every floor of its work area within sixteen blocks of it where no block light reaches, where monsters spawn, gets a torch on the floor, the torches made of its coal or charcoal and sticks; "I lit the work area: 5 torches."
+- **A patch mined out.** A patch of ore or stone is mined, every block open to the air, with a pickaxe it holds that harvests it, and what drops picked up; with none that can, it says so and mines nothing. A patch of logs is cut with an axe, and once each trunk is down a sapling of its wood it holds is planted where it stood.
+- **Bringing supplies.** `/aiplayer bring <count> <item> [target]` asks it to bring you that many: what it holds, and the rest from its assigned storage, tossed across to you from close by, exactly as many and as they are; `0` calls it off. It says when it is short.
+- **An auto-smelter.** `/aiplayer build smelter <x y z>` has it build a furnace fed by hoppers: ore into the chest on top, fuel into the chest beside, and what it smelts comes out in the chest in front. It makes the hoppers and chests of its own iron and planks.
+
 ## Storage and what goes missing
 
 A player puts what it keeps for later (enchanted books, saddles, name tags, rails; with no goal on, the diamonds and gold it has no use for yet) into a store of its own: the storage you assigned it, or a chest of a base it built. A chest assigned to two players is their team's: each tells the other what it puts in and takes out, and both count it. On a goal it keeps what the run needs on it, and fetches what the run wants from its storage before going to find more. Each time it opens one of its stores it counts what is there against what it knew. If something is gone: alone, it says so; with a team, it asks first, and takes the word of whoever owns up ("me", "I took it"); with no answer in thirty seconds it reckons it gone. It names only someone it saw at the chest, only to its own side, and never blames or retaliates against anyone else. Storing needs the server's AI world edits on.
