@@ -101,8 +101,9 @@ public final class NativeBringGameTests implements FabricGameTest {
      * stone pickaxe in Hal's hand: Hal puts the boat down beside the librarian, which takes it up and holds it where it
      * is; lays the line from there, with room for it riding high in its boat, the stone over the hall's doorway and the
      * cell's lintel taken out for it; and pushes the cart into the boat, which it takes up, librarian and all. In the
-     * cell the lintel goes back, the boat and then the cart are broken, and the stone over the door goes back with the
-     * door. The boat picked up again, the librarian unhurt.
+     * cell the lintel goes back and the lectern goes in across the front, never left open with the librarian loose; the
+     * boat is broken over the cart, which is left in the cell with the boat's item; and the stone over the door goes back
+     * with the door. The librarian unhurt.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringStrolling", tickLimit = 14000)
     public void aLibrarianThatStrollsIsHeldInABoatWhileTheLineIsLaid(TestContext context) {
