@@ -25,7 +25,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native player log gathering with survival mining timing, owned tool wear,
+ * In plain terms: an AI player chopping logs in an area it was given: real mining time, its own axe wearing
+ * down, and picking up only the drops it caused.
+ *
+ * Technical: Checkpointed native player log gathering with survival mining timing, owned tool wear,
  * patch containment, and attributable drop pickup into player inventory.
  */
 final class NativeGatherAction extends NativeRecordedAction {
@@ -132,6 +135,7 @@ final class NativeGatherAction extends NativeRecordedAction {
         return Step.running(currentProgress(), false);
     }
 
+    /** Moves the chopping on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (fresh) {

@@ -22,7 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Legacy mob-body backend retained for saves and fixtures. F-25b replaces it with qualified native player mechanics. */
+/**
+ * In plain terms: the older, mob-style body an AI player could have. It is kept so old worlds and tests still
+ * load; new AI players use a real player body instead.
+ *
+ * Technical: Legacy mob-body backend retained for saves and fixtures. F-25b replaces it with qualified native
+ * player mechanics.
+ */
 public final class CompanionEntity extends PathAwareEntity implements PolymerEntity {
     static final int INVENTORY_SIZE = 27;
     private UUID companionId;
@@ -104,6 +110,7 @@ public final class CompanionEntity extends PathAwareEntity implements PolymerEnt
         clearActiveItem();
     }
 
+    /** Links this body to its AI player and its admin. */
     public void bind(UUID companion, UUID owner) {
         if (companionId != null && (!companionId.equals(companion) || !ownerId.equals(owner))) {
             throw new IllegalStateException("A companion body cannot change ownership");

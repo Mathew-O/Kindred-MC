@@ -21,7 +21,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native Nether portal ignition action using the durable action ledger (E-15).
+ * In plain terms: an AI player lighting a Nether portal with its own flint and steel or fire charge, after
+ * checking the frame really is a portal frame and that it is allowed to.
+ *
+ * Technical: Checkpointed native Nether portal ignition action using the durable action ledger (E-15).
  * Evaluates server edit policy, verifies portal frame geometry, strikes the frame interior
  * using owned flint & steel or fire charge, incurs 1 durability wear or consumption,
  * and verifies NETHER_PORTAL block creation and inventory conservation.
@@ -66,6 +69,7 @@ final class NativeIgnitePortalAction extends NativeRecordedAction {
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Ignition needs an owned hotbar slot 0..8");
     }
 
+    /** Moves the lighting on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

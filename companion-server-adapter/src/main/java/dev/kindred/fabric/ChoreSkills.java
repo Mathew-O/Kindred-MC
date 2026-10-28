@@ -22,7 +22,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/** Gather a counted resource from the designated patch, and deposit it into the assigned container. */
+/**
+ * In plain terms: two simple jobs for the older-style AI body: chop a set number of logs from a patch it was
+ * given, and put items into its assigned chest.
+ *
+ * Technical: Gather a counted resource from the designated patch, and deposit it into the assigned container.
+ */
 final class ChoreSkills {
     static final SkillDescriptor GATHER = new SkillDescriptor("gather_logs", Set.of("count"), Set.of("block"), Set.of("break", "pickup"),
             Set.of(EditPolicy.Kind.BREAK), Duration.ofMinutes(3), Duration.ofSeconds(20), 2);

@@ -24,7 +24,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native furnace interaction action using the durable action ledger.
+ * In plain terms: an AI player using a furnace: putting in fuel and things to cook from its own inventory, or
+ * taking out what is done, with every item accounted for.
+ *
+ * Technical: Checkpointed native furnace interaction action using the durable action ledger.
  * Evaluates edit policy, claims furnace block, transfers fuel and smeltable inputs into
  * furnace slots or extracts finished outputs into player inventory, enforcing 100% item conservation.
  */
@@ -75,6 +78,7 @@ final class NativeSmeltAction extends NativeRecordedAction {
         this.countArg = countArg;
     }
 
+    /** Moves the furnace work on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

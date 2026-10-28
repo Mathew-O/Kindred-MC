@@ -18,7 +18,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native player 2x2 crafting action using the durable action ledger.
+ * In plain terms: an AI player crafting something from items in its own inventory, in its 2x2 grid or at a
+ * crafting table, just as a human would. The ingredients really go and the product really arrives; nothing is
+ * made from thin air.
+ *
+ * Technical: Checkpointed native player 2x2 crafting action using the durable action ledger.
  * Consumes owned ingredients from player inventory and places verified crafted products
  * into inventory with exact item conservation.
  */
@@ -52,6 +56,7 @@ final class NativeCraftAction extends NativeRecordedAction {
         this.workstationHint = workstationHint;
     }
 
+    /** Moves the crafting on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

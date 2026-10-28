@@ -26,11 +26,15 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
- * Server half of the skin selector. Operators drop skin PNGs into {@code config/kindred/skins}; whoever may adjust an
- * AI player picks one for it from the panel or with {@code /aiplayer skin}. The choice is kept per body in
- * {@code config/kindred/skin-choices.properties}, and the PNG goes to every Kindred client, which shows it on that
- * body. Vanilla clients keep seeing the default or signed skin, since they only accept Mojang-signed textures.
- * Folder and file work runs on its own thread, never on the server's.
+ * In plain terms: the server side of custom skins. The server owner drops skin pictures into
+ * config/kindred/skins; anyone allowed picks one for an AI player in the K panel or with /aiplayer skin.
+ * Players with the Kindred client see it; players without it see the default skin.
+ *
+ * Technical: Server half of the skin selector. Operators drop skin PNGs into {@code config/kindred/skins};
+ * whoever may adjust an AI player picks one for it from the panel or with {@code /aiplayer skin}. The choice
+ * is kept per body in {@code config/kindred/skin-choices.properties}, and the PNG goes to every Kindred
+ * client, which shows it on that body. Vanilla clients keep seeing the default or signed skin, since they
+ * only accept Mojang-signed textures. Folder and file work runs on its own thread, never on the server's.
  */
 final class KindredSkins {
     static final Path FOLDER = FabricLoader.getInstance().getConfigDir().resolve("kindred").resolve("skins");
@@ -56,6 +60,7 @@ final class KindredSkins {
 
     private KindredSkins() { }
 
+    /** Starts listening for skin messages from clients. */
     static void register() {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             choices.clear();

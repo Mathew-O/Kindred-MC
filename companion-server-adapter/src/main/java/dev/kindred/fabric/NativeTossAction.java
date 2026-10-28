@@ -17,7 +17,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Tosses owned items toward a nearby human teammate (QOL-05), or with no recipient drops them at the player's feet. */
+/**
+ * In plain terms: an AI player tossing its own items to a nearby human teammate, or dropping them at its feet
+ * when no one is there to catch.
+ *
+ * Technical: Tosses owned items toward a nearby human teammate (QOL-05), or with no recipient drops them at
+ * the player's feet.
+ */
 final class NativeTossAction extends NativeRecordedAction {
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -44,6 +50,7 @@ final class NativeTossAction extends NativeRecordedAction {
         this.targetPlayerId = targetPlayerId;
     }
 
+    /** Moves the toss on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

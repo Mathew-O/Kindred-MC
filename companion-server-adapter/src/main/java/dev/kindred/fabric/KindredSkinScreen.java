@@ -16,8 +16,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Picks an AI player's skin from the server's skins folder, each shown from the front as it will look in the world.
- * The first card brings back the player's own skin (its bundled roster skin, or the default one).
+ * In plain terms: the skin picker screen in the Kindred client: shows each skin in the server's skins folder
+ * from the front, so you can choose what an AI player wears. The first card puts its own skin back.
+ *
+ * Technical: Picks an AI player's skin from the server's skins folder, each shown from the front as it will
+ * look in the world. The first card brings back the player's own skin (its bundled roster skin, or the
+ * default one).
  */
 @Environment(EnvType.CLIENT)
 final class KindredSkinScreen extends Screen {

@@ -17,6 +17,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Optional;
 
+/**
+ * In plain terms: a small patch to Minecraft's player list so AI player bodies load from the save the mod
+ * prepared (never a half-read file) and come back as AI players when they respawn. Human players are not
+ * affected.
+ */
 @Mixin(PlayerManager.class)
 abstract class PlayerManagerMixin {
     /** Human loading is untouched. Native bodies must never fall back to an unprepared disk read. */

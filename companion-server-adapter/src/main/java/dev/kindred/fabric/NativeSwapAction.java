@@ -16,7 +16,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native inventory swap action using the durable action ledger.
+ * In plain terms: an AI player swapping two slots of its own inventory, written down first and checked after
+ * so every item is still there.
+ *
+ * Technical: Checkpointed native inventory swap action using the durable action ledger.
  * Admits durably before effect, verifies exact 100% item component and count conservation across all slots.
  */
 final class NativeSwapAction extends NativeRecordedAction {
@@ -46,6 +49,7 @@ final class NativeSwapAction extends NativeRecordedAction {
         this.targetSlot = targetSlot;
     }
 
+    /** Moves the swap on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {
