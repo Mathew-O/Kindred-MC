@@ -1,6 +1,12 @@
 package dev.kindred.core;
 
-/** Personal-space policy. It proposes movement only; the adapter must validate and authorize a route. */
+/**
+ * In plain terms: personal space while following someone: hold still when close enough, catch up when too
+ * far, back off when too close, and walk at the owner's shoulder rather than right behind.
+ *
+ * Technical: Personal-space policy. It proposes movement only; the adapter must validate and authorize a
+ * route.
+ */
 public final class FollowSpacing {
     public enum Motion { HOLD, APPROACH, YIELD }
 

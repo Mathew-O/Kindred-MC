@@ -4,7 +4,11 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Pure-Java survival and self-sustenance policies (E-07).
+ * In plain terms: the basic survival rules: which blocks hurt to stand in, when to eat, whether to fight a
+ * nearby mob, run, or ignore it, and what to say about it. It never picks a fight with a boss, a player or a
+ * pet.
+ *
+ * Technical: Pure-Java survival and self-sustenance policies (E-07).
  * Governs eating food to heal, defensive hostile engagement, and tactical retreat.
  * Strictly excludes major bosses and prevents autonomous aggression against players or pets.
  */

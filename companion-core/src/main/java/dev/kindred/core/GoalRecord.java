@@ -3,7 +3,12 @@ package dev.kindred.core;
 import java.util.Objects;
 import java.util.UUID;
 
-/** A durable intention, separate from the skill that happens to be running. */
+/**
+ * In plain terms: a saved goal, like something its owner asked for or something it wants itself, kept
+ * separately from whichever skill happens to be running.
+ *
+ * Technical: A durable intention, separate from the skill that happens to be running.
+ */
 public record GoalRecord(UUID id, UUID companionId, Origin origin, String description, String outcome,
                          int priority, Status status, long revision) {
     public enum Origin { OWNER, PERSONAL }
@@ -20,6 +25,7 @@ public record GoalRecord(UUID id, UUID companionId, Origin origin, String descri
         if (revision < 0) throw new IllegalArgumentException("Negative goal revision");
     }
 
+    /** The same goal moved on to open, blocked or done. */
     public GoalRecord advance(Status next) {
         return new GoalRecord(id, companionId, origin, description, outcome, priority, next, Math.incrementExact(revision));
     }

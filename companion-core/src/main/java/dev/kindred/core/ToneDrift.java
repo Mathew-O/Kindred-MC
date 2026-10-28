@@ -1,8 +1,12 @@
 package dev.kindred.core;
 
 /**
- * A per-peer mood that naturalizes. Tone moves with each applied relationship delta and decays back
- * toward zero on its own; the durable friendship/trust record never decays and is never written here.
+ * In plain terms: a player's mood towards one other player, which rises or falls after something happens
+ * between them and drifts back to normal on its own. The lasting friendship score is kept elsewhere and never
+ * fades.
+ *
+ * Technical: A per-peer mood that naturalizes. Tone moves with each applied relationship delta and decays
+ * back toward zero on its own; the durable friendship/trust record never decays and is never written here.
  * Reading tone has no side effects. Clock rollback neither re-sours nor extends a tone.
  */
 public record ToneDrift(double offset, long at, long latestObserved) {

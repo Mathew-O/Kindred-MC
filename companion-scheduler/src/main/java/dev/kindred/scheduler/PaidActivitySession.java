@@ -12,7 +12,11 @@ import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 /**
- * Owner-thread prepaid activity lifecycle. The injected writer is the existing ordered store;
+ * In plain terms: the meter that runs while a player works. It books a few seconds of play time, waits for
+ * the database to confirm, lets the player act, renews the slice while a long job runs, and settles up what
+ * was really used when the job ends or is stopped.
+ *
+ * Technical: Owner-thread prepaid activity lifecycle. The injected writer is the existing ordered store;
  * callbacks receive immutable budget values. This class owns no body, admission or work queue.
  * A caller must additionally recheck its action authority before using an acknowledged permit.
  */
@@ -43,6 +47,10 @@ public final class PaidActivitySession {
     private CompletableFuture<BudgetState> tail;
     private CompletableFuture<BudgetState> closeFuture;
 
+    /**
+     * Starts a meter for one player's day, with how it saves (writer) and how it gets back onto the game
+     * thread (dispatch).
+     */
     public PaidActivitySession(BudgetState budget, Duration cap, Writer writer, Consumer<Runnable> dispatch,
                                Clock clock, LongSupplier nanos) {
         this.budget = Objects.requireNonNull(budget);
@@ -60,6 +68,10 @@ public final class PaidActivitySession {
     public BudgetState snapshot() { requireOwner(); return budget; }
     public String blocker() { requireOwner(); return blocker; }
 
+    /**
+     * Books the first slice, no later than the deadline. Completes true once the database confirms and the
+     * player may act.
+     */
     public CompletableFuture<Boolean> request(Instant hardDeadline) {
         requireOwner();
         Objects.requireNonNull(hardDeadline);
@@ -152,6 +164,9 @@ public final class PaidActivitySession {
         return phase == Phase.ACTIVE && permit != null && !closed ? permit.remainingAt(nanos.getAsLong()) : Duration.ZERO;
     }
 
+    /**
+     * Whether the player may act right now. When the slice has run out it stops the meter and answers false.
+     */
     public boolean paid() {
         requireOwner();
         if (phase != Phase.ACTIVE || permit == null || closed) return false;
@@ -222,12 +237,17 @@ public final class PaidActivitySession {
         return saved.settle(id, Duration.ofMillis(millis));
     }
 
+    /** Gives back a booked slice that was never used. */
     private void settleUnused() {
         phase = Phase.SETTLING;
         BudgetState settled = budget.settle(budget.outstanding().orElseThrow().id(), Duration.ZERO);
         persist(settled, budget.sequence(), ignored -> phase = Phase.IDLE);
     }
 
+    /**
+     * Saves the next tally in order, then runs the follow-up on the game thread. A failed save blocks the
+     * meter rather than guessing.
+     */
     private void persist(BudgetState next, long expected, Consumer<BudgetState> acknowledged) {
         try { tail = checked(writer.save(next, expected), next); }
         catch (RuntimeException failure) { tail = CompletableFuture.failedFuture(failure); }
@@ -248,6 +268,7 @@ public final class PaidActivitySession {
         }));
     }
 
+    /** Makes sure the database saved exactly what was asked. */
     private static CompletableFuture<BudgetState> checked(CompletableFuture<BudgetState> future, BudgetState expected) {
         return Objects.requireNonNull(future).thenApply(saved -> {
             if (!expected.equals(saved)) throw new IllegalStateException("Mismatched durable budget acknowledgement");
@@ -255,6 +276,7 @@ public final class PaidActivitySession {
         });
     }
 
+    /** Guards against use from the wrong thread. */
     private void requireOwner() {
         if (Thread.currentThread() != owner) throw new IllegalStateException("Activity session belongs to its owner thread");
     }

@@ -6,8 +6,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Local AI-player lifecycle decisions. No human-presence or companion-mode input, IO or body control.
- * Proposals still require current admission, permissions and an ActionArbiter lease at dispatch.
+ * In plain terms: the top of an AI player's brain, asked every tick what to do: stop if it is stopped or
+ * unavailable, carry on with the skill it is running, keep following, wait, or pick a new job from the to-do
+ * list. It only decides; the job still has to pass every check before the body moves.
+ *
+ * Technical: Local AI-player lifecycle decisions. No human-presence or companion-mode input, IO or body
+ * control. Proposals still require current admission, permissions and an ActionArbiter lease at dispatch.
  */
 public final class PlayerDecisionLoop {
     public enum Action { HALT, RUN_SKILL, RUN_FOLLOW, WAIT, PROPOSE_TASK }
@@ -31,9 +35,11 @@ public final class PlayerDecisionLoop {
 
     private final PlayerIdentity identity;
 
+    /** A decision loop for one player. */
     public PlayerDecisionLoop(PlayerIdentity identity) { this.identity = Objects.requireNonNull(identity); }
     public PlayerIdentity identity() { return identity; }
 
+    /** What to do this tick, given the facts gathered for it. */
     public Decision decide(Frame frame, Personality personality) {
         Objects.requireNonNull(frame);
         Objects.requireNonNull(personality);
@@ -49,6 +55,7 @@ public final class PlayerDecisionLoop {
                 .orElseGet(() -> result(Action.WAIT, "No executable local task; retain goals and wait for a meaningful change"));
     }
 
+    /** A decision with no new job, and the reason. */
     private static Decision result(Action action, String reason) {
         return new Decision(action, Optional.empty(), reason);
     }

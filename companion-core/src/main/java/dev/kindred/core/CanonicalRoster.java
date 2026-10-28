@@ -10,7 +10,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Defines the three canonical autonomous AI players (Kindred, Sol, Vesp)
+ * In plain terms: the three built-in AI players, Kindred, Sol and Vesp: their names, titles and starting
+ * personalities, plus the switches a server can flip for them. Some of those switches are stored for future
+ * features and not read by gameplay yet.
+ *
+ * Technical: Defines the three canonical autonomous AI players (Kindred, Sol, Vesp)
  * and runtime-toggable gameplay settings.
  */
 public final class CanonicalRoster {
@@ -19,11 +23,16 @@ public final class CanonicalRoster {
     public static final String SOL_NAME = "Sol";
     public static final String VESP_NAME = "Vesp";
 
+    /** One built-in player: name, title and starting personality. */
     public record RosterPreset(
             String name,
             String title,
             Personality defaultPersonality
     ) {
+        /**
+         * The player's id in a given world, always the same for the same world, so it is recognised again
+         * after a restart.
+         */
         public UUID deterministicId(UUID worldId) {
             Objects.requireNonNull(worldId, "worldId");
             return UUID.nameUUIDFromBytes(("kindred-canonical-player:" + worldId + ":" + name)
@@ -73,6 +82,7 @@ public final class CanonicalRoster {
             );
         }
 
+        /** The switches a new player starts with. */
         public static RuntimeSettings defaultsForNewPlayer() {
             return new RuntimeSettings(
                     PlaystyleProfile.IDLE_OBSERVING,
@@ -87,6 +97,7 @@ public final class CanonicalRoster {
             );
         }
 
+        /** The same switches with a different playstyle. */
         public RuntimeSettings withPlaystyle(PlaystyleProfile profile) {
             return new RuntimeSettings(
                     Objects.requireNonNull(profile, "profile"),
@@ -101,6 +112,7 @@ public final class CanonicalRoster {
             );
         }
 
+        /** Turns boss fights as part of the player's progression on or off. */
         public RuntimeSettings toggleBossProgression() {
             return new RuntimeSettings(
                     playstyleProfile,
@@ -115,6 +127,7 @@ public final class CanonicalRoster {
             );
         }
 
+        /** Flips the long-lived-world setting (stored for future use). */
         public RuntimeSettings toggleForeverWorldKaizen() {
             return new RuntimeSettings(
                     playstyleProfile,
@@ -129,6 +142,7 @@ public final class CanonicalRoster {
             );
         }
 
+        /** Turns the speedrunning community's techniques on or off. */
         public RuntimeSettings toggleSpeedrun() {
             PlaystyleProfile next = playstyleProfile == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                     ? PlaystyleProfile.OPTIMAL_SURVIVAL
@@ -136,6 +150,7 @@ public final class CanonicalRoster {
             return withPlaystyle(next);
         }
 
+        /** Switches between playing as a team and playing solo. */
         public RuntimeSettings toggleCollaboration() {
             return new RuntimeSettings(
                     playstyleProfile,
@@ -152,6 +167,7 @@ public final class CanonicalRoster {
             );
         }
 
+        /** Flips quick weapon swapping in combat (stored for future use). */
         public RuntimeSettings toggleCombatHotSwap() {
             return new RuntimeSettings(
                     playstyleProfile,
@@ -167,6 +183,7 @@ public final class CanonicalRoster {
         }
 
 
+        /** The same switches with a different idle wandering radius, kept within limits. */
         public RuntimeSettings withIdleRadiusBlocks(int blocks) {
             return new RuntimeSettings(
                     playstyleProfile,

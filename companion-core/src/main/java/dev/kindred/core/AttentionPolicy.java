@@ -14,8 +14,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Notice-and-return: a bounded glance at a newly noticed person during an interruptible activity, after
- * which the body resumes the same checkpoint. This proposes a pause; it never cancels, retargets or
+ * In plain terms: the rule that makes a player glance up at someone new who comes near while it works, then
+ * go back to what it was doing. It only proposes a short pause; it never cancels or changes the job, and it
+ * keeps the glances rare.
+ *
+ * Technical: Notice-and-return: a bounded glance at a newly noticed person during an interruptible activity,
+ * after which the body resumes the same checkpoint. This proposes a pause; it never cancels, retargets or
  * replans the activity, and it yields to a skill that owns the gaze channel.
  */
 public final class AttentionPolicy {
@@ -31,6 +35,7 @@ public final class AttentionPolicy {
         IDLE, WAITING, BROWSING_CONTAINER, SORTING_INVENTORY, WALKING_UNCOMMITTED,
         BREAKING, TRANSFERRING, PLACING, AIRBORNE, CANCELLING;
 
+        /** Whether a skill in this phase may pause for a moment to look at someone. */
         public boolean interruptible() {
             return this == IDLE || this == WAITING || this == BROWSING_CONTAINER
                     || this == SORTING_INVENTORY || this == WALKING_UNCOMMITTED;
@@ -51,6 +56,7 @@ public final class AttentionPolicy {
     private final Deque<Spent> recent = new ArrayDeque<>();
     private long nextGlobal = Long.MIN_VALUE;
 
+    /** Looks at who is nearby now and decides whether to glance at a newcomer, and for how long. */
     public Optional<Glance> observe(Set<UUID> contacts, Phase phase, boolean bodyLeased, boolean gazeOwnedBySkill,
                                     Personality personality, Set<Mannerisms.Quirk> activeQuirks, long now) {
         Objects.requireNonNull(contacts, "contacts");
@@ -90,6 +96,7 @@ public final class AttentionPolicy {
         pendingSince.clear();
     }
 
+    /** Counts a person as noticed, so the player does not glance at them again. */
     private void settle(UUID contact) {
         known.add(contact);
         pendingSince.remove(contact);
@@ -103,6 +110,7 @@ public final class AttentionPolicy {
         return Math.max(MIN_GLANCE_MILLIS, Math.min(MAX_GLANCE_MILLIS, Math.round(base)));
     }
 
+    /** Notes when the player last glanced at someone. */
     private void remember(UUID contact, long now) {
         lastGlance.remove(contact);
         lastGlance.put(contact, now);

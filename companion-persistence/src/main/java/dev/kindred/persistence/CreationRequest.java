@@ -3,7 +3,12 @@ package dev.kindred.persistence;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Trusted command context; display names never authorize an operation. */
+/**
+ * In plain terms: a request to create an AI player of the older companion kind: who asked, its name, and
+ * which world and dimension it starts in.
+ *
+ * Technical: Trusted command context; display names never authorize an operation.
+ */
 public record CreationRequest(UUID operationId, UUID ownerId, String displayName, UUID worldId, String dimension) {
     public CreationRequest {
         Objects.requireNonNull(operationId);

@@ -3,7 +3,12 @@ package dev.kindred.persistence;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Explicit new AI identity, independent of how many other players its controller administers. */
+/**
+ * In plain terms: a request to create a new native AI player: who controls it, its name (1 to 32 printable
+ * characters), and the world and dimension it starts in.
+ *
+ * Technical: Explicit new AI identity, independent of how many other players its controller administers.
+ */
 public record PlayerCreationRequest(UUID operationId, UUID controllerId, String displayName, UUID worldId, String dimension) {
     public PlayerCreationRequest {
         Objects.requireNonNull(operationId);

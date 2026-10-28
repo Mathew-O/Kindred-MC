@@ -11,9 +11,13 @@ import java.util.HexFormat;
 import java.util.Locale;
 
 /**
- * Skins an operator drops into the skins folder: which files are usable Minecraft skins, the key each is chosen by,
- * and whether it uses the slim (three-pixel) arm model. Only the PNG header is trusted before decoding, so an image
- * claiming a huge size is refused without being decoded.
+ * In plain terms: reads the skin images a server owner puts in the skins folder: checks each is a real
+ * Minecraft skin (64 by 64, or the old 64 by 32, and small), works out its name and whether it has slim arms,
+ * and explains why a file is not usable.
+ *
+ * Technical: Skins an operator drops into the skins folder: which files are usable Minecraft skins, the key
+ * each is chosen by, and whether it uses the slim (three-pixel) arm model. Only the PNG header is trusted
+ * before decoding, so an image claiming a huge size is refused without being decoded.
  */
 public final class SkinFiles {
     /** A skin file is a few kilobytes; anything larger is not a skin. */
@@ -98,6 +102,7 @@ public final class SkinFiles {
         return width <= 0 || height <= 0 ? null : new int[] {width, height};
     }
 
+    /** A fingerprint of the image, used to recognise the same skin. */
     private static String sha1(byte[] bytes) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(bytes));

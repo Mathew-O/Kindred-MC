@@ -5,9 +5,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * A resumable boundary: the goal, absolute progress and the task revision it belongs to. Resume recomputes
- * routes and rechecks permissions from here; it never redoes the whole original request. Progress holds
- * small immutable strings only, never live world objects.
+ * In plain terms: a bookmark in a job, saving how far it got (such as how many blocks it has walked), so a
+ * paused job can carry on from there instead of starting over.
+ *
+ * Technical: A resumable boundary: the goal, absolute progress and the task revision it belongs to. Resume
+ * recomputes routes and rechecks permissions from here; it never redoes the whole original request. Progress
+ * holds small immutable strings only, never live world objects.
  */
 public record Checkpoint(String skillId, UUID taskId, long taskRevision, Map<String, String> arguments,
                          Map<String, String> progress, long at) {
@@ -21,6 +24,7 @@ public record Checkpoint(String skillId, UUID taskId, long taskRevision, Map<Str
         if (taskRevision < 0) throw new IllegalArgumentException("Negative task revision");
     }
 
+    /** Checks a bookmark's details stay small, and freezes them. */
     private static Map<String, String> bounded(Map<String, String> map, String name) {
         Objects.requireNonNull(map, name);
         if (map.size() > MAX_ENTRIES) throw new IllegalArgumentException(name + " exceeds " + MAX_ENTRIES + " entries");

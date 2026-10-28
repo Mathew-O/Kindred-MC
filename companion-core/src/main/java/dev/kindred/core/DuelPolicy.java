@@ -3,7 +3,11 @@ package dev.kindred.core;
 import java.util.Objects;
 
 /**
- * Pure personality-weighted duel decision policy. No Minecraft types; no world access.
+ * In plain terms: how an older companion decides about friendly duels: whether to accept or start a sparring
+ * match, what to say, and how to answer a player who hits it first. Its personality decides how keen it is.
+ * These duels are play-fighting, not real combat.
+ *
+ * Technical: Pure personality-weighted duel decision policy. No Minecraft types; no world access.
  *
  * <p>A duel is a consensual, bounded sparring exchange initiated by either a player or the companion.
  * It is not combat: the companion uses weakened attacks, it avoids finishing blows and it stops when

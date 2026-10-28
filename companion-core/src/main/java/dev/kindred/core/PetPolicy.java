@@ -7,8 +7,12 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Who may be tamed, with what, and when. Every fact here comes from trusted checks on the server thread;
- * the policy only combines them. Personality supplies the usual bounded bias toward a species, never
+ * In plain terms: the rules for taming pets: which animals are supported (wolves and cats first, then
+ * parrots, horses later), what each needs, whether the server allows pets and the player has room for
+ * another, and how much its personality likes each animal.
+ *
+ * Technical: Who may be tamed, with what, and when. Every fact here comes from trusted checks on the server
+ * thread; the policy only combines them. Personality supplies the usual bounded bias toward a species, never
  * permission. A pet is a world entity: this class never records or replaces one.
  */
 public final class PetPolicy {
@@ -65,6 +69,7 @@ public final class PetPolicy {
 
     private PetPolicy() { }
 
+    /** Whether a taming attempt is allowed, and every reason it isn't. */
     public static Decision evaluate(Request request) {
         Objects.requireNonNull(request, "request");
         List<Blocker> blockers = new ArrayList<>();

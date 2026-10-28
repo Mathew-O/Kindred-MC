@@ -3,7 +3,13 @@ package dev.kindred.core;
 import java.util.Objects;
 import java.util.UUID;
 
-/** An authority token; possessing an old token does not grant permission to act. */
+/**
+ * In plain terms: a pass that lets one specific job act right now. Every job gets a new pass, and an old pass
+ * stops working the moment the job is stopped or replaced, so a leftover callback can never make the player
+ * do something.
+ *
+ * Technical: An authority token; possessing an old token does not grant permission to act.
+ */
 public record ActionLease(UUID companionId, UUID taskId, UUID actionId, UUID sessionEpoch,
                           long bodyGeneration, long intentRevision, long taskRevision) {
     public ActionLease {

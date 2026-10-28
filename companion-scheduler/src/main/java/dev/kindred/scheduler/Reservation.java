@@ -5,7 +5,11 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Persist before activating. Acknowledgement after expiresAt conveys no authority to work. */
+/**
+ * In plain terms: one booked slice of play time, at most five seconds long, with when it starts and ends.
+ *
+ * Technical: Persist before activating. Acknowledgement after expiresAt conveys no authority to work.
+ */
 public record Reservation(UUID id, long reservedMillis, Instant reservedAt, Instant expiresAt) {
     public Reservation {
         Objects.requireNonNull(id, "id");

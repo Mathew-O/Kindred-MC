@@ -10,14 +10,20 @@ import java.util.Set;
 import java.util.function.LongSupplier;
 
 /**
- * Incremental, budgeted block perception over a planned list of chunk sections. Each tick examines at most
- * {@link Budget#sectionsPerTick()} sections: unloaded sections are skipped without loading, empty sections and
- * sections whose palette holds no block of interest are skipped without visiting their blocks, and at most
- * {@link Budget#detailedSectionsPerTick()} sections are walked block by block. A pass over the whole plan bumps
- * the index version; facts carry their own observation time. The adapter supplies section views on the server
- * thread; this class never sees a world object and never blocks a tick on anything but the budget.
+ * In plain terms: the player's eyes for blocks. Each tick it looks over a few chunk sections near the player
+ * for the blocks it cares about (logs, ores and so on), skipping unloaded and empty sections, and keeps what
+ * it saw in a BlockObservations. It works to a strict per-tick budget so it never slows the server down.
+ *
+ * Technical: Incremental, budgeted block perception over a planned list of chunk sections. Each tick examines
+ * at most {@link Budget#sectionsPerTick()} sections: unloaded sections are skipped without loading, empty
+ * sections and sections whose palette holds no block of interest are skipped without visiting their blocks,
+ * and at most {@link Budget#detailedSectionsPerTick()} sections are walked block by block. A pass over the
+ * whole plan bumps the index version; facts carry their own observation time. The adapter supplies section
+ * views on the server thread; this class never sees a world object and never blocks a tick on anything but
+ * the budget.
  */
 public final class BlockPerception {
+    /** How much looking is allowed each tick. */
     public record Budget(int sectionsPerTick, int detailedSectionsPerTick, int matchesPerSection, int exposedPerSection) {
         public Budget {
             if (sectionsPerTick < 1 || sectionsPerTick > 64) throw new IllegalArgumentException("sectionsPerTick is 1..64");
@@ -75,6 +81,7 @@ public final class BlockPerception {
     private PassStats lastPass = PassStats.NONE;
     private long ticks, sectionsVisited, unloaded, empty, skippedByPalette, scanned, passes, lastPassTicks, lastTickNanos, maxTickNanos;
 
+    /** New eyes for one dimension, with a budget and clocks. */
     public BlockPerception(String dimension, Budget budget, LongSupplier clockMillis, LongSupplier nanoTime) {
         this.dimension = Objects.requireNonNull(dimension);
         this.budget = Objects.requireNonNull(budget);
@@ -163,6 +170,7 @@ public final class BlockPerception {
         return stats();
     }
 
+    /** Looks through one section block by block and notes the matches. */
     private BlockObservations.SectionFacts walk(SectionView view, long now) {
         Map<String, Integer> matches = new LinkedHashMap<>();
         List<BlockObservation> exposed = new ArrayList<>();
@@ -177,6 +185,7 @@ public final class BlockPerception {
         return new BlockObservations.SectionFacts(now, matches, exposed);
     }
 
+    /** Stores what was seen in one section. */
     private void record(SectionKey key, BlockObservations.SectionFacts next) {
         facts.put(key, next);
         snapshot = null;
@@ -188,6 +197,7 @@ public final class BlockPerception {
         return snapshot;
     }
 
+    /** Counters showing where the looking budget went, for diagnosing performance. */
     public Stats stats() {
         return new Stats(ticks, sectionsVisited, unloaded, empty, skippedByPalette, scanned, passes, lastPassTicks, lastTickNanos, maxTickNanos, lastPass);
     }

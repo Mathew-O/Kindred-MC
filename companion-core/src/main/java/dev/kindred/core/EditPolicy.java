@@ -3,9 +3,13 @@ package dev.kindred.core;
 import java.util.Objects;
 
 /**
- * Whether one world mutation is permitted by the saved setup and the server's standing decisions. This is
- * evaluated immediately before a mutation on the server thread, after claims and the lease; it is never a
- * reason to skip the adapter's identity/version recheck of the actual block.
+ * In plain terms: the rulebook for whether a player may break a block, place a block or use a chest right
+ * now. It checks the server's switches and the work area and storage it was given, and says yes or gives the
+ * reason for no. The real block is still checked again in the game before anything changes.
+ *
+ * Technical: Whether one world mutation is permitted by the saved setup and the server's standing decisions.
+ * This is evaluated immediately before a mutation on the server thread, after claims and the lease; it is
+ * never a reason to skip the adapter's identity/version recheck of the actual block.
  */
 public final class EditPolicy {
     public enum Kind { BREAK, PLACE, CONTAINER }
@@ -27,6 +31,7 @@ public final class EditPolicy {
 
     private EditPolicy() { }
 
+    /** Says whether one edit (break, place or chest use) at one spot is allowed, and why not if it isn't. */
     public static Decision evaluate(WorkSetup setup, Kind kind, String dimension, WorkSetup.BlockPoint target,
                                     String blockId, ServerPolicy server) {
         Objects.requireNonNull(kind);

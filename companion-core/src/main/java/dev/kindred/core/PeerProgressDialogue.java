@@ -5,7 +5,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Peer-to-peer progression dialogue between companions (player simulation).
+ * In plain terms: the little chats AI players have with each other about how they are getting on (gathering,
+ * mining, farming, milestones, danger), remembered by both and kept out of public chat so they don't spam it.
+ *
+ * Technical: Peer-to-peer progression dialogue between companions (player simulation).
  * Companions privately confer about gathering, tool progression, storage, and milestones,
  * recording mutual facts in memory without spamming public chat.
  */

@@ -5,7 +5,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Shared activity-seat and chunk-capacity limits. Legacy callers use creator ownership;
+ * In plain terms: the seating chart for active AI players. Only so many may be working at once, each owner
+ * may run only so many, and the chunks they keep loaded are capped, so the server never gets overloaded.
+ *
+ * Technical: Shared activity-seat and chunk-capacity limits. Legacy callers use creator ownership;
  * independent AI players use their own identity as the capacity principal.
  */
 public final class AdmissionBoard {
@@ -30,10 +33,12 @@ public final class AdmissionBoard {
 
     public record Seat(UUID companionId, UUID ownerId, int chunks) { }
 
+    /** A board with the default limits. */
     public AdmissionBoard() {
         this(DEFAULT_MAX_ACTIVE, DEFAULT_MAX_PER_OWNER, DEFAULT_MAX_CHUNKS_EACH, DEFAULT_MAX_CHUNKS_GLOBAL);
     }
 
+    /** A board with custom limits: players active at once, per owner, chunks each and chunks in total. */
     public AdmissionBoard(int maxActive, int maxPerOwner, int maxChunksEach, int maxChunksGlobal) {
         if (maxActive < 1 || maxPerOwner < 1 || maxChunksEach < 1 || maxChunksGlobal < 1) {
             throw new IllegalArgumentException("Admission limits must be positive");
@@ -50,6 +55,10 @@ public final class AdmissionBoard {
                 DEFAULT_MAX_CHUNKS_EACH, concurrentCompanions * DEFAULT_MAX_CHUNKS_EACH);
     }
 
+    /**
+     * Asks for a seat. Admitted if every limit allows it, waiting if a limit is full right now, rejected if
+     * the request could never fit.
+     */
     public Decision request(UUID companionId, UUID ownerId, int chunks) {
         if (chunks < 1 || chunks > maxChunksEach) return Decision.REJECTED;
         Seat existing = seats.get(companionId);

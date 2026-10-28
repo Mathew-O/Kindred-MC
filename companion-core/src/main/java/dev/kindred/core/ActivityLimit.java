@@ -6,8 +6,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The daily awake cap, whether owner-offline work is allowed, the accounting timezone and, optionally, the local
- * hours activity is allowed in. Default is two hours, offline disabled, UTC, all day.
+ * In plain terms: the play-time rules set for one AI player: how many hours a day it may be active, in which
+ * timezone the day is counted, optionally the hours of the day it may play, and an older setting about
+ * working while its owner is offline.
+ *
+ * Technical: The daily awake cap, whether owner-offline work is allowed, the accounting timezone and,
+ * optionally, the local hours activity is allowed in. Default is two hours, offline disabled, UTC, all day.
  */
 public record ActivityLimit(UUID companionId, long capMillis, boolean offlineWork, String timezone, long revision,
                             Optional<Window> window) {
@@ -30,10 +34,12 @@ public record ActivityLimit(UUID companionId, long capMillis, boolean offlineWor
         if (revision < 0) throw new IllegalArgumentException("Negative limit revision");
     }
 
+    /** The same rules with no window of hours (all day allowed). */
     public ActivityLimit(UUID companionId, long capMillis, boolean offlineWork, String timezone, long revision) {
         this(companionId, capMillis, offlineWork, timezone, revision, Optional.empty());
     }
 
+    /** The starting rules: two hours a day, counted in UTC, all day, no offline work. */
     public static ActivityLimit defaults(UUID companionId) {
         return new ActivityLimit(companionId, DEFAULT_CAP_MILLIS, false, "UTC", 0);
     }
@@ -43,14 +49,17 @@ public record ActivityLimit(UUID companionId, long capMillis, boolean offlineWor
         return new ActivityLimit(companionId, millis, offlineWork, timezone, Math.incrementExact(revision), window);
     }
 
+    /** The next revision with offline work switched on or off; everything else kept. */
     public ActivityLimit editOfflineWork(boolean allowed) {
         return new ActivityLimit(companionId, capMillis, allowed, timezone, Math.incrementExact(revision), window);
     }
 
+    /** The next revision with a new timezone; everything else kept. */
     public ActivityLimit editTimezone(String zone) {
         return new ActivityLimit(companionId, capMillis, offlineWork, zone, Math.incrementExact(revision), window);
     }
 
+    /** The next revision with new hours (or none, meaning all day); everything else kept. */
     public ActivityLimit editWindow(Optional<Window> hours) {
         return new ActivityLimit(companionId, capMillis, offlineWork, timezone, Math.incrementExact(revision), hours);
     }

@@ -6,7 +6,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Single-use durable intent boundary around the existing ActionRecord writer. No callback performs
+ * In plain terms: the safety wrapper around one world action, such as breaking a block or moving items.
+ * Before the action happens it is written into the action ledger; after it happens the game checks the world
+ * and writes down whether it worked, failed or is uncertain. Nothing is ever repeated blindly after a crash.
+ *
+ * Technical: Single-use durable intent boundary around the existing ActionRecord writer. No callback performs
  * world work. A taken admission still needs current arbiter, payment, claims and native checks.
  * Owner-thread only; close flushes immutable records without needing another game-thread callback.
  */
@@ -24,6 +28,10 @@ public final class ActionAdmission {
     private boolean issued, closed;
     private CompletableFuture<ActionRecord> tail, closeFuture;
 
+    /**
+     * Starts writing the action down: first the plan, then that it is about to happen, with what the world
+     * looked like before.
+     */
     public ActionAdmission(ActionRecord intent, String beforeEvidence, Writer writer, Consumer<Runnable> dispatch) {
         record = Objects.requireNonNull(intent);
         this.writer = Objects.requireNonNull(writer);
@@ -50,21 +58,27 @@ public final class ActionAdmission {
         return Optional.of(record);
     }
 
+    /** Records that the action worked, with the evidence seen in the world afterwards. */
     public CompletableFuture<ActionRecord> verify(String afterEvidence, String note) {
         requireIssued();
         return finish(record.verified(afterEvidence, note), Phase.VERIFIED);
     }
 
+    /** Records that the action was tried but changed nothing, with evidence. */
     public CompletableFuture<ActionRecord> noEffect(String afterEvidence, String reason) {
         requireIssued();
         return finish(record.failed(Objects.requireNonNull(afterEvidence), reason), Phase.FAILED);
     }
 
+    /**
+     * Records that nobody can tell whether the action happened. The player is then held until someone checks.
+     */
     public CompletableFuture<ActionRecord> uncertain(String reason) {
         requireIssued();
         return finish(record.uncertain(reason), Phase.UNCERTAIN);
     }
 
+    /** Saves the final outcome and marks the wrapper finished. */
     private CompletableFuture<ActionRecord> finish(ActionRecord next, Phase terminal) {
         phase = Phase.SETTLING;
         persist(next, false, ignored -> phase = terminal);
@@ -91,6 +105,7 @@ public final class ActionAdmission {
         return closeFuture;
     }
 
+    /** Saves the next state of the record, then carries on once the database confirms. */
     private void persist(ActionRecord next, boolean prepare, Consumer<ActionRecord> acknowledged) {
         try {
             tail = checked(prepare ? writer.prepare(next) : writer.transition(next, record.revision()), next);
@@ -104,6 +119,7 @@ public final class ActionAdmission {
         }));
     }
 
+    /** Makes sure the database saved exactly what was asked. */
     private static CompletableFuture<ActionRecord> checked(CompletableFuture<ActionRecord> future, ActionRecord expected) {
         return Objects.requireNonNull(future).thenApply(saved -> {
             if (!expected.equals(saved)) throw new IllegalStateException("Mismatched durable action acknowledgement");

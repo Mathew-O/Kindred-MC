@@ -10,7 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Pure, injectable-time calculations. This class grants neither admission nor world authority. */
+/**
+ * In plain terms: the calendar maths for play time: which day a moment belongs to, when a window of hours is
+ * open, and how daylight saving and timezone changes are handled. It only does sums; it never lets a player
+ * act by itself.
+ *
+ * Technical: Pure, injectable-time calculations. This class grants neither admission nor world authority.
+ */
 public final class ScheduleClock {
     private ScheduleClock() { }
 

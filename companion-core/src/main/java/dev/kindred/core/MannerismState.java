@@ -8,7 +8,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Per-companion runtime view of its habits: the saved profile, the traits, and bounded temporary
+ * In plain terms: a player's habits as they are right now: the saved habits plus short breaks from a habit
+ * after someone asks it to stop (like no sprint-jumping indoors), which run out on their own.
+ *
+ * Technical: Per-companion runtime view of its habits: the saved profile, the traits, and bounded temporary
  * accommodations made after someone's remark. Accommodations expire on their own, are never extended
  * by clock rollback or repetition, and are replaced by an explicit owner command.
  */
@@ -18,9 +21,11 @@ public final class MannerismState {
     /** Facts the adapter checks on the server thread immediately before choosing a gait. */
     public record MovementContext(boolean leased, boolean onGround, boolean lowClearance, boolean narrowPassage,
                                   boolean hazardousLanding, boolean carefulPayload) {
+        /** The movement facts for plain open ground. */
         public static MovementContext openGround(boolean leased) {
             return new MovementContext(leased, true, false, false, false, false);
         }
+        /** Whether it is safe and allowed to jump here. */
         public boolean permitsJump() {
             return leased && onGround && !lowClearance && !narrowPassage && !hazardousLanding && !carefulPayload;
         }
@@ -34,10 +39,12 @@ public final class MannerismState {
     private final Map<Mannerisms.Quirk, Accommodation> accommodations = new EnumMap<>(Mannerisms.Quirk.class);
     private long latestObserved = Long.MIN_VALUE;
 
+    /** Habits starting from a saved profile. */
     public MannerismState(Mannerisms profile) {
         this.profile = Objects.requireNonNull(profile, "profile");
     }
 
+    /** The saved habits. */
     public Mannerisms profile() { return profile; }
 
     /** An owner command: the durable setting replaces any temporary promise about that quirk, even if unchanged. */

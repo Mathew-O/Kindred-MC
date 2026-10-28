@@ -1,8 +1,11 @@
 package dev.kindred.core;
 
 /**
- * When a sprint-jump habit may take one hop. A hop is a single request after the body has landed and
- * taken a step, then not again until the gap has passed. Requesting a jump on every grounded tick is a
+ * In plain terms: the rhythm of sprint-jumping: one hop after landing and taking a step, then a pause, so it
+ * looks like a person running rather than a pogo stick.
+ *
+ * Technical: When a sprint-jump habit may take one hop. A hop is a single request after the body has landed
+ * and taken a step, then not again until the gap has passed. Requesting a jump on every grounded tick is a
  * pogo, not a stride.
  */
 public final class SprintStride {

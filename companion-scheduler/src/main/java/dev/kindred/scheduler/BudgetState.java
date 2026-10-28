@@ -7,7 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Immutable prepaid accounting. Persist each transition atomically before granting its effect.
+ * In plain terms: the running tally of one player's play time for one day: how much it has used, which slice
+ * of time is booked right now, and a counter that goes up with every change so two writers can never
+ * overwrite each other. Saved to the database at every step.
+ *
+ * Technical: Immutable prepaid accounting. Persist each transition atomically before granting its effect.
  * chargedMillis excludes outstanding; the outstanding slice is already unavailable to another
  * reservation. Native execution must enforce both monotonic expiry and the wall-clock deadline.
  */
@@ -36,10 +40,12 @@ public record BudgetState(
         });
     }
 
+    /** A fresh tally for a new day: nothing used, nothing booked. */
     public static BudgetState empty(UUID companionId, AccountingPeriod period) {
         return new BudgetState(companionId, period, 0, 0, 0, Optional.empty());
     }
 
+    /** How much play time is left today under the given cap, counting the slice booked right now as used. */
     public Duration remainingAllowance(Duration cap) {
         long capMillis = ActivitySchedule.requirePositiveMillis(cap, "cap");
         long afterCharged = Math.max(0, capMillis - chargedMillis);
@@ -104,6 +110,7 @@ public record BudgetState(
                 observedActiveMillis, nextSequence(), Optional.empty());
     }
 
+    /** The booked slice with this id, or an error if there is none or it is a different one. */
     private Reservation requireReservation(UUID id) {
         Reservation reservation = outstanding.orElseThrow(() -> new IllegalStateException("No outstanding reservation"));
         if (!reservation.id().equals(id)) {
@@ -112,6 +119,7 @@ public record BudgetState(
         return reservation;
     }
 
+    /** The next value of the change counter. */
     private long nextSequence() {
         return Math.incrementExact(sequence);
     }

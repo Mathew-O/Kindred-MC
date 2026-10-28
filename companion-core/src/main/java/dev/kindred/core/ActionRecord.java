@@ -4,9 +4,15 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * One nontrivial world action's durable intent and outcome. Intent is recorded before the side effect; the
- * outcome is recorded only from adapter evidence. An unknown outcome is UNCERTAIN and blocks dependents until
- * an explicit reconciliation supplies evidence; nothing here can turn "unknown" into "success".
+ * In plain terms: one entry in the action ledger: what the player meant to do, what the world looked like
+ * before, and what happened. An entry moves from prepared, to dispatched, to verified, failed or cancelled;
+ * one whose outcome is unknown is marked uncertain and blocks anything that depends on it until a person
+ * checks.
+ *
+ * Technical: One nontrivial world action's durable intent and outcome. Intent is recorded before the side
+ * effect; the outcome is recorded only from adapter evidence. An unknown outcome is UNCERTAIN and blocks
+ * dependents until an explicit reconciliation supplies evidence; nothing here can turn "unknown" into
+ * "success".
  */
 public record ActionRecord(UUID actionId, UUID taskId, UUID companionId, UUID epoch, long intentRevision, long taskRevision,
                            String kind, String preconditions, State state, String beforeEvidence, String afterEvidence,
@@ -44,6 +50,7 @@ public record ActionRecord(UUID actionId, UUID taskId, UUID companionId, UUID ep
         if (!consistent) throw new IllegalArgumentException("Outcome " + outcome + " is inconsistent with state " + state);
     }
 
+    /** A new entry for an action that is planned but has not happened yet. */
     public static ActionRecord prepare(UUID actionId, ActionLease lease, String kind, String preconditions) {
         Objects.requireNonNull(lease);
         return new ActionRecord(actionId, lease.taskId(), lease.companionId(), lease.sessionEpoch(), lease.intentRevision(),
@@ -106,6 +113,7 @@ public record ActionRecord(UUID actionId, UUID taskId, UUID companionId, UUID ep
         };
     }
 
+    /** The same entry moved on to its next state, with its revision counter increased. */
     private ActionRecord next(State nextState, String before, String after, Outcome nextOutcome, String note) {
         return new ActionRecord(actionId, taskId, companionId, epoch, intentRevision, taskRevision, kind, preconditions,
                 nextState, before, after, nextOutcome, note, Math.incrementExact(revision));

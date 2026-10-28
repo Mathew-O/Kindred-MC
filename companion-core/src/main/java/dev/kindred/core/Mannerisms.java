@@ -10,7 +10,11 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Saved movement/idle habits. A quirk is presentation inside already authorized movement: it never
+ * In plain terms: a player's saved habits, its little quirks: sprint-jumping, being lively, glancing around
+ * curiously, or moving steadily. Each can be forced on, forced off, or left to its personality. Habits only
+ * change how it moves, never where it goes or whether it stops.
+ *
+ * Technical: Saved movement/idle habits. A quirk is presentation inside already authorized movement: it never
  * starts navigation, extends a route, bypasses a yield or landing check, continues after stop or
  * takes gaze from a skill that owns it. Resolution is deterministic so a companion keeps its character.
  */
@@ -23,6 +27,7 @@ public record Mannerisms(UUID companionId, Map<Quirk, Setting> settings, long re
 
         public String commandName() { return name().toLowerCase(Locale.ROOT); }
 
+        /** The quirk with this name, as typed in a command. */
         public static Quirk parse(String name) {
             Objects.requireNonNull(name, "name");
             for (Quirk quirk : values()) if (quirk.commandName().equals(name.toLowerCase(Locale.ROOT))) return quirk;
@@ -33,6 +38,7 @@ public record Mannerisms(UUID companionId, Map<Quirk, Setting> settings, long re
     public enum Setting {
         AUTO, ON, OFF;
 
+        /** The setting with this name, as typed in a command. */
         public static Setting parse(String name) {
             Objects.requireNonNull(name, "name");
             return switch (name.toLowerCase(Locale.ROOT)) {
@@ -53,12 +59,15 @@ public record Mannerisms(UUID companionId, Map<Quirk, Setting> settings, long re
         settings = Map.copyOf(copy);
     }
 
+    /** Every habit left to its personality. */
     public static Mannerisms defaults(UUID companionId) {
         return new Mannerisms(companionId, Map.of(), 0);
     }
 
+    /** How one habit is set. */
     public Setting setting(Quirk quirk) { return settings.get(Objects.requireNonNull(quirk)); }
 
+    /** The same habits with one changed. */
     public Mannerisms with(Quirk quirk, Setting setting) {
         Objects.requireNonNull(quirk);
         Objects.requireNonNull(setting);
