@@ -30,7 +30,7 @@
   "localValidationJdk": "OpenJDK 21 (Linux x64, 2026-10-20); earlier runs OpenJDK 21.0.2 (Windows x64)",
   "sqliteJdbc": "3.50.3.0",
   "anthropicJavaSdk": "2.75.0 (companion-model; development classpath only, not bundled in the release jar)",
-  "persistenceSchema": 8,
+  "persistenceSchema": 9,
   "junit": "5.11.4",
   "modelConfiguration": {
     "provider": "Optional, operator key (F-19d): Anthropic (claude-haiku-5-5), OpenAI (gpt-4o-mini), Gemini (gemini-3.5-flash-lite), Groq (openai/gpt-oss-20b), Mistral (mistral-small-latest), DeepSeek (deepseek-chat), xAI (model named), OpenRouter (openai/gpt-4o-mini) or any OpenAI-compatible server (KINDRED_STRATEGIST_BASE_URL)",
