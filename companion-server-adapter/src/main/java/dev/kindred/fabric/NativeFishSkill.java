@@ -56,8 +56,12 @@ final class NativeFishSkill implements SkillBody {
             return Step.running(Map.of("cast", String.valueOf(casts)), false);
         }
         sinceCast++;
-        // Landed off the water, or caught on something: reeled back to cast again.
-        if (sinceCast > 60 && !hook.isTouchingWater() || hook.getHookedEntity() != null) {
+        // Landed off the water, or caught on something: reeled back to cast again. The bobber is on the water, as the game
+        // reckons it, when the water is in its block, or in the one under it as it bobs up out of it.
+        var world = player.getServerWorld();
+        boolean onWater = world.getFluidState(hook.getBlockPos()).isIn(net.minecraft.registry.tag.FluidTags.WATER)
+                || world.getFluidState(hook.getBlockPos().down()).isIn(net.minecraft.registry.tag.FluidTags.WATER);
+        if (sinceCast > 60 && !onWater || hook.getHookedEntity() != null) {
             body.useRod(lease.get(), slot, null);
             return Step.running(Map.of("recast", String.valueOf(casts)), false);
         }

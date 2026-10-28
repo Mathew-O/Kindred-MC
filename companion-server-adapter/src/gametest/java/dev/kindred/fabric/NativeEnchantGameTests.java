@@ -88,10 +88,10 @@ public final class NativeEnchantGameTests implements FabricGameTest {
             if (first[0] == null && !world.getBlockState(table).isOf(Blocks.ENCHANTING_TABLE)) first[0] = "Its table put down in the ring: " + world.getBlockState(table);
             if (first[0] == null && !(spent >= 1 && spent <= 3 && lapis == 9 - spent)) first[0] = "The lapis and levels spent alike: " + spent + " levels, " + lapis + " lapis left";
             if (first[0] == null && !(count(inventory, Items.BREAD) == 8 && count(inventory, Items.ENCHANTING_TABLE) == 0)) first[0] = "Nothing else changed: " + inventory.main;
-            if (first[0] == null && f.runtime.said(f.id).stream().noneMatch(line -> line.startsWith("I enchanted my diamond sword with"))) {
-                first[0] = "Said what it gained: " + f.runtime.said(f.id);
-            }
             context.assertTrue(first[0] == null, first[0]);
+            // Said once the action is finished, a tick or so after the sword shows it.
+            context.assertTrue(f.runtime.said(f.id).stream().anyMatch(line -> line.startsWith("I enchanted my diamond sword with")),
+                    "Said what it gained: " + f.runtime.said(f.id));
         });
     }
 

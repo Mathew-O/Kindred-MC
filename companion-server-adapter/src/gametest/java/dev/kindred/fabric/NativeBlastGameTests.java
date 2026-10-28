@@ -16,7 +16,8 @@ import net.minecraft.util.math.BlockPos;
 public final class NativeBlastGameTests implements FabricGameTest {
     private static void blast(TestContext context, boolean wall) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 900);
-        double[] predicted = {-1};
+        double[] predicted = {-1}, taken = {-1};
+        long[] setAt = {-1};
         net.minecraft.entity.decoration.EndCrystalEntity[] crystal = {null};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
@@ -35,8 +36,11 @@ public final class NativeBlastGameTests implements FabricGameTest {
                     BlockPos at = o.add(12, 2, 2);
                     player.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 90, 0);
                     player.setHealth(20);
-                    player.getHungerManager().setFoodLevel(20);
+                    // Too little food to heal by between the blast and the reading of what it took.
+                    player.getHungerManager().setFoodLevel(17);
+                    player.getHungerManager().setSaturationLevel(0);
                     player.getInventory().clear();
+                    setAt[0] = world.getTime();
                     var made = EntityType.END_CRYSTAL.create(world);
                     made.refreshPositionAndAngles(o.getX() + 2.5, o.getY() + 2, o.getZ() + 2.5, 0, 0);
                     made.setShowBottom(false);
@@ -45,19 +49,22 @@ public final class NativeBlastGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // A player who has just joined is spared all harm for three seconds; past them, and still.
+                    context.assertTrue(world.getTime() - setAt[0] >= 80 && f.player().getVelocity().horizontalLengthSquared() < 1e-6, "Settled");
                     var player = f.player();
                     var c = crystal[0];
                     predicted[0] = BlastExposure.toPlayer(BlastExposure.CRYSTAL, c.getX(), c.getY(), c.getZ(), player.getX(), player.getY(), player.getZ(),
                             PlayerRuntime.blastRays(world, player));
                     KindredMod.LOGGER.info("Blast fixture ({}): the crystal at {}, the player at {}, the blast reckoned at {}", wall ? "behind a wall" : "in the open",
                             c.getPos(), player.getPos(), predicted[0]);
+                    float health = player.getHealth();
                     c.damage(world.getDamageSources().generic(), 1.0f);
+                    // The blast's harm is done in the crystal's breaking: read at once.
+                    taken[0] = health - player.getHealth();
                 })
                 .createAndAdd(() -> {
-                    var player = f.player();
-                    double taken = 20.0 - player.getHealth();
-                    KindredMod.LOGGER.info("Blast fixture ({}): reckoned {}, taken {}", wall ? "behind a wall" : "in the open", predicted[0], taken);
-                    context.assertTrue(Math.abs(taken - predicted[0]) < 0.01, "The blast as reckoned: " + predicted[0] + " reckoned, " + taken + " taken");
+                    KindredMod.LOGGER.info("Blast fixture ({}): reckoned {}, taken {}", wall ? "behind a wall" : "in the open", predicted[0], taken[0]);
+                    context.assertTrue(Math.abs(taken[0] - predicted[0]) < 0.01, "The blast as reckoned: " + predicted[0] + " reckoned, " + taken[0] + " taken");
                     context.assertTrue(wall ? predicted[0] < 2 : predicted[0] > 5, "Where it stands matters: " + predicted[0]);
                     f.runtime.stop();
                 })

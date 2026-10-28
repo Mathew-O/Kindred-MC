@@ -272,6 +272,7 @@ final class NativePlayerSkills {
                 || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
                 || ((task instanceof NativeRowSkill || task instanceof NativePushSkill) && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
+                || (task instanceof NativeFishSkill && intent == NativePlayerBody.Intent.FISH)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)

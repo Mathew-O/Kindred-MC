@@ -90,7 +90,8 @@
       "dev.kindred.fabric.NativeEnchantGameTests",
       "dev.kindred.fabric.NativeBrewGameTests",
       "dev.kindred.fabric.NativeNetheriteGameTests",
-      "dev.kindred.fabric.NativeBlastGameTests"
+      "dev.kindred.fabric.NativeBlastGameTests",
+      "dev.kindred.fabric.NativeFishGameTests"
     ]
   },
   "depends": {

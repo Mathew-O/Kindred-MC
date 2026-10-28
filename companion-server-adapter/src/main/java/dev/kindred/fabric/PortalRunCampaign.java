@@ -1023,8 +1023,9 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": light the way - " + light.get().label();
             return light;
         }
-        // Leaving to gather: take the table and an emptied furnace along, as a player would.
-        if (TRAVEL.contains(steps.getLast().action())) {
+        // Leaving to gather: take the table and an emptied furnace along, as a player would. Not while it is to make a
+        // rod at the table to fish for food it has none of (E-05): picked up as it was put down, the rod was never made.
+        if (TRAVEL.contains(steps.getLast().action()) && !(snapshot.edibleFood() == 0 && rodMakings(player))) {
             Optional<Task> pickup = pickUpWorkstation(body, snapshot);
             if (pickup.isPresent()) {
                 progress = stageLabel(stage) + ": take workstations along - " + pickup.get().label();
@@ -1465,11 +1466,12 @@ final class PortalRunCampaign {
             case DONE -> Optional.empty();
             case COLLECT_SMELTED -> nearestWorkstation(player, Blocks.FURNACE, 16).flatMap(f -> atWorkstation(player, f,
                     new Task("native_smelt", coords(f, Map.of("action", "extract")), "Take smelted iron")));
-            case HUNT -> hunt(player);
-            // Advised food first and none in sight: out to the surface by day, then walk out and look. Not over the void:
-            // an island's animals are the ones on it.
-            case SEEK_FOOD -> !groundBelow(player) ? Optional.<Task>empty()
-                    : underground(player) ? wayUp(body, "Climb out to look for animals") : explore(body, "animals");
+            // Out of food with no animal in sight, it fishes if it can (E-05); stocking up, it hunts only.
+            case HUNT -> hunt(player).or(() -> s.edibleFood() == 0 ? fish(body) : Optional.empty());
+            // Advised food first and none in sight: fish at water close by with its rod (E-05); else out to the surface by
+            // day, then walk out and look. Not over the void: an island's animals are the ones on it.
+            case SEEK_FOOD -> fish(body).or(() -> !groundBelow(player) ? Optional.<Task>empty()
+                    : underground(player) ? wayUp(body, "Climb out to look for animals") : explore(body, "animals"));
             // Advised wood first: a tree in sight, and nothing more; looking for one is the route's own step.
             case CUT_TREES -> gather(body, WorldKnowledge.Kind.LOG, 32, "logs");
             // Stocked for the run while a teammate builds the portal: it waits, looking about (E-40a, E-33a).
@@ -4182,6 +4184,48 @@ final class PortalRunCampaign {
         PassiveEntity nearest = animals.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
         if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) return Optional.of(strike(player, nearest, "Hunt " + what));
         return Optional.of(go(nearest.getBlockPos(), 2.0, false, "Approach " + what));
+    }
+
+    /**
+     * Fishing for food (E-05), as players fish: still open water within twelve blocks, and its rod to hand (one made of
+     * two string and three sticks it holds, at a table close by or one it puts down, when it has none), to where it can
+     * cast onto the water, and a
+     * cast; empty without a rod or the makings of one, or without water.
+     */
+    Optional<Task> fish(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        int rod = -1;
+        for (int slot = 0; slot < 36 && rod < 0; slot++) if (inventory.getStack(slot).isOf(Items.FISHING_ROD)) rod = slot;
+        if (rod < 0 && !rodMakings(player)) return Optional.empty();
+        BlockPos feet = player.getBlockPos(), water = null;
+        double best = Double.MAX_VALUE;
+        for (BlockPos pos : BlockPos.iterate(feet.add(-12, -3, -12), feet.add(12, 1, 12))) {
+            var fluid = world.getFluidState(pos);
+            if (!fluid.isIn(FluidTags.WATER) || !fluid.isStill() || !world.getBlockState(pos.up()).isAir()) continue;
+            double d = feet.getSquaredDistance(pos);
+            // Not the water underfoot: a cast a few blocks out.
+            if (d < 4 || d >= best) continue;
+            best = d;
+            water = pos.toImmutable();
+        }
+        if (water == null) return Optional.empty();
+        if (rod < 0) return craftAtTable(body, "fishing_rod");
+        if (rod >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return Optional.of(new Task("native_swap", Map.of("source", String.valueOf(rod), "target", String.valueOf(free)), "Rod to hand"));
+        }
+        if (Math.sqrt(best) > 6) return Optional.of(go(water, 4.0, true, "To the water to fish"));
+        return Optional.of(new Task("native_fish", Map.of("x", String.valueOf(water.getX()), "y", String.valueOf(water.getY()),
+                "z", String.valueOf(water.getZ()), "slot", String.valueOf(rod), "seconds", "60"), "Fish for food"));
+    }
+
+    /** No fishing rod, and the two string and three sticks to make one. */
+    private static boolean rodMakings(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        return inventory.count(Items.FISHING_ROD) == 0 && inventory.count(Items.STRING) >= 2 && inventory.count(Items.STICK) >= 3;
     }
 
     /**
