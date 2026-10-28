@@ -675,7 +675,7 @@ final class BuildRunner {
         }
     }
 
-    /** How often it has walked to each drop of wool, which it lets go after a few (one that keeps drifting off). */
+    /** How often it has gone for each drop of wool, walked or waited, which it lets go after a few (one that keeps drifting off). */
     private final Map<java.util.UUID, Integer> woolWalks = new HashMap<>();
 
     /**
@@ -695,11 +695,15 @@ final class BuildRunner {
             return Optional.empty();
         }
         var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(12, 4, 12),
-                drop -> drop.isAlive() && drop.getStack().isOf(item) && woolWalks.getOrDefault(drop.getUuid(), 0) < 3 && player.canSee(drop));
+                drop -> drop.isAlive() && drop.getStack().isOf(item) && woolWalks.getOrDefault(drop.getUuid(), 0) < 6 && player.canSee(drop));
         if (!drops.isEmpty()) {
             var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
-            woolWalks.merge(drop.getUuid(), 1, Integer::sum);
             needsNote = "Picking up " + shortName(wool) + " for the rest of the build";
+            woolWalks.merge(drop.getUuid(), 1, Integer::sum);
+            // Beside it already: a moment for it, as a drop is not picked up in its first half second.
+            if (player.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox())) {
+                return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Pick up " + shortName(wool)));
+            }
             return Optional.of(PortalRunCampaign.go(drop.getBlockPos(), 0.6, false, "Pick up " + shortName(wool)));
         }
         int shears = -1;
