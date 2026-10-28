@@ -19,7 +19,12 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/** Real runtime, native food and durable accounting. Resources are fixtures, not earned survival. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that eating and other
+ * jobs use real food and count play time correctly.
+ *
+ * Technical: Real runtime, native food and durable accounting. Resources are fixtures, not earned survival.
+ */
 public final class NativePaidSkillsGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 380)
     public void nativeEatingSettlesAndSpentAllowanceSurvivesReopen(TestContext context) {

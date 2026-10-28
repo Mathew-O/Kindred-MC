@@ -10,6 +10,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that a player only finds blocks it could really see, never through walls, and stays
+ * within its search budget.
+ */
 class BlockPerceptionTest {
     private static final String LOG = "minecraft:oak_log";
     private static final String CHEST = "minecraft:chest";

@@ -17,7 +17,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Native GameTests for F-11 (limits), F-16 (modes & projects), F-20 (memories), and F-21 (journal).
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that play-time limits,
+ * modes and team projects, memories and the journal work.
+ *
+ * Technical: Native GameTests for F-11 (limits), F-16 (modes & projects), F-20 (memories), and F-21
+ * (journal).
  */
 public final class IntentionsGameTests implements FabricGameTest {
 

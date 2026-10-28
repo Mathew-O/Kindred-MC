@@ -8,6 +8,9 @@ import java.util.UUID;
 import static dev.kindred.core.TaskPreferences.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how personality nudges which job a player prefers, and that urgent jobs still win.
+ */
 class TaskPreferencesTest {
     private final Personality neutral = Personality.defaults();
     private static final Eligibility AVAILABLE = new Eligibility(true, true, true, true);

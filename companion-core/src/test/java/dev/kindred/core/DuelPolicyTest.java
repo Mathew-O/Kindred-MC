@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how an older companion decides about friendly sparring matches.
+ */
 class DuelPolicyTest {
 
     private Personality personality(int combativeness, int humor, int initiative, int caution) {

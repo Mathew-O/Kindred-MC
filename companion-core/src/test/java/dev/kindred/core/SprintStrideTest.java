@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the rhythm of sprint-jumping.
+ */
 class SprintStrideTest {
     private final SprintStride stride = new SprintStride();
 

@@ -11,7 +11,10 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Native player crafting and block placement tests qualifying E-04a and E-04b:
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player crafts from
+ * its own items, places a crafting table and uses it, just as a human would.
+ *
+ * Technical: Native player crafting and block placement tests qualifying E-04a and E-04b:
  * Authentically craft 2x2 recipes in player inventory, place crafting table into world under server edit policy,
  * craft 3x3 workstation tools (wooden pickaxe) using reachable table, verify item conservation,
  * durable action ledger verification, rejection when table is unreachable, and save/reload persistence.

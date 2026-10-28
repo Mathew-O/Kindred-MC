@@ -6,6 +6,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what a player says and does when someone remarks on one of its habits.
+ */
 class QuirkFeedbackTest {
     private static final Personality NEUTRAL = Personality.defaults();
 

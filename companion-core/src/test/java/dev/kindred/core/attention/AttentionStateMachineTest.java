@@ -6,6 +6,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks a player's alertness moving between routine, alert and fighting.
+ */
 class AttentionStateMachineTest {
     private final UUID session = UUID.randomUUID();
     private final UUID player = UUID.randomUUID();

@@ -9,6 +9,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks that a player picks the right weapon for the moment.
+ */
 class SignatureWeaponPolicyTest {
 
     @Test

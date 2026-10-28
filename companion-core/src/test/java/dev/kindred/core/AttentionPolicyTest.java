@@ -7,6 +7,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what catches a player's eye and for how long, and that danger always comes first.
+ */
 class AttentionPolicyTest {
     private static final Personality NEUTRAL = Personality.defaults();
     private static final Set<Mannerisms.Quirk> NO_QUIRKS = Set.of();

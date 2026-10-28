@@ -21,8 +21,11 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 /**
- * F-11e: native requests charged to the period F-11d chooses; a zone edit and a clock behind the last period.
- * F-11f: activity hours; a request outside them waits, and a running skill stops at their end.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that play time is counted
+ * to the right day, waits outside the allowed hours, and stops on time.
+ *
+ * Technical: F-11e: native requests charged to the period F-11d chooses; a zone edit and a clock behind the
+ * last period. F-11f: activity hours; a request outside them waits, and a running skill stops at their end.
  * F-11g: a walk or wait carried over its period's end; a recorded action stopped there.
  */
 public final class NativeAccountingGameTests implements FabricGameTest {

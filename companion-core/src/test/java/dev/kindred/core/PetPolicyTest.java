@@ -6,6 +6,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the rules for taming and keeping pets.
+ */
 class PetPolicyTest {
     private static final Personality NEUTRAL = Personality.defaults();
 

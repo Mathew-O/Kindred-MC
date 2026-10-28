@@ -7,6 +7,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks where a player is allowed to work, and that anything left unset never counts as
+ * permission.
+ */
 class WorkSetupTest {
     private static final String OVERWORLD = "minecraft:overworld";
     private final UUID id = UUID.randomUUID();

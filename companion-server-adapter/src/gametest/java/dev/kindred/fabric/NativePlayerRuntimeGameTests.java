@@ -16,7 +16,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/** Real runtime/SQLite/native players. IO fault injection controls only immutable native-save bytes. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that the main runtime
+ * starts, saves and stops AI players correctly, even when saving goes wrong.
+ *
+ * Technical: Real runtime/SQLite/native players. IO fault injection controls only immutable native-save
+ * bytes.
+ */
 public final class NativePlayerRuntimeGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
     public void runtimeCreatesThreePlayersAndReopensStoppedNativeInventories(TestContext context) {

@@ -12,7 +12,12 @@ import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
-/** Autonomous candidate selection and skill dispatch under server edit policy (F-25c2). */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player picks its
+ * own jobs and only does what the server allows.
+ *
+ * Technical: Autonomous candidate selection and skill dispatch under server edit policy (F-25c2).
+ */
 public final class NativeAutonomyGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "autonomyEat", tickLimit = 420)

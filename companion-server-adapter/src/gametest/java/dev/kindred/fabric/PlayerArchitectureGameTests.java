@@ -6,7 +6,12 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 
-/** Native command boundary tests, not autonomous survival or player-body qualification. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that commands only let
+ * people do what they are allowed to.
+ *
+ * Technical: Native command boundary tests, not autonomous survival or player-body qualification.
+ */
 public final class PlayerArchitectureGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void playerCommandsAndCompatibilityAliasShareOneTree(TestContext context) {

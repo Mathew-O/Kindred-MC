@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the permits that let a player be active for a few seconds at a time.
+ */
 class ActivityPermitTest {
     private final UUID player = UUID.randomUUID();
     private final UUID reservation = UUID.randomUUID();

@@ -6,7 +6,11 @@ import dev.kindred.core.ActionRecord;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 
-/** Shared GameTest helpers for deterministic admission IO under parallel load. */
+/**
+ * In plain terms: shared helpers for the GameTests.
+ *
+ * Technical: Shared GameTest helpers for deterministic admission IO under parallel load.
+ */
 final class NativeGameTestSupport {
     private NativeGameTestSupport() { }
 

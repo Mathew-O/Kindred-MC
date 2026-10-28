@@ -13,7 +13,10 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Acceptance GameTests for Attention-System Scheduler (F-12a):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player notices
+ * danger at once and backs off, even with little budget to spare.
+ *
+ * Technical: Acceptance GameTests for Attention-System Scheduler (F-12a):
  * 1. Immediate hazard detection triggers Alert attention status and executes autonomous hazard retreat on essential path.
  * 2. Low/zero optional budget still permits essential survival eating and hazard retreat while routine planning is deferred.
  * 3. Shared scan budget and diagnostic counters prove aggregate block scan limits across players including helper methods.

@@ -17,7 +17,10 @@ import net.minecraft.util.math.Vec3d;
 import java.util.UUID;
 
 /**
- * Native GameTests for F-07: authoritative inventory slots, equipment reflections,
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that inventories hold
+ * real items, and moving or picking them up never loses or duplicates anything.
+ *
+ * Technical: Native GameTests for F-07: authoritative inventory slots, equipment reflections,
  * item conservation during transfer, attributed pickup, and NBT serialization.
  */
 public final class InventoryGameTests implements FabricGameTest {

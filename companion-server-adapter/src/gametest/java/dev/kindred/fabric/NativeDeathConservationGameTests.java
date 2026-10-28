@@ -23,8 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * F-07b: a native player's real stacks across death and vanilla respawn. Without keepInventory every stack, with its
- * components, drops once and nothing is restored; with it, every stack comes back to its own slot and nothing drops.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player's items
+ * drop exactly once when it dies, and with keepInventory every item comes back to its own slot.
+ *
+ * Technical: F-07b: a native player's real stacks across death and vanilla respawn. Without keepInventory
+ * every stack, with its components, drops once and nothing is restored; with it, every stack comes back to
+ * its own slot and nothing drops.
  */
 public final class NativeDeathConservationGameTests implements FabricGameTest {
     private static final String KEEP = "keepInventory";

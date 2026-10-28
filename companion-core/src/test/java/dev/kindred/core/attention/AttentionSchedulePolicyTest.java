@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how often each kind of thinking runs so a player stays quick to react.
+ */
 class AttentionSchedulePolicyTest {
 
     @Test

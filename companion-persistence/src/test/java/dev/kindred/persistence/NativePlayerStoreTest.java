@@ -17,6 +17,10 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.IntStream;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that AI players and their settings are saved to and loaded from the database
+ * correctly, including after an older database is upgraded.
+ */
 class NativePlayerStoreTest {
     @TempDir Path directory;
     private final List<SqliteCompanionStore> stores = new ArrayList<>();

@@ -10,7 +10,12 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-/** Scoped work metadata does not install mining or grant server edit permission. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that giving a player a
+ * work area does not by itself let it break blocks.
+ *
+ * Technical: Scoped work metadata does not install mining or grant server edit permission.
+ */
 public final class NativeWorkScopeGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 340)
     public void nativePatchRejectsUnsafeScopeStopsWorkAndPersistsWithoutAHome(TestContext context) {

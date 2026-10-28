@@ -19,7 +19,10 @@ import net.minecraft.util.math.BlockPos;
 import java.util.UUID;
 
 /**
- * Native Fabric GameTests qualifying E-13 (Establish and maintain a home and farm):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player makes a
+ * hoe, tills by water, plants and harvests crops.
+ *
+ * Technical: Native Fabric GameTests qualifying E-13 (Establish and maintain a home and farm):
  * 1. Hoe crafting, durability accounting, and soil preparation (tilling near water under server edit policy)
  * 2. Crop sowing and mature harvest with strict replanting conservation (immediate 1-seed replant)
  * 3. Bed placement, night/thunderstorm sleeping, and respawn point anchoring

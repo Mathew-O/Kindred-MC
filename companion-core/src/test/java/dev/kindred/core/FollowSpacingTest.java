@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 import static dev.kindred.core.FollowSpacing.Motion.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how close a follower stays and when it steps aside.
+ */
 class FollowSpacingTest {
     @Test
     void smallOwnerMovementsDoNotKeepRestartingNavigation() {

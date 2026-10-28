@@ -21,9 +21,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Native contracts for bounded block perception over real chunk sections: palette prefiltering, exposure,
- * unloaded-chunk refusal and the per-tick budget. They prove what the companion can and cannot see; they do not
- * claim any gathering, mining or live client behavior.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player sees only
+ * the blocks it could really see.
+ *
+ * Technical: Native contracts for bounded block perception over real chunk sections: palette prefiltering,
+ * exposure, unloaded-chunk refusal and the per-tick budget. They prove what the companion can and cannot see;
+ * they do not claim any gathering, mining or live client behavior.
  */
 public final class PerceptionGameTests implements FabricGameTest {
     private static final String LOG = "minecraft:oak_log";

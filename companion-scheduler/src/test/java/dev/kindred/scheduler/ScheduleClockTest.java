@@ -14,6 +14,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the calendar maths for play time, including daylight saving and timezone changes.
+ */
 class ScheduleClockTest {
     private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
 

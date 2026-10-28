@@ -7,6 +7,10 @@ import java.util.UUID;
 import static dev.kindred.model.ReasoningPolicy.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks when a player may ask an AI model for advice, and that it never asks on an ordinary
+ * tick.
+ */
 class ReasoningPolicyTest {
     private final UUID companion = UUID.randomUUID();
     private final UUID epoch = UUID.randomUUID();

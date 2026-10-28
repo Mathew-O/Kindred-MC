@@ -20,7 +20,12 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.UUID;
 
-/** Native entity contracts; this does not substitute for an actual vanilla-client join test. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that the older-style body
+ * behaves as it should.
+ *
+ * Technical: Native entity contracts; this does not substitute for an actual vanilla-client join test.
+ */
 public final class CompanionGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 100)
     public void metadataWriterStartsWithinNativeServer(TestContext context) {

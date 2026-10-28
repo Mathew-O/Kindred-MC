@@ -20,7 +20,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 
-/** Fault injection holds immutable acknowledgements; the real SQLite writer performs all actual writes. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that item-moving actions
+ * are written down first and handled safely when saving fails.
+ *
+ * Technical: Fault injection holds immutable acknowledgements; the real SQLite writer performs all actual
+ * writes.
+ */
 public final class NativeActionGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
     public void heldDurableDispatchCannotEquipAfterStop(TestContext context) {

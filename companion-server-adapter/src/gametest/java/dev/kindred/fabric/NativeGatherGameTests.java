@@ -15,7 +15,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Attributable drop collection, patch containment, and checkpointed native gathering (F-08).
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player chops only
+ * in its patch and picks up only the drops it caused.
+ *
+ * Technical: Attributable drop collection, patch containment, and checkpointed native gathering (F-08).
  */
 public final class NativeGatherGameTests implements FabricGameTest {
 

@@ -16,9 +16,12 @@ import java.util.Arrays;
 import java.util.UUID;
 
 /**
- * The skin selector's server half: a skin dropped into the skins folder is put on a native body by someone allowed
- * to adjust it, kept across restarts in the choices file, and taken off again with {@code default}. The payload that
- * carries the PNG to clients survives its codec.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a skin put in the
+ * skins folder can be chosen for an AI player and is remembered after a restart.
+ *
+ * Technical: The skin selector's server half: a skin dropped into the skins folder is put on a native body by
+ * someone allowed to adjust it, kept across restarts in the choices file, and taken off again with {@code
+ * default}. The payload that carries the PNG to clients survives its codec.
  */
 public final class NativeSkinGameTests implements FabricGameTest {
     private static byte[] png(int width, int height) throws Exception {

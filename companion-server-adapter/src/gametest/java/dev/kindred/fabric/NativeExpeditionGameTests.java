@@ -19,7 +19,10 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Native Fabric GameTests qualifying E-14 (Bounded expeditions, exploration and return planning):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that trips stay within
+ * range and head home at nightfall.
+ *
+ * Technical: Native Fabric GameTests qualifying E-14 (Bounded expeditions, exploration and return planning):
  * 1. Expedition readiness and outward traversal bounded within maximum distance
  * 2. Nightfall return trigger generating urgent traversal back toward home shelter
  * 3. Inventory capacity trigger (full loot slots) initiating return to deposit

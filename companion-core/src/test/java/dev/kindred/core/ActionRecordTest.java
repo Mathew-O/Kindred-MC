@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the record kept of each item-moving action: it is written before anything happens,
+ * it goes through its steps in order, and a fault at any point never counts as success.
+ */
 class ActionRecordTest {
     private final ActionLease lease = new ActionLease(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 3, 2, 5);
     private final ActionRecord prepared = ActionRecord.prepare(UUID.randomUUID(), lease, "break_block", "oak_log at 1,64,1 v=12");

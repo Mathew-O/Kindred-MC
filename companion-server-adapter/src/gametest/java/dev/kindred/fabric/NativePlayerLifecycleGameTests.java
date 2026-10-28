@@ -21,7 +21,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/** Registered native players and native file round-trip; no human client or playthrough claim. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that AI players join,
+ * save and load back correctly.
+ *
+ * Technical: Registered native players and native file round-trip; no human client or playthrough claim.
+ */
 public final class NativePlayerLifecycleGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 100)
     public void threeNativePlayersRegisterAndWorldTicksPhysicsOnlyOnce(TestContext context) {

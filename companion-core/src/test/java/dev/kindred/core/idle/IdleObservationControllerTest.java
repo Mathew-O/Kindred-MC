@@ -8,6 +8,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks what a player does with free time when it has nothing to do.
+ */
 class IdleObservationControllerTest {
 
     @Test

@@ -6,6 +6,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static dev.kindred.core.PlayerDecisionLoop.*;
 
+/**
+ * In plain terms: checks how a player decides what to do next and when to change its mind.
+ */
 class PlayerDecisionLoopTest {
     private final PlayerIdentity id = new PlayerIdentity(UUID.randomUUID(), UUID.randomUUID(), "Alex");
     private final PlayerDecisionLoop loop = new PlayerDecisionLoop(id);

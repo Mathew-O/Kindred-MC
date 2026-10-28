@@ -21,8 +21,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Retired mob prototype retained only for historical regression fixtures; never shipped or dispatched.
- * This direct-heal/equipment approximation does not qualify native player survival (E-07/F-25b).
+ * In plain terms: an old survival prototype kept only so old tests still run. It is not part of the game.
+ *
+ * Technical: Retired mob prototype retained only for historical regression fixtures; never shipped or
+ * dispatched. This direct-heal/equipment approximation does not qualify native player survival (E-07/F-25b).
  * Historical behavior:
  * - Evaluates inventory food to consume and heal when damaged.
  * - Defends against nearby hostile monsters with equipped weapons.

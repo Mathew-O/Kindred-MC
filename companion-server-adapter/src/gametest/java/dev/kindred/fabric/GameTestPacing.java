@@ -6,7 +6,11 @@ import net.minecraft.test.TestServer;
 
 import java.util.concurrent.locks.LockSupport;
 
-/** Gives asynchronous fixture IO time to run on the otherwise unpaced GameTest server. */
+/**
+ * In plain terms: lets background saving catch up during GameTests, which otherwise run as fast as they can.
+ *
+ * Technical: Gives asynchronous fixture IO time to run on the otherwise unpaced GameTest server.
+ */
 public final class GameTestPacing implements ModInitializer {
     // Ten times faster than normal 20 TPS, while avoiding hundreds of ticks in a few milliseconds.
     private static final long MIN_TICK_NANOS = 5_000_000L;

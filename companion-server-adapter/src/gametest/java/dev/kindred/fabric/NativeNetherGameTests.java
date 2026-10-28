@@ -27,7 +27,12 @@ import net.minecraft.world.World;
 import java.util.ArrayList;
 
 /**
- * Native Fabric GameTests qualifying E-15 (Explicit Nether travel, resource trips and cross-dimension recovery):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player gathers
+ * Nether wart, builds a portal frame from its own obsidian, and keeps exactly what it had when it goes
+ * through a portal and the server restarts.
+ *
+ * Technical: Native Fabric GameTests qualifying E-15 (Explicit Nether travel, resource trips and
+ * cross-dimension recovery):
  * 1. Portal frame geometry verification and ignition with flint & steel (1 durability wear, NETHER_PORTAL block created)
  * 2. Obstructed frame / non-tool ignition rejection with 100% item conservation
  * 3. Qualified cross-dimension transit (canUsePortals, 8:1 coordinate scaling, Nether anchor waypoint recording)
