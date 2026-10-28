@@ -2,7 +2,17 @@
   "required": true,
   "package": "dev.kindred.fabric.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["BoatAuthorityMixin", "BoatPaddleMixin", "PlayerManagerMixin", "PlayerManagerSaveInvoker"],
-  "client": ["client.PlayerListEntrySkinMixin"],
-  "injectors": { "defaultRequire": 1 }
+  "mixins": [
+    "BoatAuthorityMixin",
+    "BoatPaddleMixin",
+    "PlayerManagerMixin",
+    "PlayerManagerSaveInvoker",
+    "FishingBobberAccessor"
+  ],
+  "client": [
+    "client.PlayerListEntrySkinMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

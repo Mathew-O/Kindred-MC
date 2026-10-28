@@ -89,7 +89,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART, SHEAR, ENCHANT, BREW, SMITH }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART, SHEAR, ENCHANT, BREW, SMITH, FISH }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1943,6 +1943,25 @@ final class NativePlayerBody implements BodyAdapter {
                 player.getInventory().selectedSlot = hotbarSlot;
             }
             face(surface);
+            player.interactionManager.interactItem(player, world, player.getMainHandStack(), Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Uses the fishing rod in hotbar slot {@code hotbarSlot}, looking at {@code at}, as a player's use click does (E-05):
+     * casts it there with no line out, reels it in with one.
+     */
+    boolean useRod(ActionLease lease, int hotbarSlot, Vec3d at) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || !player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.FISHING_ROD)) return false;
+        var world = player.getServerWorld();
+        return execute(lease, Intent.FISH, null, () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            if (at != null) face(at);
             player.interactionManager.interactItem(player, world, player.getMainHandStack(), Hand.MAIN_HAND);
             player.swingHand(Hand.MAIN_HAND);
         });

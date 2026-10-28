@@ -141,6 +141,9 @@ final class NativePlayerSkills {
             // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
             case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // Fishing at water with its rod (E-05).
+            case "native_fish" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("seconds"), Set.of(), Set.of(),
+                    Duration.ofSeconds(120), Duration.ofSeconds(120), 0);
             // A diamond piece upgraded to netherite at its smithing table (E-16c).
             case "native_smith" -> new SkillDescriptor(id, Set.of("x", "y", "z", "template", "slot", "material"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -204,6 +207,10 @@ final class NativePlayerSkills {
             return new NativePushSkill(body, lease, UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("seconds", "10")),
                     arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                             Integer.parseInt(arguments.get("z"))) : null);
+        }
+        if (id.equals("native_fish")) {
+            return new NativeFishSkill(body, lease, Integer.parseInt(arguments.get("slot")), new BlockPos(Integer.parseInt(arguments.get("x")),
+                    Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.getOrDefault("seconds", "60")));
         }
         if (id.equals("native_row")) {
             return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),

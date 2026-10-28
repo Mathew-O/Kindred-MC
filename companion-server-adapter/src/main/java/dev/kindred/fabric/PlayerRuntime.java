@@ -1711,6 +1711,7 @@ final class PlayerRuntime {
                     || ("native_boat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.ATTACK))
                     || (("native_row".equals(entry.skillId) || "native_push".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                    || ("native_fish".equals(entry.skillId) && intent == NativePlayerBody.Intent.FISH)
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -1776,6 +1777,15 @@ final class PlayerRuntime {
     }
 
     static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos) {
+        return findBestEscapeDirection(player, threatPos, 0);
+    }
+
+    /**
+     * As {@link #findBestEscapeDirection(ServerPlayerEntity, Vec3d)}; with a blast of {@code power} about to go off at
+     * {@code threatPos} (a creeper's 3, a charged one's 6), the step where the blast would do least, by the blocks between
+     * as well as the distance (E-39i, {@link dev.kindred.core.tactics.BlastExposure}), the farther where two are alike.
+     */
+    static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos, double power) {
         var world = player.getServerWorld();
         BlockPos feetPos = player.getBlockPos();
         String[] dirs = new String[]{"north", "south", "east", "west"};
@@ -1799,12 +1809,23 @@ final class PlayerRuntime {
             if (!world.isSpaceEmpty(player, box)) continue;
 
             double distSq = threatPos == null ? 1.0 : Vec3d.ofBottomCenter(targetFeet).squaredDistanceTo(threatPos);
-            if (distSq > maxDistSq) {
-                maxDistSq = distSq;
+            // Less blast harm counts first, then distance: a step behind a block over a step merely away.
+            double harm = threatPos == null || power <= 0 ? 0 : dev.kindred.core.tactics.BlastExposure.toPlayer(power, threatPos.x, threatPos.y, threatPos.z,
+                    targetFeet.getX() + 0.5, targetFeet.getY(), targetFeet.getZ() + 0.5, blastRays(world, player));
+            double score = distSq - harm * 1000.0;
+            if (score > maxDistSq) {
+                maxDistSq = score;
                 bestDir = dirs[d];
             }
         }
         return bestDir;
+    }
+
+    /** Which rays a block's collision shape stops in {@code world}, as an explosion's exposure is reckoned (E-39i). */
+    static dev.kindred.core.tactics.BlastExposure.Rays blastRays(ServerWorld world, net.minecraft.entity.Entity entity) {
+        return (fx, fy, fz, tx, ty, tz) -> world.raycast(new net.minecraft.world.RaycastContext(new Vec3d(fx, fy, fz), new Vec3d(tx, ty, tz),
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, entity)).getType()
+                != net.minecraft.util.hit.HitResult.Type.MISS;
     }
 
     private boolean isWaterNearby(ServerWorld world, BlockPos pos) {
@@ -2372,7 +2393,8 @@ final class PlayerRuntime {
                 if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
                     var creeperEntity = world.getEntity(mob.entityId());
                     Vec3d threatPos = creeperEntity != null ? creeperEntity.getPos() : null;
-                    String escapeDir = findBestEscapeDirection(player, threatPos);
+                    double power = creeperEntity instanceof net.minecraft.entity.mob.CreeperEntity creeper && creeper.shouldRenderOverlay() ? 6 : 3;
+                    String escapeDir = findBestEscapeDirection(player, threatPos, power);
                     if (escapeDir != null) {
                         UUID taskId = UUID.nameUUIDFromBytes(("creeper_retreat:" + entry.data.id() + ":" + mob.entityId() + ":" + escapeDir).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
@@ -4378,6 +4400,8 @@ final class PlayerRuntime {
             var ranch = entry.ranch;
             var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
                     net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
+            // No animal in sight: fish at water close by with a rod it holds, before it walks out to look (E-05).
+            if (found.isEmpty()) found = fishFor(body);
             if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
             if (found.isEmpty()) {
                 entry.gettingFood = false;
@@ -9934,6 +9958,39 @@ final class PlayerRuntime {
         }
         return List.of(new NativeTaskCandidate(task, "native_smith", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
                 "z", String.valueOf(table.getZ()), "template", String.valueOf(template), "slot", String.valueOf(upgrade.slot()), "material", String.valueOf(ingot))));
+    }
+
+    /**
+     * Fishing for food (E-05), as players fish: its rod to hand, to still open water within twelve blocks, and from where
+     * it can cast onto it, a cast; empty without a rod or water.
+     */
+    private static Optional<PortalRunCampaign.Task> fishFor(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        int rod = -1;
+        for (int slot = 0; slot < 36 && rod < 0; slot++) if (inventory.getStack(slot).isOf(Items.FISHING_ROD)) rod = slot;
+        if (rod < 0) return Optional.empty();
+        BlockPos feet = player.getBlockPos(), water = null;
+        double best = Double.MAX_VALUE;
+        for (BlockPos pos : BlockPos.iterate(feet.add(-12, -3, -12), feet.add(12, 1, 12))) {
+            var fluid = world.getFluidState(pos);
+            if (!fluid.isIn(FluidTags.WATER) || !fluid.isStill() || !world.getBlockState(pos.up()).isAir()) continue;
+            double d = feet.getSquaredDistance(pos);
+            // Not the water underfoot: a cast a few blocks out.
+            if (d < 4 || d >= best) continue;
+            best = d;
+            water = pos.toImmutable();
+        }
+        if (water == null) return Optional.empty();
+        if (rod >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return Optional.of(new PortalRunCampaign.Task("native_swap", Map.of("source", String.valueOf(rod), "target", String.valueOf(free)), "Rod to hand"));
+        }
+        if (Math.sqrt(best) > 6) return Optional.of(PortalRunCampaign.go(water, 4.0, true, "To the water to fish"));
+        return Optional.of(new PortalRunCampaign.Task("native_fish", Map.of("x", String.valueOf(water.getX()), "y", String.valueOf(water.getY()),
+                "z", String.valueOf(water.getZ()), "slot", String.valueOf(rod), "seconds", "60"), "Fish for food"));
     }
 
     /** A step of one of its routines (E-16), its id the same for as long as the step is: {@code key} says which, {@code record} keeps it. */
