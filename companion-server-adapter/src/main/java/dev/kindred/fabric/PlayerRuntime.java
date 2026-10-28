@@ -5859,7 +5859,10 @@ final class PlayerRuntime {
         }
         // A step of bringing a villager home done, the next one planned from what it did; refused, counted (E-45e).
         if (entry.bring != null && state != SkillRunner.State.RUNNING && finishedTaskId != null && entry.bring.taskIds.contains(finishedTaskId)) {
-            if ("native_push".equals(entry.skillId)) entry.bring.pushes++;
+            if ("native_push".equals(entry.skillId)) {
+                entry.bring.pushes++;
+                KindredMod.LOGGER.info("{} bringing: a push ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
+            }
             if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
@@ -7570,6 +7573,9 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Where it last walked to pick up what it took up, and the places it could not get to. */
+        BlockPos lastPickup;
+        final Set<BlockPos> unreached = new HashSet<>();
         long since;
         String failure;
         final Set<UUID> taskIds = new HashSet<>();
@@ -7781,7 +7787,11 @@ final class PlayerRuntime {
                 }
                 if (b.pushes >= 4) return giveUp(entry, body, "The cart wouldn't take the " + b.noun + " up.");
                 // The cart rolled on past and stopped empty: back to its place, for another push.
-                if (!cart.getBlockPos().equals(b.cart)) return giveUp(entry, body, "The cart rolled past the " + b.noun + " without it.");
+                if (!cart.getBlockPos().equals(b.cart)) {
+                    KindredMod.LOGGER.info("{} bringing: the cart at {} rolled past the {} at {} (riding {}, {} pushes); the line from {}", entry.data.displayName(),
+                            cart.getPos(), b.noun, villager.getPos(), villager.getVehicle(), b.pushes, b.cart.toShortString());
+                    return giveUp(entry, body, "The cart rolled past the " + b.noun + " without it.");
+                }
                 if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) > 0.25) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "behind:" + b.pushes), "native_goto", Map.of("x", String.valueOf(b.push.getX()),
                             "y", String.valueOf(b.push.getY()), "z", String.valueOf(b.push.getZ()), "range", "0", "centre", "true")));
@@ -7969,11 +7979,18 @@ final class PlayerRuntime {
                     for (var at : b.rails) box = box.union(new net.minecraft.util.math.Box(at));
                     for (var at : b.laid) box = box.union(new net.minecraft.util.math.Box(at));
                     for (var at : b.bridged) box = box.union(new net.minecraft.util.math.Box(at));
+                    // One it could not walk to (in a cell shut since, say) left where it lies, not counted against the bring.
+                    if (b.failed > 0 && b.lastPickup != null) {
+                        b.unreached.add(b.lastPickup);
+                        b.failed = 0;
+                    }
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box.expand(4, 2, 4),
-                            item -> item.isAlive() && (item.getStack().isOf(Items.RAIL) || isShutterItem(item.getStack())));
+                            item -> item.isAlive() && !b.unreached.contains(item.getBlockPos()) && (item.getStack().isOf(Items.RAIL) || isShutterItem(item.getStack())));
                     if (!lying.isEmpty() && b.pickups++ < 40) {
-                        var drop = lying.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow().getBlockPos();
-                        KindredMod.LOGGER.info("{} bringing: picking up what it took up, at {}", entry.data.displayName(), drop.toShortString());
+                        var item = lying.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+                        var drop = item.getBlockPos();
+                        b.lastPickup = drop;
+                        KindredMod.LOGGER.info("{} bringing: picking up what it took up ({}), at {}", entry.data.displayName(), item.getStack(), drop.toShortString());
                         return List.of(new NativeTaskCandidate(bringTask(entry, "pick up:" + drop.asLong()), "native_goto", Map.of("x", String.valueOf(drop.getX()),
                                 "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()), "range", "0.5", "partial", "true")));
                     }
