@@ -49,8 +49,8 @@ public final class SignatureWeaponPolicy {
             return Optional.empty();
         }
 
-        boolean isVesp = CanonicalRoster.VESP_NAME.equalsIgnoreCase(ctx.playerName());
-        boolean isSol = CanonicalRoster.SOL_NAME.equalsIgnoreCase(ctx.playerName());
+        boolean isEcho = CanonicalRoster.ECHO.answersTo(ctx.playerName());
+        boolean isSol = CanonicalRoster.SOL.answersTo(ctx.playerName());
 
         WeaponProfile best = null;
         double bestScore = Double.NEGATIVE_INFINITY;
@@ -59,7 +59,7 @@ public final class SignatureWeaponPolicy {
             if (wp.durability() <= 2) {
                 continue;
             }
-            double score = scoreWeapon(wp, ctx, isVesp, isSol);
+            double score = scoreWeapon(wp, ctx, isEcho, isSol);
             if (score > bestScore) {
                 bestScore = score;
                 best = wp;
@@ -69,7 +69,7 @@ public final class SignatureWeaponPolicy {
     }
 
     /** How good one weapon is right now, higher is better. */
-    private static double scoreWeapon(WeaponProfile wp, CombatContext ctx, boolean isVesp, boolean isSol) {
+    private static double scoreWeapon(WeaponProfile wp, CombatContext ctx, boolean isEcho, boolean isSol) {
         String id = wp.normalizedItemId();
         boolean isTrident = wp.isTrident();
         boolean isMace = wp.isMace();
@@ -118,12 +118,12 @@ public final class SignatureWeaponPolicy {
 
             if (ctx.distanceToTarget() <= 3.5) {
                 double crowdPenalty = (ctx.nearbyHostileCount() >= 3 && !ctx.targetTouchingWaterOrRain()) ? -5.0 : 0.0;
-                score = (wp.baseDamage() + wetBonus) * wp.attackSpeed() + (isVesp ? 12.0 : 3.0) + crowdPenalty;
+                score = (wp.baseDamage() + wetBonus) * wp.attackSpeed() + (isEcho ? 12.0 : 3.0) + crowdPenalty;
             } else if (ctx.distanceToTarget() <= 20.0) {
                 if (riptide > 0 && ctx.playerTouchingWaterOrRain()) {
-                    score = 32.0 + (isVesp ? 15.0 : 5.0);
+                    score = 32.0 + (isEcho ? 15.0 : 5.0);
                 } else if (loyalty > 0 && !ctx.overVoidOrLava()) {
-                    score = 24.0 + wetBonus + (isVesp ? 14.0 : 4.0);
+                    score = 24.0 + wetBonus + (isEcho ? 14.0 : 4.0);
                 } else {
                     score = -100.0;
                 }
@@ -132,7 +132,7 @@ public final class SignatureWeaponPolicy {
 
         if (isBow) {
             if (ctx.distanceToTarget() > 4.5 && ctx.distanceToTarget() <= 32.0) {
-                score = 21.0 + wp.enchantmentLevel("power") * 2.5 + (isVesp ? 6.0 : 10.0);
+                score = 21.0 + wp.enchantmentLevel("power") * 2.5 + (isEcho ? 6.0 : 10.0);
             } else {
                 score = 2.0;
             }
@@ -143,7 +143,7 @@ public final class SignatureWeaponPolicy {
                 double crowdBonus = ctx.nearbyHostileCount() >= 3
                         ? 8.0 + wp.enchantmentLevel("sweeping_edge") * 3.0
                         : 0.0;
-                score = dps + crowdBonus + (!isVesp && !isSol ? 10.0 : 6.0);
+                score = dps + crowdBonus + (!isEcho && !isSol ? 10.0 : 6.0);
             } else {
                 score = 4.0;
             }

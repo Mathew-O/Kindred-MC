@@ -248,6 +248,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] E-10 — Optional client profile, project and journal screens.
 - [x] E-10a — K-key AI player panel and roster skins. Completed 2026-10-20; [evidence](evidence/E-10a.md).
 - [x] E-10b — Skin selector from a skins folder. Completed 2026-10-21; [evidence](evidence/E-10b.md).
+- [x] E-10c — The third starter renamed from Vesp to Echo; a player saved as Vesp is still Echo, keeping its body, items and skin. Completed 2026-10-28; [evidence](evidence/E-10c.md).
 - [ ] E-11 — Shared projects and AI-player task assignments. Recorded complete 2026-10-18; reopened 2026-10-24: nothing in play creates a shared project yet; changes to stored projects are now saved as they happen, and an uncertain action holds its task through restart; [evidence](evidence/E-11.md).
 - [x] E-12 — Personal milestone graph and standing progression policy. Completed 2026-10-18; [evidence](evidence/E-12.md).
 - [x] E-13 — Establish and maintain a home and farm. Completed 2026-10-18; [evidence](evidence/E-13.md). Corrected 2026-10-20: the original harvest created its drops directly; harvest now breaks the crop with vanilla mining and collects the loot-table drops, and `NativeFarmGameTests` pass on that path.

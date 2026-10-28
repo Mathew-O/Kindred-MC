@@ -89,13 +89,13 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
 
     private ItemStack decorativeStack(int slot) {
         if (selectedBotId == null) {
-            return labeled(Items.GRAY_STAINED_GLASS_PANE, "No AI player connected", List.of("Spawn Kindred, Sol, or Vesp first."));
+            return labeled(Items.GRAY_STAINED_GLASS_PANE, "No AI player connected", List.of("Spawn Kindred, Sol, or Echo first."));
         }
         var settings = runtime.runtimeSettings(selectedBotId);
         return switch (slot) {
             case 2 -> rosterStack(CanonicalRoster.KINDRED_NAME, settings, slot);
             case 4 -> rosterStack(CanonicalRoster.SOL_NAME, settings, slot);
-            case 6 -> rosterStack(CanonicalRoster.VESP_NAME, settings, slot);
+            case 6 -> rosterStack(CanonicalRoster.ECHO_NAME, settings, slot);
             case SLOT_SPEEDRUN -> toggleStack(
                     settings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT,
                     Items.CLOCK,

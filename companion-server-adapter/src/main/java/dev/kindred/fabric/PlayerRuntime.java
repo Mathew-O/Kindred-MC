@@ -12609,15 +12609,15 @@ final class PlayerRuntime {
     }
 
     Optional<UUID> canonicalBotIdForControlSlot(int slot) {
-        String name = switch (slot) {
-            case 2 -> CanonicalRoster.KINDRED_NAME;
-            case 4 -> CanonicalRoster.SOL_NAME;
-            case 6 -> CanonicalRoster.VESP_NAME;
+        CanonicalRoster.RosterPreset preset = switch (slot) {
+            case 2 -> CanonicalRoster.KINDRED;
+            case 4 -> CanonicalRoster.SOL;
+            case 6 -> CanonicalRoster.ECHO;
             default -> null;
         };
-        if (name == null) return Optional.empty();
+        if (preset == null) return Optional.empty();
         for (Entry entry : entries.values()) {
-            if (name.equalsIgnoreCase(entry.data.displayName()) && entry.nativeBody != null && entry.nativeBody.connected()) {
+            if (preset.answersTo(entry.data.displayName()) && entry.nativeBody != null && entry.nativeBody.connected()) {
                 return Optional.of(entry.data.id());
             }
         }
@@ -12980,22 +12980,22 @@ final class PlayerRuntime {
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         if (specificName != null && !specificName.isBlank()) {
             var preset = dev.kindred.core.CanonicalRoster.TRIO.stream()
-                    .filter(p -> p.name().equalsIgnoreCase(specificName.trim()))
+                    .filter(p -> p.answersTo(specificName))
                     .findFirst()
                     .orElse(null);
             if (preset == null) {
-                return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Vesp.");
+                return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Echo.");
             }
             // One player of each name, as with the whole roster: a second "Kindred" would be another player with the
             // same name (a staged run asked for one while the first was alive in the Overworld).
-            // A saved one not in the world is reconnected (main's 4cb2b33).
-            var existing = rosterEntry(preset.name());
+            // A saved one not in the world is reconnected (main's 4cb2b33), under any name it had (E-10c).
+            var existing = rosterEntry(preset);
             if (existing != null) {
                 if (existing.nativeBody != null && existing.nativeBody.connected()) {
-                    feedback(source, preset.name() + " is already active in the world.");
+                    feedback(source, existing.data.displayName() + " is already active in the world.");
                     return 1;
                 }
-                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                feedback(source, "Reconnecting saved " + existing.data.displayName() + "...");
                 connectNative(source, existing, false);
                 return 1;
             }
@@ -13003,24 +13003,25 @@ final class PlayerRuntime {
         }
         int spawned = 0;
         for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
-            var existing = rosterEntry(preset.name());
+            var existing = rosterEntry(preset);
             if (existing == null) {
                 createNative(source, preset.name());
                 spawned++;
             } else if (existing.nativeBody == null || !existing.nativeBody.connected()) {
-                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                feedback(source, "Reconnecting saved " + existing.data.displayName() + "...");
                 connectNative(source, existing, false);
                 spawned++;
             }
         }
         if (spawned == 0) {
-            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already active in the world.");
+            feedback(source, "All canonical players (Kindred, Sol, Echo) are already active in the world.");
         }
         return 1;
     }
 
-    private Entry rosterEntry(String name) {
-        return entries.values().stream().filter(e -> e.data.displayName().equalsIgnoreCase(name)
+    /** The saved player a starter is, under its name now or one it had before (E-10c: a world's Vesp is Echo). */
+    private Entry rosterEntry(CanonicalRoster.RosterPreset preset) {
+        return entries.values().stream().filter(e -> preset.answersTo(e.data.displayName())
                 && e.snapshot().lifecycle() != LifecycleState.REMOVED).findFirst().orElse(null);
     }
 

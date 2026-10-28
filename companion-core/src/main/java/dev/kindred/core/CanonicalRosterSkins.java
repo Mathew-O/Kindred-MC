@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * In plain terms: links Kindred, Sol and Vesp to their own skins, which ship inside the mod. Players running
+ * In plain terms: links Kindred, Sol and Echo to their own skins, which ship inside the mod. Players running
  * the Kindred client mod see these skins on the AI players.
  *
  * Technical: The canonical trio's own skins. The PNGs ship inside the mod; the optional client mod renders
@@ -21,22 +21,25 @@ public final class CanonicalRosterSkins {
 
     public static final SkinBinding KINDRED = new SkinBinding("kindred", true, "textures/entity/roster/kindred.png");
     public static final SkinBinding SOL = new SkinBinding("sol", true, "textures/entity/roster/sol.png");
-    public static final SkinBinding VESP = new SkinBinding("vesp", true, "textures/entity/roster/vesp.png");
+    /**
+     * Echo's skin. Its key and image keep Echo's former name, Vesp, so skin settings already saved under that key
+     * (signed textures, profile markers) still match.
+     */
+    public static final SkinBinding ECHO = new SkinBinding("vesp", true, "textures/entity/roster/vesp.png");
 
-    /** The built-in skin for a player name (Kindred, Sol or Vesp), if it is one of them. */
+    /** The built-in skin for a player name (Kindred, Sol or Echo, or Echo's former name), if it is one of them. */
     public static Optional<SkinBinding> forDisplayName(String displayName) {
         if (displayName == null || displayName.isBlank()) {
             return Optional.empty();
         }
-        String key = displayName.trim().toLowerCase(Locale.ROOT);
-        if (CanonicalRoster.KINDRED_NAME.toLowerCase(Locale.ROOT).equals(key)) {
+        if (CanonicalRoster.KINDRED.answersTo(displayName)) {
             return Optional.of(KINDRED);
         }
-        if (CanonicalRoster.SOL_NAME.toLowerCase(Locale.ROOT).equals(key)) {
+        if (CanonicalRoster.SOL.answersTo(displayName)) {
             return Optional.of(SOL);
         }
-        if (CanonicalRoster.VESP_NAME.toLowerCase(Locale.ROOT).equals(key)) {
-            return Optional.of(VESP);
+        if (CanonicalRoster.ECHO.answersTo(displayName)) {
+            return Optional.of(ECHO);
         }
         return Optional.empty();
     }
@@ -47,7 +50,7 @@ public final class CanonicalRosterSkins {
         return switch (key.trim().toLowerCase(Locale.ROOT)) {
             case "kindred" -> Optional.of(KINDRED);
             case "sol" -> Optional.of(SOL);
-            case "vesp" -> Optional.of(VESP);
+            case "vesp", "echo" -> Optional.of(ECHO);
             default -> Optional.empty();
         };
     }

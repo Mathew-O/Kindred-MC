@@ -3,6 +3,8 @@
 
 Version 1.0 · 18 October 2026
 
+> **Note (28 October 2026):** the third starter, Vesp, is now called **Echo** ([E-10c](evidence/E-10c.md)). This guide keeps the name it was written with; in the code, `VESP_NAME` is now `ECHO_NAME`, and a player saved as Vesp is still Echo.
+
 This engineering guide translates the post-`E-11`/`E-12`/`E-13`/`E-07c` technical audit and [Minecraft Wiki (Java Edition 1.21.1)](https://minecraft.wiki/) mechanics review into **self-contained, step-by-step implementation blueprints**. Each blueprint is written so an implementing agent can execute the change safely without guessing class names, method signatures, thread boundaries, or conservation invariants.
 
 ---

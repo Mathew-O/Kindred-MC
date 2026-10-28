@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Kindred MC: Kindred, Sol and Vesp standing on a grass block under a blue sky" width="100%">
+  <img src="assets/banner.png" alt="Kindred MC" width="100%">
 </p>
 
 <p align="center">
-  <b>Three AI players who play Minecraft survival like real players.</b><br>
-  They punch trees, craft tools, mine, smelt, build and fight, and earn every block on the way to the Ender Dragon.
+  <b>Make a Minecraft player of your own.</b><br>
+  It joins your server like a real person and plays survival by your rules: punching trees, crafting, mining, building and fighting its way to the Ender Dragon.
 </p>
 
 <p align="center">
@@ -18,45 +18,49 @@
 
 ## 🎮 What is this?
 
-**Kindred MC** is a mod for Minecraft Java servers. It adds AI players that join your world like real people: they show up in the player list, have their own skins and inventories, get hungry, take fall damage and respawn when they die.
+**Kindred MC** is a mod for Minecraft Java servers. It lets you add a player of your own to your world. Your player shows up in the player list, has its own skin and inventory, gets hungry, takes fall damage and respawns when it dies.
 
-**No cheats. Ever.** They don't get free items, teleport or see through walls. Everything they have, they found, mined, crafted or smelted themselves, by the same rules you play by.
+**No cheats. Ever.** It doesn't get free items, teleport or see through walls. Everything it has, it found, mined, crafted or smelted itself, by the same rules you play by.
 
-The big goal: **three AI players start with empty inventories and beat the Ender Dragon together**, while you play alongside them or just watch.
-
----
-
-## 👋 Meet the crew
-
-<table>
-  <tr>
-    <td align="center" width="33%"><img src="assets/faces/kindred-full.png" alt="Kindred" height="160"><br><b>Kindred</b><br><i>Heart &amp; Homestead Anchor</i></td>
-    <td align="center" width="33%"><img src="assets/faces/sol-full.png" alt="Sol" height="160"><br><b>Sol</b><br><i>Solar Vanguard &amp; Expedition Pioneer</i></td>
-    <td align="center" width="33%"><img src="assets/faces/vesp-full.png" alt="Vesp" height="160"><br><b>Vesp</b><br><i>Evening Star Artisan &amp; Deep Scholar</i></td>
-  </tr>
-  <tr>
-    <td>The homebody. The most helpful and chatty of the three, happiest farming and keeping the base going.</td>
-    <td>The bold one. First to set off, last to back down from a fight, and not big on caution.</td>
-    <td>The deep thinker. The most curious and the best miner, and careful about it.</td>
-  </tr>
-</table>
-
-Their personalities are numbers in the code (initiative, caution, curiosity, helpfulness, farming, mining and so on), and they nudge what each player prefers to do. You can give them other skins too (see the cheat sheet below).
+The big goal: **start with an empty inventory and beat the Ender Dragon**, while you play alongside it or just watch.
 
 ---
 
-## ⛏️ What they can do
+## 🛠️ Make your own
+
+Give it a name, dress it in any skin you like and shape its personality. In game, as an operator:
+
+```text
+/aiplayer native create Ada                 make a player called Ada; it appears beside you
+/aiplayer skin <skin> Ada                   dress Ada in a skin from the server's config/kindred/skins folder
+/aiplayer personality curiosity 90 Ada      tune a trait from 0 to 100
+```
+
+The traits are **initiative, caution, curiosity, sociability, humor, combativeness, helpfulness, farming** and **mining**. Right now they change how your player moves and looks around, how it chats and the names it gives its gear. More of its choices will follow them as the project grows.
+
+A server can have up to three of these players at once.
+
+### ⚡ In a hurry? Use a starter
+
+Three ready-made players come with the mod, each with its own name and skin: **Kindred**, **Sol** and **Echo**. Spawn one and get going:
+
+```text
+/aiplayer roster spawn Kindred
+```
+
+---
+
+## ⛏️ What it can do
 
 > 🚧 **Work in progress.** Most of this works in the automated tests and in test worlds, and is still being proven in long real games. Use a test world and keep backups.
 
-- 🪵 **Start from nothing:** logs, a crafting table and wooden tools, then stone, then iron smelted in their own furnace, then diamonds.
+- 🪵 **Start from nothing:** logs, a crafting table and wooden tools, then stone, then iron smelted in its own furnace, then diamonds.
 - 🔥 **Get to the Nether:** obsidian made from lava and water, flint and steel, and a lit portal, all earned.
-- 🟣 **Head for the End:** blaze rods, ender pearls and eyes of ender. They throw the eyes to triangulate and dig down to the stronghold.
-- 🐉 **Fight the dragon:** shoot the crystals with their own bow, open the caged ones and fight the dragon at its perch. This only happens if the server owner allows it.
-- 🏠 **Build:** huts, cabins, houses, manors, walled keeps, farms with fields, animal ranches and villager trading halls, all from blocks they gathered.
-- 🍖 **Look after themselves:** eat when hungry, sleep at night, run from creepers and lava, break long falls with a water bucket, and go back for their stuff after dying.
+- 🟣 **Head for the End:** blaze rods, ender pearls and eyes of ender. It throws the eyes to triangulate and digs down to the stronghold.
+- 🐉 **Fight the dragon:** shoot the crystals with its own bow, open the caged ones and fight the dragon at its perch. This only happens if the server owner allows it.
+- 🏠 **Build:** huts, cabins, houses, manors, walled keeps, farms with fields, animal ranches and villager trading halls, all from blocks it gathered.
+- 🍖 **Look after itself:** eat when hungry, sleep at night, run from creepers and lava, break long falls with a water bucket, and go back for its stuff after dying.
 - ⚔️ **Play games with you:** duels, speedrun races, manhunts and build battles.
-- 🤖 **Optional AI advisor:** plug in a Claude or OpenAI key for smarter planning on long goals. It's off by default, and everything above works without it.
 
 ---
 
@@ -64,28 +68,28 @@ Their personalities are numbers in the code (initiative, caution, curiosity, hel
 
 | Mode | The idea |
 | --- | --- |
-| **Co-op Survival** | Play a normal survival world with them: bases that grow, farms, enchanting, and boss fights when you're ready. |
-| **Manhunt** | Runners race to beat the game while hunters gear up and chase them. Humans and AIs on either side. |
+| **Co-op Survival** | Play a normal survival world together: bases that grow, farms, enchanting, and boss fights when you're ready. |
+| **Manhunt** | Runners race to beat the game while hunters gear up and chase them. People and players you made can be on either side. |
 | **Speedrun** | A random seed, and a race to the dragon using the tricks real speedrunners use. |
 | **Builder** | A creative build battle on a random theme, judged by votes, minigame-server style. |
 | **Factions** *(optional)* | Everyone for themselves: hidden bunkers, walled bases, scouting, and only players who joined are fair game. |
 
 ---
 
-## 🚀 Quick start (for server owners)
+## 🚀 Install (for server owners)
 
 There's no download yet, so you build the mod yourself (it takes a couple of minutes):
 
 1. **Get the tools:** [Java 21](https://adoptium.net/) and a Minecraft **1.21.1** server running **Fabric Loader 0.19.5** with **Fabric API 0.116.17+1.21.1**.
 2. **Build it:** in this folder, run `./gradlew build` (on Windows: `gradlew.bat build`).
 3. **Install it:** copy `companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar` into your server's `mods` folder and start the server.
-4. **Optional:** put the same JAR in your own game's `mods` folder too. That adds the **K** menu and lets you see the crew's skins. The mod is built so friends with plain vanilla Minecraft can join too (that part is still being tested).
+4. **Optional:** put the same JAR in your own game's `mods` folder too. That adds the **K** menu and shows your players' skins. The mod is built so friends with plain vanilla Minecraft can join too (that part is still being tested).
 5. **Say hi:** in game, as an operator:
 
 ```text
-/aiplayer edits on                  let AI players break and place blocks (off until you say so)
-/aiplayer roster spawn Kindred      spawn Kindred next to you
-/aiplayer goal nether Kindred       watch Kindred earn its way to a lit Nether portal
+/aiplayer edits on                  let your players break and place blocks (off until you say so)
+/aiplayer native create Ada         make your player
+/aiplayer goal nether Ada           watch Ada earn its way to a lit Nether portal
 ```
 
 > 💾 This is a development build. Use a world you don't mind losing, and back up your saves.
@@ -94,22 +98,24 @@ There's no download yet, so you build the mod yourself (it takes a couple of min
 
 ## ⌨️ Cheat sheet
 
-Press **K** in game (with the mod on your client) to open the AI player menu, or use commands. `[bot]` means you can name a player (Kindred, Sol or Vesp); leave it out if there's only one.
+Press **K** in game (with the mod on your client) to open the player menu, or use commands. `[player]` means you can name one; leave it out if there's only one.
 
 | Command | What it does |
 | --- | --- |
-| `/aiplayer roster spawn <name>` | Spawn Kindred, Sol or Vesp beside you |
-| `/aiplayer edits on` / `off` | Allow or stop all AI block breaking and placing |
-| `/aiplayer goal nether [bot]` | Earn a lit Nether portal from scratch |
-| `/aiplayer goal end [bot]` | Go on to find the End portal |
-| `/aiplayer dragonfight on` then `/aiplayer goal dragon [bot]` | Allow the dragon fight, then go for it |
-| `/aiplayer goal none [bot]` | Drop the current goal |
-| `/aiplayer build cabin <x y z> [bot]` | Build a cabin there (also `hut`, `house`, `manor`, `keep`) |
-| `/aiplayer ranch cow <x y z> [bot]` | Build a pen and breed a pair of cows (or `sheep`, `pig`, `chicken`) |
+| `/aiplayer native create <name>` | Make a player of your own beside you |
+| `/aiplayer roster spawn <name>` | Spawn a starter: Kindred, Sol or Echo |
+| `/aiplayer skin <skin> [player]` | Dress a player in a skin from `config/kindred/skins` |
+| `/aiplayer personality <trait> <0-100> [player]` | Tune one personality trait |
+| `/aiplayer edits on` / `off` | Allow or stop all block breaking and placing by your players |
+| `/aiplayer goal nether [player]` | Earn a lit Nether portal from scratch |
+| `/aiplayer goal end [player]` | Go on to find the End portal |
+| `/aiplayer dragonfight on` then `/aiplayer goal dragon [player]` | Allow the dragon fight, then go for it |
+| `/aiplayer goal none [player]` | Drop the current goal |
+| `/aiplayer build cabin <x y z> [player]` | Build a cabin there (also `hut`, `house`, `manor`, `keep`) |
+| `/aiplayer ranch cow <x y z> [player]` | Build a pen and breed a pair of cows (or `sheep`, `pig`, `chicken`) |
 | `/aiplayer match duel <first> <second>` | Set up a duel (also `speedrun`, `manhunt`, `build`) |
-| `/aiplayer skin <name> [bot]` | Dress a player in a skin from `config/kindred/skins` |
-| `/aiplayer limit cap <hours> [bot]` | How many hours a day a player may be active |
-| `/aiplayer limit window 18.00 23.00 [bot]` | Only let a player be active between those hours |
+| `/aiplayer limit cap <hours> [player]` | How many hours a day a player may be active |
+| `/aiplayer limit window 18.00 23.00 [player]` | Only let a player be active between those hours |
 
 The full list, with every option, is in the [operator guide](docs/operator-guide.md).
 
@@ -117,11 +123,12 @@ The full list, with every option, is in the [operator guide](docs/operator-guide
 
 ## 🧠 How it works (no jargon)
 
-- **Real players, not mobs.** Each AI joins the server as an actual player. Same hunger, same mining speed, same tool wear, same everything.
-- **A brain with a to-do list.** Each player keeps one list of things it could do and picks the most important: staying alive first (food, sleep, escaping danger), then its goal, then building.
+- **A real player, not a mob.** Your player joins the server as an actual player. Same hunger, same mining speed, same tool wear, same everything.
+- **A to-do list.** It keeps one list of things it could do and picks the most important: staying alive first (food, sleep, escaping danger), then its goal, then building.
 - **Plans from what it has seen.** It only knows about the ores, trees and structures it has actually spotted, like you.
 - **A notebook for every important action.** Before it breaks, crafts or moves items, the mod writes down what it's about to do. If the server crashes halfway, nothing gets duplicated and nothing silently vanishes.
-- **Off-switches everywhere.** Server owners decide whether AIs may edit the world, fight the dragon, build their own bases, how long they play each day and at what hours.
+- **Off-switches everywhere.** Server owners decide whether players may edit the world, fight the dragon or build their own bases, how long they play each day and at what hours.
+- **Runs on your server.** Everything above works on its own. A server owner can optionally plug in a Claude or OpenAI key for extra planning advice on long goals; it's off by default.
 
 New here? The [**start-here guide**](docs/README.md) explains the project, the folders and the words we use, in plain language.
 
@@ -135,10 +142,10 @@ New here? The [**start-here guide**](docs/README.md) explains the project, the f
 | [`companion-server-adapter/`](companion-server-adapter) | ✋ **The hands.** The actual Fabric mod: the players' bodies, the commands, the K menu, and the in-game tests. |
 | [`companion-scheduler/`](companion-scheduler) | ⏰ **The clock.** Daily play limits, hours and time zones. |
 | [`companion-persistence/`](companion-persistence) | 💾 **The memory.** Saves everything to a small database file. |
-| [`companion-model/`](companion-model) | 🤖 **The optional advisor.** Talks to Claude or OpenAI when a key is set. |
+| [`companion-model/`](companion-model) | 💡 **The optional planning helper.** Talks to Claude or OpenAI when a key is set. |
 | [`companion-testkit/`](companion-testkit) | 🧪 **Demos and test helpers.** |
 | [`docs/`](docs) | 📚 **Guides and design notes.** Start with [docs/README.md](docs/README.md). |
-| [`assets/`](assets) | 🎨 **Art.** This banner, the crew's skins and the script that draws the banner. |
+| [`assets/`](assets) | 🎨 **Art.** The logo banner, the starter skins and the script that draws the banner. |
 | [`tools/`](tools) | 🔧 Helper scripts for checking test reports. |
 
 *Why "companion" in the folder names? That's left over from an earlier version of the project, when these were pet-like companions. The names stay so old saves keep working.*
@@ -162,9 +169,9 @@ You'll need Java 21. The Gradle wrapper fetches everything else at the exact ver
 ```
 
 The technical documents:
-- [The player contract](minecraft_player_spec.md): what the AI players must do and must never do.
+- [The player contract](minecraft_player_spec.md): what a player must do and must never do.
 - [Architecture](docs/player-architecture.md): how the pieces fit together.
 - [Tracker](docs/feature-spec.md): every feature, its status and its evidence.
 - [Operator guide](docs/operator-guide.md): everything a server owner can set.
 - [Validation](docs/validation.md): test results, run by run.
-- [AGENTS.md](AGENTS.md): the rules for anyone (human or AI) working on the code.
+- [AGENTS.md](AGENTS.md): the rules for anyone working on the code.

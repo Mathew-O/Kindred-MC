@@ -519,6 +519,15 @@ Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0
 - Development live runs (not a release gate): a dedicated server on seed 8675309 with `/tick sprint`. One AI player from an empty inventory earned wood, stone and iron tools, smelted iron in its own furnace, a bucket, three diamonds and a diamond pickaxe. It respawned after deaths and recovered its drops. Later runs added a worn iron chestplate, digging in at night, recorded fights won against cave mobs, and dropping surplus stone. A lit portal has not yet been reached live: deaths to cave mobs, creepers and lava still cost each run its tools. Since run 23: fight chases check their footing, creepers are fought hit and run or outrun, and the night shelter is sealed. See F-25c4 for the open steps.
 - JAR SHA-256 at commit `34b4c83`: `6f3c2679a6cfedb5138ec9e332056e9d0beebb2bc546255b970c9e77b05a2fa5` (`kindred-mc-0.1.0-SNAPSHOT.jar`). Build, 336 JUnit and 188/188 GameTests were rerun on that commit.
 
+## Vesp renamed Echo (E-10c) — 28 October 2026 (`claude/blissful-fermi-y4tt90`)
+
+On `main` at `91f408a` with the change. Linux x64 cloud container (4 cores), OpenJDK 21.0.12.
+- `./gradlew build`: 759 JUnit results, none failed, four skipped (the opt-in live model tests). This includes the new `CanonicalRosterTest` and the updated roster-skin and weapon tests.
+- `NativePlayerRuntimeGameTests`, its gametest entrypoints narrowed for the runs (not committed): 3 of 3 runs, all three fixtures each time, including the new `starterEchoReconnectsAPlayerSavedAsVespInsteadOfMakingASecond`.
+- The same fixture with the former-name match switched off fails as expected ("Echo's control-deck slot selects the saved Vesp").
+- The full native suite was not rerun.
+- Evidence: [E-10c](evidence/E-10c.md).
+
 ## Accounting periods, activity hours and death conservation — 28 October 2026 (`claude/blissful-fermi-y4tt90`)
 
 F-11d to F-11g and F-07b, on `main` at `f5a39b9`. Linux x64 cloud container (4 cores), OpenJDK 21.0.12.

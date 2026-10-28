@@ -343,7 +343,7 @@ public final class PlayerCommands {
                 .suggests((context, builder) -> {
                     builder.suggest(dev.kindred.core.CanonicalRoster.KINDRED_NAME);
                     builder.suggest(dev.kindred.core.CanonicalRoster.SOL_NAME);
-                    builder.suggest(dev.kindred.core.CanonicalRoster.VESP_NAME);
+                    builder.suggest(dev.kindred.core.CanonicalRoster.ECHO_NAME);
                     return builder.buildFuture();
                 }).executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();

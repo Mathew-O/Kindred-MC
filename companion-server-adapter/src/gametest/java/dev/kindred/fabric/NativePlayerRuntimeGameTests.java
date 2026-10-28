@@ -114,6 +114,43 @@ public final class NativePlayerRuntimeGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /** E-10c: a world saved before Vesp became Echo keeps one player; the starter Echo is that saved Vesp. */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 240)
+    public void starterEchoReconnectsAPlayerSavedAsVespInsteadOfMakingASecond(TestContext context) {
+        Fixture f = new Fixture(context);
+        UUID[] vesp = new UUID[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Fixture ready"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.createNative(f.source, "Vesp") == 1, "A world from before the rename has Vesp"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Vesp established and in the world");
+                    vesp[0] = statuses.getFirst().id();
+                    context.assertTrue(f.runtime.canonicalBotIdForControlSlot(6).equals(Optional.of(vesp[0])), "Echo's control-deck slot selects the saved Vesp");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "disconnect", vesp[0]) == 1, "Vesp disconnected");
+                })
+                .createAndAdd(() -> context.assertFalse(f.runtime.nativeStatuses(Actor.console()).getFirst().connected(), "Vesp is offline"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, "Echo") == 1, "Spawning Echo accepted"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1, "No second player was made for Echo");
+                    context.assertTrue(statuses.getFirst().id().equals(vesp[0]) && statuses.getFirst().connected(), "The saved Vesp came back as Echo");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "disconnect", vesp[0]) == 1, "Vesp disconnected again");
+                })
+                .createAndAdd(() -> context.assertFalse(f.runtime.nativeStatuses(Actor.console()).getFirst().connected(), "Vesp is offline again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, null) == 1, "Spawning the whole starter roster accepted"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 3 && statuses.stream().allMatch(s -> s.connected()), "Three starters in the world, got " + statuses.size());
+                    context.assertTrue(statuses.stream().map(s -> s.name()).sorted().toList().equals(java.util.List.of("Kindred", "Sol", "Vesp")),
+                            "Kindred and Sol made; Echo is the saved Vesp, not a fourth player");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Fixture closes"))
+                .completeIfSuccessful();
+    }
+
     private static final class Fixture {
         PlayerRuntime runtime;
         final Path directory;
