@@ -1498,7 +1498,10 @@ final class PlayerRuntime {
                 task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, source, target);
             } else if (skill.equals("native_fight")) {
                 task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
-                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
+                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
+                        !"false".equals(arguments.get("tactics")),
+                        entry.meleeTendencies ? entry.tendencies.computeIfAbsent(UUID.fromString(arguments.get("target")), t -> new dev.kindred.core.tactics.Tendencies()) : null,
+                        entry.meleePrediction);
             } else if (skill.equals("native_attack")) {
                 UUID targetId = UUID.fromString(arguments.get("target"));
                 Integer slot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : null;
@@ -9889,6 +9892,30 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /** A benchmark's switch (E-41b): with {@code on} false, its fights with players are the declared baseline's. */
+    void meleeTactics(UUID id, boolean on) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.meleeTactics = on;
+    }
+
+    /** A benchmark's switch (E-41c): with {@code on} false, it closes in on where its opponent is, not where it will be. */
+    void meleePrediction(UUID id, boolean on) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.meleePrediction = on;
+    }
+
+    /** A benchmark's switch (E-41c): with {@code on} false, it learns nothing of its opponents (the control). */
+    void meleeTendencies(UUID id, boolean on) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) {
+            entry.meleeTendencies = on;
+            entry.tendencies.clear();
+        }
+    }
+
     /** What it has handed over of the supplies it was asked to bring, and how many it was asked for; null when none. */
     int[] deliveryStatus(UUID id) {
         Entry entry = entries.get(id);
@@ -11205,7 +11232,11 @@ final class PlayerRuntime {
             return candidates;
         }
         int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, opponent), true).map(Weapons.Held::slot).orElse(-1);
-        candidates.add(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", opponentId.toString(), "slot", String.valueOf(slot))));
+        // Its melee's tactics (E-41b), on but for a declared baseline in a benchmark.
+        Entry self = entryForPlayer(player.getUuid());
+        var args = new HashMap<String, String>(Map.of("target", opponentId.toString(), "slot", String.valueOf(slot)));
+        if (self != null && !self.meleeTactics) args.put("tactics", "false");
+        candidates.add(new NativeTaskCandidate(candidate, "native_fight", Map.copyOf(args)));
         return candidates;
     }
 
@@ -12159,6 +12190,13 @@ final class PlayerRuntime {
         private UUID netheriteTaskId;
         /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
         private PortalRunCampaign.Task netheriteStep;
+        /** Whether its fights with players use its melee tactics (E-41b); off only for a benchmark's declared baseline. */
+        private boolean meleeTactics = true;
+        /** Whether it learns its opponents' tendencies and uses them (E-41c); off for the control. What it has learned, by opponent. */
+        private boolean meleeTendencies = true;
+        /** Whether it closes in on where its opponent will be (E-41c); off for the control. */
+        private boolean meleePrediction = true;
+        private final Map<UUID, dev.kindred.core.tactics.Tendencies> tendencies = new HashMap<>();
         /** Supplies it was asked to bring someone (E-01), while it is bringing them. */
         private Delivery delivery;
         /** Its patch's mining (E-03): when it next looks, its step, what it has mined, what the patch drops, and spots set aside. */
