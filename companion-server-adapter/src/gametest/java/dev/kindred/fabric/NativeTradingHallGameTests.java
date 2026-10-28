@@ -169,16 +169,34 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "tradingHallSite", tickLimit = 24000)
     public void aPlayerThatKeepsAVillagerBuildsATradingHallByItsBase(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 23500);
+        builtByItsBase(context, true);
+    }
+
+    /**
+     * As the last, with no beds among the blocks Mason holds but shears, nine planks to spare and a crafting table, and
+     * nine white sheep standing south of its home: the hall's three beds come through its needs (E-08c), its wool shorn
+     * from the sheep, picked up where it falls and made into beds with the planks, as players make them. No sheep is
+     * killed for it.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "tradingHallBeds", tickLimit = 28000)
+    public void aTradingHallsBedsAreMadeFromWoolItShears(TestContext context) {
+        builtByItsBase(context, false);
+    }
+
+    private static void builtByItsBase(TestContext context, boolean beds) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, beds ? 23500 : 27500);
         String[] first = {null};
         var cabin = dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN,
                 dev.kindred.core.construction.BuildStyle.CLASSIC);
         var hall = TradingHall.of(3, "oak", "cobblestone");
         var needed = new TreeMap<String, Integer>();
         for (var b : hall.blocks()) if (Placement.rule(b.spec()) != Placement.Rule.COMPANION) needed.merge(Placement.item(b.spec()), 1, Integer::sum);
+        int bedsInHall = needed.getOrDefault("minecraft:white_bed", 0);
+        if (!beds) needed.remove("minecraft:white_bed");
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos cabinAt = o.add(10, 7, 10), home = o.add(16, 7, 20), at = o.add(19, 7, 20);
         VillagerEntity[] librarian = new VillagerEntity[1];
+        var flock = new java.util.ArrayList<net.minecraft.entity.passive.SheepEntity>();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
@@ -217,6 +235,18 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                     villager.setOffers(offers);
                     world.spawnEntity(villager);
                     librarian[0] = villager;
+                    // Nine white sheep in rows south of its home, their AI off so that they stand.
+                    if (!beds) {
+                        for (int i = 0; i < 9; i++) {
+                            var sheep = EntityType.SHEEP.create(world);
+                            BlockPos stand = o.add(13 + (i % 3) * 3, 7, 26 + (i / 3) * 3);
+                            sheep.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                            sheep.setAiDisabled(true);
+                            sheep.setColor(net.minecraft.util.DyeColor.WHITE);
+                            world.spawnEntity(sheep);
+                            flock.add(sheep);
+                        }
+                    }
                     // The hall's bill as though gathered, and tools and food.
                     var player = f.player();
                     var inventory = player.getInventory();
@@ -225,6 +255,12 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                     inventory.setStack(slot++, new ItemStack(Items.STONE_PICKAXE));
                     inventory.setStack(slot++, new ItemStack(Items.STONE_AXE));
                     inventory.setStack(slot++, new ItemStack(Items.BREAD, 16));
+                    if (!beds) {
+                        // For the beds: shears, three planks a bed besides the hall's, and a table to make them at.
+                        inventory.setStack(slot++, new ItemStack(Items.SHEARS));
+                        inventory.setStack(slot++, new ItemStack(Items.OAK_PLANKS, 3 * bedsInHall));
+                        inventory.setStack(slot++, new ItemStack(Items.CRAFTING_TABLE));
+                    }
                     for (var item : needed.entrySet()) {
                         int left = item.getValue();
                         while (left > 0) {
@@ -282,7 +318,126 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                             "Said why: " + f.runtime.said(f.id));
                     check(context, first, f.runtime.currentBase(f.id).map(base -> base.stage().equals("cabin") && base.complete()).orElse(false),
                             "Its cabin still its base, whole: " + f.runtime.currentBase(f.id));
+                    if (!beds) {
+                        // Its beds made from wool it shore: every sheep alive, some shorn, the shears worn and kept.
+                        long alive = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isAlive).count();
+                        long shorn = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isSheared).count();
+                        var shears = f.player().getInventory().main.stream().filter(stack -> stack.isOf(Items.SHEARS)).findFirst();
+                        KindredMod.LOGGER.info("Trading hall beds: {} of 9 sheep shorn, {} alive, shears {}", shorn, alive, shears.map(ItemStack::getDamage).orElse(-1));
+                        check(context, first, alive == 9, "No sheep killed for the beds: " + alive + " of 9 alive");
+                        check(context, first, shorn >= (bedsInHall * 3 + 2) / 3, "Sheep shorn for the beds' wool: " + shorn);
+                        check(context, first, shears.map(stack -> stack.getDamage() == shorn).orElse(false), "The shears worn once a sheep: " + shears);
+                    }
                     context.assertTrue(first[0] == null, first[0]);
+                    librarian[0].discard();
+                    flock.forEach(net.minecraft.entity.Entity::discard);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its trading hall kept whole as its base is (E-45d, E-31a): Mason's cabin and a hall of three standing as its own,
+     * both recorded whole, a librarian shut in the first cell behind its lectern, and three of the hall's blocks gone, as a
+     * creeper would leave it: a block of its front wall, the third cell's lintel and a plank of its roof. Mason puts back
+     * those three from the blocks it holds and nothing else: the lectern across the first cell's front, which the hall's
+     * plan keeps clear, stays, and the librarian with it.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "tradingHallRepair", tickLimit = 8000)
+    public void aBrokenTradingHallIsRepairedAroundTheVillagerInItsCell(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 7500);
+        String[] first = {null};
+        var cabin = dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN,
+                dev.kindred.core.construction.BuildStyle.CLASSIC);
+        var hall = TradingHall.of(3, "oak", "cobblestone");
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos cabinAt = o.add(10, 7, 10), hallAt = o.add(10, 7, 28), home = o.add(14, 7, 24);
+        var cell = TradingHall.cells(3).getFirst();
+        BlockPos stand = hallAt.add(cell.stand().x(), cell.stand().y(), cell.stand().z());
+        BlockPos front = hallAt.add(cell.jobBlock().x(), cell.jobBlock().y(), cell.jobBlock().z());
+        // The hall's front wall is its row 7, its roof four over its floor, the third cell's lintel over its front at row 4.
+        var broken = java.util.List.of(hallAt.add(1, 2, 7), hallAt.add(5, 3, 4), hallAt.add(3, 4, 1));
+        VillagerEntity[] librarian = new VillagerEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    NativeBaseGameTests.ground(context, new BlockPos[0]);
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    int flags = net.minecraft.block.Block.NOTIFY_LISTENERS | net.minecraft.block.Block.FORCE_STATE;
+                    // Its cabin and its hall standing, every block in its state, both recorded as its own and whole.
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) world.setBlockState(BuildRunner.blockPos(b.at()), state(b.spec()), flags);
+                    for (var b : hall.placed(BuildRunner.pos(hallAt), 0)) world.setBlockState(BuildRunner.blockPos(b.at()), state(b.spec()), flags);
+                    String bases = "{\"player\":\"Mason\",\"anchor\":{\"dimension\":\"minecraft:overworld\",\"x\":" + home.getX() + ",\"y\":" + home.getY()
+                            + ",\"z\":" + home.getZ() + "},\"built\":[{\"stage\":\"cabin\",\"dimension\":\"minecraft:overworld\",\"x\":" + cabinAt.getX()
+                            + ",\"y\":" + cabinAt.getY() + ",\"z\":" + cabinAt.getZ() + ",\"complete\":true,\"variant\":0,\"turns\":0}],"
+                            + "\"hall\":{\"dimension\":\"minecraft:overworld\",\"x\":" + hallAt.getX() + ",\"y\":" + hallAt.getY() + ",\"z\":" + hallAt.getZ()
+                            + ",\"cells\":3,\"wood\":\"oak\",\"complete\":true}}";
+                    try {
+                        Files.createDirectories(f.directory.resolve("memory"));
+                        Files.writeString(f.directory.resolve("memory").resolve(f.id + ".bases.json"), bases, StandardCharsets.UTF_8);
+                    } catch (java.io.IOException error) {
+                        throw new RuntimeException("The fixture's base record could not be written", error);
+                    }
+                    // A librarian shut in the first cell behind its lectern, as a bring leaves one; its AI off so that it stays.
+                    world.setBlockState(front, Blocks.LECTERN.getDefaultState());
+                    var villager = EntityType.VILLAGER.create(world);
+                    villager.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 180, 0);
+                    villager.setAiDisabled(true);
+                    villager.setVillagerData(new VillagerData(VillagerType.PLAINS, VillagerProfession.LIBRARIAN, 1));
+                    world.spawnEntity(villager);
+                    librarian[0] = villager;
+                    // Three of the hall's blocks gone, as a creeper would leave it.
+                    for (var at : broken) world.setBlockState(at, Blocks.AIR.getDefaultState(), flags);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_AXE));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 2));
+                    inventory.setStack(4, new ItemStack(Items.OAK_PLANKS, 1));
+                    inventory.setStack(5, new ItemStack(Items.DIRT, 16));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Mason playing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    for (var at : broken) {
+                        context.assertTrue(!world.getBlockState(at).isAir(), "Put back at " + at.subtract(hallAt).toShortString() + ": " + f.runtime.baseNote(f.id)
+                                + " / " + f.runtime.buildStatus(f.id).orElse(""));
+                    }
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    int wrong = 0;
+                    var report = new StringBuilder();
+                    for (var b : hall.placed(BuildRunner.pos(hallAt), 0)) {
+                        var got = BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at())));
+                        if (!got.sameAs(b.spec())) {
+                            wrong++;
+                            if (report.length() < 600) report.append(b.at()).append(' ').append(got).append(" for ").append(b.spec()).append("; ");
+                        }
+                    }
+                    check(context, first, wrong == 0, wrong + " of the hall's blocks not in their state: " + report);
+                    // Only what was gone: the lectern the plan keeps clear still shuts the librarian in.
+                    check(context, first, world.getBlockState(front).isOf(Blocks.LECTERN), "Its lectern left across the cell's front: " + world.getBlockState(front));
+                    var at = librarian[0].getBlockPos();
+                    check(context, first, librarian[0].isAlive() && at.getX() == stand.getX() && at.getZ() >= stand.getZ() - 2 && at.getZ() <= stand.getZ(),
+                            "The librarian still in its cell: at " + at.subtract(hallAt).toShortString());
+                    var inventory = f.player().getInventory();
+                    check(context, first, inventory.count(Items.COBBLESTONE) == 0 && inventory.count(Items.OAK_PLANKS) == 0,
+                            "What it held went into the repair: " + inventory.count(Items.COBBLESTONE) + " cobblestone, " + inventory.count(Items.OAK_PLANKS) + " planks");
+                    context.assertTrue(first[0] == null, first[0]);
+                    KindredMod.LOGGER.info("Trading hall: repaired ({})", f.runtime.baseNote(f.id));
                     librarian[0].discard();
                     f.runtime.stop();
                 })

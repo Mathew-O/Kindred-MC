@@ -24,7 +24,7 @@ public final class NativeBaseRepairGameTests implements FabricGameTest {
         BlockPos home = o.add(16, 7, 16);
         BlockPos[] origin = {null};
         int[] damage = {0};
-        boolean[] repairing = {false};
+        boolean[] repairing = {false}, whole = {false};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
@@ -79,15 +79,24 @@ public final class NativeBaseRepairGameTests implements FabricGameTest {
                     context.assertTrue(damage[0] > 4 && world.getBlockState(origin[0].add(5, 1, 4)).isAir(), "Damaged: " + damage[0]);
                 })
                 .createAndAdd(() -> {
-                    if (f.runtime.baseNote(f.id).startsWith("Repairing its cabin")) repairing[0] = true;
-                    context.assertTrue(repairing[0] && f.runtime.baseNote(f.id).equals("Its cabin is whole again"),
-                            "Repaired: " + f.runtime.baseNote(f.id) + " / " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id));
+                    // Its repair begun, then the cabin whole: what the world shows, not the note it ended on, which its
+                    // next look at its base may overwrite in the same tick (suite run 47).
+                    String note = f.runtime.baseNote(f.id);
+                    if (note.startsWith("Repairing its cabin")) repairing[0] = true;
+                    if (note.equals("Its cabin is whole again")) whole[0] = true;
+                    var world = context.getWorld();
+                    int out = 0;
+                    for (var b : cabin.placed(BuildRunner.pos(origin[0]), 0)) {
+                        if (!BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at()))).sameAs(b.spec())) out++;
+                    }
+                    context.assertTrue(repairing[0] && out == 0 && f.runtime.buildStatus(f.id).isEmpty(),
+                            "Repaired: " + out + " out of place / " + note + " / " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id));
                 })
                 .createAndAdd(() -> {
                     NativeBaseGameTests.exact(context, cabin, origin[0]);
                     var chest = context.getWorld().getBlockState(origin[0].add(5, 1, 4));
                     context.assertTrue(chest.isOf(Blocks.CHEST), "The chest replaced: " + chest);
-                    KindredMod.LOGGER.info("Base repair: the cabin whole again, {} blocks put back", damage[0]);
+                    KindredMod.LOGGER.info("Base repair: the cabin whole again, {} blocks put back (its note seen: {})", damage[0], whole[0]);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

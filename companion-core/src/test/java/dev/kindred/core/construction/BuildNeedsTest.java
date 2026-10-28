@@ -36,6 +36,21 @@ class BuildNeedsTest {
     }
 
     @Test
+    void aHallsBedsAreMadeFromWoolItGathersAndPlanks() {
+        // Three beds, for a hall of three cells: nine white wool from sheep, nine planks of the hall's wood.
+        var plan = BuildNeeds.plan(Map.of("minecraft:white_bed", 3), Map.of(), Map.of(), "oak", true);
+        assertEquals(Map.of("minecraft:white_wool", 9, LOG, 3), plan.gather(), "nine wool, and three logs for the nine planks (three over)");
+        assertEquals(3, plan.crafts().stream().filter(r -> r.item().equals("minecraft:white_bed")).count());
+        assertTrue(plan.unobtainable().isEmpty());
+        // Planks in hand to spare: only the wool to get; a red bed wants red wool.
+        var held = BuildNeeds.plan(Map.of("minecraft:white_bed", 3), Map.of(PLANKS, 9), Map.of(), "oak", true);
+        assertEquals(Map.of("minecraft:white_wool", 9), held.gather());
+        assertEquals(Map.of("minecraft:red_wool", 3), BuildNeeds.plan(Map.of("minecraft:red_bed", 1), Map.of(PLANKS, 3), Map.of(), "oak", true).gather());
+        assertTrue(BuildNeeds.gathered("minecraft:light_gray_wool"));
+        assertFalse(BuildNeeds.gathered("minecraft:white_carpet"));
+    }
+
+    @Test
     void itBuildsWhatItCanThenFetchesTheWholeShortfallInOneTripThenFinishes() {
         var needs = new BuildNeeds();
         // The floor's planks in hand, the stairs short: it builds the floor first.

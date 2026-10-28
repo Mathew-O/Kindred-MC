@@ -26,7 +26,7 @@ import java.nio.file.Files;
  * worth keeping, takes the hall's door off, lays a line from behind the librarian to a cell's floor, pushes a cart into
  * the librarian, sees the cart roll into the cell, shuts the cell's front, breaks the cart, takes back what it can and
  * puts the lectern in the cell's front; then takes up its rails and puts the door back. The librarian's AI is off so
- * that it stands where it was put: one that wanders off the line is not yet followed.
+ * that it stands where it was put, but in the test where it strolls, and is held in a boat while the line is laid.
  */
 public final class NativeBringGameTests implements FabricGameTest {
     private static net.minecraft.block.BlockState state(dev.kindred.core.construction.BlockSpec spec) {
@@ -95,6 +95,33 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, true, false, false, true);
     }
 
+    /**
+     * As the first, with the librarian's AI on, at work by a lectern of its own two blocks off the line in the working
+     * hours (in its idle hours a villager wanders the field, and off to the beds of the hall), and an oak boat and a
+     * stone pickaxe in Hal's hand: Hal puts the boat down beside the librarian, which takes it up and holds it where it
+     * is; lays the line from there, with room for it riding high in its boat, the stone over the hall's doorway and the
+     * cell's lintel taken out for it; and pushes the cart into the boat, which it takes up, librarian and all. In the
+     * cell the lintel goes back and the lectern goes in across the front, never left open with the librarian loose; the
+     * boat is broken over the cart, which is left in the cell with the boat's item; and the stone over the door goes back
+     * with the door. The librarian unhurt.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringStrolling", tickLimit = 14000)
+    public void aLibrarianThatStrollsIsHeldInABoatWhileTheLineIsLaid(TestContext context) {
+        scene(context, false, false, false, false, true);
+    }
+
+    /**
+     * As the last, with a lake eight wide right across the field between the librarian and the hall, and only four dirt
+     * in Hal's hand, too few for a bridge of eight: Hal holds the librarian in its boat on its own side, gets in with it,
+     * rows it over the ground into the water and across, and gets out on the far bank, the librarian left in the boat on
+     * the water (let go of, it would wade back to its lectern); lays the line along the bank past it, and the cart, rolling
+     * by, takes the boat up from the water and carries it home as the last.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringAcross", tickLimit = 16000)
+    public void aLibrarianAcrossALakeIsRowedOverAndBroughtHome(TestContext context) {
+        scene(context, false, false, false, false, true, true);
+    }
+
     private static void scene(TestContext context, boolean make) {
         scene(context, make, false);
     }
@@ -108,7 +135,15 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : make || wander || river ? 13500 : 11500);
+        scene(context, make, wander, river, mine, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling) {
+        scene(context, make, wander, river, mine, strolling, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         var hall = TradingHall.of(3, "oak", "cobblestone");
         BlockPos[] origin = new BlockPos[1];
@@ -125,10 +160,23 @@ public final class NativeBringGameTests implements FabricGameTest {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 10; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
-                    world.setTimeOfDay(1000);
+                    world.setTimeOfDay(strolling ? 3000 : 1000);
+                    if (strolling) {
+                        world.setBlockState(o.add(4, 2, 4).add(5, 0, 20), Blocks.LECTERN.getDefaultState());
+                        // A fence round the field's edge, as a pen's: a librarian that strolls off it fell into the ground about.
+                        for (int x = -8; x <= 24; x++) for (int z : new int[] {-8, 34}) world.setBlockState(o.add(x, 2, z), Blocks.OAK_FENCE.getDefaultState());
+                        for (int z = -8; z <= 34; z++) for (int x : new int[] {-8, 24}) world.setBlockState(o.add(x, 2, z), Blocks.OAK_FENCE.getDefaultState());
+                    }
                     // The river: water at the ground's top, a block deep, banked at either end of the field.
                     if (river) {
                         for (int x = -9; x <= 25; x++) for (int z = 15; z <= 17; z++) {
+                            world.setBlockState(o.add(x, 0, z), Blocks.STONE.getDefaultState());
+                            world.setBlockState(o.add(x, 1, z), x < -8 || x > 24 ? Blocks.STONE.getDefaultState() : Blocks.WATER.getDefaultState());
+                        }
+                    }
+                    // The lake: water at the ground's top, a block deep, eight wide, banked at either end of the field.
+                    if (lake) {
+                        for (int x = -9; x <= 25; x++) for (int z = 15; z <= 22; z++) {
                             world.setBlockState(o.add(x, 0, z), Blocks.STONE.getDefaultState());
                             world.setBlockState(o.add(x, 1, z), x < -8 || x > 24 ? Blocks.STONE.getDefaultState() : Blocks.WATER.getDefaultState());
                         }
@@ -154,7 +202,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                     var villager = EntityType.VILLAGER.create(world);
                     BlockPos at = origin[0].add(3, 0, 20);
                     villager.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 180, 0);
-                    villager.setAiDisabled(true);
+                    villager.setAiDisabled(!strolling);
                     villager.setVillagerData(new VillagerData(VillagerType.PLAINS, VillagerProfession.LIBRARIAN, 1));
                     villager.setExperience(1);
                     var offers = new net.minecraft.village.TradeOfferList();
@@ -192,9 +240,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                     }
                     inventory.setStack(3, new ItemStack(Items.LECTERN));
                     inventory.setStack(4, new ItemStack(Items.DIRT, river ? 8 : 4));
+                    if (strolling) {
+                        inventory.setStack(7, new ItemStack(Items.OAK_BOAT));
+                        // To take out the hall's stone over the line for the villager riding high in its boat.
+                        inventory.setStack(6, new ItemStack(Items.STONE_PICKAXE));
+                    }
                     hal.setHealth(20);
                     hal.getHungerManager().setFoodLevel(20);
-                    BlockPos stand = origin[0].add(6, 0, 18);
+                    // On the librarian's side of the water, by it.
+                    BlockPos stand = origin[0].add(6, 0, lake ? 21 : 18);
                     hal.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Hal playing"))
@@ -206,6 +260,10 @@ public final class NativeBringGameTests implements FabricGameTest {
                         librarian[0].refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 180, 0);
                         moved[0] = true;
                         KindredMod.LOGGER.info("Bring: the librarian moved off the line, to {}", at.subtract(origin[0]).toShortString());
+                    }
+                    if (context.getWorld().getTime() % 100 == 0) {
+                        KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
+                                librarian[0].getVehicle());
                     }
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
@@ -221,6 +279,14 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(world.getBlockState(slot).isOf(Blocks.LECTERN), "Its lectern across the cell's front: " + world.getBlockState(slot));
                     BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
                     context.assertTrue(world.getBlockState(door).getBlock() instanceof net.minecraft.block.DoorBlock, "The hall's door back: " + world.getBlockState(door));
+                    if (lake) {
+                        // Across it by boat: no bridge put down, the water as it was.
+                        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                        for (int rz = 15; rz <= 22; rz++) {
+                            context.assertTrue(world.getBlockState(o.add(7, 1, rz)).isOf(Blocks.WATER), "The lake as it was: " + world.getBlockState(o.add(7, 1, rz)));
+                        }
+                        context.assertTrue(f.runtime.said(f.id).stream().noneMatch(line -> line.contains("plain blocks")), "Not stopped for want of a bridge");
+                    }
                     if (river) {
                         BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
                         for (int rz = 15; rz <= 17; rz++) {
@@ -231,10 +297,14 @@ public final class NativeBringGameTests implements FabricGameTest {
                     var hal = f.player();
                     context.assertTrue(hal != null, "Hal still in play");
                     var inventory = hal.getInventory();
-                    int rails = make ? 32 : 64;
-                    context.assertTrue(count(inventory, Items.RAIL) == rails && count(inventory, Items.MINECART) == 1 && count(inventory, Items.LECTERN) == 0
+                    // All but the rail on the cell's floor, left to the cell.
+                    int rails = make ? 31 : 63;
+                    BlockPos floorRail = origin[0].add(cell.get().stand().x(), cell.get().stand().y(), cell.get().stand().z());
+                    context.assertTrue(world.getBlockState(floorRail).isIn(net.minecraft.registry.tag.BlockTags.RAILS), "The rail on its cell's floor left: "
+                            + world.getBlockState(floorRail));
+                    context.assertTrue(count(inventory, Items.RAIL) == rails && count(inventory, Items.MINECART) == (strolling ? 0 : 1) && count(inventory, Items.LECTERN) == 0
                                     && count(inventory, Items.DIRT) == (river ? 8 : 4) && (!make || count(inventory, Items.IRON_INGOT) <= 7 && count(inventory, Items.STICK) == 0),
-                            "Rails, cart and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart (what iron is left its own to use)" : "") + ": "
+                            "Rails (but the cell floor's), cart (but one that strolls) and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart (what iron is left its own to use)" : "") + ": "
                                     + count(inventory, Items.RAIL) + " rails, " + count(inventory, Items.MINECART) + " carts, " + count(inventory, Items.LECTERN)
                                     + " lecterns, " + count(inventory, Items.DIRT) + " dirt, " + count(inventory, Items.IRON_INGOT) + " iron, "
                                     + count(inventory, Items.STICK) + " sticks");
@@ -246,7 +316,27 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 "The ore it mined smelted, seventeen ingots made into rails and a cart: " + mined + " mined, " + count(inventory, Items.RAW_IRON)
                                         + " raw and " + count(inventory, Items.IRON_INGOT) + " ingots left");
                     }
+                    if (strolling) {
+                        // The boat broken in the cell, its wood left there out of reach, or picked up where it fell in reach.
+                        int boatsLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(floorRail).expand(1, 1, 2),
+                                item -> item.getStack().isOf(Items.OAK_BOAT)).size();
+                        context.assertTrue(count(inventory, Items.OAK_BOAT) + boatsLying == 1, "The boat in hand or in the cell: " + count(inventory, Items.OAK_BOAT) + " / " + boatsLying);
+                        // One that strolls is never let loose with the front open: the cart left in its cell, under it.
+                        context.assertTrue(!world.getEntitiesByClass(net.minecraft.entity.vehicle.MinecartEntity.class, new net.minecraft.util.math.Box(floorRail).expand(0.5, 1, 0.5),
+                                c -> true).isEmpty(), "The cart left in its cell");
+                        // The stone taken out over the line for its ride put back: over the doorway, and the cell's lintel.
+                        for (var over : java.util.List.of(door.up(2), slot.up(2))) {
+                            context.assertTrue(world.getBlockState(over).isOf(Blocks.COBBLESTONE), "Put back over the line: " + world.getBlockState(over)
+                                    + " at " + over.subtract(origin[0]).toShortString());
+                        }
+                        context.assertTrue(librarian[0].getHealth() >= librarian[0].getMaxHealth(), "Unhurt by its ride: " + librarian[0].getHealth());
+                    }
                     context.assertTrue(f.runtime.said(f.id).stream().anyMatch(line -> line.startsWith("I've brought the librarian home")), "Said: " + f.runtime.said(f.id));
+                    // One that strolls keeps the cart in its cell, and its boat's item falls there: said.
+                    if (strolling) {
+                        context.assertTrue(f.runtime.said(f.id).stream().anyMatch(line -> line.startsWith("I've brought the librarian home")
+                                && line.contains("left the cart")), "Said what it left in the cell: " + f.runtime.said(f.id));
+                    }
                     librarian[0].discard();
                     f.runtime.stop();
                   } catch (net.minecraft.test.GameTestException failing) {

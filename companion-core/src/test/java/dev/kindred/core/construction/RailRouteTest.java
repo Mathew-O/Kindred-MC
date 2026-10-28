@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RailRouteTest {
@@ -141,5 +142,115 @@ class RailRouteTest {
         walled.put(key(4, 20), new BaseSite.Column(63, true, 1));
         walled.put(key(2, 20), new BaseSite.Column(63, true, 1));
         assertTrue(RailRoute.plan(ground(walled), 3, 20, HALL, 3, cell).isEmpty(), "No room for the cart behind it");
+    }
+
+    @Test
+    void aVillagerInABoatInTheCartNeedsARowOfThreeOpenOverEveryRail() {
+        var cell = TradingHall.cells(3).get(1);
+        // An overhang across the way, two open under it: under it in the cart; round it in a boat in the cart.
+        var low = new HashMap<Long, BaseSite.Column>();
+        for (int x = -2; x <= 8; x++) low.put(key(x, 14), new BaseSite.Column(63, true, 2));
+        var cart = RailRoute.plan(ground(low), 3, 20, HALL, 3, cell, RailRoute.CART_ROOM).orElseThrow();
+        assertTrue(cart.rails().contains(new Pos(3, 64, 14)), "Straight under it in the cart: " + cart.rails());
+        assertEquals(cart, RailRoute.plan(ground(low), 3, 20, HALL, 3, cell).orElseThrow(), "The cart's room is the default");
+        var boat = RailRoute.plan(ground(low), 3, 20, HALL, 3, cell, RailRoute.BOAT_ROOM).orElseThrow();
+        connected(boat.rails());
+        assertTrue(boat.rails().stream().noneMatch(p -> p.z() == 14 && p.x() >= -2 && p.x() <= 8), "Round it in a boat: " + boat.rails());
+        // Across the whole way: no line for a boat.
+        for (int x = -60; x <= 60; x++) low.put(key(x, 14), new BaseSite.Column(63, true, 2));
+        assertTrue(RailRoute.plan(ground(low), 3, 20, HALL, 3, cell, RailRoute.BOAT_ROOM).isEmpty(), "No room for a villager in a boat");
+        assertThrows(IllegalArgumentException.class, () -> RailRoute.plan(ground(Map.of()), 3, 20, HALL, 3, cell, 1));
+        // A run-up of three for the boat, whose box reaches further back than a villager's: the cart three behind, the push four.
+        var open = RailRoute.plan(ground(Map.of()), 3, 20, HALL, 3, cell, RailRoute.BOAT_ROOM).orElseThrow();
+        assertEquals(new Pos(3, 64, 23), open.cart());
+        assertEquals(new Pos(3, 64, 24), open.push());
+        assertEquals(new Pos(3, 64, 21), open.rails().get(2), "The rail before the villager's");
+        assertEquals(new Pos(3, 64, 20), open.rails().get(3), "The villager's");
+    }
+
+    @Test
+    void theLineSetsOutOnlyWhereThereIsRoomBehindTheVillagerForTheRunUp() {
+        var cell = TradingHall.cells(3).get(1);
+        // A lectern on the ground just east of a villager west of the door's line (not firm ground for a rail): north
+        // then west and west then north are as dear, and only setting out north leaves room behind it, to the south.
+        var lectern = new HashMap<Long, BaseSite.Column>();
+        lectern.put(key(5, 20), new BaseSite.Column(64, false, 8));
+        var route = RailRoute.plan(ground(lectern), 4, 20, HALL, 3, cell).orElseThrow();
+        connected(route.rails());
+        assertEquals(new Pos(4, 64, 22), route.cart(), "The cart behind it to the south: " + route.rails());
+        assertEquals(new Pos(4, 64, 23), route.push());
+        // The same from the other side: setting out west, its run-up to the east.
+        var south = new HashMap<Long, BaseSite.Column>();
+        south.put(key(4, 21), new BaseSite.Column(64, false, 8));
+        var west = RailRoute.plan(ground(south), 4, 20, HALL, 3, cell).orElseThrow();
+        connected(west.rails());
+        assertEquals(new Pos(6, 64, 20), west.cart(), "The cart behind it to the east: " + west.rails());
+        assertEquals(new Pos(3, 64, 20), west.rails().get(3), "Out west first");
+        // Boxed in on three sides, the fourth toward the hall: no run-up, no line.
+        var boxed = new HashMap<Long, BaseSite.Column>();
+        for (var at : new int[][] {{5, 20}, {4, 21}, {3, 20}}) boxed.put(key(at[0], at[1]), new BaseSite.Column(64, false, 8));
+        assertTrue(RailRoute.plan(ground(boxed), 4, 20, HALL, 3, cell).isEmpty(), "No room behind it any way it could set out");
+    }
+
+    @Test
+    void aLineNeverComesBackOntoOrBesideItsOwnRailsOrItsRunUp() {
+        var cell = TradingHall.cells(3).get(0);
+        // The hall's own ground, which no rail is laid on; a villager in its boat by the hall's west front corner, and
+        // something in the way to its north where the push would start for the line straight south. Round it, the
+        // cheapest line came back through the cart's own rail (suite run 49), joining the run-up into a curve.
+        var near = new HashMap<Long, BaseSite.Column>();
+        for (int x = 0; x < TradingHall.width(3); x++) for (int z = 0; z < TradingHall.DEPTH; z++) near.put(key(x, z), new BaseSite.Column(68, false, 8));
+        near.put(key(-1, 2), new BaseSite.Column(64, false, 8));
+        var route = RailRoute.plan(ground(near), -1, 6, HALL, 3, cell, RailRoute.BOAT_ROOM).orElseThrow();
+        connected(route.rails());
+        var rails = route.rails();
+        for (int i = 0; i < rails.size(); i++) {
+            for (int j = i + 2; j < rails.size(); j++) {
+                var a = rails.get(i);
+                var b = rails.get(j);
+                assertTrue(Math.abs(a.x() - b.x()) + Math.abs(a.z() - b.z()) > 1, "Rails " + i + " and " + j + " beside each other out of order: " + rails);
+            }
+        }
+        assertTrue(rails.stream().noneMatch(p -> p.x() == route.push().x() && p.z() == route.push().z()), "Nothing laid where the push starts: " + rails);
+    }
+
+    @Test
+    void aStepIsClimbedOnlyWhereItsLowerColumnHasRoomForTheRiderAtTheSlopesTop() {
+        var cell = TradingHall.cells(3).get(1);
+        // A block up across the way at z 16 and on to the hall; the lower column before it, at 17, with two open.
+        var step = new HashMap<Long, BaseSite.Column>();
+        for (int x = -60; x <= 60; x++) for (int z = 9; z <= 16; z++) step.put(key(x, z), new BaseSite.Column(64, true, 8));
+        for (int x = -60; x <= 60; x++) step.put(key(x, 8), new BaseSite.Column(63, true, 8));
+        for (int x = -60; x <= 60; x++) if (x != 6) step.put(key(x, 17), new BaseSite.Column(63, true, 2));
+        var climb = RailRoute.plan(ground(step), 3, 20, HALL, 3, cell).orElseThrow();
+        connected(climb.rails());
+        // Up the step only at x 6, where the lower column is open over its slope.
+        for (int i = 1; i < climb.rails().size(); i++) {
+            var a = climb.rails().get(i - 1);
+            var b = climb.rails().get(i);
+            if (b.y() > a.y() && a.z() == 17) assertEquals(6, a.x(), "Climbed where there is room: " + climb.rails());
+        }
+    }
+
+    @Test
+    void theHallsOnlyBlocksAtARidersEyesInABoatAreTheWallOverTheDoorAndTheCellsLintel() {
+        for (int cells : new int[] {1, 3, 4}) {
+            var hall = TradingHall.of(cells, "oak", "cobblestone");
+            var solid = new java.util.HashSet<Pos>();
+            for (var block : hall.blocks()) {
+                String id = block.spec().toString();
+                if (!id.contains("torch") && !id.contains("door")) solid.add(block.at());
+            }
+            for (var cell : TradingHall.cells(cells)) {
+                var over = new java.util.HashSet<Pos>();
+                for (var rail : RailRoute.inside(cells, cell)) {
+                    var eyes = new Pos(rail.x(), rail.y() + 2, rail.z());
+                    if (solid.contains(eyes)) over.add(eyes);
+                    // Its cart's room: the two blocks over each rail are open, the door's taken off.
+                    for (int up = 0; up < 2; up++) assertTrue(!solid.contains(new Pos(rail.x(), rail.y() + up, rail.z())), "Open over " + rail);
+                }
+                assertEquals(new java.util.HashSet<>(RailRoute.overhead(cells, cell)), over, "The blocks taken out for a boat's ride, " + cells + " cells, cell " + cell.index());
+            }
+        }
     }
 }

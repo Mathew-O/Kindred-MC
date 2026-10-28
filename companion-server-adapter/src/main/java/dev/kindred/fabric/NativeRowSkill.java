@@ -17,6 +17,8 @@ import java.util.function.Supplier;
  * Rows the boat the player sits in toward a point, with the paddle inputs a player's client sets: forward, and left
  * or right to turn, easing off the turn as the bow comes round. It ends on arriving, on reaching a shore (land under
  * the bow, or the boat aground and going nowhere), or when its time is up, and says which. It never leaves the boat.
+ * Set off {@code fromLand}, a boat on the ground is rowed over it to the water first (slowly, as on land), and only a
+ * shore met once afloat ends it.
  */
 final class NativeRowSkill implements SkillBody {
     /** Degrees off course within which it rows straight on, and beyond which it turns without rowing. */
@@ -28,10 +30,16 @@ final class NativeRowSkill implements SkillBody {
     private final Supplier<ActionLease> lease;
     private final double x, z, range;
     private final int maxTicks;
+    private final boolean fromLand;
     private int ticks, stillTicks;
+    private boolean afloat;
     private Vec3d last;
 
     NativeRowSkill(NativePlayerBody body, Supplier<ActionLease> lease, double x, double z, double range, int seconds) {
+        this(body, lease, x, z, range, seconds, false);
+    }
+
+    NativeRowSkill(NativePlayerBody body, Supplier<ActionLease> lease, double x, double z, double range, int seconds, boolean fromLand) {
         if (!Double.isFinite(x) || !Double.isFinite(z) || !(range >= 0.5 && range <= 64)) throw new IllegalArgumentException("Invalid row target");
         if (seconds < 1 || seconds > 120) throw new IllegalArgumentException("A row lasts 1..120 seconds");
         this.body = body;
@@ -40,6 +48,7 @@ final class NativeRowSkill implements SkillBody {
         this.z = z;
         this.range = range;
         this.maxTicks = seconds * 20;
+        this.fromLand = fromLand;
     }
 
     @Override
@@ -65,7 +74,8 @@ final class NativeRowSkill implements SkillBody {
             landAhead |= Math.abs(off) < 30 && world.isChunkLoaded(bow) && !world.getFluidState(bow).isIn(FluidTags.WATER)
                     && !world.getBlockState(bow).getCollisionShape(world, bow).isEmpty();
         }
-        if (landAhead) return end("shore", at);
+        afloat |= boat.get().isTouchingWater();
+        if (landAhead && (!fromLand || afloat)) return end("shore", at);
         if (last != null && Math.abs(off) < ON_COURSE * 2 && at.squaredDistanceTo(last) < 0.03 * 0.03) {
             if (++stillTicks > AGROUND_TICKS) return end("shore", at);
         } else stillTicks = 0;

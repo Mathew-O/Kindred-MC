@@ -34,6 +34,10 @@ public final class BuildNeeds {
     /** What is gathered, not made: cut, mined or dug. */
     public static final Set<String> GATHERED = Set.of("cobblestone");
 
+    /** The sixteen dye colours wool and beds come in. */
+    public static final Set<String> COLOURS = Set.of("white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray",
+            "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black");
+
     /**
      * The recipe for {@code item}, if it is one of the blocks and parts a build is made of. A recipe that takes any
      * planks (sticks, a crafting table) takes {@code wood}'s.
@@ -50,6 +54,10 @@ public final class BuildNeeds {
             if (id.equals(w + "_fence_gate")) return Optional.of(new Recipe(item(id), 1, Map.of(p, 2, "minecraft:stick", 4), true));
             if (id.equals(w + "_door")) return Optional.of(new Recipe(item(id), 3, Map.of(p, 6), true));
             if (id.equals(w + "_trapdoor")) return Optional.of(new Recipe(item(id), 2, Map.of(p, 6), true));
+        }
+        // A bed: three wool of its colour over three planks (any planks; the build's own wood's are planned).
+        for (String c : COLOURS) {
+            if (id.equals(c + "_bed")) return Optional.of(new Recipe(item(id), 1, Map.of("minecraft:" + c + "_wool", 3, planks, 3), true));
         }
         return Optional.ofNullable(switch (id) {
             case "stick" -> new Recipe(item(id), 4, Map.of(planks, 2), false);
@@ -72,11 +80,12 @@ public final class BuildNeeds {
 
     private static String item(String id) { return "minecraft:" + id; }
 
-    /** Whether a player gathers {@code item} itself: logs it cuts, cobblestone it mines. */
+    /** Whether a player gathers {@code item} itself: logs it cuts, cobblestone it mines, wool it shears or hunts from sheep. */
     public static boolean gathered(String item) {
         String id = item.startsWith("minecraft:") ? item.substring("minecraft:".length()) : item;
         if (GATHERED.contains(id)) return true;
         for (String w : WOODS) if (id.equals(w + "_log")) return true;
+        for (String c : COLOURS) if (id.equals(c + "_wool")) return true;
         return false;
     }
 

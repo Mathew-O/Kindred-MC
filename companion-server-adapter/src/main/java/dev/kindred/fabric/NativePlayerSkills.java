@@ -77,9 +77,9 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_fill_frame" -> new SkillDescriptor(id, Set.of("slot", "x", "y", "z"), Set.of(), Set.of("place"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
+            case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target", "hx", "hz"), Set.of(), Set.of(),
                     Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
-            case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
+            case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds", "land"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(125), Duration.ofSeconds(10), 0);
             // A minecart put on a rail, or broken to take it back (E-45e).
             case "native_cart" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target"), Set.of(), Set.of(),
@@ -141,6 +141,21 @@ final class NativePlayerSkills {
             // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
             case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // Fishing at water with its rod (E-05).
+            case "native_fish" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("seconds"), Set.of(), Set.of(),
+                    Duration.ofSeconds(120), Duration.ofSeconds(120), 0);
+            // A diamond piece upgraded to netherite at its smithing table (E-16c).
+            case "native_smith" -> new SkillDescriptor(id, Set.of("x", "y", "z", "template", "slot", "material"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A bottle filled, or its brewing stand loaded or unloaded (E-16b).
+            case "native_brew" -> new SkillDescriptor(id, Set.of("mode", "x", "y", "z"), Set.of("bottles", "ingredient", "fuel", "slot"), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A piece enchanted at its table (E-16a).
+            case "native_enchant" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "lapis"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A sheep sheared for its wool (E-45d).
+            case "native_shear" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_gate" -> new SkillDescriptor(id, Set.of("x", "y", "z", "open"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // Items taken out of the player's own assigned storage for a build (E-08c).
@@ -193,9 +208,14 @@ final class NativePlayerSkills {
                     arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                             Integer.parseInt(arguments.get("z"))) : null);
         }
+        if (id.equals("native_fish")) {
+            return new NativeFishSkill(body, lease, Integer.parseInt(arguments.get("slot")), new BlockPos(Integer.parseInt(arguments.get("x")),
+                    Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.getOrDefault("seconds", "60")));
+        }
         if (id.equals("native_row")) {
             return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),
-                    Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")));
+                    Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")),
+                    Boolean.parseBoolean(arguments.getOrDefault("land", "false")));
         }
         if (id.equals("native_gate")) {
             return new Gate(body, lease, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
@@ -252,6 +272,7 @@ final class NativePlayerSkills {
                 || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
                 || ((task instanceof NativeRowSkill || task instanceof NativePushSkill) && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
+                || (task instanceof NativeFishSkill && intent == NativePlayerBody.Intent.FISH)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)

@@ -89,7 +89,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART, SHEAR, ENCHANT, BREW, SMITH, FISH }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1679,6 +1679,28 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     /**
+     * Shears the sheep with the shears in {@code hotbarSlot}, as a player's use click lands on it (E-45d): vanilla drops
+     * one to three of its wool beside it and wears the shears by one. Only a grown sheep with its wool, within the reach
+     * the server allows a player's click.
+     */
+    boolean shear(ActionLease lease, int hotbarSlot, net.minecraft.entity.passive.SheepEntity sheep) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || sheep == null || !sheep.isAlive() || sheep.getWorld() != player.getWorld()) return false;
+        if (!player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.SHEARS) || !sheep.isShearable()) return false;
+        if (!player.canInteractWithEntity(sheep, 0)) return false;
+        Vec3d at = sheep.getBoundingBox().getCenter();
+        return execute(lease, Intent.SHEAR, null, () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            face(at);
+            player.interact(sheep, Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
      * Takes up to {@code count} of {@code item} out of the container at {@code chest} into the inventory, stack by stack,
      * as a player shift-clicks them out of a chest it has open (E-08c). Only within reach; what does not fit stays.
      *
@@ -1838,6 +1860,224 @@ final class NativePlayerBody implements BodyAdapter {
             }
         }
         return empty;
+    }
+
+    /** A table's offers for a piece as its screen showed them, the button pressed (-1 for none), the piece and the levels before and after. */
+    record Enchanted(List<dev.kindred.core.Enchanting.Offer> offers, int button, ItemStack before, ItemStack after, int levelsBefore, int levelsAfter) { }
+
+    /**
+     * Enchants the piece in inventory slot {@code slot} (0 to 35) at the enchanting table at {@code table}, as a player
+     * does (E-16a): opens it with a use click, clicks the piece into its first slot and the lapis from {@code lapisSlot}
+     * into its second, reads the three offers its screen shows (the level each asks and the enchantment it hints at),
+     * presses the button {@code choose} picks, which enchants the piece for that button's lapis and levels; puts the piece
+     * and what lapis is left back where they were, and shuts it. Null when the table would not open or the piece is gone.
+     */
+    Enchanted enchant(ActionLease lease, BlockPos table, int slot, int lapisSlot,
+                      java.util.function.Function<List<dev.kindred.core.Enchanting.Offer>, Integer> choose) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
+        if (slot < 0 || slot >= 36 || lapisSlot < 0 || lapisSlot >= 36 || slot == lapisSlot || !world.isChunkLoaded(table)
+                || !world.getBlockState(table).isOf(net.minecraft.block.Blocks.ENCHANTING_TABLE)
+                || player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) return null;
+        ItemStack before = player.getInventory().getStack(slot).copy();
+        if (before.isEmpty() || !player.getInventory().getStack(lapisSlot).isOf(net.minecraft.item.Items.LAPIS_LAZULI)) return null;
+        int levels = player.experienceLevel;
+        Enchanted[] enchanted = {null};
+        boolean done = execute(lease, Intent.ENCHANT, table, () -> {
+            Vec3d top = Vec3d.ofCenter(table).add(0, 0.3, 0);
+            face(top);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(top, Direction.UP, table, false));
+            player.swingHand(Hand.MAIN_HAND);
+            if (!(player.currentScreenHandler instanceof net.minecraft.screen.EnchantmentScreenHandler handler)) {
+                if (player.currentScreenHandler != player.playerScreenHandler) player.closeHandledScreen();
+                return;
+            }
+            // The table's two slots come first (the piece, the lapis), then the inventory: its three rows, then the hotbar.
+            int piece = slot < 9 ? 2 + 27 + slot : 2 + slot - 9, lapis = lapisSlot < 9 ? 2 + 27 + lapisSlot : 2 + lapisSlot - 9;
+            var click = net.minecraft.screen.slot.SlotActionType.PICKUP;
+            handler.onSlotClick(piece, 0, click, player);
+            handler.onSlotClick(0, 0, click, player);
+            handler.onSlotClick(lapis, 0, click, player);
+            handler.onSlotClick(1, 0, click, player);
+            var registry = world.getRegistryManager().get(net.minecraft.registry.RegistryKeys.ENCHANTMENT).getIndexedEntries();
+            var offers = new java.util.ArrayList<dev.kindred.core.Enchanting.Offer>();
+            for (int button = 0; button < 3; button++) {
+                int id = handler.enchantmentId[button];
+                var hint = id < 0 ? null : registry.get(id);
+                String key = hint == null ? null : hint.getKey().map(k -> k.getValue().toString()).orElse(null);
+                offers.add(new dev.kindred.core.Enchanting.Offer(button, handler.enchantmentPower[button], key, handler.enchantmentLevel[button]));
+            }
+            Integer button = choose.apply(List.copyOf(offers));
+            int pressed = button == null ? -1 : button;
+            if (pressed >= 0 && !handler.onButtonClick(player, pressed)) pressed = -1;
+            // Back where they were: the piece, then what lapis is left.
+            handler.onSlotClick(0, 0, click, player);
+            handler.onSlotClick(piece, 0, click, player);
+            if (handler.getSlot(1).hasStack()) {
+                handler.onSlotClick(1, 0, click, player);
+                handler.onSlotClick(lapis, 0, click, player);
+            }
+            player.closeHandledScreen();
+            enchanted[0] = new Enchanted(List.copyOf(offers), pressed, before, player.getInventory().getStack(slot).copy(), levels, player.experienceLevel);
+        });
+        return done ? enchanted[0] : null;
+    }
+
+    /**
+     * Fills the glass bottle in hotbar slot {@code hotbarSlot} at the water at {@code water}, as a player's use click with
+     * a bottle looking at water does (E-16b): one bottle becomes a water bottle. Only water within reach.
+     */
+    boolean fillBottle(ActionLease lease, int hotbarSlot, BlockPos water) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || !player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.GLASS_BOTTLE)) return false;
+        if (!world.isChunkLoaded(water) || !world.getFluidState(water).isIn(net.minecraft.registry.tag.FluidTags.WATER)
+                || !world.getFluidState(water).isStill()) return false;
+        Vec3d surface = new Vec3d(water.getX() + 0.5, water.getY() + world.getFluidState(water).getHeight(world, water) - 0.05, water.getZ() + 0.5);
+        if (player.getEyePos().squaredDistanceTo(surface) > 4.0 * 4.0) return false;
+        return execute(lease, Intent.BREW, water, () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            face(surface);
+            player.interactionManager.interactItem(player, world, player.getMainHandStack(), Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Uses the fishing rod in hotbar slot {@code hotbarSlot}, looking at {@code at}, as a player's use click does (E-05):
+     * casts it there with no line out, reels it in with one.
+     */
+    boolean useRod(ActionLease lease, int hotbarSlot, Vec3d at) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || !player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.FISHING_ROD)) return false;
+        var world = player.getServerWorld();
+        return execute(lease, Intent.FISH, null, () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            if (at != null) face(at);
+            player.interactionManager.interactItem(player, world, player.getMainHandStack(), Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /** A brewing stand's five slots (three bottles, its ingredient, its fuel) before and after, and its brewing time after. */
+    record Stand(List<ItemStack> before, List<ItemStack> after, int brewTime, int fuel) { }
+
+    /**
+     * Loads the brewing stand at {@code stand}, as a player does (E-16b): opens it with a use click; clicks the bottles
+     * in the inventory slots {@code bottles} (0 to 35) one into each of its three bottle slots, one of the ingredient in
+     * {@code ingredient} into its ingredient slot and, with {@code fuel} not -1, one blaze powder into its fuel slot, the
+     * rest of each stack put back where it was; and shuts it. With {@code unload}, it instead takes what is in the three
+     * bottle slots into the inventory. Null when the stand would not open.
+     */
+    Stand useStand(ActionLease lease, BlockPos stand, int[] bottles, int ingredient, int fuel, boolean unload) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
+        if (!world.isChunkLoaded(stand) || !world.getBlockState(stand).isOf(net.minecraft.block.Blocks.BREWING_STAND)
+                || player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(stand)) > 4.5 * 4.5) return null;
+        Stand[] used = {null};
+        boolean done = execute(lease, Intent.BREW, stand, () -> {
+            Vec3d top = Vec3d.ofCenter(stand).add(0, 0.2, 0);
+            face(top);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(top, Direction.UP, stand, false));
+            player.swingHand(Hand.MAIN_HAND);
+            if (!(player.currentScreenHandler instanceof net.minecraft.screen.BrewingStandScreenHandler handler)) {
+                if (player.currentScreenHandler != player.playerScreenHandler) player.closeHandledScreen();
+                return;
+            }
+            var before = new java.util.ArrayList<ItemStack>(5);
+            for (int i = 0; i < 5; i++) before.add(handler.getSlot(i).getStack().copy());
+            // The stand's five slots come first, then the inventory: its three rows, then the hotbar.
+            java.util.function.IntUnaryOperator index = s -> s < 9 ? 5 + 27 + s : 5 + s - 9;
+            var click = net.minecraft.screen.slot.SlotActionType.PICKUP;
+            if (unload) {
+                for (int i = 0; i < 3; i++) if (handler.getSlot(i).hasStack()) handler.onSlotClick(i, 0, net.minecraft.screen.slot.SlotActionType.QUICK_MOVE, player);
+            } else {
+                for (int i = 0; i < Math.min(3, bottles.length); i++) {
+                    if (handler.getSlot(i).hasStack()) continue;
+                    handler.onSlotClick(index.applyAsInt(bottles[i]), 0, click, player);
+                    handler.onSlotClick(i, 0, click, player);
+                    if (!handler.getCursorStack().isEmpty()) handler.onSlotClick(index.applyAsInt(bottles[i]), 0, click, player);
+                }
+                for (int[] one : new int[][] {{ingredient, 3}, {fuel, 4}}) {
+                    if (one[0] < 0 || handler.getSlot(one[1]).hasStack()) continue;
+                    // The stack taken up, one of it put in with a right click, the rest put back.
+                    handler.onSlotClick(index.applyAsInt(one[0]), 0, click, player);
+                    handler.onSlotClick(one[1], 1, click, player);
+                    if (!handler.getCursorStack().isEmpty()) handler.onSlotClick(index.applyAsInt(one[0]), 0, click, player);
+                }
+            }
+            var after = new java.util.ArrayList<ItemStack>(5);
+            for (int i = 0; i < 5; i++) after.add(handler.getSlot(i).getStack().copy());
+            player.closeHandledScreen();
+            int brewTime = 0, fuelLeft = 0;
+            if (world.getBlockEntity(stand) instanceof net.minecraft.block.entity.BrewingStandBlockEntity entity) {
+                var nbt = entity.createNbt(world.getRegistryManager());
+                brewTime = nbt.getShort("BrewTime");
+                fuelLeft = nbt.getByte("Fuel");
+            }
+            used[0] = new Stand(List.copyOf(before), List.copyOf(after), brewTime, fuelLeft);
+        });
+        return done ? used[0] : null;
+    }
+
+    /** A smithing table's upgrade: the piece before, and what came out into its slot after (empty when nothing did). */
+    record Smithed(ItemStack before, ItemStack after) { }
+
+    /**
+     * Upgrades the piece in inventory slot {@code slot} (0 to 35) at the smithing table at {@code table}, as a player
+     * does (E-16c): opens it with a use click; puts one upgrade template from {@code template}, the piece, and one of the
+     * material in {@code material} into its three slots; takes what its result slot then shows back into the piece's
+     * slot, which spends the template and the material; and shuts it, which gives back anything left in its slots. Null
+     * when the table would not open or the piece is gone.
+     */
+    Smithed smith(ActionLease lease, BlockPos table, int template, int slot, int material) {
+        requireThread();
+        var world = player.getServerWorld();
+        if (player.currentScreenHandler != player.playerScreenHandler || !player.playerScreenHandler.getCursorStack().isEmpty()) return null;
+        if (slot < 0 || slot >= 36 || template < 0 || template >= 36 || material < 0 || material >= 36 || slot == template || slot == material
+                || template == material || !world.isChunkLoaded(table) || !world.getBlockState(table).isOf(net.minecraft.block.Blocks.SMITHING_TABLE)
+                || player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) return null;
+        ItemStack before = player.getInventory().getStack(slot).copy();
+        if (before.isEmpty()) return null;
+        Smithed[] smithed = {null};
+        boolean done = execute(lease, Intent.SMITH, table, () -> {
+            Vec3d top = Vec3d.ofCenter(table).add(0, 0.4, 0);
+            face(top);
+            player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND,
+                    new BlockHitResult(top, Direction.UP, table, false));
+            player.swingHand(Hand.MAIN_HAND);
+            if (!(player.currentScreenHandler instanceof net.minecraft.screen.SmithingScreenHandler handler)) {
+                if (player.currentScreenHandler != player.playerScreenHandler) player.closeHandledScreen();
+                return;
+            }
+            // Its four slots come first (the template, the piece, the material, the result), then the inventory.
+            java.util.function.IntUnaryOperator index = s -> s < 9 ? 4 + 27 + s : 4 + s - 9;
+            var click = net.minecraft.screen.slot.SlotActionType.PICKUP;
+            int[][] puts = {{template, 0}, {slot, 1}, {material, 2}};
+            for (int[] put : puts) {
+                // The stack taken up, one of it put in with a right click, the rest put back.
+                handler.onSlotClick(index.applyAsInt(put[0]), 0, click, player);
+                handler.onSlotClick(put[1], 1, click, player);
+                if (!handler.getCursorStack().isEmpty()) handler.onSlotClick(index.applyAsInt(put[0]), 0, click, player);
+            }
+            if (handler.getSlot(3).hasStack()) {
+                handler.onSlotClick(3, 0, click, player);
+                handler.onSlotClick(index.applyAsInt(slot), 0, click, player);
+            }
+            player.closeHandledScreen();
+            smithed[0] = new Smithed(before, player.getInventory().getStack(slot).copy());
+        });
+        return done ? smithed[0] : null;
     }
 
     /** An anvil's rename: the piece before and after, the levels before and after, and what the anvil asked. */
@@ -2001,6 +2241,27 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /**
+     * Puts the boat in {@code hotbarSlot} down on top of the block {@code ground}, as a player puts one down on land:
+     * looking at the block's top and using the item (E-45e: just beside a villager, which the boat then takes up).
+     */
+    boolean placeBoat(ActionLease lease, int hotbarSlot, BlockPos ground) {
+        return placeBoat(lease, hotbarSlot, ground, null);
+    }
+
+    /** As {@link #placeBoat(ActionLease, int, BlockPos)}, looking at {@code at} on the block's top (its middle if null): the boat goes where the look meets it. */
+    boolean placeBoat(ActionLease lease, int hotbarSlot, BlockPos ground, Vec3d at) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || player.hasVehicle()) return false;
+        Vec3d top = at != null ? at : new Vec3d(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
+        if (!new net.minecraft.util.math.Box(ground).expand(1.0E-4).contains(top) || player.getEyePos().distanceTo(top) > 4.0) return false;
+        return execute(lease, Intent.BOAT, ground, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            face(top);
+            player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
     /** Into {@code boat}, as a player clicks on one within reach. */
     boolean board(ActionLease lease, BoatEntity boat) {
         requireThread();
@@ -2078,8 +2339,13 @@ final class NativePlayerBody implements BodyAdapter {
 
     /** One hit on an empty boat within reach, as a player breaks one to take it back. */
     boolean strikeBoat(ActionLease lease, BoatEntity boat) {
+        return strikeBoat(lease, boat, false);
+    }
+
+    /** As {@link #strikeBoat(ActionLease, BoatEntity)}, a boat that holds a mob too: broken, it sets the mob down where it sat. */
+    boolean strikeBoat(ActionLease lease, BoatEntity boat, boolean ridden) {
         requireThread();
-        if (boat == null || !boat.isAlive() || boat.hasPassengers() || player.hasVehicle() || !player.canInteractWithEntity(boat, 0)) return false;
+        if (boat == null || !boat.isAlive() || !ridden && boat.hasPassengers() || player.hasVehicle() || !player.canInteractWithEntity(boat, 0)) return false;
         return execute(lease, Intent.ATTACK, boat.getBlockPos(), () -> {
             face(boat.getPos().add(0, 0.3, 0));
             player.attack(boat);

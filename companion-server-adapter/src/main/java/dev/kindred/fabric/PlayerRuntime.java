@@ -1423,12 +1423,32 @@ final class PlayerRuntime {
                 task = new NativeTradeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), claims, nativeActionWriter(), server::execute,
                         UUID.fromString(arguments.get("target")), arguments.containsKey("look"),
                         () -> Valuables.holding(entry.nativeBody.entity(), lootWanted(entry)));
+            } else if (skill.equals("native_enchant")) {
+                task = new NativeEnchantAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("lapis")));
+            } else if (skill.equals("native_smith")) {
+                task = new NativeSmithAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("template")), Integer.parseInt(arguments.get("slot")),
+                        Integer.parseInt(arguments.get("material")));
+            } else if (skill.equals("native_brew")) {
+                var mode = NativeBrewAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
+                int[] bottles = arguments.containsKey("bottles") && !arguments.get("bottles").isEmpty()
+                        ? java.util.Arrays.stream(arguments.get("bottles").split(",")).mapToInt(Integer::parseInt).toArray() : new int[0];
+                task = new NativeBrewAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, mode, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), bottles, Integer.parseInt(arguments.getOrDefault("ingredient", "-1")),
+                        Integer.parseInt(arguments.getOrDefault("fuel", "-1")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
             } else if (skill.equals("native_rename")) {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
                         nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), arguments.get("name"));
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
+            } else if (skill.equals("native_shear")) {
+                task = new NativeShearAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_fill_frame")) {
                 task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
@@ -1439,7 +1459,10 @@ final class PlayerRuntime {
                 BlockPos water = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
                         Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
                 task = new NativeBoatAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
-                        mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), water);
+                        mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), water,
+                        arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null,
+                        arguments.containsKey("hx") && water != null ? new Vec3d(Double.parseDouble(arguments.get("hx")), water.getY() + 1.0,
+                                Double.parseDouble(arguments.get("hz"))) : null);
             } else if (skill.equals("native_cart")) {
                 var mode = NativeCartAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
                 BlockPos rail = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
@@ -1812,9 +1835,13 @@ final class PlayerRuntime {
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
                     || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
+                    || ("native_enchant".equals(entry.skillId) && intent == NativePlayerBody.Intent.ENCHANT)
+                    || ("native_brew".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BREW || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_smith".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMITH)
                     || ("native_trade".equals(entry.skillId) && intent == NativePlayerBody.Intent.TRADE)
                     || ("native_cart".equals(entry.skillId) && intent == NativePlayerBody.Intent.CART)
                     || ("native_store".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
@@ -1841,6 +1868,7 @@ final class PlayerRuntime {
                     || ("native_boat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
                         || intent == NativePlayerBody.Intent.ATTACK))
                     || (("native_row".equals(entry.skillId) || "native_push".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                    || ("native_fish".equals(entry.skillId) && intent == NativePlayerBody.Intent.FISH)
                     || ("native_smelt".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMELT)
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -1906,6 +1934,15 @@ final class PlayerRuntime {
     }
 
     static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos) {
+        return findBestEscapeDirection(player, threatPos, 0);
+    }
+
+    /**
+     * As {@link #findBestEscapeDirection(ServerPlayerEntity, Vec3d)}; with a blast of {@code power} about to go off at
+     * {@code threatPos} (a creeper's 3, a charged one's 6), the step where the blast would do least, by the blocks between
+     * as well as the distance (E-39i, {@link dev.kindred.core.tactics.BlastExposure}), the farther where two are alike.
+     */
+    static String findBestEscapeDirection(ServerPlayerEntity player, Vec3d threatPos, double power) {
         var world = player.getServerWorld();
         BlockPos feetPos = player.getBlockPos();
         String[] dirs = new String[]{"north", "south", "east", "west"};
@@ -1929,12 +1966,23 @@ final class PlayerRuntime {
             if (!world.isSpaceEmpty(player, box)) continue;
 
             double distSq = threatPos == null ? 1.0 : Vec3d.ofBottomCenter(targetFeet).squaredDistanceTo(threatPos);
-            if (distSq > maxDistSq) {
-                maxDistSq = distSq;
+            // Less blast harm counts first, then distance: a step behind a block over a step merely away.
+            double harm = threatPos == null || power <= 0 ? 0 : dev.kindred.core.tactics.BlastExposure.toPlayer(power, threatPos.x, threatPos.y, threatPos.z,
+                    targetFeet.getX() + 0.5, targetFeet.getY(), targetFeet.getZ() + 0.5, blastRays(world, player));
+            double score = distSq - harm * 1000.0;
+            if (score > maxDistSq) {
+                maxDistSq = score;
                 bestDir = dirs[d];
             }
         }
         return bestDir;
+    }
+
+    /** Which rays a block's collision shape stops in {@code world}, as an explosion's exposure is reckoned (E-39i). */
+    static dev.kindred.core.tactics.BlastExposure.Rays blastRays(ServerWorld world, net.minecraft.entity.Entity entity) {
+        return (fx, fy, fz, tx, ty, tz) -> world.raycast(new net.minecraft.world.RaycastContext(new Vec3d(fx, fy, fz), new Vec3d(tx, ty, tz),
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, entity)).getType()
+                != net.minecraft.util.hit.HitResult.Type.MISS;
     }
 
     private boolean isWaterNearby(ServerWorld world, BlockPos pos) {
@@ -2502,7 +2550,8 @@ final class PlayerRuntime {
                 if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
                     var creeperEntity = world.getEntity(mob.entityId());
                     Vec3d threatPos = creeperEntity != null ? creeperEntity.getPos() : null;
-                    String escapeDir = findBestEscapeDirection(player, threatPos);
+                    double power = creeperEntity instanceof net.minecraft.entity.mob.CreeperEntity creeper && creeper.shouldRenderOverlay() ? 6 : 3;
+                    String escapeDir = findBestEscapeDirection(player, threatPos, power);
                     if (escapeDir != null) {
                         UUID taskId = UUID.nameUUIDFromBytes(("creeper_retreat:" + entry.data.id() + ":" + mob.entityId() + ":" + escapeDir).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
@@ -3079,7 +3128,16 @@ final class PlayerRuntime {
             }
         }
 
-        // Its best kit named at an anvil of its own once it has reached the enchanting stage (E-16d), between its work.
+        // Its weapons, armour and pickaxe enchanted at a table of its own (E-16a), then its best kit named (E-16d), between
+        // its work.
+        var enchanting = enchantCandidates(entry, body);
+        if (enchanting != null) return enchanting;
+        // Its diamond kit upgraded to netherite (E-16c), between its work.
+        var netherite = netheriteCandidates(entry, body);
+        if (netherite != null) return netherite;
+        // Potions brewed at a stand of its own (E-16b), between its work.
+        var brewing = brewCandidates(entry, body);
+        if (brewing != null) return brewing;
         var naming = kitNameCandidates(entry, body);
         if (naming != null) return naming;
 
@@ -3903,7 +3961,11 @@ final class PlayerRuntime {
         entry.campaign.policy(edits);
         var storage = entry.setup == null || entry.setup.storage() == null ? null : new BlockPos(entry.setup.storage().position().x(),
                 entry.setup.storage().position().y(), entry.setup.storage().position().z());
-        var task = build.next(body, new BuildRunner.Supply(entry.campaign, storage));
+        // Never the kind of animal its ranch is penning, for a build's wool as for its food.
+        var ranch = entry.ranch;
+        var task = build.next(body, new BuildRunner.Supply(entry.campaign, storage, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
+                net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent(),
+                lootWanted(entry).getOrDefault("minecraft:iron_ingot", 0)));
         // Its scaffold kept with its work as it changes, to take down as its own after a restart (F-13).
         if (entry.keptWork != null && "build".equals(entry.keptWork.kind())) {
             var scaffold = build.scaffold();
@@ -4078,6 +4140,7 @@ final class PlayerRuntime {
                 entry.baseBuild = null;
                 entry.baseRepair = null;
                 entry.hallBuild = null;
+                entry.hallRepair = false;
                 entry.baseCheckAt = server.getTicks() + BASE_RETRY;
             }
             entry.build = null;
@@ -4153,6 +4216,24 @@ final class PlayerRuntime {
                 noteBase(entry, why);
                 if (!startBase(entry, base, why)) return false;
                 entry.baseRepair = base;
+                return true;
+            }
+        }
+        // Its trading hall kept whole as its base is (E-45d, E-31a): its own blocks gone or out of place put back, and
+        // only those. What it keeps clear is left as it is (a cell's front shut with its villager's job block, the rail
+        // on a cell's floor), and nothing is touched while it brings a villager home, whose line takes the door out.
+        var standing = record.hall;
+        if (standing != null && standing.complete() && standing.dimension().equals(dimension) && entry.bring == null) {
+            int damage = hallDamage(world, standing);
+            if (damage > 0) {
+                String why = "Repairing its trading hall, " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
+                var plan = hallPlan(standing);
+                var repair = new dev.kindred.core.construction.Blueprint("the trading hall's repair", plan.source(), plan.creator(), plan.license(),
+                        plan.blocks(), List.of());
+                if (startBuild(server.getCommandSource(), id, repair, new BlockPos(standing.x(), standing.y(), standing.z()), 0) != 1) return false;
+                entry.hallBuild = entry.build;
+                entry.hallRepair = true;
+                noteBase(entry, why);
                 return true;
             }
         }
@@ -4260,7 +4341,7 @@ final class PlayerRuntime {
     static final int HALL_CELLS = 3;
 
     private boolean startHall(Entry entry, PlayerMemoryStore.Hall hall, String why) {
-        var plan = dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+        var plan = hallPlan(hall);
         if (startBuild(server.getCommandSource(), entry.data.id(), plan, new BlockPos(hall.x(), hall.y(), hall.z()), 0) != 1) return false;
         entry.hallBuild = entry.build;
         noteBase(entry, why);
@@ -4271,6 +4352,13 @@ final class PlayerRuntime {
     /** Its trading hall's build has ended: whole, or after its last try as far as it goes, it stands. */
     private void hallBuilt(Entry entry, BuildRunner build) {
         entry.hallBuild = null;
+        if (entry.hallRepair) {
+            // A repair that ends short is tried again later, never at once: what it lacks may come with time.
+            entry.hallRepair = false;
+            if (!build.complete()) entry.baseCheckAt = server.getTicks() + BASE_RETRY;
+            noteBase(entry, build.complete() ? "Its trading hall is whole again" : "Its trading hall's repair ended short (" + build.progress() + "); back to it later");
+            return;
+        }
         var record = entry.bases;
         if (record == null || record.hall == null) return;
         if (!build.complete() && ++entry.hallTries < BASE_TRIES) {
@@ -4469,6 +4557,8 @@ final class PlayerRuntime {
             var ranch = entry.ranch;
             var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
                     net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
+            // No animal in sight: fish at water close by with a rod it holds, before it walks out to look (E-05).
+            if (found.isEmpty()) found = entry.campaign.fish(body);
             if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
             if (found.isEmpty()) {
                 entry.gettingFood = false;
@@ -4553,6 +4643,26 @@ final class PlayerRuntime {
         requireThread();
         Entry entry = entries.get(id);
         return entry == null ? "" : entry.lifeNote;
+    }
+
+    /** The plan its trading hall was built on. */
+    private static dev.kindred.core.construction.Blueprint hallPlan(PlayerMemoryStore.Hall hall) {
+        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+    }
+
+    /**
+     * How many of its trading hall's own blocks are gone or out of place, as the build compares them (a bed slept in, a
+     * door open count as in place); none when any of it is out of loaded ground.
+     */
+    private static int hallDamage(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        int damage = 0;
+        var origin = new BlockPos(hall.x(), hall.y(), hall.z());
+        for (var block : hallPlan(hall).blocks()) {
+            BlockPos at = origin.add(block.at().x(), block.at().y(), block.at().z());
+            if (!world.isChunkLoaded(at)) return 0;
+            if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
+        }
+        return damage;
     }
 
     /**
@@ -5994,12 +6104,60 @@ final class PlayerRuntime {
             else entry.storeAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
         }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
+            entry.netheriteAt = server.getTicks() + 600;
+            entry.routineRefreshPending = true;
+        }
+        // A furnace or crafting table it put down for its netherite is its own to come back to (E-16c).
+        if (state == SkillRunner.State.COMPLETED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)
+                && entry.netheriteStep != null && "native_place".equals(entry.netheriteStep.skill()) && entry.campaign != null && entry.nativeBody != null) {
+            var args = entry.netheriteStep.args();
+            BlockPos placed = new BlockPos(Integer.parseInt(args.get("x")), Integer.parseInt(args.get("y")), Integer.parseInt(args.get("z")));
+            var block = entry.nativeBody.entity().getServerWorld().getBlockState(placed);
+            if (block.isOf(Blocks.CRAFTING_TABLE) || block.isOf(Blocks.FURNACE)) {
+                entry.campaign.placedWorkstation(placed);
+                entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
+            }
+            entry.netheriteStep = null;
+        }
+        if (entry.nativeTask instanceof NativeSmithAction smith && state == SkillRunner.State.COMPLETED) {
+            say(entry, dev.kindred.core.Netherite.said(smith.piece()), "");
+            entry.netheriteAt = server.getTicks() + 20;
+            entry.routineRefreshPending = true;
+        }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.brewTaskId)) {
+            entry.brewAt = server.getTicks() + 600;
+            entry.routineRefreshPending = true;
+        }
+        if (entry.nativeTask instanceof NativeBrewAction brew && state == SkillRunner.State.COMPLETED) {
+            if (brew.mode() == NativeBrewAction.Mode.LOAD) entry.brewLoaded = server.getTicks();
+            if (brew.mode() == NativeBrewAction.Mode.UNLOAD) {
+                for (var moved : brew.moved().entrySet()) {
+                    String key = moved.getKey();
+                    if (moved.getValue() <= 0 || !key.startsWith("minecraft:potion[")) continue;
+                    String potion = key.substring("minecraft:potion[".length(), key.length() - 1);
+                    if (potion.equals("minecraft:water") || potion.equals("minecraft:awkward")) continue;
+                    say(entry, dev.kindred.core.Brewing.said(potion, moved.getValue()), "");
+                }
+                entry.brewing = null;
+            }
+            entry.routineRefreshPending = true;
+        }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.enchantTaskId)) {
+            entry.enchantAt = server.getTicks() + 1200;
+            entry.routineRefreshPending = true;
+        }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.kitTaskId)) {
             entry.kitNamesAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
         }
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
+        if (entry.nativeTask instanceof NativeEnchantAction enchanted && state == SkillRunner.State.COMPLETED && !enchanted.gained().isEmpty()) {
+            say(entry, dev.kindred.core.Enchanting.said(enchanted.item(), enchanted.gained()), "");
+            entry.enchantAt = server.getTicks() + 20;
+            entry.routineRefreshPending = true;
+        }
         if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
@@ -6026,11 +6184,27 @@ final class PlayerRuntime {
         }
         // A step of bringing a villager home done, the next one planned from what it did; refused, counted (E-45e).
         if (entry.bring != null && state != SkillRunner.State.RUNNING && finishedTaskId != null && entry.bring.taskIds.contains(finishedTaskId)) {
+            if ("native_row".equals(entry.skillId)) {
+                entry.bring.rows++;
+                KindredMod.LOGGER.info("{} bringing: a row ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
+            }
             if ("native_push".equals(entry.skillId)) {
                 entry.bring.pushes++;
                 KindredMod.LOGGER.info("{} bringing: a push ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
             }
-            if (state == SkillRunner.State.BLOCKED) {
+            if ("native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
+                // The boat it put down, to take back up if it did not take the villager.
+                var put = entry.runner.lastProgress().get("boat");
+                if (put != null) {
+                    entry.bring.boatId = UUID.fromString(put);
+                    entry.bring.boatTries++;
+                }
+                KindredMod.LOGGER.info("{} bringing: the boat step ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
+            }
+            // A boat not put down (the villager stepped where it was to go) is another try at holding it, not a step gone wrong.
+            if (state == SkillRunner.State.BLOCKED && "native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
+                entry.bring.boatTries++;
+            } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
             } else entry.bring.failed = 0;
@@ -7809,7 +7983,8 @@ final class PlayerRuntime {
      * line and put back after; the rails it lays it takes up again; nothing owned is left but what holds the villager.
      */
     private static final class Bring {
-        enum Phase { BRIDGE, DOOR, LAY, CART, PUSH, RECART, ROLL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, UNBRIDGE, DOOR_BACK }
+        enum Phase { HOLD, BOARD, ROW, LAND, BRIDGE, DOOR, OPEN, LAY, CART, PUSH, RECART, ROLL, LINTEL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, UNBRIDGE,
+            DOOR_BACK, KEEP }
 
         final UUID villager;
         final String noun;
@@ -7824,12 +7999,31 @@ final class PlayerRuntime {
         /** The blocks of the bridge the line is laid on over water, in the line's order; and every one it put down. */
         List<BlockPos> bridge;
         final Set<BlockPos> bridged = new HashSet<>();
+        /** The boat that holds a villager that strolls (its AI on) while the line is laid, and the boats put down for it. */
+        UUID boatId;
+        int boatTries;
+        /** The boat step it is at while holding the villager, kept to while it runs (its boat spent, it is not "no boat"). */
+        NativeTaskCandidate boatStep;
+        /**
+         * Across water no line is laid over, the way it rows the villager in its boat to the far bank; once across, the
+         * bank's column beside the boat the line runs along (the cart, rolling past, takes the boat up from the water);
+         * its rows, and where the first began.
+         */
+        dev.kindred.core.construction.WaterCrossing.Crossing crossing;
+        boolean crossed;
+        BlockPos dock;
+        int rows;
+        Vec3d rowFrom;
+        /** The hall's blocks taken out over the line for a villager riding in its boat, and what each was, to put back. */
+        final Map<BlockPos, net.minecraft.block.BlockState> opened = new LinkedHashMap<>();
         final String wood;
         final net.minecraft.item.Item jobBlock;
         Phase phase = Phase.BRIDGE;
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
+        long fetchFrom;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -7897,10 +8091,18 @@ final class PlayerRuntime {
      * from two rails behind the villager to a free cell's floor, puts the cart down behind it and pushes it: rolling, the
      * cart takes the villager up and runs on into the cell, against its bed (pushed again where it stops short). It shuts
      * the cell's front with the plain block, breaks the cart through the opening above (the villager set down inside, on
-     * its bed), takes the plain block back, steps into the front for the cart and the floor's rail, steps out and puts the
-     * job block there, which shuts the villager in. Then it takes up its rails and puts the door back. Where the line
+     * its bed), takes the plain block back, steps into the front for the cart, steps out and puts the job block there,
+     * which shuts the villager in. Then it takes up its rails, but the one on the cell's floor, and puts the door back. Where the line
      * crosses water it first puts down a bridge of plain blocks for it, from the bank it is on, and takes the bridge back
-     * after its rails, toward the hall. Under the server's AI world edits only, never in a match.
+     * after its rails, toward the hall. A villager that strolls (its AI on) it first holds in a boat it puts down just
+     * beside it, as players do, and lays the line from where it sits, with room for its ride: the cart takes the boat up
+     * with the villager in it, a block higher than a villager in the cart alone, so the line needs three open over each
+     * rail and three of run-up, and the wall over the hall's doorway and the cell's lintel are taken out for it (with a
+     * tool that takes them) and put back after, the lintel before the cell is shut. In the cell it breaks the boat (the
+     * villager set down on the cart's top), then the cart. Across water no line is laid over (or whose bridge wants more
+     * plain blocks than it has), it gets in the boat with the villager, rows it over (WaterCrossing), gets out on the far
+     * bank and lays the line along the bank past the boat, which the cart takes up from the water as it rolls by. Under the
+     * server's AI world edits only, never in a match.
      */
     private List<NativeTaskCandidate> bringCandidates(Entry entry, NativePlayerBody body) {
         var player = body.entity();
@@ -7939,6 +8141,184 @@ final class PlayerRuntime {
         if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back.", false);
         var task = bringTask(entry, "step");
         switch (b.phase) {
+            case HOLD -> {
+                // A villager that strolls (its AI on) held while the line is laid, as players hold one: a boat put down
+                // beside its feet takes it up, and it sits where it is, carried in the boat by the cart to its cell.
+                // A boat step under way is kept to till it ends: the boat it puts down is spent from its hand at once.
+                if (b.boatStep != null && "native_boat".equals(entry.skillId) && b.boatStep.candidate().id().equals(entry.currentTaskId)
+                        && entry.runner.state() == SkillRunner.State.RUNNING) return List.of(b.boatStep);
+                b.boatStep = null;
+                if (villager.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    b.boatId = boat.getUuid();
+                    // Held for the crossing: into the boat with it, to row it over.
+                    if (b.crossing != null && !b.crossed) {
+                        KindredMod.LOGGER.info("{} bringing: the {} held in a boat at {}, to row it across to {}", entry.data.displayName(), b.noun,
+                                villager.getBlockPos().toShortString(), b.crossing.landing());
+                        b.phase = Bring.Phase.BOARD;
+                        return bringCandidates(entry, body);
+                    }
+                    var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
+                    if (again.isEmpty()) return giveUp(entry, body, "No rail line with room for the " + b.noun + " in its boat from where it sits.");
+                    var r = again.get();
+                    b.rails = r.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
+                    b.cart = new BlockPos(r.cart().x(), r.cart().y(), r.cart().z());
+                    b.push = new BlockPos(r.push().x(), r.push().y(), r.push().z());
+                    b.bridge = r.bridge().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
+                    KindredMod.LOGGER.info("{} bringing: the {} held in a boat at {}; the line from there, {} rails", entry.data.displayName(), b.noun,
+                            villager.getBlockPos().toShortString(), b.rails.size());
+                    b.phase = Bring.Phase.BRIDGE;
+                    return bringCandidates(entry, body);
+                }
+                // A boat just put down by it, as its step ends: a moment for it to take the villager up.
+                var near = world.getEntitiesByClass(net.minecraft.entity.vehicle.BoatEntity.class, villager.getBoundingBox().expand(2.5),
+                        boat -> boat.isAlive() && !boat.hasPassengers());
+                if (!near.isEmpty() && b.boatId == null) b.boatId = near.getFirst().getUuid();
+                if (!near.isEmpty() && near.getFirst().age < 10) return List.of(waitTask(bringTask(entry, "boat down:" + b.boatTries), "For the boat to take the " + b.noun + " up"));
+                // A boat put down that did not take it up (it had stepped on): broken, picked up, and put down again.
+                if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive() && b.boatTries < 6) {
+                    if (!player.canInteractWithEntity(empty, 0)) return List.of(goNear(bringTask(entry, "to the boat:" + b.boatTries), empty.getBlockPos()));
+                    b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString()));
+                    return List.of(b.boatStep);
+                }
+                var boatLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                        item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS));
+                if (boatSlot(player) < 0 && !boatLying.isEmpty() && b.boatTries < 6) return List.of(standAt(bringTask(entry, "boat item:" + b.boatTries), boatLying.getFirst().getBlockPos()));
+                int boatSlot = boatSlot(player);
+                if (boatSlot < 0 || b.boatTries >= 6 || !opensOverhead(player, b)) {
+                    // No boat to hand, or it would not take the villager up: brought as the cart comes instead.
+                    KindredMod.LOGGER.info("{} bringing: the {} not held ({} boats put down, {}); laying the line to it as it stands", entry.data.displayName(), b.noun,
+                            b.boatTries, boatSlot < 0 ? "no boat" : opensOverhead(player, b) ? "it took none" : "no tool to make room over the line in the hall");
+                    b.phase = Bring.Phase.BRIDGE;
+                    return bringCandidates(entry, body);
+                }
+                var hold = bringTask(entry, "hold:" + b.boatTries);
+                if (boatSlot >= 9) return List.of(new NativeTaskCandidate(hold, "native_swap", Map.of("source", String.valueOf(boatSlot), "target", "8")));
+                // On the middle of a block beside it, on the side away from the player: a boat is not put down where it
+                // would overlap a mob or a player, and one put down within a fifth of a block of a villager takes it up.
+                // The villager then sits on that block's middle, and the line is laid again from there.
+                var villagerBox = villager.getBoundingBox();
+                BlockPos ground = null;
+                for (var d : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
+                    var beside = villager.getBlockPos().offset(d);
+                    if (!world.getBlockState(beside.down()).isSideSolidFullSquare(world, beside.down(), net.minecraft.util.math.Direction.UP)
+                            || !world.getBlockState(beside).getCollisionShape(world, beside).isEmpty() || !world.getBlockState(beside.up()).getCollisionShape(world, beside.up()).isEmpty()) continue;
+                    var boatBox = new net.minecraft.util.math.Box(beside.getX() + 0.5 - 0.6875, beside.getY(), beside.getZ() + 0.5 - 0.6875,
+                            beside.getX() + 0.5 + 0.6875, beside.getY() + 0.5625, beside.getZ() + 0.5 + 0.6875);
+                    // Nor where it would stand in a block either side (a wall by the villager): wider than a block, it overhangs.
+                    if (boatBox.intersects(villagerBox) || !boatBox.expand(0.2, 0, 0.2).intersects(villagerBox) || boatBox.intersects(player.getBoundingBox())
+                            || !world.isSpaceEmpty(boatBox)) continue;
+                    if (ground == null || player.getBlockPos().getSquaredDistance(beside) > player.getBlockPos().getSquaredDistance(ground.up())) ground = beside.down();
+                }
+                // None of those fits (it stands off its block's middle, at its job site say): just clear of it along a side,
+                // a tenth of a block between their boxes, the boat's middle put down on whatever block that falls on.
+                Vec3d aim = null;
+                if (ground == null) {
+                    for (var d : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
+                        Vec3d c = villager.getPos().add(d.getOffsetX() * 1.1, 0, d.getOffsetZ() * 1.1);
+                        var feet = BlockPos.ofFloored(c.x, villager.getY() + 0.1, c.z);
+                        if (!world.getBlockState(feet.down()).isSideSolidFullSquare(world, feet.down(), net.minecraft.util.math.Direction.UP)
+                                || !world.getBlockState(feet).getCollisionShape(world, feet).isEmpty() || !world.getBlockState(feet.up()).getCollisionShape(world, feet.up()).isEmpty()) continue;
+                        var boatBox = new net.minecraft.util.math.Box(c.x - 0.6875, feet.getY(), c.z - 0.6875, c.x + 0.6875, feet.getY() + 0.5625, c.z + 0.6875);
+                        if (boatBox.intersects(villagerBox) || !boatBox.expand(0.2, 0, 0.2).intersects(villagerBox) || boatBox.intersects(player.getBoundingBox())
+                                || !world.isSpaceEmpty(boatBox)) continue;
+                        if (aim == null || player.getPos().squaredDistanceTo(c) > player.getPos().squaredDistanceTo(aim)) {
+                            aim = new Vec3d(c.x, feet.getY(), c.z);
+                            ground = feet.down();
+                        }
+                    }
+                }
+                // Nowhere this moment (it is between blocks, or hemmed in): a moment more.
+                if (ground == null) {
+                    if (player.getBlockPos().getSquaredDistance(villager.getBlockPos()) > 9) return List.of(goNear(hold, villager.getBlockPos()));
+                    return List.of(waitTask(hold, "For the " + b.noun + " to stand still"));
+                }
+                Vec3d top = aim != null ? aim : new Vec3d(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
+                if (player.getEyePos().distanceTo(top) > 3.5) return List.of(goNear(hold, villager.getBlockPos()));
+                var args = new java.util.HashMap<>(Map.of("mode", "place", "slot", String.valueOf(boatSlot),
+                        "x", String.valueOf(ground.getX()), "y", String.valueOf(ground.getY()), "z", String.valueOf(ground.getZ())));
+                if (aim != null) {
+                    args.put("hx", String.format(java.util.Locale.ROOT, "%.3f", aim.x));
+                    args.put("hz", String.format(java.util.Locale.ROOT, "%.3f", aim.z));
+                }
+                b.boatStep = new NativeTaskCandidate(hold, "native_boat", Map.copyOf(args));
+                return List.of(b.boatStep);
+            }
+            case BOARD -> {
+                // Into the boat that holds the villager: the player takes its front seat, the villager the back.
+                var boat = heldBoat(world, b);
+                if (boat == null) return giveUp(entry, body, "The " + b.noun + " got out of its boat.");
+                if (player.getVehicle() == boat) {
+                    b.phase = Bring.Phase.ROW;
+                    if (b.rowFrom == null) b.rowFrom = boat.getPos();
+                    return bringCandidates(entry, body);
+                }
+                if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(bringTask(entry, "to board"), boat.getBlockPos()));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "board:" + b.rows), "native_boat", Map.of("mode", "board", "target", boat.getUuid().toString())));
+            }
+            case ROW -> {
+                // Over the ground it sits on into the water, and across to the water by the far bank.
+                var boat = heldBoat(world, b);
+                if (boat == null) return giveUp(entry, body, "The " + b.noun + " got out of its boat.");
+                if (player.getVehicle() != boat) {
+                    b.phase = Bring.Phase.BOARD;
+                    return bringCandidates(entry, body);
+                }
+                var water = b.crossing.water();
+                double wx = water.x() + 0.5, wz = water.z() + 0.5;
+                double left = Math.hypot(boat.getX() - wx, boat.getZ() - wz);
+                // There, or aground against the far bank well across (a row ends at the first shore met afloat).
+                boolean ashore = b.rows > 0 && boat.isTouchingWater() && left < b.rowFrom.distanceTo(new Vec3d(wx, b.rowFrom.y, wz)) / 2;
+                if (left <= 2.5 || ashore) {
+                    KindredMod.LOGGER.info("{} bringing: rowed the {} across to {} ({} rows), {} off the landing", entry.data.displayName(), b.noun,
+                            boat.getBlockPos().toShortString(), b.rows, String.format(java.util.Locale.ROOT, "%.1f", left));
+                    b.phase = Bring.Phase.LAND;
+                    return bringCandidates(entry, body);
+                }
+                if (b.rows >= 4) return giveUp(entry, body, "I couldn't row the " + b.noun + " across.");
+                return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", wx),
+                        "z", String.format(java.util.Locale.ROOT, "%.2f", wz), "range", "1.5", "seconds", "90", "land", "true")));
+            }
+            case LAND -> {
+                // Out onto the bank, the villager left sitting in the boat on the water: let go of there, it would wade or
+                // swim back to its work across the water.
+                if (player.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "out:" + b.rows), "native_boat", Map.of("mode", "land")));
+                }
+                var boat = heldBoat(world, b);
+                if (boat == null) return giveUp(entry, body, "The " + b.noun + " got out of its boat.");
+                // The line laid along the bank past the boat: a rolling empty cart takes up a boat its box comes within a
+                // fifth of a block of, there beside its rail as well as before it, and carries it on, villager and all.
+                var ground = bringGround(world, b);
+                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex);
+                var hallAt = new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ());
+                dev.kindred.core.construction.RailRoute.Route best = null;
+                BlockPos dock = null;
+                for (var d : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
+                    var bank = boat.getBlockPos().offset(d);
+                    // Close enough for the cart's box, passing the bank column's middle, to meet the boat's.
+                    if (Math.hypot(boat.getX() - (bank.getX() + 0.5), boat.getZ() - (bank.getZ() + 0.5)) > 1.3) continue;
+                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, cell,
+                            dev.kindred.core.construction.RailRoute.BOAT_ROOM);
+                    if (line.isEmpty() || !line.get().bridge().isEmpty()) continue;
+                    if (best == null || line.get().rails().size() < best.rails().size()) {
+                        best = line.get();
+                        dock = bank;
+                    }
+                }
+                if (best == null) return giveUp(entry, body, "No line along the bank past the " + b.noun + "'s boat.");
+                b.rails = best.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
+                b.cart = new BlockPos(best.cart().x(), best.cart().y(), best.cart().z());
+                b.push = new BlockPos(best.push().x(), best.push().y(), best.push().z());
+                b.bridge = List.of();
+                b.dock = new BlockPos(dock.getX(), best.villager().y(), dock.getZ());
+                b.crossed = true;
+                KindredMod.LOGGER.info("{} bringing: across, the {} in its boat at {}; the line along the bank past it at {}, {} rails", entry.data.displayName(),
+                        b.noun, boat.getBlockPos().toShortString(), b.dock.toShortString(), b.rails.size());
+                b.phase = Bring.Phase.BRIDGE;
+                return bringCandidates(entry, body);
+            }
             case BRIDGE -> {
                 // Over the water first, from the bank it is on: the way to the hall's door and back is over it.
                 var step = bridgeStep(entry, body, b);
@@ -7948,11 +8328,27 @@ final class PlayerRuntime {
             }
             case DOOR -> {
                 if (!(world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock)) {
-                    b.phase = Bring.Phase.LAY;
+                    b.phase = heldBoat(world, b) != null ? Bring.Phase.OPEN : Bring.Phase.LAY;
                     return bringCandidates(entry, body);
                 }
                 if (!reaches(player, b.door)) return List.of(goNear(task, b.door.south()));
                 return List.of(breakAt(task, b.door));
+            }
+            case OPEN -> {
+                // Room made in the hall for the villager in its boat, which the cart carries a block higher than one in the
+                // cart alone: the wall over the doorway taken out from outside, the cell's lintel from the corridor, beside
+                // it, where each block falls to be picked up. Each is put back after.
+                for (var at : overhead(b)) {
+                    var state = world.getBlockState(at);
+                    if (state.isAir()) continue;
+                    b.opened.putIfAbsent(at.toImmutable(), state);
+                    // Outside, the ground is a block below the doorway's floor.
+                    var from = at.getZ() == b.door.getZ() ? b.door.south().down() : b.slot.south();
+                    if (!player.getBlockPos().equals(from)) return List.of(standAt(bringTask(entry, "to open:" + at.asLong()), from));
+                    return List.of(breakAt(bringTask(entry, "open:" + at.asLong()), at));
+                }
+                b.phase = Bring.Phase.LAY;
+                return bringCandidates(entry, body);
             }
             case LAY -> {
                 // Laid again: its rails off the new line taken up first, so that none joins onto it (a rail takes its
@@ -8017,19 +8413,22 @@ final class PlayerRuntime {
             case PUSH -> {
                 var cart = cartOf(world, b);
                 if (cart == null) return giveUp(entry, body, "The cart for the " + b.noun + " is gone.");
-                if (villager.getVehicle() == cart) {
+                // Taken up, or its boat taken up with it in it: a cart takes up a boat as it takes up a mob.
+                if (villager.getRootVehicle() == cart) {
                     b.phase = Bring.Phase.ROLL;
                     b.since = now;
                     return bringCandidates(entry, body);
                 }
                 if (cart.getVelocity().horizontalLength() > 0.01) return List.of(waitTask(task, "For the cart"));
                 // Off the line the cart will run along (wandered, or pushed aside): the line laid again from where it stands.
-                int on = b.rails.indexOf(villager.getBlockPos());
+                // Across the water, its boat floats beside the line, by the bank's column it runs past.
+                int on = b.rails.indexOf(b.crossed ? b.dock : villager.getBlockPos());
                 if (on < 1 || on > 4) {
                     if (b.replans >= 4) return giveUp(entry, body, "The " + b.noun + " kept wandering off the line.");
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
                             new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex));
+                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), heldBoat(world, b) != null
+                                    ? dev.kindred.core.construction.RailRoute.BOAT_ROOM : dev.kindred.core.construction.RailRoute.CART_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line from where the " + b.noun + " wandered to.");
                     b.replans++;
                     var r = again.get();
@@ -8043,7 +8442,17 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 if (b.pushes >= 4) return giveUp(entry, body, "The cart wouldn't take the " + b.noun + " up.");
-                // The cart rolled on past and stopped empty: back to its place, for another push.
+                // Stopped short against it, untaken: a cart takes up only what lies within a fifth of a block after its move
+                // in a tick, and rolling faster than that it can step over the gap into touching, which stops it dead. Taken
+                // back and put down in its place again, for another push.
+                int cartAt = b.rails.indexOf(cart.getBlockPos());
+                if (!cart.getBlockPos().equals(b.cart) && cartAt >= 0 && cartAt < on) {
+                    KindredMod.LOGGER.info("{} bringing: the cart at {} stopped short against the {} at {} ({} pushes); put down again", entry.data.displayName(),
+                            cart.getPos(), b.noun, villager.getPos(), b.pushes);
+                    b.phase = Bring.Phase.RECART;
+                    return bringCandidates(entry, body);
+                }
+                // The cart rolled on past and stopped empty.
                 if (!cart.getBlockPos().equals(b.cart)) {
                     KindredMod.LOGGER.info("{} bringing: the cart at {} rolled past the {} at {} (riding {}, {} pushes); the line from {}", entry.data.displayName(),
                             cart.getPos(), b.noun, villager.getPos(), villager.getVehicle(), b.pushes, b.cart.toShortString());
@@ -8053,6 +8462,7 @@ final class PlayerRuntime {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "behind:" + b.pushes), "native_goto", Map.of("x", String.valueOf(b.push.getX()),
                             "y", String.valueOf(b.push.getY()), "z", String.valueOf(b.push.getZ()), "range", "0", "centre", "true")));
                 }
+                KindredMod.LOGGER.info("{} bringing: pushing the cart at {} into the {} at {}", entry.data.displayName(), cart.getPos(), b.noun, villager.getPos());
                 return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push",
                         Map.of("target", cart.getUuid().toString(), "seconds", "10")));
             }
@@ -8074,11 +8484,11 @@ final class PlayerRuntime {
             case ROLL -> {
                 var cart = cartOf(world, b);
                 if (cart == null) return giveUp(entry, body, "The cart for the " + b.noun + " is gone.");
-                if (villager.getVehicle() != cart) return giveUp(entry, body, "The " + b.noun + " got out of the cart.");
+                if (villager.getRootVehicle() != cart) return giveUp(entry, body, "The " + b.noun + " got out of the cart.");
                 double speed = cart.getVelocity().horizontalLength();
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
                 if (cart.getBlockPos().equals(b.floor) && speed < 0.01 && !inFront) {
-                    b.phase = Bring.Phase.SHUT;
+                    b.phase = Bring.Phase.LINTEL;
                     return bringCandidates(entry, body);
                 }
                 // At rest on the cell's floor but still half in its front: nudged on in from the corridor, against the bed.
@@ -8111,6 +8521,81 @@ final class PlayerRuntime {
                 }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "again:" + b.pushes), "native_push",
                         Map.of("target", cart.getUuid().toString(), "seconds", "10")));
+            }
+            case LINTEL -> {
+                // The cell's lintel put back before its front is shut and the villager let out: with the lintel out, a
+                // villager on the shutter or the job block would walk out over it. From the corridor, under the roof.
+                BlockPos lintel = overhead(b).getLast();
+                var was = b.opened.get(lintel);
+                if (was == null || !world.getBlockState(lintel).isAir()) {
+                    b.phase = villager.isAiDisabled() ? Bring.Phase.SHUT : Bring.Phase.KEEP;
+                    return bringCandidates(entry, body);
+                }
+                int slot = slotOf(player, was.getBlock().asItem());
+                if (slot < 0) slot = shutterSlot(player);
+                if (slot < 0) return giveUp(entry, body, "I've nothing to put the " + b.noun + "'s lintel back with.");
+                if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, lintel)) {
+                    return List.of(standAt(bringTask(entry, "by the lintel"), b.slot.south(2)));
+                }
+                return List.of(new NativeTaskCandidate(bringTask(entry, "lintel"), "native_place", Map.of("x", String.valueOf(lintel.getX()),
+                        "y", String.valueOf(lintel.getY()), "z", String.valueOf(lintel.getZ()), "slot", String.valueOf(slot), "side", "down")));
+            }
+            case KEEP -> {
+                // One that strolls is never let loose with the cell's front open: at work it makes for its old job site, out
+                // through the front in the moment the player takes to step into it (a fixture's librarian, in suite run 48).
+                // So the cart stays in the cell, spent as the floor's rail is, and the job block goes in front of it. One in
+                // the cart stays in it. One in its boat, whose width overhangs the front's foot from the cart: the job block put
+                // in first where it misses the boat (a lectern's foot is under it and its post clear of it), else the opening
+                // shut a moment against the lintel, the block's height left under it too low for a villager; then the boat
+                // broken over it, which sets the villager down where it sat, inside the cart's box on the floor. The boat's
+                // wood falls in the cell, out of reach: left there, and said.
+                var state = world.getBlockState(b.slot);
+                if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
+                    if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !body.miningEligible(b.slot)) {
+                        return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    }
+                    return List.of(breakAt(bringTask(entry, "front rail"), b.slot));
+                }
+                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    BlockPos opening = b.slot.up();
+                    var job = net.minecraft.block.Block.getBlockFromItem(b.jobBlock);
+                    boolean jobIn = world.getBlockState(b.slot).isOf(job);
+                    boolean fits = jobIn || world.getBlockState(b.slot).isReplaceable() && world.doesNotIntersectEntities(null,
+                            job.getDefaultState().getCollisionShape(world, b.slot).offset(b.slot.getX(), b.slot.getY(), b.slot.getZ()));
+                    if (fits && !jobIn) {
+                        int slot = slotOf(player, b.jobBlock);
+                        if (slot < 0) return giveUp(entry, body, "I've lost the " + b.noun + "'s job block.");
+                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, b.slot)) {
+                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        }
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "job block"), "native_place", Map.of("x", String.valueOf(b.slot.getX()),
+                                "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
+                    }
+                    if (!fits && !isShutter(world.getBlockState(opening))) {
+                        int slot = shutterSlot(player);
+                        if (slot < 0) return giveUp(entry, body, "I've no block to shut the " + b.noun + "'s cell with a moment.");
+                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, opening)) {
+                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        }
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "shut opening"), "native_place", Map.of("x", String.valueOf(opening.getX()),
+                                "y", String.valueOf(opening.getY()), "z", String.valueOf(opening.getZ()), "slot", String.valueOf(slot), "side", "down")));
+                    }
+                    if (!player.canInteractWithEntity(boat, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "break boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
+                }
+                var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
+                for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                        item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS))) {
+                    KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach", entry.data.displayName(), item.getStack(), b.noun, item.getPos());
+                    b.unreached.add(item.getBlockPos());
+                }
+                KindredMod.LOGGER.info("{} bringing: the cart left in the {}'s cell, the {} {} it", entry.data.displayName(), b.noun, b.noun,
+                        villager.getVehicle() != null ? "in" : "by");
+                b.phase = Bring.Phase.CLOSE;
+                return bringCandidates(entry, body);
             }
             case SHUT -> {
                 // Out of the front first, where a nudge may have left it.
@@ -8147,17 +8632,32 @@ final class PlayerRuntime {
                     if (!reaches(player, b.slot)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                     return List.of(breakAt(bringTask(entry, "unshut"), b.slot));
                 }
-                boolean cartLying = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(b.floor).expand(0.5, 1, 0.5),
-                        item -> item.getStack().isOf(Items.MINECART)).isEmpty();
-                boolean railLeft = world.getBlockState(b.floor).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
-                if (cartLying || railLeft) {
-                    // Into the cell's front for them: the cart picked up where it lies, the floor's rail taken up.
+                // The cart dropped in the cell as it broke, anywhere from its floor to its bed. The floor's rail is left to
+                // the cell, as players leave one: broken, it popped onto the bed, out of reach from the front. What falls
+                // there, out of reach, it leaves lying and says so; it does not wait on it.
+                var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
+                var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                        item -> item.isAlive() && item.getStack().isOf(Items.MINECART));
+                if (!lying.isEmpty()) {
+                    // Into the cell's front for them, where they are picked up from (two seconds at most, by the clock: the
+                    // step is looked at more than once a tick).
                     if (!player.getBlockPos().equals(b.slot)) {
                         return List.of(new NativeTaskCandidate(bringTask(entry, "in"), "native_goto", Map.of("x", String.valueOf(b.slot.getX()),
                                 "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "range", "0", "centre", "true")));
                     }
-                    if (railLeft) return List.of(breakAt(bringTask(entry, "floor rail"), b.floor));
-                    return List.of(waitTask(task, "For the cart to be picked up"));
+                    if (b.fetchFrom == 0) b.fetchFrom = now;
+                    long waited = now - b.fetchFrom;
+                    if (waited < 15) return List.of(waitTask(task, "For the cart to be picked up"));
+                    // From the front's far edge for one that came to rest against the bed, out of reach of its middle.
+                    if (waited < 40) {
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "edge in"), "native_goto", Map.of("x", String.valueOf(b.floor.getX()),
+                                "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "0.6", "partial", "true")));
+                    }
+                    for (var item : lying) {
+                        KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach from its front", entry.data.displayName(),
+                                item.getStack(), b.noun, item.getPos());
+                        b.unreached.add(item.getBlockPos());
+                    }
                 }
                 b.phase = Bring.Phase.CLOSE;
                 return bringCandidates(entry, body);
@@ -8165,8 +8665,21 @@ final class PlayerRuntime {
             case CLOSE -> {
                 var state = world.getBlockState(b.slot);
                 if (state.isOf(net.minecraft.block.Block.getBlockFromItem(b.jobBlock))) {
+                    // The opening shut over it a moment (KEEP) opened again, to trade across.
+                    if (isShutter(world.getBlockState(b.slot.up()))) {
+                        if (!reaches(player, b.slot.up())) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        return List.of(breakAt(bringTask(entry, "open"), b.slot.up()));
+                    }
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
+                }
+                // A cart left in the cell (KEEP), shoved off its rail into the front by the villager let out over it: broken
+                // there, its item picked up from the corridor, before the job block goes in.
+                var shoved = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, new net.minecraft.util.math.Box(b.slot),
+                        c -> c.isAlive() && !c.hasPassengers());
+                if (!shoved.isEmpty()) {
+                    if (!player.canInteractWithEntity(shoved.getFirst(), 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "shoved cart"), "native_cart", Map.of("mode", "break", "target", shoved.getFirst().getUuid().toString())));
                 }
                 // Out of the front, and its job block put there behind the villager.
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
@@ -8181,6 +8694,15 @@ final class PlayerRuntime {
                         "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
             }
             case UNDO -> {
+                // Given up afloat: out onto the bank first.
+                if (player.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "undo out"), "native_boat", Map.of("mode", "land")));
+                }
+                // Given up with the villager still in its boat: the boat broken first, the villager set down where it sat.
+                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(task, boat.getBlockPos()));
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "undo boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
+                }
                 // Given up with the cart down: broken and taken back, whoever rides it set down where it is.
                 var cart = cartOf(world, b);
                 if (cart == null) {
@@ -8236,13 +8758,16 @@ final class PlayerRuntime {
                     for (var at : b.rails) box = box.union(new net.minecraft.util.math.Box(at));
                     for (var at : b.laid) box = box.union(new net.minecraft.util.math.Box(at));
                     for (var at : b.bridged) box = box.union(new net.minecraft.util.math.Box(at));
+                    for (var at : b.opened.keySet()) box = box.union(new net.minecraft.util.math.Box(at));
                     // One it could not walk to (in a cell shut since, say) left where it lies, not counted against the bring.
                     if (b.failed > 0 && b.lastPickup != null) {
                         b.unreached.add(b.lastPickup);
                         b.failed = 0;
                     }
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box.expand(4, 2, 4),
-                            item -> item.isAlive() && !b.unreached.contains(item.getBlockPos()) && (item.getStack().isOf(Items.RAIL) || isShutterItem(item.getStack())));
+                            item -> item.isAlive() && !b.unreached.contains(item.getBlockPos())
+                                    && (item.getStack().isOf(Items.RAIL) || isShutterItem(item.getStack()) || item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)
+                                        || b.opened.values().stream().anyMatch(was -> item.getStack().isOf(was.getBlock().asItem()))));
                     if (!lying.isEmpty() && b.pickups++ < 40) {
                         var item = lying.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
                         var drop = item.getBlockPos();
@@ -8272,21 +8797,29 @@ final class PlayerRuntime {
                 return List.of(breakAt(take, furthest));
             }
             case DOOR_BACK -> {
-                if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock) {
+                boolean open = b.opened.keySet().stream().anyMatch(at -> world.getBlockState(at).isAir());
+                if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock && !open) {
                     if (b.failure != null) return endBring(entry, b.failure, false);
                     entry.brought.add(b.villager);
-                    return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall.", true);
+                    return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
                 // The door put back as the hall's plan has it, by the build runner, which places a door as players do.
                 var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone");
                 var door = new ArrayList<dev.kindred.core.construction.Blueprint.Block>();
                 var rel = new dev.kindred.core.construction.Pos(b.door.getX() - b.origin.getX(), b.door.getY() - b.origin.getY(), b.door.getZ() - b.origin.getZ());
                 for (var block : hall.blocks()) if (block.at().x() == rel.x() && block.at().z() == rel.z() && (block.at().y() == rel.y() || block.at().y() == rel.y() + 1)) door.add(block);
+                // And what it took out over the line, as it was.
+                for (var was : b.opened.entrySet()) {
+                    if (!world.getBlockState(was.getKey()).isAir()) continue;
+                    var at = was.getKey().subtract(b.origin);
+                    door.add(new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(at.getX(), at.getY(), at.getZ()),
+                            dev.kindred.core.construction.BlockSpec.of(net.minecraft.registry.Registries.BLOCK.getId(was.getValue().getBlock()).toString())));
+                }
                 var plan = new dev.kindred.core.construction.Blueprint("the trading hall's door", hall.source(), hall.creator(), hall.license(), door, List.of());
                 if (++b.doorTries > 3 || startBuild(server.getCommandSource(), entry.data.id(), plan, b.origin, 0) != 1) {
                     if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back.", false);
                     entry.brought.add(b.villager);
-                    return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back.", true);
+                    return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back." + leftInCell(world, b), true);
                 }
                 return null;
             }
@@ -8331,7 +8864,26 @@ final class PlayerRuntime {
             }
             var route = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
                     new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+            // By boat across water where no line is laid over it, or where its bridge wants more plain blocks than it has:
+            // held in a boat, rowed over, let go of on the far bank and held again there (one that strolls only: one that
+            // does not would not wade ashore). Its line from the far bank, with a boat's room, is what the bill is made by.
+            dev.kindred.core.construction.WaterCrossing.Crossing crossing = null;
+            int bridgeBlocks = route.map(r -> (int) r.bridge().stream().filter(p -> world.getBlockState(new BlockPos(p.x(), p.y(), p.z())).isReplaceable()).count()).orElse(0);
+            boolean shortForBridge = bridgeBlocks > 0 && (shutterSlot(player) < 0 ? 0 : plainBlocks(player)) < 1 + bridgeBlocks;
+            if ((route.isEmpty() || shortForBridge) && !villager.isAiDisabled() && boatSlot(player) >= 0
+                    && opensOverhead(player, origin, hall.cells(), cells.indexOf(free))) {
+                var across = dev.kindred.core.construction.WaterCrossing.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
+                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                if (across.isPresent()) {
+                    crossing = across.get();
+                    route = Optional.of(crossing.home());
+                }
+            }
             if (route.isEmpty()) {
+                if (!("No rail line from the " + noun + " to its cell").equals(entry.bringNote)) {
+                    KindredMod.LOGGER.info("{} bringing: no line from the {} at {} (from the hall, {}) to cell {}", entry.data.displayName(), noun,
+                            villager.getBlockPos().toShortString(), villager.getBlockPos().subtract(origin).toShortString(), free.index());
+                }
                 noteBring(entry, "No rail line from the " + noun + " to its cell");
                 continue;
             }
@@ -8376,8 +8928,16 @@ final class PlayerRuntime {
             BlockPos slot = origin.add(free.jobBlock().x(), free.jobBlock().y(), free.jobBlock().z());
             BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells()) / 2, 1, 7);
             noteBring(entry, "Bringing the " + noun + " home");
-            return new Bring(id, noun, rails, bridge, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
+            var bring = new Bring(id, noun, rails, bridge, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
                     floor, slot, door, origin, hall.cells(), cells.indexOf(free), hall.wood(), jobBlock);
+            // One that strolls is held in a boat while the line is laid, where it has one to put down on it.
+            if (!villager.isAiDisabled() && boatSlot(player) >= 0) bring.phase = Bring.Phase.HOLD;
+            if (crossing != null) {
+                bring.crossing = crossing;
+                KindredMod.LOGGER.info("{} bringing: the {} across the water by boat, landing at {} ({} blocks rowed)", entry.data.displayName(), noun,
+                        crossing.landing(), String.format(java.util.Locale.ROOT, "%.0f", crossing.row()));
+            }
+            return bring;
         }
         return null;
     }
@@ -8531,6 +9091,20 @@ final class PlayerRuntime {
                 ? new dev.kindred.core.construction.BaseSite.Column(c.top(), true, c.open()) : c);
     }
 
+    /**
+     * What it left in the villager's cell, as it is there now, said after it: the cart one that strolls keeps (KEEP), and
+     * what fell there out of reach (the cart's item by the bed, the boat's under the cart).
+     */
+    private static String leftInCell(net.minecraft.server.world.ServerWorld world, Bring b) {
+        var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
+        boolean cart = !world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, cell, net.minecraft.entity.Entity::isAlive).isEmpty()
+                || !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell, item -> item.isAlive() && item.getStack().isOf(Items.MINECART)).isEmpty();
+        boolean boat = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)).isEmpty();
+        if (!cart && !boat) return "";
+        return " I've left " + (cart && boat ? "the cart and my boat" : cart ? "the cart" : "my boat") + " in there with it.";
+    }
+
     private static net.minecraft.entity.vehicle.AbstractMinecartEntity cartOf(net.minecraft.server.world.ServerWorld world, Bring b) {
         return b.cartId != null && world.getEntity(b.cartId) instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity c && c.isAlive() ? c : null;
     }
@@ -8538,6 +9112,44 @@ final class PlayerRuntime {
     private static boolean isShutter(net.minecraft.block.BlockState state) {
         for (var shutter : SHUTTERS) if (state.isOf(net.minecraft.block.Block.getBlockFromItem(shutter))) return true;
         return false;
+    }
+
+    /** The slot of a boat it can put down on a villager to hold it (not a chest boat), or -1. */
+    private static int boatSlot(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) if (inventory.getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.BOATS)) return slot;
+        return -1;
+    }
+
+    /** The hall's blocks over the line that a villager riding in its boat would put its eyes into: over the doorway, then the lintel. */
+    private static List<BlockPos> overhead(Bring b) {
+        var out = new ArrayList<BlockPos>();
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex))) {
+            out.add(b.origin.add(p.x(), p.y(), p.z()));
+        }
+        return out;
+    }
+
+    /** Whether it can take out the hall's blocks over the line, and so keep what they drop to put back: a tool that takes each. */
+    private static boolean opensOverhead(ServerPlayerEntity player, Bring b) {
+        return opensOverhead(player, b.origin, b.cells, b.cellIndex);
+    }
+
+    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, int cellIndex) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, dev.kindred.core.construction.TradingHall.cells(cells).get(cellIndex))) {
+            var at = origin.add(p.x(), p.y(), p.z());
+            var state = player.getServerWorld().getBlockState(at);
+            if (state.isAir() || !state.isToolRequired()) continue;
+            boolean takes = false;
+            for (int i = 0; i < 36 && !takes; i++) takes = player.getInventory().getStack(i).isSuitableFor(state);
+            if (!takes) return false;
+        }
+        return true;
+    }
+
+    /** The boat it put down that still holds something, if any. */
+    private static net.minecraft.entity.vehicle.BoatEntity heldBoat(net.minecraft.server.world.ServerWorld world, Bring b) {
+        return b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity boat && boat.isAlive() && boat.hasPassengers() ? boat : null;
     }
 
     private static boolean isShutterItem(ItemStack stack) {
@@ -8567,7 +9179,7 @@ final class PlayerRuntime {
      */
     private List<NativeTaskCandidate> giveUp(Entry entry, NativePlayerBody body, String why) {
         var b = entry.bring;
-        if ((b.phase == Bring.Phase.BRIDGE || b.phase == Bring.Phase.DOOR) && b.bridged.isEmpty()) return endBring(entry, why, false);
+        if ((b.phase == Bring.Phase.HOLD || b.phase == Bring.Phase.BRIDGE || b.phase == Bring.Phase.DOOR) && b.bridged.isEmpty() && b.boatId == null) return endBring(entry, why, false);
         KindredMod.LOGGER.info("{} bringing: giving up ({}); taking back what it put down", entry.data.displayName(), why);
         b.failure = why;
         b.failed = 0;
@@ -9433,10 +10045,369 @@ final class PlayerRuntime {
     }
 
     /**
+     * Its weapons, armour and pickaxe enchanted (E-16a), out of any match: with the levels and lapis the table's top offer
+     * takes ({@link dev.kindred.core.Enchanting#ready}) and a piece to enchant ({@link dev.kindred.core.Enchanting#next}),
+     * to its own table (one standing in a base it built, or one it put down), and there the best offer it can pay for
+     * taken. With no table standing but one in hand, it puts that down beside it first. Nothing when it has no table: a
+     * table's diamonds, obsidian and book are its run's to get.
+     */
+    private List<NativeTaskCandidate> enchantCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.enchantAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var inventory = player.getInventory();
+        var pieces = new ArrayList<dev.kindred.core.Enchanting.Piece>();
+        int lapis = 0, lapisSlot = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            if (stack.isOf(Items.LAPIS_LAZULI)) {
+                lapis += stack.getCount();
+                if (lapisSlot < 0 || stack.getCount() > inventory.getStack(lapisSlot).getCount()) lapisSlot = slot;
+                continue;
+            }
+            var enchanted = new HashMap<String, Integer>();
+            for (var each : stack.getEnchantments().getEnchantmentEntries()) {
+                each.getKey().getKey().ifPresent(k -> enchanted.put(k.getValue().toString(), each.getIntValue()));
+            }
+            pieces.add(new dev.kindred.core.Enchanting.Piece(slot, Valuables.id(stack), enchanted));
+        }
+        var piece = dev.kindred.core.Enchanting.next(pieces);
+        // The lapis in one slot: the table takes it from one, and the top offer three of it.
+        if (piece.isEmpty() || !dev.kindred.core.Enchanting.ready(player.experienceLevel, lapisSlot < 0 ? 0 : inventory.getStack(lapisSlot).getCount())) {
+            entry.enchantAt = now + 1200;
+            return null;
+        }
+        var world = player.getServerWorld();
+        BlockPos table = ownEnchantingTable(entry, player);
+        UUID taskId = UUID.nameUUIDFromBytes(("enchant:" + entry.data.id() + ":" + piece.get().slot() + ":" + piece.get().item()).getBytes(StandardCharsets.UTF_8));
+        entry.enchantTaskId = taskId;
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 60.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (table != null) {
+            var at = Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()), "z", String.valueOf(table.getZ()));
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) <= 4.5 * 4.5) {
+                var args = new HashMap<>(at);
+                args.put("slot", String.valueOf(piece.get().slot()));
+                args.put("lapis", String.valueOf(lapisSlot));
+                return List.of(new NativeTaskCandidate(task, "native_enchant", Map.copyOf(args)));
+            }
+            // Enchanted when it is by its table again, not a trip for it.
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
+                entry.enchantAt = now + 1200;
+                return null;
+            }
+            var args = new HashMap<>(at);
+            args.put("range", "2.5");
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+        }
+        int held = -1;
+        for (int slot = 0; slot < 36 && held < 0; slot++) if (inventory.getStack(slot).isOf(Items.ENCHANTING_TABLE)) held = slot;
+        if (held < 0) {
+            entry.enchantAt = now + 2400;
+            return null;
+        }
+        if (held >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
+        }
+        BlockPos spot = workstationSpot(player, entry.setup, "minecraft:enchanting_table");
+        if (spot == null) {
+            entry.enchantAt = now + 600;
+            return null;
+        }
+        entry.enchantTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+        return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
+                "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+    }
+
+    /**
+     * Its diamond kit upgraded to netherite (E-16c), out of any match, by {@link dev.kindred.core.Netherite#next}: ancient
+     * debris it holds smelted into scrap in its furnace, and what the furnace made taken out; four scrap and four gold
+     * made into an ingot at a crafting table; a template copied when it has an ingot more than templates and diamonds
+     * to spare; and the first piece upgraded at a smithing table of its own, one it holds put down beside it first.
+     */
+    private List<NativeTaskCandidate> netheriteCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.netheriteAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var inventory = player.getInventory();
+        var held = new HashMap<String, Integer>();
+        var pieces = new HashMap<Integer, String>();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            String id = Valuables.id(stack);
+            held.merge(id, stack.getCount(), Integer::sum);
+            if (id.startsWith("minecraft:diamond_") && dev.kindred.core.Netherite.ORDER.contains(dev.kindred.core.Netherite.kind(id))) pieces.put(slot, id);
+        }
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        // Scrap the furnace made, taken out before anything else.
+        var made = entry.campaign.takeSmelted(body, Items.NETHERITE_SCRAP);
+        var task = stepTask(entry.data.id(), "netherite:take", id -> entry.netheriteTaskId = id);
+        if (made.isPresent() && pieces.size() > 0) {
+            entry.netheriteStep = made.get();
+            return List.of(new NativeTaskCandidate(task, made.get().skill(), made.get().args()));
+        }
+        var step = dev.kindred.core.Netherite.next(held, pieces, lootWanted(entry).getOrDefault("minecraft:diamond", 0));
+        if (step.isEmpty()) {
+            // Debris in the furnace still smelting: a moment by it.
+            if (entry.campaign.smelting(body, Items.ANCIENT_DEBRIS) && pieces.size() > 0 && held.getOrDefault("minecraft:netherite_ingot", 0) == 0) {
+                return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1")));
+            }
+            entry.netheriteAt = now + 1200;
+            return null;
+        }
+        KindredMod.LOGGER.info("{} netherite: {}", entry.data.displayName(), step.get());
+        task = stepTask(entry.data.id(), "netherite:" + step.get(), id -> entry.netheriteTaskId = id);
+        Optional<PortalRunCampaign.Task> next = switch (step.get()) {
+            case dev.kindred.core.Netherite.Step.Smelt smelt -> entry.campaign.smeltItem(body, Items.ANCIENT_DEBRIS, smelt.debris(), "Smelt ancient debris into scrap");
+            case dev.kindred.core.Netherite.Step.Ingot ingot -> entry.campaign.craftAtTable(body, "netherite_ingot");
+            case dev.kindred.core.Netherite.Step.Template template -> entry.campaign.craftAtTable(body, "netherite_upgrade_smithing_template");
+            case dev.kindred.core.Netherite.Step.Upgrade upgrade -> Optional.empty();
+        };
+        if (!(step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade upgrade)) {
+            if (next.isEmpty()) {
+                entry.netheriteAt = now + 1200;
+                return null;
+            }
+            entry.netheriteStep = next.get();
+            return List.of(new NativeTaskCandidate(task, next.get().skill(), next.get().args()));
+        }
+        var world = player.getServerWorld();
+        BlockPos table = entry.smithingTable != null && world.isChunkLoaded(entry.smithingTable) && world.getBlockState(entry.smithingTable).isOf(Blocks.SMITHING_TABLE)
+                ? entry.smithingTable : null;
+        if (table == null) {
+            int tableSlot = -1;
+            for (int slot = 0; slot < 36 && tableSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.SMITHING_TABLE)) tableSlot = slot;
+            if (tableSlot < 0) {
+                entry.netheriteAt = now + 2400;
+                return null;
+            }
+            if (tableSlot >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
+            }
+            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:smithing_table");
+            if (spot == null) {
+                entry.netheriteAt = now + 600;
+                return null;
+            }
+            entry.smithingTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(tableSlot), "x", String.valueOf(spot.getX()),
+                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+        }
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) {
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
+                entry.netheriteAt = now + 1200;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
+                    "z", String.valueOf(table.getZ()), "range", "2.5")));
+        }
+        int template = -1, ingot = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (template < 0 && stack.isOf(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)) template = slot;
+            if (ingot < 0 && stack.isOf(Items.NETHERITE_INGOT)) ingot = slot;
+        }
+        return List.of(new NativeTaskCandidate(task, "native_smith", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
+                "z", String.valueOf(table.getZ()), "template", String.valueOf(template), "slot", String.valueOf(upgrade.slot()), "material", String.valueOf(ingot))));
+    }
+
+    /** A step of one of its routines (E-16), its id the same for as long as the step is: {@code key} says which, {@code record} keeps it. */
+    private static dev.kindred.core.TaskPreferences.Candidate stepTask(UUID player, String key, java.util.function.Consumer<UUID> record) {
+        UUID taskId = UUID.nameUUIDFromBytes((key + ":" + player).getBytes(StandardCharsets.UTF_8));
+        record.accept(taskId);
+        return new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 58.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+    }
+
+    /** What potions it holds, by the potion each holds ("minecraft:water", "minecraft:awkward", "minecraft:fire_resistance"), and their slots. */
+    private static Map<String, List<Integer>> potionSlots(ServerPlayerEntity player) {
+        var out = new HashMap<String, List<Integer>>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!stack.isOf(Items.POTION)) continue;
+            var contents = stack.get(net.minecraft.component.DataComponentTypes.POTION_CONTENTS);
+            if (contents == null || contents.potion().isEmpty()) continue;
+            String id = contents.potion().get().getKey().map(k -> k.getValue().toString()).orElse(null);
+            if (id != null) out.computeIfAbsent(id, k -> new ArrayList<>()).add(slot);
+        }
+        return out;
+    }
+
+    /**
+     * Potions brewed (E-16b), out of any match, as players brew at a stand of their own: glass bottles filled at water
+     * close by first, three; then its stand loaded with the next brew ({@link dev.kindred.core.Brewing#next}): three water
+     * bottles and nether wart for awkward potions, or three awkward ones and the potion's ingredient, with blaze powder
+     * when the stand's fuel is spent; the brew waited out nearby, twenty seconds; and what it brewed taken out. With no
+     * stand standing but one in hand, it puts that down beside it first. Nothing to brew, or no stand, nothing.
+     */
+    private List<NativeTaskCandidate> brewCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.brewAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        var held = new HashMap<String, Integer>();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!stack.isEmpty() && !stack.isOf(Items.POTION)) held.merge(Valuables.id(stack), stack.getCount(), Integer::sum);
+        }
+        var slots = potionSlots(player);
+        var potions = new HashMap<String, Integer>();
+        slots.forEach((k, v) -> potions.put(k, v.size()));
+        BlockPos stand = entry.brewStand != null && world.isChunkLoaded(entry.brewStand) && world.getBlockState(entry.brewStand).isOf(Blocks.BREWING_STAND)
+                ? entry.brewStand : null;
+        var task = stepTask(entry.data.id(), "brew:" + entry.brewing + ":" + potions + ":" + held, id -> entry.brewTaskId = id);
+        // A brew under way in its stand: waited out by it, then taken out.
+        if (stand != null && entry.brewing != null && world.getBlockEntity(stand) instanceof net.minecraft.block.entity.BrewingStandBlockEntity entity) {
+            int brewTime = entity.createNbt(world.getRegistryManager()).getShort("BrewTime");
+            boolean bottlesIn = false;
+            for (int i = 0; i < 3; i++) if (!entity.getStack(i).isEmpty()) bottlesIn = true;
+            if (!bottlesIn) {
+                entry.brewing = null;
+            } else if (brewTime > 0 || now - entry.brewLoaded < 40) {
+                if (player.getBlockPos().getSquaredDistance(stand) > 16 * 16) return null;
+                return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1", "x", String.valueOf(stand.getX()),
+                        "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()))));
+            } else {
+                if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(stand)) > 4.5 * 4.5) {
+                    return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(stand.getX()), "y", String.valueOf(stand.getY()),
+                            "z", String.valueOf(stand.getZ()), "range", "2.5")));
+                }
+                return List.of(new NativeTaskCandidate(task, "native_brew", Map.of("mode", "unload", "x", String.valueOf(stand.getX()),
+                        "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()))));
+            }
+        }
+        // Bottles to fill at water close by.
+        int fill = dev.kindred.core.Brewing.toFill(held, potions);
+        if (fill > 0) {
+            BlockPos water = null;
+            BlockPos feet = player.getBlockPos();
+            double best = Double.MAX_VALUE;
+            for (BlockPos pos : BlockPos.iterate(feet.add(-12, -3, -12), feet.add(12, 2, 12))) {
+                var fluid = world.getFluidState(pos);
+                if (!fluid.isIn(net.minecraft.registry.tag.FluidTags.WATER) || !fluid.isStill() || !world.getBlockState(pos.up()).isAir()) continue;
+                double d = feet.getSquaredDistance(pos);
+                if (d < best) {
+                    best = d;
+                    water = pos.toImmutable();
+                }
+            }
+            if (water == null) {
+                entry.brewAt = now + 2400;
+                return null;
+            }
+            int bottle = -1;
+            for (int slot = 0; slot < 36 && bottle < 0; slot++) if (inventory.getStack(slot).isOf(Items.GLASS_BOTTLE)) bottle = slot;
+            if (bottle >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(bottle), "target", String.valueOf(free))));
+            }
+            Vec3d surface = new Vec3d(water.getX() + 0.5, water.getY() + 0.85, water.getZ() + 0.5);
+            if (player.getEyePos().squaredDistanceTo(surface) > 3.5 * 3.5) {
+                return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(water.getX()), "y", String.valueOf(water.getY()),
+                        "z", String.valueOf(water.getZ()), "range", "2.0", "partial", "true")));
+            }
+            return List.of(new NativeTaskCandidate(task, "native_brew", Map.of("mode", "fill", "x", String.valueOf(water.getX()),
+                    "y", String.valueOf(water.getY()), "z", String.valueOf(water.getZ()), "slot", String.valueOf(bottle))));
+        }
+        var brew = dev.kindred.core.Brewing.next(held, potions);
+        if (brew.isEmpty()) {
+            entry.brewAt = now + 1200;
+            return null;
+        }
+        if (stand == null) {
+            int standSlot = -1;
+            for (int slot = 0; slot < 36 && standSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.BREWING_STAND)) standSlot = slot;
+            if (standSlot < 0) {
+                entry.brewAt = now + 2400;
+                return null;
+            }
+            if (standSlot >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(standSlot), "target", String.valueOf(free))));
+            }
+            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:brewing_stand");
+            if (spot == null) {
+                entry.brewAt = now + 600;
+                return null;
+            }
+            entry.brewStand = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(standSlot), "x", String.valueOf(spot.getX()),
+                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+        }
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(stand)) > 4.5 * 4.5) {
+            if (player.getBlockPos().getSquaredDistance(stand) > 48 * 48) {
+                entry.brewAt = now + 1200;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(stand.getX()), "y", String.valueOf(stand.getY()),
+                    "z", String.valueOf(stand.getZ()), "range", "2.5")));
+        }
+        var bottles = slots.getOrDefault(brew.get().bottles(), List.of());
+        int ingredient = -1, fuel = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            String id = Valuables.id(inventory.getStack(slot));
+            if (ingredient < 0 && id.equals(brew.get().ingredient())) ingredient = slot;
+            if (fuel < 0 && id.equals("minecraft:blaze_powder") && slot != ingredient) fuel = slot;
+        }
+        int standFuel = world.getBlockEntity(stand) instanceof net.minecraft.block.entity.BrewingStandBlockEntity entity
+                ? entity.createNbt(world.getRegistryManager()).getByte("Fuel") : 0;
+        if (bottles.size() < 3 || ingredient < 0 || dev.kindred.core.Brewing.needsFuel(standFuel) && fuel < 0) {
+            entry.brewAt = now + 1200;
+            return null;
+        }
+        entry.brewing = brew.get().yields();
+        KindredMod.LOGGER.info("{} brewing: {}", entry.data.displayName(), brew.get().why());
+        var args = new HashMap<String, String>();
+        args.put("mode", "load");
+        args.put("x", String.valueOf(stand.getX()));
+        args.put("y", String.valueOf(stand.getY()));
+        args.put("z", String.valueOf(stand.getZ()));
+        args.put("bottles", bottles.get(0) + "," + bottles.get(1) + "," + bottles.get(2));
+        args.put("ingredient", String.valueOf(ingredient));
+        if (dev.kindred.core.Brewing.needsFuel(standFuel)) args.put("fuel", String.valueOf(fuel));
+        return List.of(new NativeTaskCandidate(task, "native_brew", Map.copyOf(args)));
+    }
+
+    /** Its own enchanting table: one standing in a base it built, else the one it put down, if it is still there. */
+    private BlockPos ownEnchantingTable(Entry entry, ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        if (entry.bases != null) {
+            String dimension = world.getRegistryKey().getValue().toString();
+            for (var base : entry.bases.built) {
+                if (!dimension.equals(base.dimension())) continue;
+                for (var block : placedOf(base)) {
+                    if (!block.spec().block().equals("minecraft:enchanting_table")) continue;
+                    BlockPos pos = BuildRunner.blockPos(block.at());
+                    if (world.isChunkLoaded(pos) && world.getBlockState(pos).isOf(Blocks.ENCHANTING_TABLE)) return pos;
+                }
+            }
+        }
+        if (entry.enchantTable != null && world.isChunkLoaded(entry.enchantTable) && world.getBlockState(entry.enchantTable).isOf(Blocks.ENCHANTING_TABLE)) {
+            return entry.enchantTable;
+        }
+        return null;
+    }
+
+    /**
      * Where to put its anvil down: on solid ground beside it, open, within reach, and allowed by its work area's rules,
      * or the server's roaming rules with none.
      */
     private BlockPos anvilSpot(ServerPlayerEntity player, WorkSetup setup) {
+        return workstationSpot(player, setup, "minecraft:anvil");
+    }
+
+    /** As {@link #anvilSpot}, for a workstation of {@code block}. */
+    private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
@@ -9444,7 +10415,7 @@ final class PlayerRuntime {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
                         || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
-                if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, "minecraft:anvil", edits).allowed()) return pos.toImmutable();
+                if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
         return null;
@@ -11006,6 +11977,22 @@ final class PlayerRuntime {
         private final Set<String> kitNamesGiven = new HashSet<>();
         private BlockPos anvil;
         private long kitNamesAt;
+        /** Its enchanting table, once it put one down (E-16a), and when it next looks to enchant. */
+        private BlockPos enchantTable;
+        private long enchantAt;
+        private UUID enchantTaskId;
+        /** Its smithing table, once it put one down (E-16c), and when it next looks to its netherite. */
+        private BlockPos smithingTable;
+        private long netheriteAt;
+        private UUID netheriteTaskId;
+        /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
+        private PortalRunCampaign.Task netheriteStep;
+        /** Its brewing stand, once it put one down (E-16b); when it next looks to brew; and what it last put in to brew. */
+        private BlockPos brewStand;
+        private long brewAt;
+        private UUID brewTaskId;
+        private String brewing;
+        private long brewLoaded;
         /**
          * Its extended inventory (E-43): what it has stored, as it knows it; its stores, as last reckoned; who it saw at
          * one of them, and when; a question to its team of what is gone, and until when it waits for a word; the stores
@@ -11253,6 +12240,8 @@ final class PlayerRuntime {
         String baseNote = "";
         /** Its trading hall's build while it is at it (E-45d), and the times it ended short. */
         BuildRunner hallBuild;
+        /** Whether the hall's build in hand is a repair (its record already complete). */
+        boolean hallRepair;
         int hallTries;
         boolean goalAnnounced;
         String loggedGoalProgress = "";
