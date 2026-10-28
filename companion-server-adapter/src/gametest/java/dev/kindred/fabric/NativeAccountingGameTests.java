@@ -23,6 +23,7 @@ import java.util.function.Function;
 /**
  * F-11e: native requests charged to the period F-11d chooses; a zone edit and a clock behind the last period.
  * F-11f: activity hours; a request outside them waits, and a running skill stops at their end.
+ * F-11g: a walk or wait carried over its period's end; a recorded action stopped there.
  */
 public final class NativeAccountingGameTests implements FabricGameTest {
     private static final String KIRITIMATI = "Pacific/Kiritimati";
@@ -227,6 +228,126 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** A wait running when its period ends holds still for the next period's slice and carries on (F-11g). */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "realTimePeriod", tickLimit = 800)
+    public void aWaitRunningAtItsPeriodsEndCarriesOnIntoTheNext(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        ZoneOffset[] zone = new ZoneOffset[1];
+        long[] lastTick = new long[1];
+        boolean[] carried = {false};
+        CompletableFuture<?>[] read = new CompletableFuture<?>[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Midnight"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    zone[0] = midnightIn(2);
+                    context.assertTrue(f.runtime.setLimitTimezone(f.source, f.id, zone[0].getId()) == 1, "Zone set");
+                })
+                .createAndAdd(() -> {
+                    var limit = f.runtime.activityLimitForTest(f.id);
+                    context.assertTrue(limit != null && limit.timezone().equals(zone[0].getId()), "Zone saved");
+                    lastTick[0] = System.nanoTime();
+                    context.assertTrue(f.runtime.nativeSkill(f.source, f.id, "native_wait", 4) == 1, "A four-second wait over its period's end");
+                })
+                .createAndAdd(() -> {
+                    pace(lastTick);
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    if (activity.work().contains("carried into a new accounting period")) carried[0] = true;
+                    context.assertTrue(activity.phase().equals("IDLE") && !activity.work().startsWith("Running"), "Settled: " + activity.work());
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.work().startsWith("Completed native_wait") && activity.work().contains("elapsedTicks=80"),
+                            "The same wait ran to its end: " + activity.work());
+                    context.assertTrue(carried[0], "It was carried into the next period, not started again");
+                    context.assertTrue(!f.runtime.nativeStatuses(Actor.console()).getFirst().stopped(), "Not halted");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Writer closed"))
+                .createAndAdd(() -> read[0] = withStore(f, store -> store.latestPeriod(f.id).thenCompose(latest -> {
+                    AccountingPeriod next = latest.orElseThrow();
+                    AccountingPeriod first = AccountingPeriod.on(next.localDate().minusDays(1), next.zone());
+                    return store.findBudget(f.id, first.startInclusive()).thenCompose(before -> store.findBudget(f.id, next.startInclusive())
+                            .thenApply(after -> new Split(first, next, before.orElseThrow(), after.orElseThrow())));
+                })))
+                .createAndAdd(() -> {
+                    context.assertTrue(read[0].isDone() && !read[0].isCompletedExceptionally(), "Saved state read back");
+                    Split split = (Split) read[0].join();
+                    context.assertTrue(split.first().endExclusive().equals(split.next().startInclusive()), "The two periods meet");
+                    context.assertTrue(split.before().chargedMillis() > 0 && split.after().chargedMillis() > 0,
+                            "Each period charged its own part: " + split.before().chargedMillis() + " and " + split.after().chargedMillis() + " ms");
+                    context.assertTrue(split.before().outstanding().isEmpty() && split.after().outstanding().isEmpty(), "Nothing left reserved");
+                    context.assertTrue(split.before().chargedMillis() + split.after().chargedMillis() <= 5_000, "No more than the wait was charged");
+                })
+                .completeIfSuccessful();
+    }
+
+    /** A recorded action is not held over its period's end: the break stops there, and the next period opens for the next request. */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "realTimePeriod", tickLimit = 800)
+    public void aBreakRunningAtItsPeriodsEndStopsThere(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos obsidian = context.getAbsolutePos(new BlockPos(5, 2, 3));
+        ZoneOffset[] zone = new ZoneOffset[1];
+        long[] lastTick = new long[1];
+        boolean[] breaking = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Recorded"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setBlockState(obsidian, Blocks.OBSIDIAN.getDefaultState());
+                    f.player().getInventory().setStack(15, new ItemStack(Items.DIAMOND_PICKAXE));
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    zone[0] = midnightIn(2);
+                    context.assertTrue(f.runtime.setLimitTimezone(f.source, f.id, zone[0].getId()) == 1, "Zone set");
+                })
+                .createAndAdd(() -> {
+                    var limit = f.runtime.activityLimitForTest(f.id);
+                    context.assertTrue(limit != null && limit.timezone().equals(zone[0].getId()), "Zone saved");
+                    lastTick[0] = System.nanoTime();
+                    context.assertTrue(f.runtime.nativeBreak(f.source, f.id, obsidian) == 1, "A 9.4-second break over its period's end");
+                })
+                .createAndAdd(() -> {
+                    pace(lastTick);
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    if (activity.work().startsWith("Running native_break")) breaking[0] = true;
+                    context.assertTrue(breaking[0] && activity.phase().equals("IDLE") && !activity.work().startsWith("Running"), "Broke, then settled: " + activity.work());
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(!activity.work().startsWith("Completed") && !activity.work().contains("carried"), "Stopped at the period's end: " + activity.work());
+                    context.assertTrue(context.getWorld().getBlockState(obsidian).isOf(Blocks.OBSIDIAN), "The obsidian is left whole");
+                    context.assertTrue(!f.runtime.nativeStatuses(Actor.console()).getFirst().stopped(), "Not halted");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeSkill(f.source, f.id, "native_wait", 1) == 1, "A new request"))
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_wait"), "Charged to the next period: " + activity.work());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    private record Split(AccountingPeriod first, AccountingPeriod next, BudgetState before, BudgetState after) { }
+
+    /** A fixed zone whose local midnight is the given whole seconds from now: a period kept in it ends then. */
+    private static ZoneOffset midnightIn(int seconds) {
+        long at = System.currentTimeMillis() / 1000 + seconds;
+        int ofDay = (int) Math.floorMod(at, 86_400L);
+        return ZoneOffset.ofTotalSeconds(ofDay <= 18 * 3600 ? -ofDay : 86_400 - ofDay);
+    }
+
+    /** No faster than a live server: at least 50 ms a tick, parked again after an early return (each server.execute unparks). */
+    private static void pace(long[] lastTick) {
+        long until = lastTick[0] + 50_000_000L;
+        for (long left; (left = until - System.nanoTime()) > 0; ) java.util.concurrent.locks.LockSupport.parkNanos(left);
+        lastTick[0] = System.nanoTime();
     }
 
     /** Opens the fixture's store while its runtime is stopped, applies one piece of work, and closes it again. */

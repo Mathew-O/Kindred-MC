@@ -1665,6 +1665,83 @@ final class PlayerRuntime {
         return prefix + (opens.isAfter(now) ? "No allowance until then. " + first : "The next period is today's local day.");
     }
 
+    /** Skills carried over a period's end by holding still (F-11g): their state is their own, not a recorded world action. */
+    private static final Set<String> HELD_OVER_PERIOD_END = Set.of("native_wait", "native_walk", "native_traverse", "native_retreat", "native_goto");
+    /** A hold that has not been paid again by then is given up, and the skill stops as any lapsed skill does. */
+    private static final java.time.Duration PERIOD_HOLD_LIMIT = java.time.Duration.ofSeconds(5);
+
+    private static final class PeriodHold {
+        private final java.time.Instant since;
+        private boolean requested;
+        private boolean failed;
+        private PeriodHold(java.time.Instant since) { this.since = since; }
+    }
+
+    /**
+     * F-11g: a walk, traverse, retreat, goto or wait whose slice lapsed at its period's end holds still, unpaid and
+     * doing nothing in the world, until the next period's slice is acknowledged, then carries on. A recorded action
+     * does not: held mid-action its record could be left uncertain. Neither does a lapse at the cap or at the end of
+     * the hours. False once the hold has failed or taken too long; the skill then stops as any lapsed skill does.
+     */
+    private boolean holdOverPeriodEnd(Entry entry) {
+        var session = entry.activity;
+        java.time.Instant now = java.time.Instant.now();
+        if (session == null || entry.runner.state() != SkillRunner.State.RUNNING || !HELD_OVER_PERIOD_END.contains(entry.skillId)
+                || entry.nativeTask instanceof NativeRecordedAction || entry.snapshot().stopLatched()
+                || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR || entry.arbiter.cancellationPending() || entry.hazardInterrupted
+                || entry.nativeBody == null || !entry.nativeBody.connected() || session.phase() == PaidActivitySession.Phase.BLOCKED) {
+            entry.periodHold = null;
+            return false;
+        }
+        if (entry.periodHold == null) {
+            if (now.isBefore(session.snapshot().period().endExclusive())) return false;
+            entry.periodHold = new PeriodHold(now);
+        }
+        PeriodHold hold = entry.periodHold;
+        if (hold.failed || java.time.Duration.between(hold.since, now).compareTo(PERIOD_HOLD_LIMIT) > 0) {
+            entry.periodHold = null;
+            return false;
+        }
+        // One budget writer at a time: the old period's settlement is acknowledged before the next period is opened,
+        // which would otherwise close the old period under it.
+        if (!hold.requested && session.phase() == PaidActivitySession.Phase.IDLE) requestNextPeriod(entry, hold);
+        return true;
+    }
+
+    /** The next period's slice for a held skill, through the same store choice and acknowledgement as a dispatch. */
+    private void requestNextPeriod(Entry entry, PeriodHold hold) {
+        hold.requested = true;
+        UUID id = entry.data.id();
+        long generation = entry.generation;
+        var preparation = store.limit(id).thenCompose(limit -> store.chargeableBudget(id, java.time.Instant.now(),
+                java.time.ZoneId.of(limit.timezone())).thenApply(chargeable -> new NativeBudget(limit, chargeable)));
+        entry.activityFlush = CompletableFuture.allOf(entry.activityFlush, preparation.handle((ignored, failure) -> null));
+        preparation.whenComplete((prepared, failure) -> server.execute(() -> {
+            if (!running || entry.generation != generation || entry.periodHold != hold) return;
+            if (failure != null) { nativeActivityFailure(entry, "Activity budget could not be loaded"); return; }
+            if (!prepared.chargeable().transition().chargeable()) { hold.failed = true; return; }
+            BudgetState budget = prepared.chargeable().budget().orElseThrow();
+            var open = ScheduleClock.windowInterval(activityWindow(prepared.limit()), budget.period(), java.time.Instant.now());
+            if (open.isEmpty()) { hold.failed = true; return; }
+            entry.activityLimit = prepared.limit();
+            try {
+                var next = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
+                        store::saveBudget, server::execute, java.time.Clock.systemUTC(), System::nanoTime);
+                entry.activity = next; // Closed with the entry on shutdown, as a dispatched session is.
+                next.request(open.orElseThrow().endExclusive()).whenComplete((paid, error) -> {
+                    if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
+                    if (!running || entry.generation != generation || entry.periodHold != hold || !Boolean.TRUE.equals(paid) || !next.paid()) {
+                        next.stop();
+                        hold.failed = true;
+                        return;
+                    }
+                    entry.periodHold = null; // Paid again: the held skill carries on from the next tick.
+                    entry.blocker = "Running " + entry.skillId + " under one acknowledged activity slice, carried into a new accounting period.";
+                });
+            } catch (RuntimeException invalid) { nativeActivityFailure(entry, "Activity state requires reconciliation"); }
+        }));
+    }
+
     private static java.util.Optional<dev.kindred.scheduler.ActivityWindow> activityWindow(ActivityLimit limit) {
         return limit.window().map(hours -> new dev.kindred.scheduler.ActivityWindow(hours.start(), hours.end()));
     }
@@ -5124,7 +5201,10 @@ final class PlayerRuntime {
             java.time.Instant deadline = renewalDeadline(entry);
             if (java.time.Instant.now().plus(entry.activity.remaining()).plus(RENEW_GAIN_MIN).isBefore(deadline)) entry.activity.renew(deadline);
         }
+        boolean admitted = usable;
         if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
+        // A walk or wait whose slice lapsed at its period's end holds still for the next period's slice (F-11g).
+        boolean holding = admitted && !usable && busy && holdOverPeriodEnd(entry);
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
             nativeActivityFailure(entry, "Activity settlement is uncertain");
             usable = false;
@@ -5385,7 +5465,7 @@ final class PlayerRuntime {
                 }
             }
             body.stopInputs();
-            if (busy) {
+            if (busy && !holding) {
                 entry.runner.lease().ifPresent(entry.arbiter::cancel);
                 entry.runner.abort(decision.reason());
                 observeRunner(entry);
@@ -6579,6 +6659,7 @@ final class PlayerRuntime {
                     source.sendError(Text.literal("Failed to save accounting timezone."));
                     return;
                 }
+                entry.activityLimit = edited;
                 entry.noPeriodUntil = null; // The next request asks the store again, under the new zone.
                 feedback(source, timezoneChangeReport(entry.data.displayName(), next, read.getValue(), java.time.Instant.now()));
             }));
@@ -11022,6 +11103,8 @@ final class PlayerRuntime {
         private String noPeriodReason;
         /** The limit last read or saved for this player, whose window bounds a renewal (F-11f); null before any. */
         private ActivityLimit activityLimit;
+        /** A skill held over its period's end while the next period's slice is asked for (F-11g); null otherwise. */
+        private PeriodHold periodHold;
         private FollowBehavior follow;
         private SocialProfile profile;
         private CompletableFuture<SocialProfile> profileWrite;
