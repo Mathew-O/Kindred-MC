@@ -129,7 +129,7 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
             case "native_discard" -> new SkillDescriptor(id, Set.of("slot", "count"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_fight" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot", "tactics"), Set.of("move"), Set.of(),
+            case "native_fight" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot", "tactics", "style"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
             case "native_bucket" -> new SkillDescriptor(id, Set.of("x", "y", "z", "mode"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);

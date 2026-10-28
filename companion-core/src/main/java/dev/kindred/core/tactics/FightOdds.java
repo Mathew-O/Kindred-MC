@@ -131,4 +131,20 @@ public final class FightOdds {
         if (odds.verdict() == Verdict.WINNABLE || odds.verdict() == Verdict.EVEN && cornered) return Answer.DEFEND;
         return Answer.GET_AWAY;
     }
+
+    /**
+     * Its answer to a lethal hit in a duel it joined: both came to fight, so a hard hit is the fight going on, judged by
+     * the kit on each side ({@code kitOdds}: the odds with both at full health) rather than by the health the hit
+     * already took, which the fight's own melee weighs as it goes (E-41b). Outclassed, it gets away; else it fights on.
+     */
+    public static Answer answerInDuel(boolean equipped, Odds kitOdds) {
+        Objects.requireNonNull(kitOdds);
+        return equipped && kitOdds.verdict() != Verdict.LOSING ? Answer.DEFEND : Answer.GET_AWAY;
+    }
+
+    /** {@code side} at {@code health}, all else as it is: the kit alone, for {@link #answerInDuel}. */
+    public static Side at(Side side, double health) {
+        return new Side(health, side.armour(), side.toughness(), side.protection(), side.armourGlints(), side.weapon(), side.weaponGlints(),
+                side.crits(), side.shield(), side.healing(), side.hardestHit());
+    }
 }

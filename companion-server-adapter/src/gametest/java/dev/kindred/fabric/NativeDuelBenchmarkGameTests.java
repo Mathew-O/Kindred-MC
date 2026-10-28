@@ -28,6 +28,12 @@ import java.util.UUID;
  */
 public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
     static final int DUELS = Integer.getInteger("kindred.duels", 20);
+    /** The declared opponent: "baseline" (the tactics off), or a fixed style, "turtle", "spammer" or "evade". */
+    static final String OPPONENT = System.getProperty("kindred.duel.opponent", "baseline");
+    /** What is switched off in the player's own fight, for a control: "none", "tactics", "tendencies" or "prediction". */
+    static final String OFF = System.getProperty("kindred.duel.off", "none");
+    /** Whether both carry a shield (true by default). */
+    static final boolean SHIELDS = !"false".equals(System.getProperty("kindred.duel.shields"));
 
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID id) {
         return id == null ? null : f.source.getServer().getPlayerManager().getPlayer(id);
@@ -36,7 +42,7 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
     private static boolean settled(NativePaidSkillsGameTests.Fixture f, UUID id) {
         String line = f.runtime.nativeStatusLine(id);
         return line.contains("busy=false") && line.contains("workPending=false") && line.contains("actionPending=false")
-                && line.contains("activity=IDLE") && line.contains("flushes=true/true") && line.contains("cancelling=false");
+                && (line.contains("activity=IDLE") || line.contains("activity=none")) && line.contains("flushes=true/true") && line.contains("cancelling=false");
     }
 
     /** The Wilson score interval at 95% for {@code wins} of {@code n}. */
@@ -56,7 +62,7 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
         var rng = new java.util.Random(20261028L);
         int[] state = {0}, tally = new int[3], done = {0};
         UUID[] match = {null};
-        long[] since = {0};
+        long[] since = {0}, ticks = {0};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))
@@ -80,8 +86,14 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                     }
                     world.setTimeOfDay(1000);
                     server.setPvpEnabled(true);
-                    // The baseline: the same fight with its tactics off.
+                    // The baseline: the same fight with its tactics off; or a declared style.
                     f.runtime.meleeTactics(ids[1], false);
+                    if (!OPPONENT.equals("baseline")) f.runtime.meleeStyle(ids[1], OPPONENT);
+                    // The control: the player's fight with a part of it off.
+                    if (OFF.equals("tactics")) f.runtime.meleeTactics(ids[0], false);
+                    if (OFF.equals("tendencies")) f.runtime.meleeTendencies(ids[0], false);
+                    if (OFF.equals("prediction")) f.runtime.meleePrediction(ids[0], false);
+                    KindredMod.LOGGER.info("Duel benchmark: {} duels against the {}, with {} off", DUELS, OPPONENT, OFF);
                 })
                 .createAndAdd(() -> {
                     long now = server.getTicks();
@@ -110,8 +122,9 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                                 p.getInventory().clear();
                                 p.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
                                 p.getInventory().setStack(1, new ItemStack(Items.BREAD, 4));
+                                p.getInventory().setStack(2, new ItemStack(Items.IRON_AXE));
                                 p.getInventory().selectedSlot = 0;
-                                p.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                                p.equipStack(EquipmentSlot.OFFHAND, SHIELDS ? new ItemStack(Items.SHIELD) : ItemStack.EMPTY);
                                 p.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
                                 p.setHealth(20);
                                 p.getHungerManager().setFoodLevel(20);
@@ -119,6 +132,9 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                                 p.teleport(world, o.getX() + at[i][0], o.getY() + 2, o.getZ() + at[i][1], rng.nextFloat() * 360 - 180, 0);
                                 i++;
                             }
+                            // Both at full health, as each is told at a duel's start: the fixture's own heal made known.
+                            f.runtime.forgetHealth(players[0]);
+                            f.runtime.forgetHealth(players[1]);
                             if (f.runtime.proposeDuel(f.source, players[0], players[1]) != 1) {
                                 KindredMod.LOGGER.info("Duel benchmark: duel {} not proposed", done[0] + 1);
                                 break;
@@ -139,9 +155,12 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                                 int side = players[0].equals(duel.winner()) ? 0 : players[1].equals(duel.winner()) ? 1 : 2;
                                 tally[side]++;
                                 done[0]++;
+                                ticks[0] += now - since[0];
                                 var rate = wilson(tally[0], tally[0] + tally[1]);
-                                KindredMod.LOGGER.info("Duel benchmark {}/{}: {} ({}); tactics {}, baseline {}, draws {}; the tactics' rate {} [{}, {}]",
-                                        done[0], DUELS, side == 0 ? "tactics" : side == 1 ? "baseline" : "draw", duel.result(), tally[0], tally[1], tally[2],
+                                KindredMod.LOGGER.info("Duel benchmark {}/{}: {} ({}; {} ticks, Hal {}, Wren {}); tactics {}, baseline {}, draws {}; the tactics' rate {} [{}, {}]",
+                                        done[0], DUELS, side == 0 ? "tactics" : side == 1 ? "baseline" : "draw", duel.result(), now - since[0],
+                                        hal == null ? "-" : String.format("%.1f", hal.getHealth()), wren == null ? "-" : String.format("%.1f", wren.getHealth()),
+                                        tally[0], tally[1], tally[2],
                                         String.format("%.2f", tally[0] + tally[1] == 0 ? 0 : (double) tally[0] / (tally[0] + tally[1])),
                                         String.format("%.2f", rate[0]), String.format("%.2f", rate[1]));
                                 state[0] = 2;
@@ -158,8 +177,8 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var rate = wilson(tally[0], tally[0] + tally[1]);
-                    KindredMod.LOGGER.info("Duel benchmark done: {} duels; the tactics won {}, the baseline {}, {} drawn; the tactics' rate {} with 95% interval [{}, {}]",
-                            DUELS, tally[0], tally[1], tally[2], String.format("%.3f", (double) tally[0] / Math.max(1, tally[0] + tally[1])),
+                    KindredMod.LOGGER.info("Duel benchmark done: {} duels against the {} with {} off{}, {} ticks a duel on average; the player won {}, the opponent {}, {} drawn; the player's rate {} with 95% interval [{}, {}]",
+                            DUELS, OPPONENT, OFF, SHIELDS ? "" : " and no shields", ticks[0] / Math.max(1, done[0]), tally[0], tally[1], tally[2], String.format("%.3f", (double) tally[0] / Math.max(1, tally[0] + tally[1])),
                             String.format("%.3f", rate[0]), String.format("%.3f", rate[1]));
                     f.runtime.stop();
                 })

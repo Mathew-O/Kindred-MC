@@ -38,6 +38,8 @@ final class NativeFightAction extends NativeRecordedAction {
     private static final int UNSAFE_TICKS = 40;
     /** How long the shield stays up after a shooter stops drawing: long enough for the arrow to arrive. */
     private static final int SHOT_GUARD_TICKS = 12;
+    /** Ticks a raised shield takes before it guards (vanilla's five). */
+    private static final int SHIELD_WARMUP = 5;
     /**
      * How far the swing has recovered when the player jumps for a critical hit: with about a dozen ticks in the air, it
      * lands the swing just past the top of the jump, when the cooldown is full and the player is falling.
@@ -49,7 +51,7 @@ final class NativeFightAction extends NativeRecordedAction {
     private final ActionAdmission.Writer writer;
     private final Consumer<Runnable> dispatch;
     private final UUID targetId;
-    private final int slot;
+    private int slot;
     private ActionLease issuedLease;
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -66,7 +68,7 @@ final class NativeFightAction extends NativeRecordedAction {
      * The melee of a fight with another player (E-41b): the move each tick by {@link dev.kindred.core.tactics.Melee}.
      * Null against a mob, or with the tactics off (the declared baseline: close in and strike when the swing is full).
      */
-    private final dev.kindred.core.tactics.Melee melee;
+    private final dev.kindred.core.tactics.MeleePolicy melee;
     private int strafe = 1, strafeTicks;
     /** When the opponent was last seen to swing, and whether it was swinging the tick before. */
     private long opponentSwungAt = -1_000_000L;
@@ -81,22 +83,43 @@ final class NativeFightAction extends NativeRecordedAction {
     /** Whether it closes in on where the opponent will be rather than where it is (E-41c); off for the control. */
     private final boolean predicts;
     private double lastOpponentX = Double.NaN, lastOpponentZ;
+    /**
+     * A declared opponent's fixed style for the benchmarks and the mechanics suite (E-41b, E-41c), null for the
+     * player's own fight: "turtle" keeps its shield up but for each full swing; "spammer" swings whenever in reach,
+     * however little its swing has recovered; "evade" only runs.
+     */
+    private final String style;
+    /** The strategist's proposal for the fight as it stands (E-41f), asked for and checked by the runtime; or null. */
+    private java.util.function.BiFunction<net.minecraft.server.network.ServerPlayerEntity, net.minecraft.entity.player.PlayerEntity,
+            Optional<dev.kindred.core.tactics.CombatProposals.Tactic>> advisor;
+    private dev.kindred.core.tactics.CombatProposals.Tactic leaning;
 
     NativeFightAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       UUID targetId, int slot) {
-        this(body, lease, writer, dispatch, targetId, slot, true, null, false);
+        this(body, lease, writer, dispatch, targetId, slot, true, null, false, null, null);
     }
 
     NativeFightAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
-                      UUID targetId, int slot, boolean tactics, dev.kindred.core.tactics.Tendencies tendencies, boolean predicts) {
+                      UUID targetId, int slot, boolean tactics, dev.kindred.core.tactics.Tendencies tendencies, boolean predicts, String style,
+                      dev.kindred.core.tactics.LearnedMelee.Model learned) {
         this.body = body; this.lease = lease; this.writer = writer; this.dispatch = dispatch;
         this.targetId = targetId; this.slot = slot;
         if (!(body.entity().getServerWorld().getEntity(targetId) instanceof LivingEntity target) || !target.isAlive()) {
             throw new IllegalArgumentException("Nothing to fight");
         }
-        this.melee = tactics && target instanceof net.minecraft.entity.player.PlayerEntity ? new dev.kindred.core.tactics.Melee() : null;
+        // The hand-set melee, or a model trained offline that an operator turned on (E-41e).
+        this.melee = !(tactics && target instanceof net.minecraft.entity.player.PlayerEntity) ? null
+                : learned != null ? new dev.kindred.core.tactics.LearnedMelee(learned) : new dev.kindred.core.tactics.Melee();
         this.tendencies = melee == null ? null : tendencies;
         this.predicts = melee != null && predicts;
+        this.style = melee == null && target instanceof net.minecraft.entity.player.PlayerEntity ? style : null;
+    }
+
+    /** This fight advised by {@code advisor} (E-41f): its proposal leans the melee while it holds. */
+    NativeFightAction advised(java.util.function.BiFunction<net.minecraft.server.network.ServerPlayerEntity, net.minecraft.entity.player.PlayerEntity,
+            Optional<dev.kindred.core.tactics.CombatProposals.Tactic>> advisor) {
+        this.advisor = advisor;
+        return this;
     }
 
     private Step waiting() { return Step.running(Map.of("durableAction", phase(), "hits", String.valueOf(hits)), false); }
@@ -173,6 +196,8 @@ final class NativeFightAction extends NativeRecordedAction {
             decision = "back off while the swing recovers";
         } else if (melee != null && target instanceof net.minecraft.entity.player.PlayerEntity opponent) {
             moved = melee(player, opponent, navigator, yaw, distance, visible, ready);
+        } else if (style != null) {
+            moved = styled(player, target, navigator, yaw, distance, visible, ready);
         } else if (distance > STRIKE_RANGE || !visible) {
             moved = closeIn(player, target, navigator, yaw, dx, dz, visible);
             if (decision.equals("unsafe")) { settle("The way to the target is unsafe", false); return waiting(); }
@@ -206,7 +231,8 @@ final class NativeFightAction extends NativeRecordedAction {
             opponentSwungAt = now;
         }
         opponentWasSwinging = opponent.handSwinging;
-        boolean opponentReady = now - opponentSwungAt >= 0.9 * opponentCooldown;
+        // Ready, or near enough that a shield raised now (it guards only after five ticks up) is up in time for it.
+        boolean opponentReady = now - opponentSwungAt >= opponentCooldown - SHIELD_WARMUP - 1;
         // Its own swing come full in reach: the opponent's chance to raise its shield against it, and whether it did.
         boolean full = player.getAttackCooldownProgress(0.5f) >= dev.kindred.core.tactics.Melee.FULL && distance <= STRIKE_RANGE && visible;
         if (full && !wasFull && tendencies != null) tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS, opponent.isBlocking());
@@ -220,6 +246,19 @@ final class NativeFightAction extends NativeRecordedAction {
                     && !stack.isOf(Items.PUFFERFISH) && player.canConsume(component.canAlwaysEat())) food = s;
         }
         boolean shield = player.getOffHandStack().isOf(Items.SHIELD) && !player.getItemCooldownManager().isCoolingDown(Items.SHIELD);
+        // Against one it has learned keeps its shield up (E-41c), the axe in hand, which disables a shield it strikes;
+        // the change costs a swing's recovery, so it is made once, and only when it is sure enough.
+        if (tendencies != null && tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS) > 0.65
+                && !(inventory.getMainHandStack().getItem() instanceof net.minecraft.item.AxeItem)) {
+            for (int s = 0; s < 9; s++) {
+                if (inventory.getStack(s).getItem() instanceof net.minecraft.item.AxeItem && body.selectHotbar(issuedLease, s)) {
+                    slot = s;
+                    events.add("weapon axe: it keeps its shield up");
+                    break;
+                }
+            }
+        }
+        boolean axe = inventory.getMainHandStack().getItem() instanceof net.minecraft.item.AxeItem;
         // Food it set out to eat, eaten once it stops using it with one fewer.
         if (eating != null && !player.isUsingItem()) {
             if (inventory.count(eating) < eatingBefore) eaten.merge(eating, eatingBefore - inventory.count(eating), Integer::sum);
@@ -230,7 +269,13 @@ final class NativeFightAction extends NativeRecordedAction {
                 player.getAttackCooldownProgress(0.5f), player.getHealth(), food >= 0, shield, opponentReady, opponent.isBlocking(),
                 NativePlayerBody.believedHealth(player, opponent), visible,
                 tendencies == null ? 0.5 : tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS),
-                tendencies == null ? 0.5 : tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.SPAMS));
+                tendencies == null ? 0.5 : tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.SPAMS), axe);
+        if (advisor != null) {
+            var tactic = advisor.apply(player, opponent).orElse(null);
+            if (tactic != leaning) events.add("proposal " + (tactic == null ? "none" : tactic.name().toLowerCase(java.util.Locale.ROOT)));
+            leaning = tactic;
+            melee.lean(tactic);
+        }
         var choice = melee.next(sight, now);
         decision = choice.why();
         if (choice.move() != dev.kindred.core.tactics.Melee.Move.EAT && eating != null) {
@@ -284,6 +329,44 @@ final class NativeFightAction extends NativeRecordedAction {
             }
         }
         return body.move(issuedLease, 0, 0, false, false, yaw);
+    }
+
+    /** A declared opponent's fight in its fixed {@link #style}. */
+    private boolean styled(net.minecraft.server.network.ServerPlayerEntity player, LivingEntity target, NativeNavigator navigator,
+                           float yaw, double distance, boolean visible, boolean ready) {
+        double dx = target.getX() - player.getX(), dz = target.getZ() - player.getZ();
+        switch (style) {
+            case "evade" -> {
+                guard(false);
+                decision = "run";
+                return flee(navigator, target);
+            }
+            case "spammer" -> {
+                if (distance > STRIKE_RANGE || !visible) return closeIn(player, target, navigator, yaw, dx, dz, visible);
+                boolean moved = body.move(issuedLease, 0, 0, false, false, yaw);
+                decision = "swing, however little recovered";
+                if (moved && player.getAttackCooldownProgress(0.5f) >= 0.3f && body.attack(issuedLease, targetId, slot)) hits++;
+                return moved;
+            }
+            default -> {
+                // "turtle": its shield up but for a full swing in reach.
+                if (distance > STRIKE_RANGE || !visible) {
+                    boolean moved = closeIn(player, target, navigator, yaw, dx, dz, visible);
+                    guard(true);
+                    return moved;
+                }
+                if (!ready) {
+                    guard(true);
+                    decision = "shield up while the swing recovers";
+                    return body.move(issuedLease, 0, 0, false, false, yaw);
+                }
+                guard(false);
+                boolean moved = body.move(issuedLease, 0, 0, false, false, yaw);
+                decision = "strike, the swing full";
+                if (moved && body.attack(issuedLease, targetId, slot)) hits++;
+                return moved;
+            }
+        }
     }
 
     /** Round {@code opponent} sideways, facing it; the other way after a while, or where this way meets a wall or an edge. */

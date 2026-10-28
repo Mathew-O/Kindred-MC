@@ -182,6 +182,13 @@ final class PlayerRuntime {
     private boolean dragonFight;
     /** The operator's leave for AI players to choose, site and build their own bases (M-01c); off by default. */
     private boolean bases;
+    /** Whether the strategist is asked for combat proposals (E-41f): an operator's choice, off by default. */
+    private boolean combatAdvice;
+    /** A learned melee model an operator turned on (E-41e), or null for the hand-set melee. */
+    private dev.kindred.core.tactics.LearnedMelee.Model meleeModel;
+    /** Humans who chose to have their duels recorded as demonstrations (E-41e), and what is being recorded of each. */
+    private final Set<UUID> demonstrators = new HashSet<>();
+    private final Map<UUID, Demonstration> demonstrations = new HashMap<>();
     private final AdmissionBoard admission = AdmissionBoard.serverTarget(10);
     private final ClaimRegistry claims = new ClaimRegistry();
     ClaimRegistry claims() { return claims; }
@@ -1501,7 +1508,8 @@ final class PlayerRuntime {
                         UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
                         !"false".equals(arguments.get("tactics")),
                         entry.meleeTendencies ? entry.tendencies.computeIfAbsent(UUID.fromString(arguments.get("target")), t -> new dev.kindred.core.tactics.Tendencies()) : null,
-                        entry.meleePrediction);
+                        entry.meleePrediction, arguments.get("style"), meleeModel)
+                        .advised((self, opponent) -> combatProposal(entry, self, opponent));
             } else if (skill.equals("native_attack")) {
                 UUID targetId = UUID.fromString(arguments.get("target"));
                 Integer slot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : null;
@@ -2003,6 +2011,7 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
         if (tick % 20 == 17) pollBuildBattles();
@@ -7550,7 +7559,14 @@ final class PlayerRuntime {
         boolean equipped = Weapons.choose(hit, NativePlayerBody.believedHealth(hit, by), false)
                 .filter(w -> w.weapon().kind() != dev.kindred.core.tactics.DamageModel.Kind.HAND).isPresent();
         boolean cornered = openWayFrom(entry, hit, by) == null;
-        var answer = dev.kindred.core.tactics.FightOdds.answer(mayStrike, equipped, odds, cornered);
+        // In a duel both joined, judged by the kit on each side (E-41b): the health already lost is the melee's to weigh.
+        boolean duel = matches.running(hit.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL
+                && m.invited().contains(by.getUuid())).isPresent();
+        var answer = duel && mayStrike
+                ? dev.kindred.core.tactics.FightOdds.answerInDuel(equipped, dev.kindred.core.tactics.FightOdds.of(
+                        dev.kindred.core.tactics.FightOdds.at(fightSide(entry, hit, null), hit.getMaxHealth()),
+                        dev.kindred.core.tactics.FightOdds.at(fightSide(entry, by, hit), by.getMaxHealth())))
+                : dev.kindred.core.tactics.FightOdds.answer(mayStrike, equipped, odds, cornered);
         boolean fresh = held == null || !held.who().equals(by.getUuid()) || held.answer() != answer;
         entry.aggressor = new Aggressor(by.getUuid(), by.getName().getString(), answer, now + AGGRESSION_HOLD, odds);
         entry.aggressionInterrupt = true;
@@ -7637,6 +7653,11 @@ final class PlayerRuntime {
         UUID taskId = aggressionTaskId(entry, held.who());
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.9,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (held.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND && matches.running(player.getUuid())
+                .filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL && m.invited().contains(attacker.getUuid())).isPresent()) {
+            // Defending itself in its duel is the duel's own fight, with its own tactics (E-41b).
+            return null;
+        }
         if (held.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND && matches.mayAttack(player.getUuid(), attacker.getUuid())) {
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, attacker), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", attacker.getUuid().toString(), "slot", String.valueOf(slot))));
@@ -9899,6 +9920,16 @@ final class PlayerRuntime {
         if (entry != null) entry.meleeTactics = on;
     }
 
+    /**
+     * A benchmark's declared opponent (E-41b, E-41c): its duel fought in a fixed style, "idle" not at all, or null for
+     * its own fight.
+     */
+    void meleeStyle(UUID id, String style) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.meleeStyle = style;
+    }
+
     /** A benchmark's switch (E-41c): with {@code on} false, it closes in on where its opponent is, not where it will be. */
     void meleePrediction(UUID id, boolean on) {
         requireThread();
@@ -11231,11 +11262,17 @@ final class PlayerRuntime {
                     "z", String.valueOf(at.getZ()))));
             return candidates;
         }
+        Entry self = entryForPlayer(player.getUuid());
+        // A declared opponent that stands, for the mechanics suite.
+        if (self != null && "idle".equals(self.meleeStyle)) return candidates;
         int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, opponent), true).map(Weapons.Held::slot).orElse(-1);
         // Its melee's tactics (E-41b), on but for a declared baseline in a benchmark.
-        Entry self = entryForPlayer(player.getUuid());
         var args = new HashMap<String, String>(Map.of("target", opponentId.toString(), "slot", String.valueOf(slot)));
         if (self != null && !self.meleeTactics) args.put("tactics", "false");
+        if (self != null && self.meleeStyle != null) {
+            args.put("tactics", "false");
+            args.put("style", self.meleeStyle);
+        }
         candidates.add(new NativeTaskCandidate(candidate, "native_fight", Map.copyOf(args)));
         return candidates;
     }
@@ -12067,6 +12104,15 @@ final class PlayerRuntime {
     void playerFell(UUID playerId) {
         requireThread();
         matches.fallen(playerId).ifPresent(this::announce);
+        // A death is told to everyone, and a player comes back at full health: what any player believed of its health
+        // is gone with it (E-41a).
+        forgetHealth(playerId);
+    }
+
+    /** Each native player's belief of {@code playerId}'s health forgotten: it is known to be full again. */
+    void forgetHealth(UUID playerId) {
+        requireThread();
+        for (Entry entry : entries.values()) if (entry.nativeBody != null) entry.nativeBody.beliefs().forget(playerId);
     }
 
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
@@ -12196,6 +12242,12 @@ final class PlayerRuntime {
         private boolean meleeTendencies = true;
         /** Whether it closes in on where its opponent will be (E-41c); off for the control. */
         private boolean meleePrediction = true;
+        /** The strategist's combat proposals for this player's fights (E-41f), and the health at the last question. */
+        private final dev.kindred.core.tactics.CombatProposals.Gate combatGate = new dev.kindred.core.tactics.CombatProposals.Gate();
+        private double combatAskedHealth = -1;
+        private UUID combatAskedOf;
+        /** A declared opponent's fixed style in a benchmark ("idle", "turtle", "spammer", "evade"), or null. */
+        private String meleeStyle;
         private final Map<UUID, dev.kindred.core.tactics.Tendencies> tendencies = new HashMap<>();
         /** Supplies it was asked to bring someone (E-01), while it is bringing them. */
         private Delivery delivery;
@@ -12958,6 +13010,231 @@ final class PlayerRuntime {
      * Records whether AI players may choose, site and build their own bases as they go (M-01c), in edits.properties;
      * operators only. Their builds are still world edits: AI world edits must be on as well.
      */
+    /**
+     * The learned melee (E-41e) turned on, from {@code kindred/combat/melee.model} under the server's directory (read
+     * off the server thread), or off, back to the hand-set melee. An operator's choice; a model is never put in place
+     * by training alone. A fight already going keeps the policy it began with.
+     */
+    int setCombatModel(ServerCommandSource source, boolean on) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the combat model.");
+        if (!on) {
+            String was = meleeModel == null ? null : meleeModel.version();
+            meleeModel = null;
+            feedback(source, was == null ? "The hand-set melee is in use." : "Back to the hand-set melee (from " + was + ").");
+            return 1;
+        }
+        Path file = server.getRunDirectory().resolve("kindred").resolve("combat").resolve("melee.model");
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return dev.kindred.core.tactics.LearnedMelee.read(Files.readString(file, StandardCharsets.UTF_8));
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((model, failure) -> server.execute(() -> {
+            if (failure != null) {
+                Throwable cause = failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+                reject(source, "No combat model turned on: " + (cause instanceof java.nio.file.NoSuchFileException ? "there is no " + file : cause.getMessage()));
+                return;
+            }
+            if (!dev.kindred.core.tactics.LearnedMelee.RULESET.equals(model.ruleset())) {
+                reject(source, "The model in " + file + " was trained for " + model.ruleset() + ", not " + dev.kindred.core.tactics.LearnedMelee.RULESET + "; the hand-set melee stays.");
+                return;
+            }
+            meleeModel = model;
+            feedback(source, String.format(java.util.Locale.ROOT, "Learned melee %s on (trained on %d, %.0f%% of held-out moves made); /aiplayer combat model off goes back.",
+                    model.version(), model.trainedOn(), 100 * model.heldOut()));
+        }));
+        return 1;
+    }
+
+    /** The strategist's combat proposals turned on or off (E-41f); with no strategist set up, there is nothing to turn on. */
+    int setCombatAdvice(ServerCommandSource source, boolean on) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change combat advice.");
+        if (on && strategist.isEmpty()) return reject(source, "No strategist is set up, so there is no one to advise its fights.");
+        combatAdvice = on;
+        feedback(source, on ? "The strategist now advises AI players' duels: a tactic at a time, checked against the fight, never the fighting itself."
+                : "The strategist no longer advises fights; each fights by its own melee alone.");
+        return 1;
+    }
+
+    /** The fight with {@code opponent} as a proposal is checked against it (E-41f). */
+    private dev.kindred.core.tactics.CombatProposals.Facts combatFacts(Entry entry, ServerPlayerEntity self, net.minecraft.entity.player.PlayerEntity opponent) {
+        boolean food = false;
+        for (int s = 0; s < 9 && !food; s++) food = self.getInventory().getStack(s).get(net.minecraft.component.DataComponentTypes.FOOD) != null;
+        var verdict = opponent instanceof ServerPlayerEntity them ? fightOdds(entry, self, them).verdict() : dev.kindred.core.tactics.FightOdds.Verdict.EVEN;
+        return new dev.kindred.core.tactics.CombatProposals.Facts(self.getHealth(), NativePlayerBody.believedHealth(self, opponent),
+                self.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD), food, verdict, self.distanceTo(opponent));
+    }
+
+    /**
+     * The proposal leaning {@code entry}'s fight with {@code opponent} now (E-41f): one held while valid, and a question
+     * put to the strategist when advice is on, none is out, the cooldown has passed and the fight has changed (a new
+     * opponent, or six health gained or lost since the last). The answer comes back later and is checked again then.
+     */
+    private Optional<dev.kindred.core.tactics.CombatProposals.Tactic> combatProposal(Entry entry, ServerPlayerEntity self, net.minecraft.entity.player.PlayerEntity opponent) {
+        long tick = server.getTicks();
+        var facts = combatFacts(entry, self, opponent);
+        var gate = entry.combatGate;
+        String before = gate.dropped();
+        var current = gate.current(facts, tick).map(dev.kindred.core.tactics.CombatProposals.Proposal::tactic);
+        if (!gate.dropped().equals(before)) KindredMod.LOGGER.info("{} combat proposal dropped: {}", entry.data.displayName(), gate.dropped());
+        boolean changed = !opponent.getUuid().equals(entry.combatAskedOf) || Math.abs(facts.health() - entry.combatAskedHealth) >= 6;
+        if (combatAdvice && strategist.isPresent() && changed && gate.mayAsk(tick)) {
+            gate.asked(tick);
+            entry.combatAskedHealth = facts.health();
+            entry.combatAskedOf = opponent.getUuid();
+            var question = new dev.kindred.model.Strategist.Question(dev.kindred.core.tactics.CombatProposals.SYSTEM,
+                    dev.kindred.core.tactics.CombatProposals.question(facts), dev.kindred.core.tactics.CombatProposals.choices(facts), 0);
+            strategist.get().ask(entry.data.id(), entry.data.displayName(), question, server).whenComplete((answer, failure) -> {
+                var tactic = answer == null ? Optional.<dev.kindred.core.tactics.CombatProposals.Tactic>empty()
+                        : answer.flatMap(a -> a.choice()).flatMap(dev.kindred.core.tactics.CombatProposals::parse);
+                String reason = answer == null ? "" : answer.map(dev.kindred.model.Strategist.Answer::reason).orElse("");
+                // Checked against the fight as it is now, not as it was asked about.
+                var now = opponent.isAlive() && self.isAlive() ? combatFacts(entry, self, opponent) : null;
+                var adopted = now == null ? Optional.<dev.kindred.core.tactics.CombatProposals.Proposal>empty()
+                        : gate.answered(tactic, reason, now, server.getTicks());
+                if (now == null) gate.answered(Optional.empty(), "", facts, server.getTicks());
+                KindredMod.LOGGER.info("{} combat proposal: {}{}", entry.data.displayName(),
+                        adopted.map(p -> p.tactic().name().toLowerCase(java.util.Locale.ROOT) + " adopted (" + p.reason() + ")")
+                                .orElse(tactic.isEmpty() ? "none usable; its own melee" : "not adopted, " + gate.dropped()), "");
+            });
+        }
+        return current;
+    }
+
+    /** The learned melee model in use, or "hand-set". */
+    String combatModel() {
+        return meleeModel == null ? "hand-set" : meleeModel.version();
+    }
+
+    /**
+     * A human's own choice to have its duels recorded as demonstrations for the learned melee (E-41e), or to stop: what
+     * it saw and the move it made each tick of a duel it plays, kept on this server under {@code kindred/demonstrations}.
+     * Only a human, and only for itself.
+     */
+    int setDemonstrating(ServerCommandSource source, boolean on) {
+        requireThread();
+        ServerPlayerEntity human = source.getPlayer();
+        if (human == null || entryForPlayer(human.getUuid()) != null) return reject(source, "Only a human player can record its own duels.");
+        if (on) demonstrators.add(human.getUuid());
+        else {
+            demonstrators.remove(human.getUuid());
+            var going = demonstrations.remove(human.getUuid());
+            if (going != null) writeDemonstration(human.getUuid(), going);
+        }
+        feedback(source, on ? "Your duels are recorded as demonstrations from now: what you see and the move you make each tick, kept on this server. /aiplayer combat record off stops it."
+                : "Your duels are no longer recorded.");
+        return 1;
+    }
+
+    /** What is being recorded of a demonstrator's duel. */
+    private static final class Demonstration {
+        final UUID match;
+        final List<String> lines = new ArrayList<>();
+        final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
+        final dev.kindred.core.tactics.Tendencies tendencies = new dev.kindred.core.tactics.Tendencies();
+        double lastX = Double.NaN, lastZ, lastDistance;
+        float lastCharge, lastFall;
+        boolean wasSwinging, opponentWasSwinging, wasFull, wasOnGround = true;
+        long opponentSwungAt = -1_000_000L;
+
+        Demonstration(UUID match) { this.match = match; }
+    }
+
+    /** A sample a tick of each demonstrator's running duel; a finished duel's written off the server thread. */
+    private void recordDemonstrations(long tick) {
+        if (demonstrators.isEmpty() && demonstrations.isEmpty()) return;
+        for (var it = demonstrations.entrySet().iterator(); it.hasNext(); ) {
+            var each = it.next();
+            boolean still = matches.running(each.getKey()).filter(m -> m.id().equals(each.getValue().match)).isPresent();
+            if (!still) {
+                writeDemonstration(each.getKey(), each.getValue());
+                it.remove();
+            }
+        }
+        for (UUID id : demonstrators) {
+            var human = server.getPlayerManager().getPlayer(id);
+            var match = matches.running(id).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL).orElse(null);
+            if (human == null || match == null || !human.isAlive()) continue;
+            UUID otherId = dev.kindred.core.match.MatchRegistry.other(match, id);
+            var opponent = otherId == null ? null : server.getPlayerManager().getPlayer(otherId);
+            if (opponent == null || !opponent.isAlive() || opponent.getServerWorld() != human.getServerWorld()) continue;
+            var demo = demonstrations.computeIfAbsent(id, k -> new Demonstration(match.id()));
+            long now = human.getServerWorld().getTime();
+            double distance = human.distanceTo(opponent);
+            // A blow it was seen to land on its opponent, believed as the ruleset says it dealt (E-41a).
+            var source = opponent.getRecentDamageSource();
+            if (opponent.hurtTime == opponent.maxHurtTime && source != null && source.getAttacker() == human) {
+                double raw = dev.kindred.core.tactics.DamageModel.hit(Weapons.of(human.getMainHandStack()).orElse(dev.kindred.core.tactics.DamageModel.Weapon.HAND),
+                        demo.lastCharge, demo.lastFall > 0 && !demo.wasOnGround, 0, demo.lastFall);
+                demo.beliefs.hit(opponent.getUuid(), opponent.getMaxHealth(), true, dev.kindred.core.tactics.CombatRuleset.afterArmour(raw, opponent.getArmor(),
+                        opponent.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ARMOR_TOUGHNESS)), now);
+            }
+            double cooldown = opponent.getAttackCooldownProgressPerTick();
+            if (opponent.handSwinging && !demo.opponentWasSwinging) {
+                demo.tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.SPAMS, now - demo.opponentSwungAt < 0.9 * cooldown);
+                demo.opponentSwungAt = now;
+            }
+            demo.opponentWasSwinging = opponent.handSwinging;
+            float charge = human.getAttackCooldownProgress(0.5f);
+            boolean full = charge >= dev.kindred.core.tactics.Melee.FULL && distance <= 2.8 && human.canSee(opponent);
+            if (full && !demo.wasFull) demo.tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS, opponent.isBlocking());
+            demo.wasFull = full;
+            boolean food = false;
+            for (int s = 0; s < 9 && !food; s++) food = human.getInventory().getStack(s).get(net.minecraft.component.DataComponentTypes.FOOD) != null;
+            var sight = new dev.kindred.core.tactics.Melee.Sight(distance * dev.kindred.core.tactics.Melee.REACH / 2.8, charge, human.getHealth(),
+                    food && human.canConsume(false), human.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD)
+                    && !human.getItemCooldownManager().isCoolingDown(net.minecraft.item.Items.SHIELD),
+                    now - demo.opponentSwungAt >= cooldown - 6, opponent.isBlocking(),
+                    demo.beliefs.of(opponent.getUuid(), opponent.getMaxHealth(), true, now).value(), human.canSee(opponent),
+                    demo.tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS), demo.tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.SPAMS),
+                    human.getMainHandStack().getItem() instanceof net.minecraft.item.AxeItem);
+            if (!Double.isNaN(demo.lastX)) {
+                // How it moved this tick against its opponent's bearing: sideways is across the line between them.
+                double mx = human.getX() - demo.lastX, mz = human.getZ() - demo.lastZ;
+                double bx = opponent.getX() - human.getX(), bz = opponent.getZ() - human.getZ(), len = Math.max(1e-6, Math.hypot(bx, bz));
+                double sideways = (mx * -bz + mz * bx) / len;
+                boolean swung = human.handSwinging && !demo.wasSwinging;
+                boolean eating = human.isUsingItem() && human.getActiveItem().get(net.minecraft.component.DataComponentTypes.FOOD) != null;
+                dev.kindred.core.tactics.MoveLabels.label(demo.lastDistance, distance, sideways, swung, human.isBlocking(), eating)
+                        .ifPresent(move -> {
+                            if (demo.lines.size() < 20_000) demo.lines.add(dev.kindred.core.tactics.LearnedMelee.line(new dev.kindred.core.tactics.LearnedMelee.Sample(sight, move)));
+                        });
+            }
+            demo.lastX = human.getX();
+            demo.lastZ = human.getZ();
+            demo.lastDistance = distance;
+            demo.lastCharge = charge;
+            demo.lastFall = human.fallDistance;
+            demo.wasOnGround = human.isOnGround();
+            demo.wasSwinging = human.handSwinging;
+        }
+    }
+
+    /** A finished demonstration written off the server thread, as {@code kindred/demonstrations/<player>/<match>.csv}. */
+    private void writeDemonstration(UUID player, Demonstration demo) {
+        if (demo.lines.isEmpty()) return;
+        var lines = new ArrayList<String>();
+        lines.add(dev.kindred.core.tactics.LearnedMelee.SAMPLE_HEADER);
+        lines.addAll(demo.lines);
+        Path file = server.getRunDirectory().resolve("kindred").resolve("demonstrations").resolve(player.toString()).resolve(demo.match + ".csv");
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(file.getParent());
+                Files.write(file, lines, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) KindredMod.LOGGER.warn("A demonstration could not be written to {}", file, failure);
+            else KindredMod.LOGGER.info("Demonstration of {} samples written to {}", lines.size() - 1, file);
+        });
+    }
+
     int setBases(ServerCommandSource source, boolean allowed) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");

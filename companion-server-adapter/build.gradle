@@ -56,6 +56,8 @@ loom {
             source sourceSets.gametest
             vmArg '-Dfabric-api.gametest'
             vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('gametest-results.xml').get().asFile}"
+            // A benchmark's settings (kindred.duels and the like), passed on from the command line.
+            System.properties.findAll { it.key.toString().startsWith('kindred.') }.each { vmArg "-D${it.key}=${it.value}" }
             runDir 'build/gametest'
         }
     }

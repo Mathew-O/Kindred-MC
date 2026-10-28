@@ -165,6 +165,32 @@ public final class PlayerCommands {
                     return runtime.setDragonFight(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                 })));
         // The leave for AI players to build their own bases (M-01c): /aiplayer bases on|off.
+        // The learned melee (E-41e): an operator turns a trained model on or off; a human records its own duels.
+        root.then(CommandManager.literal("combat")
+                .then(CommandManager.literal("model").then(CommandManager.argument("enabled", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String raw = StringArgumentType.getString(context, "enabled");
+                            return runtime.setCombatModel(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                        })))
+                .then(CommandManager.literal("advice").then(CommandManager.argument("enabled", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String raw = StringArgumentType.getString(context, "enabled");
+                            return runtime.setCombatAdvice(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                        })))
+                .then(CommandManager.literal("record").then(CommandManager.argument("enabled", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String raw = StringArgumentType.getString(context, "enabled");
+                            return runtime.setDemonstrating(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                        }))));
         root.then(CommandManager.literal("bases").then(CommandManager.argument("enabled", StringArgumentType.word())
                 .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
                 .executes(context -> {
