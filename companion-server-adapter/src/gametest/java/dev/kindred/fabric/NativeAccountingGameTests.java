@@ -200,9 +200,10 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.nativeBreak(f.source, f.id, obsidian) == 1, "Obsidian break requested");
                 })
                 .createAndAdd(() -> {
-                    // No faster than a live server: each tick takes at least 50 ms of wall-clock time.
-                    long wait = 50_000_000L - (System.nanoTime() - lastTick[0]);
-                    if (wait > 0) java.util.concurrent.locks.LockSupport.parkNanos(wait);
+                    // No faster than a live server: each tick takes at least 50 ms of wall-clock time. Parked again after
+                    // an early return: every server.execute from the IO thread unparks the server thread.
+                    long until = lastTick[0] + 50_000_000L;
+                    for (long left; (left = until - System.nanoTime()) > 0; ) java.util.concurrent.locks.LockSupport.parkNanos(left);
                     lastTick[0] = System.nanoTime();
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     if (activity.work().startsWith("Running native_break")) breaking[0] = true;

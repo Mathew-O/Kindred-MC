@@ -201,6 +201,8 @@ final class PlayerRuntime {
     static final int MANUAL_COMMAND_HOLD_TICKS = 200;
     /** A running native skill's paid slice is renewed when this little of it is left (F-11c). */
     static final java.time.Duration RENEW_AHEAD = java.time.Duration.ofMillis(1500);
+    /** A renewal that would gain less than this is not made (F-11f); it absorbs the rounding of a slice that already reaches its deadline. */
+    static final java.time.Duration RENEW_GAIN_MIN = java.time.Duration.ofMillis(250);
     private int blocksScannedThisTick = 0;
     private long totalBlockChecksMonotonic = 0;
 
@@ -5117,7 +5119,10 @@ final class PlayerRuntime {
                 && !entry.snapshot().stopLatched() && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR
                 && !entry.arbiter.cancellationPending() && !entry.hazardInterrupted
                 && entry.nativeBody != null && entry.nativeBody.connected()) {
-            entry.activity.renew(renewalDeadline(entry));
+            // A permit that already runs to the deadline gains nothing from a renewal: near the end of its hours (or
+            // period) each renewal would reach only the deadline and leave too little again, a write every tick.
+            java.time.Instant deadline = renewalDeadline(entry);
+            if (java.time.Instant.now().plus(entry.activity.remaining()).plus(RENEW_GAIN_MIN).isBefore(deadline)) entry.activity.renew(deadline);
         }
         if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
@@ -5782,12 +5787,16 @@ final class PlayerRuntime {
         if (entry.runner.state() == SkillRunner.State.PAUSED) {
             if (entry.nativeState != null) {
                 if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.IDLE) {
+                    java.time.Instant deadline = renewalDeadline(entry);
+                    if (!deadline.isAfter(java.time.Instant.now())) {
+                        return reject(source, "Its activity hours or accounting period are over; start the work again (F-11f).");
+                    }
                     if (admission.request(entry.data.id(), entry.data.id(), 1) != AdmissionBoard.Decision.ADMIT) {
                         return reject(source, "No activity seat is available.");
                     }
                     entry.nativeWorkPending = true;
                     long generation = entry.generation;
-                    entry.activity.request(entry.activity.snapshot().period().endExclusive()).whenComplete((paid, error) -> server.execute(() -> {
+                    entry.activity.request(deadline).whenComplete((paid, error) -> server.execute(() -> {
                         entry.nativeWorkPending = false;
                         if (!running || generation != entry.generation || entry.runner == null || entry.runner.state() != SkillRunner.State.PAUSED) {
                             admission.release(entry.data.id());
