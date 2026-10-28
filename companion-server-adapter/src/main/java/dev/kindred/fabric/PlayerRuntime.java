@@ -3924,6 +3924,7 @@ final class PlayerRuntime {
                 entry.baseBuild = null;
                 entry.baseRepair = null;
                 entry.hallBuild = null;
+                entry.hallRepair = false;
                 entry.baseCheckAt = server.getTicks() + BASE_RETRY;
             }
             entry.build = null;
@@ -3999,6 +4000,24 @@ final class PlayerRuntime {
                 noteBase(entry, why);
                 if (!startBase(entry, base, why)) return false;
                 entry.baseRepair = base;
+                return true;
+            }
+        }
+        // Its trading hall kept whole as its base is (E-45d, E-31a): its own blocks gone or out of place put back, and
+        // only those. What it keeps clear is left as it is (a cell's front shut with its villager's job block, the rail
+        // on a cell's floor), and nothing is touched while it brings a villager home, whose line takes the door out.
+        var standing = record.hall;
+        if (standing != null && standing.complete() && standing.dimension().equals(dimension) && entry.bring == null) {
+            int damage = hallDamage(world, standing);
+            if (damage > 0) {
+                String why = "Repairing its trading hall, " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
+                var plan = hallPlan(standing);
+                var repair = new dev.kindred.core.construction.Blueprint("the trading hall's repair", plan.source(), plan.creator(), plan.license(),
+                        plan.blocks(), List.of());
+                if (startBuild(server.getCommandSource(), id, repair, new BlockPos(standing.x(), standing.y(), standing.z()), 0) != 1) return false;
+                entry.hallBuild = entry.build;
+                entry.hallRepair = true;
+                noteBase(entry, why);
                 return true;
             }
         }
@@ -4106,7 +4125,7 @@ final class PlayerRuntime {
     static final int HALL_CELLS = 3;
 
     private boolean startHall(Entry entry, PlayerMemoryStore.Hall hall, String why) {
-        var plan = dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+        var plan = hallPlan(hall);
         if (startBuild(server.getCommandSource(), entry.data.id(), plan, new BlockPos(hall.x(), hall.y(), hall.z()), 0) != 1) return false;
         entry.hallBuild = entry.build;
         noteBase(entry, why);
@@ -4117,6 +4136,13 @@ final class PlayerRuntime {
     /** Its trading hall's build has ended: whole, or after its last try as far as it goes, it stands. */
     private void hallBuilt(Entry entry, BuildRunner build) {
         entry.hallBuild = null;
+        if (entry.hallRepair) {
+            // A repair that ends short is tried again later, never at once: what it lacks may come with time.
+            entry.hallRepair = false;
+            if (!build.complete()) entry.baseCheckAt = server.getTicks() + BASE_RETRY;
+            noteBase(entry, build.complete() ? "Its trading hall is whole again" : "Its trading hall's repair ended short (" + build.progress() + "); back to it later");
+            return;
+        }
         var record = entry.bases;
         if (record == null || record.hall == null) return;
         if (!build.complete() && ++entry.hallTries < BASE_TRIES) {
@@ -4399,6 +4425,26 @@ final class PlayerRuntime {
         requireThread();
         Entry entry = entries.get(id);
         return entry == null ? "" : entry.lifeNote;
+    }
+
+    /** The plan its trading hall was built on. */
+    private static dev.kindred.core.construction.Blueprint hallPlan(PlayerMemoryStore.Hall hall) {
+        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+    }
+
+    /**
+     * How many of its trading hall's own blocks are gone or out of place, as the build compares them (a bed slept in, a
+     * door open count as in place); none when any of it is out of loaded ground.
+     */
+    private static int hallDamage(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        int damage = 0;
+        var origin = new BlockPos(hall.x(), hall.y(), hall.z());
+        for (var block : hallPlan(hall).blocks()) {
+            BlockPos at = origin.add(block.at().x(), block.at().y(), block.at().z());
+            if (!world.isChunkLoaded(at)) return 0;
+            if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
+        }
+        return damage;
     }
 
     /**
@@ -11210,6 +11256,8 @@ final class PlayerRuntime {
         String baseNote = "";
         /** Its trading hall's build while it is at it (E-45d), and the times it ended short. */
         BuildRunner hallBuild;
+        /** Whether the hall's build in hand is a repair (its record already complete). */
+        boolean hallRepair;
         int hallTries;
         boolean goalAnnounced;
         String loggedGoalProgress = "";
