@@ -186,14 +186,14 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] F-10g — Routes that change on the move: steering round what appears on the way at a run, and keeping out of the notice of mobs it does not mean to fight. In progress; [evidence](evidence/F-10g.md).
 - [ ] F-10h — A staircase built up as it walks: a block placed under the next step on the move, in one smooth climb, in the Nether, the End and anywhere a climb is wanted. In progress: done in native fixtures; a climb in play remains; [evidence](evidence/F-10h.md).
 - [x] F-24 — Bounded block perception: chunk-section index with palette prefilter, exposure filter and a per-tick budget. Completed 2026-10-13; [evidence](evidence/F-24.md).
-- [ ] F-11 — Native schedule configuration and prepaid runtime enforcement.
+- [ ] F-11 — Native schedule configuration and prepaid runtime enforcement. Testable (checked 2026-10-28): F-11a–c done; `IntentionsGameTests.limitAndJournalCommandsParseAndSummarize` passes in suite run 49. Remaining: schedule configuration by time zone and accounting period in native play (time zone changes are refused until accounting-period transitions exist).
 - [x] F-11a — Acknowledged prepaid activity permit boundary. Completed 2026-10-15; [pure boundary evidence](evidence/F-11a.md).
 - [x] F-11b — Asynchronous prepaid activity session and shutdown settlement. Completed 2026-10-15; [asynchronous boundary evidence](evidence/F-11b.md).
 - [x] F-11c — Renewal of a running native skill's prepaid slice. Completed 2026-10-21; [evidence](evidence/F-11c.md).
 - [ ] F-12 — Fair admission and bounded ticking tickets.
 - [x] F-12a — Attention-state policy, fair multi-player round-robin scheduler, and budgeted native candidate planning. Completed 2026-10-17; [evidence](evidence/F-12a.md).
 - [ ] F-13 — Restart, suspension, death and uncertain-action recovery. In progress: work an operator set a player to (a build, a farm ward's field) kept across a restart and taken up again from the world, the player left stopped until resumed (2026-10-24); [evidence](evidence/E-08b.md).
-- [ ] F-14 — Operator suspension and confirmed removal with item recovery.
+- [ ] F-14 — Operator suspension and confirmed removal with item recovery. Testable (checked 2026-10-28): suspend, recover and one-use removal tokens built for the earlier body; `LifecycleGameTests` (commands parse; removal tokens single-use, foreign or expired ones refused) pass in suite run 49. Remaining: suspension and removal of a native player with its items recovered, natively.
 - [ ] F-15 — Zero-player work and recovery qualification.
 - [x] F-16 — Historical project-record foundation (legacy mode fields retained only for save compatibility). Completed 2026-10-13; [evidence](evidence/F-16.md).
 - [ ] F-17 — Native task selection using the larger personality.
@@ -204,8 +204,8 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] F-19d — The strategist from any provider: Anthropic, OpenAI and OpenAI-compatible providers, chosen from the operator's key. In progress; [evidence](evidence/F-19d.md).
 - [ ] F-19c — The strategist's say in task choice: habits its notes teach, kept per world, and a short focus on what comes next. In progress; [evidence](evidence/F-19c.md).
 - [ ] F-19e — The strategist's Minecraft guide and follow-ups: a guide sent with its instructions, and needs it adds to the player's queue. In progress; [evidence](evidence/F-19e.md).
-- [ ] F-20 — Correctable preferences and provenance-backed social memory.
-- [ ] F-21 — Verified player activity journal.
+- [ ] F-20 — Correctable preferences and provenance-backed social memory. Testable (checked 2026-10-28): goal and memory commands; `IntentionsGameTests.goalAndMemoryCommandsParse` and `goalSurvivesAcrossFollowInterruptWithoutDeletion` pass in suite run 49. Remaining: provenance and correction of what a native player remembers of people, natively.
+- [ ] F-21 — Verified player activity journal. Testable (checked 2026-10-28): the journal command; `IntentionsGameTests.limitAndJournalCommandsParseAndSummarize` passes in suite run 49. Remaining: a journal of a native player's verified actions, natively.
 - [ ] F-22 — Operator configuration, diagnostics, performance and installation evidence.
 - [ ] F-23 — Full first-playable acceptance and release package.
 - [ ] E-01 — Fetch and deliver supplies.
@@ -237,7 +237,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [x] E-12 — Personal milestone graph and standing progression policy. Completed 2026-10-18; [evidence](evidence/E-12.md).
 - [x] E-13 — Establish and maintain a home and farm. Completed 2026-10-18; [evidence](evidence/E-13.md). Corrected 2026-10-20: the original harvest created its drops directly; harvest now breaks the crop with vanilla mining and collects the loot-table drops, and `NativeFarmGameTests` pass on that path.
 - [x] E-14 — Bounded expeditions, exploration and return planning. Completed 2026-10-18; [evidence](evidence/E-14.md).
-- [ ] E-15 — Explicit Nether travel, resource trips and cross-dimension recovery.
+- [ ] E-15 — Explicit Nether travel, resource trips and cross-dimension recovery. Testable (checked 2026-10-28): `NativeNetherGameTests` (frame assembled from owned obsidian, ignition with wear, obstructed frame refused, transfer and scaling, conservation across transit and restart, a wart patch's recorded drops) pass in suite run 49; [evidence](evidence/E-15.md). Remaining: resource trips and cross-dimension recovery in a live run.
 - [ ] E-16 — Equipment progression, upgrades and netherite goals.
   - [ ] E-16a — Enchanting: a table, lapis and levels earned, and the enchantments a run wants (Sharpness, Protection, Feather Falling, Power).
   - [ ] E-16b — Brewing: a stand, nether wart and water bottles, and the potions a run wants (fire resistance for the Nether, strength and slow falling for the dragon, healing).
@@ -311,7 +311,7 @@ Completed entries below retain their original bounded evidence. Reopened or unfi
 - [ ] E-30 — Canonical/semantic design comparison and durable uniqueness reservations.
 - [ ] E-31 — Native distinct-build construction, repair and recovery qualification.
   - [ ] E-31a — Repair: a player keeps what it built whole; a broken chest replaced, what is blown up or destroyed fixed; never a graveyard build left behind (owner, 2026-10-23). In progress: its own base repaired; [evidence](evidence/E-31a.md).
-- [ ] E-32 — Persistent quirk profile, deterministic `auto` resolution and sprint-jump/lively/steady movement habits.
+- [ ] E-32 — Persistent quirk profile, deterministic `auto` resolution and sprint-jump/lively/steady movement habits. Testable (checked 2026-10-28): `MannerismGameTests` (quirk commands, sprint-jump refused under low ceilings and without a lease, hard stop clearing it, habit feedback answered without starting work) pass in suite run 49; [evidence](evidence/E-32.md). Remaining: native movement quality and the two-player feedback scene, live.
 - [ ] E-33 — Notice-and-return attention pauses during interruptible work, with bounded remarks.
   - [ ] E-33a — Looking at what matters while it waits, and a moment's pause to look at whoever speaks to it. In progress (2026-10-25); [evidence](evidence/E-33a.md).
 - [ ] E-34 — Habit feedback: character-dependent keep/accommodate replies, bounded temporary accommodation and authorized durable edits.

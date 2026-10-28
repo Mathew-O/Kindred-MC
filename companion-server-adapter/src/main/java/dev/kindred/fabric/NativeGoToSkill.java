@@ -134,7 +134,9 @@ final class NativeGoToSkill implements SkillBody {
         // A body over an edge searches from the block below its feet; when that is the goal, the route is the step off.
         boolean below = found.complete() && found.nodes().size() == 1 && goalReached(found.nodes().getFirst());
         if (found.nodes().size() < 2 && !goalReached(start) && !below || !found.complete() && !partial) {
-            KindredMod.LOGGER.debug("No route from {} toward {} (expanded {}, standing {})", start.toShortString(),
+            // Said at info: a build stopped by eight of these in a row says nothing more of where it stood (#82).
+            KindredMod.LOGGER.info("No route from {} ({}, on the ground {}) toward {} (expanded {}, standing {})", start.toShortString(),
+                    String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f", player.getX(), player.getY(), player.getZ()), player.isOnGround(),
                     target.toShortString(), found.expanded(), navigator.standable(start));
             path = null;
             return false;
