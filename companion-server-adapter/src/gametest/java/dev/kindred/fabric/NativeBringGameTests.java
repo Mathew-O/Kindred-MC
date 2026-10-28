@@ -292,9 +292,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                     BlockPos floorRail = origin[0].add(cell.get().stand().x(), cell.get().stand().y(), cell.get().stand().z());
                     context.assertTrue(world.getBlockState(floorRail).isIn(net.minecraft.registry.tag.BlockTags.RAILS), "The rail on its cell's floor left: "
                             + world.getBlockState(floorRail));
-                    context.assertTrue(count(inventory, Items.RAIL) == rails && count(inventory, Items.MINECART) == 1 && count(inventory, Items.LECTERN) == 0
+                    context.assertTrue(count(inventory, Items.RAIL) == rails && count(inventory, Items.MINECART) == (strolling ? 0 : 1) && count(inventory, Items.LECTERN) == 0
                                     && count(inventory, Items.DIRT) == (river ? 8 : 4) && (!make || count(inventory, Items.IRON_INGOT) <= 7 && count(inventory, Items.STICK) == 0),
-                            "Rails (but the cell floor's), cart and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart (what iron is left its own to use)" : "") + ": "
+                            "Rails (but the cell floor's), cart (but one that strolls) and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart (what iron is left its own to use)" : "") + ": "
                                     + count(inventory, Items.RAIL) + " rails, " + count(inventory, Items.MINECART) + " carts, " + count(inventory, Items.LECTERN)
                                     + " lecterns, " + count(inventory, Items.DIRT) + " dirt, " + count(inventory, Items.IRON_INGOT) + " iron, "
                                     + count(inventory, Items.STICK) + " sticks");
@@ -308,6 +308,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                     }
                     if (strolling) {
                         context.assertTrue(count(inventory, Items.OAK_BOAT) == 1, "The boat picked up again: " + count(inventory, Items.OAK_BOAT));
+                        // One that strolls is never let loose with the front open: the cart left in its cell, under it.
+                        context.assertTrue(!world.getEntitiesByClass(net.minecraft.entity.vehicle.MinecartEntity.class, new net.minecraft.util.math.Box(floorRail).expand(0.5, 1, 0.5),
+                                c -> true).isEmpty(), "The cart left in its cell");
                         // The stone taken out over the line for its ride put back: over the doorway, and the cell's lintel.
                         for (var over : java.util.List.of(door.up(2), slot.up(2))) {
                             context.assertTrue(world.getBlockState(over).isOf(Blocks.COBBLESTONE), "Put back over the line: " + world.getBlockState(over)
