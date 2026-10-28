@@ -13,8 +13,15 @@ import java.util.Optional;
  * container or another's build), and how many open cells are over it. Pure.
  */
 public final class BaseSite {
-    /** One column of ground: its top block's height, whether that block is ground to build on, the open cells over it. */
-    public record Column(int top, boolean firm, int open) { }
+    /**
+     * One column of ground: its top block's height, whether that block is ground to build on, the open cells over it,
+     * and whether that top is water (a rail line is laid over it on a bridge, E-45e).
+     */
+    public record Column(int top, boolean firm, int open, boolean water) {
+        public Column(int top, boolean firm, int open) {
+            this(top, firm, open, false);
+        }
+    }
 
     /** The ground the player knows, column by column; empty where it does not know. */
     @FunctionalInterface

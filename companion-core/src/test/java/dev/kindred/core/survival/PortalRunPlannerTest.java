@@ -125,6 +125,45 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void ironForWorkOfItsOwnIsMinedAndSmeltedWhenTheRunHasNoMoreUseForIron() {
+        // The portal lit and its iron long made: seventeen ingots more for rails and a minecart (E-45e), with a stone
+        // pickaxe, a table by it and stone for a furnace, but no coal, wood or furnace.
+        Sim sim = new Sim();
+        sim.pick = 2;
+        sim.lit = true;
+        sim.tableNearby = true;
+        sim.cobble = 8;
+        assertTrue(PortalRunPlanner.ironFor(sim.snapshot(), WorldFacts.ordinary(), 0).isEmpty(), "Nothing to do for none");
+        List<Action> seen = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            var step = PortalRunPlanner.ironFor(sim.snapshot(), WorldFacts.ordinary(), 17);
+            if (step.isEmpty()) break;
+            seen.add(step.get().action());
+            sim.apply(step.get());
+        }
+        assertEquals(17, sim.iron, "All of it in hand: " + seen);
+        assertEquals(17, seen.stream().filter(a -> a == Action.MINE_IRON).count(), "An ore a step, until it holds the number raw");
+        assertTrue(seen.containsAll(List.of(Action.MINE_COAL, Action.CRAFT, Action.SMELT, Action.AWAIT_SMELT, Action.COLLECT_SMELTED)),
+                "Fuel found, a furnace made and put down, the iron smelted and taken out: " + seen);
+        assertTrue(seen.indexOf(Action.MINE_COAL) > seen.lastIndexOf(Action.MINE_IRON), "The ore first, then what to smelt it with");
+        // A furnace still at work is waited for, not emptied an ingot at a time; emptied once it holds the number.
+        var working = new Sim();
+        working.pick = 2;
+        working.furnaceNearby = true;
+        working.furnaceInput = 16;
+        working.furnaceOutput = 1;
+        assertEquals(Action.AWAIT_SMELT, PortalRunPlanner.ironFor(working.snapshot(), WorldFacts.ordinary(), 17).orElseThrow().action());
+        working.furnaceInput = 2;
+        working.furnaceOutput = 17;
+        assertEquals(Action.COLLECT_SMELTED, PortalRunPlanner.ironFor(working.snapshot(), WorldFacts.ordinary(), 17).orElseThrow().action(),
+                "Seventeen out and two more still smelting: what it wants is there, taken out");
+        // Iron in hand already counts; and with no pickaxe that mines iron ore there is nothing it can do from here.
+        assertTrue(PortalRunPlanner.ironFor(sim.snapshot(), WorldFacts.ordinary(), 12).isEmpty(), "Held already");
+        var bare = new Sim();
+        assertTrue(PortalRunPlanner.ironFor(bare.snapshot(), WorldFacts.ordinary(), 6).isEmpty(), "No pickaxe for the ore");
+    }
+
+    @Test
     void walksTheWholeRouteFromAnEmptyInventoryToALitPortal() {
         Sim sim = new Sim();
         List<Action> seen = new ArrayList<>();

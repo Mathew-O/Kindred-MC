@@ -78,14 +78,15 @@ class RailRouteTest {
     }
 
     @Test
-    void aLineGoesRoundWaterAndClimbsOnlyOnAStraight() {
+    void aLineGoesRoundWhatItCannotLayOnAndClimbsOnlyOnAStraight() {
         var cell = TradingHall.cells(3).get(1);
         var changes = new HashMap<Long, BaseSite.Column>();
-        // A pond across the way, but for a gap at its west end.
+        // Lava across the way, but for a gap at its west end.
         for (int x = -2; x <= 8; x++) changes.put(key(x, 14), new BaseSite.Column(62, false, 8));
         var round = RailRoute.plan(ground(changes), 3, 20, HALL, 3, cell).orElseThrow();
         connected(round.rails());
-        assertTrue(round.rails().stream().noneMatch(p -> p.z() == 14 && p.x() >= -2 && p.x() <= 8), "Never over the water: " + round.rails());
+        assertTrue(round.rails().stream().noneMatch(p -> p.z() == 14 && p.x() >= -2 && p.x() <= 8), "Never over the lava: " + round.rails());
+        assertTrue(round.bridge().isEmpty(), "No bridge: " + round.bridge());
         // Closed right across: no line.
         for (int x = -60; x <= 60; x++) changes.put(key(x, 14), new BaseSite.Column(62, false, 8));
         assertTrue(RailRoute.plan(ground(changes), 3, 20, HALL, 3, cell).isEmpty(), "No way across");
@@ -98,6 +99,34 @@ class RailRouteTest {
         var climb = RailRoute.plan(ground(step), 3, 20, HALL, 3, cell).orElseThrow();
         connected(climb.rails());
         assertEquals(0, turns(climb.rails()), "Up and down again in a straight line: " + climb.rails());
+    }
+
+    @Test
+    void aLineCrossesWaterOnABridgeAndGoesRoundAPuddleOnlyWhereThatIsNoDearer() {
+        var cell = TradingHall.cells(3).get(1);
+        // A river right across the way, three wide, its water's top level with the ground's.
+        var river = new HashMap<Long, BaseSite.Column>();
+        for (int x = -60; x <= 60; x++) for (int z = 13; z <= 15; z++) river.put(key(x, z), new BaseSite.Column(63, false, 8, true));
+        var across = RailRoute.plan(ground(river), 3, 20, HALL, 3, cell).orElseThrow();
+        connected(across.rails());
+        assertEquals(0, turns(across.rails().subList(0, across.rails().size() - RailRoute.inside(3, cell).size())), "Straight over: " + across.rails());
+        assertEquals(java.util.List.of(new Pos(3, 63, 15), new Pos(3, 63, 14), new Pos(3, 63, 13)), across.bridge(), "A block at the water's top a column, in the line's order");
+        for (int z = 13; z <= 15; z++) assertTrue(across.rails().contains(new Pos(3, 64, z)), "Its rail on the bridge, level with the ground's");
+        // The water too deep down to bridge level with the ground on either side: a block up or down at most.
+        var low = new HashMap<Long, BaseSite.Column>();
+        for (int x = -60; x <= 60; x++) for (int z = 13; z <= 15; z++) low.put(key(x, z), new BaseSite.Column(61, false, 8, true));
+        assertTrue(RailRoute.plan(ground(low), 3, 20, HALL, 3, cell).isEmpty(), "No line down to water two below the ground");
+        // A puddle one column wide on the way, with dry ground beside: over it, a block dearer, rather than round it,
+        // four rails dearer.
+        var puddle = new HashMap<Long, BaseSite.Column>();
+        puddle.put(key(3, 14), new BaseSite.Column(63, false, 8, true));
+        var over = RailRoute.plan(ground(puddle), 3, 20, HALL, 3, cell).orElseThrow();
+        assertEquals(java.util.List.of(new Pos(3, 63, 14)), over.bridge());
+        // Water by the villager: the cart's place and the push are never on a bridge.
+        var behind = new HashMap<Long, BaseSite.Column>();
+        for (int x = -60; x <= 60; x++) for (int z = 21; z <= 24; z++) behind.put(key(x, z), new BaseSite.Column(63, false, 8, true));
+        assertTrue(RailRoute.plan(ground(behind), 3, 20, HALL, 3, cell).map(r -> r.cart().z() < 21 && r.push().z() < 21).orElse(true),
+                "No cart put down, nor a push begun, over the water behind it");
     }
 
     @Test

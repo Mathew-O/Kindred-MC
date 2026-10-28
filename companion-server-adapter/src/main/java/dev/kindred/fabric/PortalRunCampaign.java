@@ -415,6 +415,19 @@ final class PortalRunCampaign {
     /** The server's edit policy for work outside the goal's own passes, as a build's needs (E-08c). */
     void policy(EditPolicy.ServerPolicy policy) { this.policy = policy; }
 
+    /**
+     * The next step toward holding {@code wanted} iron ingots for work of the player's own beyond the run (E-45e: rails
+     * and a minecart to bring a villager home), planned as the run plans its iron ({@link PortalRunPlanner#ironFor})
+     * and carried out by the run's own steps: ore in sight, then the caves it knows, then down to where iron is; fuel,
+     * a furnace and the smelt. Empty once it holds them, or where it cannot from here.
+     */
+    Optional<Task> ironFor(NativePlayerBody body, EditPolicy.ServerPolicy policy, int wanted) {
+        this.policy = policy;
+        lastFeet = body.entity().getBlockPos().toImmutable();
+        var snapshot = snapshot(body);
+        return PortalRunPlanner.ironFor(snapshot, facts(body.entity()), wanted).flatMap(step -> realize(step, snapshot, body, policy));
+    }
+
     /** Bounded perception each tick; cheap enough to run while other work proceeds. */
     void observe(ServerPlayerEntity player) {
         knowledge.scan(player);

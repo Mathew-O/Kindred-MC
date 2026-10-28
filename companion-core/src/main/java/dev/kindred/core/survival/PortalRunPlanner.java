@@ -3,6 +3,7 @@ package dev.kindred.core.survival;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Local, deterministic plan for earning a Nether portal from an empty inventory. It reads only the player's
@@ -527,6 +528,45 @@ public final class PortalRunPlanner {
     /** Buckets the route needs: one for water when mining obsidian, a second for lava when casting it. */
     static int bucketsWanted(WorldFacts.Method frame) {
         return frame == WorldFacts.Method.CAST_OBSIDIAN ? 2 : 1;
+    }
+
+    /**
+     * The next step to hold {@code wanted} iron ingots for work of its own beyond the run (E-45e: the rails and the
+     * minecart that bring a villager home), as the run gets its iron: what a furnace near it has smelted collected once
+     * it is done (or once what is in it makes the number); iron
+     * ore mined until what it holds, raw and smelted, makes the number; then the raw iron smelted in a furnace of its
+     * own, with coal, or with wood where it has none to hand (logs where trees are grown again and no coal is known);
+     * stone for the furnace, and the furnace made, where it has none. Empty once it holds them, and where it has no
+     * pickaxe that mines iron ore.
+     */
+    public static Optional<Step> ironFor(PortalRunSnapshot s, WorldFacts facts, int wanted) {
+        Objects.requireNonNull(s);
+        Objects.requireNonNull(facts);
+        // Taken out once the furnace is done, or once what is in it makes the number: not an ingot at a time.
+        boolean enough = s.ironIngots() >= wanted;
+        if (s.furnaceNearby() && s.furnaceOutput() > 0 && (enough || !s.furnaceSmelting())) {
+            return Optional.of(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect the smelted iron"));
+        }
+        if (enough) return Optional.empty();
+        if (s.furnaceSmelting()) return Optional.of(Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron"));
+        int have = s.ironIngots() + s.rawIron();
+        if (have < wanted) {
+            if (s.pickaxeTier() < 2) return Optional.empty();
+            return Optional.of(new Step(Action.MINE_IRON, "", wanted - have, Stage.IRON, "Mine iron ore (" + have + "/" + wanted + ")"));
+        }
+        int fuelWood = (s.rawIron() * 2 + 2) / 3;
+        if (s.coal() == 0 && s.woodUnits() < fuelWood) {
+            if (facts.can(WorldFacts.Method.REPLANT) && !facts.knows(WorldFacts.Source.COAL_ORE)) {
+                return Optional.of(logs(facts, (fuelWood - s.woodUnits() + 3) / 4, Stage.IRON, "Gather logs for fuel to smelt iron"));
+            }
+            return Optional.of(new Step(Action.MINE_COAL, "", 1, Stage.IRON, "Find fuel to smelt iron"));
+        }
+        if (!s.furnaceNearby() && s.furnaces() == 0) {
+            if (s.cobble() < 8) return Optional.of(stone(s, facts, 8 - s.cobble(), Stage.IRON, "Mine cobblestone for a furnace"));
+            return Optional.of(craftAtTable(s, facts, "furnace", 0, 0, Stage.IRON));
+        }
+        // The smelt puts down a furnace it holds where none of its own is near, as the run's does.
+        return Optional.of(new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron"));
     }
 
     /** {@link #ironShortfall(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to go down into. */
