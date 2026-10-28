@@ -160,7 +160,12 @@ public final class NativeBringGameTests implements FabricGameTest {
                         for (int y = 2; y <= 10; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
                     world.setTimeOfDay(strolling ? 3000 : 1000);
-                    if (strolling) world.setBlockState(o.add(4, 2, 4).add(5, 0, 20), Blocks.LECTERN.getDefaultState());
+                    if (strolling) {
+                        world.setBlockState(o.add(4, 2, 4).add(5, 0, 20), Blocks.LECTERN.getDefaultState());
+                        // A fence round the field's edge, as a pen's: a librarian that strolls off it fell into the ground about.
+                        for (int x = -8; x <= 24; x++) for (int z : new int[] {-8, 34}) world.setBlockState(o.add(x, 2, z), Blocks.OAK_FENCE.getDefaultState());
+                        for (int z = -8; z <= 34; z++) for (int x : new int[] {-8, 24}) world.setBlockState(o.add(x, 2, z), Blocks.OAK_FENCE.getDefaultState());
+                    }
                     // The river: water at the ground's top, a block deep, banked at either end of the field.
                     if (river) {
                         for (int x = -9; x <= 25; x++) for (int z = 15; z <= 17; z++) {
