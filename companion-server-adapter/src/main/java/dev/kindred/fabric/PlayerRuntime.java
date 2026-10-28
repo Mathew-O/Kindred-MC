@@ -8166,9 +8166,11 @@ final class PlayerRuntime {
             case KEEP -> {
                 // One that strolls is never let loose with the cell's front open: at work it makes for its old job site, out
                 // through the front in the moment the player takes to step into it (a fixture's librarian, in suite run 48).
-                // So the cart stays in the cell, spent as the floor's rail is, and the job block goes in front of it: one in
-                // the cart stays in it; one in its boat is let out of the boat from the front, the player standing between it
-                // and the corridor, onto the cart's top, where the lintel leaves it no room to step out over the front.
+                // So the cart stays in the cell, spent as the floor's rail is, and the job block goes in front of it. One in
+                // the cart stays in it. One in its boat (whose width overhangs the front's foot from the cart) has the opening
+                // shut first, against the lintel, the block's height left open under it too low for a villager; then the boat
+                // is broken, which sets it down where it sat, inside the cart's box on the floor, and the job block goes in
+                // under the shutter. The boat's wood falls in the cell, out of reach: left there, and said.
                 var state = world.getBlockState(b.slot);
                 if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
                     if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !body.miningEligible(b.slot)) {
@@ -8176,27 +8178,29 @@ final class PlayerRuntime {
                     }
                     return List.of(breakAt(bringTask(entry, "front rail"), b.slot));
                 }
-                var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).union(new net.minecraft.util.math.Box(b.slot)).expand(0, 1, 0);
-                var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
-                        item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS));
-                if (heldBoat(world, b) != null || !lying.isEmpty()) {
-                    if (!player.getBlockPos().equals(b.slot)) {
-                        return List.of(new NativeTaskCandidate(bringTask(entry, "in"), "native_goto", Map.of("x", String.valueOf(b.slot.getX()),
-                                "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "range", "0", "centre", "true")));
+                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    BlockPos opening = b.slot.up();
+                    if (!isShutter(world.getBlockState(opening))) {
+                        int slot = shutterSlot(player);
+                        if (slot < 0) return giveUp(entry, body, "I've no block to shut the " + b.noun + "'s cell with a moment.");
+                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, opening)) {
+                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        }
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "shut opening"), "native_place", Map.of("x", String.valueOf(opening.getX()),
+                                "y", String.valueOf(opening.getY()), "z", String.valueOf(opening.getZ()), "slot", String.valueOf(slot), "side", "down")));
                     }
-                    if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
-                        return List.of(new NativeTaskCandidate(bringTask(entry, "break boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
-                    }
-                    // Its boat's item, where it fell in reach from the front; what fell out of reach left lying, and said.
-                    if (b.fetchWaits++ < 40) return List.of(waitTask(task, "For the boat to be picked up"));
-                    for (var item : lying) {
-                        KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach from its front", entry.data.displayName(),
-                                item.getStack(), b.noun, item.getPos());
-                        b.unreached.add(item.getBlockPos());
-                    }
+                    if (!player.canInteractWithEntity(boat, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "break boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
+                }
+                var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
+                for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                        item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS))) {
+                    KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach", entry.data.displayName(), item.getStack(), b.noun, item.getPos());
+                    b.unreached.add(item.getBlockPos());
                 }
                 KindredMod.LOGGER.info("{} bringing: the cart left in the {}'s cell, the {} {} it", entry.data.displayName(), b.noun, b.noun,
-                        villager.getVehicle() != null ? "in" : "on");
+                        villager.getVehicle() != null ? "in" : "by");
                 b.phase = Bring.Phase.CLOSE;
                 return bringCandidates(entry, body);
             }
@@ -8243,11 +8247,16 @@ final class PlayerRuntime {
                         item -> item.isAlive() && item.getStack().isOf(Items.MINECART));
                 if (!lying.isEmpty()) {
                     // Into the cell's front for them, where they are picked up from.
-                    if (!player.getBlockPos().equals(b.slot)) {
+                    if (!player.getBlockPos().equals(b.slot) && b.fetchWaits <= 15) {
                         return List.of(new NativeTaskCandidate(bringTask(entry, "in"), "native_goto", Map.of("x", String.valueOf(b.slot.getX()),
                                 "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "range", "0", "centre", "true")));
                     }
-                    if (b.fetchWaits++ < 40) return List.of(waitTask(task, "For the cart to be picked up"));
+                    // From the front's far edge for one that came to rest by the bed, a twentieth of a block out of reach of its middle.
+                    if (b.fetchWaits++ == 15) {
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "edge in"), "native_goto", Map.of("x", String.valueOf(b.floor.getX()),
+                                "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "1.2", "partial", "true")));
+                    }
+                    if (b.fetchWaits < 40) return List.of(waitTask(task, "For the cart to be picked up"));
                     for (var item : lying) {
                         KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach from its front", entry.data.displayName(),
                                 item.getStack(), b.noun, item.getPos());
@@ -8260,6 +8269,11 @@ final class PlayerRuntime {
             case CLOSE -> {
                 var state = world.getBlockState(b.slot);
                 if (state.isOf(net.minecraft.block.Block.getBlockFromItem(b.jobBlock))) {
+                    // The opening shut over it a moment (KEEP) opened again, to trade across.
+                    if (isShutter(world.getBlockState(b.slot.up()))) {
+                        if (!reaches(player, b.slot.up())) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        return List.of(breakAt(bringTask(entry, "open"), b.slot.up()));
+                    }
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }

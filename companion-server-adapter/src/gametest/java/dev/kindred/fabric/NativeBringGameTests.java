@@ -255,6 +255,10 @@ public final class NativeBringGameTests implements FabricGameTest {
                         moved[0] = true;
                         KindredMod.LOGGER.info("Bring: the librarian moved off the line, to {}", at.subtract(origin[0]).toShortString());
                     }
+                    if (context.getWorld().getTime() % 100 == 0) {
+                        KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
+                                librarian[0].getVehicle());
+                    }
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
                 })
@@ -307,7 +311,10 @@ public final class NativeBringGameTests implements FabricGameTest {
                                         + " raw and " + count(inventory, Items.IRON_INGOT) + " ingots left");
                     }
                     if (strolling) {
-                        context.assertTrue(count(inventory, Items.OAK_BOAT) == 1, "The boat picked up again: " + count(inventory, Items.OAK_BOAT));
+                        // The boat broken in the cell, its wood left there out of reach, or picked up where it fell in reach.
+                        int boatsLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(floorRail).expand(1, 1, 2),
+                                item -> item.getStack().isOf(Items.OAK_BOAT)).size();
+                        context.assertTrue(count(inventory, Items.OAK_BOAT) + boatsLying == 1, "The boat in hand or in the cell: " + count(inventory, Items.OAK_BOAT) + " / " + boatsLying);
                         // One that strolls is never let loose with the front open: the cart left in its cell, under it.
                         context.assertTrue(!world.getEntitiesByClass(net.minecraft.entity.vehicle.MinecartEntity.class, new net.minecraft.util.math.Box(floorRail).expand(0.5, 1, 0.5),
                                 c -> true).isEmpty(), "The cart left in its cell");
