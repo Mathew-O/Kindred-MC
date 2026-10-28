@@ -141,6 +141,15 @@ final class NativePlayerSkills {
             // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
             case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A diamond piece upgraded to netherite at its smithing table (E-16c).
+            case "native_smith" -> new SkillDescriptor(id, Set.of("x", "y", "z", "template", "slot", "material"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A bottle filled, or its brewing stand loaded or unloaded (E-16b).
+            case "native_brew" -> new SkillDescriptor(id, Set.of("mode", "x", "y", "z"), Set.of("bottles", "ingredient", "fuel", "slot"), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A piece enchanted at its table (E-16a).
+            case "native_enchant" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot", "lapis"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // A sheep sheared for its wool (E-45d).
             case "native_shear" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

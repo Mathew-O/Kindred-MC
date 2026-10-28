@@ -229,6 +229,18 @@ final class BuildRunner {
         return want;
     }
 
+    /**
+     * Whether the block at {@code at} is one of its own it can dig out from under itself: a scaffold block of the kinds it
+     * scaffolds with, above the build's floor, and none the plan places there.
+     */
+    private boolean offPlan(Pos at, ServerWorld world) {
+        if (at.y() < siteFloor()) return false;
+        var item = world.getBlockState(blockPos(at)).getBlock().asItem();
+        if (!SCAFFOLD.contains(item)) return false;
+        for (var b : blocks) if (b.at().equals(at)) return false;
+        return true;
+    }
+
     /** Ground with a full top under {@code feet}, and room for a player's body above it. */
     private static boolean standable(ServerWorld world, BlockPos feet) {
         if (!world.isChunkLoaded(feet)) return false;
@@ -479,12 +491,26 @@ final class BuildRunner {
             // walkable route", and eight in a row within a second stopped a cabin short of its roof (a seed fixture,
             // and the nine by seven cabin in full run 19).
             case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(wait("Landing first"))
+                    // Walks round failing from up on a block that is none of the build's (a scaffold's foot it lost count
+                    // of, a pillar's): off it, the block underfoot dug out, as a player steps off a stray block (#82).
+                    : overFailed >= 2 && player.isOnGround() && offPlan(feet.down(), world) ? Optional.of(new PortalRunCampaign.Task("native_break",
+                            Map.of("x", str(feet.down().x()), "y", str(feet.down().y()), "z", str(feet.down().z()), "collect", "true", "underfoot", "true"),
+                            "Off what it stands on"))
                     : step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
                     ? Optional.of(outside(groundBeside(step.target(), world, overFailed), step.reason() + OVER + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet, world), step.reason() + "; down off the build first"))
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
+                // Its own scaffold's block in the column it stands on, wanted gone: dug out from on top, the block underfoot
+                // first, never a walk to the ground beside from up a pillar it cannot step down from. Asked for such a
+                // walk, eight in a row found "no walkable route" and stopped a cabin with all its blocks placed (#82; suite
+                // run 49, and runs 22 and 48 before it).
+                if (scaffold.contains(step.target()) && step.target().x() == feet.x() && step.target().z() == feet.z() && step.target().y() < feet.y()) {
+                    if (!player.isOnGround()) yield Optional.of(wait("Landing first"));
+                    yield Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
+                            "collect", "true", "underfoot", "true"), "Down the scaffold"));
+                }
                 if (!at(player, step.stance())) {
                     breakTarget = step.target();
                     breakStance = step.stance();

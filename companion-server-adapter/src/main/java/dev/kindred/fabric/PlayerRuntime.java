@@ -1413,6 +1413,23 @@ final class PlayerRuntime {
                 task = new NativeTradeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), claims, nativeActionWriter(), server::execute,
                         UUID.fromString(arguments.get("target")), arguments.containsKey("look"),
                         () -> Valuables.holding(entry.nativeBody.entity(), lootWanted(entry)));
+            } else if (skill.equals("native_enchant")) {
+                task = new NativeEnchantAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("lapis")));
+            } else if (skill.equals("native_smith")) {
+                task = new NativeSmithAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("template")), Integer.parseInt(arguments.get("slot")),
+                        Integer.parseInt(arguments.get("material")));
+            } else if (skill.equals("native_brew")) {
+                var mode = NativeBrewAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
+                int[] bottles = arguments.containsKey("bottles") && !arguments.get("bottles").isEmpty()
+                        ? java.util.Arrays.stream(arguments.get("bottles").split(",")).mapToInt(Integer::parseInt).toArray() : new int[0];
+                task = new NativeBrewAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
+                        nativeActionWriter(), server::execute, mode, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        Integer.parseInt(arguments.get("z"))), bottles, Integer.parseInt(arguments.getOrDefault("ingredient", "-1")),
+                        Integer.parseInt(arguments.getOrDefault("fuel", "-1")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
             } else if (skill.equals("native_rename")) {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
                         nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
@@ -1665,6 +1682,9 @@ final class PlayerRuntime {
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
+                    || ("native_enchant".equals(entry.skillId) && intent == NativePlayerBody.Intent.ENCHANT)
+                    || ("native_brew".equals(entry.skillId) && (intent == NativePlayerBody.Intent.BREW || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_smith".equals(entry.skillId) && intent == NativePlayerBody.Intent.SMITH)
                     || ("native_trade".equals(entry.skillId) && intent == NativePlayerBody.Intent.TRADE)
                     || ("native_cart".equals(entry.skillId) && intent == NativePlayerBody.Intent.CART)
                     || ("native_store".equals(entry.skillId) && intent == NativePlayerBody.Intent.TAKE)
@@ -2929,7 +2949,16 @@ final class PlayerRuntime {
             }
         }
 
-        // Its best kit named at an anvil of its own once it has reached the enchanting stage (E-16d), between its work.
+        // Its weapons, armour and pickaxe enchanted at a table of its own (E-16a), then its best kit named (E-16d), between
+        // its work.
+        var enchanting = enchantCandidates(entry, body);
+        if (enchanting != null) return enchanting;
+        // Its diamond kit upgraded to netherite (E-16c), between its work.
+        var netherite = netheriteCandidates(entry, body);
+        if (netherite != null) return netherite;
+        // Potions brewed at a stand of its own (E-16b), between its work.
+        var brewing = brewCandidates(entry, body);
+        if (brewing != null) return brewing;
         var naming = kitNameCandidates(entry, body);
         if (naming != null) return naming;
 
@@ -5884,12 +5913,60 @@ final class PlayerRuntime {
             else entry.storeAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
         }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
+            entry.netheriteAt = server.getTicks() + 600;
+            entry.routineRefreshPending = true;
+        }
+        // A furnace or crafting table it put down for its netherite is its own to come back to (E-16c).
+        if (state == SkillRunner.State.COMPLETED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)
+                && entry.netheriteStep != null && "native_place".equals(entry.netheriteStep.skill()) && entry.campaign != null && entry.nativeBody != null) {
+            var args = entry.netheriteStep.args();
+            BlockPos placed = new BlockPos(Integer.parseInt(args.get("x")), Integer.parseInt(args.get("y")), Integer.parseInt(args.get("z")));
+            var block = entry.nativeBody.entity().getServerWorld().getBlockState(placed);
+            if (block.isOf(Blocks.CRAFTING_TABLE) || block.isOf(Blocks.FURNACE)) {
+                entry.campaign.placedWorkstation(placed);
+                entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
+            }
+            entry.netheriteStep = null;
+        }
+        if (entry.nativeTask instanceof NativeSmithAction smith && state == SkillRunner.State.COMPLETED) {
+            say(entry, dev.kindred.core.Netherite.said(smith.piece()), "");
+            entry.netheriteAt = server.getTicks() + 20;
+            entry.routineRefreshPending = true;
+        }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.brewTaskId)) {
+            entry.brewAt = server.getTicks() + 600;
+            entry.routineRefreshPending = true;
+        }
+        if (entry.nativeTask instanceof NativeBrewAction brew && state == SkillRunner.State.COMPLETED) {
+            if (brew.mode() == NativeBrewAction.Mode.LOAD) entry.brewLoaded = server.getTicks();
+            if (brew.mode() == NativeBrewAction.Mode.UNLOAD) {
+                for (var moved : brew.moved().entrySet()) {
+                    String key = moved.getKey();
+                    if (moved.getValue() <= 0 || !key.startsWith("minecraft:potion[")) continue;
+                    String potion = key.substring("minecraft:potion[".length(), key.length() - 1);
+                    if (potion.equals("minecraft:water") || potion.equals("minecraft:awkward")) continue;
+                    say(entry, dev.kindred.core.Brewing.said(potion, moved.getValue()), "");
+                }
+                entry.brewing = null;
+            }
+            entry.routineRefreshPending = true;
+        }
+        if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.enchantTaskId)) {
+            entry.enchantAt = server.getTicks() + 1200;
+            entry.routineRefreshPending = true;
+        }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.kitTaskId)) {
             entry.kitNamesAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
         }
         if (entry.nativeTask instanceof NativeLootAction loot && loot.raidOwner() != null) raidEnded(entry, loot, state);
         if (entry.nativeTask instanceof NativeRenameAction rename) renameEnded(entry, rename, state);
+        if (entry.nativeTask instanceof NativeEnchantAction enchanted && state == SkillRunner.State.COMPLETED && !enchanted.gained().isEmpty()) {
+            say(entry, dev.kindred.core.Enchanting.said(enchanted.item(), enchanted.gained()), "");
+            entry.enchantAt = server.getTicks() + 20;
+            entry.routineRefreshPending = true;
+        }
         if (entry.nativeTask instanceof NativeStoreAction stored) storeEnded(entry, stored, state);
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
@@ -9687,10 +9764,369 @@ final class PlayerRuntime {
     }
 
     /**
+     * Its weapons, armour and pickaxe enchanted (E-16a), out of any match: with the levels and lapis the table's top offer
+     * takes ({@link dev.kindred.core.Enchanting#ready}) and a piece to enchant ({@link dev.kindred.core.Enchanting#next}),
+     * to its own table (one standing in a base it built, or one it put down), and there the best offer it can pay for
+     * taken. With no table standing but one in hand, it puts that down beside it first. Nothing when it has no table: a
+     * table's diamonds, obsidian and book are its run's to get.
+     */
+    private List<NativeTaskCandidate> enchantCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.enchantAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var inventory = player.getInventory();
+        var pieces = new ArrayList<dev.kindred.core.Enchanting.Piece>();
+        int lapis = 0, lapisSlot = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            if (stack.isOf(Items.LAPIS_LAZULI)) {
+                lapis += stack.getCount();
+                if (lapisSlot < 0 || stack.getCount() > inventory.getStack(lapisSlot).getCount()) lapisSlot = slot;
+                continue;
+            }
+            var enchanted = new HashMap<String, Integer>();
+            for (var each : stack.getEnchantments().getEnchantmentEntries()) {
+                each.getKey().getKey().ifPresent(k -> enchanted.put(k.getValue().toString(), each.getIntValue()));
+            }
+            pieces.add(new dev.kindred.core.Enchanting.Piece(slot, Valuables.id(stack), enchanted));
+        }
+        var piece = dev.kindred.core.Enchanting.next(pieces);
+        // The lapis in one slot: the table takes it from one, and the top offer three of it.
+        if (piece.isEmpty() || !dev.kindred.core.Enchanting.ready(player.experienceLevel, lapisSlot < 0 ? 0 : inventory.getStack(lapisSlot).getCount())) {
+            entry.enchantAt = now + 1200;
+            return null;
+        }
+        var world = player.getServerWorld();
+        BlockPos table = ownEnchantingTable(entry, player);
+        UUID taskId = UUID.nameUUIDFromBytes(("enchant:" + entry.data.id() + ":" + piece.get().slot() + ":" + piece.get().item()).getBytes(StandardCharsets.UTF_8));
+        entry.enchantTaskId = taskId;
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 60.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (table != null) {
+            var at = Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()), "z", String.valueOf(table.getZ()));
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) <= 4.5 * 4.5) {
+                var args = new HashMap<>(at);
+                args.put("slot", String.valueOf(piece.get().slot()));
+                args.put("lapis", String.valueOf(lapisSlot));
+                return List.of(new NativeTaskCandidate(task, "native_enchant", Map.copyOf(args)));
+            }
+            // Enchanted when it is by its table again, not a trip for it.
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
+                entry.enchantAt = now + 1200;
+                return null;
+            }
+            var args = new HashMap<>(at);
+            args.put("range", "2.5");
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+        }
+        int held = -1;
+        for (int slot = 0; slot < 36 && held < 0; slot++) if (inventory.getStack(slot).isOf(Items.ENCHANTING_TABLE)) held = slot;
+        if (held < 0) {
+            entry.enchantAt = now + 2400;
+            return null;
+        }
+        if (held >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
+        }
+        BlockPos spot = workstationSpot(player, entry.setup, "minecraft:enchanting_table");
+        if (spot == null) {
+            entry.enchantAt = now + 600;
+            return null;
+        }
+        entry.enchantTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+        return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
+                "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+    }
+
+    /**
+     * Its diamond kit upgraded to netherite (E-16c), out of any match, by {@link dev.kindred.core.Netherite#next}: ancient
+     * debris it holds smelted into scrap in its furnace, and what the furnace made taken out; four scrap and four gold
+     * made into an ingot at a crafting table; a template copied when it has an ingot more than templates and diamonds
+     * to spare; and the first piece upgraded at a smithing table of its own, one it holds put down beside it first.
+     */
+    private List<NativeTaskCandidate> netheriteCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.netheriteAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var inventory = player.getInventory();
+        var held = new HashMap<String, Integer>();
+        var pieces = new HashMap<Integer, String>();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            String id = Valuables.id(stack);
+            held.merge(id, stack.getCount(), Integer::sum);
+            if (id.startsWith("minecraft:diamond_") && dev.kindred.core.Netherite.ORDER.contains(dev.kindred.core.Netherite.kind(id))) pieces.put(slot, id);
+        }
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        // Scrap the furnace made, taken out before anything else.
+        var made = entry.campaign.takeSmelted(body, Items.NETHERITE_SCRAP);
+        var task = stepTask(entry.data.id(), "netherite:take", id -> entry.netheriteTaskId = id);
+        if (made.isPresent() && pieces.size() > 0) {
+            entry.netheriteStep = made.get();
+            return List.of(new NativeTaskCandidate(task, made.get().skill(), made.get().args()));
+        }
+        var step = dev.kindred.core.Netherite.next(held, pieces, lootWanted(entry).getOrDefault("minecraft:diamond", 0));
+        if (step.isEmpty()) {
+            // Debris in the furnace still smelting: a moment by it.
+            if (entry.campaign.smelting(body, Items.ANCIENT_DEBRIS) && pieces.size() > 0 && held.getOrDefault("minecraft:netherite_ingot", 0) == 0) {
+                return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1")));
+            }
+            entry.netheriteAt = now + 1200;
+            return null;
+        }
+        KindredMod.LOGGER.info("{} netherite: {}", entry.data.displayName(), step.get());
+        task = stepTask(entry.data.id(), "netherite:" + step.get(), id -> entry.netheriteTaskId = id);
+        Optional<PortalRunCampaign.Task> next = switch (step.get()) {
+            case dev.kindred.core.Netherite.Step.Smelt smelt -> entry.campaign.smeltItem(body, Items.ANCIENT_DEBRIS, smelt.debris(), "Smelt ancient debris into scrap");
+            case dev.kindred.core.Netherite.Step.Ingot ingot -> entry.campaign.craftAtTable(body, "netherite_ingot");
+            case dev.kindred.core.Netherite.Step.Template template -> entry.campaign.craftAtTable(body, "netherite_upgrade_smithing_template");
+            case dev.kindred.core.Netherite.Step.Upgrade upgrade -> Optional.empty();
+        };
+        if (!(step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade upgrade)) {
+            if (next.isEmpty()) {
+                entry.netheriteAt = now + 1200;
+                return null;
+            }
+            entry.netheriteStep = next.get();
+            return List.of(new NativeTaskCandidate(task, next.get().skill(), next.get().args()));
+        }
+        var world = player.getServerWorld();
+        BlockPos table = entry.smithingTable != null && world.isChunkLoaded(entry.smithingTable) && world.getBlockState(entry.smithingTable).isOf(Blocks.SMITHING_TABLE)
+                ? entry.smithingTable : null;
+        if (table == null) {
+            int tableSlot = -1;
+            for (int slot = 0; slot < 36 && tableSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.SMITHING_TABLE)) tableSlot = slot;
+            if (tableSlot < 0) {
+                entry.netheriteAt = now + 2400;
+                return null;
+            }
+            if (tableSlot >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
+            }
+            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:smithing_table");
+            if (spot == null) {
+                entry.netheriteAt = now + 600;
+                return null;
+            }
+            entry.smithingTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(tableSlot), "x", String.valueOf(spot.getX()),
+                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+        }
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) {
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
+                entry.netheriteAt = now + 1200;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
+                    "z", String.valueOf(table.getZ()), "range", "2.5")));
+        }
+        int template = -1, ingot = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (template < 0 && stack.isOf(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)) template = slot;
+            if (ingot < 0 && stack.isOf(Items.NETHERITE_INGOT)) ingot = slot;
+        }
+        return List.of(new NativeTaskCandidate(task, "native_smith", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
+                "z", String.valueOf(table.getZ()), "template", String.valueOf(template), "slot", String.valueOf(upgrade.slot()), "material", String.valueOf(ingot))));
+    }
+
+    /** A step of one of its routines (E-16), its id the same for as long as the step is: {@code key} says which, {@code record} keeps it. */
+    private static dev.kindred.core.TaskPreferences.Candidate stepTask(UUID player, String key, java.util.function.Consumer<UUID> record) {
+        UUID taskId = UUID.nameUUIDFromBytes((key + ":" + player).getBytes(StandardCharsets.UTF_8));
+        record.accept(taskId);
+        return new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 58.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+    }
+
+    /** What potions it holds, by the potion each holds ("minecraft:water", "minecraft:awkward", "minecraft:fire_resistance"), and their slots. */
+    private static Map<String, List<Integer>> potionSlots(ServerPlayerEntity player) {
+        var out = new HashMap<String, List<Integer>>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!stack.isOf(Items.POTION)) continue;
+            var contents = stack.get(net.minecraft.component.DataComponentTypes.POTION_CONTENTS);
+            if (contents == null || contents.potion().isEmpty()) continue;
+            String id = contents.potion().get().getKey().map(k -> k.getValue().toString()).orElse(null);
+            if (id != null) out.computeIfAbsent(id, k -> new ArrayList<>()).add(slot);
+        }
+        return out;
+    }
+
+    /**
+     * Potions brewed (E-16b), out of any match, as players brew at a stand of their own: glass bottles filled at water
+     * close by first, three; then its stand loaded with the next brew ({@link dev.kindred.core.Brewing#next}): three water
+     * bottles and nether wart for awkward potions, or three awkward ones and the potion's ingredient, with blaze powder
+     * when the stand's fuel is spent; the brew waited out nearby, twenty seconds; and what it brewed taken out. With no
+     * stand standing but one in hand, it puts that down beside it first. Nothing to brew, or no stand, nothing.
+     */
+    private List<NativeTaskCandidate> brewCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.brewAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        var held = new HashMap<String, Integer>();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!stack.isEmpty() && !stack.isOf(Items.POTION)) held.merge(Valuables.id(stack), stack.getCount(), Integer::sum);
+        }
+        var slots = potionSlots(player);
+        var potions = new HashMap<String, Integer>();
+        slots.forEach((k, v) -> potions.put(k, v.size()));
+        BlockPos stand = entry.brewStand != null && world.isChunkLoaded(entry.brewStand) && world.getBlockState(entry.brewStand).isOf(Blocks.BREWING_STAND)
+                ? entry.brewStand : null;
+        var task = stepTask(entry.data.id(), "brew:" + entry.brewing + ":" + potions + ":" + held, id -> entry.brewTaskId = id);
+        // A brew under way in its stand: waited out by it, then taken out.
+        if (stand != null && entry.brewing != null && world.getBlockEntity(stand) instanceof net.minecraft.block.entity.BrewingStandBlockEntity entity) {
+            int brewTime = entity.createNbt(world.getRegistryManager()).getShort("BrewTime");
+            boolean bottlesIn = false;
+            for (int i = 0; i < 3; i++) if (!entity.getStack(i).isEmpty()) bottlesIn = true;
+            if (!bottlesIn) {
+                entry.brewing = null;
+            } else if (brewTime > 0 || now - entry.brewLoaded < 40) {
+                if (player.getBlockPos().getSquaredDistance(stand) > 16 * 16) return null;
+                return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1", "x", String.valueOf(stand.getX()),
+                        "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()))));
+            } else {
+                if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(stand)) > 4.5 * 4.5) {
+                    return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(stand.getX()), "y", String.valueOf(stand.getY()),
+                            "z", String.valueOf(stand.getZ()), "range", "2.5")));
+                }
+                return List.of(new NativeTaskCandidate(task, "native_brew", Map.of("mode", "unload", "x", String.valueOf(stand.getX()),
+                        "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()))));
+            }
+        }
+        // Bottles to fill at water close by.
+        int fill = dev.kindred.core.Brewing.toFill(held, potions);
+        if (fill > 0) {
+            BlockPos water = null;
+            BlockPos feet = player.getBlockPos();
+            double best = Double.MAX_VALUE;
+            for (BlockPos pos : BlockPos.iterate(feet.add(-12, -3, -12), feet.add(12, 2, 12))) {
+                var fluid = world.getFluidState(pos);
+                if (!fluid.isIn(net.minecraft.registry.tag.FluidTags.WATER) || !fluid.isStill() || !world.getBlockState(pos.up()).isAir()) continue;
+                double d = feet.getSquaredDistance(pos);
+                if (d < best) {
+                    best = d;
+                    water = pos.toImmutable();
+                }
+            }
+            if (water == null) {
+                entry.brewAt = now + 2400;
+                return null;
+            }
+            int bottle = -1;
+            for (int slot = 0; slot < 36 && bottle < 0; slot++) if (inventory.getStack(slot).isOf(Items.GLASS_BOTTLE)) bottle = slot;
+            if (bottle >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(bottle), "target", String.valueOf(free))));
+            }
+            Vec3d surface = new Vec3d(water.getX() + 0.5, water.getY() + 0.85, water.getZ() + 0.5);
+            if (player.getEyePos().squaredDistanceTo(surface) > 3.5 * 3.5) {
+                return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(water.getX()), "y", String.valueOf(water.getY()),
+                        "z", String.valueOf(water.getZ()), "range", "2.0", "partial", "true")));
+            }
+            return List.of(new NativeTaskCandidate(task, "native_brew", Map.of("mode", "fill", "x", String.valueOf(water.getX()),
+                    "y", String.valueOf(water.getY()), "z", String.valueOf(water.getZ()), "slot", String.valueOf(bottle))));
+        }
+        var brew = dev.kindred.core.Brewing.next(held, potions);
+        if (brew.isEmpty()) {
+            entry.brewAt = now + 1200;
+            return null;
+        }
+        if (stand == null) {
+            int standSlot = -1;
+            for (int slot = 0; slot < 36 && standSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.BREWING_STAND)) standSlot = slot;
+            if (standSlot < 0) {
+                entry.brewAt = now + 2400;
+                return null;
+            }
+            if (standSlot >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(standSlot), "target", String.valueOf(free))));
+            }
+            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:brewing_stand");
+            if (spot == null) {
+                entry.brewAt = now + 600;
+                return null;
+            }
+            entry.brewStand = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
+            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(standSlot), "x", String.valueOf(spot.getX()),
+                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+        }
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(stand)) > 4.5 * 4.5) {
+            if (player.getBlockPos().getSquaredDistance(stand) > 48 * 48) {
+                entry.brewAt = now + 1200;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(stand.getX()), "y", String.valueOf(stand.getY()),
+                    "z", String.valueOf(stand.getZ()), "range", "2.5")));
+        }
+        var bottles = slots.getOrDefault(brew.get().bottles(), List.of());
+        int ingredient = -1, fuel = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            String id = Valuables.id(inventory.getStack(slot));
+            if (ingredient < 0 && id.equals(brew.get().ingredient())) ingredient = slot;
+            if (fuel < 0 && id.equals("minecraft:blaze_powder") && slot != ingredient) fuel = slot;
+        }
+        int standFuel = world.getBlockEntity(stand) instanceof net.minecraft.block.entity.BrewingStandBlockEntity entity
+                ? entity.createNbt(world.getRegistryManager()).getByte("Fuel") : 0;
+        if (bottles.size() < 3 || ingredient < 0 || dev.kindred.core.Brewing.needsFuel(standFuel) && fuel < 0) {
+            entry.brewAt = now + 1200;
+            return null;
+        }
+        entry.brewing = brew.get().yields();
+        KindredMod.LOGGER.info("{} brewing: {}", entry.data.displayName(), brew.get().why());
+        var args = new HashMap<String, String>();
+        args.put("mode", "load");
+        args.put("x", String.valueOf(stand.getX()));
+        args.put("y", String.valueOf(stand.getY()));
+        args.put("z", String.valueOf(stand.getZ()));
+        args.put("bottles", bottles.get(0) + "," + bottles.get(1) + "," + bottles.get(2));
+        args.put("ingredient", String.valueOf(ingredient));
+        if (dev.kindred.core.Brewing.needsFuel(standFuel)) args.put("fuel", String.valueOf(fuel));
+        return List.of(new NativeTaskCandidate(task, "native_brew", Map.copyOf(args)));
+    }
+
+    /** Its own enchanting table: one standing in a base it built, else the one it put down, if it is still there. */
+    private BlockPos ownEnchantingTable(Entry entry, ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        if (entry.bases != null) {
+            String dimension = world.getRegistryKey().getValue().toString();
+            for (var base : entry.bases.built) {
+                if (!dimension.equals(base.dimension())) continue;
+                for (var block : placedOf(base)) {
+                    if (!block.spec().block().equals("minecraft:enchanting_table")) continue;
+                    BlockPos pos = BuildRunner.blockPos(block.at());
+                    if (world.isChunkLoaded(pos) && world.getBlockState(pos).isOf(Blocks.ENCHANTING_TABLE)) return pos;
+                }
+            }
+        }
+        if (entry.enchantTable != null && world.isChunkLoaded(entry.enchantTable) && world.getBlockState(entry.enchantTable).isOf(Blocks.ENCHANTING_TABLE)) {
+            return entry.enchantTable;
+        }
+        return null;
+    }
+
+    /**
      * Where to put its anvil down: on solid ground beside it, open, within reach, and allowed by its work area's rules,
      * or the server's roaming rules with none.
      */
     private BlockPos anvilSpot(ServerPlayerEntity player, WorkSetup setup) {
+        return workstationSpot(player, setup, "minecraft:anvil");
+    }
+
+    /** As {@link #anvilSpot}, for a workstation of {@code block}. */
+    private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
@@ -9698,7 +10134,7 @@ final class PlayerRuntime {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
                         || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
-                if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, "minecraft:anvil", edits).allowed()) return pos.toImmutable();
+                if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
         return null;
@@ -11253,6 +11689,22 @@ final class PlayerRuntime {
         private final Set<String> kitNamesGiven = new HashSet<>();
         private BlockPos anvil;
         private long kitNamesAt;
+        /** Its enchanting table, once it put one down (E-16a), and when it next looks to enchant. */
+        private BlockPos enchantTable;
+        private long enchantAt;
+        private UUID enchantTaskId;
+        /** Its smithing table, once it put one down (E-16c), and when it next looks to its netherite. */
+        private BlockPos smithingTable;
+        private long netheriteAt;
+        private UUID netheriteTaskId;
+        /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
+        private PortalRunCampaign.Task netheriteStep;
+        /** Its brewing stand, once it put one down (E-16b); when it next looks to brew; and what it last put in to brew. */
+        private BlockPos brewStand;
+        private long brewAt;
+        private UUID brewTaskId;
+        private String brewing;
+        private long brewLoaded;
         /**
          * Its extended inventory (E-43): what it has stored, as it knows it; its stores, as last reckoned; who it saw at
          * one of them, and when; a question to its team of what is gone, and until when it waits for a word; the stores

@@ -2600,6 +2600,57 @@ final class PortalRunCampaign {
         return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Load raw iron and fuel"));
     }
 
+    /**
+     * {@code count} of {@code input} into its furnace with fuel, as the iron goes in (E-16c, ancient debris for scrap): a
+     * furnace of its own close by, else one it holds put down; what the furnace made taken out first. Empty when it has
+     * none of the input or no fuel, or the furnace is busy with something else.
+     */
+    Optional<Task> smeltItem(NativePlayerBody body, net.minecraft.item.Item input, int count, String label) {
+        var player = body.entity();
+        var furnace = nearestWorkstation(player, Blocks.FURNACE, 16);
+        if (furnace.isEmpty()) return placeItem(body, Items.FURNACE, "Place a furnace");
+        if (player.getServerWorld().getBlockEntity(furnace.get()) instanceof AbstractFurnaceBlockEntity block) {
+            if (!block.getStack(2).isEmpty()) {
+                return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), Map.of("action", "extract")), "Take what the furnace made"));
+            }
+            if (!block.getStack(0).isEmpty()) return Optional.empty();
+        }
+        var inventory = player.getInventory();
+        int in = -1, fuel = -1, fuelScore = -1;
+        for (int s = 0; s < 36; s++) {
+            ItemStack stack = inventory.getStack(s);
+            if (stack.isOf(input) && in < 0) in = s;
+            if (NativePlayerBody.isSafeAutonomousFuel(stack) && !stack.isOf(input)) {
+                int score = NativePlayerBody.fuelPriorityScore(stack);
+                if (score > fuelScore) { fuelScore = score; fuel = s; }
+            }
+        }
+        if (in < 0 || fuel < 0) return Optional.empty();
+        var args = new LinkedHashMap<String, String>();
+        args.put("action", "load");
+        args.put("input_slot", String.valueOf(in));
+        args.put("fuel_slot", String.valueOf(fuel));
+        args.put("count", String.valueOf(count));
+        return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), label));
+    }
+
+    /** The {@code made} its furnace close by has made, taken out; empty when it has made none. */
+    Optional<Task> takeSmelted(NativePlayerBody body, net.minecraft.item.Item made) {
+        var player = body.entity();
+        var furnace = nearestWorkstation(player, Blocks.FURNACE, 16);
+        if (furnace.isEmpty() || !(player.getServerWorld().getBlockEntity(furnace.get()) instanceof AbstractFurnaceBlockEntity block)
+                || !block.getStack(2).isOf(made)) return Optional.empty();
+        return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), Map.of("action", "extract")), "Take what the furnace made"));
+    }
+
+    /** Whether its furnace close by is still smelting {@code input}. */
+    boolean smelting(NativePlayerBody body, net.minecraft.item.Item input) {
+        var player = body.entity();
+        var furnace = nearestWorkstation(player, Blocks.FURNACE, 16);
+        return furnace.isPresent() && player.getServerWorld().getBlockEntity(furnace.get()) instanceof AbstractFurnaceBlockEntity block
+                && block.getStack(0).isOf(input);
+    }
+
     /** One log into the furnace with one plank to burn it: charcoal for the iron where there is no coal (F-25c5c). */
     private Optional<Task> charcoal(NativePlayerBody body) {
         var player = body.entity();
