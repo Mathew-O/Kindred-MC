@@ -193,6 +193,28 @@ class RailRouteTest {
     }
 
     @Test
+    void aLineNeverComesBackOntoOrBesideItsOwnRailsOrItsRunUp() {
+        var cell = TradingHall.cells(3).get(0);
+        // The hall's own ground, which no rail is laid on; a villager in its boat by the hall's west front corner, and
+        // something in the way to its north where the push would start for the line straight south. Round it, the
+        // cheapest line came back through the cart's own rail (suite run 49), joining the run-up into a curve.
+        var near = new HashMap<Long, BaseSite.Column>();
+        for (int x = 0; x < TradingHall.width(3); x++) for (int z = 0; z < TradingHall.DEPTH; z++) near.put(key(x, z), new BaseSite.Column(68, false, 8));
+        near.put(key(-1, 2), new BaseSite.Column(64, false, 8));
+        var route = RailRoute.plan(ground(near), -1, 6, HALL, 3, cell, RailRoute.BOAT_ROOM).orElseThrow();
+        connected(route.rails());
+        var rails = route.rails();
+        for (int i = 0; i < rails.size(); i++) {
+            for (int j = i + 2; j < rails.size(); j++) {
+                var a = rails.get(i);
+                var b = rails.get(j);
+                assertTrue(Math.abs(a.x() - b.x()) + Math.abs(a.z() - b.z()) > 1, "Rails " + i + " and " + j + " beside each other out of order: " + rails);
+            }
+        }
+        assertTrue(rails.stream().noneMatch(p -> p.x() == route.push().x() && p.z() == route.push().z()), "Nothing laid where the push starts: " + rails);
+    }
+
+    @Test
     void aStepIsClimbedOnlyWhereItsLowerColumnHasRoomForTheRiderAtTheSlopesTop() {
         var cell = TradingHall.cells(3).get(1);
         // A block up across the way at z 16 and on to the hall; the lower column before it, at 17, with two open.

@@ -55,6 +55,18 @@ public final class RailRoute {
 
     private static final int[][] SIDES = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 
+    /** A column the search has come into, and the way it came. */
+    private record State(int x, int z, int heading) { }
+
+    /** How the search came to a state: from which, and the line's length, bridge blocks and turns so far. */
+    private record Seen(State from, int length, int bridges, int turns) {
+        int cost() {
+            return length + bridges;
+        }
+    }
+
+    private record Queued(State state, int cost, int turns) { }
+
     /**
      * The hall's own part of the line into {@code cell}, in the hall's frame: the doorway (its door taken off for
      * it), the corridor's south row to the cell's column, and north through the cell's front onto its floor.
@@ -118,13 +130,6 @@ public final class RailRoute {
         // A search over columns and the way the line came into them: cheapest first (a rail a column, a bridge's block
         // one more), fewest turns among the cheapest. It sets out from the villager only the ways that leave room behind
         // it, on level ground, for the cart's run-up and the push.
-        record State(int x, int z, int heading) { }
-        record Seen(State from, int length, int bridges, int turns) {
-            int cost() {
-                return length + bridges;
-            }
-        }
-        record Queued(State state, int cost, int turns) { }
         var seen = new HashMap<State, Seen>();
         var queue = new PriorityQueue<Queued>(Comparator.comparingInt(Queued::cost).thenComparingInt(Queued::turns));
         for (int h = 0; h < 4; h++) {
@@ -167,6 +172,9 @@ public final class RailRoute {
                 // No turn where the line climbs or falls into or out of the column.
                 if (turn && here.from() != null && at.apply(here.from().x(), here.from().z()).orElseThrow().top() != top) continue;
                 if (next.get().top() != top && turn) continue;
+                // Never onto or beside its own line out of order, nor its run-up, nor where the push starts: a rail takes
+                // its shape from the rails beside it, and one joined so would turn the cart off the way it was laid.
+                if (!clear(seen, s, nx, nz, villagerX, villagerZ, run)) continue;
                 var n = new State(nx, nz, h);
                 if (done.contains(n)) continue;
                 var was = seen.get(n);
@@ -195,6 +203,27 @@ public final class RailRoute {
         for (var p : inside(cells, cell)) rails.add(new Pos(origin.x() + p.x(), origin.y() + p.y(), origin.z() + p.z()));
         return Optional.of(new Route(rails, rails.getFirst(), new Pos(villagerX, villagerTop + 1, villagerZ),
                 new Pos(villagerX + bx * (run + 1), push.top() + 1, villagerZ + bz * (run + 1)), bridge));
+    }
+
+    /**
+     * Whether the line can go on from {@code s} into the column at {@code x}, {@code z}: not onto or beside a column it
+     * came through before {@code s} (the villager's among them), nor onto or beside the run-up's rails behind the
+     * villager, nor onto the spot the push starts from. A cheapest line round something in its way could otherwise come
+     * back through its own run-up (suite run 49: the cart's rail, joined to the line's return beside it, turned the cart
+     * off along it, away from the villager).
+     */
+    private static boolean clear(Map<State, Seen> seen, State s, int x, int z, int villagerX, int villagerZ, int run) {
+        State root = s;
+        for (State p = seen.get(s).from(); p != null; p = seen.get(p).from()) {
+            if (Math.abs(p.x() - x) + Math.abs(p.z() - z) <= 1) return false;
+            root = p;
+        }
+        if (seen.get(s).from() == null) root = s;
+        int bx = -SIDES[root.heading()][0], bz = -SIDES[root.heading()][1];
+        for (int back = 1; back <= run; back++) {
+            if (Math.abs(villagerX + bx * back - x) + Math.abs(villagerZ + bz * back - z) <= 1) return false;
+        }
+        return !(x == villagerX + bx * (run + 1) && z == villagerZ + bz * (run + 1));
     }
 
     /** Ground a rail can lie on: firm, with {@code room} open over it for the cart and the villager riding. */

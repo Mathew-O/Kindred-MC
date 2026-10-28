@@ -700,8 +700,9 @@ final class BuildRunner {
             var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
             needsNote = "Picking up " + shortName(wool) + " for the rest of the build";
             woolWalks.merge(drop.getUuid(), 1, Integer::sum);
-            // Beside it already: a moment for it, as a drop is not picked up in its first half second.
-            if (player.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox())) {
+            // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling from
+            // the sheep: a moment for it to land, a walk to a block in the air being no walk at all.
+            if (player.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox()) || !drop.isOnGround()) {
                 return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Pick up " + shortName(wool)));
             }
             return Optional.of(PortalRunCampaign.go(drop.getBlockPos(), 0.6, false, "Pick up " + shortName(wool)));
