@@ -529,6 +529,7 @@ final class NativeFightAction extends NativeRecordedAction {
      * compass is the match's: taken back when the fight ends the hunt, it was never the player's to lose.
      */
     private boolean conserved(InventoryEvidence after) {
+        creditEating();
         Map<Item, Integer> lost = new HashMap<>();
         for (ItemStack stack : before.stacks()) if (!stack.isEmpty() && !HuntCompass.handed(stack)) lost.merge(stack.getItem(), stack.getCount(), Integer::sum);
         for (ItemStack stack : after.stacks()) if (!stack.isEmpty() && !HuntCompass.handed(stack)) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
@@ -540,6 +541,17 @@ final class NativeFightAction extends NativeRecordedAction {
             if (!brokenWeapon) return false;
         }
         return true;
+    }
+
+    /**
+     * Food it was eating when the fight ended, credited (E-41b): a fight can end on the tick the game takes a bite,
+     * before the melee's own credit comes round, and what was eaten is not lost.
+     */
+    private void creditEating() {
+        if (eating == null) return;
+        int now = body.entity().getInventory().count(eating);
+        if (now < eatingBefore) eaten.merge(eating, eatingBefore - now, Integer::sum);
+        eatingBefore = now;
     }
 
     /** This tick in the fight's record: the player, the target as it could know it, the choice, the confirmed events. */

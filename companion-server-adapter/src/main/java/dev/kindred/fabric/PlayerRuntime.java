@@ -182,6 +182,8 @@ final class PlayerRuntime {
     private boolean dragonFight;
     /** The operator's leave for AI players to choose, site and build their own bases (M-01c); off by default. */
     private boolean bases;
+    /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
+    private boolean pets;
     /** Whether the strategist is asked for combat proposals (E-41f): an operator's choice, off by default. */
     private boolean combatAdvice;
     /** A learned melee model an operator turned on (E-41e), or null for the hand-set melee. */
@@ -1447,6 +1449,10 @@ final class PlayerRuntime {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
                         nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), arguments.get("name"));
+            } else if (skill.equals("native_pet")) {
+                task = new NativePetAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        "name".equals(arguments.get("mode")) ? NativePetAction.Mode.NAME : NativePetAction.Mode.TAME,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -1694,7 +1700,8 @@ final class PlayerRuntime {
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
-                    || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || (("native_feed".equals(entry.skillId) || "native_pet".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
@@ -2011,6 +2018,7 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
@@ -3014,6 +3022,9 @@ final class PlayerRuntime {
         // Its approved patch of ore or stone mined out, what drops picked up (E-03).
         var mining = patchMineCandidates(entry, body);
         if (mining != null) return mining;
+        // A wolf tamed with its own bones, and named (E-37, E-36), where the server allows pets.
+        var pets = petCandidates(entry, body);
+        if (pets != null) return pets;
 
         if (entry.ranch != null) {
             candidates.addAll(ranchCandidates(entry, body));
@@ -10707,6 +10718,11 @@ final class PlayerRuntime {
             if (state == SkillRunner.State.BLOCKED || state == SkillRunner.State.CANCELLED) entry.kitNamesAt = now + 1200;
             return;
         }
+        // A name tag lettered for a pet (E-36): the pet's naming says it, once the tag is on it.
+        if (entry.petNames.containsValue(rename.name())) {
+            entry.petsAt = now;
+            return;
+        }
         String noun = "kit";
         for (var it = entry.kitNames.values().iterator(); it.hasNext(); ) {
             var chosen = it.next();
@@ -12242,6 +12258,12 @@ final class PlayerRuntime {
         private boolean meleeTendencies = true;
         /** Whether it closes in on where its opponent will be (E-41c); off for the control. */
         private boolean meleePrediction = true;
+        /** Its pets as it knows them (E-37), the names it chose for them, when it next looks, and why it last let a wolf be. */
+        private final Set<UUID> petsKnown = new HashSet<>(), petsNamed = new HashSet<>();
+        private final Map<UUID, net.minecraft.entity.passive.TameableEntity> petsSeen = new HashMap<>();
+        private final Map<UUID, String> petNames = new HashMap<>();
+        private long petsAt;
+        private List<dev.kindred.core.PetPolicy.Blocker> petBlockers = List.of();
         /** The strategist's combat proposals for this player's fights (E-41f), and the health at the last question. */
         private final dev.kindred.core.tactics.CombatProposals.Gate combatGate = new dev.kindred.core.tactics.CombatProposals.Gate();
         private double combatAskedHealth = -1;
@@ -13233,6 +13255,176 @@ final class PlayerRuntime {
             if (failure != null) KindredMod.LOGGER.warn("A demonstration could not be written to {}", file, failure);
             else KindredMod.LOGGER.info("Demonstration of {} samples written to {}", lines.size() - 1, file);
         });
+    }
+
+    /** Pets turned on or off (E-37): with them on, an AI player with bones of its own tames a wild wolf it comes across. */
+    int setPets(ServerCommandSource source, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change whether AI players keep pets.");
+        pets = allowed;
+        feedback(source, allowed ? "Pets are on: an AI player with bones of its own tames a wild wolf it comes across, at most "
+                + dev.kindred.core.PetPolicy.DEFAULT_CAP + " pets and one wolf each, and names it with a name tag it has. (Not kept over a restart.)"
+                : "Pets are off: no AI player tames another animal; those it has stay its own.");
+        return 1;
+    }
+
+    /** Its own pets within {@code range} of it: tamed to its body. */
+    private static List<net.minecraft.entity.passive.TameableEntity> ownPets(ServerPlayerEntity player, double range) {
+        return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.TameableEntity.class, player.getBoundingBox().expand(range),
+                pet -> pet.isAlive() && pet.isTamed() && player.getUuid().equals(pet.getOwnerUuid()));
+    }
+
+    /**
+     * Its pets' tasks (E-37, E-36): a wild wolf in sight tamed with its own bones, a bone a click, while the pet policy
+     * allows (pets on, under its caps, a wild wolf at peace in sight); then its unnamed pet named with a name tag it
+     * holds, the tag lettered first at an anvil it knows if it bears no name, the name its own from the name forge.
+     */
+    private List<NativeTaskCandidate> petCandidates(Entry entry, NativePlayerBody body) {
+        if (!pets) return null;
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.petsAt || matches.running(player.getUuid()).isPresent()) return null;
+        var world = player.getServerWorld();
+        var own = ownPets(player, 48);
+        // A pet new to it, said once, and watched from now on.
+        for (var pet : own) {
+            entry.petsSeen.put(pet.getUuid(), pet);
+            if (entry.petsKnown.add(pet.getUuid())) {
+                say(entry, "The " + petKind(pet) + " has taken to me" + (pet.hasCustomName() ? ", " + pet.getCustomName().getString() : "") + ".", "");
+            }
+
+        }
+        var inventory = player.getInventory();
+        var task = new dev.kindred.core.TaskPreferences.Candidate(UUID.nameUUIDFromBytes(("pet:" + entry.data.id()).getBytes(StandardCharsets.UTF_8)),
+                dev.kindred.core.TaskPreferences.Priority.ROUTINE, 40.0, dev.kindred.core.TaskPreferences.Affinities.none(),
+                new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        // Naming: an unnamed pet of its own, and a name tag.
+        var unnamed = own.stream().filter(p -> !p.hasCustomName()).min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        int tag = -1;
+        for (int slot = 0; slot < 36 && tag < 0; slot++) if (inventory.getStack(slot).isOf(net.minecraft.item.Items.NAME_TAG)) tag = slot;
+        if (unnamed != null && tag >= 0) {
+            var stack = inventory.getStack(tag);
+            boolean lettered = stack.get(net.minecraft.component.DataComponentTypes.CUSTOM_NAME) != null;
+            if (!lettered) {
+                String name = entry.petNames.computeIfAbsent(unnamed.getUuid(), id -> {
+                    var taken = new HashSet<String>();
+                    for (var p : own) if (p.hasCustomName()) taken.add(p.getCustomName().getString());
+                    return dev.kindred.core.NameForge.propose(new dev.kindred.core.NameForge.Brief(dev.kindred.core.NameForge.Subject.PET, petKind(unnamed),
+                            entry.data.id(), entry.profile.personality(), taken)).map(dev.kindred.core.NameForge.Name::text).orElse(null);
+                });
+                if (name != null && entry.anvil != null && anvilAt(world, entry.anvil) && player.experienceLevel >= 1
+                        && player.getBlockPos().getSquaredDistance(entry.anvil) <= 48 * 48) {
+                    var at = Map.of("x", String.valueOf(entry.anvil.getX()), "y", String.valueOf(entry.anvil.getY()), "z", String.valueOf(entry.anvil.getZ()));
+                    if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(entry.anvil)) <= 4.5 * 4.5) {
+                        var args = new HashMap<>(at);
+                        args.put("slot", String.valueOf(tag));
+                        args.put("name", name);
+                        return List.of(new NativeTaskCandidate(task, "native_rename", Map.copyOf(args)));
+                    }
+                    var args = new HashMap<>(at);
+                    args.put("range", "2.5");
+                    return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+                }
+                // No anvil it knows: one of its own put down, if it has one, as for naming its kit.
+                if (name != null && (entry.anvil == null || !anvilAt(world, entry.anvil)) && player.experienceLevel >= 1) {
+                    int held = -1;
+                    for (int slot = 0; slot < 36 && held < 0; slot++) if (inventory.getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.ANVIL)) held = slot;
+                    if (held >= 9) {
+                        int free = 8;
+                        for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                        return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
+                    }
+                    if (held >= 0) {
+                        BlockPos spot = anvilSpot(player, entry.setup);
+                        if (spot != null) {
+                            entry.anvil = spot.toImmutable();
+                            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
+                                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+                        }
+                    }
+                }
+            } else if (tag >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tag), "target", String.valueOf(free))));
+            } else if (player.distanceTo(unnamed) > 2.5) {
+                BlockPos to = unnamed.getBlockPos();
+                return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                        "z", String.valueOf(to.getZ()), "range", "2")));
+            } else {
+                return List.of(new NativeTaskCandidate(task, "native_pet", Map.of("target", unnamed.getUuid().toString(), "slot", String.valueOf(tag), "mode", "name")));
+            }
+        }
+        // Taming: a wild wolf at peace in sight, and bones of its own.
+        var wild = world.getEntitiesByClass(net.minecraft.entity.passive.WolfEntity.class, player.getBoundingBox().expand(16),
+                        w -> w.isAlive() && !w.isTamed() && !w.isBaby() && !w.hasAngerTime() && player.canSee(w))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        int bones = inventory.count(net.minecraft.item.Items.BONE);
+        if (wild == null || bones == 0) {
+            entry.petsAt = now + 200;
+            return null;
+        }
+        int ownWolves = (int) own.stream().filter(p -> p instanceof net.minecraft.entity.passive.WolfEntity).count();
+        var decision = dev.kindred.core.PetPolicy.evaluate(new dev.kindred.core.PetPolicy.Request(dev.kindred.core.PetPolicy.Species.WOLF, true, pets,
+                dev.kindred.core.PetPolicy.DEFAULT_CAP, own.size(), ownWolves, bones, true, player.canSee(wild), true, false, false, false,
+                true, true, true, true));
+        if (!decision.eligible()) {
+            if (!decision.blockers().equals(entry.petBlockers)) KindredMod.LOGGER.info("{} leaves the wolf be: {}", entry.data.displayName(), decision.blockers());
+            entry.petBlockers = decision.blockers();
+            entry.petsAt = now + 600;
+            return null;
+        }
+        int bone = -1;
+        for (int slot = 0; slot < 36 && bone < 0; slot++) if (inventory.getStack(slot).isOf(net.minecraft.item.Items.BONE)) bone = slot;
+        if (bone >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(bone), "target", String.valueOf(free))));
+        }
+        if (player.distanceTo(wild) > 2.5) {
+            BlockPos to = wild.getBlockPos();
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                    "z", String.valueOf(to.getZ()), "range", "2")));
+        }
+        return List.of(new NativeTaskCandidate(task, "native_pet", Map.of("target", wild.getUuid().toString(), "slot", String.valueOf(bone), "mode", "tame")));
+    }
+
+    private static String petKind(net.minecraft.entity.Entity pet) {
+        return net.minecraft.registry.Registries.ENTITY_TYPE.getId(pet.getType()).getPath().replace('_', ' ');
+    }
+
+    /**
+     * Its pets looked to (E-38), each second: one it has seen that has since been killed is told, plainly, with what
+     * killed it as the game tells it, and forgotten; one only out of the loaded world is kept.
+     */
+    private void checkPets(Entry entry) {
+        for (var it = entry.petsSeen.entrySet().iterator(); it.hasNext(); ) {
+            var pet = it.next().getValue();
+            // Named as it meant: said, and remembered where the name came from (E-36).
+            String chosen = entry.petNames.get(pet.getUuid());
+            if (chosen != null && pet.hasCustomName() && chosen.equals(pet.getCustomName().getString()) && entry.petsNamed.add(pet.getUuid())) {
+                say(entry, "My " + petKind(pet) + " is called " + chosen + " now.", "");
+                if (store != null) {
+                    store.addMemory(new MemoryNote(UUID.randomUUID(), entry.data.id(), MemoryNote.Kind.FACT, "Named its " + petKind(pet) + " " + chosen
+                            + " with a name tag it lettered at its anvil; a name of its own", "pet_name", 0));
+                }
+            }
+            if (!pet.isRemoved() && pet.isAlive()) continue;
+            if (pet.isRemoved() && pet.getRemovalReason() != net.minecraft.entity.Entity.RemovalReason.KILLED && pet.isAlive()) {
+                it.remove(); // Unloaded with its chunk, or gone through a portal: not dead.
+                continue;
+            }
+            it.remove();
+            entry.petsKnown.remove(pet.getUuid());
+            entry.petNames.remove(pet.getUuid());
+            String told = pet.getDamageTracker().getDeathMessage().getString();
+            // What the game says of it ("was slain by Zombie"), less its name and the bare "died".
+            String how = told.replace(pet.getName().getString(), "").strip().replaceFirst("^was ", "");
+            String who = pet.hasCustomName() ? pet.getCustomName().getString() : "My " + petKind(pet);
+            KindredMod.LOGGER.info("{}'s pet {} died: {}", entry.data.displayName(), who, told);
+            say(entry, who + " is dead" + (how.isEmpty() || how.equals("died") ? "." : ": " + how + "."), "");
+        }
     }
 
     int setBases(ServerCommandSource source, boolean allowed) {

@@ -141,6 +141,9 @@ final class NativePlayerSkills {
             // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
             case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A wolf tamed with a bone of its own, or its pet named with a name tag (E-37, E-36).
+            case "native_pet" -> new SkillDescriptor(id, Set.of("target", "slot", "mode"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // Fishing at water with its rod (E-05).
             case "native_fish" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("seconds"), Set.of(), Set.of(),
                     Duration.ofSeconds(120), Duration.ofSeconds(120), 0);

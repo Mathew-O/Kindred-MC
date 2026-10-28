@@ -191,6 +191,15 @@ public final class PlayerCommands {
                             String raw = StringArgumentType.getString(context, "enabled");
                             return runtime.setDemonstrating(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                         }))));
+        // Pets (E-37): an operator lets AI players tame a wolf with their own bones, or not.
+        root.then(CommandManager.literal("pets").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setPets(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
         root.then(CommandManager.literal("bases").then(CommandManager.argument("enabled", StringArgumentType.word())
                 .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
                 .executes(context -> {

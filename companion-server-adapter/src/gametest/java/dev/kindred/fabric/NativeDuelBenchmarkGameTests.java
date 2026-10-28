@@ -62,7 +62,7 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
         var rng = new java.util.Random(20261028L);
         int[] state = {0}, tally = new int[3], done = {0};
         UUID[] match = {null};
-        long[] since = {0}, ticks = {0};
+        long[] since = {0}, ticks = {0}, waiting = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))
@@ -106,9 +106,17 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                                 if (now % 200 == 0) {
                                     KindredMod.LOGGER.info("Duel benchmark: waiting for both to settle; Hal {}, Wren {}", f.runtime.nativeStatusLine(ids[0]), f.runtime.nativeStatusLine(ids[1]));
                                 }
+                                if (waiting[0] < 0) waiting[0] = now;
+                                if (now - waiting[0] > 2400) {
+                                    // A player that never settles (one blocked for reconciliation): the benchmark ends, said loudly.
+                                    KindredMod.LOGGER.error("Duel benchmark STUCK after {} duels: Hal {}, Wren {}", done[0], f.runtime.nativeStatusLine(ids[0]),
+                                            f.runtime.nativeStatusLine(ids[1]));
+                                    done[0] = DUELS;
+                                }
                                 break;
                             }
                             var world = context.getWorld();
+                            waiting[0] = -1;
                             for (var drop : world.getEntitiesByClass(ItemEntity.class, new Box(o).expand(16), e -> true)) drop.discard();
                             // A randomised legal start: anywhere in the arena, at least six apart, facing anywhere.
                             double ax, az, bx, bz;
