@@ -12,12 +12,14 @@ import dev.kindred.core.SocialProfile;
 import dev.kindred.core.WorkSetup;
 import dev.kindred.scheduler.AccountingPeriod;
 import dev.kindred.scheduler.BudgetState;
+import dev.kindred.scheduler.PeriodTransition;
 
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -188,6 +190,57 @@ class SqliteCompanionStoreTest {
         assertCause(IllegalStateException.class, store.openBudget(id, next));
         store.saveBudget(reserved.settle(reserved.outstanding().orElseThrow().id(), Duration.ZERO), 1).join();
         assertEquals(next, store.openBudget(id, next).join().period());
+    }
+
+    @Test
+    void chargeableBudgetOpensEachPeriodOnceAndNeitherARestartNorAZoneEditReplenishesIt() {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        Instant now = period.startInclusive().plus(Duration.ofHours(1));
+        ChargeableBudget first = store.chargeableBudget(id, now, ZoneOffset.UTC).join();
+        assertEquals(PeriodTransition.Kind.OPEN, first.transition().kind());
+        BudgetState empty = first.budget().orElseThrow();
+        assertEquals(BudgetState.empty(id, period), empty);
+        BudgetState reserved = store.saveBudget(reserve(empty, UUID.randomUUID(), now), 0).join();
+        BudgetState settled = store.saveBudget(reserved.settle(reserved.outstanding().orElseThrow().id(),
+                Duration.ofSeconds(2)), 1).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.current(period), Optional.of(settled)),
+                store.chargeableBudget(id, now.plusSeconds(60), ZoneOffset.UTC).join());
+        store.closeAsync().join();
+        SqliteCompanionStore reopened = open(10);
+        assertEquals(Optional.of(settled), reopened.chargeableBudget(id, now.plusSeconds(120), ZoneOffset.UTC).join().budget());
+        // A zone edit mid-period is charged to the saved period to its end.
+        ChargeableBudget edited = reopened.chargeableBudget(id, now.plus(Duration.ofHours(2)), ZoneId.of("Asia/Tokyo")).join();
+        assertEquals(PeriodTransition.Kind.CURRENT, edited.transition().kind());
+        assertEquals(2000, edited.budget().orElseThrow().chargedMillis());
+        AccountingPeriod next = AccountingPeriod.on(period.localDate().plusDays(1), ZoneOffset.UTC);
+        ChargeableBudget tomorrow = reopened.chargeableBudget(id, period.endExclusive(), ZoneOffset.UTC).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.open(next), Optional.of(BudgetState.empty(id, next))), tomorrow);
+        assertEquals(settled, reopened.findBudget(id, period.startInclusive()).join().orElseThrow());
+        assertEquals(new ChargeableBudget(PeriodTransition.current(next), tomorrow.budget()),
+                reopened.chargeableBudget(id, period.endExclusive(), ZoneOffset.UTC).join());
+    }
+
+    @Test
+    void chargeableBudgetWritesNothingWhileTheClockIsBehindOrAZoneEditWaits() {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        BudgetState opened = store.chargeableBudget(id, period.startInclusive(), ZoneOffset.UTC).join().budget().orElseThrow();
+        ChargeableBudget behind = store.chargeableBudget(id, period.startInclusive().minusSeconds(1), ZoneOffset.UTC).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.clockBehind(period.startInclusive()), Optional.empty()), behind);
+        ZoneId newYork = ZoneId.of("America/New_York");
+        ChargeableBudget waiting = store.chargeableBudget(id, period.endExclusive().plus(Duration.ofHours(1)), newYork).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.zonePending(Instant.parse("2026-10-14T04:00:00Z")), Optional.empty()),
+                waiting);
+        assertTrue(store.findBudget(id, AccountingPeriod.on(period.localDate(), newYork).startInclusive()).join().isEmpty());
+        assertEquals(opened, store.findBudget(id, period.startInclusive()).join().orElseThrow());
+        AccountingPeriod local = AccountingPeriod.on(LocalDate.of(2026, 10, 14), newYork);
+        BudgetState fresh = store.chargeableBudget(id, waiting.transition().opensAt().orElseThrow(), newYork).join().budget().orElseThrow();
+        assertEquals(BudgetState.empty(id, local), fresh);
+        // An unsettled slice left in the latest period is an inconsistency, not a transition.
+        store.saveBudget(reserve(fresh, UUID.randomUUID(), local.startInclusive()), 0).join();
+        assertCause(IllegalStateException.class, store.chargeableBudget(id, local.endExclusive(), newYork));
+        assertThrows(IllegalArgumentException.class, () -> new ChargeableBudget(PeriodTransition.current(period), Optional.empty()));
     }
 
     @Test

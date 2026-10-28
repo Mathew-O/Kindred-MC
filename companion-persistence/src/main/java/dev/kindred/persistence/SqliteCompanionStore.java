@@ -19,7 +19,9 @@ import dev.kindred.core.team.StockReservation;
 import dev.kindred.core.team.TaskId;
 import dev.kindred.scheduler.AccountingPeriod;
 import dev.kindred.scheduler.BudgetState;
+import dev.kindred.scheduler.PeriodTransition;
 import dev.kindred.scheduler.Reservation;
+import dev.kindred.scheduler.ScheduleClock;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -1289,25 +1291,52 @@ public final class SqliteCompanionStore {
         requireMilliseconds(period.endExclusive());
         return submit(() -> transaction(() -> {
             required(companionId);
-            Optional<BudgetState> latest = latestBudget(companionId);
-            if (latest.isPresent()) {
-                BudgetState previous = latest.orElseThrow();
-                if (previous.period().equals(period)) return previous;
-                if (period.startInclusive().isBefore(previous.period().endExclusive())) {
-                    throw new IllegalArgumentException("Accounting periods cannot overlap or reopen an earlier period");
-                }
-                if (previous.outstanding().isPresent()) {
-                    throw new IllegalStateException("Settle the previous period before opening a new one");
-                }
-            }
-            BudgetState empty = BudgetState.empty(companionId, period);
-            try (PreparedStatement insert = database.prepareStatement(
-                    "INSERT INTO budget_buckets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                bindBudget(insert, empty);
-                insert.executeUpdate();
-            }
-            return empty;
+            return openPeriod(companionId, period, latestBudget(companionId));
         }));
+    }
+
+    /**
+     * The budget activity at now is charged to, chosen from the latest saved period in the transaction that opens a
+     * new one (ScheduleClock.transition). Nothing is written while the clock is behind that period or a zone edit
+     * waits for its first whole local day; the result says when one opens. An open period is returned as saved, so
+     * neither a restart nor a zone edit replenishes it.
+     */
+    public CompletableFuture<ChargeableBudget> chargeableBudget(UUID companionId, Instant now, ZoneId zone) {
+        Objects.requireNonNull(companionId, "companionId");
+        Objects.requireNonNull(now, "now");
+        Objects.requireNonNull(zone, "zone");
+        return submit(() -> transaction(() -> {
+            required(companionId);
+            Optional<BudgetState> latest = latestBudget(companionId);
+            PeriodTransition transition = ScheduleClock.transition(now, zone, latest.map(BudgetState::period));
+            return new ChargeableBudget(transition, switch (transition.kind()) {
+                case CURRENT -> latest;
+                case OPEN -> Optional.of(openPeriod(companionId, transition.period().orElseThrow(), latest));
+                case CLOCK_BEHIND, ZONE_PENDING -> Optional.empty();
+            });
+        }));
+    }
+
+    private BudgetState openPeriod(UUID companionId, AccountingPeriod period, Optional<BudgetState> latest) throws SQLException {
+        requireMilliseconds(period.startInclusive());
+        requireMilliseconds(period.endExclusive());
+        if (latest.isPresent()) {
+            BudgetState previous = latest.orElseThrow();
+            if (previous.period().equals(period)) return previous;
+            if (period.startInclusive().isBefore(previous.period().endExclusive())) {
+                throw new IllegalArgumentException("Accounting periods cannot overlap or reopen an earlier period");
+            }
+            if (previous.outstanding().isPresent()) {
+                throw new IllegalStateException("Settle the previous period before opening a new one");
+            }
+        }
+        BudgetState empty = BudgetState.empty(companionId, period);
+        try (PreparedStatement insert = database.prepareStatement(
+                "INSERT INTO budget_buckets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+            bindBudget(insert, empty);
+            insert.executeUpdate();
+        }
+        return empty;
     }
 
     public CompletableFuture<Optional<BudgetState>> findBudget(UUID companionId, Instant start) {

@@ -25,6 +25,38 @@ public final class ScheduleClock {
         return candidate.startInclusive().isBefore(closedThrough) ? Optional.empty() : Optional.of(candidate);
     }
 
+    /**
+     * Where activity at now is charged, given the latest saved period: that period while it lasts, even after a
+     * zone edit; once it has ended, the local day in zone containing now, unless that day would start before the
+     * latest period's end, when a zone edit waits for its next whole local day. A clock behind the latest period
+     * charges nothing until it catches up.
+     */
+    public static PeriodTransition transition(Instant now, ZoneId zone, Optional<AccountingPeriod> latest) {
+        Objects.requireNonNull(now, "now");
+        Objects.requireNonNull(zone, "zone");
+        Objects.requireNonNull(latest, "latest");
+        if (latest.isEmpty()) {
+            return PeriodTransition.open(AccountingPeriod.containing(now, zone));
+        }
+        AccountingPeriod last = latest.orElseThrow();
+        if (last.contains(now)) {
+            return PeriodTransition.current(last);
+        }
+        if (now.isBefore(last.startInclusive())) {
+            return PeriodTransition.clockBehind(last.startInclusive());
+        }
+        return openPeriod(now, zone, last.endExclusive()).map(PeriodTransition::open)
+                .orElseGet(() -> PeriodTransition.zonePending(firstPeriodFrom(zone, last.endExclusive()).startInclusive()));
+    }
+
+    /** The first local day in zone that starts at or after closedThrough. */
+    public static AccountingPeriod firstPeriodFrom(ZoneId zone, Instant closedThrough) {
+        Objects.requireNonNull(closedThrough, "closedThrough");
+        AccountingPeriod containing = AccountingPeriod.containing(closedThrough, zone);
+        return containing.startInclusive().isBefore(closedThrough)
+                ? AccountingPeriod.on(containing.localDate().plusDays(1), zone) : containing;
+    }
+
     /** Returns the currently open window, clipped to the persisted accounting period. */
     public static Optional<TimeInterval> activeInterval(
             ActivitySchedule schedule, AccountingPeriod period, Instant now) {
