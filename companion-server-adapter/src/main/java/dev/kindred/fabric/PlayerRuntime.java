@@ -8167,10 +8167,11 @@ final class PlayerRuntime {
                 // One that strolls is never let loose with the cell's front open: at work it makes for its old job site, out
                 // through the front in the moment the player takes to step into it (a fixture's librarian, in suite run 48).
                 // So the cart stays in the cell, spent as the floor's rail is, and the job block goes in front of it. One in
-                // the cart stays in it. One in its boat (whose width overhangs the front's foot from the cart) has the opening
-                // shut first, against the lintel, the block's height left open under it too low for a villager; then the boat
-                // is broken, which sets it down where it sat, inside the cart's box on the floor, and the job block goes in
-                // under the shutter. The boat's wood falls in the cell, out of reach: left there, and said.
+                // the cart stays in it. One in its boat, whose width overhangs the front's foot from the cart: the job block put
+                // in first where it misses the boat (a lectern's foot is under it and its post clear of it), else the opening
+                // shut a moment against the lintel, the block's height left under it too low for a villager; then the boat
+                // broken over it, which sets the villager down where it sat, inside the cart's box on the floor. The boat's
+                // wood falls in the cell, out of reach: left there, and said.
                 var state = world.getBlockState(b.slot);
                 if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
                     if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !body.miningEligible(b.slot)) {
@@ -8180,7 +8181,21 @@ final class PlayerRuntime {
                 }
                 if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                     BlockPos opening = b.slot.up();
-                    if (!isShutter(world.getBlockState(opening))) {
+                    var job = net.minecraft.block.Block.getBlockFromItem(b.jobBlock);
+                    boolean jobIn = world.getBlockState(b.slot).isOf(job);
+                    boolean fits = jobIn || world.getBlockState(b.slot).isReplaceable() && world.doesNotIntersectEntities(null,
+                            job.getDefaultState().getCollisionShape(world, b.slot).offset(b.slot.getX(), b.slot.getY(), b.slot.getZ()));
+                    if (fits && !jobIn) {
+                        int slot = slotOf(player, b.jobBlock);
+                        if (slot < 0) return giveUp(entry, body, "I've lost the " + b.noun + "'s job block.");
+                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, b.slot)) {
+                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        }
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "job block"), "native_place", Map.of("x", String.valueOf(b.slot.getX()),
+                                "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
+                    }
+                    if (!fits && !isShutter(world.getBlockState(opening))) {
                         int slot = shutterSlot(player);
                         if (slot < 0) return giveUp(entry, body, "I've no block to shut the " + b.noun + "'s cell with a moment.");
                         if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
@@ -8254,7 +8269,7 @@ final class PlayerRuntime {
                     // From the front's far edge for one that came to rest by the bed, a twentieth of a block out of reach of its middle.
                     if (b.fetchWaits++ == 15) {
                         return List.of(new NativeTaskCandidate(bringTask(entry, "edge in"), "native_goto", Map.of("x", String.valueOf(b.floor.getX()),
-                                "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "1.2", "partial", "true")));
+                                "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "0.6", "partial", "true")));
                     }
                     if (b.fetchWaits < 40) return List.of(waitTask(task, "For the cart to be picked up"));
                     for (var item : lying) {
@@ -8276,6 +8291,14 @@ final class PlayerRuntime {
                     }
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
+                }
+                // A cart left in the cell (KEEP), shoved off its rail into the front by the villager let out over it: broken
+                // there, its item picked up from the corridor, before the job block goes in.
+                var shoved = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, new net.minecraft.util.math.Box(b.slot),
+                        c -> c.isAlive() && !c.hasPassengers());
+                if (!shoved.isEmpty()) {
+                    if (!player.canInteractWithEntity(shoved.getFirst(), 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "shoved cart"), "native_cart", Map.of("mode", "break", "target", shoved.getFirst().getUuid().toString())));
                 }
                 // Out of the front, and its job block put there behind the villager.
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
