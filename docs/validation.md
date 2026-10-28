@@ -497,6 +497,23 @@ Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0
 - Development live runs (not a release gate): a dedicated server on seed 8675309 with `/tick sprint`. One AI player from an empty inventory earned wood, stone and iron tools, smelted iron in its own furnace, a bucket, three diamonds and a diamond pickaxe. It respawned after deaths and recovered its drops. Later runs added a worn iron chestplate, digging in at night, recorded fights won against cave mobs, and dropping surplus stone. A lit portal has not yet been reached live: deaths to cave mobs, creepers and lava still cost each run its tools. Since run 23: fight chases check their footing, creepers are fought hit and run or outrun, and the night shelter is sealed. See F-25c4 for the open steps.
 - JAR SHA-256 at commit `34b4c83`: `6f3c2679a6cfedb5138ec9e332056e9d0beebb2bc546255b970c9e77b05a2fa5` (`kindred-mc-0.1.0-SNAPSHOT.jar`). Build, 336 JUnit and 188/188 GameTests were rerun on that commit.
 
+## Accounting periods, activity hours and death conservation — 28 October 2026 (`claude/blissful-fermi-y4tt90`)
+
+F-11d to F-11g and F-07b, on `main` at `f5a39b9`. Linux x64 cloud container (4 cores), OpenJDK 21.0.12.
+- Baseline, the full native suite on `main` (`f5a39b9`): 356 of 359. Failed: the portal goal's walk back up its staircase, the off-line librarian bring, and a stone-tools cabin short of its roof stairs (#82). All three are open on `claude/modest-faraday-r3spro`.
+- Full suite on `3921f91`, which carries all five slices: 365 of 367. Every new fixture passed: `NativeAccountingGameTests` (6) and `NativeDeathConservationGameTests` (2). F-11c's real-time break and the hazard interrupt passed too. Failed: the pasture's cattle and the keep's roof stairs (#82), the two listed open in that branch's runs 44 to 46.
+- `./gradlew build` on `3921f91`: 733 JUnit results, none failed, four skipped (the opt-in live model tests).
+- Focused runs, each in a scratch worktree with its gametest entrypoints narrowed (not committed):
+  - F-11e, 5 of 5;
+  - F-11f, F-11g and F-07b, 3 of 3 each;
+  - `NativeDefensivePrerequisitesGameTests.hazardArrivalDuringActiveWorkRevokesWorkWithoutOverlappingControllers` in all eight of those runs, its flake fixed on that branch in `fe4fb99`.
+- The clock-behind fixture, trimmed and run on unchanged `main`, failed as the bug predicts: "Activity budget could not be loaded; stopped pending reconciliation."
+- Found and fixed:
+  - A renewal storm in the last 1.5 s before any slice deadline: a budget write every tick.
+  - Continuing a paused native skill ignored the hours and treated a refusal as a fault.
+  - Fixtures that hold the server to 20 ticks a second must park again after an early return: each `server.execute` from the IO thread unparks the server thread.
+- Evidence: [F-11d](evidence/F-11d.md), [F-11e](evidence/F-11e.md), [F-11f](evidence/F-11f.md), [F-11g](evidence/F-11g.md), [F-07b](evidence/F-07b.md).
+
 ## Previous regression — 19 October 2026
 
 The earlier serialized JDK 21 gate passed 179/179 twice on its source version. On the current E-15 source, two consecutive serialized JDK 21 runs passed 182/182 after E-14 outward-expedition and night-return assertions were changed to wait for activity to settle. The runs include portal/restart, actual-arrival hazard observation, observed-Blaze durable native attack, owned-frame assembly and assigned wart harvest fixtures. See [E-15 stabilization](evidence/E-15-stabilization.md).
