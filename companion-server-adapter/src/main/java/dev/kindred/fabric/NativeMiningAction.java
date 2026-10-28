@@ -61,6 +61,10 @@ final class NativeMiningAction extends NativeRecordedAction {
         if (!decision.allowed()) throw new IllegalArgumentException(decision.reason());
         if (!body.miningEligible(target)) throw new IllegalArgumentException("Mining target is not visible/reachable or native permissions deny it");
         tool = body.entity().getInventory().getStack(slot).copy(); // Comparison only; native selection uses the real slot.
+        // A block that drops only to the right tool is never mined with the wrong one: nothing would come of it (E-03).
+        if (state.isToolRequired() && !tool.isSuitableFor(state)) {
+            throw new IllegalArgumentException("The tool in slot " + slot + " cannot harvest " + resource + "; nothing would drop");
+        }
         priorReceipt = body.miningReceipt().map(NativePlayerBody.MiningReceipt::sequence).orElse(0L);
         claimKey = "block:" + worldId + ":" + world.getRegistryKey().getValue() + ":" + target.toShortString();
     }

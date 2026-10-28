@@ -10,7 +10,7 @@ import java.util.List;
 public final class Generators {
     public static final String SOURCE = "kindred:generator/";
     /** The generators there are, by name. */
-    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward", "pastureward", "hall", "walltower", "tradinghall");
+    public static final java.util.Set<String> NAMES = java.util.Set.of("hut", "tower", "pyramid", "lighthouse", "pen", "cabin", "house", "manor", "keep", "farmward", "pastureward", "hall", "walltower", "tradinghall", "smelter");
 
     private Generators() { }
 
@@ -207,7 +207,9 @@ public final class Generators {
             }
             // A trading hall of cells for the villagers kept (E-45d), of oak and cobblestone: tradinghall-<cells>.
             case "tradinghall" -> TradingHall.of(sizes.isEmpty() ? 3 : sizes.get(0), "oak", "cobblestone");
-            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward, pastureward, hall, walltower, tradinghall");
+            // A furnace fed by hoppers (M-01d).
+            case "smelter" -> Machines.smelter();
+            default -> throw new IllegalArgumentException("No generator called " + name + "; there are: hut, tower, pyramid, lighthouse, pen, cabin, house, manor, keep, farmward, pastureward, hall, walltower, tradinghall, smelter");
         };
     }
 }

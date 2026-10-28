@@ -123,6 +123,9 @@ public final class Ranch {
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
+    /** How many times it has gone back to the animals it gave up on. */
+    private int retried;
+    private static final int RETRIES = 2;
     private int youngBefore = -1;
     private String outcome = "";
     private boolean bred;
@@ -253,7 +256,10 @@ public final class Ranch {
                 if (seen.tick() - waitingSince > BIRTH) return leave(seen, "No young one came");
                 return new Step.Wait(false, "Wait for the young " + kind.noun());
             }
-            if (inLove.size() + ready.size() < 2) return leave(seen, "The " + kind.noun() + "s are not ready to breed again yet");
+            if (inLove.size() + ready.size() < 2) {
+                return leave(seen, "The " + kind.noun() + "s are not ready to breed again yet (" + adultsIn.size() + " in the pen, "
+                        + ready.size() + " ready, " + inLove.size() + " in love)");
+            }
             if (seen.food() <= 0) return leave(seen, "Out of " + foodName() + " to breed them");
             var next = ready.getFirst();
             if (Math.sqrt(next.at().distanceSquared(seen.feet())) > FEEDING) return go(next.at(), FEEDING - 0.5, true, 0, "Walk up to a " + kind.noun());
@@ -290,6 +296,14 @@ public final class Ranch {
                 .sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet())))
                 .toList();
         var lead = candidates.stream().filter(a -> a.id().equals(leading)).findFirst().or(() -> candidates.stream().findFirst());
+        // Those it gave up on, still in sight, tried again, twice: two led in together crowd the gate and both were
+        // given up as they waited their turn, and it left with both standing at the gate (the cattle fixture).
+        if (lead.isEmpty() && !givenUp.isEmpty() && retried < RETRIES && seen.animals().stream().anyMatch(a -> givenUp.contains(a.id())
+                && !inside(a.at()) && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE)) {
+            retried++;
+            givenUp.clear();
+            return new Step.Wait(true, "Try the " + kind.noun() + "s again");
+        }
         if (lead.isEmpty()) {
             return leave(seen, adultsIn == 1 ? "Only one " + kind.noun() + " in the pen; no other in sight" : "No " + kind.noun() + "s in sight to bring in");
         }

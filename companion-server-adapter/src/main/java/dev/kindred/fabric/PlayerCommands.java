@@ -99,6 +99,13 @@ public final class PlayerCommands {
                                 .then(CommandManager.argument("target", StringArgumentType.string())
                                         .suggests((context, builder) -> suggestBots(builder))
                                         .executes(context -> pasture(context, true))))));
+        root.then(CommandManager.literal("bring")
+                .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 64 * 27))
+                        .then(CommandManager.argument("item", net.minecraft.command.argument.IdentifierArgumentType.identifier())
+                                .executes(context -> bring(context, false))
+                                .then(CommandManager.argument("target", StringArgumentType.string())
+                                        .suggests((context, builder) -> suggestBots(builder))
+                                        .executes(context -> bring(context, true))))));
         root.then(CommandManager.literal("field")
                 .then(CommandManager.literal("stop").executes(context -> field(context, false, false))
                         .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
@@ -1135,6 +1142,24 @@ public final class PlayerCommands {
             return 0;
         }
         return runtime.startField(context.getSource(), id, start ? BlockPosArgumentType.getBlockPos(context, "at") : null);
+    }
+
+    /** Supplies brought to whoever asks (E-01): {@code count} of an item, fetched from its storage if need be; 0 calls it off. */
+    private static int bring(CommandContext<ServerCommandSource> context, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        var asker = context.getSource().getPlayer();
+        if (asker == null) {
+            context.getSource().sendError(Text.literal("Only a player in the world can be brought things."));
+            return 0;
+        }
+        return runtime.nativeDeliver(context.getSource(), id, net.minecraft.command.argument.IdentifierArgumentType.getIdentifier(context, "item").toString(),
+                IntegerArgumentType.getInteger(context, "count"), asker.getUuid());
     }
 
     private static int unavailable(ServerCommandSource source) {

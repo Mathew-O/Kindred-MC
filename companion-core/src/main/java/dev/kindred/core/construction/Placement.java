@@ -41,6 +41,11 @@ public final class Placement {
         BED,
         /** Placed with another block, never on its own: a door's upper half, a bed's head. */
         COMPANION,
+        /**
+         * Facing the block it was set against, which it feeds (M-01d): a hopper clicked onto a chest's side points into
+         * the chest, onto the top of a furnace points down into it.
+         */
+        HOPPER,
         /** Not modelled yet: trapdoors, signs, buttons, rails, redstone, plants and the rest. */
         UNSUPPORTED
     }
@@ -74,6 +79,10 @@ public final class Placement {
             return "upper".equals(spec.property("half")) ? Rule.COMPANION : Rule.DOOR;
         }
         if (id.endsWith("_bed") && spec.property("facing") != null) return "head".equals(spec.property("part")) ? Rule.COMPANION : Rule.BED;
+        if (id.equals("minecraft:hopper")) {
+            Face facing = face(spec.property("facing") == null ? "down" : spec.property("facing"));
+            return facing == null || facing == Face.UP ? Rule.UNSUPPORTED : Rule.HOPPER;
+        }
         if (spec.property("axis") != null) return Rule.AXIS;
         if (UNSUPPORTED_SUFFIXES.stream().anyMatch(id::endsWith) || UNSUPPORTED.contains(id)) return Rule.UNSUPPORTED;
         // A facing, a half or a hinge we have no rule for: not guessed at.
@@ -91,7 +100,7 @@ public final class Placement {
             "minecraft:short_grass", "minecraft:tall_grass", "minecraft:fern", "minecraft:large_fern", "minecraft:dandelion",
             "minecraft:poppy", "minecraft:sugar_cane", "minecraft:cactus", "minecraft:kelp", "minecraft:seagrass", "minecraft:bamboo",
             "minecraft:scaffolding", "minecraft:piston", "minecraft:sticky_piston", "minecraft:observer", "minecraft:dispenser",
-            "minecraft:dropper", "minecraft:hopper", "minecraft:anvil", "minecraft:chipped_anvil", "minecraft:damaged_anvil",
+            "minecraft:dropper", "minecraft:anvil", "minecraft:chipped_anvil", "minecraft:damaged_anvil",
             "minecraft:bell", "minecraft:end_portal_frame", "minecraft:nether_portal", "minecraft:end_portal");
 
     /**
@@ -116,6 +125,8 @@ public final class Placement {
                     : List.of(Face.UP, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
             case STAIRS -> "top".equals(spec.property("half")) ? List.of(Face.DOWN, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST)
                     : List.of(Face.UP, Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
+            // Set against the block it faces: the face of that block toward it.
+            case HOPPER -> List.of(face(spec.property("facing") == null ? "down" : spec.property("facing")).opposite());
             case UNSUPPORTED, COMPANION -> List.of();
         };
     }
