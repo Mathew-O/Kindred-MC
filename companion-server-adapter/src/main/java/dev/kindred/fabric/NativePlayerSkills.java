@@ -77,7 +77,7 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(8), Duration.ofSeconds(6), 0);
             case "native_fill_frame" -> new SkillDescriptor(id, Set.of("slot", "x", "y", "z"), Set.of(), Set.of("place"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z"), Set.of(), Set.of(),
+            case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target", "hx", "hz"), Set.of(), Set.of(),
                     Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
             case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(125), Duration.ofSeconds(10), 0);

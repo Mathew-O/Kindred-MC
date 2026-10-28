@@ -2001,6 +2001,27 @@ final class NativePlayerBody implements BodyAdapter {
         });
     }
 
+    /**
+     * Puts the boat in {@code hotbarSlot} down on top of the block {@code ground}, as a player puts one down on land:
+     * looking at the block's top and using the item (E-45e: just beside a villager, which the boat then takes up).
+     */
+    boolean placeBoat(ActionLease lease, int hotbarSlot, BlockPos ground) {
+        return placeBoat(lease, hotbarSlot, ground, null);
+    }
+
+    /** As {@link #placeBoat(ActionLease, int, BlockPos)}, looking at {@code at} on the block's top (its middle if null): the boat goes where the look meets it. */
+    boolean placeBoat(ActionLease lease, int hotbarSlot, BlockPos ground, Vec3d at) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || player.hasVehicle()) return false;
+        Vec3d top = at != null ? at : new Vec3d(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
+        if (!new net.minecraft.util.math.Box(ground).expand(1.0E-4).contains(top) || player.getEyePos().distanceTo(top) > 4.0) return false;
+        return execute(lease, Intent.BOAT, ground, () -> {
+            player.getInventory().selectedSlot = hotbarSlot;
+            face(top);
+            player.interactionManager.interactItem(player, player.getServerWorld(), player.getMainHandStack(), Hand.MAIN_HAND);
+        });
+    }
+
     /** Into {@code boat}, as a player clicks on one within reach. */
     boolean board(ActionLease lease, BoatEntity boat) {
         requireThread();
@@ -2078,8 +2099,13 @@ final class NativePlayerBody implements BodyAdapter {
 
     /** One hit on an empty boat within reach, as a player breaks one to take it back. */
     boolean strikeBoat(ActionLease lease, BoatEntity boat) {
+        return strikeBoat(lease, boat, false);
+    }
+
+    /** As {@link #strikeBoat(ActionLease, BoatEntity)}, a boat that holds a mob too: broken, it sets the mob down where it sat. */
+    boolean strikeBoat(ActionLease lease, BoatEntity boat, boolean ridden) {
         requireThread();
-        if (boat == null || !boat.isAlive() || boat.hasPassengers() || player.hasVehicle() || !player.canInteractWithEntity(boat, 0)) return false;
+        if (boat == null || !boat.isAlive() || !ridden && boat.hasPassengers() || player.hasVehicle() || !player.canInteractWithEntity(boat, 0)) return false;
         return execute(lease, Intent.ATTACK, boat.getBlockPos(), () -> {
             face(boat.getPos().add(0, 0.3, 0));
             player.attack(boat);

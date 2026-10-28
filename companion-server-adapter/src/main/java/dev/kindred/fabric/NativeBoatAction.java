@@ -26,9 +26,12 @@ import java.util.function.Supplier;
  * water within reach and gets in: one boat item is spent under the ledger, and the boat is then in the world. {@code
  * board} gets into an empty boat within reach. {@code land} gets out and breaks the boat with ordinary hits, so it
  * drops as an item to be picked up again; nothing owned is lost. Rowing is {@link NativeRowSkill}'s, between them.
+ * {@code place} puts one owned boat down on top of a block without getting in (E-45e: just beside a villager, which it
+ * takes up, so that the villager stays put); {@code break} breaks a boat within reach, whoever is in it set down where
+ * it sat, its item dropped to be picked up again.
  */
 final class NativeBoatAction extends NativeRecordedAction {
-    enum Mode { LAUNCH, BOARD, LAND }
+    enum Mode { LAUNCH, BOARD, LAND, PLACE, BREAK }
 
     /** Ticks to wait for vanilla to set the player down beside the boat, and to break it. */
     private static final int LEAVE_TICKS = 20, BREAK_TICKS = 160;
@@ -40,6 +43,8 @@ final class NativeBoatAction extends NativeRecordedAction {
     private final Mode mode;
     private final int slot;
     private final BlockPos water;
+    private final UUID target;
+    private final net.minecraft.util.math.Vec3d aim;
 
     private ActionAdmission admission;
     private InventoryEvidence before;
@@ -52,14 +57,28 @@ final class NativeBoatAction extends NativeRecordedAction {
 
     NativeBoatAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                      Mode mode, int slot, BlockPos water) {
+        this(body, lease, writer, dispatch, mode, slot, water, null);
+    }
+
+    NativeBoatAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
+                     Mode mode, int slot, BlockPos water, UUID target) {
+        this(body, lease, writer, dispatch, mode, slot, water, target, null);
+    }
+
+    /** With {@code aim}, a point on the block's top that a place looks at, where the boat goes, rather than its middle. */
+    NativeBoatAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
+                     Mode mode, int slot, BlockPos water, UUID target, net.minecraft.util.math.Vec3d aim) {
         this.body = body;
+        this.aim = aim;
         this.lease = lease;
         this.writer = writer;
         this.dispatch = dispatch;
         this.mode = mode;
         this.slot = slot;
         this.water = water;
-        if (mode == Mode.LAUNCH && (slot < 0 || slot > 8 || water == null)) throw new IllegalArgumentException("A launch needs an owned hotbar slot 0..8 and a water cell");
+        this.target = target;
+        if ((mode == Mode.LAUNCH || mode == Mode.PLACE) && (slot < 0 || slot > 8 || water == null)) throw new IllegalArgumentException("A launch or a place needs an owned hotbar slot 0..8 and a block");
+        if (mode == Mode.BREAK && target == null) throw new IllegalArgumentException("A break needs its boat");
     }
 
     @Override
@@ -79,11 +98,21 @@ final class NativeBoatAction extends NativeRecordedAction {
                 case LAND -> {
                     if (body.boat().isEmpty()) return Step.blocked("Not in a boat", true);
                 }
+                case PLACE -> {
+                    if (!(player.getInventory().getStack(slot).getItem() instanceof BoatItem)) return Step.blocked("The hotbar slot holds no boat", true);
+                    if (player.hasVehicle()) return Step.blocked("In a vehicle", true);
+                }
+                case BREAK -> {
+                    if (player.hasVehicle()) return Step.blocked("In a vehicle", true);
+                    if (!(player.getServerWorld().getEntity(target) instanceof BoatEntity b) || !b.isAlive()) return Step.blocked("No such boat", true);
+                    if (!player.canInteractWithEntity(b, 0)) return Step.blocked("The boat is out of reach", true);
+                }
             }
             before = InventoryEvidence.capture(body);
-            String target = mode == Mode.LAUNCH ? "slot=" + slot + "; water=" + water.toShortString() : "near=" + player.getBlockPos().toShortString();
+            String at = mode == Mode.LAUNCH || mode == Mode.PLACE ? "slot=" + slot + "; at=" + water.toShortString()
+                    : mode == Mode.BREAK ? "boat=" + target : "near=" + player.getBlockPos().toShortString();
             admission = new ActionAdmission(ActionRecord.prepare(UUID.randomUUID(), lease.get(), "native_boat",
-                    "mode=" + mode.name().toLowerCase(Locale.ROOT) + "; " + target), before.description(), writer, dispatch);
+                    "mode=" + mode.name().toLowerCase(Locale.ROOT) + "; " + at), before.description(), writer, dispatch);
         }
         if (admission.phase() == ActionAdmission.Phase.BLOCKED) {
             unknown = true;
@@ -115,12 +144,71 @@ final class NativeBoatAction extends NativeRecordedAction {
                 case LAUNCH -> launch();
                 case BOARD -> board(nearestEmptyBoat());
                 case LAND -> leave();
+                case PLACE -> place();
+                case BREAK -> {
+                    boat = target;
+                    boatAt = player.getServerWorld().getEntity(target).getBlockPos();
+                    left = true;
+                    waited = 0;
+                    yield waiting();
+                }
             };
         }
         return switch (mode) {
             case LAUNCH, BOARD -> settleAboard();
             case LAND -> land();
+            case PLACE -> settlePlaced();
+            case BREAK -> breakUp();
         };
+    }
+
+    private Step place() {
+        try {
+            if (!body.placeBoat(lease.get(), slot, water, aim)) return settle("Placing authority denied", null);
+        } catch (RuntimeException failure) {
+            unknown = true;
+            result = Step.blocked("Placing interrupted with an unknown outcome; reconcile", true);
+            if (admission.phase() == ActionAdmission.Phase.ISSUED) admission.uncertain(result.reason());
+            return waiting();
+        }
+        var placed = body.entity().getServerWorld().getEntitiesByClass(BoatEntity.class, new Box(water.up()).expand(1.5),
+                b -> b.isAlive() && b.age <= 2);
+        if (placed.isEmpty()) {
+            var look = body.entity().raycast(5.0, 1.0f, true);
+            return settle("The boat was not put down (the look met " + (look instanceof net.minecraft.util.hit.BlockHitResult block
+                    ? block.getBlockPos().toShortString() + " " + block.getSide() : look.getType()) + ", for " + water.toShortString() + ")", null);
+        }
+        boat = placed.getFirst().getUuid();
+        boatAt = placed.getFirst().getBlockPos();
+        waited = 0;
+        return waiting();
+    }
+
+    /** Put down, and whoever it was put down on taken up within a few ticks, or left empty; said either way. */
+    private Step settlePlaced() {
+        var entity = body.entity().getServerWorld().getEntity(boat);
+        if (entity instanceof BoatEntity placed && placed.hasPassengers()) return settle(null, Map.of("boat", boat.toString(), "taken", "true"));
+        if (++waited < 10) return waiting();
+        return settle(null, Map.of("boat", boat.toString(), "taken", "false"));
+    }
+
+    /** Hit until it breaks, whoever is in it set down where it sat. */
+    private Step breakUp() {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var entity = world.getEntity(boat);
+        if (!(entity instanceof BoatEntity target) || !target.isAlive()) {
+            var drops = world.getEntitiesByClass(ItemEntity.class, new Box(boatAt).expand(4), item -> item.isAlive() && item.getStack().getItem() instanceof BoatItem);
+            if (!drops.isEmpty()) {
+                var drop = drops.getFirst().getBlockPos();
+                return settle(null, Map.of("dropX", String.valueOf(drop.getX()), "dropY", String.valueOf(drop.getY()), "dropZ", String.valueOf(drop.getZ())));
+            }
+            return settle(null, Map.of("picked", "true"));
+        }
+        boatAt = target.getBlockPos();
+        if (++waited > BREAK_TICKS || !player.canInteractWithEntity(target, 0)) return settle("Could not break the boat", null);
+        if (player.getAttackCooldownProgress(0.5f) >= 1f) body.strikeBoat(lease.get(), target, true);
+        return waiting();
     }
 
     private Step launch() {
@@ -200,14 +288,14 @@ final class NativeBoatAction extends NativeRecordedAction {
     private Step settle(String failure, Map<String, String> progress) {
         var after = InventoryEvidence.capture(body);
         int spent = boats(before) - boats(after);
-        boolean launched = mode == Mode.LAUNCH && boat != null;
+        boolean launched = (mode == Mode.LAUNCH || mode == Mode.PLACE) && boat != null;
         if (!conserved(after, launched ? 1 : 0) || launched && spent != 1 || !launched && spent > 0) {
             unknown = true;
             result = Step.blocked("Boat conservation check failed; reconcile", true);
             admission.uncertain(result.reason());
             return waiting();
         }
-        if (failure != null && !launched && mode != Mode.LAND) {
+        if (failure != null && !launched && mode != Mode.LAND && mode != Mode.BREAK) {
             result = Step.blocked(failure, true);
             admission.noEffect(before.description() + "; nothing owned lost", failure);
             return waiting();
@@ -264,7 +352,7 @@ final class NativeBoatAction extends NativeRecordedAction {
     boolean permits(NativePlayerBody.Intent intent, BlockPos target) {
         if (halted || admission == null || admission.phase() != ActionAdmission.Phase.ISSUED || result != null) return false;
         return intent == NativePlayerBody.Intent.BOAT || intent == NativePlayerBody.Intent.SELECT_SLOT
-                || mode == Mode.LAND && intent == NativePlayerBody.Intent.ATTACK;
+                || (mode == Mode.LAND || mode == Mode.BREAK) && intent == NativePlayerBody.Intent.ATTACK;
     }
 
     @Override boolean uncertain() { return unknown; }
@@ -286,7 +374,7 @@ final class NativeBoatAction extends NativeRecordedAction {
                 admission.verify(after.description() + "; " + result.progress(), "Native boat step verified");
             } else if (before != null && spent == 0 && conserved(after, 0)) {
                 admission.noEffect(before.description() + "; nothing owned lost", "Boat step cancelled with nothing spent");
-            } else if (before != null && spent == 1 && conserved(after, 1) && mode == Mode.LAUNCH) {
+            } else if (before != null && spent == 1 && conserved(after, 1) && (mode == Mode.LAUNCH || mode == Mode.PLACE)) {
                 admission.verify(after.description() + "; launched, boarding not seen", "Native boat launch verified");
             } else {
                 unknown = true;

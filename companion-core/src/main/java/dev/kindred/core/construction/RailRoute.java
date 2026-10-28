@@ -37,6 +37,22 @@ public final class RailRoute {
     /** How many columns of water a line crosses on its bridge, at most: half a stack of plain blocks. */
     public static final int MAX_BRIDGE = 32;
 
+    /**
+     * Open blocks a line needs over each rail: two for a villager riding in the cart (its eyes 1.87 over the rail's
+     * block); three for one sitting in a boat the cart carries (2.06 over it: the boat rides on the cart's seat, the
+     * villager on the boat's), as a villager that strolls is held and then brought. Where the line climbs or falls a
+     * block, the column the slope is in needs one more: the rider is a block higher at the slope's top end.
+     */
+    public static final int CART_ROOM = 2, BOAT_ROOM = 3;
+
+    /**
+     * Rails behind the villager for the cart's run-up: two for a villager on its feet; three for one in a boat, whose
+     * box reaches the further back (the cart, pushed from rest, takes up only what it reaches rolling).
+     */
+    static int runUp(int room) {
+        return room > CART_ROOM ? 3 : 2;
+    }
+
     private static final int[][] SIDES = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 
     /**
@@ -44,6 +60,20 @@ public final class RailRoute {
      * it), the corridor's south row to the cell's column, and north through the cell's front onto its floor.
      */
     public static List<Pos> inside(int cells, TradingHall.Cell cell) {
+        return insideRails(cells, cell);
+    }
+
+    /**
+     * The hall's blocks a villager riding in a boat in the cart would put its eyes into on the way in, in the hall's
+     * frame: the wall over the doorway and the lintel over the cell's front (each a third block over the rail). Taken
+     * out for the ride and put back after.
+     */
+    public static List<Pos> overhead(int cells, TradingHall.Cell cell) {
+        int door = TradingHall.width(cells) / 2;
+        return List.of(new Pos(door, 3, TradingHall.FRONT_WALL), new Pos(cell.stand().x(), 3, TradingHall.FRONT));
+    }
+
+    private static List<Pos> insideRails(int cells, TradingHall.Cell cell) {
         int door = TradingHall.width(cells) / 2, x = cell.stand().x();
         var rails = new ArrayList<Pos>();
         rails.add(new Pos(door, 1, TradingHall.FRONT_WALL));
@@ -67,6 +97,12 @@ public final class RailRoute {
      * crossed on a bridge block at its top; the villager, the cart's place and the push stand on firm ground.
      */
     public static Optional<Route> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Cell cell) {
+        return plan(ground, villagerX, villagerZ, origin, cells, cell, CART_ROOM);
+    }
+
+    /** As {@link #plan(BaseSite.Ground, int, int, Pos, int, TradingHall.Cell)}, with {@code room} open blocks over each rail. */
+    public static Optional<Route> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Cell cell, int room) {
+        if (room < CART_ROOM) throw new IllegalArgumentException("A line needs at least " + CART_ROOM + " open blocks over it");
         var in = approach(cells);
         int goalX = origin.x() + in.x(), goalZ = origin.z() + in.z();
         // The goal is reached heading north, straight in at the door: from the column south of it.
@@ -74,11 +110,14 @@ public final class RailRoute {
         java.util.function.BiFunction<Integer, Integer, Optional<BaseSite.Column>> at = (x, z) ->
                 ground_.computeIfAbsent(((long) x << 32) ^ (z & 0xffffffffL), k -> ground.at(x, z));
         var goalColumn = at.apply(goalX, goalZ);
-        if (goalColumn.isEmpty() || !railable(goalColumn.get()) || goalColumn.get().top() != origin.y() - 1) return Optional.empty();
+        // Its rail climbs into the doorway: the slope's room is the column's.
+        if (goalColumn.isEmpty() || !railable(goalColumn.get(), room + 1) || goalColumn.get().top() != origin.y() - 1) return Optional.empty();
         var start = at.apply(villagerX, villagerZ);
-        if (start.isEmpty() || !railable(start.get())) return Optional.empty();
+        if (start.isEmpty() || !railable(start.get(), room)) return Optional.empty();
+        int villagerTop = start.get().top(), run = runUp(room);
         // A search over columns and the way the line came into them: cheapest first (a rail a column, a bridge's block
-        // one more), fewest turns among the cheapest.
+        // one more), fewest turns among the cheapest. It sets out from the villager only the ways that leave room behind
+        // it, on level ground, for the cart's run-up and the push.
         record State(int x, int z, int heading) { }
         record Seen(State from, int length, int bridges, int turns) {
             int cost() {
@@ -89,6 +128,13 @@ public final class RailRoute {
         var seen = new HashMap<State, Seen>();
         var queue = new PriorityQueue<Queued>(Comparator.comparingInt(Queued::cost).thenComparingInt(Queued::turns));
         for (int h = 0; h < 4; h++) {
+            boolean room_ = true;
+            for (int back = 1; back <= run && room_; back++) {
+                var behind = at.apply(villagerX - SIDES[h][0] * back, villagerZ - SIDES[h][1] * back);
+                room_ = behind.isPresent() && railable(behind.get(), room) && behind.get().top() == villagerTop;
+            }
+            var push = at.apply(villagerX - SIDES[h][0] * (run + 1), villagerZ - SIDES[h][1] * (run + 1));
+            if (!room_ || push.isEmpty() || !push.get().firm() || push.get().open() < 2 || Math.abs(push.get().top() - villagerTop) > 1) continue;
             var s = new State(villagerX, villagerZ, h);
             seen.put(s, new Seen(null, 0, 0, 0));
             queue.add(new Queued(s, 0, 0));
@@ -104,13 +150,18 @@ public final class RailRoute {
                 break;
             }
             if (here.length() >= MAX_LENGTH) continue;
-            int top = at.apply(s.x(), s.z()).orElseThrow().top();
+            var column = at.apply(s.x(), s.z()).orElseThrow();
+            int top = column.top();
             for (int h = 0; h < 4; h++) {
                 if (here.from() != null && h == (s.heading() + 2) % 4) continue;
+                // Out from the villager the way it set out, its run-up behind it.
+                if (here.from() == null && h != s.heading()) continue;
                 int nx = s.x() + SIDES[h][0], nz = s.z() + SIDES[h][1];
                 var next = at.apply(nx, nz);
-                if (next.isEmpty() || !(railable(next.get()) || bridgeable(next.get())) || Math.abs(next.get().top() - top) > 1) continue;
-                boolean bridge = !railable(next.get());
+                if (next.isEmpty() || !(railable(next.get(), room) || bridgeable(next.get(), room)) || Math.abs(next.get().top() - top) > 1) continue;
+                // A step's slope lies in its lower column, which needs the room the rider's eyes reach at its top end.
+                if (next.get().top() > top && column.open() < room + 1 || next.get().top() < top && next.get().open() < room + 1) continue;
+                boolean bridge = !railable(next.get(), room);
                 if (bridge && here.bridges() >= MAX_BRIDGE) continue;
                 boolean turn = here.from() != null && h != s.heading();
                 // No turn where the line climbs or falls into or out of the column.
@@ -128,38 +179,32 @@ public final class RailRoute {
         if (end == null) return Optional.empty();
         var columns = new ArrayList<State>();
         for (State s = end; s != null; s = seen.get(s).from()) columns.add(0, s);
-        // Two rails behind the villager, against the line's first step, on level ground: the cart's and its run-up's.
-        int first = columns.size() > 1 ? columns.get(1).heading() : 0;
+        // The run-up's rails behind the villager, against the line's first step, on level ground: the cart's place first.
+        int first = columns.getFirst().heading();
         int bx = -SIDES[first][0], bz = -SIDES[first][1];
-        int villagerTop = start.get().top();
         var rails = new ArrayList<Pos>();
-        for (int back = 2; back >= 1; back--) {
-            var behind = at.apply(villagerX + bx * back, villagerZ + bz * back);
-            if (behind.isEmpty() || !railable(behind.get()) || behind.get().top() != villagerTop) return Optional.empty();
-            rails.add(new Pos(villagerX + bx * back, villagerTop + 1, villagerZ + bz * back));
-        }
+        for (int back = run; back >= 1; back--) rails.add(new Pos(villagerX + bx * back, villagerTop + 1, villagerZ + bz * back));
         var bridge = new ArrayList<Pos>();
         for (var s : columns) {
             var column = at.apply(s.x(), s.z()).orElseThrow();
-            if (!railable(column)) bridge.add(new Pos(s.x(), column.top(), s.z()));
+            if (!railable(column, room)) bridge.add(new Pos(s.x(), column.top(), s.z()));
             rails.add(new Pos(s.x(), column.top() + 1, s.z()));
         }
         // Where the push starts: behind the cart, on the ground the run-up is on.
-        var push = at.apply(villagerX + bx * 3, villagerZ + bz * 3);
-        if (push.isEmpty() || !push.get().firm() || push.get().open() < 2 || Math.abs(push.get().top() - villagerTop) > 1) return Optional.empty();
+        var push = at.apply(villagerX + bx * (run + 1), villagerZ + bz * (run + 1)).orElseThrow();
         for (var p : inside(cells, cell)) rails.add(new Pos(origin.x() + p.x(), origin.y() + p.y(), origin.z() + p.z()));
         return Optional.of(new Route(rails, rails.getFirst(), new Pos(villagerX, villagerTop + 1, villagerZ),
-                new Pos(villagerX + bx * 3, push.get().top() + 1, villagerZ + bz * 3), bridge));
+                new Pos(villagerX + bx * (run + 1), push.top() + 1, villagerZ + bz * (run + 1)), bridge));
     }
 
-    /** Ground a rail can lie on: firm, with room over it for the cart and the villager in it. */
-    private static boolean railable(BaseSite.Column column) {
-        return column.firm() && column.open() >= 2;
+    /** Ground a rail can lie on: firm, with {@code room} open over it for the cart and the villager riding. */
+    private static boolean railable(BaseSite.Column column, int room) {
+        return column.firm() && column.open() >= room;
     }
 
     /** Water a rail can be laid over on a bridge block at its top, with room over it as on the ground. */
-    private static boolean bridgeable(BaseSite.Column column) {
-        return column.water() && column.open() >= 2;
+    private static boolean bridgeable(BaseSite.Column column, int room) {
+        return column.water() && column.open() >= room;
     }
 
     /** The rails a route takes, and the iron and sticks they are made of (six iron and a stick make sixteen). */
