@@ -24,8 +24,10 @@ import java.util.function.Supplier;
 /**
  * A boat taken onto the water and back, as a player crosses water with one. {@code launch} puts one owned boat on the
  * water within reach and gets in: one boat item is spent under the ledger, and the boat is then in the world. {@code
- * board} gets into an empty boat within reach. {@code land} gets out and breaks the boat with ordinary hits, so it
- * drops as an item to be picked up again; nothing owned is lost. Rowing is {@link NativeRowSkill}'s, between them.
+ * board} gets into an empty boat within reach, or the one named (one holding a villager: a player takes the front
+ * seat, the villager moving to the back). {@code land} gets out and breaks the boat with ordinary hits, so it drops as
+ * an item to be picked up again, or leaves it on the water if another rider is still in it; nothing owned is lost.
+ * Rowing is {@link NativeRowSkill}'s, between them.
  * {@code place} puts one owned boat down on top of a block without getting in (E-45e: just beside a villager, which it
  * takes up, so that the villager stays put); {@code break} breaks a boat within reach, whoever is in it set down where
  * it sat, its item dropped to be picked up again.
@@ -93,7 +95,8 @@ final class NativeBoatAction extends NativeRecordedAction {
                 }
                 case BOARD -> {
                     if (player.hasVehicle()) return Step.blocked("Already in a boat", true);
-                    if (nearestEmptyBoat() == null) return Step.blocked("No empty boat within reach", true);
+                    if (target != null ? !(player.getServerWorld().getEntity(target) instanceof BoatEntity b) || !b.isAlive() || !player.canInteractWithEntity(b, 0)
+                            : nearestEmptyBoat() == null) return Step.blocked(target != null ? "The boat is out of reach" : "No empty boat within reach", true);
                 }
                 case LAND -> {
                     if (body.boat().isEmpty()) return Step.blocked("Not in a boat", true);
@@ -142,7 +145,7 @@ final class NativeBoatAction extends NativeRecordedAction {
             started = true;
             return switch (mode) {
                 case LAUNCH -> launch();
-                case BOARD -> board(nearestEmptyBoat());
+                case BOARD -> board(target != null && player.getServerWorld().getEntity(target) instanceof BoatEntity b ? b : nearestEmptyBoat());
                 case LAND -> leave();
                 case PLACE -> place();
                 case BREAK -> {
@@ -277,8 +280,9 @@ final class NativeBoatAction extends NativeRecordedAction {
             return settle(null, Map.of("picked", "true"));
         }
         boatAt = target.getBlockPos();
-        if (++waited > BREAK_TICKS || !player.canInteractWithEntity(target, 0)) {
-            return settle(null, Map.of("left", boatAt.toShortString())); // Out, with the boat left on the water.
+        // Out, with the boat left on the water: out of reach, or holding another rider (a villager it brought across).
+        if (++waited > BREAK_TICKS || !player.canInteractWithEntity(target, 0) || target.hasPassengers()) {
+            return settle(null, Map.of("left", boatAt.toShortString()));
         }
         if (player.getAttackCooldownProgress(0.5f) >= 1f) body.strikeBoat(lease.get(), target);
         return waiting();

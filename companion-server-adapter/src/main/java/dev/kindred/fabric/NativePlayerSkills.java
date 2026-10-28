@@ -79,7 +79,7 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_boat" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target", "hx", "hz"), Set.of(), Set.of(),
                     Duration.ofSeconds(12), Duration.ofSeconds(10), 0);
-            case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds"), Set.of("move"), Set.of(),
+            case "native_row" -> new SkillDescriptor(id, Set.of("x", "z"), Set.of("range", "seconds", "land"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(125), Duration.ofSeconds(10), 0);
             // A minecart put on a rail, or broken to take it back (E-45e).
             case "native_cart" -> new SkillDescriptor(id, Set.of("mode"), Set.of("slot", "x", "y", "z", "target"), Set.of(), Set.of(),
@@ -195,7 +195,8 @@ final class NativePlayerSkills {
         }
         if (id.equals("native_row")) {
             return new NativeRowSkill(body, lease, Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("z")),
-                    Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")));
+                    Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")),
+                    Boolean.parseBoolean(arguments.getOrDefault("land", "false")));
         }
         if (id.equals("native_gate")) {
             return new Gate(body, lease, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),

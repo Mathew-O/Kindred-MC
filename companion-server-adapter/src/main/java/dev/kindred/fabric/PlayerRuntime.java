@@ -5908,6 +5908,10 @@ final class PlayerRuntime {
         }
         // A step of bringing a villager home done, the next one planned from what it did; refused, counted (E-45e).
         if (entry.bring != null && state != SkillRunner.State.RUNNING && finishedTaskId != null && entry.bring.taskIds.contains(finishedTaskId)) {
+            if ("native_row".equals(entry.skillId)) {
+                entry.bring.rows++;
+                KindredMod.LOGGER.info("{} bringing: a row ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
+            }
             if ("native_push".equals(entry.skillId)) {
                 entry.bring.pushes++;
                 KindredMod.LOGGER.info("{} bringing: a push ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
@@ -7613,7 +7617,8 @@ final class PlayerRuntime {
      * line and put back after; the rails it lays it takes up again; nothing owned is left but what holds the villager.
      */
     private static final class Bring {
-        enum Phase { HOLD, BRIDGE, DOOR, OPEN, LAY, CART, PUSH, RECART, ROLL, LINTEL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, UNBRIDGE, DOOR_BACK }
+        enum Phase { HOLD, BOARD, ROW, LAND, BRIDGE, DOOR, OPEN, LAY, CART, PUSH, RECART, ROLL, LINTEL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, UNBRIDGE,
+            DOOR_BACK }
 
         final UUID villager;
         final String noun;
@@ -7633,6 +7638,16 @@ final class PlayerRuntime {
         int boatTries;
         /** The boat step it is at while holding the villager, kept to while it runs (its boat spent, it is not "no boat"). */
         NativeTaskCandidate boatStep;
+        /**
+         * Across water no line is laid over, the way it rows the villager in its boat to the far bank; once across, the
+         * bank's column beside the boat the line runs along (the cart, rolling past, takes the boat up from the water);
+         * its rows, and where the first began.
+         */
+        dev.kindred.core.construction.WaterCrossing.Crossing crossing;
+        boolean crossed;
+        BlockPos dock;
+        int rows;
+        Vec3d rowFrom;
         /** The hall's blocks taken out over the line for a villager riding in its boat, and what each was, to put back. */
         final Map<BlockPos, net.minecraft.block.BlockState> opened = new LinkedHashMap<>();
         final String wood;
@@ -7640,7 +7655,7 @@ final class PlayerRuntime {
         Phase phase = Phase.BRIDGE;
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
-        int pushes, failed, doorTries, pickups;
+        int pushes, failed, doorTries, pickups, fetchWaits;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -7708,15 +7723,18 @@ final class PlayerRuntime {
      * from two rails behind the villager to a free cell's floor, puts the cart down behind it and pushes it: rolling, the
      * cart takes the villager up and runs on into the cell, against its bed (pushed again where it stops short). It shuts
      * the cell's front with the plain block, breaks the cart through the opening above (the villager set down inside, on
-     * its bed), takes the plain block back, steps into the front for the cart and the floor's rail, steps out and puts the
-     * job block there, which shuts the villager in. Then it takes up its rails and puts the door back. Where the line
+     * its bed), takes the plain block back, steps into the front for the cart, steps out and puts the job block there,
+     * which shuts the villager in. Then it takes up its rails, but the one on the cell's floor, and puts the door back. Where the line
      * crosses water it first puts down a bridge of plain blocks for it, from the bank it is on, and takes the bridge back
      * after its rails, toward the hall. A villager that strolls (its AI on) it first holds in a boat it puts down just
      * beside it, as players do, and lays the line from where it sits, with room for its ride: the cart takes the boat up
      * with the villager in it, a block higher than a villager in the cart alone, so the line needs three open over each
      * rail and three of run-up, and the wall over the hall's doorway and the cell's lintel are taken out for it (with a
      * tool that takes them) and put back after, the lintel before the cell is shut. In the cell it breaks the boat (the
-     * villager set down on the cart's top), then the cart. Under the server's AI world edits only, never in a match.
+     * villager set down on the cart's top), then the cart. Across water no line is laid over (or whose bridge wants more
+     * plain blocks than it has), it gets in the boat with the villager, rows it over (WaterCrossing), gets out on the far
+     * bank and lays the line along the bank past the boat, which the cart takes up from the water as it rolls by. Under the
+     * server's AI world edits only, never in a match.
      */
     private List<NativeTaskCandidate> bringCandidates(Entry entry, NativePlayerBody body) {
         var player = body.entity();
@@ -7764,6 +7782,13 @@ final class PlayerRuntime {
                 b.boatStep = null;
                 if (villager.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                     b.boatId = boat.getUuid();
+                    // Held for the crossing: into the boat with it, to row it over.
+                    if (b.crossing != null && !b.crossed) {
+                        KindredMod.LOGGER.info("{} bringing: the {} held in a boat at {}, to row it across to {}", entry.data.displayName(), b.noun,
+                                villager.getBlockPos().toShortString(), b.crossing.landing());
+                        b.phase = Bring.Phase.BOARD;
+                        return bringCandidates(entry, body);
+                    }
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
                             new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
                             dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
@@ -7851,6 +7876,80 @@ final class PlayerRuntime {
                 }
                 b.boatStep = new NativeTaskCandidate(hold, "native_boat", Map.copyOf(args));
                 return List.of(b.boatStep);
+            }
+            case BOARD -> {
+                // Into the boat that holds the villager: the player takes its front seat, the villager the back.
+                var boat = heldBoat(world, b);
+                if (boat == null) return giveUp(entry, body, "The " + b.noun + " got out of its boat.");
+                if (player.getVehicle() == boat) {
+                    b.phase = Bring.Phase.ROW;
+                    if (b.rowFrom == null) b.rowFrom = boat.getPos();
+                    return bringCandidates(entry, body);
+                }
+                if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(bringTask(entry, "to board"), boat.getBlockPos()));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "board:" + b.rows), "native_boat", Map.of("mode", "board", "target", boat.getUuid().toString())));
+            }
+            case ROW -> {
+                // Over the ground it sits on into the water, and across to the water by the far bank.
+                var boat = heldBoat(world, b);
+                if (boat == null) return giveUp(entry, body, "The " + b.noun + " got out of its boat.");
+                if (player.getVehicle() != boat) {
+                    b.phase = Bring.Phase.BOARD;
+                    return bringCandidates(entry, body);
+                }
+                var water = b.crossing.water();
+                double wx = water.x() + 0.5, wz = water.z() + 0.5;
+                double left = Math.hypot(boat.getX() - wx, boat.getZ() - wz);
+                // There, or aground against the far bank well across (a row ends at the first shore met afloat).
+                boolean ashore = b.rows > 0 && boat.isTouchingWater() && left < b.rowFrom.distanceTo(new Vec3d(wx, b.rowFrom.y, wz)) / 2;
+                if (left <= 2.5 || ashore) {
+                    KindredMod.LOGGER.info("{} bringing: rowed the {} across to {} ({} rows), {} off the landing", entry.data.displayName(), b.noun,
+                            boat.getBlockPos().toShortString(), b.rows, String.format(java.util.Locale.ROOT, "%.1f", left));
+                    b.phase = Bring.Phase.LAND;
+                    return bringCandidates(entry, body);
+                }
+                if (b.rows >= 4) return giveUp(entry, body, "I couldn't row the " + b.noun + " across.");
+                return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", wx),
+                        "z", String.format(java.util.Locale.ROOT, "%.2f", wz), "range", "1.5", "seconds", "90", "land", "true")));
+            }
+            case LAND -> {
+                // Out onto the bank, the villager left sitting in the boat on the water: let go of there, it would wade or
+                // swim back to its work across the water.
+                if (player.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "out:" + b.rows), "native_boat", Map.of("mode", "land")));
+                }
+                var boat = heldBoat(world, b);
+                if (boat == null) return giveUp(entry, body, "The " + b.noun + " got out of its boat.");
+                // The line laid along the bank past the boat: a rolling empty cart takes up a boat its box comes within a
+                // fifth of a block of, there beside its rail as well as before it, and carries it on, villager and all.
+                var ground = bringGround(world, b);
+                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex);
+                var hallAt = new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ());
+                dev.kindred.core.construction.RailRoute.Route best = null;
+                BlockPos dock = null;
+                for (var d : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
+                    var bank = boat.getBlockPos().offset(d);
+                    // Close enough for the cart's box, passing the bank column's middle, to meet the boat's.
+                    if (Math.hypot(boat.getX() - (bank.getX() + 0.5), boat.getZ() - (bank.getZ() + 0.5)) > 1.3) continue;
+                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, cell,
+                            dev.kindred.core.construction.RailRoute.BOAT_ROOM);
+                    if (line.isEmpty() || !line.get().bridge().isEmpty()) continue;
+                    if (best == null || line.get().rails().size() < best.rails().size()) {
+                        best = line.get();
+                        dock = bank;
+                    }
+                }
+                if (best == null) return giveUp(entry, body, "No line along the bank past the " + b.noun + "'s boat.");
+                b.rails = best.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
+                b.cart = new BlockPos(best.cart().x(), best.cart().y(), best.cart().z());
+                b.push = new BlockPos(best.push().x(), best.push().y(), best.push().z());
+                b.bridge = List.of();
+                b.dock = new BlockPos(dock.getX(), best.villager().y(), dock.getZ());
+                b.crossed = true;
+                KindredMod.LOGGER.info("{} bringing: across, the {} in its boat at {}; the line along the bank past it at {}, {} rails", entry.data.displayName(),
+                        b.noun, boat.getBlockPos().toShortString(), b.dock.toShortString(), b.rails.size());
+                b.phase = Bring.Phase.BRIDGE;
+                return bringCandidates(entry, body);
             }
             case BRIDGE -> {
                 // Over the water first, from the bank it is on: the way to the hall's door and back is over it.
@@ -7954,7 +8053,8 @@ final class PlayerRuntime {
                 }
                 if (cart.getVelocity().horizontalLength() > 0.01) return List.of(waitTask(task, "For the cart"));
                 // Off the line the cart will run along (wandered, or pushed aside): the line laid again from where it stands.
-                int on = b.rails.indexOf(villager.getBlockPos());
+                // Across the water, its boat floats beside the line, by the bank's column it runs past.
+                int on = b.rails.indexOf(b.crossed ? b.dock : villager.getBlockPos());
                 if (on < 1 || on > 4) {
                     if (b.replans >= 4) return giveUp(entry, body, "The " + b.noun + " kept wandering off the line.");
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
@@ -8108,17 +8208,24 @@ final class PlayerRuntime {
                     if (!reaches(player, shut)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                     return List.of(breakAt(bringTask(entry, "unshut"), shut));
                 }
-                boolean cartLying = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(b.floor).expand(0.5, 1, 0.5),
-                        item -> item.getStack().isOf(Items.MINECART) || item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)).isEmpty();
-                boolean railLeft = world.getBlockState(b.floor).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
-                if (cartLying || railLeft) {
-                    // Into the cell's front for them: the cart picked up where it lies, the floor's rail taken up.
+                // The cart and the boat dropped in the cell as they broke, anywhere from its floor to its bed. The floor's rail
+                // is left to the cell, as players leave one: broken, it as often popped onto the bed, out of reach from the
+                // front, as anywhere. What falls there, out of reach, it leaves lying and says so; it does not wait on it.
+                var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
+                var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                        item -> item.isAlive() && (item.getStack().isOf(Items.MINECART) || item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
+                if (!lying.isEmpty()) {
+                    // Into the cell's front for them, where they are picked up from.
                     if (!player.getBlockPos().equals(b.slot)) {
                         return List.of(new NativeTaskCandidate(bringTask(entry, "in"), "native_goto", Map.of("x", String.valueOf(b.slot.getX()),
                                 "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "range", "0", "centre", "true")));
                     }
-                    if (railLeft) return List.of(breakAt(bringTask(entry, "floor rail"), b.floor));
-                    return List.of(waitTask(task, "For the cart to be picked up"));
+                    if (b.fetchWaits++ < 40) return List.of(waitTask(task, "For the cart to be picked up"));
+                    for (var item : lying) {
+                        KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach from its front", entry.data.displayName(),
+                                item.getStack(), b.noun, item.getPos());
+                        b.unreached.add(item.getBlockPos());
+                    }
                 }
                 b.phase = Bring.Phase.CLOSE;
                 return bringCandidates(entry, body);
@@ -8142,6 +8249,10 @@ final class PlayerRuntime {
                         "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
             }
             case UNDO -> {
+                // Given up afloat: out onto the bank first.
+                if (player.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "undo out"), "native_boat", Map.of("mode", "land")));
+                }
                 // Given up with the villager still in its boat: the boat broken first, the villager set down where it sat.
                 if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                     if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(task, boat.getBlockPos()));
@@ -8308,6 +8419,21 @@ final class PlayerRuntime {
             }
             var route = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
                     new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+            // By boat across water where no line is laid over it, or where its bridge wants more plain blocks than it has:
+            // held in a boat, rowed over, let go of on the far bank and held again there (one that strolls only: one that
+            // does not would not wade ashore). Its line from the far bank, with a boat's room, is what the bill is made by.
+            dev.kindred.core.construction.WaterCrossing.Crossing crossing = null;
+            int bridgeBlocks = route.map(r -> (int) r.bridge().stream().filter(p -> world.getBlockState(new BlockPos(p.x(), p.y(), p.z())).isReplaceable()).count()).orElse(0);
+            boolean shortForBridge = bridgeBlocks > 0 && (shutterSlot(player) < 0 ? 0 : plainBlocks(player)) < 1 + bridgeBlocks;
+            if ((route.isEmpty() || shortForBridge) && !villager.isAiDisabled() && boatSlot(player) >= 0
+                    && opensOverhead(player, origin, hall.cells(), cells.indexOf(free))) {
+                var across = dev.kindred.core.construction.WaterCrossing.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
+                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                if (across.isPresent()) {
+                    crossing = across.get();
+                    route = Optional.of(crossing.home());
+                }
+            }
             if (route.isEmpty()) {
                 if (!("No rail line from the " + noun + " to its cell").equals(entry.bringNote)) {
                     KindredMod.LOGGER.info("{} bringing: no line from the {} at {} (from the hall, {}) to cell {}", entry.data.displayName(), noun,
@@ -8361,6 +8487,11 @@ final class PlayerRuntime {
                     floor, slot, door, origin, hall.cells(), cells.indexOf(free), hall.wood(), jobBlock);
             // One that strolls is held in a boat while the line is laid, where it has one to put down on it.
             if (!villager.isAiDisabled() && boatSlot(player) >= 0) bring.phase = Bring.Phase.HOLD;
+            if (crossing != null) {
+                bring.crossing = crossing;
+                KindredMod.LOGGER.info("{} bringing: the {} across the water by boat, landing at {} ({} blocks rowed)", entry.data.displayName(), noun,
+                        crossing.landing(), String.format(java.util.Locale.ROOT, "%.0f", crossing.row()));
+            }
             return bring;
         }
         return null;
@@ -8542,7 +8673,12 @@ final class PlayerRuntime {
 
     /** Whether it can take out the hall's blocks over the line, and so keep what they drop to put back: a tool that takes each. */
     private static boolean opensOverhead(ServerPlayerEntity player, Bring b) {
-        for (var at : overhead(b)) {
+        return opensOverhead(player, b.origin, b.cells, b.cellIndex);
+    }
+
+    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, int cellIndex) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, dev.kindred.core.construction.TradingHall.cells(cells).get(cellIndex))) {
+            var at = origin.add(p.x(), p.y(), p.z());
             var state = player.getServerWorld().getBlockState(at);
             if (state.isAir() || !state.isToolRequired()) continue;
             boolean takes = false;
