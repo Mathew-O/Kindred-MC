@@ -8,6 +8,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks a few ground rules together: politeness in doorways, how many AI players may be
+ * awake, that model advice can only name real actions, and that removal tokens work once.
+ */
 class PlayContractsTest {
     @Test
     void courtesyWaitsInADoorwayAndDoesNotSprintThere() {

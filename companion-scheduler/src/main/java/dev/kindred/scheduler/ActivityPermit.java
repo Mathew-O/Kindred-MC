@@ -7,7 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Short prepaid activity boundary. Construct only from the durable reservation acknowledgement;
+ * In plain terms: the ticket that lets a player act for a few seconds. It is made only after the paid time
+ * slice has been safely written to the database, and it runs out on its own: when it does, the player has to
+ * stop until a new slice is paid for.
+ *
+ * Technical: Short prepaid activity boundary. Construct only from the durable reservation acknowledgement;
  * this value does not prove persistence or grant admission/world authority. Runtime must revoke
  * its action lease on the first failed check, never resurrect a permit after a failed deadline.
  */
@@ -30,6 +34,9 @@ public final class ActivityPermit {
         availableNanos = Duration.ofMillis(millis).toNanos();
     }
 
+    /**
+     * Makes a permit from a slice the database has just confirmed; empty if the slice has already run out.
+     */
     public static Optional<ActivityPermit> acknowledged(BudgetState state, UUID expectedReservation, Instant wall, long nanos) {
         Objects.requireNonNull(state);
         Objects.requireNonNull(expectedReservation);
@@ -45,6 +52,10 @@ public final class ActivityPermit {
     public long sequence() { return sequence; }
     public Duration maximumActiveTime() { return Duration.ofNanos(availableNanos); }
 
+    /**
+     * Whether this permit still lets the given player act right now. Checked again and again while a skill
+     * runs.
+     */
     public boolean allows(UUID player, Instant wall, long nanos) {
         Objects.requireNonNull(wall);
         // Subtraction supports System.nanoTime's normal signed wrap; a backwards sample fails closed.
@@ -67,6 +78,10 @@ public final class ActivityPermit {
         return Optional.of(Duration.ofMillis((bounded + 999_999) / 1_000_000));
     }
 
+    /**
+     * Works out how much of the slice was really used and gives back the rest, rounding up so uncertainty is
+     * never free.
+     */
     public BudgetState settle(BudgetState acknowledged, long nanos) {
         Objects.requireNonNull(acknowledged);
         if (!acknowledged.companionId().equals(playerId) || acknowledged.sequence() != sequence || !acknowledged.period().equals(period)

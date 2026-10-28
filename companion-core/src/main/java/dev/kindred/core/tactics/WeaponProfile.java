@@ -5,7 +5,10 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Immutable snapshot of an owned weapon or tool, including slot, item type, attributes,
+ * In plain terms: what the player knows about one weapon it owns: which slot it is in, what it is, its damage
+ * and speed, how worn it is and its enchantments.
+ *
+ * Technical: Immutable snapshot of an owned weapon or tool, including slot, item type, attributes,
  * durability, and applicable enchantments.
  */
 public record WeaponProfile(
@@ -86,6 +89,7 @@ public record WeaponProfile(
             "power", "punch", "flame", "infinity", "quick_charge", "multishot", "piercing"
     );
 
+    /** The item's id in a standard form. */
     public String normalizedItemId() {
         String clean = itemId.toLowerCase(java.util.Locale.ROOT);
         if (clean.startsWith("minecraft:")) {
@@ -94,6 +98,7 @@ public record WeaponProfile(
         return "minecraft:" + clean;
     }
 
+    /** What kind of weapon it is (sword, axe, bow...). */
     public WeaponCategory category() {
         return switch (normalizedItemId()) {
             case "minecraft:wooden_sword", "minecraft:stone_sword", "minecraft:iron_sword",
@@ -108,26 +113,32 @@ public record WeaponProfile(
         };
     }
 
+    /** Whether it is a trident. */
     public boolean isTrident() {
         return category() == WeaponCategory.TRIDENT;
     }
 
+    /** Whether it is a mace. */
     public boolean isMace() {
         return category() == WeaponCategory.MACE;
     }
 
+    /** Whether it is a bow. */
     public boolean isBow() {
         return category() == WeaponCategory.BOW;
     }
 
+    /** Whether it is a crossbow. */
     public boolean isCrossbow() {
         return category() == WeaponCategory.CROSSBOW;
     }
 
+    /** Whether it has a certain enchantment. */
     public boolean hasEnchantment(String enchantmentId) {
         return enchantmentLevel(enchantmentId) > 0;
     }
 
+    /** Whether it has enchantments the combat maths does not know. */
     public boolean hasUnknownEnchantments() {
         for (String ench : enchantments.keySet()) {
             String clean = ench.toLowerCase(java.util.Locale.ROOT);

@@ -23,8 +23,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Native contracts for habits: command grammar, world-probed hard bounds and stop fencing. These do not
- * establish the visual quality of sprint-jumping or a live attention pause; see E-32/E-33 for that evidence.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that habit commands work
+ * and habits stay within their limits.
+ *
+ * Technical: Native contracts for habits: command grammar, world-probed hard bounds and stop fencing. These
+ * do not establish the visual quality of sprint-jumping or a live attention pause; see E-32/E-33 for that
+ * evidence.
  */
 public final class MannerismGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE)

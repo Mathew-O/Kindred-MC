@@ -4,7 +4,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * A concrete evaluated tactical candidate with its sequence, predicted outcome envelope,
+ * In plain terms: one possible fight plan, with how it is expected to turn out and a short description.
+ *
+ * Technical: A concrete evaluated tactical candidate with its sequence, predicted outcome envelope,
  * and explanatory description.
  */
 public record TacticalOption(

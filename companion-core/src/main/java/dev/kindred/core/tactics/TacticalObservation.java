@@ -6,7 +6,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Immutable threat context observed at a specific server tick and body generation.
+ * In plain terms: a snapshot of a fight at one moment: the player's health, armour and weapons, and the mobs
+ * around it (only a limited number, so thinking stays quick).
+ *
+ * Technical: Immutable threat context observed at a specific server tick and body generation.
  * Limits the number of observed entities and weapon candidates to prevent compute spikes.
  */
 public record TacticalObservation(
@@ -84,6 +87,7 @@ public record TacticalObservation(
                 List.copyOf(observedMobs.subList(0, Math.min(observedMobs.size(), MAX_OBSERVED_MOBS)));
     }
 
+    /** Whether this snapshot is out of date. */
     public boolean isStale(long currentTick, long currentBodyGeneration) {
         return this.bodyGeneration != currentBodyGeneration || currentTick < this.tick || (currentTick - this.tick > 20);
     }

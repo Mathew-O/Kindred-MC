@@ -6,7 +6,11 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Pure decision controller for IDLE_OBSERVING mode and in-game waiting states.
+ * In plain terms: what a player does while it waits with nothing to do: meets the eyes of a person looking at
+ * it, picks up something interesting dropped nearby, notices a landmark, or strolls around within a small
+ * radius and comes back.
+ *
+ * Technical: Pure decision controller for IDLE_OBSERVING mode and in-game waiting states.
  */
 public final class IdleObservationController {
 
@@ -83,6 +87,7 @@ public final class IdleObservationController {
             Optional<String> ambientChatRemark
     ) { }
 
+    /** What to do next while waiting, from what it can see. */
     public static IdleActionPlan evaluate(IdleObservationInput input) {
         Objects.requireNonNull(input, "input");
         int radius = Math.clamp(

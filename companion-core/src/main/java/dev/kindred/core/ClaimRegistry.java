@@ -10,14 +10,19 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 /**
- * Central, all-or-nothing coordination of block/container/region keys between companions. A claim carries a
- * monotonically increasing fencing token and an expiry; a stale holder can neither renew nor release what a
- * newer holder owns. Claims coordinate companions only: players still change the world, so the adapter
- * rechecks identity, permission and version immediately before mutation.
+ * In plain terms: the dibs list. Before a player works on a block, a chest or an area, it claims it, so two
+ * AI players never fight over the same tree or chest. Claims run out after a while, and a newer claim always
+ * beats an older one.
+ *
+ * Technical: Central, all-or-nothing coordination of block/container/region keys between companions. A claim
+ * carries a monotonically increasing fencing token and an expiry; a stale holder can neither renew nor
+ * release what a newer holder owns. Claims coordinate companions only: players still change the world, so the
+ * adapter rechecks identity, permission and version immediately before mutation.
  */
 public final class ClaimRegistry {
     public static final long MAX_TTL_MILLIS = 5 * 60_000L;
 
+    /** A successful claim: who holds it, on what, and until when. */
     public record Grant(UUID taskId, UUID epoch, Set<String> keys, long token, long expiresAt) {
         public Grant {
             Objects.requireNonNull(taskId);
@@ -110,6 +115,7 @@ public final class ClaimRegistry {
         return true;
     }
 
+    /** Which job currently holds a claim on this thing, if any. */
     public Optional<UUID> holderOf(String key, long now) {
         Claim current = claims.get(Objects.requireNonNull(key));
         return current == null || expired(current, now) ? Optional.empty() : Optional.of(current.taskId());
@@ -119,6 +125,7 @@ public final class ClaimRegistry {
 
     private static boolean expired(Claim claim, long now) { return now >= claim.expiresAt(); }
 
+    /** Cleans up and sorts the claim keys so the same thing always has the same key. */
     private static Set<String> canonical(Collection<String> keys) {
         Objects.requireNonNull(keys);
         if (keys.isEmpty()) throw new IllegalArgumentException("Acquire at least one key");

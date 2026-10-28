@@ -15,7 +15,13 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 
-/** Native death and vanilla respawn: work settles before the drop, nothing is restored, the identity carries on. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that after death and
+ * respawn a player keeps who it is, and nothing is handed back for free.
+ *
+ * Technical: Native death and vanilla respawn: work settles before the drop, nothing is restored, the
+ * identity carries on.
+ */
 public final class NativeRespawnGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)

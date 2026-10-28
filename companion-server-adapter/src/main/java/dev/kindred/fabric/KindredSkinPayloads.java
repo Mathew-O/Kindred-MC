@@ -12,8 +12,12 @@ import net.minecraft.util.Uuids;
 import java.util.UUID;
 
 /**
- * Skin selector protocol for the optional client. The server sends the skin each AI player wears (the PNG itself,
- * since clients cannot read the server's folder) and, when a client opens the selector, the skins on offer.
+ * In plain terms: the messages for choosing skins with the optional client mod: the server sends each AI
+ * player's skin picture and, when you open the skin picker, the skins on offer.
+ *
+ * Technical: Skin selector protocol for the optional client. The server sends the skin each AI player wears
+ * (the PNG itself, since clients cannot read the server's folder) and, when a client opens the selector, the
+ * skins on offer.
  */
 final class KindredSkinPayloads {
     private KindredSkinPayloads() { }
@@ -55,6 +59,7 @@ final class KindredSkinPayloads {
         @Override public Id<? extends CustomPayload> getId() { return ID; }
     }
 
+    /** Tells Minecraft about these messages. */
     static void register() {
         PayloadTypeRegistry.playS2C().register(Binding.ID, Binding.CODEC);
         PayloadTypeRegistry.playC2S().register(CatalogRequest.ID, CatalogRequest.CODEC);

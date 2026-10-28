@@ -23,7 +23,10 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Acceptance GameTests for Guide 02:
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that AI players do not
+ * start until unfinished business from last time is sorted out.
+ *
+ * Technical: Acceptance GameTests for Guide 02:
  * 1. Pending startup ledger read blocks ready and connect.
  * 2. Failed startup ledger read closes store and leaves runtime not ready.
  * 3. Unresolved action rows in startup ledger block native entry.

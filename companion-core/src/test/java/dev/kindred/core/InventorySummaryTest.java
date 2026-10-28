@@ -6,6 +6,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the short summary of what a player is carrying.
+ */
 class InventorySummaryTest {
 
     @Test

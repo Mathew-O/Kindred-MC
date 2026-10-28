@@ -1,7 +1,10 @@
 package dev.kindred.core.tactics;
 
 /**
- * Categorical safety classification for tactical alternatives.
+ * In plain terms: how safe a fight plan is: survivable, for emergencies only, unknown, or not allowed. A
+ * safer plan always wins, whatever loot or kills a riskier one might bring.
+ *
+ * Technical: Categorical safety classification for tactical alternatives.
  * Self-preservation is a hard constraint: an option in a superior survival class
  * strictly outranks any option in an inferior survival class, regardless of property,
  * loot, kill rewards, or personality bias.
@@ -37,10 +40,12 @@ public enum SurvivalClass {
         this.rank = rank;
     }
 
+    /** Lower is safer. */
     public int rank() {
         return rank;
     }
 
+    /** Whether this is safer than another class. */
     public boolean isBetterThan(SurvivalClass other) {
         return this.rank < other.rank;
     }

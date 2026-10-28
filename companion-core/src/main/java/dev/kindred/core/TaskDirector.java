@@ -6,7 +6,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Trusted director that selects executable task candidates based on personality, mode, priority,
+ * In plain terms: picks the next job from the to-do list. Urgent jobs (like eating or escaping danger) come
+ * before project jobs, which come before routine ones; personality nudges the choice a little; and it only
+ * switches jobs when a new one is clearly better, so the player does not flip-flop.
+ *
+ * Technical: Trusted director that selects executable task candidates based on personality, mode, priority,
  * and need scores (F-17).
  *
  * <p>Rules:
@@ -143,10 +147,12 @@ public final class TaskDirector {
 
     private static final java.util.Set<UUID> FORBIDDEN_BOSS_TARGETS = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    /** Marks a job as one aimed at a boss, which is filtered out unless that fight is allowed. */
     public static void markBossTarget(UUID id) {
         FORBIDDEN_BOSS_TARGETS.add(Objects.requireNonNull(id));
     }
 
+    /** Whether a job is aimed at a boss and so filtered out. */
     public static boolean isForbiddenBossTarget(TaskPreferences.Candidate c) {
         return FORBIDDEN_BOSS_TARGETS.contains(c.id());
     }

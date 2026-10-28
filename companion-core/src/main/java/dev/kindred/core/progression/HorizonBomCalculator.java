@@ -1,7 +1,10 @@
 package dev.kindred.core.progression;
 
 /**
- * Lookahead horizon bill-of-materials batch targets for early survival milestones (EXEC-01).
+ * In plain terms: how much of the basics (logs, cobblestone, iron) to gather in one go before moving on, so a
+ * player does not keep running back for one more block. The amounts depend on its playstyle.
+ *
+ * Technical: Lookahead horizon bill-of-materials batch targets for early survival milestones (EXEC-01).
  */
 public final class HorizonBomCalculator {
 
@@ -11,6 +14,7 @@ public final class HorizonBomCalculator {
         IRON_INGOTS
     }
 
+    /** How many to gather in one trip for this playstyle. */
     public static int targetCount(HorizonResource resource, PlaystyleProfile profile) {
         PlaystyleProfile effective = profile == null ? PlaystyleProfile.OPTIMAL_SURVIVAL : profile.materialQuotaProfile();
         return switch (resource) {

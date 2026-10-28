@@ -1,3 +1,4 @@
+// Saving to disk: the AI players' records live in a SQLite database file.
 dependencies {
     api project(':companion-core')
     api project(':companion-scheduler')

@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Work for the end of the next server tick, for a wait that must not spin between ticks (a queued server task runs at
- * once whenever the tick has time to spare). Server thread only.
+ * In plain terms: runs a bit of work at the end of the next game tick, for waits that should not keep the
+ * server busy in between.
+ *
+ * Technical: Work for the end of the next server tick, for a wait that must not spin between ticks (a queued
+ * server task runs at once whenever the tick has time to spare). Server thread only.
  */
 final class NextTick {
     private static final List<Runnable> due = new ArrayList<>();
@@ -15,6 +18,7 @@ final class NextTick {
 
     private NextTick() { }
 
+    /** Runs the task at the end of the next tick. */
     static void run(Runnable task) {
         if (!registered) {
             registered = true;

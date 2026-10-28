@@ -3,7 +3,10 @@ package dev.kindred.core.attention;
 import java.util.Objects;
 
 /**
- * Immutable snapshot of an AI-player's current attention state and revision.
+ * In plain terms: a snapshot of a player's current attention mood (routine, alert, combat or recovering) at a
+ * given tick, and whether it may spend time on optional thinking.
+ *
+ * Technical: Immutable snapshot of an AI-player's current attention state and revision.
  *
  * @param tick server tick when this snapshot was evaluated
  * @param bodyGeneration body generation at evaluation time

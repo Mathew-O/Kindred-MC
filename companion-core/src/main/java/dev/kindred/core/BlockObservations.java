@@ -13,10 +13,14 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Immutable per-companion index of observed blocks of interest, keyed by chunk section. It is the bounded,
- * loaded, nearby observation WRLD-03 allows the brain to have: every fact has an observation time, sections
- * outside the current plan are absent, and nothing here is permission to act. Consumers recheck the live block
- * before any world action.
+ * In plain terms: everything a player currently knows about the blocks it is interested in nearby, sorted by
+ * chunk section. Every fact carries when it was seen and old facts are forgotten; it is knowledge, not
+ * permission, so the real block is always checked again before acting.
+ *
+ * Technical: Immutable per-companion index of observed blocks of interest, keyed by chunk section. It is the
+ * bounded, loaded, nearby observation WRLD-03 allows the brain to have: every fact has an observation time,
+ * sections outside the current plan are absent, and nothing here is permission to act. Consumers recheck the
+ * live block before any world action.
  */
 public record BlockObservations(String dimension, long version, Set<String> interest, Map<SectionKey, SectionFacts> sections) {
     public static final int MAX_SECTIONS = 128;
@@ -48,16 +52,19 @@ public record BlockObservations(String dimension, long version, Set<String> inte
         if (sections.size() > MAX_SECTIONS) throw new IllegalArgumentException("Observation index exceeds " + MAX_SECTIONS + " sections");
     }
 
+    /** Knowing nothing yet, in a dimension, about the given kinds of block. */
     public static BlockObservations empty(String dimension, Set<String> interest) {
         return new BlockObservations(dimension, 0, interest, Map.of());
     }
 
+    /** The same knowledge with one section's facts replaced by newer ones. */
     public BlockObservations withSection(SectionKey key, SectionFacts facts) {
         Map<SectionKey, SectionFacts> next = new HashMap<>(sections);
         next.put(Objects.requireNonNull(key), Objects.requireNonNull(facts));
         return new BlockObservations(dimension, version, interest, next);
     }
 
+    /** The same knowledge with one section forgotten. */
     public BlockObservations without(SectionKey key) {
         if (!sections.containsKey(key)) return this;
         Map<SectionKey, SectionFacts> next = new HashMap<>(sections);
@@ -77,12 +84,14 @@ public record BlockObservations(String dimension, long version, Set<String> inte
 
     public BlockObservations withVersion(long version) { return new BlockObservations(dimension, version, interest, sections); }
 
+    /** How many blocks of this kind it knows of, seen or buried. */
     public int matchCount(String blockId) {
         int total = 0;
         for (SectionFacts facts : sections.values()) total += facts.matches().getOrDefault(blockId, 0);
         return total;
     }
 
+    /** How many blocks of this kind it knows of that have an open side and so a known position. */
     public int exposedCount(String blockId) {
         int total = 0;
         for (SectionFacts facts : sections.values()) {
@@ -98,6 +107,7 @@ public record BlockObservations(String dimension, long version, Set<String> inte
         return summary;
     }
 
+    /** The closest seen blocks of this kind, nearest first. */
     public List<BlockObservation> nearest(String blockId, WorkSetup.BlockPoint from, int limit) {
         return nearest(blockId, from, limit, point -> true);
     }
@@ -116,10 +126,12 @@ public record BlockObservations(String dimension, long version, Set<String> inte
         return List.copyOf(candidates.subList(0, Math.min(limit, candidates.size())));
     }
 
+    /** When the oldest fact it holds was seen. */
     public OptionalLong oldestObservationMillis() {
         return sections.values().stream().mapToLong(SectionFacts::observedAtMillis).min();
     }
 
+    /** When the newest fact it holds was seen. */
     public OptionalLong newestObservationMillis() {
         return sections.values().stream().mapToLong(SectionFacts::observedAtMillis).max();
     }

@@ -15,6 +15,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks Nether travel maths: the distance between the dimensions, what counts as a real
+ * portal frame, and the Nether milestones.
+ */
 public class PortalTravelTest {
 
     @Test

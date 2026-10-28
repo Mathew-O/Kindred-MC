@@ -9,6 +9,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the write-it-down-first rule for actions that move items: nothing happens until the
+ * record is safely saved, and an unclear outcome stops for checking instead of being repeated.
+ */
 class ActionAdmissionTest {
     @Test void bothDurableAcknowledgementsAndOwnerDispatchPrecedeSingleUse() {
         Harness h = new Harness();

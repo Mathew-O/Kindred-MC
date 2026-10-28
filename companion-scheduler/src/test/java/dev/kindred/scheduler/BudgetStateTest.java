@@ -10,6 +10,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the play-time budget for one day: what is used, set aside and left.
+ */
 class BudgetStateTest {
     private static final Instant NOW = Instant.parse("2026-10-13T18:00:00Z");
     private static final Duration CAP = Duration.ofMinutes(2);

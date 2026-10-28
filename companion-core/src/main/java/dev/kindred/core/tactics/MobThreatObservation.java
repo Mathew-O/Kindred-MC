@@ -4,7 +4,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Bounded immutable observation of a nearby mob.
+ * In plain terms: what a player can see of a nearby mob: what it is, how far away, its health when visible,
+ * whether a creeper is about to blow, and so on. Hidden details are never guessed.
+ *
+ * Technical: Bounded immutable observation of a nearby mob.
  * Visible mob health is observable under explicit adapter policy; unseen mobs or hidden
  * states remain protected.
  */
@@ -50,18 +53,22 @@ public record MobThreatObservation(
         }
     }
 
+    /** Whether the mob is a creeper. */
     public boolean isCreeper() {
         return "minecraft:creeper".equalsIgnoreCase(entityType);
     }
 
+    /** Whether the mob is a zombie. */
     public boolean isZombie() {
         return entityType.toLowerCase(java.util.Locale.ROOT).contains("zombie");
     }
 
+    /** Whether the mob is a skeleton. */
     public boolean isSkeleton() {
         return entityType.toLowerCase(java.util.Locale.ROOT).contains("skeleton");
     }
 
+    /** Whether the mob is a cow. */
     public boolean isCow() {
         return "minecraft:cow".equalsIgnoreCase(entityType);
     }

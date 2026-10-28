@@ -9,9 +9,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 /**
- * Container identity on the server thread. A storage assignment records block identity and an observed
- * version; before any transfer the live block is compared again, so a replaced, broken or changed container
- * is a blocker rather than a trusted coordinate.
+ * In plain terms: checks a chest is still the chest it was before a player puts things in or takes them out.
+ * If it was broken, replaced or changed, the player stops instead of trusting an old location.
+ *
+ * Technical: Container identity on the server thread. A storage assignment records block identity and an
+ * observed version; before any transfer the live block is compared again, so a replaced, broken or changed
+ * container is a blocker rather than a trusted coordinate.
  */
 final class StorageTargets {
     enum Verdict { OK, UNLOADED, NOT_A_CONTAINER, CHANGED }
@@ -30,6 +33,7 @@ final class StorageTargets {
         return new Observation(id, version, entity instanceof Inventory);
     }
 
+    /** Whether the chest is still the one that was assigned. */
     static Verdict validate(World world, WorkSetup.StorageTarget target) {
         BlockPos pos = new BlockPos(target.position().x(), target.position().y(), target.position().z());
         Observation now = observe(world, pos);
@@ -39,6 +43,7 @@ final class StorageTargets {
         return Verdict.OK;
     }
 
+    /** A short reason for a failed check. */
     static String explain(Verdict verdict) {
         return switch (verdict) {
             case OK -> "assigned storage verified";

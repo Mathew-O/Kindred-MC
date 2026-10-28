@@ -2,6 +2,7 @@ package dev.kindred.persistence;
 
 import dev.kindred.core.ActionLease;
 import dev.kindred.core.ActionRecord;
+import dev.kindred.core.ActivityLimit;
 import dev.kindred.core.Checkpoint;
 import dev.kindred.core.Companion;
 import dev.kindred.core.LifecycleState;
@@ -12,12 +13,15 @@ import dev.kindred.core.SocialProfile;
 import dev.kindred.core.WorkSetup;
 import dev.kindred.scheduler.AccountingPeriod;
 import dev.kindred.scheduler.BudgetState;
+import dev.kindred.scheduler.PeriodTransition;
 
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -188,6 +192,94 @@ class SqliteCompanionStoreTest {
         assertCause(IllegalStateException.class, store.openBudget(id, next));
         store.saveBudget(reserved.settle(reserved.outstanding().orElseThrow().id(), Duration.ZERO), 1).join();
         assertEquals(next, store.openBudget(id, next).join().period());
+    }
+
+    @Test
+    void chargeableBudgetOpensEachPeriodOnceAndNeitherARestartNorAZoneEditReplenishesIt() {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        Instant now = period.startInclusive().plus(Duration.ofHours(1));
+        assertEquals(Optional.empty(), store.latestPeriod(id).join());
+        ChargeableBudget first = store.chargeableBudget(id, now, ZoneOffset.UTC).join();
+        assertEquals(PeriodTransition.Kind.OPEN, first.transition().kind());
+        BudgetState empty = first.budget().orElseThrow();
+        assertEquals(BudgetState.empty(id, period), empty);
+        BudgetState reserved = store.saveBudget(reserve(empty, UUID.randomUUID(), now), 0).join();
+        BudgetState settled = store.saveBudget(reserved.settle(reserved.outstanding().orElseThrow().id(),
+                Duration.ofSeconds(2)), 1).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.current(period), Optional.of(settled)),
+                store.chargeableBudget(id, now.plusSeconds(60), ZoneOffset.UTC).join());
+        store.closeAsync().join();
+        SqliteCompanionStore reopened = open(10);
+        assertEquals(Optional.of(settled), reopened.chargeableBudget(id, now.plusSeconds(120), ZoneOffset.UTC).join().budget());
+        // A zone edit mid-period is charged to the saved period to its end.
+        ChargeableBudget edited = reopened.chargeableBudget(id, now.plus(Duration.ofHours(2)), ZoneId.of("Asia/Tokyo")).join();
+        assertEquals(PeriodTransition.Kind.CURRENT, edited.transition().kind());
+        assertEquals(2000, edited.budget().orElseThrow().chargedMillis());
+        AccountingPeriod next = AccountingPeriod.on(period.localDate().plusDays(1), ZoneOffset.UTC);
+        ChargeableBudget tomorrow = reopened.chargeableBudget(id, period.endExclusive(), ZoneOffset.UTC).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.open(next), Optional.of(BudgetState.empty(id, next))), tomorrow);
+        assertEquals(settled, reopened.findBudget(id, period.startInclusive()).join().orElseThrow());
+        assertEquals(Optional.of(next), reopened.latestPeriod(id).join());
+        assertEquals(new ChargeableBudget(PeriodTransition.current(next), tomorrow.budget()),
+                reopened.chargeableBudget(id, period.endExclusive(), ZoneOffset.UTC).join());
+    }
+
+    @Test
+    void chargeableBudgetWritesNothingWhileTheClockIsBehindOrAZoneEditWaits() {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        BudgetState opened = store.chargeableBudget(id, period.startInclusive(), ZoneOffset.UTC).join().budget().orElseThrow();
+        ChargeableBudget behind = store.chargeableBudget(id, period.startInclusive().minusSeconds(1), ZoneOffset.UTC).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.clockBehind(period.startInclusive()), Optional.empty()), behind);
+        ZoneId newYork = ZoneId.of("America/New_York");
+        ChargeableBudget waiting = store.chargeableBudget(id, period.endExclusive().plus(Duration.ofHours(1)), newYork).join();
+        assertEquals(new ChargeableBudget(PeriodTransition.zonePending(Instant.parse("2026-10-14T04:00:00Z")), Optional.empty()),
+                waiting);
+        assertTrue(store.findBudget(id, AccountingPeriod.on(period.localDate(), newYork).startInclusive()).join().isEmpty());
+        assertEquals(opened, store.findBudget(id, period.startInclusive()).join().orElseThrow());
+        assertEquals(Optional.of(period), store.latestPeriod(id).join());
+        AccountingPeriod local = AccountingPeriod.on(LocalDate.of(2026, 10, 14), newYork);
+        BudgetState fresh = store.chargeableBudget(id, waiting.transition().opensAt().orElseThrow(), newYork).join().budget().orElseThrow();
+        assertEquals(BudgetState.empty(id, local), fresh);
+        // An unsettled slice left in the latest period is an inconsistency, not a transition.
+        store.saveBudget(reserve(fresh, UUID.randomUUID(), local.startInclusive()), 0).join();
+        assertCause(IllegalStateException.class, store.chargeableBudget(id, local.endExclusive(), newYork));
+        assertThrows(IllegalArgumentException.class, () -> new ChargeableBudget(PeriodTransition.current(period), Optional.empty()));
+    }
+
+    @Test
+    void anActivityWindowIsKeptWithItsLimitAndAnOlderDatabaseUpgradesToAllDay() throws Exception {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        ActivityLimit initial = store.limit(id).join();
+        assertEquals(Optional.empty(), initial.window());
+        var evening = new ActivityLimit.Window(LocalTime.of(18, 0), LocalTime.of(23, 0));
+        ActivityLimit windowed = store.saveLimit(initial.editWindow(Optional.of(evening)), 0).join();
+        assertEquals(windowed, store.limit(id).join());
+        // Editing the cap keeps the window, as every edit keeps the fields it does not name.
+        ActivityLimit capped = store.saveLimit(windowed.editCap(3_600_000), 1).join();
+        assertEquals(Optional.of(evening), store.limit(id).join().window());
+        assertEquals(List.of(capped), store.limits().join());
+        var overnight = new ActivityLimit.Window(LocalTime.of(22, 30), LocalTime.of(2, 0));
+        store.saveLimit(capped.editWindow(Optional.of(overnight)), 2).join();
+        assertEquals(Optional.of(overnight), store.limit(id).join().window());
+        assertThrows(IllegalArgumentException.class, () -> new ActivityLimit.Window(LocalTime.NOON, LocalTime.NOON));
+        store.closeAsync().join();
+        try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE activity_limits DROP COLUMN window_start");
+            statement.execute("ALTER TABLE activity_limits DROP COLUMN window_end");
+            statement.execute("PRAGMA user_version = 8");
+        }
+        SqliteCompanionStore upgraded = open(10);
+        ActivityLimit migrated = upgraded.limit(id).join();
+        assertEquals(new ActivityLimit(id, 3_600_000, false, "UTC", 3), migrated, "a schema 8 limit upgrades to all day, nothing else changed");
+        upgraded.closeAsync().join();
+        try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(9, row.getInt(1)); }
+            statement.execute("UPDATE activity_limits SET window_start = '09:00'");
+        }
+        assertCause(IllegalStateException.class, open(10).limit(id));
     }
 
     @Test

@@ -15,7 +15,10 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 /**
- * Manages external LLM API keys for autonomous player reasoning and speech.
+ * In plain terms: keeps the API keys for the optional AI adviser (Anthropic or OpenAI) in a config file, and
+ * never shows more than a masked version of a key in chat.
+ *
+ * Technical: Manages external LLM API keys for autonomous player reasoning and speech.
  * Keys are persisted in config/kindred_api_keys.properties and masked in all chat outputs.
  */
 public final class KindredApiKeyConfig {
@@ -24,6 +27,7 @@ public final class KindredApiKeyConfig {
 
     private KindredApiKeyConfig() { }
 
+    /** The Anthropic key, from the environment or the config file. */
     public static String getAnthropicKey() {
         String prop = System.getProperty("ANTHROPIC_API_KEY");
         if (prop != null && !prop.isBlank()) return prop.trim();
@@ -32,6 +36,7 @@ public final class KindredApiKeyConfig {
         return loadStoredProperty("anthropic_key");
     }
 
+    /** The OpenAI key, from the environment or the config file. */
     public static String getOpenAiKey() {
         String prop = System.getProperty("OPENAI_API_KEY");
         if (prop != null && !prop.isBlank()) return prop.trim();
@@ -40,6 +45,7 @@ public final class KindredApiKeyConfig {
         return loadStoredProperty("openai_key");
     }
 
+    /** Saves a key to the config file; false if that failed. */
     public static synchronized boolean setKey(String provider, String key) {
         String propName = provider.equalsIgnoreCase("openai") ? "openai_key" : "anthropic_key";
         String sysProp = provider.equalsIgnoreCase("openai") ? "OPENAI_API_KEY" : "ANTHROPIC_API_KEY";
@@ -63,6 +69,7 @@ public final class KindredApiKeyConfig {
         }
     }
 
+    /** A key with most of it hidden, safe to show. */
     public static String mask(String key) {
         if (key == null || key.isBlank()) return "NOT SET";
         int len = key.length();
@@ -86,6 +93,7 @@ public final class KindredApiKeyConfig {
         }
     }
 
+    /** Tells the command's sender which keys are set, masked, and how to set one. */
     public static void displayStatusAndPrompts(ServerCommandSource source) {
         String anthropic = getAnthropicKey();
         String openai = getOpenAiKey();

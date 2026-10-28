@@ -26,9 +26,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * The Claude strategist (F-19b): one request per consultation through the official Anthropic SDK, its reply
- * constrained by structured output to the fields of {@link StrategistPrompt}, then validated in core. The API key is
- * read from the {@code ANTHROPIC_API_KEY} environment variable and is never stored or logged here.
+ * In plain terms: asks Anthropic's Claude for advice on how a player is doing. It is optional: the game plays
+ * on fine without it, the answer is checked before it is used, and the key is never saved or logged.
+ *
+ * Technical: The Claude strategist (F-19b): one request per consultation through the official Anthropic SDK,
+ * its reply constrained by structured output to the fields of {@link StrategistPrompt}, then validated in
+ * core. The API key is read from the {@code ANTHROPIC_API_KEY} environment variable and is never stored or
+ * logged here.
  */
 public final class ClaudeStrategist implements Strategist {
     /** Default model: fast and cheap enough to consult on every event that matters. */
@@ -118,6 +122,7 @@ public final class ClaudeStrategist implements Strategist {
     /** The effort and thinking settings, for the log. */
     @Override public String pace() { return "effort " + (effort == null ? "default" : effort.toString()) + ", thinking " + (thinking ? "on" : "off"); }
 
+    /** Asks for advice in the background; the game never waits for the answer. */
     @Override
     public CompletableFuture<Outcome> advise(String report, List<StrategyAdvice.Place> reported) {
         Objects.requireNonNull(report);
@@ -165,6 +170,7 @@ public final class ClaudeStrategist implements Strategist {
         }
     }
 
+    /** Asks one question in the background, such as which of a few choices to make. */
     @Override
     public CompletableFuture<Answer> ask(Question question) {
         Objects.requireNonNull(question);
@@ -204,6 +210,7 @@ public final class ClaudeStrategist implements Strategist {
 
     private static String name(Enum<?> value) { return value == null ? null : value.name(); }
 
+    /** Shuts the connection. */
     @Override
     public void close() {
         executor.shutdownNow();

@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how long a player pauses before its message appears, like someone typing.
+ */
 class SpeechTimingTest {
     @Test
     void longerLinesWaitLongerAndBothEndsAreBounded() {

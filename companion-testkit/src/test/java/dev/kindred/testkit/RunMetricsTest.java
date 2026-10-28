@@ -7,6 +7,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that the log scorer counts repeats, recoveries and walks in vain correctly.
+ */
 class RunMetricsTest {
     private static String at(int minute, int second, String text) {
         return String.format("[10:%02d:%02d] [Server thread/INFO] (Kindred) %s", minute, second, text);

@@ -13,9 +13,13 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * First-release movement skills: go to a marker inside the allocated area, return home, and wait. Arrival is a
- * fresh position within one block; a blocked path, an unloaded destination or no progress produce typed reasons.
- * Navigation never digs, places scaffolding or changes dimension.
+ * In plain terms: simple movement for the older mob-style bodies: walk to a marker, go home, or wait. If the
+ * way is blocked or it stops getting closer, it says why. It never digs, builds or goes through portals to
+ * get there.
+ *
+ * Technical: First-release movement skills: go to a marker inside the allocated area, return home, and wait.
+ * Arrival is a fresh position within one block; a blocked path, an unloaded destination or no progress
+ * produce typed reasons. Navigation never digs, places scaffolding or changes dimension.
  */
 final class MovementSkills {
     static final SkillDescriptor MOVE_TO = new SkillDescriptor("move_to", Set.of("x", "y", "z"), Set.of(), Set.of("navigate"), Set.of(),
@@ -29,6 +33,7 @@ final class MovementSkills {
 
     private MovementSkills() { }
 
+    /** What a movement skill is called and needs, if it is one of these. */
     static Optional<SkillDescriptor> descriptor(String id) {
         return switch (id) {
             case "move_to" -> Optional.of(MOVE_TO);

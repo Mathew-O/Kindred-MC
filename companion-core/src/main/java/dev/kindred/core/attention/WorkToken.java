@@ -4,7 +4,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Single-use token issued by {@link AttentionWorkScheduler} authorizing a single slice of optional
+ * In plain terms: a one-time ticket for one slot of background thinking. It allows looking and planning only,
+ * never changing the world, and it expires quickly or when anything about the player changes.
+ *
+ * Technical: Single-use token issued by {@link AttentionWorkScheduler} authorizing a single slice of optional
  * computation.
  *
  * <p>A token authorizes bounded observation and planning opportunities, NEVER a Minecraft physical

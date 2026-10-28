@@ -8,7 +8,12 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
-/** Real paid runtime movement, no fixture teleport or manually advanced entity ticks. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player really
+ * walks where it goes, with no teleporting.
+ *
+ * Technical: Real paid runtime movement, no fixture teleport or manually advanced entity ticks.
+ */
 public final class NativeMovementGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
     public void paidNativeWalkArrivesAndStopPreventsContinuedTravel(TestContext context) {

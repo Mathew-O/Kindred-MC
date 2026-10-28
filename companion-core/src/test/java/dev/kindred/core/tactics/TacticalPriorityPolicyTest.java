@@ -11,6 +11,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that the safest fight plan always wins.
+ */
 public class TacticalPriorityPolicyTest {
 
     private final UUID companionId = UUID.randomUUID();

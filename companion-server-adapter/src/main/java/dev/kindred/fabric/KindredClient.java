@@ -17,13 +17,19 @@ import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Optional client enhancements: the AI player panel on a key (K by default), bundled roster skins for native
- * bodies and skins chosen from the server's skins folder, and the legacy mob renderer. Servers work with vanilla clients; these only add presentation.
+ * In plain terms: the optional client-side mod. It adds the K panel for the AI players, shows their skins,
+ * and draws the older mob-style bodies. The server works with ordinary Minecraft clients too; this only adds
+ * extras.
+ *
+ * Technical: Optional client enhancements: the AI player panel on a key (K by default), bundled roster skins
+ * for native bodies and skins chosen from the server's skins folder, and the legacy mob renderer. Servers
+ * work with vanilla clients; these only add presentation.
  */
 public final class KindredClient implements ClientModInitializer {
     private static KeyBinding openPanel;
     private static boolean panelRequested;
 
+    /** Sets up the panel key, the skin handling and the renderer when the game starts. */
     @Override
     public void onInitializeClient() {
         EntityRendererRegistry.register(KindredMod.COMPANION, CompanionRenderer::new);

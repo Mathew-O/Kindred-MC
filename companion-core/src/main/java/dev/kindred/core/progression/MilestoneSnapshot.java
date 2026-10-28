@@ -3,7 +3,11 @@ package dev.kindred.core.progression;
 import java.util.Objects;
 
 /**
- * Snapshot of a milestone's current evaluation.
+ * In plain terms: how one step stands right now: whether it is met by what the player has, and whether it was
+ * ever reached before. A step reached before but lost (say the pickaxe broke) needs recovering, without
+ * forgetting it was done.
+ *
+ * Technical: Snapshot of a milestone's current evaluation.
  * Tracks physical postcondition satisfaction vs historical achievement.
  * "Lost gear creates recovery work without erasing achievement history" (independent-progression.md).
  */

@@ -18,7 +18,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Real blocks and stacks. These do not by themselves prove an unattended zero-player run. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that the older-style
+ * body's gathering and chest jobs move real blocks and items.
+ *
+ * Technical: Real blocks and stacks. These do not by themselves prove an unattended zero-player run.
+ */
 public final class ChoreGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void stacksMoveBetweenInventoryAndChestWithoutCopying(TestContext context) {

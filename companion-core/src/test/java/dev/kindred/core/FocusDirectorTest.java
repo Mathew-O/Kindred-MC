@@ -8,6 +8,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks where a player looks and how long it keeps looking.
+ */
 class FocusDirectorTest {
     private final FocusDirector focus = new FocusDirector();
     private final UUID owner = UUID.randomUUID();

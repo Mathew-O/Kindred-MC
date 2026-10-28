@@ -4,7 +4,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Pure core attention state machine for an autonomous AI-player.
+ * In plain terms: moves a player's attention mood between routine, alert, combat and recovery as danger
+ * appears and fades: a hazard or a credible threat makes it alert, being attacked puts it in combat, and it
+ * calms down step by step afterwards.
+ *
+ * Technical: Pure core attention state machine for an autonomous AI-player.
  *
  * <p>Transitions between Routine, Alert, Combat and Recovery states based on environmental danger,
  * credible threats, and attack events. Stop, unavailable body and reconciliation faults make
@@ -28,6 +32,7 @@ public final class AttentionStateMachine {
     private long quietStartedTick = -1;
     private long lastTick = -1;
 
+    /** A mood tracker for one player, starting calm. */
     public AttentionStateMachine(UUID runtimeSession, UUID playerId) {
         this(runtimeSession, playerId, 0L);
     }
@@ -46,6 +51,7 @@ public final class AttentionStateMachine {
     public long revision() { return revision; }
     public long bodyGeneration() { return bodyGeneration; }
 
+    /** Takes this tick's danger signals and updates the mood. */
     public synchronized AttentionSnapshot observe(SignalFrame frame) {
         Objects.requireNonNull(frame, "frame");
 
@@ -167,6 +173,7 @@ public final class AttentionStateMachine {
         return new AttentionSnapshot(frame.tick(), this.bodyGeneration, this.revision, this.state, true);
     }
 
+    /** The mood right now, without changing it. */
     public synchronized AttentionSnapshot snapshot(long tick) {
         return new AttentionSnapshot(tick, this.bodyGeneration, this.revision, this.state, this.active);
     }

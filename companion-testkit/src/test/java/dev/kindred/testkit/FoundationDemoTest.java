@@ -12,6 +12,9 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that the quick self-check demo passes.
+ */
 class FoundationDemoTest {
     @TempDir Path directory;
 

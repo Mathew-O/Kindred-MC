@@ -10,7 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Pure, injectable-time calculations. This class grants neither admission nor world authority. */
+/**
+ * In plain terms: the calendar maths for play time: which day a moment belongs to, when a window of hours is
+ * open, and how daylight saving and timezone changes are handled. It only does sums; it never lets a player
+ * act by itself.
+ *
+ * Technical: Pure, injectable-time calculations. This class grants neither admission nor world authority.
+ */
 public final class ScheduleClock {
     private ScheduleClock() { }
 
@@ -25,22 +31,63 @@ public final class ScheduleClock {
         return candidate.startInclusive().isBefore(closedThrough) ? Optional.empty() : Optional.of(candidate);
     }
 
+    /**
+     * Where activity at now is charged, given the latest saved period: that period while it lasts, even after a
+     * zone edit; once it has ended, the local day in zone containing now, unless that day would start before the
+     * latest period's end, when a zone edit waits for its next whole local day. A clock behind the latest period
+     * charges nothing until it catches up.
+     */
+    public static PeriodTransition transition(Instant now, ZoneId zone, Optional<AccountingPeriod> latest) {
+        Objects.requireNonNull(now, "now");
+        Objects.requireNonNull(zone, "zone");
+        Objects.requireNonNull(latest, "latest");
+        if (latest.isEmpty()) {
+            return PeriodTransition.open(AccountingPeriod.containing(now, zone));
+        }
+        AccountingPeriod last = latest.orElseThrow();
+        if (last.contains(now)) {
+            return PeriodTransition.current(last);
+        }
+        if (now.isBefore(last.startInclusive())) {
+            return PeriodTransition.clockBehind(last.startInclusive());
+        }
+        return openPeriod(now, zone, last.endExclusive()).map(PeriodTransition::open)
+                .orElseGet(() -> PeriodTransition.zonePending(firstPeriodFrom(zone, last.endExclusive()).startInclusive()));
+    }
+
+    /** The first local day in zone that starts at or after closedThrough. */
+    public static AccountingPeriod firstPeriodFrom(ZoneId zone, Instant closedThrough) {
+        Objects.requireNonNull(closedThrough, "closedThrough");
+        AccountingPeriod containing = AccountingPeriod.containing(closedThrough, zone);
+        return containing.startInclusive().isBefore(closedThrough)
+                ? AccountingPeriod.on(containing.localDate().plusDays(1), zone) : containing;
+    }
+
     /** Returns the currently open window, clipped to the persisted accounting period. */
     public static Optional<TimeInterval> activeInterval(
             ActivitySchedule schedule, AccountingPeriod period, Instant now) {
         if (!schedule.zone().equals(period.zone())) {
             throw new IllegalArgumentException("Timezone change must wait for a new accounting period");
         }
+        return windowInterval(schedule.window(), period, now);
+    }
+
+    /**
+     * The open stretch of window containing now, clipped to the period, its local times read in the zone the period
+     * is kept in: after a zone edit the current period keeps its own zone to its end (F-11f). No window is the whole
+     * period; empty outside the window or the period.
+     */
+    public static Optional<TimeInterval> windowInterval(Optional<ActivityWindow> window, AccountingPeriod period, Instant now) {
+        Objects.requireNonNull(window, "window");
         if (!period.contains(now)) {
             return Optional.empty();
         }
-        if (schedule.window().isEmpty()) {
+        if (window.isEmpty()) {
             return Optional.of(new TimeInterval(period.startInclusive(), period.endExclusive()));
         }
-        ActivityWindow window = schedule.window().orElseThrow();
-        LocalDate date = now.atZone(schedule.zone()).toLocalDate();
+        LocalDate date = now.atZone(period.zone()).toLocalDate();
         for (LocalDate startDate : List.of(date.minusDays(1), date)) {
-            Optional<TimeInterval> resolved = windowOn(startDate, window, schedule.zone());
+            Optional<TimeInterval> resolved = windowOn(startDate, window.orElseThrow(), period.zone());
             if (resolved.isPresent() && resolved.orElseThrow().contains(now)) {
                 TimeInterval interval = resolved.orElseThrow();
                 return Optional.of(new TimeInterval(
@@ -49,6 +96,20 @@ public final class ScheduleClock {
             }
         }
         return Optional.empty();
+    }
+
+    /** The first start of window after now in zone; a day whose window a daylight-saving gap collapses is passed over. */
+    public static Instant nextWindowStart(ActivityWindow window, ZoneId zone, Instant now) {
+        Objects.requireNonNull(window, "window");
+        Objects.requireNonNull(now, "now");
+        LocalDate date = now.atZone(zone).toLocalDate();
+        for (int day = -1; day <= 2; day++) {
+            Optional<TimeInterval> resolved = windowOn(date.plusDays(day), window, zone);
+            if (resolved.isPresent() && resolved.orElseThrow().startInclusive().isAfter(now)) {
+                return resolved.orElseThrow().startInclusive();
+            }
+        }
+        throw new IllegalStateException("No activity window opens within two days");
     }
 
     /** Empty when a daylight-saving gap collapses the entire configured window. */

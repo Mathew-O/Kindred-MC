@@ -3,13 +3,19 @@ package dev.kindred.model;
 import java.util.Map;
 import java.util.Optional;
 
-/** Builds the strategist the operator's settings choose (F-19d); nothing when none is set up. */
+/**
+ * In plain terms: sets up the AI adviser the server owner has chosen in their settings, or none at all if
+ * nothing is set.
+ *
+ * Technical: Builds the strategist the operator's settings choose (F-19d); nothing when none is set up.
+ */
 public final class Strategists {
     private Strategists() { }
 
     /** A strategist, or nothing with the reason in {@code problem} when the settings are incomplete. */
     public record Built(Optional<Strategist> strategist, Optional<String> problem) { }
 
+    /** The adviser the settings ask for, or nothing and why. */
     public static Built fromEnvironment(Map<String, String> env) {
         var selection = StrategistProvider.choose(env);
         if (selection.choice().isEmpty()) return new Built(Optional.empty(), selection.problem());

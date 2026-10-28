@@ -14,7 +14,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Real ordered writer, with an explicit owner inbox instead of a Minecraft tick. */
+/**
+ * In plain terms: checks that action records are really written to the database, in order.
+ *
+ * Technical: Real ordered writer, with an explicit owner inbox instead of a Minecraft tick.
+ */
 class ActionAdmissionStoreTest {
     @TempDir Path directory;
 

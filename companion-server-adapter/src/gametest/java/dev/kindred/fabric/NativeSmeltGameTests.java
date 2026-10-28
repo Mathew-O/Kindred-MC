@@ -12,7 +12,10 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Native furnace smelting and fuel accounting tests qualifying E-04d:
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player uses a
+ * furnace with its own fuel and items, with every item accounted for.
+ *
+ * Technical: Native furnace smelting and fuel accounting tests qualifying E-04d:
  * Interacting with placed furnace workstations under server edit policy,
  * inserting fuel and smeltable ingredients with 100% item conservation,
  * authentic cooking progress, extracting finished outputs into player inventory,

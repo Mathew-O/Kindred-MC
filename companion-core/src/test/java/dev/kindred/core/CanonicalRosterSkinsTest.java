@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks that Kindred, Sol and Vesp each get their own bundled skin.
+ */
 class CanonicalRosterSkinsTest {
 
     @Test

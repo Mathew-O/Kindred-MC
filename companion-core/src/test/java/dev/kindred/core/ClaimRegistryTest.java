@@ -7,6 +7,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the dibs list: two players can never claim the same block or chest, claims run out,
+ * and a newer claim wins.
+ */
 class ClaimRegistryTest {
     private final ClaimRegistry registry = new ClaimRegistry();
     private final UUID epoch = UUID.randomUUID();

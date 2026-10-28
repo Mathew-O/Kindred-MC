@@ -8,8 +8,12 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Optional client panel protocol. The client only asks for state and sends named actions; the server checks
- * the sender's authority for every action exactly as it does for the equivalent command.
+ * In plain terms: the messages the optional client mod and the server exchange for the K panel: the client
+ * asks for the panel's contents or presses a button; the server checks the player is allowed, just as it
+ * would for the matching command.
+ *
+ * Technical: Optional client panel protocol. The client only asks for state and sends named actions; the
+ * server checks the sender's authority for every action exactly as it does for the equivalent command.
  */
 final class KindredPanelPayloads {
     private KindredPanelPayloads() { }
@@ -42,6 +46,7 @@ final class KindredPanelPayloads {
         @Override public Id<? extends CustomPayload> getId() { return ID; }
     }
 
+    /** Tells Minecraft about these messages. */
     static void register() {
         PayloadTypeRegistry.playC2S().register(Request.ID, Request.CODEC);
         PayloadTypeRegistry.playC2S().register(Action.ID, Action.CODEC);

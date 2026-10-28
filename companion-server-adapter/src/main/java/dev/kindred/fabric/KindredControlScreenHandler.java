@@ -20,7 +20,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Virtual 9x6 control deck (GUI-01). Clicks never move items into player inventories (PLY-04).
+ * In plain terms: the chest-style control menu for the AI players: pick a player, then flip its settings
+ * (speedrun style, teamwork, how far it wanders). The items in the menu are just buttons; clicking never
+ * gives you or anyone else items.
+ *
+ * Technical: Virtual 9x6 control deck (GUI-01). Clicks never move items into player inventories (PLY-04).
  */
 final class KindredControlScreenHandler extends GenericContainerScreenHandler {
 
@@ -41,6 +45,7 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
         refreshVirtualSlots();
     }
 
+    /** A click on a button: pick a player, flip a setting, or close the menu. */
     @Override
     public void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player) {
         if (!(player instanceof ServerPlayerEntity serverPlayer) || slotIndex < 0 || slotIndex >= 54) {
@@ -64,6 +69,7 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
         sendContentUpdates();
     }
 
+    /** Shift-clicking does nothing, so no item can be taken out. */
     @Override
     public ItemStack quickMove(PlayerEntity player, int slot) {
         return ItemStack.EMPTY;
@@ -74,6 +80,7 @@ final class KindredControlScreenHandler extends GenericContainerScreenHandler {
         return true;
     }
 
+    /** Redraws every button with the current settings. */
     private void refreshVirtualSlots() {
         for (int i = 0; i < 54; i++) {
             getSlot(i).setStack(decorativeStack(i));

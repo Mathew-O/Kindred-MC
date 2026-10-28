@@ -6,11 +6,16 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Standard shared team projects for establishing and maintaining home shelter and farm bases (E-13).
+ * In plain terms: ready-made team projects for setting up a home base: a farm (hoe, tilled field, crops) and
+ * a shelter with beds, split into jobs any of the players can take.
+ *
+ * Technical: Standard shared team projects for establishing and maintaining home shelter and farm bases
+ * (E-13).
  */
 public final class FarmHomeProjects {
     private FarmHomeProjects() { }
 
+    /** The team project for starting a farm. */
     public static SharedProject createFarmEstablishmentProject(ProjectId id, String name, String description) {
         TaskId craftHoeId = TaskId.of(id, "craft_hoe");
         TaskId tillSoilId = TaskId.of(id, "till_soil");
@@ -49,6 +54,7 @@ public final class FarmHomeProjects {
                 .withTask(harvestCropsTask);
     }
 
+    /** The team project for building a shelter with beds. */
     public static SharedProject createShelterBedProject(ProjectId id, String name, String description) {
         TaskId craftBedId = TaskId.of(id, "craft_bed");
         TaskId placeBedId = TaskId.of(id, "place_bed");

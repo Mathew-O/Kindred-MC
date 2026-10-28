@@ -13,7 +13,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-/** Read-only native-save preparation. Vanilla PlayerSaveHandler remains the only physical-state writer. */
+/**
+ * In plain terms: reads an AI player's save file (its inventory and so on) in the background, before the body
+ * joins. It only reads; Minecraft's own saving stays the only thing that writes it.
+ *
+ * Technical: Read-only native-save preparation. Vanilla PlayerSaveHandler remains the only physical-state
+ * writer.
+ */
 final class NativePlayerSaves {
     private static final int MAX_BYTES = 16 * 1024 * 1024;
     private NativePlayerSaves() { }
@@ -26,6 +32,7 @@ final class NativePlayerSaves {
         Bytes { compressed = compressed.clone(); }
         @Override public byte[] compressed() { return compressed.clone(); }
 
+        /** The save's contents, unpacked. */
         NbtCompound decode(MinecraftServer server) {
             if (!server.isOnThread()) throw new IllegalStateException("Apply native data on the server thread");
             try { return NbtIo.readCompressed(new ByteArrayInputStream(compressed), NbtSizeTracker.of(MAX_BYTES)); }
@@ -33,6 +40,7 @@ final class NativePlayerSaves {
         }
     }
 
+    /** Reads one player's save file in the background, or nothing if there is none yet. */
     static CompletableFuture<Optional<Bytes>> read(Path playerDirectory, UUID nativeId) {
         Path file = playerDirectory.resolve(nativeId + ".dat");
         // Workers receive only a path/UUID and return defensively copied bytes, never Minecraft state.

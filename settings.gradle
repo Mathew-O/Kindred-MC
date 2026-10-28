@@ -1,3 +1,4 @@
+// Where Gradle finds its plugins (Fabric's Loom comes from Fabric's own server).
 pluginManagement {
     repositories {
         maven { url = 'https://maven.fabricmc.net/' }
@@ -6,5 +7,6 @@ pluginManagement {
     }
 }
 
+// The project's parts, each a folder of its own.
 rootProject.name = 'kindred-mc'
 include 'companion-core', 'companion-scheduler', 'companion-persistence', 'companion-testkit', 'companion-server-adapter', 'companion-model'

@@ -12,7 +12,12 @@ import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 import net.minecraft.text.Text;
 
-/** Native equipped stacks originate in the owned inventory; fixture grants are not earned gear. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player only wears
+ * and holds items from its own inventory.
+ *
+ * Technical: Native equipped stacks originate in the owned inventory; fixture grants are not earned gear.
+ */
 public final class NativeEquipmentGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 320)
     public void ownedArmorAndShieldMoveExactlyAndSurviveNativeReconnect(TestContext context) {

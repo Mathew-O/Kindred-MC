@@ -15,6 +15,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks a stretch of play time: asking for more, renewing in time, and stopping.
+ */
 class PaidActivitySessionTest {
     @Test void durableAcknowledgementAndOwnerDispatchPrecedeActivation() {
         Harness h = new Harness();

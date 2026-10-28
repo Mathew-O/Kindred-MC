@@ -6,6 +6,10 @@ import java.util.Set;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks who may give an AI player commands, separately from who it is and which team it is
+ * on.
+ */
 class PlayerAccessTest {
     @Test void grantsAreIndependentOfIdentityAndCopiedImmutably() {
         UUID player = UUID.randomUUID();

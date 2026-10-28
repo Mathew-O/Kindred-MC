@@ -18,7 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Keybind panel for spawning, starting, stopping and tuning the AI players this client may control. */
+/**
+ * In plain terms: the K panel in the Kindred client: a screen for spawning, starting, stopping and adjusting
+ * the AI players you are allowed to control.
+ *
+ * Technical: Keybind panel for spawning, starting, stopping and tuning the AI players this client may
+ * control.
+ */
 @Environment(EnvType.CLIENT)
 final class KindredPanelScreen extends Screen {
     private static final int PANEL = 0xD0101418;
@@ -42,6 +48,7 @@ final class KindredPanelScreen extends Screen {
         accept(json, message);
     }
 
+    /** Shows the latest panel contents the server sent. */
     void accept(String json, String message) {
         try {
             JsonElement parsed = JsonParser.parseString(json);

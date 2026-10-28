@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks a player's mood towards someone, which shifts after something happens and drifts
+ * back on its own.
+ */
 class ToneDriftTest {
     private static final long MINUTE = 60_000L;
 

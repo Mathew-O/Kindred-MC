@@ -10,6 +10,10 @@ import java.nio.ByteBuffer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that skin images in the skins folder are read correctly, and that broken or
+ * oversized ones are refused with a clear reason.
+ */
 class SkinFilesTest {
     private static byte[] png(int width, int height, boolean wideArms) throws IOException {
         var image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);

@@ -35,7 +35,7 @@ public final class PlayerCommands {
                     + "quirks [UUID]; quirk <sprintjump|lively|curiousglance|steady> <auto|on|off> [UUID]; "
                     + "setup; home set; area set <x1> <z1> <x2> <z2>|default; storage set; patch set <from> <to> <block> [UUID]; "
                     + "goto <x> <y> <z>; gohome; wait <1..60>; pause; continue [UUID]; look [block] [UUID]; "
-                    + "scope home|approved; goal list|add; memory list|add|forget; limit status|cap|offline|timezone; "
+                    + "scope home|approved; goal list|add; memory list|add|forget; limit status|cap|offline|timezone|window; "
                     + "suspend [UUID]; recover [UUID]; remove [UUID]; journal [UUID]. Autonomous survival awaits qualification."), false);
             return 1;
         });
@@ -531,6 +531,12 @@ public final class PlayerCommands {
         limit.then(CommandManager.literal("timezone")
                 .then(withOptionalId(CommandManager.argument("zone", StringArgumentType.string()),
                         (runtime, context, id) -> runtime.setLimitTimezone(context.getSource(), id, StringArgumentType.getString(context, "zone")))));
+        limit.then(CommandManager.literal("window")
+                .then(withOptionalId(CommandManager.literal("off"), (runtime, context, id) -> runtime.setLimitWindow(context.getSource(), id, null, null)))
+                .then(CommandManager.argument("start", StringArgumentType.string())
+                        .then(withOptionalId(CommandManager.argument("end", StringArgumentType.string()),
+                                (runtime, context, id) -> runtime.setLimitWindow(context.getSource(), id,
+                                        StringArgumentType.getString(context, "start"), StringArgumentType.getString(context, "end"))))));
         root.then(limit);
         root.then(withOptionalId(CommandManager.literal("journal"), (runtime, context, id) -> runtime.journal(context.getSource(), id)));
         root.then(CommandManager.literal("gather").then(withOptionalId(CommandManager.argument("count", IntegerArgumentType.integer(1, 32)),

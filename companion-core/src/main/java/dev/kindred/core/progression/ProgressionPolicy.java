@@ -8,7 +8,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Pure policy that maps a ProgressionState and physical ProgressionObservation into actionable candidate recommendations.
+ * In plain terms: turns where a player stands on the progression map into suggested jobs: recover anything
+ * lost first, then work on the next steps it can reach, such as "craft planks" or "smelt iron".
+ *
+ * Technical: Pure policy that maps a ProgressionState and physical ProgressionObservation into actionable
+ * candidate recommendations.
  */
 public final class ProgressionPolicy {
 
@@ -344,6 +348,7 @@ public final class ProgressionPolicy {
         return java.util.Optional.empty();
     }
 
+    /** How many logs of any kind it carries. */
     private static int getLogsCount(ProgressionObservation obs) {
         return obs.count("minecraft:oak_log") + obs.count("minecraft:birch_log")
                 + obs.count("minecraft:spruce_log") + obs.count("minecraft:jungle_log")
@@ -351,6 +356,7 @@ public final class ProgressionPolicy {
                 + obs.count("minecraft:mangrove_log") + obs.count("minecraft:cherry_log");
     }
 
+    /** How many planks of any kind it carries. */
     private static int getPlanksCount(ProgressionObservation obs) {
         return obs.count("minecraft:oak_planks") + obs.count("minecraft:birch_planks")
                 + obs.count("minecraft:spruce_planks") + obs.count("minecraft:jungle_planks")

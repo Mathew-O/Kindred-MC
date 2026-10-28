@@ -9,6 +9,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the players' habits (like sprint-jumping) and that each stays within its limits.
+ */
 class MannerismsTest {
     private static final Personality NEUTRAL = Personality.defaults();
 

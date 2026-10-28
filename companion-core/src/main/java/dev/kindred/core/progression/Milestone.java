@@ -5,7 +5,11 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Definition of a progression milestone in the milestone graph.
+ * In plain terms: one step of a survival playthrough, like "craft a stone pickaxe" or "enter the Nether":
+ * what must come before it, and how to tell from the player's real items and surroundings that it has been
+ * reached.
+ *
+ * Technical: Definition of a progression milestone in the milestone graph.
  */
 public record Milestone(
         MilestoneId id,
@@ -22,6 +26,7 @@ public record Milestone(
         if (priorityWeight < 0.0) throw new IllegalArgumentException("Priority weight cannot be negative: " + priorityWeight);
     }
 
+    /** Whether the player's real items and surroundings meet this step right now. */
     public boolean isSatisfied(ProgressionObservation obs) {
         return postcondition.test(obs);
     }

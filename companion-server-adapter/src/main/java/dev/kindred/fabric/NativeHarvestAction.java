@@ -21,9 +21,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Recorded native crop harvest (E-13). The mature crop is broken through the ordinary survival break path, so
- * its own loot table decides the yield; the player then walks over its attributable drops and, when asked,
- * replants with an owned seed through normal item use. Nothing is added to the inventory except by pickup.
+ * In plain terms: an AI player harvesting a ripe crop: it breaks it the normal way (so the crop decides what
+ * drops), walks over to pick up the drops, and replants with one of its own seeds if asked.
+ *
+ * Technical: Recorded native crop harvest (E-13). The mature crop is broken through the ordinary survival
+ * break path, so its own loot table decides the yield; the player then walks over its attributable drops and,
+ * when asked, replants with an owned seed through normal item use. Nothing is added to the inventory except
+ * by pickup.
  */
 final class NativeHarvestAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -75,6 +79,7 @@ final class NativeHarvestAction extends NativeRecordedAction {
         if (s == null || s.area() == null) throw new IllegalArgumentException("No work area is assigned.");
     }
 
+    /** Moves the harvest on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

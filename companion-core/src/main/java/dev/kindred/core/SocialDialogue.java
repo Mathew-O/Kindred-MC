@@ -3,10 +3,16 @@ package dev.kindred.core;
 import java.util.Locale;
 import java.util.Optional;
 
-/** Deliberately finite small talk, without model access or a command execution path. */
+/**
+ * In plain terms: a small, fixed set of friendly replies for when a player is spoken to by name. No AI model
+ * is involved, and nothing said can make the player do anything.
+ *
+ * Technical: Deliberately finite small talk, without model access or a command execution path.
+ */
 public final class SocialDialogue {
     private SocialDialogue() { }
 
+    /** The rest of a chat message, if it starts by addressing this player by name. */
     public static Optional<String> addressedMessage(String name, String raw) {
         if (raw.length() > 256) return Optional.empty();
         String message = raw.strip();
@@ -17,6 +23,7 @@ public final class SocialDialogue {
         return remainder.isEmpty() ? Optional.empty() : Optional.of(remainder);
     }
 
+    /** The player's reply, picked from what it is doing and its personality. */
     public static String reply(String raw, SocialSnapshot snapshot, SocialProfile profile) {
         if (raw.isBlank() || raw.length() > 256) return "Keep it to a short message, please.";
         String message = raw.strip().toLowerCase(Locale.ROOT).replaceAll("[!?.,]+$", "");

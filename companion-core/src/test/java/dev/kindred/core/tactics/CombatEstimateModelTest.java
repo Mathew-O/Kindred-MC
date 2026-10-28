@@ -9,6 +9,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the combat maths a player uses to think ahead.
+ */
 public class CombatEstimateModelTest {
 
     private final StandardCombatPredictor predictor = new StandardCombatPredictor();

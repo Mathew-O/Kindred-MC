@@ -28,11 +28,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Recorded casting of one obsidian block in place, as speedrunners build a portal without a diamond pickaxe: water
- * from the player's own bucket is poured into the cell above the target, lava from its own bucket is poured into the
- * target, where vanilla hardens it at once because water touches it, and the water is taken back. The lava never
- * stands uncovered, so it cannot spread. Outcome: obsidian at the target, one lava bucket emptied, the water bucket
- * refilled.
+ * In plain terms: an AI player making one obsidian block without a diamond pickaxe, the way speedrunners do:
+ * water from its own bucket goes on top, lava from its own bucket goes in below, the lava turns to obsidian
+ * at once, and it takes the water back. The lava is never left out in the open.
+ *
+ * Technical: Recorded casting of one obsidian block in place, as speedrunners build a portal without a
+ * diamond pickaxe: water from the player's own bucket is poured into the cell above the target, lava from its
+ * own bucket is poured into the target, where vanilla hardens it at once because water touches it, and the
+ * water is taken back. The lava never stands uncovered, so it cannot spread. Outcome: obsidian at the target,
+ * one lava bucket emptied, the water bucket refilled.
  */
 final class NativeCastAction extends NativeRecordedAction {
     private enum Phase { WATER, LAVA, RECOVER, DONE }
@@ -167,6 +171,7 @@ final class NativeCastAction extends NativeRecordedAction {
 
     private Step waiting() { return Step.running(Map.of("durableAction", phase(), "cast", phase.name()), false); }
 
+    /** Moves the casting on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded cast never replays", true);

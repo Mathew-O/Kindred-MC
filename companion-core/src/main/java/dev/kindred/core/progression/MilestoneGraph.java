@@ -11,7 +11,11 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Directed acyclic graph of survival milestones.
+ * In plain terms: the map of a survival playthrough as linked steps: wood, planks, sticks, a crafting table,
+ * wooden then stone pickaxe, furnace, iron, sword, shield, shelter, farm, bed, Nether, blaze rods. It works
+ * out which steps are done, which come next, and which need redoing after losing gear.
+ *
+ * Technical: Directed acyclic graph of survival milestones.
  * Evaluates physical postconditions and computes the active progression frontier.
  */
 public final class MilestoneGraph {
@@ -19,6 +23,7 @@ public final class MilestoneGraph {
     private final Map<MilestoneId, Milestone> milestones;
     private final List<MilestoneId> topologicalOrder;
 
+    /** A map made from these steps. */
     public MilestoneGraph(Map<MilestoneId, Milestone> milestones) {
         Objects.requireNonNull(milestones, "milestones");
         this.milestones = Map.copyOf(milestones);
@@ -248,14 +253,17 @@ public final class MilestoneGraph {
         return new ProgressionState(obs.tick(), snapshots, activeFrontier, recoveryFrontier);
     }
 
+    /** One step by its name. */
     public Milestone getMilestone(MilestoneId id) {
         return milestones.get(id);
     }
 
+    /** Every step in an order where each comes after the ones it needs. */
     public List<MilestoneId> topologicalOrder() {
         return topologicalOrder;
     }
 
+    /** Whether the player has any kind of log. */
     private static boolean hasAnyWoodLog(ProgressionObservation obs) {
         return obs.has("minecraft:oak_log", 1) || obs.has("minecraft:birch_log", 1)
                 || obs.has("minecraft:spruce_log", 1) || obs.has("minecraft:jungle_log", 1)
@@ -263,6 +271,7 @@ public final class MilestoneGraph {
                 || obs.has("minecraft:mangrove_log", 1) || obs.has("minecraft:cherry_log", 1);
     }
 
+    /** Whether the player has any kind of planks. */
     private static boolean hasAnyPlank(ProgressionObservation obs) {
         return obs.has("minecraft:oak_planks", 1) || obs.has("minecraft:birch_planks", 1)
                 || obs.has("minecraft:spruce_planks", 1) || obs.has("minecraft:jungle_planks", 1)
@@ -271,6 +280,7 @@ public final class MilestoneGraph {
                 || obs.has("minecraft:bamboo_planks", 1);
     }
 
+    /** Whether the player has a pickaxe at least this good. */
     private static boolean hasPickaxeTier(ProgressionObservation obs, int minimumTier) {
         if (minimumTier <= 1 && obs.has("minecraft:wooden_pickaxe", 1)) return true;
         if (minimumTier <= 2 && obs.has("minecraft:stone_pickaxe", 1)) return true;
@@ -279,6 +289,7 @@ public final class MilestoneGraph {
         return obs.has("minecraft:netherite_pickaxe", 1);
     }
 
+    /** Puts the steps in an order where each comes after what it needs. */
     private static List<MilestoneId> computeTopologicalOrder(Map<MilestoneId, Milestone> map) {
         List<MilestoneId> order = new ArrayList<>();
         Map<MilestoneId, Integer> inDegree = new HashMap<>();

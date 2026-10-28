@@ -1,10 +1,14 @@
 package dev.kindred.model;
 
 /**
- * What every strategist is told, whoever serves it (F-19b, F-19d): the instructions, then the Minecraft guide
- * (F-19e: what each larger task needs, recipes, where things come from, mobs and dangers), and the meaning of each
- * field of the reply. Kept in one place so that providers differ only in transport. The whole is the same on every
- * request, so a provider that caches prompts reads it back cheaply.
+ * In plain terms: the briefing an optional AI model gets before it gives a player advice: what it is for, a
+ * short Minecraft guide (recipes, where things are found, mobs and dangers), and the exact form its answer
+ * must take.
+ *
+ * Technical: What every strategist is told, whoever serves it (F-19b, F-19d): the instructions, then the
+ * Minecraft guide (F-19e: what each larger task needs, recipes, where things come from, mobs and dangers),
+ * and the meaning of each field of the reply. Kept in one place so that providers differ only in transport.
+ * The whole is the same on every request, so a provider that caches prompts reads it back cheaply.
  */
 public final class StrategistPrompt {
     private StrategistPrompt() { }
@@ -59,6 +63,7 @@ public final class StrategistPrompt {
 
     public static final String SYSTEM = INSTRUCTIONS + GUIDE;
 
+    /** The Minecraft guide, read from the bundled minecraft-guide.md. */
     private static String guide() {
         try (var in = StrategistPrompt.class.getResourceAsStream("minecraft-guide.md")) {
             if (in == null) throw new IllegalStateException("minecraft-guide.md is missing from companion-model");

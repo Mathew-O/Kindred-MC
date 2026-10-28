@@ -7,9 +7,13 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Catalog entry for an installed skill: what it needs, how long it may run, how long it may make no progress,
- * how many local recoveries it gets. A model may select a skill and its arguments; it cannot add one, change
- * these bounds or supply the success predicate.
+ * In plain terms: the catalogue card for one skill: what details it needs, how long it may run, how long it
+ * may go without progress and how many times it may recover on its own. An AI advisor may pick a skill and
+ * fill in its details, but never change these limits.
+ *
+ * Technical: Catalog entry for an installed skill: what it needs, how long it may run, how long it may make
+ * no progress, how many local recoveries it gets. A model may select a skill and its arguments; it cannot add
+ * one, change these bounds or supply the success predicate.
  */
 public record SkillDescriptor(String id, Set<String> requiredArguments, Set<String> optionalArguments,
                               Set<String> capabilities, Set<EditPolicy.Kind> permissions, Duration timeout,

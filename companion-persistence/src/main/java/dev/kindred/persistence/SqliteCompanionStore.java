@@ -19,7 +19,9 @@ import dev.kindred.core.team.StockReservation;
 import dev.kindred.core.team.TaskId;
 import dev.kindred.scheduler.AccountingPeriod;
 import dev.kindred.scheduler.BudgetState;
+import dev.kindred.scheduler.PeriodTransition;
 import dev.kindred.scheduler.Reservation;
+import dev.kindred.scheduler.ScheduleClock;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -430,7 +432,7 @@ public final class SqliteCompanionStore {
                 while (rows.next()) {
                     result.add(new ActivityLimit(UUID.fromString(rows.getString("companion_id")),
                             rows.getLong("cap_ms"), rows.getBoolean("offline_work"),
-                            rows.getString("timezone"), rows.getLong("revision")));
+                            rows.getString("timezone"), rows.getLong("revision"), readWindow(rows)));
                 }
             }
             return List.copyOf(result);
@@ -931,13 +933,16 @@ public final class SqliteCompanionStore {
             requireRevision(previous.revision(), expectedRevision);
             if (limit.revision() != Math.incrementExact(expectedRevision)) throw new IllegalArgumentException("Limit revisions advance by one");
             try (PreparedStatement update = database.prepareStatement(
-                    "UPDATE activity_limits SET cap_ms=?, offline_work=?, timezone=?, revision=? WHERE companion_id=? AND revision=?")) {
+                    "UPDATE activity_limits SET cap_ms=?, offline_work=?, timezone=?, revision=?, window_start=?, window_end=? "
+                            + "WHERE companion_id=? AND revision=?")) {
                 update.setLong(1, limit.capMillis());
                 update.setBoolean(2, limit.offlineWork());
                 update.setString(3, limit.timezone());
                 update.setLong(4, limit.revision());
-                update.setString(5, limit.companionId().toString());
-                update.setLong(6, expectedRevision);
+                update.setString(5, limit.window().map(window -> window.start().toString()).orElse(null));
+                update.setString(6, limit.window().map(window -> window.end().toString()).orElse(null));
+                update.setString(7, limit.companionId().toString());
+                update.setLong(8, expectedRevision);
                 if (update.executeUpdate() != 1) throw new ConcurrentModificationException("Stale limit revision");
             }
             return limit;
@@ -949,9 +954,19 @@ public final class SqliteCompanionStore {
             query.setString(1, companionId.toString());
             try (ResultSet row = query.executeQuery()) {
                 if (!row.next()) return ActivityLimit.defaults(companionId);
-                return new ActivityLimit(companionId, row.getLong("cap_ms"), row.getBoolean("offline_work"), row.getString("timezone"), row.getLong("revision"));
+                return new ActivityLimit(companionId, row.getLong("cap_ms"), row.getBoolean("offline_work"), row.getString("timezone"),
+                        row.getLong("revision"), readWindow(row));
             }
         }
+    }
+
+    /** Both window columns or neither: a half-written window is not read as all day. */
+    private static Optional<ActivityLimit.Window> readWindow(ResultSet row) throws SQLException {
+        String start = row.getString("window_start");
+        String end = row.getString("window_end");
+        if (start == null && end == null) return Optional.empty();
+        if (start == null || end == null) throw new IllegalStateException("Activity window is half saved");
+        return Optional.of(new ActivityLimit.Window(java.time.LocalTime.parse(start), java.time.LocalTime.parse(end)));
     }
 
     public CompletableFuture<SharedProject> createProject(SharedProject project) {
@@ -1289,25 +1304,58 @@ public final class SqliteCompanionStore {
         requireMilliseconds(period.endExclusive());
         return submit(() -> transaction(() -> {
             required(companionId);
-            Optional<BudgetState> latest = latestBudget(companionId);
-            if (latest.isPresent()) {
-                BudgetState previous = latest.orElseThrow();
-                if (previous.period().equals(period)) return previous;
-                if (period.startInclusive().isBefore(previous.period().endExclusive())) {
-                    throw new IllegalArgumentException("Accounting periods cannot overlap or reopen an earlier period");
-                }
-                if (previous.outstanding().isPresent()) {
-                    throw new IllegalStateException("Settle the previous period before opening a new one");
-                }
-            }
-            BudgetState empty = BudgetState.empty(companionId, period);
-            try (PreparedStatement insert = database.prepareStatement(
-                    "INSERT INTO budget_buckets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                bindBudget(insert, empty);
-                insert.executeUpdate();
-            }
-            return empty;
+            return openPeriod(companionId, period, latestBudget(companionId));
         }));
+    }
+
+    /**
+     * The budget activity at now is charged to, chosen from the latest saved period in the transaction that opens a
+     * new one (ScheduleClock.transition). Nothing is written while the clock is behind that period or a zone edit
+     * waits for its first whole local day; the result says when one opens. An open period is returned as saved, so
+     * neither a restart nor a zone edit replenishes it.
+     */
+    public CompletableFuture<ChargeableBudget> chargeableBudget(UUID companionId, Instant now, ZoneId zone) {
+        Objects.requireNonNull(companionId, "companionId");
+        Objects.requireNonNull(now, "now");
+        Objects.requireNonNull(zone, "zone");
+        return submit(() -> transaction(() -> {
+            required(companionId);
+            Optional<BudgetState> latest = latestBudget(companionId);
+            PeriodTransition transition = ScheduleClock.transition(now, zone, latest.map(BudgetState::period));
+            return new ChargeableBudget(transition, switch (transition.kind()) {
+                case CURRENT -> latest;
+                case OPEN -> Optional.of(openPeriod(companionId, transition.period().orElseThrow(), latest));
+                case CLOCK_BEHIND, ZONE_PENDING -> Optional.empty();
+            });
+        }));
+    }
+
+    /** The latest saved accounting period, whose end closes every earlier one. */
+    public CompletableFuture<Optional<AccountingPeriod>> latestPeriod(UUID companionId) {
+        Objects.requireNonNull(companionId, "companionId");
+        return submit(() -> latestBudget(companionId).map(BudgetState::period));
+    }
+
+    private BudgetState openPeriod(UUID companionId, AccountingPeriod period, Optional<BudgetState> latest) throws SQLException {
+        requireMilliseconds(period.startInclusive());
+        requireMilliseconds(period.endExclusive());
+        if (latest.isPresent()) {
+            BudgetState previous = latest.orElseThrow();
+            if (previous.period().equals(period)) return previous;
+            if (period.startInclusive().isBefore(previous.period().endExclusive())) {
+                throw new IllegalArgumentException("Accounting periods cannot overlap or reopen an earlier period");
+            }
+            if (previous.outstanding().isPresent()) {
+                throw new IllegalStateException("Settle the previous period before opening a new one");
+            }
+        }
+        BudgetState empty = BudgetState.empty(companionId, period);
+        try (PreparedStatement insert = database.prepareStatement(
+                "INSERT INTO budget_buckets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+            bindBudget(insert, empty);
+            insert.executeUpdate();
+        }
+        return empty;
     }
 
     public CompletableFuture<Optional<BudgetState>> findBudget(UUID companionId, Instant start) {
@@ -1373,7 +1421,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 8) {
+            if (schemaVersion < 0 || schemaVersion > 9) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1384,6 +1432,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 6) migrate(6, "V6__intentions.sql");
             if (schemaVersion < 7) migrate(7, "V7__native_players.sql");
             if (schemaVersion < 8) migrate(8, "V8__shared_projects.sql");
+            if (schemaVersion < 9) migrate(9, "V9__activity_windows.sql");
         }
         recover();
     }

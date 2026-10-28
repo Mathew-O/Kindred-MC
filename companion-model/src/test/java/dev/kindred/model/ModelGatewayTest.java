@@ -13,6 +13,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the limits on optional AI model requests: how many at once, how often, and the daily
+ * token budget.
+ */
 class ModelGatewayTest {
     private static final Set<String> SKILLS = Set.of("move_to", "return_home", "wait", "gather_logs", "deposit");
 

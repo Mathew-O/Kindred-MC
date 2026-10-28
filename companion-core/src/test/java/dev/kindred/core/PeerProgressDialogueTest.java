@@ -7,6 +7,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the little chats AI players have with each other about how they are getting on, and
+ * that they never spam public chat.
+ */
 class PeerProgressDialogueTest {
 
     @Test

@@ -13,7 +13,10 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Acceptance GameTests for Personal Milestone Graph and Standing Progression Policy (E-12):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player's progress
+ * matches what it really has, and it picks sensible next steps.
+ *
+ * Technical: Acceptance GameTests for Personal Milestone Graph and Standing Progression Policy (E-12):
  * 1. Milestone evaluation faithfully reflects physical inventory and workstation proximity.
  * 2. Autonomous progression executes candidate actions to advance the active frontier without human intervention.
  * 3. Lost gear creates recovery work in the recovery frontier without erasing achievement history, recovering upon crafting replacement.

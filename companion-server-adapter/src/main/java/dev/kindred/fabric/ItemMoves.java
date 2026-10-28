@@ -13,8 +13,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Moves real stacks between a companion's slots, the ground, and a container with verifiable item conservation.
- * Nothing is copied into metadata; source decrease and destination increase must reconcile exactly.
+ * In plain terms: moves real items between an older-style AI body, the ground and a chest, and checks the
+ * numbers add up exactly: what left one place arrived in the other, nothing more, nothing less.
+ *
+ * Technical: Moves real stacks between a companion's slots, the ground, and a container with verifiable item
+ * conservation. Nothing is copied into metadata; source decrease and destination increase must reconcile
+ * exactly.
  */
 final class ItemMoves {
     private ItemMoves() { }
@@ -49,6 +53,7 @@ final class ItemMoves {
         public String afterEvidence() { return "{\"pickedUp\":" + pickedUp + ",\"inventory\":" + inventoryAfter + "}"; }
     }
 
+    /** How many of an item a container holds. */
     static int count(Inventory inventory, Item item) {
         int total = 0;
         for (int slot = 0; slot < inventory.size(); slot++) {

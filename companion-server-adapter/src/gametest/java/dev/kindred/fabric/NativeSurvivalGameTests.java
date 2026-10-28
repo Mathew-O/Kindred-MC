@@ -10,7 +10,10 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Native player survival, eating, and retreat qualification for E-07a:
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player eats when
+ * hungry, with real food from its own inventory, and backs away from danger.
+ *
+ * Technical: Native player survival, eating, and retreat qualification for E-07a:
  * - Health-aware autonomous eating with inventory food search and hotbar swapping
  * - 100% item conservation during food consumption and natural health regeneration
  * - Environmental hazard detection (magma block, fire, etc.) and evasive retreat

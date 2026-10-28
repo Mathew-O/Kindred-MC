@@ -10,8 +10,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-/** Server-thread snapshot of a container inventory for conservation checks (CHEST-01). */
+/**
+ * In plain terms: a quick snapshot of everything in a chest, taken to check that nothing appeared or vanished
+ * while a player used it.
+ *
+ * Technical: Server-thread snapshot of a container inventory for conservation checks (CHEST-01).
+ */
 record ChestEvidence(ItemStack[] stacks, String description) {
+    /** Takes a snapshot of a container's slots. */
     static ChestEvidence capture(Inventory inventory) {
         int size = inventory.size();
         var stacks = new ItemStack[size];
@@ -29,6 +35,7 @@ record ChestEvidence(ItemStack[] stacks, String description) {
         }
     }
 
+    /** Takes a snapshot of a chest-like block, or of nothing if it has no slots. */
     static ChestEvidence capture(BlockEntity entity) {
         if (!(entity instanceof Inventory inventory)) {
             return new ChestEvidence(new ItemStack[0], "not_a_container");
@@ -36,6 +43,7 @@ record ChestEvidence(ItemStack[] stacks, String description) {
         return capture(inventory);
     }
 
+    /** Whether the container still holds exactly what the snapshot saw, slot by slot. */
     boolean matches(Inventory inventory) {
         if (inventory.size() != stacks.length) return false;
         for (int i = 0; i < stacks.length; i++) {

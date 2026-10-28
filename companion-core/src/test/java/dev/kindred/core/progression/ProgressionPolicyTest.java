@@ -9,6 +9,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player picks its next step towards beating the game.
+ */
 public class ProgressionPolicyTest {
 
     private final UUID id = UUID.randomUUID();

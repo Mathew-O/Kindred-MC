@@ -18,7 +18,12 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Actual native log breaks under paid, scoped, claimed and recorded runtime authority. */
+/**
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player breaks
+ * blocks only where and when it is allowed.
+ *
+ * Technical: Actual native log breaks under paid, scoped, claimed and recorded runtime authority.
+ */
 public final class NativeMiningGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
     public void recordedMiningUsesOwnedToolAndDoesNotClaimCollection(TestContext context) {

@@ -6,7 +6,11 @@ import dev.kindred.core.construction.BuildSite.Kind;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Flat test ground: stone at y 0 across -20..20, air above to y 20, plus whatever a test sets. */
+/**
+ * In plain terms: a flat patch of stone used as test ground for building tests.
+ *
+ * Technical: Flat test ground: stone at y 0 across -20..20, air above to y 20, plus whatever a test sets.
+ */
 final class BuildTestSites {
     static final Cell STONE = new Cell(Kind.SOLID, BlockSpec.of("minecraft:stone"), true);
 

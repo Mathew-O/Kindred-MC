@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the basics of an AI player: a new one starts asleep, a name gives no control over
+ * it, and its personality values stay in range.
+ */
 class CompanionTest {
     @Test
     void creationIsDormantAndNameDoesNotGrantOwnership() {

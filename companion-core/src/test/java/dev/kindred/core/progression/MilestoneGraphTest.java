@@ -10,6 +10,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the map of progress from wooden tools to the Ender Dragon, and what each step needs
+ * first.
+ */
 public class MilestoneGraphTest {
 
     private final UUID id = UUID.randomUUID();

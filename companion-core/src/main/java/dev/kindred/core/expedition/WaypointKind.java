@@ -1,7 +1,10 @@
 package dev.kindred.core.expedition;
 
 /**
- * Categorization of waypoints discovered or navigated during exploration and expeditions.
+ * In plain terms: the kinds of places a player remembers: its home bed, shelters, resource patches,
+ * workstations, dangers, landmarks, breadcrumbs, Nether portals and fortresses.
+ *
+ * Technical: Categorization of waypoints discovered or navigated during exploration and expeditions.
  */
 public enum WaypointKind {
     HOME_BED,

@@ -11,10 +11,15 @@ import java.util.Properties;
 import java.util.UUID;
 
 /**
- * Builds native body profiles. Canonical roster bodies carry a {@link CanonicalRosterSkins#PROFILE_PROPERTY}
- * marker so the optional Kindred client renders the bundled skin. Vanilla clients can only show a custom skin
- * from Mojang-signed textures, which an operator may supply in {@code config/kindred_skins.properties} as
- * {@code <key>.value} and {@code <key>.signature}; without them those clients see a default skin.
+ * In plain terms: builds the player profile (name, id and skin) an AI player's body joins the server with.
+ * Players using the Kindred client see the crew's own skins; everyone else sees a default skin unless the
+ * server owner supplies signed skin data.
+ *
+ * Technical: Builds native body profiles. Canonical roster bodies carry a {@link
+ * CanonicalRosterSkins#PROFILE_PROPERTY} marker so the optional Kindred client renders the bundled skin.
+ * Vanilla clients can only show a custom skin from Mojang-signed textures, which an operator may supply in
+ * {@code config/kindred_skins.properties} as {@code <key>.value} and {@code <key>.signature}; without them
+ * those clients see a default skin.
  */
 final class RosterGameProfiles {
 
@@ -23,6 +28,7 @@ final class RosterGameProfiles {
 
     private RosterGameProfiles() { }
 
+    /** The profile for one AI player's body. */
     static GameProfile forNativeBody(UUID entityId, String internalProfileName, String displayName) {
         GameProfile profile = new GameProfile(entityId, internalProfileName);
         CanonicalRosterSkins.forDisplayName(displayName).ifPresent(skin -> {

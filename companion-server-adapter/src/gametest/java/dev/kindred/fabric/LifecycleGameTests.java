@@ -10,7 +10,10 @@ import net.minecraft.test.TestContext;
 import java.util.UUID;
 
 /**
- * Native GameTests for F-14 lifecycle operations (suspend, recover, removal tokens).
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that pausing, recovering
+ * and removing an AI player work.
+ *
+ * Technical: Native GameTests for F-14 lifecycle operations (suspend, recover, removal tokens).
  */
 public final class LifecycleGameTests implements FabricGameTest {
 

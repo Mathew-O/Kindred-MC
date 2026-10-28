@@ -6,9 +6,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * What the world holds round a build, as the adapter saw it on the server thread (E-08a): for each cell in a bounded
- * box, what kind of thing is there and its exact state. A cell outside the snapshot is unknown, and nothing is built
- * against what is unknown. Immutable and pure.
+ * In plain terms: what a builder sees around its build: for every block in a box around the site, whether it
+ * is air, a block it can build over, solid, walkable, dangerous or protected. Anything outside the box is
+ * unknown, and nothing is ever built against the unknown.
+ *
+ * Technical: What the world holds round a build, as the adapter saw it on the server thread (E-08a): for each
+ * cell in a bounded box, what kind of thing is there and its exact state. A cell outside the snapshot is
+ * unknown, and nothing is built against what is unknown. Immutable and pure.
  */
 public final class BuildSite {
     /** How a cell bears on building. */
@@ -62,6 +66,7 @@ public final class BuildSite {
     /** Cells changed over {@link #cells}: what a placement or a scaffold would make of them. */
     private final Map<Pos, Cell> changes;
 
+    /** A view of the site from what the game saw. */
     public BuildSite(Map<Pos, Cell> cells) {
         if (cells.size() > 400_000) throw new IllegalArgumentException("Snapshot too large");
         this.cells = Map.copyOf(cells);
@@ -73,11 +78,13 @@ public final class BuildSite {
         this.changes = changes;
     }
 
+    /** What is at a position, if it is inside the view. */
     public Optional<Cell> cell(Pos at) {
         var changed = changes.get(at);
         return Optional.ofNullable(changed != null ? changed : cells.get(at));
     }
 
+    /** Whether a position is inside the view. */
     public boolean known(Pos at) {
         return changes.containsKey(at) || cells.containsKey(at);
     }
@@ -97,6 +104,7 @@ public final class BuildSite {
         return below.isPresent() && below.get().floor() && at.isPresent() && at.get().passable() && head.isPresent() && head.get().passable();
     }
 
+    /** How many positions the view covers. */
     public int size() {
         int added = 0;
         for (Pos p : changes.keySet()) if (!cells.containsKey(p)) added++;

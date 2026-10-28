@@ -18,7 +18,10 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Acceptance GameTests for Stage A (F-05e shared-action correctness):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player re-checks
+ * its permission at the very moment it places a block.
+ *
+ * Technical: Acceptance GameTests for Stage A (F-05e shared-action correctness):
  * 1. Claim revocation while paid activity is still valid prevents block placement at mutation time.
  * 2. Support replaceability drift prevents placement and avoids redirected destination mutation.
  * 3. Setup revision change prevents placement at mutation time.

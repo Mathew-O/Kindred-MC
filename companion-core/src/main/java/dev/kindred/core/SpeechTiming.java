@@ -1,8 +1,11 @@
 package dev.kindred.core;
 
 /**
- * How long a companion waits before a line is heard. A short reply arrives quickly. A longer one takes
- * longer, up to a cap, so speech has the weight of the sentence instead of appearing as it is decided.
+ * In plain terms: how long a player pauses before its message appears in chat: a short reply comes quickly
+ * and a longer one takes longer (up to a limit), like someone typing.
+ *
+ * Technical: How long a companion waits before a line is heard. A short reply arrives quickly. A longer one
+ * takes longer, up to a cap, so speech has the weight of the sentence instead of appearing as it is decided.
  */
 public final class SpeechTiming {
     public static final long MIN_MILLIS = 250;
@@ -12,6 +15,7 @@ public final class SpeechTiming {
 
     private SpeechTiming() { }
 
+    /** The pause before this message appears. */
     public static long delayMillis(String spoken) {
         int length = spoken == null ? 0 : spoken.strip().length();
         long delay = BASE_MILLIS + PER_CHARACTER_MILLIS * (long) length;

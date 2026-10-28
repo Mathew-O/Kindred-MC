@@ -18,10 +18,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Server-thread section views over already-loaded chunks. Nothing here loads a chunk: an absent chunk is
- * {@code null}. The palette prefilter asks the section's {@code PalettedContainer} whether any entry is a block of
- * interest, which is proportional to the palette (usually a few dozen states), not to 4,096 blocks. Only a section
- * whose palette says "maybe" is walked, and only matching blocks pay for the six-neighbour exposure check.
+ * In plain terms: lets an AI player look for blocks (ores, logs and so on) in the parts of the world that are
+ * already loaded, quickly, and only counting blocks it could actually see: ones with air or glass next to
+ * them. It never loads new chunks and never sees through walls.
+ *
+ * Technical: Server-thread section views over already-loaded chunks. Nothing here loads a chunk: an absent
+ * chunk is {@code null}. The palette prefilter asks the section's {@code PalettedContainer} whether any entry
+ * is a block of interest, which is proportional to the palette (usually a few dozen states), not to 4,096
+ * blocks. Only a section whose palette says "maybe" is walked, and only matching blocks pay for the
+ * six-neighbour exposure check.
  */
 final class ChunkSectionSource implements BlockPerception.SectionSource {
     private final ServerWorld world;
@@ -33,6 +38,7 @@ final class ChunkSectionSource implements BlockPerception.SectionSource {
 
     ServerWorld world() { return world; }
 
+    /** One 16-block cube of the world, if its chunk is loaded. */
     @Override
     public BlockPerception.SectionView section(SectionKey key) {
         if (key.y() < world.getBottomSectionCoord() || key.y() >= world.getTopSectionCoord()) return null;
@@ -77,12 +83,14 @@ final class ChunkSectionSource implements BlockPerception.SectionSource {
         @Override
         public boolean isEmpty() { return section.isEmpty(); }
 
+        /** A quick check whether any of these blocks could be in this cube. */
         @Override
         public boolean mayContain(Set<String> blockIds) {
             Set<Block> wanted = blocks(blockIds);
             return !wanted.isEmpty() && section.hasAny(state -> wanted.contains(state.getBlock()));
         }
 
+        /** Reports each matching block in this cube that can be seen. */
         @Override
         public void visitMatches(Set<String> blockIds, BlockPerception.MatchVisitor visitor) {
             Set<Block> wanted = blocks(blockIds);
@@ -99,6 +107,7 @@ final class ChunkSectionSource implements BlockPerception.SectionSource {
             }
         }
 
+        /** Whether any side of the block touches air or something see-through. */
         private boolean exposed(int x, int y, int z) {
             return revealing(neighbour(x + 1, y, z)) || revealing(neighbour(x - 1, y, z))
                     || revealing(neighbour(x, y + 1, z)) || revealing(neighbour(x, y - 1, z))

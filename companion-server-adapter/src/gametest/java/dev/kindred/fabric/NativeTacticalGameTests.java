@@ -20,7 +20,10 @@ import net.minecraft.util.math.Vec3d;
 import java.util.Map;
 
 /**
- * Acceptance GameTests for Tactical Priority Hierarchy and Combat Prediction (E-07b):
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a player reads a
+ * fight correctly and picks a safe plan.
+ *
+ * Technical: Acceptance GameTests for Tactical Priority Hierarchy and Combat Prediction (E-07b):
  * 1. Read-only observation faithfully captures visible mob health, armor, and inventory weapons.
  * 2. Shadow tactical evaluation produces valid decisions without issuing body inputs or mutations.
  * 3. Controlled native attack parity verifies predictor calculations against actual Yarn 1.21.1 combat mechanics.

@@ -16,10 +16,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** Turns a focus choice into one head movement. The head eases toward a held subject instead of snapping. */
+/**
+ * In plain terms: where an older-style AI body looks: it turns its head smoothly towards whatever caught its
+ * attention instead of snapping around.
+ *
+ * Technical: Turns a focus choice into one head movement. The head eases toward a held subject instead of
+ * snapping.
+ */
 final class FocusBehavior {
     private final FocusDirector director = new FocusDirector();
 
+    /** Moves the head a little this tick. */
     void tick(CompanionEntity body, ServerPlayerEntity owner, boolean moving, Entity notice,
               Personality personality, Set<Mannerisms.Quirk> quirks) {
         List<LivingEntity> nearby = new ArrayList<>();

@@ -6,7 +6,11 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * What a companion says and does when someone comments on one of its habits. The decision is a
+ * In plain terms: what a player says and does when someone remarks on one of its habits ("stop
+ * sprint-jumping!"). Its personality decides whether it goes along for a while or keeps the habit, however
+ * many times it is asked; only its owner can change the saved habit.
+ *
+ * Technical: What a companion says and does when someone comments on one of its habits. The decision is a
  * deterministic function of its own traits, never of how insistent the speaker is. Only an owner
  * command edits the saved setting; chat can earn at most a bounded temporary accommodation.
  */
@@ -65,6 +69,7 @@ public final class QuirkFeedback {
         return 0.5 * personality.helpfulness() + 0.3 * personality.caution() + 0.2 * (100 - personality.initiative());
     }
 
+    /** How the player answers a remark about one habit, and whether it drops the habit for a while. */
     public static Response respond(Mannerisms.Quirk quirk, Personality personality, Speaker speaker, boolean currentlyActive) {
         Objects.requireNonNull(quirk, "quirk");
         Objects.requireNonNull(personality, "personality");

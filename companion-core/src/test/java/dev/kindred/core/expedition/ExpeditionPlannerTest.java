@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks trip planning: how far to go, and when to head home (nightfall, low food, full
+ * bags).
+ */
 class ExpeditionPlannerTest {
 
     private final Waypoint home = Waypoint.of("home_base", 100, 64, 200, "minecraft:overworld", WaypointKind.HOME_BED, 0);

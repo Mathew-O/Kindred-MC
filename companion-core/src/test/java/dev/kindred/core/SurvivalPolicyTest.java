@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the survival rules: when to eat, when to retreat, and that staying alive comes
+ * first.
+ */
 final class SurvivalPolicyTest {
 
     private final Personality balanced = Personality.defaults();

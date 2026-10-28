@@ -4,7 +4,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * A durable material reservation against shared stock, preventing double-spending
+ * In plain terms: materials in a shared chest set aside for one job, so two players never count on the same
+ * iron or wood.
+ *
+ * Technical: A durable material reservation against shared stock, preventing double-spending
  * across concurrent AI players.
  */
 public record StockReservation(
@@ -38,6 +41,7 @@ public record StockReservation(
         }
     }
 
+    /** Sets materials aside for a job. */
     public static StockReservation active(
             UUID reservationId,
             TaskId taskId,
@@ -50,6 +54,7 @@ public record StockReservation(
         return new StockReservation(reservationId, taskId, projectId, assignedPlayerId, itemId, quantity, destination, ReservationStatus.ACTIVE, 0L);
     }
 
+    /** The set-aside materials were used for the job. */
     public StockReservation fulfill(long nextRevision) {
         if (status != ReservationStatus.ACTIVE) {
             throw new IllegalStateException("Only active reservations can be fulfilled");
@@ -57,6 +62,7 @@ public record StockReservation(
         return new StockReservation(reservationId, taskId, projectId, assignedPlayerId, itemId, quantity, destination, ReservationStatus.FULFILLED, nextRevision);
     }
 
+    /** The set-aside materials are free again. */
     public StockReservation release(long nextRevision) {
         if (status != ReservationStatus.ACTIVE) {
             throw new IllegalStateException("Only active reservations can be released");

@@ -8,8 +8,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Small personality biases over authoritative task candidates, not a skill catalog or action executor.
- * The director supplies eligibility and need scores; the arbiter and adapter still authorize execution.
+ * In plain terms: the to-do list entries and the personality nudges on them. Each job has an urgency, a need
+ * score, what interests it serves (combat, helping, farming, mining) and whether it is allowed right now;
+ * personality adds a small bias, never permission.
+ *
+ * Technical: Small personality biases over authoritative task candidates, not a skill catalog or action
+ * executor. The director supplies eligibility and need scores; the arbiter and adapter still authorize
+ * execution.
  */
 public final class TaskPreferences {
     public static final double MAX_PERSONALITY_BIAS = 5;
@@ -53,6 +58,7 @@ public final class TaskPreferences {
 
     private TaskPreferences() { }
 
+    /** How much a player's personality favours a job, between -5 and +5. */
     public static double bias(Personality personality, Affinities affinities) {
         Objects.requireNonNull(personality);
         Objects.requireNonNull(affinities);
@@ -66,6 +72,7 @@ public final class TaskPreferences {
         return MAX_PERSONALITY_BIAS * sum / Math.max(1, total);
     }
 
+    /** The jobs that are allowed right now, best first. */
     public static List<Ranked> rankAvailable(List<Candidate> candidates, Personality personality) {
         Objects.requireNonNull(personality);
         HashSet<UUID> ids = new HashSet<>();

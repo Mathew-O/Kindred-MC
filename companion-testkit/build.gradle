@@ -1,3 +1,7 @@
+// Small programs you can run without Minecraft:
+//   ./gradlew :companion-testkit:run                  the self-check demo
+//   ./gradlew :companion-testkit:runPersonalityDemo   how personality changes job choice
+//   ./gradlew :companion-testkit:runMetrics --args=<server log>   scores a play session
 plugins { id 'application' }
 
 dependencies {

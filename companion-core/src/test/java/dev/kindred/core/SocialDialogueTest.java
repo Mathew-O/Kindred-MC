@@ -7,6 +7,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what players say to people, and that it stays polite and within its limits.
+ */
 class SocialDialogueTest {
     private final SocialProfile profile = SocialProfile.defaults(UUID.randomUUID());
     private final SocialSnapshot stopped = new SocialSnapshot(false, false, false, false, null, List.of());

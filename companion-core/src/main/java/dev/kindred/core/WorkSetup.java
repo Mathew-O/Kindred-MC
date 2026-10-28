@@ -6,8 +6,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Saved bounded work permissions. Home/storage are optional metadata; each native task determines its
- * actual prerequisites. Legacy chores retain missing()/readyForChores(). Incomplete setup never grants permission.
+ * In plain terms: where a player is allowed to work: an optional home spot, a work area, a storage chest, and
+ * a patch where it may gather one resource. Anything left unset is never treated as permission.
+ *
+ * Technical: Saved bounded work permissions. Home/storage are optional metadata; each native task determines
+ * its actual prerequisites. Legacy chores retain missing()/readyForChores(). Incomplete setup never grants
+ * permission.
  */
 public record WorkSetup(UUID companionId, String dimension, HomeMarker home, WorkRegion area, StorageTarget storage,
                         ResourcePatch patch, long revision) {
@@ -96,22 +100,27 @@ public record WorkSetup(UUID companionId, String dimension, HomeMarker home, Wor
         }
     }
 
+    /** No home, area, storage or patch set yet. */
     public static WorkSetup empty(UUID companionId, String dimension) {
         return new WorkSetup(companionId, dimension, null, null, null, null, 0);
     }
 
+    /** The same setup with a home spot. */
     public WorkSetup withHome(HomeMarker marker) {
         return new WorkSetup(companionId, dimension, marker, area, storage, patch, Math.incrementExact(revision));
     }
 
+    /** The same setup with a work area. */
     public WorkSetup withArea(WorkRegion region) {
         return new WorkSetup(companionId, dimension, home, region, storage, patch, Math.incrementExact(revision));
     }
 
+    /** The same setup with a storage container. */
     public WorkSetup withStorage(StorageTarget target) {
         return new WorkSetup(companionId, dimension, home, area, target, patch, Math.incrementExact(revision));
     }
 
+    /** The same setup with a gathering patch. */
     public WorkSetup withPatch(ResourcePatch resource) {
         return new WorkSetup(companionId, dimension, home, area, storage, resource, Math.incrementExact(revision));
     }
@@ -128,6 +137,7 @@ public record WorkSetup(UUID companionId, String dimension, HomeMarker home, Wor
 
     public boolean readyForChores() { return missing().isEmpty(); }
 
+    /** A plain explanation of a missing setting, for chat. */
     public static String explain(Field field) {
         return switch (field) {
             case HOME -> "no home marker: stand where it should live and use /companion home set";
@@ -137,6 +147,7 @@ public record WorkSetup(UUID companionId, String dimension, HomeMarker home, Wor
         };
     }
 
+    /** What is still missing before chores can start, for chat. */
     public String explanation() {
         List<Field> missing = missing();
         if (missing.isEmpty()) return "Setup complete for the first chore; autonomous work still needs its own gates.";

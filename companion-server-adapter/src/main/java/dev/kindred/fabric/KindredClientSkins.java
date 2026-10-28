@@ -18,8 +18,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Client half of the skin selector: the skins the server has put on AI players' bodies, and the ones it offers
- * while the selector is open, each held as a texture. Render thread only.
+ * In plain terms: on your own game (with the Kindred client mod), keeps the skins the server sent for the AI
+ * players and the ones on offer in the skin picker, ready to draw.
+ *
+ * Technical: Client half of the skin selector: the skins the server has put on AI players' bodies, and the
+ * ones it offers while the selector is open, each held as a texture. Render thread only.
  */
 @Environment(EnvType.CLIENT)
 public final class KindredClientSkins {
@@ -47,6 +50,7 @@ public final class KindredClientSkins {
         return held == null ? null : held.textures();
     }
 
+    /** Puts the skin the server sent on one AI player's body. */
     static void bind(UUID body, String key, boolean slim, byte[] png) {
         Identifier id = Identifier.of("kindred", "skins/body/" + body);
         Held old = bodies.remove(body);
@@ -63,6 +67,7 @@ public final class KindredClientSkins {
         catalogTotal = -1;
     }
 
+    /** Adds one skin the server offers to the picker. */
     static void addToCatalog(String key, boolean slim, byte[] png, int total) {
         catalogTotal = total;
         if (total == 0 || key.isEmpty() || !key.matches("[a-z0-9_-]{1,32}")) return;

@@ -17,7 +17,12 @@ import net.minecraft.world.World;
 
 import java.util.Set;
 
-/** Ephemeral follow state, ticked only on the server thread under the current body lease. */
+/**
+ * In plain terms: how an older-style AI body follows someone: staying close at one side, stepping out of their
+ * way, and saying it is stuck if it gets no nearer for ten seconds.
+ *
+ * Technical: Ephemeral follow state, ticked only on the server thread under the current body lease.
+ */
 final class FollowBehavior {
     private FollowSpacing.Motion motion = FollowSpacing.Motion.HOLD;
     private final int preferredSide;
@@ -46,6 +51,7 @@ final class FollowBehavior {
     /** True while settled beside the owner; the only follow phase where a social glance may own the gaze. */
     boolean waiting() { return motion == FollowSpacing.Motion.HOLD; }
 
+    /** Moves the body one tick nearer, or lets it wait. */
     void tick(CompanionEntity body, ServerPlayerEntity owner) {
         tick(body, owner, MannerismState.Gait.WALK, null, Personality.defaults(), Set.of());
     }

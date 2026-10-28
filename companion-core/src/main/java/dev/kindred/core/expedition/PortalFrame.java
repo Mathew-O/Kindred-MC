@@ -7,7 +7,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Geometric verification for standard Nether portal frames (E-15).
+ * In plain terms: checks whether a set of blocks is a proper Nether portal frame: obsidian all round a 2 by 3
+ * opening (the corners are optional), standing upright along either axis.
+ *
+ * Technical: Geometric verification for standard Nether portal frames (E-15).
  * Validates 4x5 minimum bounding frame (2x3 opening, >= 10 obsidian blocks, 4 optional corners).
  */
 public record PortalFrame(
@@ -165,6 +168,7 @@ public record PortalFrame(
         return Optional.empty();
     }
 
+    /** The blocks inside the frame, where the portal itself appears. */
     public List<BlockPos3i> interiorPositions() {
         List<BlockPos3i> list = new ArrayList<>(interiorWidth * interiorHeight);
         int dx = axis == Axis.X ? 1 : 0;
@@ -181,10 +185,12 @@ public record PortalFrame(
         return list;
     }
 
+    /** Whether a block is obsidian. */
     private static boolean isObsidian(String blockId) {
         return OBSIDIAN.equals(blockId);
     }
 
+    /** Whether a block inside the frame is empty enough for a portal. */
     private static boolean isInteriorPassable(String blockId) {
         return blockId == null || AIR.equals(blockId) || "minecraft:cave_air".equals(blockId)
                 || PORTAL.equals(blockId) || "minecraft:fire".equals(blockId);

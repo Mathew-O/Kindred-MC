@@ -1,7 +1,10 @@
 package dev.kindred.core.progression;
 
 /**
- * Standard progression milestones in the survival journey.
+ * In plain terms: the named steps of an early survival playthrough, from gathering wood to getting blaze rods
+ * and Nether wart.
+ *
+ * Technical: Standard progression milestones in the survival journey.
  * Determined by verified physical postconditions (PROG-01).
  */
 public enum MilestoneId {

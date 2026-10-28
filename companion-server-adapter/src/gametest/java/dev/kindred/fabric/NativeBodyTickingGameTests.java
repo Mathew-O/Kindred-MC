@@ -7,10 +7,14 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * A native body moved outside its own tick is still ticked where it lands (M-05's rare idle start). A world ticks an
- * entity only where a chunk is simulated. A human's client re-centres its chunk tickets with its next movement packet;
- * a native body moved by a teleport command, or by a fixture, into a chunk its tickets did not cover was never ticked
- * again to move them, and froze there for good. Here the body is moved far from every test's area, as a /tp would.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that an AI player keeps
+ * moving even where no human is nearby.
+ *
+ * Technical: A native body moved outside its own tick is still ticked where it lands (M-05's rare idle
+ * start). A world ticks an entity only where a chunk is simulated. A human's client re-centres its chunk
+ * tickets with its next movement packet; a native body moved by a teleport command, or by a fixture, into a
+ * chunk its tickets did not cover was never ticked again to move them, and froze there for good. Here the
+ * body is moved far from every test's area, as a /tp would.
  */
 public final class NativeBodyTickingGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "movedAway", tickLimit = 600)

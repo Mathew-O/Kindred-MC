@@ -13,7 +13,9 @@ import net.minecraft.util.Hand;
 import java.util.UUID;
 
 /**
- * Retired mob duel prototype, retained only in historical regression fixtures and never shipped.
+ * In plain terms: an old sparring prototype kept only so old tests still run. It is not part of the game.
+ *
+ * Technical: Retired mob duel prototype, retained only in historical regression fixtures and never shipped.
  * Its free/copy equipment and independent controller cannot qualify AI-player combat.
  *
  * <p>States:

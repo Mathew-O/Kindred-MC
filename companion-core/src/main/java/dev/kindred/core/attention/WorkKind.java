@@ -1,7 +1,11 @@
 package dev.kindred.core.attention;
 
 /**
- * Optional computational categories scheduled according to the AI-player's current attention state.
+ * In plain terms: the kinds of background thinking a player does: watching for threats, checking its gear,
+ * planning its goals, looking for resources, deciding what to say, and reviewing what it learned.
+ *
+ * Technical: Optional computational categories scheduled according to the AI-player's current attention
+ * state.
  */
 public enum WorkKind {
     BROAD_THREAT,

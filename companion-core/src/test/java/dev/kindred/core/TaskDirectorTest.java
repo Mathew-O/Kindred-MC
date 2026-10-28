@@ -8,6 +8,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player picks its current job and keeps to it.
+ */
 class TaskDirectorTest {
 
     private static final TaskPreferences.Eligibility AVAILABLE = new TaskPreferences.Eligibility(true, true, true, true);

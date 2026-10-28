@@ -16,12 +16,17 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * Server half of the optional keybind panel. Every action runs through the same runtime entry points and
- * authority checks as the matching {@code /aiplayer} command, using the requesting player's command source.
+ * In plain terms: the server side of the K panel: when you press a button there, it does exactly what the
+ * matching /aiplayer command would, with the same checks on whether you are allowed.
+ *
+ * Technical: Server half of the optional keybind panel. Every action runs through the same runtime entry
+ * points and authority checks as the matching {@code /aiplayer} command, using the requesting player's
+ * command source.
  */
 final class KindredPanelService {
     private KindredPanelService() { }
 
+    /** Starts listening for panel messages from clients. */
     static void register() {
         ServerPlayNetworking.registerGlobalReceiver(KindredPanelPayloads.Request.ID,
                 (payload, context) -> sendState(context.player(), ""));
@@ -78,6 +83,7 @@ final class KindredPanelService {
         sendState(player, feedback.toString());
     }
 
+    /** Sends a player the panel's current contents, with a short message. */
     static void sendState(ServerPlayerEntity player, String message) {
         PlayerRuntime runtime = KindredMod.runtime();
         if (!ServerPlayNetworking.canSend(player, KindredPanelPayloads.State.ID)) return;

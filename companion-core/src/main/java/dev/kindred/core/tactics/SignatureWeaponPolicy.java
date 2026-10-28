@@ -7,7 +7,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Selects the optimal owned weapon for the current combat tick with per-roster signature bias.
+ * In plain terms: picks the best weapon the player owns for this moment in a fight: an axe against a shield,
+ * a mace after a long fall, a bow at range, and so on, with each of the crew leaning a little towards a
+ * favourite.
+ *
+ * Technical: Selects the optimal owned weapon for the current combat tick with per-roster signature bias.
  */
 public final class SignatureWeaponPolicy {
 
@@ -22,6 +26,7 @@ public final class SignatureWeaponPolicy {
             boolean overVoidOrLava
     ) { }
 
+    /** How hard a mace hits after falling this far. */
     public static double calculateMaceSmashDamage(double baseDamage, double fallDistance, int densityLevel) {
         if (fallDistance < 1.5) {
             return baseDamage;
@@ -33,6 +38,7 @@ public final class SignatureWeaponPolicy {
         return baseDamage + firstTier + secondTier + thirdTier + densityBonus;
     }
 
+    /** The best owned weapon for this moment, if any. */
     public static Optional<WeaponProfile> selectOptimalWeapon(
             List<WeaponProfile> ownedWeapons,
             CombatContext ctx
@@ -62,6 +68,7 @@ public final class SignatureWeaponPolicy {
         return Optional.ofNullable(best);
     }
 
+    /** How good one weapon is right now, higher is better. */
     private static double scoreWeapon(WeaponProfile wp, CombatContext ctx, boolean isVesp, boolean isSol) {
         String id = wp.normalizedItemId();
         boolean isTrident = wp.isTrident();

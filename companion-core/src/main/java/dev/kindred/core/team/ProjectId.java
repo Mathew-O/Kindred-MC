@@ -2,7 +2,11 @@ package dev.kindred.core.team;
 
 import java.util.Objects;
 
-/** Strongly-typed shared project identifier. */
+/**
+ * In plain terms: the name tag of a team project.
+ *
+ * Technical: Strongly-typed shared project identifier.
+ */
 public record ProjectId(String id) {
     public ProjectId {
         Objects.requireNonNull(id, "id cannot be null");
@@ -11,6 +15,7 @@ public record ProjectId(String id) {
         }
     }
 
+    /** A project id from its name. */
     public static ProjectId of(String id) {
         return new ProjectId(id);
     }

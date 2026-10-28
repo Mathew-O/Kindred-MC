@@ -18,7 +18,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** One native equipment operation, admitted durably before effect and verified before completion. */
+/**
+ * In plain terms: an AI player putting on armour or holding an item from its own inventory, written down
+ * before it happens and checked after, so nothing is lost or duplicated.
+ *
+ * Technical: One native equipment operation, admitted durably before effect and verified before completion.
+ */
 final class NativeEquipmentAction extends NativeRecordedAction {
     private final SkillBody operation;
     private final NativePlayerBody body;

@@ -1,8 +1,13 @@
 package dev.kindred.core.survival;
 
 /**
- * What one AI player currently owns and can observe that matters for earning a Nether portal. Counts are
- * physical items in its own inventory (and in a furnace it is using); nothing here is a world query.
+ * In plain terms: everything that matters for earning a Nether portal, counted from the player's own items
+ * and what it can see: wood, stone, coal, iron, diamonds, flint, obsidian, buckets, tools, food, nearby
+ * workstations and whether a frame is built or lit.
+ *
+ * Technical: What one AI player currently owns and can observe that matters for earning a Nether portal.
+ * Counts are physical items in its own inventory (and in a furnace it is using); nothing here is a world
+ * query.
  *
  * @param logs            any log or wood item that crafts planks
  * @param planks          any planks

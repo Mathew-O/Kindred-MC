@@ -22,12 +22,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * The strategist served over OpenAI's chat completions API (F-19d): OpenAI itself, and the providers and local
- * servers that speak the same API (Gemini, Groq, Mistral, DeepSeek, xAI, OpenRouter, Ollama, LM Studio). The reply's
- * shape is asked for with a strict JSON schema where the provider enforces one, else with JSON mode and the fields
- * described in the instructions; either way core validates it exactly as it validates Claude's. Uses only the JDK's
- * HTTP client and Gson, which the server already carries, so it needs nothing bundled. A request the provider refuses
- * for its schema is asked once more in JSON mode within the same deadline (AI-05's one repair); nothing else retries.
+ * In plain terms: asks for advice from OpenAI or any service that speaks the same language (Gemini, Groq,
+ * Mistral, DeepSeek, xAI, OpenRouter, or a model running on your own computer with Ollama or LM Studio).
+ * Optional, checked before use, and the key is never saved or logged.
+ *
+ * Technical: The strategist served over OpenAI's chat completions API (F-19d): OpenAI itself, and the
+ * providers and local servers that speak the same API (Gemini, Groq, Mistral, DeepSeek, xAI, OpenRouter,
+ * Ollama, LM Studio). The reply's shape is asked for with a strict JSON schema where the provider enforces
+ * one, else with JSON mode and the fields described in the instructions; either way core validates it exactly
+ * as it validates Claude's. Uses only the JDK's HTTP client and Gson, which the server already carries, so it
+ * needs nothing bundled. A request the provider refuses for its schema is asked once more in JSON mode within
+ * the same deadline (AI-05's one repair); nothing else retries.
  */
 public final class OpenAiCompatibleStrategist implements Strategist {
     private final StrategistProvider.Choice choice;
@@ -35,6 +40,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     private final ExecutorService executor;
     private final URI endpoint;
 
+    /** A strategist for the chosen service. */
     public OpenAiCompatibleStrategist(StrategistProvider.Choice choice) {
         this(choice, HttpClient.newBuilder().connectTimeout(DEADLINE).proxy(ProxySelector.getDefault()).build());
     }
@@ -54,6 +60,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     @Override public String model() { return choice.model(); }
     @Override public String pace() { return choice.provider().shape() == StrategistProvider.Shape.JSON_SCHEMA ? "JSON schema" : "JSON mode"; }
 
+    /** Asks for advice in the background; the game never waits for the answer. */
     @Override
     public CompletableFuture<Outcome> advise(String report, List<StrategyAdvice.Place> reported) {
         Objects.requireNonNull(report);
@@ -83,6 +90,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         }
     }
 
+    /** Asks one question in the background, such as which of a few choices to make. */
     @Override
     public CompletableFuture<Answer> ask(Question question) {
         Objects.requireNonNull(question);
@@ -186,6 +194,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         return Answer.checked(question, text(reply, "choice"), text(reply, "text"), text(reply, "reason"), in, cached, out, millis);
     }
 
+    /** Sends one request, giving up at the deadline. */
     private HttpResponse<String> send(String body, long started) throws Exception {
         long left = DEADLINE.toMillis() - (System.nanoTime() - started) / 1_000_000;
         if (left <= 0) throw new java.net.http.HttpTimeoutException("deadline passed");
@@ -395,6 +404,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         return o.has(name) && o.get(name).isJsonPrimitive() ? o.get(name).getAsString() : null;
     }
 
+    /** Nothing to shut: each request stands alone. */
     @Override
     public void close() {
         executor.shutdownNow();

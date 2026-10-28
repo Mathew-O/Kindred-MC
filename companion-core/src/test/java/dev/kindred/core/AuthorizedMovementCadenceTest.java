@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks when a moving player sprints and hops: always over terrain, and only now and then
+ * for show.
+ */
 class AuthorizedMovementCadenceTest {
     private final SprintStride stride = new SprintStride();
 

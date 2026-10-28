@@ -18,10 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A fight's record read back (E-41a). The player fights a zombie with its sword; when the fight ends, its record is
- * written off the server thread, and read here from the file. It must name the ruleset, keep the frames in tick order,
- * hold the hits the player saw land as confirmed events, and show the zombie's health as the player believed it,
- * falling from its kind's twenty.
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that a fight's record is
+ * written after the fight and reads back correctly.
+ *
+ * Technical: A fight's record read back (E-41a). The player fights a zombie with its sword; when the fight
+ * ends, its record is written off the server thread, and read here from the file. It must name the ruleset,
+ * keep the frames in tick order, hold the hits the player saw land as confirmed events, and show the zombie's
+ * health as the player believed it, falling from its kind's twenty.
  */
 public final class NativeEncounterGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "encounterRecord", tickLimit = 600)

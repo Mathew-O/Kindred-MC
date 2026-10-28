@@ -17,7 +17,10 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Regression tests qualifying F-04b / F-05c prerequisites for defensive combat:
+ * In plain terms: a GameTest: it runs inside a real Minecraft test world and checks that checking a fight
+ * plan never touches the inventory, and danger cleanly stops other work.
+ *
+ * Technical: Regression tests qualifying F-04b / F-05c prerequisites for defensive combat:
  * 1. Candidate evaluation never changes inventory, including rejected/unselected candidates.
  * 2. Hazard arrival during active work revokes that work and cannot cause overlapping controllers.
  * 3. Delayed callbacks cannot restart stopped/replaced work.

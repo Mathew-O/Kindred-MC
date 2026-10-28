@@ -21,7 +21,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** One scoped native log break. Completion claims a break, never drop collection. */
+/**
+ * In plain terms: an AI player breaking one block (a log, stone or ore) the way a human does: with a tool
+ * from its own hotbar, taking as long as it really takes, and only blocks it can see and reach and is allowed
+ * to break.
+ *
+ * Technical: One scoped native log break. Completion claims a break, never drop collection.
+ */
 final class NativeMiningAction extends NativeRecordedAction {
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;

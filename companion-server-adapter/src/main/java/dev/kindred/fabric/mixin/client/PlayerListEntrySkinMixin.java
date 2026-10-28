@@ -13,8 +13,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Renders the skin the server chose for a native body from its skins folder, else the bundled roster skin for
- * bodies whose profile carries the Kindred skin marker.
+ * In plain terms: a client-side patch that shows an AI player's chosen skin (from the server's skins folder,
+ * or the crew's bundled skin) instead of a default one.
+ *
+ * Technical: Renders the skin the server chose for a native body from its skins folder, else the bundled
+ * roster skin for bodies whose profile carries the Kindred skin marker.
  */
 @Mixin(PlayerListEntry.class)
 abstract class PlayerListEntrySkinMixin {

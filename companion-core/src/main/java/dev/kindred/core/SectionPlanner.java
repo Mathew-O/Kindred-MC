@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Which chunk sections a companion may perceive right now: the allocated work area, clipped to a few chunks
- * around the body and a vertical band around its feet, inside the world's height. Nearest sections come
- * first so a budgeted pass improves the most relevant facts earliest. This is range, not permission.
+ * In plain terms: which chunk sections a player may look at right now: its work area, cut down to a few
+ * chunks around it and a band of height around its feet, nearest first. This is how far it can see, not
+ * permission to touch anything.
+ *
+ * Technical: Which chunk sections a companion may perceive right now: the allocated work area, clipped to a
+ * few chunks around the body and a vertical band around its feet, inside the world's height. Nearest sections
+ * come first so a budgeted pass improves the most relevant facts earliest. This is range, not permission.
  */
 public final class SectionPlanner {
     /** Horizontal radius in chunks and vertical radius in sections around the body's own section. */
@@ -18,6 +22,7 @@ public final class SectionPlanner {
             if (verticalSections < 0 || verticalSections > 4) throw new IllegalArgumentException("Vertical range is 0..4 sections");
         }
 
+        /** The most sections a range can cover. */
         public int maxSections() {
             int side = 2 * horizontalChunks + 1;
             return Math.min(side * side, WorkSetup.MAX_AREA_CHUNKS) * (2 * verticalSections + 1);
@@ -29,6 +34,7 @@ public final class SectionPlanner {
 
     private SectionPlanner() { }
 
+    /** The sections to look at, nearest first. */
     public static List<SectionKey> plan(WorkSetup.WorkRegion area, WorkSetup.BlockPoint center, Range range,
                                         int bottomSectionY, int topSectionYExclusive) {
         Objects.requireNonNull(area, "area");
