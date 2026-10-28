@@ -3,7 +3,12 @@ package dev.kindred.core.attention;
 import java.util.Objects;
 
 /**
- * Immutable per-tick observation inputs delivered from the server thread to the attention state machine.
+ * In plain terms: the danger signals gathered for a player each tick: whether its body is working, whether it
+ * stands in danger (fire, lava, cactus), whether a threat is in sight, whether it was just attacked and
+ * whether it urgently needs food or health.
+ *
+ * Technical: Immutable per-tick observation inputs delivered from the server thread to the attention state
+ * machine.
  *
  * @param tick monotonic server tick
  * @param bodyGeneration monotonic body/connection generation

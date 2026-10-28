@@ -1,7 +1,11 @@
 package dev.kindred.core.progression;
 
 /**
- * Pure coordinate math and recipe helpers for fair-play speedrunning community tech (SPEED-01).
+ * In plain terms: fair-play helpers that speedrunners use: where buried treasure and stronghold staircases
+ * sit inside their chunk, and turning string into wool for a bed. Only active in speedrun mode with the
+ * switch on.
+ *
+ * Technical: Pure coordinate math and recipe helpers for fair-play speedrunning community tech (SPEED-01).
  */
 public final class SpeedrunTechPolicy {
 

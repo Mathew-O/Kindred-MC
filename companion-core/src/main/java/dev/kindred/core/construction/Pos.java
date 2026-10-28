@@ -1,17 +1,26 @@
 package dev.kindred.core.construction;
 
-/** A block position, in a blueprint's own frame or the world's (E-08a). Pure. */
+/**
+ * In plain terms: a block position (x, y, z), either in a blueprint or in the world, with helpers for its
+ * neighbours and the six faces of a block.
+ *
+ * Technical: A block position, in a blueprint's own frame or the world's (E-08a). Pure.
+ */
 public record Pos(int x, int y, int z) implements Comparable<Pos> {
+    /** The position moved by an offset. */
     public Pos add(int dx, int dy, int dz) {
         return new Pos(Math.addExact(x, dx), Math.addExact(y, dy), Math.addExact(z, dz));
     }
 
+    /** The position moved by another position's coordinates. */
     public Pos add(Pos other) {
         return add(other.x, other.y, other.z);
     }
 
+    /** The block above. */
     public Pos up() { return add(0, 1, 0); }
 
+    /** The block below. */
     public Pos down() { return add(0, -1, 0); }
 
     /** The neighbour on {@code face}: one of up, down, north, south, east, west. */
@@ -44,17 +53,20 @@ public record Pos(int x, int y, int z) implements Comparable<Pos> {
             this.dz = dz;
         }
 
+        /** The face on the other side of the block. */
         public Face opposite() {
             return switch (this) {
                 case DOWN -> UP; case UP -> DOWN; case NORTH -> SOUTH; case SOUTH -> NORTH; case WEST -> EAST; case EAST -> WEST;
             };
         }
 
+        /** Whether this face points sideways (not up or down). */
         public boolean horizontal() { return dy == 0; }
 
         /** The axis it lies along: x, y or z. */
         public String axis() { return dx != 0 ? "x" : dy != 0 ? "y" : "z"; }
 
+        /** The face's name as Minecraft writes it. */
         public String id() { return name().toLowerCase(java.util.Locale.ROOT); }
     }
 }

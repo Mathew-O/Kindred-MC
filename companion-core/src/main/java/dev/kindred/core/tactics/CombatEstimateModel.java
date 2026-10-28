@@ -1,7 +1,11 @@
 package dev.kindred.core.tactics;
 
 /**
- * Pure abstraction for estimating combat mechanics: charge timing, weapon damage,
+ * In plain terms: the combat maths a player uses to think ahead: how charged its swing is, how much damage a
+ * hit would do to a given mob, and how a short plan of moves would turn out. It only predicts; it never
+ * swings.
+ *
+ * Technical: Pure abstraction for estimating combat mechanics: charge timing, weapon damage,
  * critical strike eligibility, target mitigation, and multi-step sequence outcomes.
  */
 public interface CombatEstimateModel {

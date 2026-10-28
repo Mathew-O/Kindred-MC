@@ -1,7 +1,11 @@
 package dev.kindred.core.expedition;
 
 /**
- * Immutable observation of player state and environmental conditions relevant to exploration.
+ * In plain terms: what an exploring player knows about itself and its surroundings right now (health, food,
+ * how full its bags are, the time of day, the weather and how far it is from home), used to decide whether to
+ * keep going or head back.
+ *
+ * Technical: Immutable observation of player state and environmental conditions relevant to exploration.
  */
 public record ExpeditionObservation(
         int x,
@@ -19,6 +23,7 @@ public record ExpeditionObservation(
         int totalSlots, // 36
         boolean hasWeapon
 ) {
+    /** Whether it is getting dark or already night. */
     public boolean isNightOrDusk() {
         long tod = timeOfDay % 24000;
         return tod >= 11500 && tod <= 23000;

@@ -3,12 +3,17 @@ package dev.kindred.core.team;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Strongly-typed shared project task identifier. */
+/**
+ * In plain terms: the name tag of one job in a team project.
+ *
+ * Technical: Strongly-typed shared project task identifier.
+ */
 public record TaskId(UUID id) {
     public TaskId {
         Objects.requireNonNull(id, "id cannot be null");
     }
 
+    /** A job id from a raw id. */
     public static TaskId of(UUID id) {
         return new TaskId(id);
     }
@@ -19,6 +24,7 @@ public record TaskId(UUID id) {
         return new TaskId(UUID.nameUUIDFromBytes((projectId.id() + ":" + taskName).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
 
+    /** A new, unique job id. */
     public static TaskId random() {
         return new TaskId(UUID.randomUUID());
     }

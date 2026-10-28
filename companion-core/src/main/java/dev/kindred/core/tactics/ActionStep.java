@@ -1,7 +1,10 @@
 package dev.kindred.core.tactics;
 
 /**
- * Elementary action steps that comprise a bounded tactical sequence.
+ * In plain terms: the small moves a fight plan is made of: stand guard, back off to a safe spot, close in,
+ * strike, strike with a critical hit, or get a weapon ready.
+ *
+ * Technical: Elementary action steps that comprise a bounded tactical sequence.
  */
 public enum ActionStep {
     /**

@@ -8,9 +8,13 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 /**
- * What the route planner may use besides the player's own items: the kinds of sources the player has actually
- * seen, with the distance to the nearest of each, and the methods the server side can carry out. The adapter
- * rebuilds this on every planning pass, so the plan follows the world as the player learns it.
+ * In plain terms: what the route planner may count on besides the player's own items: the kinds of things it
+ * has actually seen (with how far away the nearest is), and the methods the game side can carry out. It is
+ * rebuilt as the player learns more about the world.
+ *
+ * Technical: What the route planner may use besides the player's own items: the kinds of sources the player
+ * has actually seen, with the distance to the nearest of each, and the methods the server side can carry out.
+ * The adapter rebuilds this on every planning pass, so the plan follows the world as the player learns it.
  *
  * @param nearest blocks to the nearest observed source of each kind; a kind never seen is absent
  * @param methods ways of getting things the adapter can execute; the planner never picks one outside this set
@@ -57,10 +61,13 @@ public record WorldFacts(Map<Source, Integer> nearest, Set<Method> methods) {
         return new WorldFacts(Map.of(), Set.of(Method.MINE_OBSIDIAN, Method.DIG_FOR_STONE));
     }
 
+    /** Whether a method may be used. */
     public boolean can(Method method) { return methods.contains(method); }
 
+    /** Whether the player has seen this kind of source. */
     public boolean knows(Source source) { return nearest.containsKey(source); }
 
+    /** How far away the nearest seen source of this kind is. */
     public OptionalInt distance(Source source) {
         Integer distance = nearest.get(source);
         return distance == null ? OptionalInt.empty() : OptionalInt.of(distance);

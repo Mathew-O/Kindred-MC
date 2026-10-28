@@ -1,7 +1,10 @@
 package dev.kindred.core.tactics;
 
 /**
- * Ordered objectives within the surviving option set.
+ * In plain terms: what a fight plan is for, most important first: stop serious harm right now, avoid losing
+ * things for good, end the encounter safely, then get back to its jobs.
+ *
+ * Technical: Ordered objectives within the surviving option set.
  * Lexicographically ordered: rank 1 strictly outranks rank 2, which strictly outranks rank 3,
  * which strictly outranks rank 4.
  */
@@ -32,10 +35,12 @@ public enum TacticalObjective {
         this.rank = rank;
     }
 
+    /** Lower is more important. */
     public int rank() {
         return rank;
     }
 
+    /** Whether this goal comes before another. */
     public boolean hasHigherPriorityThan(TacticalObjective other) {
         return this.rank < other.rank;
     }

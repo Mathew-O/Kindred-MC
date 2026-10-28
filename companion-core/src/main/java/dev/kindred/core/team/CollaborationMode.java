@@ -1,7 +1,10 @@
 package dev.kindred.core.team;
 
 /**
- * Controls whether AI players coordinate via shared projects, stock reservations,
+ * In plain terms: whether the AI players work as a team (sharing projects, chests and discoveries) or each
+ * plays alone.
+ *
+ * Technical: Controls whether AI players coordinate via shared projects, stock reservations,
  * and shared discovery atlases, or operate as completely independent solo players.
  */
 public enum CollaborationMode {

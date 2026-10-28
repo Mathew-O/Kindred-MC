@@ -11,7 +11,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Pure chest categorization, stack compaction, slot sorting, and Item-Frame icon mapping
+ * In plain terms: keeps chests tidy: sorts items into categories (ores, tools, food, wood, stone, redstone,
+ * Nether and End, mob drops), merges half stacks, decides what to put away from a player's backpack while
+ * keeping its survival kit, and how to be polite when a person is using the same chests. It only ever moves
+ * real items; it never creates or deletes any.
+ *
+ * Technical: Pure chest categorization, stack compaction, slot sorting, and Item-Frame icon mapping
  * for autonomous storage organization (CHEST-01) and Bot <-> Player QoL (QOL-05).
  *
  * Strictly adheres to PLY-04 item conservation: plans only merge/swap/transfer operations
@@ -42,6 +47,7 @@ public final class ChestOrganizationPolicy {
             this.sortOrder = sortOrder;
         }
 
+        /** The category's name as shown to people. */
         public String displayName() {
             return displayName;
         }
@@ -51,6 +57,7 @@ public final class ChestOrganizationPolicy {
             return itemFrameIconId;
         }
 
+        /** Where the category goes in a row of chests. */
         public int sortOrder() {
             return sortOrder;
         }
@@ -79,10 +86,12 @@ public final class ChestOrganizationPolicy {
             }
         }
 
+        /** Whether the slot holds nothing. */
         public boolean isEmpty() {
             return count <= 0 || "minecraft:air".equals(itemId);
         }
 
+        /** Whether two stacks are the same item and can be combined. */
         public boolean canMergeWith(SlotSnapshot other) {
             return !this.isEmpty()
                     && !other.isEmpty()
@@ -168,6 +177,7 @@ public final class ChestOrganizationPolicy {
             "minecraft:chorus_fruit", "minecraft:shulker_shell", "minecraft:dragon_breath", "minecraft:elytra"
     );
 
+    /** Cleans up an item id so the same item always matches. */
     private static String normalizeId(String raw) {
         String clean = raw.trim().toLowerCase(Locale.ROOT);
         return clean.startsWith("minecraft:") ? clean : "minecraft:" + clean;

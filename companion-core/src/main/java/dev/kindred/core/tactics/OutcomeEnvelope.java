@@ -3,7 +3,10 @@ package dev.kindred.core.tactics;
 import java.util.Objects;
 
 /**
- * Evaluated multi-dimensional outcome envelope of a tactical sequence.
+ * In plain terms: how a fight plan is expected to go: how safe the player stays, how much damage it takes and
+ * deals, how long it takes, and whether anything nearby could get hurt.
+ *
+ * Technical: Evaluated multi-dimensional outcome envelope of a tactical sequence.
  * Includes survival classification, predicted damage intervals, execution timing,
  * collateral risk, and objective-prevented harm.
  */

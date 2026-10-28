@@ -3,7 +3,11 @@ package dev.kindred.core.tactics;
 import java.util.Objects;
 
 /**
- * Standard deterministic implementation of CombatEstimateModel based on Minecraft 1.21.1 / Yarn
+ * In plain terms: the combat maths, done the way Minecraft 1.21.1 does it: attack cooldowns, weapon damage,
+ * critical hits, enchantments like Sharpness and Smite, and how much armour soaks up. It only predicts and
+ * never changes anything in the game.
+ *
+ * Technical: Standard deterministic implementation of CombatEstimateModel based on Minecraft 1.21.1 / Yarn
  * combat mechanics.
  * Side-effect free: does not mutate player body, inventory, world, entity health, cooldowns, or RNG.
  */
@@ -56,6 +60,7 @@ public final class StandardCombatPredictor implements CombatEstimateModel {
         return new DamageInterval(minMitigated, maxMitigated);
     }
 
+    /** The extra damage from a weapon's enchantments against this mob. */
     private double calculateEnchantmentBonus(WeaponProfile weapon, MobThreatObservation target) {
         double bonus = 0.0;
 

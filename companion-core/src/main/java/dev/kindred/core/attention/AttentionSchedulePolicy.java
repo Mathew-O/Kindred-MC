@@ -3,7 +3,12 @@ package dev.kindred.core.attention;
 import java.util.Objects;
 
 /**
- * Cadences, category eligibility and deterministic work budget limits for the shared attention scheduler.
+ * In plain terms: how often each kind of background thinking runs in each mood (routine, alert, combat,
+ * recovering), and the hard limits on how much thinking may happen per tick, so the AI never slows the server
+ * down.
+ *
+ * Technical: Cadences, category eligibility and deterministic work budget limits for the shared attention
+ * scheduler.
  */
 public final class AttentionSchedulePolicy {
     public static final int DEFAULT_MAX_SLICES_PER_TICK = 6;
@@ -27,6 +32,7 @@ public final class AttentionSchedulePolicy {
         this.learningReviewEnabled = learningReviewEnabled;
     }
 
+    /** The standard limits and timings. */
     public static AttentionSchedulePolicy defaultPolicy() {
         return new AttentionSchedulePolicy(
                 DEFAULT_MAX_SLICES_PER_TICK,

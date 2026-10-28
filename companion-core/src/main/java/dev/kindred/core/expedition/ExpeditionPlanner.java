@@ -3,7 +3,11 @@ package dev.kindred.core.expedition;
 import dev.kindred.core.TaskPreferences.Priority;
 
 /**
- * Pure policy deciding expedition readiness, return trigger evaluation, and return route planning.
+ * In plain terms: the explorer's common sense: whether a player is ready to set out, when it must turn back
+ * (dusk, night, storms, full bags, low health or food, too far from home, or called back), and which way to
+ * walk next.
+ *
+ * Technical: Pure policy deciding expedition readiness, return trigger evaluation, and return route planning.
  */
 public final class ExpeditionPlanner {
     public static final double DEFAULT_MAX_EXPEDITION_RADIUS = 64.0;
@@ -13,6 +17,7 @@ public final class ExpeditionPlanner {
 
     private ExpeditionPlanner() {}
 
+    /** Whether the player is fit to set out (healthy, fed, room in its bags, daylight). */
     public static boolean isReadyForExpedition(ExpeditionObservation obs) {
         // Must have sufficient health, food rations, not be during dusk/night/thunderstorm, and have inventory space
         if (obs.health() < 14.0f) return false;
@@ -22,6 +27,7 @@ public final class ExpeditionPlanner {
         return true;
     }
 
+    /** The reason it must head home now, or none. */
     public static ReturnReason evaluateReturnTriggers(ExpeditionState state, ExpeditionObservation obs) {
         // 1. Night or dusk approaching or thunderstorm
         if (obs.isNightOrDusk()) {

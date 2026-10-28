@@ -10,7 +10,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Pure policy for ranking tactical options according to the strict self-preservation hierarchy.
+ * In plain terms: chooses how to handle a fight: drops plans that are impossible or not allowed, keeps only
+ * the safest ones, then picks the one that best serves the most important goal. Safety always comes first; no
+ * loot or kill can buy a riskier plan.
+ *
+ * Technical: Pure policy for ranking tactical options according to the strict self-preservation hierarchy.
  *
  * Decision pipeline:
  * 1. Eligibility filter: mechanical feasibility, authority, collateral safety.

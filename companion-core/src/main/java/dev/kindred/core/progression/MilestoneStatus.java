@@ -1,7 +1,10 @@
 package dev.kindred.core.progression;
 
 /**
- * Status of a milestone within the progression graph.
+ * In plain terms: whether a step is locked (needs earlier steps first), unlocked (can be worked on) or
+ * achieved.
+ *
+ * Technical: Status of a milestone within the progression graph.
  */
 public enum MilestoneStatus {
     /**

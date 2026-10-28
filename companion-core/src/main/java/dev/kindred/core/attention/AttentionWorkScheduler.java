@@ -15,7 +15,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Shared fair-budget scheduler for up to three native AI-players.
+ * In plain terms: shares the AI's background thinking fairly between up to three players. Each tick it hands
+ * out a small, fixed number of thinking slots (look for threats, check gear, plan goals, look for
+ * resources...), taking turns between players and putting the most urgent work first, and it stops when the
+ * tick's time budget is used.
+ *
+ * Technical: Shared fair-budget scheduler for up to three native AI-players.
  *
  * <p>Redistributes computational attention across Routine, Alert, Combat and Recovery states.
  * Guarantees round-robin fairness across eligible players, coalesced per-category jobs, single-use
@@ -109,6 +114,7 @@ public final class AttentionWorkScheduler {
     private final Map<WorkKind, Long> invalidationsByKind = new EnumMap<>(WorkKind.class);
     private final Map<WorkKind, Long> overrunsByKind = new EnumMap<>(WorkKind.class);
 
+    /** A scheduler with its limits and timings. */
     public AttentionWorkScheduler(UUID runtimeSession, AttentionSchedulePolicy policy) {
         this.runtimeSession = Objects.requireNonNull(runtimeSession, "runtimeSession");
         this.policy = Objects.requireNonNull(policy, "policy");
@@ -405,6 +411,7 @@ public final class AttentionWorkScheduler {
         }
     }
 
+    /** Counters showing how the thinking time was spent, for diagnosing performance. */
     public synchronized SchedulerDiagnostics diagnostics() {
         return new SchedulerDiagnostics(
                 totalSlicesStarted,

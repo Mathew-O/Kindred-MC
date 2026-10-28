@@ -3,7 +3,10 @@ package dev.kindred.core.attention;
 import java.util.Map;
 
 /**
- * Immutable snapshot of attention scheduler metrics and diagnostic counters.
+ * In plain terms: the counters that show how the background thinking was shared out: slots started, skipped
+ * and over time, for checking performance.
+ *
+ * Technical: Immutable snapshot of attention scheduler metrics and diagnostic counters.
  */
 public record SchedulerDiagnostics(
         long totalSlicesStarted,
