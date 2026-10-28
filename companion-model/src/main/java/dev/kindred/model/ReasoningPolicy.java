@@ -5,7 +5,14 @@ import dev.kindred.core.ProposalFence;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Pure admission policy. The runtime supplies trusted facts; this policy cannot grant body authority. */
+/**
+ * In plain terms: decides whether a player should ask an AI model anything right now: only when one is set
+ * up, there is budget left, nothing is already waiting, it is allowed to, and something has actually changed
+ * (never on an ordinary tick).
+ *
+ * Technical: Pure admission policy. The runtime supplies trusted facts; this policy cannot grant body
+ * authority.
+ */
 public final class ReasoningPolicy {
     public enum Trigger { DIRECT_CHAT, NEW_GOAL, PLAN_INVALIDATED, LOCAL_RECOVERY_EXHAUSTED, ROUTINE_TICK }
     public enum Verdict { REQUEST, DISABLED, BUDGET_EXHAUSTED, IN_FLIGHT, NOT_PERMITTED, NO_CHANGE }
@@ -26,6 +33,7 @@ public final class ReasoningPolicy {
             }
         }
 
+        /** What a request would be about, read from the player's current plan. */
         public static Key from(UUID companionId, ModelGateway.Lane lane, ProposalFence fence,
                                long observationRevision, Trigger trigger) {
             return new Key(companionId, lane, fence.sessionEpoch(), fence.intentRevision(),

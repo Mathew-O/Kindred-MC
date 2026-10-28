@@ -14,8 +14,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * How a run went for each player, read from the server's log: the measures of the review of 2026-10-24 (section 5)
- * that the log carries. What it reads:
+ * In plain terms: reads a server log after a play session and scores how each AI player did: whether it kept
+ * repeating the same mistake, got back to its work after being interrupted, stuck with a job, recovered when
+ * stuck, and how often it tried to walk somewhere it could not reach.
+ *
+ * Technical: How a run went for each player, read from the server's log: the measures of the review of
+ * 2026-10-24 (section 5) that the log carries. What it reads:
  * <ul>
  *   <li>Each task's end: {@code <player> <skill> COMPLETED|BLOCKED|CANCELLED[: reason] [label]}.</li>
  *   <li>Each step of its work: {@code <player> goal at x y z: <goal>: ...}, {@code <player> build: <blueprint>: ...},
@@ -218,12 +222,14 @@ public final class RunMetrics {
 
     public Map<String, Player> players() { return players; }
 
+    /** The scores for a whole log. */
     public static RunMetrics of(List<String> lines) {
         var metrics = new RunMetrics();
         lines.forEach(metrics::read);
         return metrics;
     }
 
+    /** Prints the scores for the log named on the command line. */
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             System.err.println("Usage: RunMetrics <server log> [more logs]");

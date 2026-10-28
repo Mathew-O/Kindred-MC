@@ -7,10 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Synthetic choice comparison, without a Minecraft world or executable skills. */
+/**
+ * In plain terms: a quick demo you can run without Minecraft: it shows how turning up one personality trait
+ * (helpfulness, farming or mining) changes which job a player picks, and that an urgent job still wins.
+ *
+ * Technical: Synthetic choice comparison, without a Minecraft world or executable skills.
+ */
 public final class PersonalityDemo {
     private PersonalityDemo() { }
 
+    /** Prints the demo's choices. */
     public static void main(String[] args) {
         var eligible = new TaskPreferences.Eligibility(true, true, true, true);
         var supplies = new TaskPreferences.Candidate(new UUID(0, 1), TaskPreferences.Priority.PROJECT, 62,

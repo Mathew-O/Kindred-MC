@@ -26,7 +26,13 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Executable contract demonstration, deliberately without a Minecraft world or inference provider. */
+/**
+ * In plain terms: a quick self-check you can run without Minecraft: it creates a player in a throwaway
+ * database, sets aside play time, and checks that stopping a player really stops it and that after a restart
+ * the player is the same one, still stopped, with its play time counted correctly.
+ *
+ * Technical: Executable contract demonstration, deliberately without a Minecraft world or inference provider.
+ */
 public final class FoundationDemo {
     static final Instant NOW = Instant.parse("2026-10-13T18:00:00Z");
     static final AccountingPeriod PERIOD = AccountingPeriod.containing(NOW, ZoneId.of("America/New_York"));
@@ -35,6 +41,7 @@ public final class FoundationDemo {
 
     private FoundationDemo() { }
 
+    /** Runs the self-check in a temporary database. */
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
             throw new IllegalArgumentException("Usage: FoundationDemo [new-demo-database-path]");

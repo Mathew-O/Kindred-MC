@@ -5,7 +5,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Which provider serves the strategist, chosen from the operator's settings (F-19d). An explicit
+ * In plain terms: works out which AI service to use from the server owner's settings: one named outright,
+ * else one recognised from its key, else the first whose key is set. Each comes with a small, quick default
+ * model that can be swapped for another.
+ *
+ * Technical: Which provider serves the strategist, chosen from the operator's settings (F-19d). An explicit
  * {@code KINDRED_STRATEGIST_PROVIDER} wins; else a generic {@code KINDRED_STRATEGIST_API_KEY} is recognised by its
  * prefix; else the first provider whose own key variable is set, in the order below. Each provider has a small, fast
  * default model of the kind the strategist needs, and {@code KINDRED_STRATEGIST_MODEL} replaces it;
@@ -58,6 +62,7 @@ public final class StrategistProvider {
         @Override public String toString() { return provider.label + " " + model + (baseUrl == null ? "" : " at " + baseUrl); }
     }
 
+    /** The service the settings point to, or why none could be chosen. */
     public static Selection choose(Map<String, String> env) {
         String named = value(env, "KINDRED_STRATEGIST_PROVIDER");
         String generic = value(env, "KINDRED_STRATEGIST_API_KEY");

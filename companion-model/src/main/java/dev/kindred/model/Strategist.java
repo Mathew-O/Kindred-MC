@@ -9,10 +9,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * An optional model strategist (F-19b, F-19d): one request per consultation, off the game thread, whose reply is a
- * stance and preferences from fixed sets and two short texts, validated in core. It never returns actions or code,
- * and nothing in the game waits on it. Each provider reads its own key from the environment; keys are never stored or
- * logged.
+ * In plain terms: the shape every optional AI adviser has, whichever company serves it. It only ever gives
+ * advice picked from fixed lists plus a little text; it never controls a player directly or writes code, and
+ * nothing in the game waits for it.
+ *
+ * Technical: An optional model strategist (F-19b, F-19d): one request per consultation, off the game thread,
+ * whose reply is a stance and preferences from fixed sets and two short texts, validated in core. It never
+ * returns actions or code, and nothing in the game waits on it. Each provider reads its own key from the
+ * environment; keys are never stored or logged.
  */
 public interface Strategist extends AutoCloseable {
     /** The planning lane's bounds (AI-05): a fifteen-second deadline and a thousand output tokens. */

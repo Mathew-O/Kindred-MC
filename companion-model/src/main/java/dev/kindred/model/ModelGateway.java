@@ -17,7 +17,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Bounded asynchronous gateway for model chat and planning proposals (F-19).
+ * In plain terms: a gatekeeper for AI model requests: it limits how many run at once and how often, keeps
+ * each player inside a daily token budget, and turns away any answer that names an action the player cannot
+ * do.
+ *
+ * Technical: Bounded asynchronous gateway for model chat and planning proposals (F-19).
  * Enforces lane separation (CHAT vs PLANNER), concurrency bounds (1 per lane per companion, 2 globally),
  * rate limits (6/min companion, 12/min global), daily token budgets (50k companion, 100k global),
  * and skill-name validation via ProposalGate. This is not yet a runtime integration:
@@ -72,10 +76,12 @@ public final class ModelGateway {
             validatedSteps = validatedSteps == null ? List.of() : List.copyOf(validatedSteps);
         }
 
+        /** An answer that came back. */
         public static Response success(UUID requestId, String text, List<String> steps, int tokens) {
             return new Response(requestId, true, text, steps, tokens, Optional.empty());
         }
 
+        /** A request turned away, and why. */
         public static Response rejected(UUID requestId, String reason) {
             return new Response(requestId, false, "", List.of(), 0, Optional.of(reason));
         }
@@ -100,11 +106,13 @@ public final class ModelGateway {
     private int globalTokenUsage = 0;
     private int globalActiveCount = 0;
 
+    /** A gatekeeper that knows which actions the players can really do. */
     public ModelGateway(Set<String> installedSkills, Provider provider) {
         this.proposalGate = new ProposalGate(installedSkills);
         this.provider = provider;
     }
 
+    /** Sends a request if the limits allow it, else turns it away at once. */
     public synchronized CompletableFuture<Response> submit(Request request, long nowMs, boolean revisionsCurrent) {
         Objects.requireNonNull(request, "request");
         UUID companionId = request.companionId();
@@ -235,6 +243,7 @@ public final class ModelGateway {
     public synchronized int globalTokensUsed() { return globalTokenUsage; }
     public synchronized int companionTokensUsed(UUID companionId) { return companionTokenUsage.getOrDefault(companionId, 0); }
 
+    /** Starts a new day's token budgets. */
     public synchronized void resetDailyBudgets() {
         companionTokenUsage.clear();
         globalTokenUsage = 0;
