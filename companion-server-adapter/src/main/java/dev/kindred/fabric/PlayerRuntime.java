@@ -7655,7 +7655,9 @@ final class PlayerRuntime {
         Phase phase = Phase.BRIDGE;
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
-        int pushes, failed, doorTries, pickups, fetchWaits;
+        int pushes, failed, doorTries, pickups;
+        /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
+        long fetchFrom;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -8074,7 +8076,17 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 if (b.pushes >= 4) return giveUp(entry, body, "The cart wouldn't take the " + b.noun + " up.");
-                // The cart rolled on past and stopped empty: back to its place, for another push.
+                // Stopped short against it, untaken: a cart takes up only what lies within a fifth of a block after its move
+                // in a tick, and rolling faster than that it can step over the gap into touching, which stops it dead. Taken
+                // back and put down in its place again, for another push.
+                int cartAt = b.rails.indexOf(cart.getBlockPos());
+                if (!cart.getBlockPos().equals(b.cart) && cartAt >= 0 && cartAt < on) {
+                    KindredMod.LOGGER.info("{} bringing: the cart at {} stopped short against the {} at {} ({} pushes); put down again", entry.data.displayName(),
+                            cart.getPos(), b.noun, villager.getPos(), b.pushes);
+                    b.phase = Bring.Phase.RECART;
+                    return bringCandidates(entry, body);
+                }
+                // The cart rolled on past and stopped empty.
                 if (!cart.getBlockPos().equals(b.cart)) {
                     KindredMod.LOGGER.info("{} bringing: the cart at {} rolled past the {} at {} (riding {}, {} pushes); the line from {}", entry.data.displayName(),
                             cart.getPos(), b.noun, villager.getPos(), villager.getVehicle(), b.pushes, b.cart.toShortString());
@@ -8261,17 +8273,20 @@ final class PlayerRuntime {
                 var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
                         item -> item.isAlive() && item.getStack().isOf(Items.MINECART));
                 if (!lying.isEmpty()) {
-                    // Into the cell's front for them, where they are picked up from.
-                    if (!player.getBlockPos().equals(b.slot) && b.fetchWaits <= 15) {
+                    // Into the cell's front for them, where they are picked up from (two seconds at most, by the clock: the
+                    // step is looked at more than once a tick).
+                    if (!player.getBlockPos().equals(b.slot)) {
                         return List.of(new NativeTaskCandidate(bringTask(entry, "in"), "native_goto", Map.of("x", String.valueOf(b.slot.getX()),
                                 "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "range", "0", "centre", "true")));
                     }
-                    // From the front's far edge for one that came to rest by the bed, a twentieth of a block out of reach of its middle.
-                    if (b.fetchWaits++ == 15) {
+                    if (b.fetchFrom == 0) b.fetchFrom = now;
+                    long waited = now - b.fetchFrom;
+                    if (waited < 15) return List.of(waitTask(task, "For the cart to be picked up"));
+                    // From the front's far edge for one that came to rest against the bed, out of reach of its middle.
+                    if (waited < 40) {
                         return List.of(new NativeTaskCandidate(bringTask(entry, "edge in"), "native_goto", Map.of("x", String.valueOf(b.floor.getX()),
                                 "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "0.6", "partial", "true")));
                     }
-                    if (b.fetchWaits < 40) return List.of(waitTask(task, "For the cart to be picked up"));
                     for (var item : lying) {
                         KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach from its front", entry.data.displayName(),
                                 item.getStack(), b.noun, item.getPos());
