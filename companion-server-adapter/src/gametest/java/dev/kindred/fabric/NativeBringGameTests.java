@@ -332,6 +332,11 @@ public final class NativeBringGameTests implements FabricGameTest {
                         context.assertTrue(librarian[0].getHealth() >= librarian[0].getMaxHealth(), "Unhurt by its ride: " + librarian[0].getHealth());
                     }
                     context.assertTrue(f.runtime.said(f.id).stream().anyMatch(line -> line.startsWith("I've brought the librarian home")), "Said: " + f.runtime.said(f.id));
+                    // One that strolls keeps the cart in its cell, and its boat's item falls there: said.
+                    if (strolling) {
+                        context.assertTrue(f.runtime.said(f.id).stream().anyMatch(line -> line.startsWith("I've brought the librarian home")
+                                && line.contains("left the cart")), "Said what it left in the cell: " + f.runtime.said(f.id));
+                    }
                     librarian[0].discard();
                     f.runtime.stop();
                   } catch (net.minecraft.test.GameTestException failing) {

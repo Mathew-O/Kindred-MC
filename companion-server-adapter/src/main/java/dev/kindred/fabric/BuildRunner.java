@@ -122,9 +122,14 @@ final class BuildRunner {
 
     /**
      * What a build's needs draw on (E-08c): the run's own gathering and crafting, and the player's own assigned
-     * storage, if it has one (null otherwise).
+     * storage, if it has one (null otherwise); the animals it never hunts for them (its ranch's), and the iron its run
+     * keeps for itself, which shears are not made from.
      */
-    record Supply(PortalRunCampaign campaign, BlockPos storage) { }
+    record Supply(PortalRunCampaign campaign, BlockPos storage, java.util.function.Predicate<net.minecraft.entity.passive.PassiveEntity> spare, int ironKept) {
+        Supply(PortalRunCampaign campaign, BlockPos storage) {
+            this(campaign, storage, animal -> false, 0);
+        }
+    }
 
     /** How far its own storage may be for stepping over to it to count as easy. */
     private static final int STORAGE_NEAR = 24;
@@ -600,6 +605,7 @@ final class BuildRunner {
             }
             case BuildNeeds.Step.Gather g -> {
                 needsNote = g.why() + " (" + g.count() + ")";
+                if (g.item().endsWith("_wool")) return wool(body, supply, g.item(), missing);
                 var kind = g.item().endsWith("_log") ? WorldKnowledge.Kind.LOG : WorldKnowledge.Kind.STONE;
                 String what = kind == WorldKnowledge.Kind.LOG ? "logs" : "stone";
                 // Stone as the goal gets it: close by, else a staircase down, begun off the build's site.
@@ -667,6 +673,70 @@ final class BuildRunner {
                 return Optional.empty();
             }
         }
+    }
+
+    /** How often it has walked to each drop of wool, which it lets go after a few (one that keeps drifting off). */
+    private final Map<java.util.UUID, Integer> woolWalks = new HashMap<>();
+
+    /**
+     * Wool for the build (a trading hall's beds, E-45d), as players get it: what has dropped picked up first; a sheep of
+     * its colour sheared with shears it holds, which drops one to three and grows it again, shears made first from iron
+     * it can spare; else a sheep of its colour hunted, one wool a sheep, never one of its ranch's or one named. None in
+     * sight: out over the ground to look, a few times, before the build ends without it.
+     */
+    private Optional<PortalRunCampaign.Task> wool(NativePlayerBody body, Supply supply, String wool, String missing) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        Item item = Registries.ITEM.get(Identifier.of(wool));
+        var colour = net.minecraft.util.DyeColor.byName(Identifier.of(wool).getPath().replace("_wool", ""), null);
+        if (colour == null) {
+            needsNote = "No way to " + shortName(wool) + " for the rest of the build";
+            wanting = missing;
+            return Optional.empty();
+        }
+        var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(12, 4, 12),
+                drop -> drop.isAlive() && drop.getStack().isOf(item) && woolWalks.getOrDefault(drop.getUuid(), 0) < 3 && player.canSee(drop));
+        if (!drops.isEmpty()) {
+            var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+            woolWalks.merge(drop.getUuid(), 1, Integer::sum);
+            needsNote = "Picking up " + shortName(wool) + " for the rest of the build";
+            return Optional.of(PortalRunCampaign.go(drop.getBlockPos(), 0.6, false, "Pick up " + shortName(wool)));
+        }
+        int shears = -1;
+        for (int s = 0; s < 36 && shears < 0; s++) if (player.getInventory().getStack(s).isOf(Items.SHEARS)) shears = s;
+        if (shears < 0 && player.getInventory().count(Items.IRON_INGOT) - supply.ironKept() >= 2) {
+            var make = supply.campaign().craft(body, "shears");
+            if (make.isPresent()) {
+                needsNote = "Making shears for " + shortName(wool);
+                return make;
+            }
+        }
+        boolean shearing = shears >= 0;
+        var sheep = world.getEntitiesByClass(net.minecraft.entity.passive.SheepEntity.class, player.getBoundingBox().expand(24, 8, 24),
+                s -> s.isAlive() && !s.isBaby() && s.getColor() == colour && player.canSee(s)
+                        && (shearing ? s.isShearable() : !s.isSheared() && !s.hasCustomName() && !supply.spare().test(s)));
+        if (!sheep.isEmpty()) {
+            var nearest = sheep.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+            if (shearing) {
+                needsNote = "Shearing sheep for " + shortName(wool);
+                if (shears >= 9) return Optional.of(new PortalRunCampaign.Task("native_swap", Map.of("source", str(shears), "target", "8"), "Shears to hand"));
+                if (!player.canInteractWithEntity(nearest, 0)) return Optional.of(PortalRunCampaign.go(nearest.getBlockPos(), 2.0, false, "Approach a sheep to shear"));
+                return Optional.of(new PortalRunCampaign.Task("native_shear", Map.of("target", nearest.getUuid().toString(), "slot", str(shears)), "Shear a sheep"));
+            }
+            needsNote = "Hunting sheep for " + shortName(wool);
+            if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) return Optional.of(PortalRunCampaign.strike(player, nearest, "Hunt a sheep for its wool"));
+            return Optional.of(PortalRunCampaign.go(nearest.getBlockPos(), 2.0, false, "Approach a sheep for its wool"));
+        }
+        if (looks < LOOKS) {
+            var look = supply.campaign().lookFor(body, "sheep");
+            if (look.isPresent()) {
+                needsNote = "Looking for sheep for the rest of the build";
+                return look;
+            }
+        }
+        needsNote = "No sheep in sight for the rest of the build";
+        wanting = missing;
+        return Optional.empty();
     }
 
     /** The wood the build is mostly made of, for recipes that take any planks; oak if none. */

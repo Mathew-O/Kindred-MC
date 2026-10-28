@@ -1420,6 +1420,9 @@ final class PlayerRuntime {
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
+            } else if (skill.equals("native_shear")) {
+                task = new NativeShearAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_fill_frame")) {
                 task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")),
@@ -1658,6 +1661,7 @@ final class PlayerRuntime {
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
                     || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
@@ -3749,7 +3753,11 @@ final class PlayerRuntime {
         entry.campaign.policy(edits);
         var storage = entry.setup == null || entry.setup.storage() == null ? null : new BlockPos(entry.setup.storage().position().x(),
                 entry.setup.storage().position().y(), entry.setup.storage().position().z());
-        var task = build.next(body, new BuildRunner.Supply(entry.campaign, storage));
+        // Never the kind of animal its ranch is penning, for a build's wool as for its food.
+        var ranch = entry.ranch;
+        var task = build.next(body, new BuildRunner.Supply(entry.campaign, storage, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
+                net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent(),
+                lootWanted(entry).getOrDefault("minecraft:iron_ingot", 0)));
         // Its scaffold kept with its work as it changes, to take down as its own after a restart (F-13).
         if (entry.keptWork != null && "build".equals(entry.keptWork.kind())) {
             var scaffold = build.scaffold();
@@ -8435,7 +8443,7 @@ final class PlayerRuntime {
                 if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock && !open) {
                     if (b.failure != null) return endBring(entry, b.failure, false);
                     entry.brought.add(b.villager);
-                    return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall.", true);
+                    return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
                 // The door put back as the hall's plan has it, by the build runner, which places a door as players do.
                 var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone");
@@ -8453,7 +8461,7 @@ final class PlayerRuntime {
                 if (++b.doorTries > 3 || startBuild(server.getCommandSource(), entry.data.id(), plan, b.origin, 0) != 1) {
                     if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back.", false);
                     entry.brought.add(b.villager);
-                    return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back.", true);
+                    return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back." + leftInCell(world, b), true);
                 }
                 return null;
             }
@@ -8723,6 +8731,20 @@ final class PlayerRuntime {
         var ground = ground(world);
         return (x, z) -> ground.at(x, z).map(c -> b.bridged.contains(new BlockPos(x, c.top(), z)) && isShutter(world.getBlockState(new BlockPos(x, c.top(), z)))
                 ? new dev.kindred.core.construction.BaseSite.Column(c.top(), true, c.open()) : c);
+    }
+
+    /**
+     * What it left in the villager's cell, as it is there now, said after it: the cart one that strolls keeps (KEEP), and
+     * what fell there out of reach (the cart's item by the bed, the boat's under the cart).
+     */
+    private static String leftInCell(net.minecraft.server.world.ServerWorld world, Bring b) {
+        var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
+        boolean cart = !world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, cell, net.minecraft.entity.Entity::isAlive).isEmpty()
+                || !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell, item -> item.isAlive() && item.getStack().isOf(Items.MINECART)).isEmpty();
+        boolean boat = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)).isEmpty();
+        if (!cart && !boat) return "";
+        return " I've left " + (cart && boat ? "the cart and my boat" : cart ? "the cart" : "my boat") + " in there with it.";
     }
 
     private static net.minecraft.entity.vehicle.AbstractMinecartEntity cartOf(net.minecraft.server.world.ServerWorld world, Bring b) {

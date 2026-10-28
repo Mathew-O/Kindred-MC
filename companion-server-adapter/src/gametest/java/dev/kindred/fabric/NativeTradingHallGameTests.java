@@ -169,16 +169,34 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "tradingHallSite", tickLimit = 24000)
     public void aPlayerThatKeepsAVillagerBuildsATradingHallByItsBase(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 23500);
+        builtByItsBase(context, true);
+    }
+
+    /**
+     * As the last, with no beds among the blocks Mason holds but shears, nine planks to spare and a crafting table, and
+     * nine white sheep standing south of its home: the hall's three beds come through its needs (E-08c), its wool shorn
+     * from the sheep, picked up where it falls and made into beds with the planks, as players make them. No sheep is
+     * killed for it.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "tradingHallBeds", tickLimit = 28000)
+    public void aTradingHallsBedsAreMadeFromWoolItShears(TestContext context) {
+        builtByItsBase(context, false);
+    }
+
+    private static void builtByItsBase(TestContext context, boolean beds) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, beds ? 23500 : 27500);
         String[] first = {null};
         var cabin = dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN,
                 dev.kindred.core.construction.BuildStyle.CLASSIC);
         var hall = TradingHall.of(3, "oak", "cobblestone");
         var needed = new TreeMap<String, Integer>();
         for (var b : hall.blocks()) if (Placement.rule(b.spec()) != Placement.Rule.COMPANION) needed.merge(Placement.item(b.spec()), 1, Integer::sum);
+        int bedsInHall = needed.getOrDefault("minecraft:white_bed", 0);
+        if (!beds) needed.remove("minecraft:white_bed");
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos cabinAt = o.add(10, 7, 10), home = o.add(16, 7, 20), at = o.add(19, 7, 20);
         VillagerEntity[] librarian = new VillagerEntity[1];
+        var flock = new java.util.ArrayList<net.minecraft.entity.passive.SheepEntity>();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
@@ -217,6 +235,18 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                     villager.setOffers(offers);
                     world.spawnEntity(villager);
                     librarian[0] = villager;
+                    // Nine white sheep in rows south of its home, their AI off so that they stand.
+                    if (!beds) {
+                        for (int i = 0; i < 9; i++) {
+                            var sheep = EntityType.SHEEP.create(world);
+                            BlockPos stand = o.add(13 + (i % 3) * 3, 7, 26 + (i / 3) * 3);
+                            sheep.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                            sheep.setAiDisabled(true);
+                            sheep.setColor(net.minecraft.util.DyeColor.WHITE);
+                            world.spawnEntity(sheep);
+                            flock.add(sheep);
+                        }
+                    }
                     // The hall's bill as though gathered, and tools and food.
                     var player = f.player();
                     var inventory = player.getInventory();
@@ -225,6 +255,12 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                     inventory.setStack(slot++, new ItemStack(Items.STONE_PICKAXE));
                     inventory.setStack(slot++, new ItemStack(Items.STONE_AXE));
                     inventory.setStack(slot++, new ItemStack(Items.BREAD, 16));
+                    if (!beds) {
+                        // For the beds: shears, three planks a bed besides the hall's, and a table to make them at.
+                        inventory.setStack(slot++, new ItemStack(Items.SHEARS));
+                        inventory.setStack(slot++, new ItemStack(Items.OAK_PLANKS, 3 * bedsInHall));
+                        inventory.setStack(slot++, new ItemStack(Items.CRAFTING_TABLE));
+                    }
                     for (var item : needed.entrySet()) {
                         int left = item.getValue();
                         while (left > 0) {
@@ -282,8 +318,19 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                             "Said why: " + f.runtime.said(f.id));
                     check(context, first, f.runtime.currentBase(f.id).map(base -> base.stage().equals("cabin") && base.complete()).orElse(false),
                             "Its cabin still its base, whole: " + f.runtime.currentBase(f.id));
+                    if (!beds) {
+                        // Its beds made from wool it shore: every sheep alive, some shorn, the shears worn and kept.
+                        long alive = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isAlive).count();
+                        long shorn = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isSheared).count();
+                        var shears = f.player().getInventory().main.stream().filter(stack -> stack.isOf(Items.SHEARS)).findFirst();
+                        KindredMod.LOGGER.info("Trading hall beds: {} of 9 sheep shorn, {} alive, shears {}", shorn, alive, shears.map(ItemStack::getDamage).orElse(-1));
+                        check(context, first, alive == 9, "No sheep killed for the beds: " + alive + " of 9 alive");
+                        check(context, first, shorn >= (bedsInHall * 3 + 2) / 3, "Sheep shorn for the beds' wool: " + shorn);
+                        check(context, first, shears.map(stack -> stack.getDamage() == shorn).orElse(false), "The shears worn once a sheep: " + shears);
+                    }
                     context.assertTrue(first[0] == null, first[0]);
                     librarian[0].discard();
+                    flock.forEach(net.minecraft.entity.Entity::discard);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

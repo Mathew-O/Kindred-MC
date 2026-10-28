@@ -89,7 +89,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART, SHEAR }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -1674,6 +1674,28 @@ final class NativePlayerBody implements BodyAdapter {
             }
             face(at);
             player.interact(animal, Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /**
+     * Shears the sheep with the shears in {@code hotbarSlot}, as a player's use click lands on it (E-45d): vanilla drops
+     * one to three of its wool beside it and wears the shears by one. Only a grown sheep with its wool, within the reach
+     * the server allows a player's click.
+     */
+    boolean shear(ActionLease lease, int hotbarSlot, net.minecraft.entity.passive.SheepEntity sheep) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || sheep == null || !sheep.isAlive() || sheep.getWorld() != player.getWorld()) return false;
+        if (!player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.SHEARS) || !sheep.isShearable()) return false;
+        if (!player.canInteractWithEntity(sheep, 0)) return false;
+        Vec3d at = sheep.getBoundingBox().getCenter();
+        return execute(lease, Intent.SHEAR, null, () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            face(at);
+            player.interact(sheep, Hand.MAIN_HAND);
             player.swingHand(Hand.MAIN_HAND);
         });
     }
