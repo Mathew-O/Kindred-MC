@@ -15,6 +15,7 @@
       "dev.kindred.fabric.NativePlayerLifecycleGameTests",
       "dev.kindred.fabric.NativePlayerRuntimeGameTests",
       "dev.kindred.fabric.NativePaidSkillsGameTests",
+      "dev.kindred.fabric.NativeAccountingGameTests",
       "dev.kindred.fabric.NativeMovementGameTests",
       "dev.kindred.fabric.NativeEquipmentGameTests",
       "dev.kindred.fabric.NativeActionGameTests",

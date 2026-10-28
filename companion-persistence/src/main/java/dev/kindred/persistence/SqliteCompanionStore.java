@@ -1317,6 +1317,12 @@ public final class SqliteCompanionStore {
         }));
     }
 
+    /** The latest saved accounting period, whose end closes every earlier one. */
+    public CompletableFuture<Optional<AccountingPeriod>> latestPeriod(UUID companionId) {
+        Objects.requireNonNull(companionId, "companionId");
+        return submit(() -> latestBudget(companionId).map(BudgetState::period));
+    }
+
     private BudgetState openPeriod(UUID companionId, AccountingPeriod period, Optional<BudgetState> latest) throws SQLException {
         requireMilliseconds(period.startInclusive());
         requireMilliseconds(period.endExclusive());

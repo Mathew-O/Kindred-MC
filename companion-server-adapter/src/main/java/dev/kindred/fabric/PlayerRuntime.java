@@ -46,6 +46,7 @@ import dev.kindred.core.attention.ThreatKnowledge;
 import dev.kindred.core.attention.WorkKind;
 import dev.kindred.core.attention.WorkToken;
 import dev.kindred.persistence.ActionRef;
+import dev.kindred.persistence.ChargeableBudget;
 import dev.kindred.persistence.CreationRequest;
 import dev.kindred.persistence.LedgerScan;
 import dev.kindred.persistence.SqliteCompanionStore;
@@ -86,6 +87,8 @@ import dev.kindred.core.expedition.Waypoint;
 import dev.kindred.core.expedition.WaypointKind;
 import dev.kindred.scheduler.PaidActivitySession;
 import dev.kindred.scheduler.AccountingPeriod;
+import dev.kindred.scheduler.PeriodTransition;
+import dev.kindred.scheduler.ScheduleClock;
 import dev.kindred.scheduler.BudgetState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.StatusEffects;
@@ -1334,6 +1337,11 @@ final class PlayerRuntime {
             entry.blocker = "Connect and resume a reconciled, idle native player; activity settlement must finish first.";
             return 0;
         }
+        // No accounting period opens before then (F-11e); asking the store again every tick would change nothing.
+        if (entry.noPeriodUntil != null && java.time.Instant.now().isBefore(entry.noPeriodUntil)) {
+            entry.blocker = entry.noPeriodReason;
+            return 0;
+        }
         final dev.kindred.core.SkillDescriptor descriptor;
         final dev.kindred.core.SkillBody task;
         try {
@@ -1547,10 +1555,8 @@ final class PlayerRuntime {
         }
         entry.nativeWorkPending = true;
         long generation = entry.generation;
-        var preparation = store.limit(id).thenCompose(limit -> {
-            var period = AccountingPeriod.containing(java.time.Instant.now(), java.time.ZoneId.of(limit.timezone()));
-            return store.openBudget(id, period).thenApply(budget -> new NativeBudget(limit, budget));
-        });
+        var preparation = store.limit(id).thenCompose(limit -> store.chargeableBudget(id, java.time.Instant.now(),
+                java.time.ZoneId.of(limit.timezone())).thenApply(chargeable -> new NativeBudget(limit, chargeable)));
         // Track preparation as well as settlement so shutdown never closes the store underneath it.
         entry.activityFlush = preparation.handle((ignored, failure) -> null);
         preparation.whenComplete((prepared, failure) -> server.execute(() -> {
@@ -1564,10 +1570,22 @@ final class PlayerRuntime {
                 return;
             }
             if (failure != null) { nativeActivityFailure(entry, "Activity budget could not be loaded"); return; }
+            PeriodTransition transition = prepared.chargeable().transition();
+            if (!transition.chargeable()) {
+                // A clock behind the last period, or a zone edit before its first whole local day: wait, not a fault.
+                entry.nativeWorkPending = false;
+                admission.release(id);
+                entry.noPeriodUntil = transition.opensAt().orElseThrow();
+                entry.noPeriodReason = noPeriodReason(transition, java.time.ZoneId.of(prepared.limit().timezone()));
+                entry.blocker = entry.noPeriodReason;
+                return;
+            }
+            entry.noPeriodUntil = null;
+            BudgetState budget = prepared.chargeable().budget().orElseThrow();
             try {
-                entry.activity = new PaidActivitySession(prepared.budget(), Duration.ofMillis(prepared.limit().capMillis()),
+                entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
                         store::saveBudget, server::execute, java.time.Clock.systemUTC(), System::nanoTime);
-                entry.activity.request(prepared.budget().period().endExclusive()).whenComplete((paid, error) -> {
+                entry.activity.request(budget.period().endExclusive()).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
                     if (!running || generation != entry.generation || (actor != null && !entry.nativeState.access().mayControl(actor))
@@ -1602,7 +1620,32 @@ final class PlayerRuntime {
         return 1;
     }
 
-    private record NativeBudget(ActivityLimit limit, BudgetState budget) { }
+    private record NativeBudget(ActivityLimit limit, ChargeableBudget chargeable) { }
+
+    private static final java.time.format.DateTimeFormatter PERIOD_TIME = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z");
+
+    /** Why activity is not charged now, and when a period opens, in the zone the player's limit keeps. */
+    static String noPeriodReason(PeriodTransition transition, java.time.ZoneId zone) {
+        String when = PERIOD_TIME.format(transition.opensAt().orElseThrow().atZone(zone));
+        return transition.kind() == PeriodTransition.Kind.CLOCK_BEHIND
+                ? "No activity allowance until " + when + ": the clock is behind the last accounting period, which never reopens."
+                : "No activity allowance until " + when + ", when the first whole day in the new timezone begins.";
+    }
+
+    /** What a zone edit means for the allowance: the saved period runs to its end, then the new zone's first whole day. */
+    static String timezoneChangeReport(String name, java.time.ZoneId zone, java.util.Optional<AccountingPeriod> latest,
+                                       java.time.Instant now) {
+        String prefix = name + " now keeps its activity allowance in " + zone.getId() + ". ";
+        if (latest.isEmpty()) return prefix + "Its first period is the local day it next works in.";
+        AccountingPeriod last = latest.orElseThrow();
+        java.time.Instant opens = ScheduleClock.firstPeriodFrom(zone, last.endExclusive()).startInclusive();
+        String first = "Its first period in the new timezone begins " + PERIOD_TIME.format(opens.atZone(zone)) + ".";
+        if (last.contains(now)) {
+            String current = "The current period runs to " + PERIOD_TIME.format(last.endExclusive().atZone(zone)) + " as before. ";
+            return prefix + current + (opens.equals(last.endExclusive()) ? "The next follows straight on." : first + " No allowance in between.");
+        }
+        return prefix + (opens.isAfter(now) ? "No allowance until then. " + first : "The next period is today's local day.");
+    }
 
     private void nativeActivityFailure(Entry entry, String reason) {
         entry.metadataFault = true;
@@ -6121,6 +6164,27 @@ final class PlayerRuntime {
         return entry;
     }
 
+    /**
+     * Activity limits belong to native players too (F-11e): a native player's under its native access, as its
+     * lifecycle controls are; any other through authorizedEntry as before.
+     */
+    private Entry limitEntry(ServerCommandSource source, UUID requestedId, String verb) {
+        requireThread();
+        if (!ready || !running) { reject(source, "Kindred is loading its saved records."); return null; }
+        UUID id = requestedId;
+        // Unnamed, a legacy body is found as before; only with none is the default native player meant.
+        if (id == null && entries.values().stream().noneMatch(e -> e.nativeState == null && e.snapshot().lifecycle() != LifecycleState.REMOVED)) {
+            id = defaultBotId();
+        }
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null) return authorizedEntry(source, requestedId, verb);
+        if (!nativeMayControl(source, entry)) {
+            reject(source, "Only the owner or an operator may " + verb + ".");
+            return null;
+        }
+        return entry;
+    }
+
     private int editSetup(ServerCommandSource source, Entry entry, java.util.function.UnaryOperator<WorkSetup> change, String description) {
         if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This companion's setup is unavailable.");
         if (!entry.setupWrite.isDone()) return reject(source, "The previous setup change is still being saved.");
@@ -6409,7 +6473,7 @@ final class PlayerRuntime {
     }
 
     int limitStatus(ServerCommandSource source, UUID requestedId) {
-        Entry entry = authorizedEntry(source, requestedId, "view schedule limits");
+        Entry entry = limitEntry(source, requestedId, "view schedule limits");
         if (entry == null) return 0;
         store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
             if (failure != null || limit == null) {
@@ -6427,7 +6491,7 @@ final class PlayerRuntime {
 
     int setLimitCap(ServerCommandSource source, UUID requestedId, int hours) {
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may modify daily activity caps.");
-        Entry entry = authorizedEntry(source, requestedId, "change daily cap");
+        Entry entry = limitEntry(source, requestedId, "change daily cap");
         if (entry == null) return 0;
         long capMs = (long) hours * 3600 * 1000;
         store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
@@ -6446,12 +6510,36 @@ final class PlayerRuntime {
 
     int setLimitTimezone(ServerCommandSource source, UUID requestedId, String zone) {
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change accounting timezones.");
-        Entry entry = authorizedEntry(source, requestedId, "change accounting timezone");
+        Entry entry = limitEntry(source, requestedId, "change accounting timezone");
         if (entry == null) return 0;
-        try { java.time.ZoneId.of(zone); }
+        final java.time.ZoneId next;
+        try { next = java.time.ZoneId.of(zone); }
         catch (java.time.DateTimeException invalid) { return reject(source, "Unknown timezone: " + zone); }
-        // Do not reset spent time by editing a zone before the period-transition protocol exists.
-        return reject(source, "Timezone changes are unavailable until accounting-period transitions are implemented (F-11).");
+        UUID id = entry.data.id();
+        // A saved period keeps its own zone to its end, and the new zone begins at its first whole local day after,
+        // so an edit never resets spent time (F-11d chooses the period at each request).
+        store.limit(id).thenCompose(limit -> store.latestPeriod(id).thenApply(latest -> Map.entry(limit, latest)))
+                .whenComplete((read, failure) -> server.execute(() -> {
+            if (failure != null || read == null) {
+                source.sendError(Text.literal("Could not read current limit."));
+                return;
+            }
+            ActivityLimit limit = read.getKey();
+            if (limit.timezone().equals(next.getId())) {
+                feedback(source, entry.data.displayName() + " already keeps its activity allowance in " + next.getId() + ".");
+                return;
+            }
+            ActivityLimit edited = new ActivityLimit(limit.companionId(), limit.capMillis(), limit.offlineWork(), next.getId(), limit.revision() + 1);
+            store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+                if (saveFailure != null) {
+                    source.sendError(Text.literal("Failed to save accounting timezone."));
+                    return;
+                }
+                entry.noPeriodUntil = null; // The next request asks the store again, under the new zone.
+                feedback(source, timezoneChangeReport(entry.data.displayName(), next, read.getValue(), java.time.Instant.now()));
+            }));
+        }));
+        return 1;
     }
 
     int setLimitOffline(ServerCommandSource source, UUID requestedId, boolean offline) {
@@ -10834,6 +10922,9 @@ final class PlayerRuntime {
         private boolean metadataFault;
         private boolean reconciliationBlocked;
         private boolean hazardInterrupted;
+        /** No accounting period opens before this instant, and why (F-11e); null when one may. */
+        private java.time.Instant noPeriodUntil;
+        private String noPeriodReason;
         private FollowBehavior follow;
         private SocialProfile profile;
         private CompletableFuture<SocialProfile> profileWrite;

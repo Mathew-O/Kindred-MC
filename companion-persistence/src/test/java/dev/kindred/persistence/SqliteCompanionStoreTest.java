@@ -197,6 +197,7 @@ class SqliteCompanionStoreTest {
         SqliteCompanionStore store = open(10);
         UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
         Instant now = period.startInclusive().plus(Duration.ofHours(1));
+        assertEquals(Optional.empty(), store.latestPeriod(id).join());
         ChargeableBudget first = store.chargeableBudget(id, now, ZoneOffset.UTC).join();
         assertEquals(PeriodTransition.Kind.OPEN, first.transition().kind());
         BudgetState empty = first.budget().orElseThrow();
@@ -217,6 +218,7 @@ class SqliteCompanionStoreTest {
         ChargeableBudget tomorrow = reopened.chargeableBudget(id, period.endExclusive(), ZoneOffset.UTC).join();
         assertEquals(new ChargeableBudget(PeriodTransition.open(next), Optional.of(BudgetState.empty(id, next))), tomorrow);
         assertEquals(settled, reopened.findBudget(id, period.startInclusive()).join().orElseThrow());
+        assertEquals(Optional.of(next), reopened.latestPeriod(id).join());
         assertEquals(new ChargeableBudget(PeriodTransition.current(next), tomorrow.budget()),
                 reopened.chargeableBudget(id, period.endExclusive(), ZoneOffset.UTC).join());
     }
@@ -234,6 +236,7 @@ class SqliteCompanionStoreTest {
                 waiting);
         assertTrue(store.findBudget(id, AccountingPeriod.on(period.localDate(), newYork).startInclusive()).join().isEmpty());
         assertEquals(opened, store.findBudget(id, period.startInclusive()).join().orElseThrow());
+        assertEquals(Optional.of(period), store.latestPeriod(id).join());
         AccountingPeriod local = AccountingPeriod.on(LocalDate.of(2026, 10, 14), newYork);
         BudgetState fresh = store.chargeableBudget(id, waiting.transition().opensAt().orElseThrow(), newYork).join().budget().orElseThrow();
         assertEquals(BudgetState.empty(id, local), fresh);
