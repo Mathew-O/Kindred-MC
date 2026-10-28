@@ -49,6 +49,8 @@ public final class NativeDeathConservationGameTests implements FabricGameTest {
         Held[] held = new Held[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                // Off unless the keepInventory batch left it on: its restore runs however that batch ended.
+                .createAndAdd(() -> context.assertFalse(context.getWorld().getGameRules().getBoolean(GameRules.KEEP_INVENTORY), "keepInventory off"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Ashes"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
