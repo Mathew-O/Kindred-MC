@@ -9,6 +9,10 @@ On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merge
   - the remark fixture with the `canTalk` change alone: "A remark to its controller: []";
   - after the change, with the voice, ask, social, gaze and mannerism classes: 29 of 29 in each of three runs.
   - Evidence: [F-18a](evidence/F-18a.md).
+- E-20c (a replaced speaker answered), `6ea5681`. The coalescing fixture with its new check:
+  - on the code before: fails, the bystander heard nothing;
+  - after, with the voice, ask and social classes: 21 of 21 in each of three runs.
+  - Evidence: [E-20c](evidence/E-20c.md).
 
 ## Asks in chat (E-20b) — 29 October 2026 (`claude/player-voice-e20`)
 

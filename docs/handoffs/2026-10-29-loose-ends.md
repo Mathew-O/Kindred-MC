@@ -31,6 +31,8 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
 3. **Coalescing drops a speaker.** A message waiting behind one in flight is replaced by any newer message, from anyone,
    so the first speaker can get no reply at all. Keep one waiting message per speaker, or answer the displaced one
    with the fixed reply.
+   **Done in `6ea5681` (E-20c):** the displaced speaker is given the fixed reply at once; the model is still asked only
+   for the newest.
 4. **Innocent refusals.** The clean-word list and the "three numbers in a row" place check can refuse an ordinary
    line; the cost is the fixed reply. Watch the `voice: no line (...)` log lines in play and loosen only what they show.
 5. My re-run of the branch: see the end of this page.
