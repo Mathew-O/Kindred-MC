@@ -146,7 +146,7 @@ public final class NativeGazeGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     // Another player, three blocks east, looking at its face.
-                    other[0] = context.createMockCreativeServerPlayerInWorld();
+                    other[0] = MockPlayers.creative(context);
                     Vec3d stand = context.getAbsolute(new Vec3d(6.5, 2, 3.5));
                     other[0].refreshPositionAndAngles(stand.x, stand.y, stand.z, 90, 0);
                     other[0].setHeadYaw(90);
@@ -208,7 +208,7 @@ public final class NativeGazeGameTests implements FabricGameTest {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                     context.assertTrue(f.runtime.socialSetting(f.source, f.id, "public", true, null, 0) == 1, "Open to talk with anyone");
                     for (int y = 2; y <= 4; y++) for (int z = 1; z <= 5; z++) context.setBlockState(6, y, z, Blocks.STONE);
-                    other[0] = context.createMockCreativeServerPlayerInWorld();
+                    other[0] = MockPlayers.creative(context);
                     Vec3d stand = context.getAbsolute(new Vec3d(7.5, 2, 3.5));
                     other[0].refreshPositionAndAngles(stand.x, stand.y, stand.z, 90, 0);
                     faceSouth(f.player());

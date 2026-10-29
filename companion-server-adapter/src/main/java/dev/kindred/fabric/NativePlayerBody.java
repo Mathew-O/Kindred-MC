@@ -730,7 +730,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (id != null) {
             var direct = recipeManager.get(id);
             if (direct.isPresent() && direct.get().value() instanceof CraftingRecipe cr && (cr.fits(2, 2) || cr.fits(3, 3))) {
-                matchedEntry = Optional.of((RecipeEntry<CraftingRecipe>) (Object) direct.get());
+                matchedEntry = Optional.of(new RecipeEntry<>(direct.get().id(), cr)); // The same entry, typed: no unchecked cast.
             }
         }
         if (matchedEntry.isEmpty()) {

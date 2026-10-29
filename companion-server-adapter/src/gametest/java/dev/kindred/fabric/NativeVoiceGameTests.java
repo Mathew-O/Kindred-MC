@@ -93,7 +93,7 @@ public final class NativeVoiceGameTests implements FabricGameTest {
 
         /** A mock player at {@code at} in the test's own coordinates, facing {@code yaw}. */
         ServerPlayerEntity player(TestContext context, Vec3d at, float yaw) {
-            var player = context.createMockCreativeServerPlayerInWorld();
+            var player = MockPlayers.creative(context);
             Vec3d stand = context.getAbsolute(at);
             player.refreshPositionAndAngles(stand.x, stand.y, stand.z, yaw, 0);
             player.setHeadYaw(yaw);

@@ -221,7 +221,7 @@ public final class NativeCombatGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "combatWeapon", tickLimit = 100)
     public void theFightsWeaponIsTheOneThatDealsTheMost(TestContext context) {
-        var player = context.createMockCreativeServerPlayerInWorld();
+        var player = MockPlayers.creative(context);
         var inventory = player.getInventory();
         inventory.clear();
         inventory.setStack(0, new ItemStack(Items.DIAMOND_AXE));

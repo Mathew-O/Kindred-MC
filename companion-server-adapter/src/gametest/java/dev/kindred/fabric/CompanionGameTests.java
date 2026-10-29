@@ -132,7 +132,7 @@ public final class CompanionGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void stopFencesFollowMovementAndAttention(TestContext context) {
-        var owner = context.createMockCreativeServerPlayerInWorld();
+        var owner = MockPlayers.creative(context);
         Vec3d ownerPosition = context.getAbsolute(new Vec3d(1.5, 2, 1.5));
         owner.refreshPositionAndAngles(ownerPosition.x, ownerPosition.y, ownerPosition.z, 0, 0);
         CompanionEntity body = create(context);
