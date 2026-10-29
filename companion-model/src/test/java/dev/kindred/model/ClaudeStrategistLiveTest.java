@@ -101,6 +101,26 @@ class ClaudeStrategistLiveTest {
         }
     }
 
+    @Test
+    void aRealReplyToWhatAreYouDoingNamesTheLogsItIsChopping() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");
+        var strategist = ClaudeStrategist.fromEnvironment(null);
+        Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+        try (var s = strategist.get()) {
+            var situation = new dev.kindred.core.ConversationAudience.Situation("Echo", "Steve", dev.kindred.core.ConversationAudience.Relation.PLAYER,
+                    false, 20, 18, "", "the Overworld", "day", "clear", false, true, "chopping logs for a crafting table", "a Nether portal",
+                    "Wood: Gather logs for a crafting table", "120, 64, -35", "", List.of("Steve"), List.of("a stone axe"), 3, List.of(),
+                    List.of("Cut 3 oak logs at 118, 66, -33"), List.of(), "", List.of());
+            var conversation = ConversationPrompt.conversation("Echo", dev.kindred.core.Personality.defaults(), situation, "Echo, what are you doing?");
+            var line = s.converse(conversation).get(30, TimeUnit.SECONDS);
+            System.out.println("voice line: " + line);
+            assertTrue(line.say().isPresent(), "a line: " + line.failure());
+            String said = line.say().get().toLowerCase(java.util.Locale.ROOT);
+            assertTrue(said.contains("log") || said.contains("wood") || said.contains("tree") || said.contains("chop"), "grounded in what it is doing: " + said);
+            assertTrue(line.millis() < Strategist.CHAT_DEADLINE.toMillis(), "within the chat lane's deadline");
+        }
+    }
+
     /** Latency of each pace on the same report, run only with {@code KINDRED_LIVE_MODEL_BENCH}: three calls each. */
     @Test
     void paceBenchmark() throws Exception {

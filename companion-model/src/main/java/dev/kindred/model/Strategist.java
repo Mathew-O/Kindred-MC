@@ -96,6 +96,74 @@ public interface Strategist extends AutoCloseable {
         return (question.system().length() + question.text().length()) / 3 + 100 + ASK_MAX_OUTPUT_TOKENS;
     }
 
+    /** The chat lane's bounds (AI-05, E-20a): an eight-second deadline, a sentence or two, one chat line. */
+    Duration CHAT_DEADLINE = Duration.ofSeconds(8);
+    int CHAT_MAX_OUTPUT_TOKENS = 120;
+    int MAX_SAID = 240;
+
+    /**
+     * Someone spoke to the player (E-20a): who it is and how it talks, in {@code system}; what it knows that this
+     * listener may know, and the message quoted as data, in {@code text}; and whether this listener may be told
+     * where things are, which decides whether a reply may give a place.
+     */
+    record Conversation(String system, String text, boolean mayGivePlaces) {
+        public Conversation {
+            Objects.requireNonNull(system);
+            Objects.requireNonNull(text);
+        }
+    }
+
+    /**
+     * What a conversation came to: the line to say, if the reply was usable; why it was said; the tokens and time it
+     * took; and why it failed, if it did. A refused reply is a failure: nothing of it is said, and the player's
+     * fixed reply is used instead.
+     */
+    record Line(Optional<String> say, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis,
+                Optional<String> failure) {
+        static Line failed(String why, long millis) { return new Line(Optional.empty(), "", 0, 0, 0, millis, Optional.of(why)); }
+
+        static Line failed(String why, long in, long cached, long out, long millis) {
+            return new Line(Optional.empty(), "", in, cached, out, millis, Optional.of(why));
+        }
+
+        /** Words no player says in chat while every listener gets clean speech (E-18's presets come later). */
+        private static final java.util.regex.Pattern UNCLEAN = java.util.regex.Pattern.compile(
+                "\\b(fuck\\w*|shit\\w*|bitch\\w*|cunts?|bastards?|assholes?|dicks?|piss\\w*|damn\\w*|crap\\w*|sluts?|whores?|fags?|retard\\w*)\\b",
+                java.util.regex.Pattern.CASE_INSENSITIVE);
+
+        /**
+         * The reply checked before anything of it is said: one line of at most {@link #MAX_SAID} characters, not a
+         * command, without formatting codes or control characters, clean, and giving no place to a listener who may
+         * not know where things are.
+         */
+        public static Line checked(Conversation conversation, String say, String reason, long in, long cached, long out, long millis) {
+            String why = reason == null ? "" : reason.strip();
+            if (why.length() > 300) why = why.substring(0, 300);
+            String said = say == null ? "" : say.strip();
+            String refused = said.isEmpty() ? "nothing to say"
+                    : said.length() > MAX_SAID ? "too long"
+                    : said.indexOf('\n') >= 0 || said.indexOf('\r') >= 0 ? "more than one line"
+                    : said.startsWith("/") ? "a command"
+                    : said.indexOf('§') >= 0 ? "formatting codes"
+                    : said.chars().anyMatch(Character::isISOControl) ? "control characters"
+                    : UNCLEAN.matcher(said).find() ? "not clean"
+                    : !conversation.mayGivePlaces() && dev.kindred.core.ConversationAudience.givesPlace(said) ? "a place this listener may not know"
+                    : null;
+            if (refused != null) return new Line(Optional.empty(), why, in, cached, out, millis, Optional.of(refused));
+            return new Line(Optional.of(said), why, in, cached, out, millis, Optional.empty());
+        }
+    }
+
+    /** Answer someone who spoke to the player; a provider that cannot says so, and the fixed reply is used. */
+    default CompletableFuture<Line> converse(Conversation conversation) {
+        return CompletableFuture.completedFuture(Line.failed("conversation not supported by " + provider(), 0));
+    }
+
+    /** Tokens to reserve before a conversation: its input, conservatively, and the most the reply may use. */
+    static long reservation(Conversation conversation) {
+        return (conversation.system().length() + conversation.text().length()) / 3 + 100 + CHAT_MAX_OUTPUT_TOKENS;
+    }
+
     /** Who serves it, for the log: "Anthropic", "OpenAI", ... */
     String provider();
 

@@ -176,6 +176,91 @@ class OpenAiCompatibleStrategistTest {
         }
     }
 
+    private static final Strategist.Conversation TALK = new Strategist.Conversation("You are Echo, a player.",
+            "What you know:\nWhat you are doing: gathering logs\n\n" + ConversationPrompt.SAID + "\n\"Steve: Echo, what are you doing?\"", false);
+
+    @Test
+    void aConversationAsksForTheTwoFieldsInAStrictSchemaWithTheChatLanesCap() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"say\":\" Chopping logs for a table. \",\"reason\":\"I am gathering logs.\"}", "stop"));
+            var line = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("Chopping logs for a table."), line.say(), "trimmed: " + line.failure());
+            assertEquals("I am gathering logs.", line.reason());
+            assertEquals(1900, line.inputTokens());
+            assertEquals(1536, line.cachedTokens());
+            assertEquals(90, line.outputTokens());
+            var body = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals(Strategist.CHAT_MAX_OUTPUT_TOKENS, body.get("max_completion_tokens").getAsInt());
+            var format = body.getAsJsonObject("response_format");
+            assertEquals("json_schema", format.get("type").getAsString());
+            var spec = format.getAsJsonObject("json_schema");
+            assertTrue(spec.get("strict").getAsBoolean());
+            var shape = spec.getAsJsonObject("schema");
+            assertFalse(shape.get("additionalProperties").getAsBoolean());
+            assertEquals("[\"say\",\"reason\"]", shape.getAsJsonArray("required").toString());
+            var messages = body.getAsJsonArray("messages");
+            assertEquals(TALK.system(), messages.get(0).getAsJsonObject().get("content").getAsString(), "the player's own instructions, not the guide");
+            assertEquals(TALK.text(), messages.get(1).getAsJsonObject().get("content").getAsString());
+        }
+    }
+
+    @Test
+    void aRefusedConversationReplyIsAFailureAndCostsWhatItUsed() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"say\":\"I'm at 120, 64, -35.\",\"reason\":\"Asked where.\"}", "stop"));
+            var placed = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertTrue(placed.say().isEmpty());
+            assertEquals(java.util.Optional.of("a place this listener may not know"), placed.failure());
+            assertEquals(1900, placed.inputTokens(), "a used request is still counted");
+            replies.add(completion("{\"say\":\"/kill Steve\",\"reason\":\"\"}", "stop"));
+            assertEquals(java.util.Optional.of("a command"), strategist.converse(TALK).get(10, TimeUnit.SECONDS).failure());
+            replies.add(completion("{\"say\":\"Chopping\",\"reason\":\"\"}", "length"));
+            assertEquals(java.util.Optional.of("stopped: length"), strategist.converse(TALK).get(10, TimeUnit.SECONDS).failure());
+            statuses.add(new int[] {500});
+            replies.add("{}");
+            assertEquals(java.util.Optional.of("service error 500"), strategist.converse(TALK).get(10, TimeUnit.SECONDS).failure());
+            assertEquals(4, bodies.size(), "no retries");
+        }
+    }
+
+    @Test
+    void aConversationSchemaTheProviderRefusesIsRepairedOnceInJsonMode() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.GROQ, "gsk_test")) {
+            statuses.add(new int[] {400});
+            replies.add("{\"error\":{\"message\":\"response_format json_schema is not supported for this model\"}}");
+            replies.add(completion("```json\n{\"say\":\"Chopping logs.\",\"reason\":\"Logs.\"}\n```", "stop"));
+            var line = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("Chopping logs."), line.say(), "JSON mode, fenced reply read: " + line.failure());
+            assertEquals(2, bodies.size(), "one repair, no more");
+            var second = JsonParser.parseString(bodies.get(1)).getAsJsonObject();
+            assertEquals("json_object", second.getAsJsonObject("response_format").get("type").getAsString());
+            assertTrue(second.getAsJsonArray("messages").get(0).getAsJsonObject().get("content").getAsString().contains("\"say\""),
+                    "the fields described in the instructions instead");
+            assertEquals(Strategist.CHAT_MAX_OUTPUT_TOKENS, second.get("max_tokens").getAsInt());
+        }
+    }
+
+    @Test
+    void aConversationGivesUpAtTheChatLanesEightSeconds() throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            exchange.getRequestBody().readAllBytes();
+            java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(12)); // Slower than the deadline.
+            exchange.close();
+        });
+        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
+        server.start();
+        String base = "http://127.0.0.1:" + server.getAddress().getPort() + "/v1";
+        try (var strategist = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.OPENAI, "sk", "m", base),
+                HttpClient.newBuilder().build())) {
+            long started = System.nanoTime();
+            var line = strategist.converse(TALK).get(20, TimeUnit.SECONDS);
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            assertEquals(java.util.Optional.of("deadline passed"), line.failure());
+            assertTrue(millis >= 7_500 && millis < 10_000, "within the chat lane's deadline, not the planning lane's: " + millis);
+        }
+    }
+
     @Test
     void aLocalServerNeedsNoKeyAndDeepSeekUsesJsonMode() throws Exception {
         try (var strategist = start(StrategistProvider.Provider.COMPATIBLE, null)) {

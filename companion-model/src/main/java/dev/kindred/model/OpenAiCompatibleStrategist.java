@@ -38,6 +38,8 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     private final StrategistProvider.Choice choice;
     private final HttpClient http;
     private final ExecutorService executor;
+    /** The chat lane's own thread, so a reply is never queued behind a planning request (AI-05's separate lanes). */
+    private final ExecutorService voice;
     private final URI endpoint;
 
     /** A strategist for the chosen service. */
@@ -51,6 +53,11 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         this.endpoint = URI.create(choice.baseUrl() + "/chat/completions");
         this.executor = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "kindred-strategist");
+            thread.setDaemon(true);
+            return thread;
+        });
+        this.voice = Executors.newSingleThreadExecutor(task -> {
+            Thread thread = new Thread(task, "kindred-voice");
             thread.setDaemon(true);
             return thread;
         });
@@ -194,9 +201,109 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         return Answer.checked(question, text(reply, "choice"), text(reply, "text"), text(reply, "reason"), in, cached, out, millis);
     }
 
-    /** Sends one request, giving up at the deadline. */
+    /**
+     * Answers someone who spoke to the player, in the background on the chat lane: within its eight seconds from the
+     * moment it was asked (time spent waiting for the lane counts), with one repair in JSON mode when the provider
+     * refuses the schema.
+     */
+    @Override
+    public CompletableFuture<Line> converse(Conversation conversation) {
+        Objects.requireNonNull(conversation);
+        long started = System.nanoTime();
+        return CompletableFuture.supplyAsync(() -> converseCall(conversation, started), voice);
+    }
+
+    private Line converseCall(Conversation conversation, long started) {
+        try {
+            boolean schema = choice.provider().shape() == StrategistProvider.Shape.JSON_SCHEMA;
+            HttpResponse<String> response = send(converseRequest(conversation, schema), started, CHAT_DEADLINE);
+            if (schema && response.statusCode() == 400 && mentionsShape(response.body())) {
+                response = send(converseRequest(conversation, false), started, CHAT_DEADLINE); // The one repair, within the same deadline.
+            }
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            if (response.statusCode() == 429) return Line.failed("rate limited", millis);
+            if (response.statusCode() / 100 != 2) return Line.failed("service error " + response.statusCode(), millis);
+            return line(conversation, JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+        } catch (java.net.http.HttpTimeoutException late) {
+            return Line.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return Line.failed("interrupted", (System.nanoTime() - started) / 1_000_000);
+        } catch (Exception other) {
+            return Line.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
+        }
+    }
+
+    /** A conversation's request: the player's instructions and personality, what it knows and what was said, and the reply's two fields. */
+    String converseRequest(Conversation conversation, boolean schema) {
+        var body = new JsonObject();
+        body.addProperty("model", choice.model());
+        var messages = new JsonArray();
+        messages.add(message("system", schema ? conversation.system() : conversation.system() + "\n\n" + ConversationPrompt.fieldsInWords()));
+        messages.add(message("user", conversation.text()));
+        body.add("messages", messages);
+        body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", CHAT_MAX_OUTPUT_TOKENS);
+        var format = new JsonObject();
+        if (schema) {
+            var properties = new JsonObject();
+            properties.add("say", stringField(ConversationPrompt.SAY));
+            properties.add("reason", stringField(ConversationPrompt.REASON));
+            var all = new JsonArray();
+            for (String name : properties.keySet()) all.add(name);
+            var shape = new JsonObject();
+            shape.addProperty("type", "object");
+            shape.addProperty("additionalProperties", false);
+            shape.add("properties", properties);
+            shape.add("required", all);
+            format.addProperty("type", "json_schema");
+            var spec = new JsonObject();
+            spec.addProperty("name", "reply");
+            spec.addProperty("strict", true);
+            spec.add("schema", shape);
+            format.add("json_schema", spec);
+        } else {
+            format.addProperty("type", "json_object");
+        }
+        body.add("response_format", format);
+        return body.toString();
+    }
+
+    /** A conversation's completion, checked before anything of it is said. */
+    static Line line(Conversation conversation, JsonObject completion, long millis) {
+        long in = 0, cached = 0, out = 0;
+        if (completion.has("usage") && completion.get("usage").isJsonObject()) {
+            var usage = completion.getAsJsonObject("usage");
+            in = number(usage, "prompt_tokens");
+            out = number(usage, "completion_tokens");
+            if (usage.has("prompt_tokens_details") && usage.get("prompt_tokens_details").isJsonObject()) {
+                cached = number(usage.getAsJsonObject("prompt_tokens_details"), "cached_tokens");
+            }
+        }
+        var choices = completion.has("choices") && completion.get("choices").isJsonArray() ? completion.getAsJsonArray("choices") : new JsonArray();
+        if (choices.isEmpty()) return Line.failed("no reply", in, cached, out, millis);
+        var first = choices.get(0).getAsJsonObject();
+        String finish = text(first, "finish_reason");
+        if (finish != null && !finish.equals("stop")) return Line.failed("stopped: " + finish, in, cached, out, millis);
+        var message = first.has("message") && first.get("message").isJsonObject() ? first.getAsJsonObject("message") : new JsonObject();
+        String content = text(message, "content");
+        if (content == null || content.isBlank()) return Line.failed("no reply text", in, cached, out, millis);
+        JsonObject reply;
+        try {
+            reply = JsonParser.parseString(stripFence(content)).getAsJsonObject();
+        } catch (RuntimeException unreadable) {
+            return Line.failed("unreadable reply", in, cached, out, millis);
+        }
+        return Line.checked(conversation, text(reply, "say"), text(reply, "reason"), in, cached, out, millis);
+    }
+
+    /** Sends one request, giving up at the planning lane's deadline. */
     private HttpResponse<String> send(String body, long started) throws Exception {
-        long left = DEADLINE.toMillis() - (System.nanoTime() - started) / 1_000_000;
+        return send(body, started, DEADLINE);
+    }
+
+    /** Sends one request, giving up at {@code deadline} after {@code started}. */
+    private HttpResponse<String> send(String body, long started, java.time.Duration deadline) throws Exception {
+        long left = deadline.toMillis() - (System.nanoTime() - started) / 1_000_000;
         if (left <= 0) throw new java.net.http.HttpTimeoutException("deadline passed");
         var builder = HttpRequest.newBuilder(endpoint)
                 .timeout(java.time.Duration.ofMillis(left))
@@ -408,5 +515,6 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     @Override
     public void close() {
         executor.shutdownNow();
+        voice.shutdownNow();
     }
 }

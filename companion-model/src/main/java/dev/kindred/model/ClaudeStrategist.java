@@ -2,6 +2,7 @@ package dev.kindred.model;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.anthropic.core.RequestOptions;
 import com.anthropic.errors.AnthropicServiceException;
 import com.anthropic.errors.RateLimitException;
 import com.anthropic.models.messages.CacheControlEphemeral;
@@ -58,6 +59,11 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription("The name the question asks for; an empty string when it asks for none.") String text,
             @JsonPropertyDescription("One sentence: why.") String reason) { }
 
+    /** A conversation's reply as the model is constrained to write it (E-20a). */
+    public record VoiceReply(
+            @JsonPropertyDescription(ConversationPrompt.SAY) String say,
+            @JsonPropertyDescription(ConversationPrompt.REASON) String reason) { }
+
     /** A follow-up for the player's queue (F-19e). */
     public record FollowUp(
             @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) Need need,
@@ -71,6 +77,8 @@ public final class ClaudeStrategist implements Strategist {
     private final OutputConfig.Effort effort;
     private final boolean thinking;
     private final ExecutorService executor;
+    /** The chat lane's own thread, so a reply is never queued behind a planning request (AI-05's separate lanes). */
+    private final ExecutorService voice;
 
     ClaudeStrategist(AnthropicClient client, String model, OutputConfig.Effort effort, boolean thinking) {
         this.client = Objects.requireNonNull(client);
@@ -79,6 +87,11 @@ public final class ClaudeStrategist implements Strategist {
         this.thinking = thinking;
         this.executor = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "kindred-strategist");
+            thread.setDaemon(true);
+            return thread;
+        });
+        this.voice = Executors.newSingleThreadExecutor(task -> {
+            Thread thread = new Thread(task, "kindred-voice");
             thread.setDaemon(true);
             return thread;
         });
@@ -208,11 +221,56 @@ public final class ClaudeStrategist implements Strategist {
         }
     }
 
+    /**
+     * Answers someone who spoke to the player, in the background on the chat lane, within its eight seconds from the
+     * moment it was asked (time spent waiting for the lane counts). Structured output holds the reply to its two
+     * fields, so no repair is needed.
+     */
+    @Override
+    public CompletableFuture<Line> converse(Conversation conversation) {
+        Objects.requireNonNull(conversation);
+        long started = System.nanoTime();
+        return CompletableFuture.supplyAsync(() -> converseCall(conversation, started), voice);
+    }
+
+    private Line converseCall(Conversation conversation, long started) {
+        long left = CHAT_DEADLINE.toMillis() - (System.nanoTime() - started) / 1_000_000;
+        if (left <= 0) return Line.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
+        var builder = MessageCreateParams.builder()
+                .model(model)
+                .maxTokens(CHAT_MAX_OUTPUT_TOKENS)
+                // The instructions and personality are the same for this player on every message: cached where long enough.
+                .systemOfTextBlockParams(List.of(TextBlockParam.builder().text(conversation.system()).cacheControl(CacheControlEphemeral.builder().build()).build()))
+                .outputConfig(StructuredOutputConfig.<VoiceReply>builder().format(VoiceReply.class).effort(Optional.ofNullable(effort)).build())
+                .addUserMessage(conversation.text());
+        builder.thinking(ThinkingConfigDisabled.builder().build());
+        try {
+            var message = client.messages().create(builder.build(), RequestOptions.builder().timeout(java.time.Duration.ofMillis(left)).build());
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            var usage = message.usage();
+            long cached = usage.cacheReadInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            String stop = message.stopReason().map(Object::toString).orElse("none");
+            if (!stop.equalsIgnoreCase("end_turn")) return Line.failed("stopped: " + stop, in, cached, out, millis);
+            Optional<VoiceReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
+            if (reply.isEmpty()) return Line.failed("no reply text", in, cached, out, millis);
+            return Line.checked(conversation, reply.get().say(), reply.get().reason(), in, cached, out, millis);
+        } catch (RateLimitException limited) {
+            return Line.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
+        } catch (AnthropicServiceException service) {
+            return Line.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
+        } catch (RuntimeException other) {
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            return Line.failed(millis >= CHAT_DEADLINE.toMillis() ? "deadline passed" : other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), millis);
+        }
+    }
+
     private static String name(Enum<?> value) { return value == null ? null : value.name(); }
 
     /** Shuts the connection. */
     @Override
     public void close() {
         executor.shutdownNow();
+        voice.shutdownNow();
     }
 }
