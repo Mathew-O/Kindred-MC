@@ -148,6 +148,49 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
       `28395df` has a fix "not yet run natively".
     - The Nether portal-restart fixture, `modest-faraday`'s one failure on `9f354b4`, with a fix in that commit to confirm.
     Each wants a root cause and a fixture that fails for the right reason, not a retry.
+    **Checked on this branch (29 October):**
+    - **The night-and-bed fixture: two causes, both fixed.**
+      - [E-08d](../evidence/E-08d.md), `2b1f325`: short of logs, it cut the corner posts out of its own cabin. In the
+        failing suite run v1, its first twelve log breaks were its cabin's twelve corner logs.
+      - [F-25c9a](../evidence/F-25c9a.md), `bc1690a`: its first night slept in its cabin made the cabin's bed its
+        expedition's home, and the next night the urgent walk home stopped at the cabin wall and outranked its bed.
+      - A fixture for each fails before its fix: a hut standing nearer than the trees, and the night fixture with its
+        first night falling while the cabin goes up.
+      - The class alone ten times on both fixes: the night fixture 10 of 10, the new one 10 of 10. The
+        class's third fixture, the hungry one, failed once in the ten on a separate cause, fixed as E-08e (below).
+      - Where this page is wrong: it gives one failure for this fixture; it had two causes, either of which ended in
+        "Its body" (a timeout at the scheduled stop, not a death).
+    - **Found in those runs: the hungry fixture stranded by its scaffold (E-08e).**
+      - In run 5 its base stood on its field's last row, three blocks above the ground beyond.
+      - Taking the scaffold down, the planner chose a spot down off that edge: it could walk there and not back. Stood
+        there, the last scaffold was out of reach and so was its bed.
+      - Now a spot off the build and its ring must be one it can walk back from: E-08e, with a planner test that fails
+        before and passes after. See E-08e's evidence for its commit.
+    - **The pit climb: the fix is on `modest-faraday`.**
+      - In both failing suite runs (s53, v1) it fails at "Down in the pit": the player never saw the iron ore at the
+        staircase's foot. It looked about, explored and branch-mined at the top, broke its last pickaxe there, and
+        then climbed out for logs.
+      - `modest-faraday`'s `292852f` ("Ore not seen past open stone") fixes exactly that, giving cave floors sight
+        lines of their own, and clears the sky over the staircase fixtures.
+      - It spans `WorldKnowledge` and the fixture's file, in a commit that also changes `PlayerRuntime`, all files that
+        branch changes, so it waits for the merge.
+    - **The pasture's cattle: not reproduced; open.**
+      - It failed in suite runs 46, 48 and 49 with "the player at none": its body was gone at the scheduled stop, so a
+        timeout while still leading cows.
+      - It passed in all seven suite runs since (s52 to s56, v1, v2). No commit names a fix, and its cause is not
+        established.
+    - **A base's roof stairs (#82): `28395df`'s fix has now run natively.**
+      - The keep passed in all seven suite runs on this branch since it.
+      - CI run 223 on `main` (which has the fix) failed the keep, but CI's log gives only the test's name: the results
+        file, with the message, is not kept.
+    - **The portal restart: the fix is on `modest-faraday`.**
+      - It failed in s54, s55 and s56 with three different messages: a blaze fight's receipt, "No walk back into the
+        portal admitted", and the return portal's 8:1 region.
+      - `9f354b4` fixes the walk back; it is not on this branch, so it waits for the merge.
+    - The CI run 223 failure "the build that fetches its shortfall" is not in this list: it set out with 77 of 112
+      blocks placed where the fixture asks for 79. It passed here in all four of its runs this session, alone.
+    - Recommended, not done: keep `companion-server-adapter/build/gametest-results.xml` as a CI artifact. Without it
+      no CI failure can be root-caused from GitHub.
 22. **The suite takes about an hour on four cores** and did not finish inside 70 minutes when it shared them (run 51).
     Check that the GitHub workflow, which runs the whole suite on every push, is green on `main` and how long it takes;
     consider splitting the gametest job or running the long fixtures nightly.

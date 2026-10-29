@@ -18,6 +18,14 @@ On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merge
   - after, with the rest of its class and `NativeSkinGameTests`: 5 of 5 in each of three runs.
   - Evidence: [E-10d](evidence/E-10d.md).
 - Fixtures off the deprecated mock player, and `NativePlayerBody`'s unchecked cast removed, `a841f6b`: no deprecation or unchecked warnings with `-Xlint:unchecked`. `NativeCraftGameTests`, `CompanionGameTests`, `NativeCombatGameTests`, `NativeGazeGameTests`, `NativeVoiceGameTests` and `NativeAskGameTests` together: 45 of 45 in each of three runs.
+- E-08d (a log built into something is never a tree), `2b1f325`. The new `NativeBuildNeedsGameTests` fixture (a hut standing nearer than the trees):
+  - on the code before: fails, all 12 of the standing hut's logs cut and none of the trees';
+  - after, with the rest of its class: 2 of 2 in each of three runs.
+  - Evidence: [E-08d](evidence/E-08d.md).
+- F-25c9a (at night a bed of its own is its way home), `bc1690a`. The new `NativeLifeFirstGameTests` fixture (its first night falling as its cabin goes up):
+  - on the code before: fails, "Its body"; a diagnostic copy, not committed, failed the same way 3 of 3 and logged why;
+  - after, the class alone ten times on both fixes: the night fixture 10 of 10, the new one 10 of 10, the hungry fixture 9 of 10 (its one failure is E-08e's cause).
+  - Evidence: [F-25c9a](evidence/F-25c9a.md).
 - B7, one paired live run (strategist off, then on) on `f7f206a` in a worktree of its own: the three starters on the Nether goal, a fresh world on seed 8675309, 144,000 ticks sprinted (46 and 58 ticks a second, with fixture runs on the same four cores). Off: 2 deaths, all three with an iron pickaxe, Echo furthest (casting the frame). On: 10 deaths (8 of them Echo's), two with an iron pickaxe, Kindred furthest (casting the frame); 54 strategist replies, 381,612 input tokens (327,805 read from the cache) and 8,634 output, the all-player daily budget spent four minutes before the end. No portal lit in either. One pair shows no gain; see the loose-ends page, items 7 and 9. The key was read into the server's environment only and is in neither log.
 - CI (`.github/workflows/build.yml`) on `main`, run 223 on `91f408a`: build and testkit pass; the native suite 373 of 379 in 41 minutes (six open failures, listed on the loose-ends page). From `fa0466b` a newer push cancels the run it supersedes.
 
