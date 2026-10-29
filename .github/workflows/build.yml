@@ -7,6 +7,10 @@ on:
   pull_request:
 permissions:
   contents: read
+# A newer push to the same branch or pull request stops the run it supersedes: the whole run takes about an hour.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
