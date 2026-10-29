@@ -43,7 +43,8 @@
     "playerContext": "<world>/kindred/model-context/<player UUID>.json",
     "bundledInReleaseJar": "the OpenAI-compatible providers yes (JDK HTTP client and Minecraft's Gson); the Anthropic SDK no",
     "qualified": false,
-    "evidence": "docs/evidence/F-19b.md, docs/evidence/F-19c.md, docs/evidence/F-19d.md, docs/evidence/F-19e.md",
+    "evidence": "docs/evidence/F-19b.md, docs/evidence/F-19c.md, docs/evidence/F-19d.md, docs/evidence/F-19e.md, docs/evidence/E-20a.md",
+    "voice": "Replies in chat phrased by the same model (E-20a): told only what each listener may know (core's ConversationAudience), said through the social lane's own checks; chat lane 8 s, one JSON-mode repair, 120 output tokens, at most 240 characters, refused if a command, formatting codes, unclean or a place for a non-controller; the same rates and daily budgets as the strategist; any failure the fixed reply; KINDRED_VOICE=off keeps the fixed replies",
     "requestSettings": "low effort, thinking off, instructions and guide cached (about 2.5 s a question, about 4,500 of its 4,700 to 5,100 input tokens from the cache; KINDRED_STRATEGIST_EFFORT, KINDRED_STRATEGIST_THINKING)"
   },
   "architecture": {

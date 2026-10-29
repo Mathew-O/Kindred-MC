@@ -1,5 +1,29 @@
 # AI-player development validation
 
+## The player's voice (E-20a) — 29 October 2026 (`claude/player-voice-e20`)
+
+On `main` at `91f408a` with `claude/blissful-fermi-y4tt90` merged in (`385a6c2`). Code `3d7c7f4`; `ee93a17` then shortened the reply's `reason` field. Linux x64 cloud container (4 cores), OpenJDK 21.
+
+- `./gradlew build`: 780 JUnit results, none failed, five skipped (the opt-in live model tests).
+  - New: `ConversationAudienceTest` (5), `ConversationPromptTest` (5), `StrategistLineTest` (6).
+  - Four new cases in `OpenAiCompatibleStrategistTest` (14 in all).
+- `NativeVoiceGameTests`, its entrypoints narrowed and restored after each run: all seven fixtures in each of three runs.
+  - The fixtures: the owner on a gather; a bystander in private and in public; an opponent's coordinates refused; a failure; coalescing; a stopped player; the voice off.
+  - Two of those runs also held `SocialGameTests`, `NativeGazeGameTests` and `MannerismGameTests`: 21 of 21 each.
+  - Earlier runs, while the fixtures were being written, failed on three things, each fixed in the fixture:
+    - a native player's own record is its identity, so the lane admits its controller only with public chat on;
+    - its ambient greeting was heard among the replies;
+    - the test server runs up to ten times real time while the lane keeps real time (gaps now waited out by parking).
+- Negative control: the tier check removed (every listener a controller). The bystander and opponent fixtures fail on the position in their prompts; the other five pass.
+- The full native suite on `3d7c7f4`: 385 of 387, every voice fixture passing.
+  - Failed: `NativeLifeFirstGameTests.atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning` ("Its body") and `NativePortalCampaignGameTests.goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe` (still in the pit at the end). Neither was on the open list.
+  - Their two classes alone, twice on each build: on the base `385a6c2` 54 of 54, then 53 of 54 (the bed fixture again, "Its body"); on `3d7c7f4` 54 of 54 twice.
+  - So both are intermittent, outside the voice lane, and the bed fixture's failure predates it. Open.
+- Opt-in live runs with a key from the environment, three of three (`ClaudeStrategistLiveTest.aRealReplyToWhatAreYouDoingNamesTheLogsItIsChopping`):
+  - Each reply named the logs it was chopping, its goal and its three logs cut, and gave no place to a listener who may not know it.
+  - 1,058 to 1,059 input tokens (833 from the cache once) and 63 to 101 output, in 3.6 to 6.8 s.
+- Evidence: [E-20a](evidence/E-20a.md).
+
 ## Support reconstruction — 24 October 2026
 
 On base `fa8c3ac` (`claude/modest-faraday-r3spro`), reconstructed the lost support-batch scope on `codex/rebuild-support-integration`. The only production changes fix ModelGateway cleanup after caller cancellation and overflow-safe token accounting. Both dedicated regression tests fail on the unchanged base gateway and pass after the fixes.

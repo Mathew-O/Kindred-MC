@@ -28,7 +28,7 @@ Kindred MC is a Minecraft Java mod (Fabric, 1.21.1) that lets you add **a player
 | **Held for reconciliation** | The player paused itself because something uncertain happened (say, the server crashed mid-action). A human checks the world, then lets it carry on. It's the safe choice: it never guesses. |
 | **Edits switch** | `/aiplayer edits on|off`. While it's off, your players never break or place blocks. It starts off. |
 | **Activity allowance** | How long a player may be active each day (the *cap*), optionally only between certain *hours*, counted in a chosen *timezone*. Each day is a *period*. Time is paid for in small *slices* of a few seconds, booked before the player acts. |
-| **Strategist** | The optional planning helper (Claude or OpenAI) a player can ask for advice on long goals. Off unless a server owner adds a key. |
+| **Strategist** | The optional planning helper (Claude or OpenAI) a player can ask for advice on long goals. Off unless a server owner adds a key. With it on, the same model also gives a player its **voice**: a short reply in its own words when someone talks to it, told only what that person may know (`KINDRED_VOICE=off` keeps the fixed replies). |
 | **Mode** | A way to play: Co-op Survival, Manhunt, Speedrun, Builder, or Factions. |
 | **Match** | One round of a mode, like a duel or a manhunt. Players the mod runs only attack people inside a match those people joined. |
 | **Unit test** (JUnit) | A quick automatic check of one piece of logic, without starting Minecraft. |
