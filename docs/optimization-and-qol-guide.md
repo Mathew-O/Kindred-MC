@@ -3,7 +3,7 @@
 
 Version 1.0 · 18 October 2026
 
-> **Note (28 October 2026):** the third starter, Vesp, is now called **Echo** ([E-10c](evidence/E-10c.md)). This guide keeps the name it was written with; in the code, `VESP_NAME` is now `ECHO_NAME`, and a player saved as Vesp is still Echo.
+> **Note (28 October 2026, updated 29 October):** the third starter, once Vesp, is now called **Echo** ([E-10c](evidence/E-10c.md)), and this guide's text says Echo. Its code excerpts are kept as they were written, with `VESP_NAME` and `VESP`: in the code these are now `ECHO_NAME` and `ECHO`, with Vesp kept as `ECHO_FORMER_NAME`, so a player saved as Vesp is still Echo. The skin file's key for Echo is still `vesp`.
 
 This engineering guide translates the post-`E-11`/`E-12`/`E-13`/`E-07c` technical audit and [Minecraft Wiki (Java Edition 1.21.1)](https://minecraft.wiki/) mechanics review into **self-contained, step-by-step implementation blueprints**. Each blueprint is written so an implementing agent can execute the change safely without guessing class names, method signatures, thread boundaries, or conservation invariants.
 
@@ -1305,11 +1305,11 @@ In `ProgressionPolicy.recommendForMilestone`:
 
 ---
 
-## 9. Canonical Trio Roster (`Kindred`, `Sol`, `Vesp`), Sovereign Peer Independence & In-Game Settings GUI (`ROSTER-01` & `GUI-01`)
+## 9. Canonical Trio Roster (`Kindred`, `Sol`, `Echo`), Sovereign Peer Independence & In-Game Settings GUI (`ROSTER-01` & `GUI-01`)
 
 ---
 
-## `ROSTER-01` (P1): The Canonical Trio (`Kindred`, `Sol`, `Vesp`), Zero Inter-Bot Dependency & Toggable Collaboration
+## `ROSTER-01` (P1): The Canonical Trio (`Kindred`, `Sol`, `Echo`), Zero Inter-Bot Dependency & Toggable Collaboration
 
 ### 1. Canonical Roster & Distinct Default Personalities (`CanonicalRoster.java`)
 Kindred MC's three autonomous AI players have canonical names, deterministic UUID seeds per world, and complementary (but **never restrictive**) default `Personality` profiles:
@@ -1318,21 +1318,21 @@ Kindred MC's three autonomous AI players have canonical names, deterministic UUI
 | --- | --- | --- | --- | --- |
 | **1 (Main)** | **`Kindred`** | *Heart & Bond* — Balanced All-Rounder, Homestead Architect & Team Anchor | `initiative=75, caution=60, curiosity=65, sociability=80, humor=60, combativeness=65, helpfulness=85, farming=80, mining=70` | `TIMBER_HOMESTEAD` (Gambrel Barn Roof, Wrap-Around Porch, Sunken Hearth) |
 | **2** | **`Sol`** | *The Sun* — Bold Vanguard, Surface Explorer, Blaze/Dragon Striker | `initiative=90, caution=40, curiosity=85, sociability=65, humor=70, combativeness=90, helpfulness=70, farming=45, mining=60` | `FORTIFIED_BASTION` (Crenellated Parapet, Stone-Brick Keep, Watchtower) |
-| **3** | **`Vesp`** | *The Evening Star* — Deep Caver, Redstone/Smelting Artisan & Stronghold Scholar | `initiative=80, caution=75, curiosity=95, sociability=55, humor=50, combativeness=55, helpfulness=75, farming=50, mining=95` | `SCHOLAR_OBSERVATORY` / `DWARVEN_FOUNDRY_HALL` (Steep Nordic Gable, Rose Window, Twin Chimneys) |
+| **3** | **`Echo`** | *Deep Dark Artisan & Cave Scholar* — Deep Caver, Redstone/Smelting Artisan & Stronghold Scholar | `initiative=80, caution=75, curiosity=95, sociability=55, humor=50, combativeness=55, helpfulness=75, farming=50, mining=95` | `SCHOLAR_OBSERVATORY` / `DWARVEN_FOUNDRY_HALL` (Steep Nordic Gable, Rose Window, Twin Chimneys) |
 
-> **Critical Invariant (`SOC-01` & `PLY-01`)**: Personality weights only apply a bounded $[-5.0, +5.0]$ preference bias (`TaskPreferences.MAX_PERSONALITY_BIAS`). They **never** lock skills or create class dependencies: **`Kindred`**, **`Sol`**, and **`Vesp`** all possess 100% of the survival, mining, crafting, smelting, farming, building, and combat capabilities!
+> **Critical Invariant (`SOC-01` & `PLY-01`)**: Personality weights only apply a bounded $[-5.0, +5.0]$ preference bias (`TaskPreferences.MAX_PERSONALITY_BIAS`). They **never** lock skills or create class dependencies: **`Kindred`**, **`Sol`**, and **`Echo`** all possess 100% of the survival, mining, crafting, smelting, farming, building, and combat capabilities!
 
-**Skins (`CanonicalRosterSkins`)**: When a native body's saved display name is exactly **`Kindred`**, **`Sol`**, or **`Vesp`**, spawn/connect applies the matching NameMC texture hash to its `GameProfile` (`textures.minecraft.net`). PNGs live under `assets/kindred/textures/entity/roster/` for legacy mob-body client rendering.
+**Skins (`CanonicalRosterSkins`)**: When a native body's saved display name is exactly **`Kindred`**, **`Sol`**, or **`Echo`**, spawn/connect applies the matching NameMC texture hash to its `GameProfile` (`textures.minecraft.net`). PNGs live under `assets/kindred/textures/entity/roster/` for legacy mob-body client rendering.
 
 ---
 
 ### 2. Zero Inter-Bot Dependency ("Sovereign Peer Architecture")
-None of **`Kindred`**, **`Sol`**, or **`Vesp`** is a "sub-bot" or dependent on another bot being online, alive, or nearby:
+None of **`Kindred`**, **`Sol`**, or **`Echo`** is a "sub-bot" or dependent on another bot being online, alive, or nearby:
 1. **Independent Survival Loop**:
    - Every bot owns its own `PlayerIdentity`, `ServerPlayerEntity` native body (`F-25b`), `PlayerDecisionLoop`, `MilestoneGraph` state, `ActionArbiter`, and `SkillRunner`.
-   - Whether **only `Kindred`** is spawned, **only `Sol`**, or all three (`Kindred`, `Sol`, `Vesp`), any single bot can complete the entire `PLY-03`/`E-40` progression from empty inventory to the Ender Dragon solo.
+   - Whether **only `Kindred`** is spawned, **only `Sol`**, or all three (`Kindred`, `Sol`, `Echo`), any single bot can complete the entire `PLY-03`/`E-40` progression from empty inventory to the Ender Dragon solo.
 2. **No Leader Single-Point-of-Failure**:
-   - `Kindred` is the flagship bot by name, not a master controller for `Sol` or `Vesp`. If `Kindred` is paused, stopped, or disconnected, `Sol` and `Vesp` continue operating at 100% capability without waiting for `Kindred`.
+   - `Kindred` is the flagship bot by name, not a master controller for `Sol` or `Echo`. If `Kindred` is paused, stopped, or disconnected, `Sol` and `Echo` continue operating at 100% capability without waiting for `Kindred`.
 
 ---
 
@@ -1583,13 +1583,13 @@ Create `c:\Users\matmu\Downloads\Kindred MC\companion-server-adapter\src\main\ja
 - Override `onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player)`:
   - **Always return early without calling `super.onSlotClick`** so zero items can ever be picked up, cloned, or moved (`PLY-04` invariant).
   - If `slotIndex` is one of the interactive control slots:
-    - **Slots `2`, `4`, `6` (`Kindred`, `Sol`, `Vesp`)**:
+    - **Slots `2`, `4`, `6` (`Kindred`, `Sol`, `Echo`)**:
       - `button == 0` (Left-Click): Select this bot for the Row 4–5 Inspector (or if not yet spawned in the world and `player.hasPermissionLevel(2)`, spawn/connect that canonical bot!).
       - `button == 1` (Right-Click): Toggle `stop` / `resume` on that specific bot.
-    - **Slot `8` (`Spawn / Wake All Three: Kindred, Sol, Vesp`)**:
-      - Ensures all three canonical players (`Kindred`, `Sol`, `Vesp`) are created, connected as native `ServerPlayerEntity` bodies (`F-25b`), and resumed.
+    - **Slot `8` (`Spawn / Wake All Three: Kindred, Sol, Echo`)**:
+      - Ensures all three canonical players (`Kindred`, `Sol`, `Echo`) are created, connected as native `ServerPlayerEntity` bodies (`F-25b`), and resumed.
     - **Slot `18` (`Boss & Playthrough Mode Toggle`)**:
-      - Calls `runtime.toggleBossProgression(actor)` (`bossProgressionEnabled = true/false`). When **OFF**, `Kindred`, `Sol`, and `Vesp` suppress `E-39`/`E-40` boss rushes and devote 100% of their project bandwidth to **Forever World Kaizen (`WORLD-01`)**.
+      - Calls `runtime.toggleBossProgression(actor)` (`bossProgressionEnabled = true/false`). When **OFF**, `Kindred`, `Sol`, and `Echo` suppress `E-39`/`E-40` boss rushes and devote 100% of their project bandwidth to **Forever World Kaizen (`WORLD-01`)**.
     - **Slot `19` (`Speedrun Mode Toggle`)**:
       - Calls `runtime.toggleSpeedrunMode(actor)` (`OPTIMAL_SURVIVAL` $\leftrightarrow$ `SPEEDRUN_ANY_PERCENT`).
     - **Slot `20` (`Forever World Kaizen Toggle`)**:
@@ -1605,7 +1605,7 @@ Create `c:\Users\matmu\Downloads\Kindred MC\companion-server-adapter\src\main\ja
       - Right-Click (`button == 1`): `-10` to trait (clamped `0..100`).
       - Persists updated `SocialProfile` via `store.saveProfile`.
     - **Slot `49` & `50` (Per-Bot Collaboration & Speedrun Override)**:
-      - Allows e.g. **`Kindred`** and **`Sol`** to collaborate in `COOP_TEAM` while **`Vesp`** runs `SOLO_INDEPENDENT` (or lets one bot run `SPEEDRUN_ANY_PERCENT` while another builds a house in `OPTIMAL_SURVIVAL`!).
+      - Allows e.g. **`Kindred`** and **`Sol`** to collaborate in `COOP_TEAM` while **`Echo`** runs `SOLO_INDEPENDENT` (or lets one bot run `SPEEDRUN_ANY_PERCENT` while another builds a house in `OPTIMAL_SURVIVAL`!).
   - Call `refreshSlots()` and `sendContentUpdates()` after any click.
 
 #### Step 3: Wire `/aiplayer gui` and `/aiplayer roster` in `PlayerCommands.java`
@@ -1618,7 +1618,7 @@ In `PlayerCommands.register`:
        return runtime.openControlGui(context.getSource());
    }));
    ```
-2. Add `/aiplayer roster spawn` to spawn **`Kindred`**, **`Sol`**, and **`Vesp`** with their canonical `Personality` presets in one command, or `/aiplayer roster spawn <Kindred|Sol|Vesp>` to spawn any one of them individually.
+2. Add `/aiplayer roster spawn` to spawn **`Kindred`**, **`Sol`**, and **`Echo`** with their canonical `Personality` presets in one command, or `/aiplayer roster spawn <Kindred|Sol|Echo>` to spawn any one of them individually.
 
 ---
 
@@ -1631,7 +1631,7 @@ In `PlayerCommands.register`:
 ### The Vision: What Happens When Boss Fights Are Toggled OFF (or After the Dragon Falls)?
 In a real 2+ year Minecraft survival world, beating the Ender Dragon is just one optional chapter—or something players deliberately postpone while building a sprawling, interconnected civilization.
 
-When **`bossProgressionEnabled == false`** in `/aiplayer gui` (or once `E-40` is completed and the team returns home), **`Kindred`**, **`Sol`**, and **`Vesp`** shift their top-level planner into the **Infinite World Kaizen Loop (`WorldKaizenDirector`)**—where every completed project unlocks the next tier of estate expansion, technical automation, rail infrastructure, Netherite gear perfection, and playful creative architecture.
+When **`bossProgressionEnabled == false`** in `/aiplayer gui` (or once `E-40` is completed and the team returns home), **`Kindred`**, **`Sol`**, and **`Echo`** shift their top-level planner into the **Infinite World Kaizen Loop (`WorldKaizenDirector`)**—where every completed project unlocks the next tier of estate expansion, technical automation, rail infrastructure, Netherite gear perfection, and playful creative architecture.
 
 ---
 
@@ -1713,7 +1713,7 @@ When core survival and infrastructure quotas are healthy, the bots spend discret
 - **`Sol`'s Signature Builds**:
   - **Canopy Treehouse & Archery Range** with `Target` blocks (`Blocks.TARGET` + hay bale + redstone lamps).
   - **Coastal Lighthouse / Beacon Tower** with a spiral staircase and high-altitude lookout deck.
-- **`Vesp`'s Signature Builds**:
+- **`Echo`'s Signature Builds**:
   - **Glass-Domed Botanical Conservatory & Aquarium** housing tropical fish/axolotls and rare biome flora brought back from expeditions.
   - **Clocktower & Redstone Bell Shrine** that rings a `Bell` (`Blocks.BELL`) at dawn and dusk via a `DaylightDetectorBlock`.
 
@@ -1771,7 +1771,7 @@ public enum WorldKaizenStage {
 2. **When `bossProgressionEnabled == false` (Forever World Mode)**:
    - `ProgressionPolicy` filters out `E-39` / `E-40` boss-rush milestones and delegates `PROJECT`-tier candidate generation to `WorldKaizenDirector.recommendNextUpgrade(...)`.
    - The Nether (`E-37`) is still visited—not to rush the End, but to gather **Quartz** (for `Observers`/`Comparators`), **Glowstone/Shroomlights** (for ranch lighting), **Soul Sand** (for bubble-column elevators!), and **`Y = 15` Ancient Debris** (for full Netherite gear).
-   - You can toggle `bossProgressionEnabled` **ON at any time** in `/aiplayer gui`—meaning `Kindred`, `Sol`, and `Vesp` can spend 50 in-game days building a massive ranch, rail network, mob grinder, and full Enchanted Netherite armor, and then you click **🐉 Boss & Playthrough: ON** and watch them march into the End Portal as an unstoppable maxed-out trio!
+   - You can toggle `bossProgressionEnabled` **ON at any time** in `/aiplayer gui`—meaning `Kindred`, `Sol`, and `Echo` can spend 50 in-game days building a massive ranch, rail network, mob grinder, and full Enchanted Netherite armor, and then you click **🐉 Boss & Playthrough: ON** and watch them march into the End Portal as an unstoppable maxed-out trio!
 
 ---
 
@@ -1779,7 +1779,7 @@ public enum WorldKaizenStage {
 
 ### Goal
 1. **Default Upon Creation & Non-Locked Mode Switching**:
-   - When **`Kindred`**, **`Sol`**, or **`Vesp`** is first created/spawned, its initial `PlaystyleProfile` starts in **`IDLE_OBSERVING`** until a player/operator selects an active play mode (`OPTIMAL_SURVIVAL`, `FOREVER_WORLD`, or `SPEEDRUN_ANY_PERCENT`) via `/aiplayer gui` or `/aiplayer mode`.
+   - When **`Kindred`**, **`Sol`**, or **`Echo`** is first created/spawned, its initial `PlaystyleProfile` starts in **`IDLE_OBSERVING`** until a player/operator selects an active play mode (`OPTIMAL_SURVIVAL`, `FOREVER_WORLD`, or `SPEEDRUN_ANY_PERCENT`) via `/aiplayer gui` or `/aiplayer mode`.
    - Modes are **never hard-locked**: a player can switch any bot (or the whole trio) between `IDLE_OBSERVING`, `OPTIMAL_SURVIVAL`, `FOREVER_WORLD`, and `SPEEDRUN_ANY_PERCENT` at any safe checkpoint without restarting or losing state.
    - `IDLE_OBSERVING` is also automatically used as the **in-game waiting sub-state** whenever a bot is waiting for a furnace batch, waiting for crops/daylight, or waiting on a human player.
 2. **Adjustable Wander Range (`default = 40 blocks`, range `8..128`)**:
@@ -2099,11 +2099,11 @@ Create `c:\Users\matmu\Downloads\Kindred MC\companion-server-adapter\src\main\ja
 ## 13. Signature Combat Loadouts & Dynamic Optimal Weapon Switching (`WEAP-01`)
 
 ### Goal
-Give **`Vesp`**, **`Sol`**, and **`Kindred`** distinct, iconic weapon identities once those weapons are discovered/crafted, while ensuring **none of them is locked to a single weapon**—each dynamically hot-swaps to whichever weapon is mathematically optimal for the exact range, weather, vertical height, and target count!
+Give **`Echo`**, **`Sol`**, and **`Kindred`** distinct, iconic weapon identities once those weapons are discovered/crafted, while ensuring **none of them is locked to a single weapon**—each dynamically hot-swaps to whichever weapon is mathematically optimal for the exact range, weather, vertical height, and target count!
 
 | AI Player | Primary Signature Weapon(s) | Secondary / Situation Weapons | Dynamic Optimal Hot-Swap Rules (Java Edition 1.21.1) |
 | --- | --- | --- | --- |
-| **`Vesp`** | **Trident** (`Items.TRIDENT`: `9.0` melee dmg, `1.1` speed, `8.0` thrown ranged dmg; `Loyalty`, `Impaling`, `Riptide`, `Channeling`) | **Bow** (`Power` / long-range dry targets) & **Sword** (`Sweeping Edge` / `Looting III`) | • **Use Trident (Melee or Throw)** when: target is in water/rain (`Impaling V` adds **`+12.5` bonus damage** to wet targets in 1.21.1!), or at mid-range (`4–18m`) when Trident has `Loyalty >= 1` (and not over End void).<br>• **Use `Riptide` Trident** in rain/water to launch across gaps or burst-strike.<br>• **Hot-Swap to Bow** while a thrown `Loyalty` Trident is in flight returning to hand, or at `> 20m` against dry airborne targets (Blazes/Dragon crystals).<br>• **Hot-Swap to Sword** when surrounded by `>= 3` melee mobs (`Sweeping Edge` crowd cleave) or landing the final blow on a mob whose drops scale with `Looting III` (Endermen/Blazes/Wither Skeletons). |
+| **`Echo`** | **Trident** (`Items.TRIDENT`: `9.0` melee dmg, `1.1` speed, `8.0` thrown ranged dmg; `Loyalty`, `Impaling`, `Riptide`, `Channeling`) | **Bow** (`Power` / long-range dry targets) & **Sword** (`Sweeping Edge` / `Looting III`) | • **Use Trident (Melee or Throw)** when: target is in water/rain (`Impaling V` adds **`+12.5` bonus damage** to wet targets in 1.21.1!), or at mid-range (`4–18m`) when Trident has `Loyalty >= 1` (and not over End void).<br>• **Use `Riptide` Trident** in rain/water to launch across gaps or burst-strike.<br>• **Hot-Swap to Bow** while a thrown `Loyalty` Trident is in flight returning to hand, or at `> 20m` against dry airborne targets (Blazes/Dragon crystals).<br>• **Hot-Swap to Sword** when surrounded by `>= 3` melee mobs (`Sweeping Edge` crowd cleave) or landing the final blow on a mob whose drops scale with `Looting III` (Endermen/Blazes/Wither Skeletons). |
 | **`Sol`** | **Mace** (`Items.MACE`: `6.0` base, `0.6` speed, **1.21 Smash Attack** when `fallDistance >= 1.5 blocks`) & **Charged Crossbow** (`Items.CROSSBOW` with `Piercing` / `Multishot`) | **Sword / Axe** (flat-ground sustained melee) & **Wind Charge** (`Items.WIND_CHARGE`) | • **Pre-Charge Crossbow Before Combat**: Outside melee range, `Sol` loads its Crossbow (`DataComponentTypes.CHARGED_PROJECTILES`) and keeps it ready in hotbar slot 1. On engagement or against a shielded enemy (`Piercing` ignores shields!), fires an instant `0-tick` snap-shot.<br>• **Mace Smash Combo (`fallDistance >= 1.5m`)**: Whenever `Sol` drops from high ground, jumps off a pillar/ledge, or throws a **`Wind Charge` at its feet** (launching `5–7 blocks` into the air!), `Sol` hot-swaps to the **Mace** in mid-air. Hitting the target triggers the 1.21 **Smash Attack** (`+4 HP/block` for first 3 blocks, `+2 HP/block` for next 5, `+1 HP/block` beyond, plus `Density` & `Breach` $-60\%$ armor) and **cancels 100% of `Sol`'s fall damage**!<br>• **Immediate Post-Smash Hot-Swap to Sword**: Because the Mace has a slow `0.6` attack speed (`34 ticks` recharge) on flat ground, the moment `Sol` lands (`onGround && fallDistance < 1.5f`), `Sol` hot-swaps to its **Sword** (`1.6` speed) for rapid follow-up DPS! |
 | **`Kindred`** | **Sword + Axe + Bow** (Classic Master-at-Arms Loadout) | **Shield / Totem** (Off-hand Slot 40) & **Water Bucket** (Slot 6) | • **Bow** at `5–24m` range, pre-switching to **Sword** `12 ticks` before the mob closes to `3.0m`.<br>• **Axe** (`9.0–10.0` single hit) to shatter raised shields (`100-tick` disable) or open with a jump-crit.<br>• **Sword** (`9.6–12.8` sustained DPS) for continuous melee combos, `Sweeping Edge` cleave, and `PROTECT_ALLY` sprint-knockback peels. |
 
@@ -2360,7 +2360,7 @@ public final class SignatureWeaponPolicy {
 
 ---
 
-### Phase B: Trio Roster (`Kindred`, `Sol`, `Vesp`), Idle Mode & In-Game GUI (`ROSTER-01`, `IDLE-01`, `GUI-01`)
+### Phase B: Trio Roster (`Kindred`, `Sol`, `Echo`), Idle Mode & In-Game GUI (`ROSTER-01`, `IDLE-01`, `GUI-01`)
 5. **`ROSTER-01` (Canonical Trio & Sovereign Independence)**:
    - **Files to Create**: `companion-core/.../CanonicalRoster.java`, `companion-core/.../team/CollaborationMode.java`.
    - **Action**: Define `KINDRED`, `SOL`, and `VESP` presets with deterministic UUID seeds and 9-trait personalities. Gate `TeamCoordinator` task claims in `PlayerRuntime.evaluateScheduledRoutineCandidates` behind `collaborationMode == CollaborationMode.COOP_TEAM`; call `teamCoordinator.handlePlayerStop` when switching to `SOLO_INDEPENDENT`.
@@ -2372,7 +2372,7 @@ public final class SignatureWeaponPolicy {
 7. **`GUI-01` (9x6 Vanilla-Compatible Control Deck GUI)**:
    - **Files to Create**: `companion-server-adapter/.../KindredControlScreenHandler.java`.
    - **Files to Edit**: `PlayerCommands.java` (add `/aiplayer gui` and `/aiplayer roster spawn`).
-   - **Action**: Build the 54-slot virtual container menu with click-intercepted buttons for `Kindred`/`Sol`/`Vesp`, `Idle/Survival/Speedrun/Forever-World` mode selector, `Boss Fights ON/OFF`, `Collaboration CO-OP/SOLO`, `Seed Locator ON/OFF`, `Idle Radius (16/40/64/128)`, and the 9 Personality sliders.
+   - **Action**: Build the 54-slot virtual container menu with click-intercepted buttons for `Kindred`/`Sol`/`Echo`, `Idle/Survival/Speedrun/Forever-World` mode selector, `Boss Fights ON/OFF`, `Collaboration CO-OP/SOLO`, `Seed Locator ON/OFF`, `Idle Radius (16/40/64/128)`, and the 9 Personality sliders.
    - **Verify**: Verify in GameTest that clicking any GUI slot mutates `RuntimeSettings` and transfers `0` items into player inventory (`PLY-04`).
 
 ---
@@ -2381,9 +2381,9 @@ public final class SignatureWeaponPolicy {
 8. **`INT-01` (Provenance Discovery Atlas, Base Lectern & 8:1 Portal Linker)**:
    - **Files**: `Waypoint.java`, `DiscoveryAtlas.java`, `NativeLecternSyncAction.java`.
    - **Action**: Enforce `knownByPlayers` provenance set; sync discoveries when reading/writing a `Blocks.LECTERN` `WRITABLE_BOOK` at base or via proximity `SocialBrain` callouts; add `Waypoint.linkedPortalCoordinate()`.
-9. **`INT-02` & `WEAP-01` (Combat Hot-Swapping & Signature Weapons for `Kindred`, `Sol`, `Vesp`)**:
+9. **`INT-02` & `WEAP-01` (Combat Hot-Swapping & Signature Weapons for `Kindred`, `Sol`, `Echo`)**:
    - **Files**: `WeaponProfile.java`, `SignatureWeaponPolicy.java`, `TacticalPriorityPolicy.java`, `NativePlayerBody.java`, `PlayerRuntime.java`.
-   - **Action**: Add off-hand `Shield` $\leftrightarrow$ `Totem of Undying` swap (`slot 40` at $\le 6.0\text{ HP}$), `Water Bucket` clutch (`native_bucket`), `PROTECT_ALLY` peel, and `SignatureWeaponPolicy` (`Vesp` = Trident + Bow/Sword; `Sol` = 1.21 Mace aerial smash + Charged Crossbow + Sword; `Kindred` = Sword + Axe + Bow).
+   - **Action**: Add off-hand `Shield` $\leftrightarrow$ `Totem of Undying` swap (`slot 40` at $\le 6.0\text{ HP}$), `Water Bucket` clutch (`native_bucket`), `PROTECT_ALLY` peel, and `SignatureWeaponPolicy` (`Echo` = Trident + Bow/Sword; `Sol` = 1.21 Mace aerial smash + Charged Crossbow + Sword; `Kindred` = Sword + Axe + Bow).
    - **Verify**: `.\gradlew.bat :companion-core:test :companion-server-adapter:runGametest`
 
 ---
@@ -2413,8 +2413,8 @@ public final class SignatureWeaponPolicy {
 | `IDLE-01` | **P1** | Default Idle Mode (`40m` radius), trinket pickup & Eye-Contact Lock + Crouch/Chat | `IdleObservationController.java`, `PlayerRuntime.java` | Natural ambient presence on creation/wait with eye-contact lock & squat greeting |
 | `CHEST-01` | **P1** | Autonomous Chest Organization, 8-Category Sorting & Surplus Deposit | `ChestOrganizationPolicy.java`, `NativeChestOrganizeAction.java` | Compacts partial stacks, sorts chests by category & preserves bot survival kit |
 | `QOL-05` | **P1** | Bot$\leftrightarrow$Player QoL: Chest Yielding, Emergency Food Toss, Cave Torches & Sleep Sync | `ChestOrganizationPolicy.java`, `PlayerRuntime.java` | Polite chest access, shares food/torches with low-stat humans & syncs bed sleep |
-| `ROSTER-01` | **P1** | Canonical Trio (`Kindred`, `Sol`, `Vesp`) & Independent/Co-op Toggle | `CanonicalRoster.java`, `CollaborationMode.java`, `PlayerRuntime.java` | Zero inter-bot dependency; toggleable `COOP_TEAM` vs `SOLO_INDEPENDENT` |
-| `WEAP-01` | **P1** | Signature Weapons (`Vesp` Trident, `Sol` Mace/Crossbow, `Kindred` Sword/Axe/Bow) | `SignatureWeaponPolicy.java`, `WeaponProfile.java`, `PlayerRuntime.java` | Distinct weapon identities with dynamic mathematical hot-swapping |
+| `ROSTER-01` | **P1** | Canonical Trio (`Kindred`, `Sol`, `Echo`) & Independent/Co-op Toggle | `CanonicalRoster.java`, `CollaborationMode.java`, `PlayerRuntime.java` | Zero inter-bot dependency; toggleable `COOP_TEAM` vs `SOLO_INDEPENDENT` |
+| `WEAP-01` | **P1** | Signature Weapons (`Echo` Trident, `Sol` Mace/Crossbow, `Kindred` Sword/Axe/Bow) | `SignatureWeaponPolicy.java`, `WeaponProfile.java`, `PlayerRuntime.java` | Distinct weapon identities with dynamic mathematical hot-swapping |
 | `GUI-01` | **P1** | In-Game 9x6 Control Deck GUI (`/aiplayer gui`) | `KindredControlScreenHandler.java`, `PlayerCommands.java` | Clickable vanilla-compatible GUI for Modes, Bosses, Collab, Seed Tool & Traits |
 | `EXEC-02` | **P1** | `PlaystyleProfile`: `IDLE` / `OPTIMAL_SURVIVAL` / `SPEEDRUN_ANY_PERCENT` | `PlaystyleProfile.java`, `ProgressionPolicy.java`, `MilestoneGraph.java` | Non-locked mode switching between Idle, Optimal Survival, and Speedrun |
 | `SPEED-01` | **P1** | Fair-Play Speedrun Community Tech (seed locator retired 2026-10-20) | `SpeedrunTechPolicy.java` | `(9,9)` treasure, underwater door air, boat clutch, Bastion tech & `(4,4)` stronghold |
