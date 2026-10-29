@@ -129,7 +129,7 @@ The full list, with every option, is in the [operator guide](docs/operator-guide
 - **A notebook for every important action.** Before it breaks, crafts or moves items, the mod writes down what it's about to do. If the server crashes halfway, nothing gets duplicated and nothing silently vanishes.
 - **Off-switches everywhere.** Server owners decide whether players may edit the world, fight the dragon or build their own bases, how long they play each day and at what hours.
 - **Runs on your server.** Everything above works on its own. A server owner can optionally plug in a Claude or OpenAI key for extra planning advice on long goals; it's off by default.
-- **Talks back in its own words.** With that key plugged in, a player you speak to answers in its own voice from what it actually knows, and only tells you what you're allowed to know; anything goes wrong and it says its usual line. Talking never makes it do anything.
+- **Talks back in its own words.** With that key plugged in, a player you speak to answers in its own voice from what it actually knows, and only tells you what you're allowed to know; anything goes wrong and it says its usual line. If you're allowed to command it, you can also ask it in chat to come over, wait, stop or toss you something, and it does exactly what the matching command would. Nobody else's chat makes it do anything.
 
 New here? The [**start-here guide**](docs/README.md) explains the project, the folders and the words we use, in plain language.
 

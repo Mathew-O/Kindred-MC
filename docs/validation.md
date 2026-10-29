@@ -1,5 +1,22 @@
 # AI-player development validation
 
+## Asks in chat (E-20b) — 29 October 2026 (`claude/player-voice-e20`)
+
+On E-20a. Code `64f4ac1`. Linux x64 cloud container (4 cores), OpenJDK 21.
+
+- `./gradlew build` on `64f4ac1`: 787 JUnit results, none failed, six skipped (the opt-in live model tests). It ran alongside the full suite below.
+  - New: three `StrategistLineTest` cases (9 in all), one `ConversationAudienceTest` case (6), one `ConversationPromptTest` case (6), one `OpenAiCompatibleStrategistTest` case (15).
+- `NativeAskGameTests` (6), entrypoints narrowed and restored after each run.
+  - The fixtures: COME, WAIT and TOSS from the owner; STOP during a gather; a bystander's ask refused; a refused toss answered in the command's words.
+  - `ask1` on the code before the settling wait: 5 of 6. WAIT was refused because the last activity was still settling; fixed.
+  - Then `ask2`, `ask3` and `ask4` on `64f4ac1`'s code: 6 of 6 each, the last two with `NativeVoiceGameTests`, 7 of 7 each.
+- Negative control: the ask check in `Line.checked` removed. The bystander fixture fails: the model's words, then the command's own "Native player unavailable or administrative access denied.", and nothing done (the command's authority still holds). The other five pass.
+- The full native suite on `64f4ac1`: 393 of 393.
+- Opt-in live run (`ClaudeStrategistLiveTest.aRealAskFromTheOwnerToComeIsCome`): 1 of 1.
+  - "come over here please" came back "Sure thing, Steve, I'm on my way over." with COME (1,403 in / 50 out, 4.4 s).
+  - "nice weather today" came back with no ask (1,404 in, 1,134 cached / 56 out, 1.2 s).
+- Evidence: [E-20b](evidence/E-20b.md).
+
 ## The player's voice (E-20a) — 29 October 2026 (`claude/player-voice-e20`)
 
 On `main` at `91f408a` with `claude/blissful-fermi-y4tt90` merged in (`385a6c2`). Code `3d7c7f4`; `ee93a17` then shortened the reply's `reason` field. Linux x64 cloud container (4 cores), OpenJDK 21.
