@@ -87,7 +87,7 @@ There's no download yet, so you build the mod yourself (it takes a couple of min
 1. **Get the tools:** [Java 21](https://adoptium.net/) and a Minecraft **1.21.1** server running **Fabric Loader 0.19.5** with **Fabric API 0.116.17+1.21.1**.
 2. **Build it:** in this folder, run `./gradlew build` (on Windows: `gradlew.bat build`).
 3. **Install it:** copy `companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar` into your server's `mods` folder and start the server.
-4. **Optional:** put the same JAR in your own game's `mods` folder too. That adds the **K** menu and shows your players' skins. The mod is built so friends with plain vanilla Minecraft can join too (that part is still being tested).
+4. **Optional:** put the same JAR in your own game's `mods` folder too. That adds the **K** menu and shows your players' skins. The mod is built so that friends with plain vanilla Minecraft should be able to join too, but nobody has tried that with a real vanilla client yet.
 5. **Say hi:** in game, as an operator:
 
 ```text

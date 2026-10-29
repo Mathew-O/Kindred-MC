@@ -102,10 +102,14 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
     each module compiled after, and the README's "the rest are getting one" updated when done.
 18. **README: "friends with plain vanilla Minecraft can join too (still being tested)".** The ordinary-client gate
     (F-25b) has never been run; keep the wording honest until it has.
+    **Done in the commit that ticks this:** "should be able to join too, but nobody has tried that with a real vanilla
+    client yet".
 19. **No download.** The build workflow keeps a jar as a run artifact only; there is no GitHub release (F-23). The
     README says "build it yourself"; a tagged pre-release would be the first download.
 20. **GitHub-side, owner only:** the repository's About description and topics are unset; four stale `codex/*`
     branches remain.
+    **Owner only; untouched.** D19 (a first download, a tagged pre-release) is also the owner's call: publishing a
+    release is outward-facing.
 
 ## E. The test suite
 
