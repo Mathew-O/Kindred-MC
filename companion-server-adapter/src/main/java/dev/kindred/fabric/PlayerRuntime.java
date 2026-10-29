@@ -184,6 +184,8 @@ final class PlayerRuntime {
     private boolean bases;
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
+    /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
+    private final dev.kindred.core.construction.DesignFingerprint.Registry designs = new dev.kindred.core.construction.DesignFingerprint.Registry();
     /** Whether the strategist is asked for combat proposals (E-41f): an operator's choice, off by default. */
     private boolean combatAdvice;
     /** A learned melee model an operator turned on (E-41e), or null for the hand-set melee. */
@@ -1740,7 +1742,7 @@ final class PlayerRuntime {
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_fight".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
-                        || intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.BLOCK))
+                        || intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.BLOCK || intent == NativePlayerBody.Intent.EAT))
                     || ("native_block".equals(entry.skillId) && intent == NativePlayerBody.Intent.BLOCK)
                     || ("native_till".equals(entry.skillId) && (intent == NativePlayerBody.Intent.TILL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_plant".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLANT || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -4163,8 +4165,8 @@ final class PlayerRuntime {
         if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
         // Its style grown from its seed block, or the wood it has to hand, and its world (E-29a): this world's stage
         // is not the next world's.
-        var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : dev.kindred.core.construction.BuildStyle.grown(record.seed,
-                woodAtHand(entry, body), world.getSeed() ^ id.getMostSignificantBits() ^ id.getLeastSignificantBits() * 31 + stage.ordinal());
+        var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : unique(entry, stage, dev.kindred.core.construction.BuildStyle.grown(record.seed,
+                woodAtHand(entry, body), world.getSeed() ^ id.getMostSignificantBits() ^ id.getLeastSignificantBits() * 31 + stage.ordinal()));
         var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
         int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
         var plan = dev.kindred.core.construction.Houses.of(stage, style);
@@ -4206,9 +4208,35 @@ final class PlayerRuntime {
                 entry.bases.hall = null;
             }
             if (entry.seedBlock != null) entry.bases.seed = entry.seedBlock;
+            // Its bases' designs reserved as its own, as recorded (E-30).
+            for (var base : entry.bases.built) {
+                designs.reserve(id, entry.data.displayName() + "'s " + base.stage(), dev.kindred.core.construction.DesignFingerprint.of(planOf(base)));
+            }
             entry.basesLoading = false;
         }));
         return false;
+    }
+
+    /**
+     * The first of {@code grown}'s variants on whose plan is no near copy of a design another player has reserved
+     * (E-30), reserved as its own: two players' bases are not one design, turned or in other wood or with a window more.
+     */
+    private dev.kindred.core.construction.BuildStyle unique(Entry entry, dev.kindred.core.construction.Houses.Stage stage,
+                                                            dev.kindred.core.construction.BuildStyle grown) {
+        String copied = null;
+        for (int k = 0; k < dev.kindred.core.construction.BuildStyle.VARIANTS; k++) {
+            int variant = 1 + Math.floorMod(grown.variant() - 1 + k, dev.kindred.core.construction.BuildStyle.VARIANTS);
+            var style = new dev.kindred.core.construction.BuildStyle(grown.seed(), grown.wood(), grown.stone(), variant, grown.turns());
+            var refused = designs.reserve(entry.data.id(), entry.data.displayName() + "'s " + stage.noun,
+                    dev.kindred.core.construction.DesignFingerprint.of(dev.kindred.core.construction.Houses.of(stage, style)));
+            if (refused.isEmpty()) {
+                if (copied != null) KindredMod.LOGGER.info("{}'s {}: its plan {} would copy {}; plan {} instead", entry.data.displayName(), stage.noun,
+                        grown.variant(), copied, variant);
+                return style;
+            }
+            if (copied == null) copied = refused.get().name();
+        }
+        return grown;
     }
 
     private boolean startBase(Entry entry, PlayerMemoryStore.Base base, String why) {
@@ -13098,6 +13126,8 @@ final class PlayerRuntime {
      * opponent, or six health gained or lost since the last). The answer comes back later and is checked again then.
      */
     private Optional<dev.kindred.core.tactics.CombatProposals.Tactic> combatProposal(Entry entry, ServerPlayerEntity self, net.minecraft.entity.player.PlayerEntity opponent) {
+        // Advice off (the default), or no one to ask: the melee alone, and nothing reckoned for it.
+        if (!combatAdvice || strategist.isEmpty()) return Optional.empty();
         long tick = server.getTicks();
         var facts = combatFacts(entry, self, opponent);
         var gate = entry.combatGate;
@@ -13105,7 +13135,7 @@ final class PlayerRuntime {
         var current = gate.current(facts, tick).map(dev.kindred.core.tactics.CombatProposals.Proposal::tactic);
         if (!gate.dropped().equals(before)) KindredMod.LOGGER.info("{} combat proposal dropped: {}", entry.data.displayName(), gate.dropped());
         boolean changed = !opponent.getUuid().equals(entry.combatAskedOf) || Math.abs(facts.health() - entry.combatAskedHealth) >= 6;
-        if (combatAdvice && strategist.isPresent() && changed && gate.mayAsk(tick)) {
+        if (changed && gate.mayAsk(tick)) {
             gate.asked(tick);
             entry.combatAskedHealth = facts.health();
             entry.combatAskedOf = opponent.getUuid();

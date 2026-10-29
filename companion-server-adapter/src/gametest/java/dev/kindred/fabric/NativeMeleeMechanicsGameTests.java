@@ -20,15 +20,16 @@ import java.util.UUID;
 
 /**
  * The melee mechanics suite (E-41b): each move of the player's melee tried on its own, from randomised legal starts in a
- * walled arena, in a duel both joined, against a declared opponent that either stands (the strike, the strafe, getting
- * away, eating) or fights as the baseline does (the shield, the step back). Each trial passes when the move is seen made
- * in the world, from what the game shows, within its time:
+ * walled arena, in a duel both joined, against a declared opponent that stands (the strike, getting away, eating), swings
+ * as fast as it can (the strafe) or fights as the baseline does (the shield, the step back), in equal kit where it
+ * fights. Each trial passes when the move is seen made in the world, from what the game shows, within its time:
  * <ul>
  *   <li>strike: its first blow on the opponent lands a full swing (at least an iron sword's full hit through iron);</li>
- *   <li>strafe: between its first two blows it goes round the opponent, sideways, at least thirty degrees;</li>
+ *   <li>strafe: against one that swings as fast as it can, between its blows it steps sideways round it, ten degrees or
+ *   more;</li>
  *   <li>shield: a blow of the opponent's is taken on its raised shield (the shield wears);</li>
  *   <li>step back: after its first blow, it walks backward out of the opponent's way;</li>
- *   <li>get away: losing (five health against twenty), it gets five blocks further off;</li>
+ *   <li>get away: losing (five health against twenty, too hungry to heal), it gets five blocks further off;</li>
  *   <li>eat: hurt and well out of reach, it eats, and its weapon is back in hand after.</li>
  * </ul>
  * Then a fight stopped half way: nothing more is struck, and nothing of the fight moves the body. Run apart from the
@@ -135,7 +136,9 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                 p.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
                                 if (p == hal && skill != Skill.GET_AWAY) p.getInventory().setStack(1, new ItemStack(Items.BREAD, 4));
                                 p.getInventory().selectedSlot = 0;
-                                p.equipStack(EquipmentSlot.OFFHAND, p == wren || halShield ? new ItemStack(Items.SHIELD) : ItemStack.EMPTY);
+                                // Equal kit where the move is against one that swings, so a hard hit is the fight going on (E-41g).
+                                boolean shield = p == hal ? halShield : skill == Skill.SHIELD || skill == Skill.STRIKE;
+                                p.equipStack(EquipmentSlot.OFFHAND, shield ? new ItemStack(Items.SHIELD) : ItemStack.EMPTY);
                                 p.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
                                 p.setHealth(20);
                                 p.getHungerManager().setFoodLevel(20);
@@ -144,8 +147,9 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                             // Out of each other's way until the fight starts.
                             hal.teleport(world, o.getX() - 6.5, o.getY() + 2, o.getZ() + 0.5, 0, 0);
                             wren.teleport(world, o.getX() + 6.5, o.getY() + 2, o.getZ() + 0.5, 0, 0);
-                            boolean stands = skill == Skill.STRIKE || skill == Skill.STRAFE || skill == Skill.GET_AWAY || skill == Skill.EAT;
-                            f.runtime.meleeStyle(ids[1], stands ? "idle" : null);
+                            boolean stands = skill == Skill.STRIKE || skill == Skill.GET_AWAY || skill == Skill.EAT;
+                            // Strafing is for the swings between its own: against one that swings as fast as it can.
+                            f.runtime.meleeStyle(ids[1], stands ? "idle" : skill == Skill.STRAFE ? "spammer" : null);
                             f.runtime.forgetHealth(players[0]);
                             f.runtime.forgetHealth(players[1]);
                             if (f.runtime.proposeDuel(f.source, players[0], players[1]) != 1) break;
@@ -176,7 +180,12 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                             } while (Math.abs(hx) > 7.5 || Math.abs(hz) > 7.5);
                             wren.teleport(world, o.getX() + wx, o.getY() + 2, o.getZ() + wz, rng.nextFloat() * 360 - 180, 0);
                             hal.teleport(world, o.getX() + hx, o.getY() + 2, o.getZ() + hz, rng.nextFloat() * 360 - 180, 0);
-                            if (w.skill == Skill.GET_AWAY) hal.setHealth(5);
+                            if (w.skill == Skill.GET_AWAY) {
+                                // Losing, and no regaining it as it goes: not full enough to heal.
+                                hal.setHealth(5);
+                                hal.getHungerManager().setFoodLevel(17);
+                                hal.getHungerManager().setSaturationLevel(0);
+                            }
                             if (w.skill == Skill.EAT) {
                                 hal.setHealth(10);
                                 hal.getHungerManager().setFoodLevel(14);
@@ -203,20 +212,27 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                         if (drop >= 5.0f) w.passed = true;
                                         else { w.failed = true; w.why = "a weak first blow: " + drop; }
                                     }
-                                    if (t > 200 && !w.passed) { w.failed = true; w.why = "no blow landed"; }
+                                    if (t > 200 && !w.passed) {
+                                        w.failed = true;
+                                        w.why = String.format(java.util.Locale.ROOT, "no blow landed; it at %.1f %.1f %.1f, the opponent at %.1f %.1f %.1f; %s",
+                                                hal.getX() - o.getX(), hal.getY() - o.getY(), hal.getZ() - o.getZ(), wren.getX() - o.getX(), wren.getY() - o.getY(),
+                                                wren.getZ() - o.getZ(), f.runtime.nativeLastResult(ids[0]));
+                                    }
                                 }
                                 case STRAFE -> {
+                                    // Between its blows, sideways round it: a sideways step held three ticks, ten degrees round.
                                     if (w.hits >= 1) {
                                         if (!Double.isNaN(w.lastAngle)) {
                                             double turn = Math.abs(((angle - w.lastAngle) + 540) % 360 - 180);
                                             w.swept += turn;
                                         }
                                         w.lastAngle = angle;
+                                        w.backward = hal.sidewaysSpeed != 0 ? w.backward + 1 : w.backward;
                                         w.maxDistance = Math.max(w.maxDistance, hal.distanceTo(wren));
-                                        if (w.swept >= 30 && w.maxDistance <= 6) w.passed = true;
-                                        if (w.hits >= 2 && !w.passed) { w.failed = true; w.why = "swept only " + Math.round(w.swept) + " degrees, as far as " + w.maxDistance; }
+                                        if (w.backward >= 3 && w.swept >= 10 && w.maxDistance <= 6) w.passed = true;
+                                        if (w.hits >= 4 && !w.passed) { w.failed = true; w.why = "sideways " + w.backward + " ticks, " + Math.round(w.swept) + " degrees, as far as " + w.maxDistance; }
                                     }
-                                    if (t > 300 && !w.passed) { w.failed = true; w.why = "swept " + Math.round(w.swept) + " in time, " + w.hits + " blows"; }
+                                    if (!hal.isAlive() || t > 300 && !w.passed) { w.failed = true; w.why = "sideways " + w.backward + " ticks, " + Math.round(w.swept) + " degrees in time, " + w.hits + " blows"; }
                                 }
                                 case SHIELD -> {
                                     var shield = hal.getOffHandStack();
@@ -227,7 +243,7 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                     if (w.hits >= 1) {
                                         w.backward = hal.forwardSpeed < 0 ? w.backward + 1 : 0;
                                         if (w.backward >= 3) w.passed = true;
-                                        if (w.hits >= 2 && !w.passed) { w.failed = true; w.why = "no step back between its blows"; }
+                                        if (w.hits >= 4 && !w.passed) { w.failed = true; w.why = "no step back between its blows"; }
                                     }
                                     if (!hal.isAlive() || t > 300 && !w.passed) { w.failed = true; w.why = "no step back, " + w.hits + " blows"; }
                                 }

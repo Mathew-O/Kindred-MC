@@ -96,7 +96,9 @@
       "dev.kindred.fabric.NativeTreeFarmGameTests",
       "dev.kindred.fabric.NativePatchMineGameTests",
       "dev.kindred.fabric.NativeDeliveryGameTests",
-      "dev.kindred.fabric.NativeSmelterGameTests"
+      "dev.kindred.fabric.NativeSmelterGameTests",
+      "dev.kindred.fabric.NativeBunkerGameTests",
+      "dev.kindred.fabric.NativePetGameTests"
     ]
   },
   "depends": {

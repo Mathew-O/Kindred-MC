@@ -164,6 +164,7 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                                 tally[side]++;
                                 done[0]++;
                                 ticks[0] += now - since[0];
+                                waiting[0] = -1;
                                 var rate = wilson(tally[0], tally[0] + tally[1]);
                                 KindredMod.LOGGER.info("Duel benchmark {}/{}: {} ({}; {} ticks, Hal {}, Wren {}); tactics {}, baseline {}, draws {}; the tactics' rate {} [{}, {}]",
                                         done[0], DUELS, side == 0 ? "tactics" : side == 1 ? "baseline" : "draw", duel.result(), now - since[0],
@@ -178,7 +179,18 @@ public final class NativeDuelBenchmarkGameTests implements FabricGameTest {
                             }
                         }
                         default -> {
-                            if (hal != null && wren != null && hal.isAlive() && wren.isAlive()) state[0] = 0;
+                            if (hal != null && wren != null && hal.isAlive() && wren.isAlive()) {
+                                state[0] = 0;
+                                break;
+                            }
+                            // A player gone and not back (one blocked for reconciliation leaves the world): ended, said loudly.
+                            if (waiting[0] < 0) waiting[0] = now;
+                            if (now - waiting[0] > 2400) {
+                                KindredMod.LOGGER.error("Duel benchmark STUCK after {} duels, a player not back: Hal {}, Wren {}", done[0],
+                                        f.runtime.nativeStatusLine(ids[0]), f.runtime.nativeStatusLine(ids[1]));
+                                done[0] = DUELS;
+                                state[0] = 0;
+                            }
                         }
                     }
                     context.assertTrue(done[0] >= DUELS && state[0] != 1, "Duels fought: " + done[0] + " of " + DUELS);

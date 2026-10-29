@@ -597,6 +597,8 @@ final class NativeFightAction extends NativeRecordedAction {
             result = won ? Step.completed(Map.of("hits", String.valueOf(hits), "outcome", reason)) : Step.blocked(reason, true);
         } else {
             unknown = true;
+            KindredMod.LOGGER.warn("{} fight: owned items changed beyond wear and pickups: before {}, after {}, eaten {}", body.entity().getName().getString(),
+                    before.description(), after.description(), eaten);
             admission.uncertain(reason + "; owned items changed beyond wear and pickups");
             result = Step.blocked("Fight outcome requires reconciliation", true);
         }
