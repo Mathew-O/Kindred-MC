@@ -23,6 +23,9 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
    `/aiplayer social public true <name>`. Either count whoever `mayControl` admits as the owner in the lane (two lines,
    part of F-18, with a fixture) or say so in the README's "Make your own" section and in the operator guide (which
    still says a native player talks "to its owner").
+   **Done in `249f476` (F-18a), the lane fix.** `canTalk` alone was not enough: a native player's remarks and
+   greeting decide its owner in `SocialPerception` too, so the lane now has one owner predicate for all three.
+   README and operator guide updated in `d9b1b91`.
 2. **FOLLOW as an ask** needs a native follow task first (none exists for the native body; the legacy
    `FollowBehavior` is the mob body's).
 3. **Coalescing drops a speaker.** A message waiting behind one in flight is replaced by any newer message, from anyone,
