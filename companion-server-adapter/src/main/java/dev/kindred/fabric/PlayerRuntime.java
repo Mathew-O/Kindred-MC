@@ -573,6 +573,8 @@ final class PlayerRuntime {
 
     boolean shutdownComplete() { requireThread(); return !running && shutdown.isDone() && !shutdown.isCompletedExceptionally(); }
 
+    boolean running() { requireThread(); return running; }
+
     int createNative(ServerCommandSource source, String name) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
@@ -3095,9 +3097,12 @@ final class PlayerRuntime {
         var recommendations = ProgressionPolicy.recommend(entry.lastProgressionState, progObs);
         if (!entry.lastProgressionState.recoveryFrontier().isEmpty()) {
             var recoveryOnly = java.util.Set.copyOf(entry.lastProgressionState.recoveryFrontier());
-            recommendations = recommendations.stream()
+            var recovering = recommendations.stream()
                     .filter(rec -> recoveryOnly.contains(rec.milestoneId()))
                     .toList();
+            // What it had and lost comes first, but a loss it has no way to make good (the logs it made into planks,
+            // with no patch of trees to cut) does not hold back the rest.
+            if (!recovering.isEmpty()) recommendations = recovering;
         }
         for (var rec : recommendations) {
             switch (rec.skill()) {
@@ -6058,8 +6063,21 @@ final class PlayerRuntime {
             entry.routineRefreshPending = true;
         }
         if (finishedTaskId != null && (finishedTaskId.equals(entry.patchMineTaskId) || entry.patchMineIds.contains(finishedTaskId))) {
-            if (entry.patchMineIds.remove(finishedTaskId) && state == SkillRunner.State.COMPLETED && "native_mine".equals(entry.skillId)) entry.patchMined++;
+            if (entry.patchMineIds.remove(finishedTaskId) && state == SkillRunner.State.COMPLETED && "native_mine".equals(entry.skillId)) {
+                entry.patchMined++;
+                entry.patchDropsAside.clear(); // A block out opens the way to what fell beside it.
+                entry.patchDropRetries = 0;
+            }
             if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null) entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            // A drop it could not walk to (fallen into a hole too low to step into), or that it reached twice and is still
+            // lying there out of its reach: set aside while the mining goes on.
+            if ("native_goto".equals(entry.skillId) && entry.patchDropWalk >= 0 && entry.nativeBody != null) {
+                var drop = entry.nativeBody.entity().getServerWorld().getEntityById(entry.patchDropWalk);
+                boolean lying = drop != null && drop.isAlive();
+                if (state == SkillRunner.State.BLOCKED || lying && entry.patchDropReached == entry.patchDropWalk) entry.patchDropsAside.add(entry.patchDropWalk);
+                entry.patchDropReached = lying ? entry.patchDropWalk : -1;
+            }
+            entry.patchDropWalk = -1;
             entry.routineRefreshPending = true;
         }
         if (finishedTaskId != null && finishedTaskId.equals(entry.replantTaskId) && state == SkillRunner.State.COMPLETED && "native_place".equals(entry.skillId)) {
@@ -10100,6 +10118,7 @@ final class PlayerRuntime {
             return null;
         }
         entry.patchToolSaid = false;
+        if (!logs && toolsFirst(entry, body)) return null;
         var box = new net.minecraft.util.math.Box(patch.min().x() - 2, patch.min().y() - 2, patch.min().z() - 2, patch.max().x() + 3, patch.max().y() + 3, patch.max().z() + 3);
         // The nearest open block of the resource.
         BlockPos feet = player.getBlockPos(), best = null;
@@ -10116,8 +10135,13 @@ final class PlayerRuntime {
             }
         }
         // What the patch dropped, picked up first.
+        // With every block out, a drop set aside is tried again, twice at most: the holes are open now.
+        if (best == null && !entry.patchDropsAside.isEmpty() && entry.patchDropRetries < 2) {
+            entry.patchDropsAside.clear();
+            entry.patchDropRetries++;
+        }
         var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box, e -> e.isAlive() && e.isOnGround()
-                && entry.patchDrops.contains(Registries.ITEM.getId(e.getStack().getItem()).toString()));
+                && entry.patchDrops.contains(Registries.ITEM.getId(e.getStack().getItem()).toString()) && !entry.patchDropsAside.contains(e.getId()));
         var task = (java.util.function.Function<String, dev.kindred.core.TaskPreferences.Candidate>) key -> {
             UUID id = UUID.nameUUIDFromBytes(("patchmine:" + entry.data.id() + ":" + key).getBytes(StandardCharsets.UTF_8));
             entry.patchMineTaskId = id;
@@ -10128,6 +10152,7 @@ final class PlayerRuntime {
             var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
             BlockPos at = drop.getBlockPos();
             entry.patchWalkTo = null;
+            entry.patchDropWalk = drop.getId();
             return List.of(new NativeTaskCandidate(task.apply("drop:" + drop.getId()), "native_goto", Map.of("x", String.valueOf(at.getX()),
                     "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0.6")));
         }
@@ -10251,6 +10276,7 @@ final class PlayerRuntime {
         long now = server.getTicks();
         var setup = entry.setup;
         if (setup == null || setup.area() == null || now < entry.lightAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        if (toolsFirst(entry, body)) return null;
         var world = player.getServerWorld();
         if (!world.getRegistryKey().getValue().toString().equals(setup.dimension())) return null;
         BlockPos feet = player.getBlockPos();
@@ -12315,6 +12341,9 @@ final class PlayerRuntime {
         private BlockPos patchWalkTo;
         private final Set<String> patchDrops = new HashSet<>();
         private final Set<Long> patchSkipped = new HashSet<>();
+        /** Drops of the patch it could not walk to, by entity, until a block more is out; and the drop it walks to. */
+        private final Set<Integer> patchDropsAside = new HashSet<>();
+        private int patchDropWalk = -1, patchDropReached = -1, patchDropRetries;
         private boolean patchToolSaid;
         /** Where the trunks of its patch stood on dirt or grass (E-02), when it last looked, and its replanting step. */
         private final Set<Long> trunkBases = new HashSet<>();
@@ -12796,6 +12825,32 @@ final class PlayerRuntime {
                 "y", String.valueOf(chestPos.getY()),
                 "z", String.valueOf(chestPos.getZ()),
                 "max_moves", "4")));
+    }
+
+    /**
+     * Its own next step in tools first, before the chores of a work area (E-03, E-06), by its progression: a better
+     * pickaxe it can make now from what it carries, a furnace where it has none about, or iron enough for an iron
+     * pickaxe to smelt at one about with fuel it carries. A chore would wear out the worse pickaxe, or burn the coal and
+     * the sticks the better one wants.
+     */
+    private boolean toolsFirst(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        var world = player.getServerWorld();
+        int best = 0;
+        boolean fuel = false;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            best = Math.max(best, toolTier(stack.getItem()));
+            fuel |= net.minecraft.block.entity.AbstractFurnaceBlockEntity.canUseAsFuel(stack);
+        }
+        for (var upgrade : List.of(Map.entry(3, "stone_pickaxe"), Map.entry(4, "iron_pickaxe"), Map.entry(5, "diamond_pickaxe"))) {
+            if (upgrade.getKey() > best && body.planCraft(upgrade.getValue(), entry.cachedCraftingTablePos).isPresent()) return true;
+        }
+        BlockPos furnace = entry.cachedFurnacePos != null ? entry.cachedFurnacePos : locateWorkstationBlock(world, player.getBlockPos(), Blocks.FURNACE, 8);
+        if (furnace == null && inventory.count(Items.FURNACE) == 0 && body.planCraft("furnace", entry.cachedCraftingTablePos).isPresent()) return true;
+        return best < 4 && inventory.count(Items.RAW_IRON) > 0 && inventory.count(Items.RAW_IRON) + inventory.count(Items.IRON_INGOT) >= 3
+                && (furnace != null || inventory.count(Items.FURNACE) > 0) && fuel;
     }
 
     private static int toolTier(net.minecraft.item.Item item) {

@@ -215,6 +215,9 @@ final class NativeGatherAction extends NativeRecordedAction {
                 currentState = null;
                 startedMining = false;
                 dropTicks = 0;
+                // Fresh ground (just through a portal) loads its entities a few ticks after its blocks: what it broke
+                // meanwhile would drop where nothing falls or is picked up.
+                if (!player.getServerWorld().shouldTickEntity(player.getBlockPos())) return Step.running(currentProgress(), true);
 
                 var patch = currentSetup.patch();
                 int minX = patch.min().x();

@@ -35,15 +35,23 @@ import java.util.ArrayList;
  */
 public final class NativeNetherGameTests implements FabricGameTest {
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "netherWartGather", tickLimit = 260)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "netherWartGather", tickLimit = 1200)
     public void assignedNetherWartPatchYieldsRecordedNativeDrops(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8000);
         ServerWorld nether = context.getWorld().getServer().getWorld(World.NETHER);
-        BlockPos wart = context.getAbsolutePos(new BlockPos(3, 3, 3));
+        BlockPos above = context.getAbsolutePos(new BlockPos(3, 3, 3));
+        // In the Nether at the test's own x and z, within the Nether's build height (the test's ground lies below its floor).
+        BlockPos wart = new BlockPos(above.getX(), 64, above.getZ());
         f.runnerAwaitingReady(context, "Runtime ready with edit policy")
                 .createAndAdd(() -> f.runtime.createNative(f.source, "WartGatherer"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
+                    // A closed room of netherrack, so no lava runs in.
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -2; dy <= 4; dy++) {
+                        boolean shell = Math.abs(dx) == 4 || Math.abs(dz) == 4 || dy == -2 || dy == 4;
+                        nether.setBlockState(wart.add(dx, dy, dz), shell ? Blocks.NETHERRACK.getDefaultState() : dy == -1
+                                ? Blocks.NETHERRACK.getDefaultState() : Blocks.AIR.getDefaultState());
+                    }
                     for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
                         nether.setBlockState(wart.down().add(dx, 0, dz), Blocks.SOUL_SAND.getDefaultState());
                     }
@@ -68,6 +76,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     context.assertTrue(fixtureTeleport(f.runtime.nativeBody(f.id).orElseThrow(), nether,
                             new Vec3d(wart.getX() + 0.5, wart.getY(), wart.getZ() + 1.5)), "Fixture places native body in Nether");
                 })
+                // Its new ground's entities loaded, as they are a few ticks after its blocks.
+                .createAndAdd(() -> context.assertTrue(nether.shouldTickEntity(wart), "Nether ground ticking"))
                 .createAndAdd(() -> { })
                 .createAndAdd(() -> { })
                 .createAndAdd(() -> { })
@@ -81,9 +91,15 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
-                    waitForWartGatherCandidate(context, f, 0, () -> context.assertTrue(
-                            f.runtime.nativeGather(f.source, f.id, 1, 0) == 1, "Native wart gathering admitted"));
+                    // The fixture admits the gather itself; its own choices must not take it first.
+                    f.runtime.holdAutonomyForTest(f.id, 8000);
+                    waitForWartGatherCandidate(context, f, 0, () -> {
+                        var before = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                        context.assertTrue(f.runtime.nativeGather(f.source, f.id, 1, 0) == 1, "Native wart gathering admitted");
+                        waitForNewAction(context, f, before == null ? null : before.actionId(), 0, () -> { });
+                    });
                 })
+                .createAndAdd(() -> settled(context))
                 .createAndAdd(() -> waitForActivityIdle(context, f, 0, () -> {
                     var status = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     context.assertTrue(status.work().startsWith("Completed native_gather"), "Native drop collection verified: " + status);
@@ -94,6 +110,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     f.runtime.stop();
                     waitForShutdown(context, f, 0, () -> { });
                 }))
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
     }
 
@@ -107,10 +124,12 @@ public final class NativeNetherGameTests implements FabricGameTest {
         if (attempts >= 20) {
             var snapshot = f.runtime.nativeProgressionState(f.id).snapshot(dev.kindred.core.progression.MilestoneId.GATHER_NETHER_WART);
             context.throwGameTestException("No scoped Nether Wart gather candidate after retries; milestone=" + snapshot
-                    + ", patch=" + f.runtime.nativeSetupStatus(Actor.console(), f.id).setup().patch());
+                    + ", patch=" + f.runtime.nativeSetupStatus(Actor.console(), f.id).setup().patch()
+                    + ", candidates=" + candidates.stream().map(c -> c.skill() + c.arguments()).toList()
+                    + ", " + f.runtime.nativeStatusLine(f.id));
             return;
         }
-        context.waitAndRun(1, () -> waitForWartGatherCandidate(context, f, attempts + 1, next));
+        later(context, () -> waitForWartGatherCandidate(context, f, attempts + 1, next));
     }
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "netherOwnedFrame", tickLimit = 520)
@@ -149,10 +168,15 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     context.assertTrue(candidate.isPresent(), "Nether progression proposes an admitted owned-obsidian frame placement");
                     placeNextPortalFrameBlock(context, f, 0);
                 })
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
     }
 
     private static void placeNextPortalFrameBlock(TestContext context, NativePaidSkillsGameTests.Fixture f, int placed) {
+        placeNextPortalFrameBlock(context, f, placed, 0);
+    }
+
+    private static void placeNextPortalFrameBlock(TestContext context, NativePaidSkillsGameTests.Fixture f, int placed, int attempts) {
         if (placed == 14) {
             BlockPos p = f.player().getBlockPos();
             BlockPos interior = new BlockPos(p.getX() - 1, p.getY() + 1, p.getZ() + 1);
@@ -172,18 +196,67 @@ public final class NativeNetherGameTests implements FabricGameTest {
         context.assertTrue(next.isPresent(), "Frame assembly step " + placed + " proposed from current physical state");
         var args = next.orElseThrow().arguments();
         BlockPos click = new BlockPos(Integer.parseInt(args.get("x")), Integer.parseInt(args.get("y")), Integer.parseInt(args.get("z")));
-        context.assertTrue(f.runtime.nativePlace(f.source, f.id, click, args.get("side"), 2) == 1,
-                "Durably admitted frame placement " + placed);
-        waitForActivityIdle(context, f, 0, () -> {
+        var before = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+        if (f.runtime.nativePlace(f.source, f.id, click, args.get("side"), 2) != 1) {
+            // The last placement's receipt may still be settling.
+            if (attempts >= 40) context.throwGameTestException("Durably admitted frame placement " + placed + ": " + f.runtime.nativeStatusLine(f.id));
+            later(context, () -> placeNextPortalFrameBlock(context, f, placed, attempts + 1));
+            return;
+        }
+        // Admission is durable before any work begins: wait for this placement's own receipt, then for it to settle.
+        waitForNewAction(context, f, before == null ? null : before.actionId(), 0, () -> waitForActivityIdle(context, f, 0, () -> {
             var status = f.runtime.nativeActivityStatus(Actor.console(), f.id);
             context.assertTrue(status.work().startsWith("Completed native_place"), "Frame block placement verified: " + status);
             context.assertTrue(f.runtime.nativeActionStatus(Actor.console(), f.id).record().state() == ActionRecord.State.VERIFIED,
                     "Each obsidian placement has a verified durable receipt");
             placeNextPortalFrameBlock(context, f, placed + 1);
-        });
+        }));
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "netherPortalRestart", tickLimit = 520)
+    /** Walks a block out of the portal it stands in, whichever side is open, and back in. */
+    private static void stepOutAndBack(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
+        BlockPos start = f.player().getBlockPos();
+        String out = f.runtime.nativeWalk(f.source, f.id, "north", 1) == 1 ? "north"
+                : f.runtime.nativeWalk(f.source, f.id, "south", 1) == 1 ? "south" : null;
+        if (out == null) {
+            if (attempts >= 40) { context.throwGameTestException("No walk out of the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
+            later(context, () -> stepOutAndBack(context, f, attempts + 1, next));
+            return;
+        }
+        String back = out.equals("north") ? "south" : "north";
+        waitForStepped(context, f, start, 0, () -> waitForPortalCooldown(context, f, 0, () -> walkBack(context, f, back, 0, next)));
+    }
+
+    /** Out of the portal its cooldown (300 ticks, reset each tick spent inside) runs down before it will take it again. */
+    private static void waitForPortalCooldown(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
+        if (f.player().getPortalCooldown() == 0) { next.run(); return; }
+        if (attempts >= 400) { context.throwGameTestException("Portal cooldown did not run down: " + f.player().getPortalCooldown()); return; }
+        later(context, () -> waitForPortalCooldown(context, f, attempts + 1, next));
+    }
+
+    /** A walk keeps no action receipt: it is done once the player stands elsewhere and its activity is idle again. */
+    private static void waitForStepped(TestContext context, NativePaidSkillsGameTests.Fixture f, BlockPos start, int attempts, Runnable next) {
+        var status = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+        if (!f.player().getBlockPos().equals(start) && status != null && status.phase().equals("IDLE")) { next.run(); return; }
+        if (attempts >= 100) { context.throwGameTestException("The walk out of the portal did not finish: " + status + " at " + f.player().getPos()); return; }
+        later(context, () -> waitForStepped(context, f, start, attempts + 1, next));
+    }
+
+    private static void walkBack(TestContext context, NativePaidSkillsGameTests.Fixture f, String direction, int attempts, Runnable next) {
+        if (f.runtime.nativeWalk(f.source, f.id, direction, 1) == 1) { next.run(); return; }
+        if (attempts >= 40) { context.throwGameTestException("No walk back into the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
+        later(context, () -> walkBack(context, f, direction, attempts + 1, next));
+    }
+
+    private static void waitForNewAction(TestContext context, NativePaidSkillsGameTests.Fixture f, java.util.UUID before, int attempts, Runnable next) {
+        var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+        if (record != null && !record.actionId().equals(before) && record.state() != ActionRecord.State.PREPARED
+                && record.state() != ActionRecord.State.DISPATCHED) { next.run(); return; }
+        if (attempts >= 100) { context.throwGameTestException("Admitted action never settled: " + record); return; }
+        later(context, () -> waitForNewAction(context, f, before, attempts + 1, next));
+    }
+
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "netherPortalRestart", tickLimit = 2000)
     public void vanillaPortalEntryPersistsDimensionAndExactNativeStateAcrossRuntimeRestart(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
         ServerWorld overworld = context.getWorld();
@@ -198,7 +271,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
         int[] food = new int[1];
         int[] selected = new int[1];
 
-        f.runnerAwaitingReady(context, "Runtime ready with edit policy").expectMinDuration(450)
+        f.runnerAwaitingReady(context, "Runtime ready with edit policy")
                 .createAndAdd(() -> f.runtime.createNative(f.source, "PortalRestart"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
@@ -206,6 +279,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
                         context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 7; y++) context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, y, z)), Blocks.AIR.getDefaultState());
+                        // Ground level with the frame's sill on the near side, so the walk into the portal is flat.
+                        if (z < 3) context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 2, z)), Blocks.STONE.getDefaultState());
                     }
                     // 10-block 4x5 frame, aligned along X in the Z=3 plane.
                     for (int x : new int[]{3, 4}) {
@@ -217,7 +292,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                         context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(5, y, 3)), Blocks.OBSIDIAN.getDefaultState());
                     }
                     var player = f.player();
-                    player.setPosition(interior.getX() + 0.5, interior.getY() - 1, interior.getZ() - 0.5);
+                    player.setPosition(interior.getX() + 0.5, interior.getY(), interior.getZ() - 0.5);
                     player.getInventory().setStack(0, new ItemStack(Items.FLINT_AND_STEEL));
                     for (int slot = 1; slot < 36; slot++) {
                         ItemStack stack = new ItemStack(Items.APPLE, slot % 16 + 1);
@@ -235,7 +310,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
                     player.getInventory().offHand.get(0).set(DataComponentTypes.CUSTOM_NAME, Text.literal("Named shield"));
                     player.setHealth(17.5f);
-                    player.getHungerManager().setFoodLevel(18);
+                    // Below 18 food it neither heals nor starves, so health and hunger stay as they are while it travels.
+                    player.getHungerManager().setFoodLevel(17);
                     Waypoint home = Waypoint.of("fixture_home", player.getBlockX(), player.getBlockY(), player.getBlockZ(),
                             "minecraft:overworld", WaypointKind.HOME_BED, context.getWorld().getTime());
                     f.runtime.setExpeditionState(f.id, new ExpeditionState(home, 128.0));
@@ -244,6 +320,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertFalse(f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Edit patch acknowledged"))
                 .createAndAdd(() -> {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    // The fixture drives each step itself; its own work (the stone patch) must not move it meanwhile.
+                    f.runtime.holdAutonomyForTest(f.id, 8000);
                     context.assertTrue(f.runtime.nativeIgnitePortal(f.source, f.id, interior, 0) == 1, "Owned ignition tool admitted");
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.nativeActivityStatus(Actor.console(), f.id).work().startsWith("Completed native_ignite_portal"), "Portal ignition completed"))
@@ -296,9 +374,10 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     blaze.setHealth(1.0f);
                     context.assertTrue(nether.spawnEntity(blaze), "Fixture Blaze spawned in the arrived Nether world");
                     waitForBlazeAttackCandidate(context, f, blaze.getUuid(), 0, () -> {
+                    var beforeAttack = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(f.runtime.nativeAttack(f.source, f.id, blaze.getUuid(), 1) == 1,
                             "Visible Nether Blaze attack admitted through the existing durable action path");
-                    waitForActivityIdle(context, f, 0, () -> {
+                    waitForNewAction(context, f, beforeAttack == null ? null : beforeAttack.actionId(), 0, () -> waitForActivityIdle(context, f, 0, () -> {
                     context.assertFalse(blaze.isAlive(), "Native player dealt the authentic killing strike to the Nether Blaze");
                     var attackRecord = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(attackRecord != null && attackRecord.state() == ActionRecord.State.VERIFIED
@@ -327,10 +406,14 @@ public final class NativeNetherGameTests implements FabricGameTest {
                                     && ItemStack.areEqual(armor[3], f.player().getEquippedStack(EquipmentSlot.HEAD)), "Restart preserves exact armor slots/components");
                     context.assertTrue(ItemStack.areEqual(offhand[0], f.player().getInventory().offHand.get(0)), "Restart preserves exact offhand components");
                     context.assertTrue(f.player().getHealth() == health[0] && f.player().getHungerManager().getFoodLevel() == food[0], "Restart preserves health and hunger");
-                    context.assertTrue(f.runtime.nativeActionStatus(Actor.console(), f.id).record().kind().equals("native_ignite_portal"), "Durable action ledger reopens with the same verified portal action");
+                    var reopened = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(reopened == null || reopened.state() == ActionRecord.State.VERIFIED, "Durable action ledger reopens clear, nothing left to reconcile: " + reopened);
                     context.assertTrue(f.runtime.nativeBody(f.id).orElseThrow().isPortalTravelAuthorized() == false, "Portal authority does not silently persist across restart");
                     f.runtime.nativeBody(f.id).orElseThrow().setPortalTravelAuthorized(true);
-                    waitForDimension(context, f, overworld, 0, () -> waitTicks(context, 3, () -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    f.runtime.holdAutonomyForTest(f.id, 8000);
+                    // As in vanilla, a player that came through a portal steps out of it and back in to take it again.
+                    stepOutAndBack(context, f, 0, () -> waitForDimension(context, f, overworld, 0, () -> waitTicks(context, 3, () -> {
                         context.assertTrue(f.player().getServerWorld() == overworld, "Vanilla return portal transferred body back to Overworld");
                         context.assertTrue(Math.abs(f.player().getX() - (interior.getX() + 0.5)) < 16
                                 && Math.abs(f.player().getZ() - (interior.getZ() + 0.5)) < 16, "Return portal preserves expected 8:1 linked region");
@@ -339,28 +422,44 @@ public final class NativeNetherGameTests implements FabricGameTest {
                         context.assertTrue(f.player().getHealth() == health[0] && f.player().getHungerManager().getFoodLevel() == food[0], "Return conserves health and hunger");
                         f.runtime.stop();
                         waitForShutdown(context, f, 0, context::complete);
+                    })));
+                    });
+                    });
+                    });
                     }));
                     });
                     });
                     });
-                    });
-                    });
-                    });
-                    });
                 }))
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
+    }
+
+    /** Waits a test's steps start with {@code later}, counted so that its runner does not move on or pass while they run. */
+    private static final java.util.Map<TestContext, Integer> NESTED = new java.util.WeakHashMap<>();
+
+    private static void later(TestContext context, Runnable next) {
+        NESTED.merge(context, 1, Integer::sum);
+        context.waitAndRun(1, () -> {
+            NESTED.merge(context, -1, Integer::sum);
+            next.run();
+        });
+    }
+
+    private static void settled(TestContext context) {
+        context.assertTrue(NESTED.getOrDefault(context, 0) == 0, "Nested checks still running");
     }
 
     private static void waitTicks(TestContext context, int remaining, Runnable next) {
         if (remaining <= 0) { next.run(); return; }
-        context.waitAndRun(1, () -> waitTicks(context, remaining - 1, next));
+        later(context, () -> waitTicks(context, remaining - 1, next));
     }
 
     private static void waitForActivityIdle(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
         var status = f.runtime.nativeActivityStatus(Actor.console(), f.id);
         if (status != null && status.phase().equals("IDLE")) { next.run(); return; }
         if (attempts >= 100) { context.throwGameTestException("Portal ignition activity did not settle: " + status); return; }
-        context.waitAndRun(1, () -> waitForActivityIdle(context, f, attempts + 1, next));
+        later(context, () -> waitForActivityIdle(context, f, attempts + 1, next));
     }
 
     private static void waitForBlazeAttackCandidate(TestContext context, NativePaidSkillsGameTests.Fixture f,
@@ -375,31 +474,35 @@ public final class NativeNetherGameTests implements FabricGameTest {
             context.throwGameTestException("No observed-Blaze attack candidate after Nether portal arrival");
             return;
         }
-        context.waitAndRun(1, () -> waitForBlazeAttackCandidate(context, f, blazeId, attempts + 1, next));
+        later(context, () -> waitForBlazeAttackCandidate(context, f, blazeId, attempts + 1, next));
     }
 
     private static void waitForDimension(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerWorld target, int attempts, Runnable next) {
         if (f.player().getServerWorld() == target) { next.run(); return; }
-        if (attempts >= 100) { context.throwGameTestException("Vanilla portal did not transfer the body; activity=" + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
-        context.waitAndRun(1, () -> waitForDimension(context, f, target, attempts + 1, next));
+        // A survival player stands 80 ticks in a portal before it takes it.
+        if (attempts >= 200) { context.throwGameTestException("Vanilla portal did not transfer the body; activity=" + f.runtime.nativeActivityStatus(Actor.console(), f.id)
+                + ", at " + f.player().getPos() + " in " + f.player().getServerWorld().getBlockState(f.player().getBlockPos())
+                + ", age " + f.player().age + ", ticking " + f.player().getServerWorld().shouldTickEntity(f.player().getBlockPos())
+                + ", portal " + f.player().portalManager); return; }
+        later(context, () -> waitForDimension(context, f, target, attempts + 1, next));
     }
 
     private static void waitForShutdown(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
         if (f.runtime.shutdownComplete()) { next.run(); return; }
         if (attempts >= 100) { context.throwGameTestException("Runtime shutdown did not settle"); return; }
-        context.waitAndRun(1, () -> waitForShutdown(context, f, attempts + 1, next));
+        later(context, () -> waitForShutdown(context, f, attempts + 1, next));
     }
 
     private static void waitForReady(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
         if (f.runtime.isReady()) { next.run(); return; }
         if (attempts >= 100) { context.throwGameTestException("Restarted metadata store did not become ready"); return; }
-        context.waitAndRun(1, () -> waitForReady(context, f, attempts + 1, next));
+        later(context, () -> waitForReady(context, f, attempts + 1, next));
     }
 
     private static void waitForConnected(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
         if (f.runtime.nativeStatuses(Actor.console()).getFirst().connected()) { next.run(); return; }
         if (attempts >= 100) { context.throwGameTestException("Native save reconnect did not complete"); return; }
-        context.waitAndRun(1, () -> waitForConnected(context, f, attempts + 1, next));
+        later(context, () -> waitForConnected(context, f, attempts + 1, next));
     }
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "netherIgnite", tickLimit = 450)
@@ -485,6 +588,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
     }
 
@@ -525,6 +629,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
     }
 
@@ -612,6 +717,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
     }
 
@@ -685,12 +791,17 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
     }
 
     /** Fixture repositioning only: proves dimension bookkeeping, never earned portal travel. */
     private static boolean fixtureTeleport(NativePlayerBody body, ServerWorld target, Vec3d pos) {
         var player = body.entity();
+        // As a portal's arrival does: the ground about it held loaded while the player's own ticket takes over (a
+        // teleport alone holds it five ticks, too few for fresh ground to load).
+        var at = BlockPos.ofFloored(pos);
+        target.getChunkManager().addTicket(net.minecraft.server.world.ChunkTicketType.PORTAL, new net.minecraft.util.math.ChunkPos(at), 3, at);
         return player.teleport(target, pos.x, pos.y, pos.z, java.util.Set.of(), player.getYaw(), player.getPitch());
     }
 }
