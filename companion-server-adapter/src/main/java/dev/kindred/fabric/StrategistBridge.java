@@ -185,8 +185,8 @@ final class StrategistBridge implements AutoCloseable {
         strategist.converse(conversation).whenComplete((given, failure) -> server.execute(() -> {
             state.talking = false;
             // Checked here again, whoever served it: a provider that let a place or a command through is still refused.
-            var line = given == null || given.say().isEmpty() ? given : Strategist.Line.checked(conversation, given.say().get(), given.reason(),
-                    given.inputTokens(), given.cachedTokens(), given.outputTokens(), given.millis());
+            var line = given == null || given.say().isEmpty() ? given : Strategist.Line.checked(conversation, given.say().get(), given.ask().name(),
+                    given.item().orElse(null), given.reason(), given.inputTokens(), given.cachedTokens(), given.outputTokens(), given.millis());
             if (failure != null || line == null) { // The reservation stands: it may still have been billed.
                 KindredMod.LOGGER.warn("{} voice: no line for {}: {}", name, listener, String.valueOf(failure));
                 answered.complete(Optional.empty());
@@ -205,7 +205,8 @@ final class StrategistBridge implements AutoCloseable {
             }
             String cost = String.format(java.util.Locale.ROOT, "to %s, %,d in / %,d out, %.1f s", listener, line.inputTokens(), line.outputTokens(),
                     line.millis() / 1000.0);
-            if (line.say().isPresent()) KindredMod.LOGGER.info("<{}> {} ({})", name, line.say().get(), cost);
+            if (line.say().isPresent()) KindredMod.LOGGER.info("<{}> {} ({}{})", name, line.say().get(), cost,
+                    line.ask() == Strategist.Ask.NONE ? "" : "; asked " + line.ask() + line.item().map(item -> " " + item).orElse(""));
             else KindredMod.LOGGER.info("{} voice: no line ({}); the fixed reply instead ({})", name, line.failure().orElse("refused"), cost);
             answered.complete(line.say().isPresent() ? Optional.of(line) : Optional.empty());
         }));

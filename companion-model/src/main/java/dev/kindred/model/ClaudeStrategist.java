@@ -62,6 +62,8 @@ public final class ClaudeStrategist implements Strategist {
     /** A conversation's reply as the model is constrained to write it (E-20a). */
     public record VoiceReply(
             @JsonPropertyDescription(ConversationPrompt.SAY) String say,
+            @JsonPropertyDescription(ConversationPrompt.ASK) Strategist.Ask ask,
+            @JsonPropertyDescription(ConversationPrompt.ITEM) String item,
             @JsonPropertyDescription(ConversationPrompt.REASON) String reason) { }
 
     /** A follow-up for the player's queue (F-19e). */
@@ -223,8 +225,8 @@ public final class ClaudeStrategist implements Strategist {
 
     /**
      * Answers someone who spoke to the player, in the background on the chat lane, within its eight seconds from the
-     * moment it was asked (time spent waiting for the lane counts). Structured output holds the reply to its two
-     * fields, so no repair is needed.
+     * moment it was asked (time spent waiting for the lane counts). Structured output holds the reply to its fields,
+     * so no repair is needed.
      */
     @Override
     public CompletableFuture<Line> converse(Conversation conversation) {
@@ -254,7 +256,8 @@ public final class ClaudeStrategist implements Strategist {
             if (!stop.equalsIgnoreCase("end_turn")) return Line.failed("stopped: " + stop, in, cached, out, millis);
             Optional<VoiceReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
             if (reply.isEmpty()) return Line.failed("no reply text", in, cached, out, millis);
-            return Line.checked(conversation, reply.get().say(), reply.get().reason(), in, cached, out, millis);
+            var r = reply.get();
+            return Line.checked(conversation, r.say(), name(r.ask()), r.item(), r.reason(), in, cached, out, millis);
         } catch (RateLimitException limited) {
             return Line.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
         } catch (AnthropicServiceException service) {

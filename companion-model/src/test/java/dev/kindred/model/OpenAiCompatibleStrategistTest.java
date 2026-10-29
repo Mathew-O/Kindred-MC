@@ -197,10 +197,26 @@ class OpenAiCompatibleStrategistTest {
             assertTrue(spec.get("strict").getAsBoolean());
             var shape = spec.getAsJsonObject("schema");
             assertFalse(shape.get("additionalProperties").getAsBoolean());
-            assertEquals("[\"say\",\"reason\"]", shape.getAsJsonArray("required").toString());
+            assertEquals("[\"say\",\"ask\",\"item\",\"reason\"]", shape.getAsJsonArray("required").toString());
+            assertEquals("[\"NONE\",\"COME\",\"WAIT\",\"STOP\",\"TOSS\"]",
+                    shape.getAsJsonObject("properties").getAsJsonObject("ask").get("enum").toString(), "the asks, and only they");
             var messages = body.getAsJsonArray("messages");
             assertEquals(TALK.system(), messages.get(0).getAsJsonObject().get("content").getAsString(), "the player's own instructions, not the guide");
             assertEquals(TALK.text(), messages.get(1).getAsJsonObject().get("content").getAsString());
+        }
+    }
+
+    @Test
+    void anAskInTheReplyIsTakenOnlyFromOneWhoMayCommandThePlayer() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            var owner = new Strategist.Conversation("You are Echo.", "What you know: ...", true, true);
+            replies.add(completion("{\"say\":\"Here, have some.\",\"ask\":\"TOSS\",\"item\":\"minecraft:bread\",\"reason\":\"asked for bread\"}", "stop"));
+            var line = strategist.converse(owner).get(10, TimeUnit.SECONDS);
+            assertEquals(Strategist.Ask.TOSS, line.ask(), "" + line.failure());
+            assertEquals(java.util.Optional.of("minecraft:bread"), line.item());
+            replies.add(completion("{\"say\":\"On my way.\",\"ask\":\"COME\",\"item\":\"\",\"reason\":\"asked to come\"}", "stop"));
+            var refused = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("an ask from one who may not command it"), refused.failure(), "TALK's listener may not ask");
         }
     }
 

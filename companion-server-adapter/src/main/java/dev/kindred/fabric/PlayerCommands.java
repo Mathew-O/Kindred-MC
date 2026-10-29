@@ -638,6 +638,24 @@ public final class PlayerCommands {
                                                 id, "native_" + task, IntegerArgumentType.getInteger(context, "value"));
                                     }))));
         }
+        // Toss you up to `count` of an item it carries (E-20b, QOL-05): `/aiplayer native toss minecraft:bread 4 [target]`.
+        nativePlayers.then(CommandManager.literal("toss").then(CommandManager.argument("item", IdentifierArgumentType.identifier())
+                .then(CommandManager.argument("count", IntegerArgumentType.integer(1, 64))
+                        .executes(context -> {
+                            var runtime = KindredMod.runtime();
+                            return runtime == null ? unavailable(context.getSource()) : runtime.nativeToss(context.getSource(), null,
+                                    IdentifierArgumentType.getIdentifier(context, "item").toString(), IntegerArgumentType.getInteger(context, "count"));
+                        })
+                        .then(CommandManager.argument("target", StringArgumentType.string())
+                                .suggests((context, builder) -> suggestBots(builder))
+                                .executes(context -> {
+                                    var runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID id = resolveBotTarget(context, "target", runtime);
+                                    if (id == null) return 0;
+                                    return runtime.nativeToss(context.getSource(), id, IdentifierArgumentType.getIdentifier(context, "item").toString(),
+                                            IntegerArgumentType.getInteger(context, "count"));
+                                })))));
         nativePlayers.then(CommandManager.literal("walk").then(CommandManager.argument("direction", StringArgumentType.word())
                 .then(CommandManager.argument("blocks", IntegerArgumentType.integer(1, 3))
                         .executes(context -> {

@@ -71,10 +71,20 @@ final class CompanionSocials {
          * Ask for a line answering {@code message}, handing it to {@code answered} on the server thread, or empty for the
          * fixed reply; false at once, {@code answered} never called, when it cannot ask now (off, budgets, rates).
          */
-        boolean answer(ServerPlayerEntity speaker, Participant player, String message, java.util.function.Consumer<Optional<String>> answered);
+        boolean answer(ServerPlayerEntity speaker, Participant player, String message, java.util.function.Consumer<Optional<Spoken>> answered);
 
         /** A direct reply was said to {@code speaker}, the model's or the fixed one: the exchange as it went. */
         default void replied(ServerPlayerEntity speaker, Participant player, String said, String spoken) { }
+    }
+
+    /**
+     * A voiced line, and what follows once it is said (E-20b: an ask, handed a way to say one more line to the same
+     * listener, as a refusal in the command's own words). The lane only says the words; what follows is the voice's.
+     */
+    record Spoken(String text, java.util.function.Consumer<java.util.function.Consumer<String>> then) {
+        Spoken {
+            java.util.Objects.requireNonNull(text);
+        }
     }
 
     /** A message that came while a line was being phrased: only the newest waits. */
@@ -112,10 +122,14 @@ final class CompanionSocials {
         this.conferenceHandler = handler;
     }
 
-    /** A line to say when due; a voiced one ({@code voiced}) is checked at delivery against the player as it is then. */
-    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct, boolean voiced) {
+    /**
+     * A line to say when due; a voiced one ({@code voiced}) is checked at delivery against the player as it is then, and
+     * what follows it ({@code then}) happens only once it is said.
+     */
+    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct, boolean voiced,
+                           java.util.function.Consumer<java.util.function.Consumer<String>> then) {
         Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct) {
-            this(speaker, recipient, text, due, direct, false);
+            this(speaker, recipient, text, due, direct, false, null);
         }
     }
 
@@ -158,13 +172,19 @@ final class CompanionSocials {
 
     /** Say the lines whose reading time has elapsed, and drop any whose listener has walked off. */
     void deliverDue(UUID companionId, long now) {
+        var said = new ArrayList<Runnable>();
         pending.removeIf(pendingLine -> {
             if (!pendingLine.speaker().id().equals(companionId) || pendingLine.due() > now) return false;
             // A voiced line was asked for a while back: it is said only if the player, as it is now, may still say it.
             Participant speaker = pendingLine.voiced() ? lookup.apply(companionId) : pendingLine.speaker();
-            if (canTalk(pendingLine.recipient(), speaker)) output.accept(pendingLine.recipient(), pendingLine.text());
+            if (canTalk(pendingLine.recipient(), speaker)) {
+                output.accept(pendingLine.recipient(), pendingLine.text());
+                if (pendingLine.then() != null) said.add(() -> pendingLine.then().accept(follow ->
+                        scheduleInTurn(speaker, pendingLine.recipient(), follow, clock.getAsLong() + SpeechTiming.delayMillis(follow), null)));
+            }
             return true;
         });
+        said.forEach(Runnable::run); // What follows a line, once the lines are said.
     }
 
     void tick(Participant speaker) {
@@ -329,8 +349,10 @@ final class CompanionSocials {
             Participant now = lookup.apply(companion.id());
             long at = clock.getAsLong();
             if (now != null && canTalk(player, now)) {
-                String spoken = line.orElseGet(() -> fixedReply(now, message, at));
-                scheduleInTurn(now, player, spoken, at + Math.max(0, SpeechTiming.delayMillis(spoken) - (at - asked)));
+                String spoken = line.map(Spoken::text).orElseGet(() -> fixedReply(now, message, at));
+                var then = line.map(Spoken::then).orElse(null);
+                // A line that acts is said as it acts, at once; any other once it would have been typed.
+                scheduleInTurn(now, player, spoken, then != null ? at : at + Math.max(0, SpeechTiming.delayMillis(spoken) - (at - asked)), then);
                 voice.replied(player, now, message, spoken);
             }
             Waiting next = waiting.remove(companion.id());
@@ -344,16 +366,17 @@ final class CompanionSocials {
     private void answerWaiting(Waiting next, Participant companion, long now) {
         if (voice != null && voiced(next.speaker(), companion, next.message(), now)) return;
         String spoken = fixedReply(companion, next.message(), now);
-        scheduleInTurn(companion, next.speaker(), spoken, now + SpeechTiming.delayMillis(spoken));
+        scheduleInTurn(companion, next.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
         if (voice != null) voice.replied(next.speaker(), companion, next.message(), spoken);
     }
 
     /** A reply after a voiced exchange: said after any reply to the same listener not yet said, never in its place. */
-    private void scheduleInTurn(Participant speaker, ServerPlayerEntity recipient, String spoken, long due) {
+    private void scheduleInTurn(Participant speaker, ServerPlayerEntity recipient, String spoken, long due,
+                                java.util.function.Consumer<java.util.function.Consumer<String>> then) {
         for (Pending p : pending) {
             if (p.direct() && p.speaker().id().equals(speaker.id()) && p.recipient().getUuid().equals(recipient.getUuid())) due = Math.max(due, p.due() + 1);
         }
-        pending.add(new Pending(speaker, recipient, line(speaker, spoken), due, true, true));
+        pending.add(new Pending(speaker, recipient, line(speaker, spoken), due, true, true, then));
         while (pending.size() > 64) pending.removeFirst();
     }
 

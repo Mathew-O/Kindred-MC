@@ -60,6 +60,15 @@ class ConversationAudienceTest {
     }
 
     @Test
+    void onlyOneWhoMayCommandItMayAskAndNeverAnOpponent() {
+        assertTrue(ConversationAudience.mayAsk(situation(ConversationAudience.Relation.OWNER, true, false)));
+        assertTrue(ConversationAudience.mayAsk(situation(ConversationAudience.Relation.ADMIN, true, false)));
+        assertFalse(ConversationAudience.mayAsk(situation(ConversationAudience.Relation.PLAYER, false, false)));
+        assertFalse(ConversationAudience.mayAsk(situation(ConversationAudience.Relation.TEAMMATE, false, false)));
+        assertFalse(ConversationAudience.mayAsk(situation(ConversationAudience.Relation.OPPONENT, true, false)), "an opponent never, operator or not");
+    }
+
+    @Test
     void aStoppedPlayersSituationSaysSo() {
         String told = text(situation(ConversationAudience.Relation.OWNER, true, true));
         assertTrue(told.contains("You are stopped"), told);

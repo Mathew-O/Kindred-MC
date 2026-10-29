@@ -234,7 +234,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         }
     }
 
-    /** A conversation's request: the player's instructions and personality, what it knows and what was said, and the reply's two fields. */
+    /** A conversation's request: the player's instructions and personality, what it knows and what was said, and the reply's fields. */
     String converseRequest(Conversation conversation, boolean schema) {
         var body = new JsonObject();
         body.addProperty("model", choice.model());
@@ -247,6 +247,8 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         if (schema) {
             var properties = new JsonObject();
             properties.add("say", stringField(ConversationPrompt.SAY));
+            properties.add("ask", enumField(ConversationPrompt.ASK, Ask.values()));
+            properties.add("item", stringField(ConversationPrompt.ITEM));
             properties.add("reason", stringField(ConversationPrompt.REASON));
             var all = new JsonArray();
             for (String name : properties.keySet()) all.add(name);
@@ -293,7 +295,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         } catch (RuntimeException unreadable) {
             return Line.failed("unreadable reply", in, cached, out, millis);
         }
-        return Line.checked(conversation, text(reply, "say"), text(reply, "reason"), in, cached, out, millis);
+        return Line.checked(conversation, text(reply, "say"), text(reply, "ask"), text(reply, "item"), text(reply, "reason"), in, cached, out, millis);
     }
 
     /** Sends one request, giving up at the planning lane's deadline. */

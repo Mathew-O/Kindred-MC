@@ -57,16 +57,27 @@ final class PlayerVoice implements CompanionSocials.Voice {
         Facts facts(UUID playerId, ServerPlayerEntity speaker);
     }
 
+    /**
+     * The runtime's side of an ask (E-20b): {@code ask} of the player from {@code speaker}, done as the matching command
+     * does it, with the speaker's own authority, once the line asking it is said; a refusal handed to {@code refused} in
+     * the command's own words.
+     */
+    interface Asks {
+        void ask(UUID playerId, ServerPlayerEntity speaker, Strategist.Ask ask, String item, Consumer<String> refused);
+    }
+
     private record Said(long at, String line) { }
 
     private final Source source;
+    private final Asks asks;
     private final Supplier<Optional<StrategistBridge>> bridge;
     private final MinecraftServer server;
     private final LongSupplier clock;
     private final Map<String, ArrayDeque<Said>> transcripts = new LinkedHashMap<>();
 
-    PlayerVoice(Source source, Supplier<Optional<StrategistBridge>> bridge, MinecraftServer server, LongSupplier clock) {
+    PlayerVoice(Source source, Asks asks, Supplier<Optional<StrategistBridge>> bridge, MinecraftServer server, LongSupplier clock) {
         this.source = source;
+        this.asks = asks;
         this.bridge = bridge;
         this.server = server;
         this.clock = clock;
@@ -78,7 +89,8 @@ final class PlayerVoice implements CompanionSocials.Voice {
     }
 
     @Override
-    public boolean answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message, Consumer<Optional<String>> answered) {
+    public boolean answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message,
+                          Consumer<Optional<CompanionSocials.Spoken>> answered) {
         var lane = bridge.get();
         if (lane.isEmpty()) return false;
         Facts facts = source.facts(player.id(), speaker);
@@ -89,8 +101,14 @@ final class PlayerVoice implements CompanionSocials.Voice {
         if (asked.isDone() && asked.join().isEmpty()) return false; // Declined at once (budgets, rates, a line already out).
         // Never left waiting: past the deadline and a second's grace it is taken as no line, and the fixed reply is said.
         asked.completeOnTimeout(Optional.empty(), Strategist.CHAT_DEADLINE.toMillis() + 1_000, TimeUnit.MILLISECONDS)
-                .thenAccept(line -> server.execute(() -> answered.accept(line.flatMap(Strategist.Line::say))));
+                .thenAccept(line -> server.execute(() -> answered.accept(line.flatMap(said -> said.say().map(text -> spoken(text, said, player, speaker))))));
         return true;
+    }
+
+    /** The line to say, and the ask it carries, if any, to do once it is said (E-20b). */
+    private CompanionSocials.Spoken spoken(String text, Strategist.Line line, CompanionSocials.Participant player, ServerPlayerEntity speaker) {
+        if (line.ask() == Strategist.Ask.NONE) return new CompanionSocials.Spoken(text, null);
+        return new CompanionSocials.Spoken(text, refused -> asks.ask(player.id(), speaker, line.ask(), line.item().orElse(null), refused));
     }
 
     @Override

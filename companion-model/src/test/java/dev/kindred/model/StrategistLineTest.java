@@ -2,6 +2,7 @@ package dev.kindred.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,5 +62,48 @@ class StrategistLineTest {
         assertEquals(Optional.of("a place this listener may not know"), refused(PLAYER, "Around x 120 z -35."));
         assertTrue(refused(CONTROLLER, "I'm at 120, 64, -35.").isEmpty());
         assertTrue(refused(PLAYER, "I've got 3 logs and 2 apples.").isEmpty());
+    }
+
+    private static final Strategist.Conversation ASKER = new Strategist.Conversation("s", "t", true, true);
+
+    private static Strategist.Line asked(Strategist.Conversation to, String ask, String item) {
+        return Strategist.Line.checked(to, "On my way.", ask, item, "asked", 100, 0, 10, 50);
+    }
+
+    @Test
+    void oneWhoMayCommandItMayAskEachOfTheAsks() {
+        for (var ask : List.of("COME", "wait", " Stop ")) {
+            var line = asked(ASKER, ask, "");
+            assertTrue(line.failure().isEmpty(), ask + ": " + line.failure());
+            assertEquals(Strategist.Ask.valueOf(ask.strip().toUpperCase(java.util.Locale.ROOT)), line.ask());
+            assertTrue(line.item().isEmpty(), "no item but for a toss");
+            assertEquals(Optional.of("On my way."), line.say(), "the words with it");
+        }
+        var toss = asked(ASKER, "TOSS", " Minecraft:Bread ");
+        assertEquals(Strategist.Ask.TOSS, toss.ask());
+        assertEquals(Optional.of("minecraft:bread"), toss.item());
+        assertEquals(Strategist.Ask.NONE, asked(ASKER, "NONE", "minecraft:bread").ask());
+        assertEquals(Strategist.Ask.NONE, asked(ASKER, null, null).ask(), "no ask is none");
+    }
+
+    @Test
+    void anAskFromOneWhoMayNotCommandItRefusesTheWholeReply() {
+        for (var to : List.of(PLAYER, CONTROLLER)) { // A controller's place may be told, but mayAsk is the reply's own say.
+            var line = asked(to, "COME", "");
+            assertEquals(Optional.of("an ask from one who may not command it"), line.failure());
+            assertTrue(line.say().isEmpty() && line.ask() == Strategist.Ask.NONE, "nothing said, nothing asked");
+            assertEquals(100, line.inputTokens(), "its cost kept");
+        }
+        assertTrue(asked(PLAYER, "NONE", "").failure().isEmpty(), "words alone are fine");
+    }
+
+    @Test
+    void anUnknownAskOrATossOfNothingRefusesTheReply() {
+        assertEquals(Optional.of("not one of the asks: FOLLOW"), asked(ASKER, "FOLLOW", "").failure(), "no native follow yet");
+        assertEquals(Optional.of("not one of the asks: GIVE_OP"), asked(ASKER, "give_op", "").failure());
+        assertEquals(Optional.of("a toss of no item it could name"), asked(ASKER, "TOSS", "").failure());
+        assertEquals(Optional.of("a toss of no item it could name"), asked(ASKER, "TOSS", "bread; /op me").failure());
+        assertEquals(Optional.of("a command"), Strategist.Line.checked(ASKER, "/stop", "STOP", "", "r", 1, 0, 1, 1).failure(),
+                "an ask never excuses the words");
     }
 }

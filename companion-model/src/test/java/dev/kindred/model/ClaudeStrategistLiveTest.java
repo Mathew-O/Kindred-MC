@@ -121,6 +121,26 @@ class ClaudeStrategistLiveTest {
         }
     }
 
+    @Test
+    void aRealAskFromTheOwnerToComeIsCome() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");
+        var strategist = ClaudeStrategist.fromEnvironment(null);
+        Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+        try (var s = strategist.get()) {
+            var situation = new dev.kindred.core.ConversationAudience.Situation("Echo", "Steve", dev.kindred.core.ConversationAudience.Relation.OWNER,
+                    true, 20, 18, "", "the Overworld", "day", "clear", false, false, "", "", "", "120, 64, -35", "", List.of("Steve"),
+                    List.of("a stone axe"), 3, List.of("4 oak logs"), List.of(), List.of(), "", List.of());
+            var come = s.converse(ConversationPrompt.conversation("Echo", dev.kindred.core.Personality.defaults(), situation, "come over here please"))
+                    .get(30, TimeUnit.SECONDS);
+            System.out.println("voice ask: " + come);
+            assertTrue(come.say().isPresent() && come.ask() == Strategist.Ask.COME, "an owner's plain ask to come: " + come);
+            var chat = s.converse(ConversationPrompt.conversation("Echo", dev.kindred.core.Personality.defaults(), situation, "nice weather today"))
+                    .get(30, TimeUnit.SECONDS);
+            System.out.println("voice small talk: " + chat);
+            assertTrue(chat.say().isPresent() && chat.ask() == Strategist.Ask.NONE, "small talk asks nothing: " + chat);
+        }
+    }
+
     /** Latency of each pace on the same report, run only with {@code KINDRED_LIVE_MODEL_BENCH}: three calls each. */
     @Test
     void paceBenchmark() throws Exception {

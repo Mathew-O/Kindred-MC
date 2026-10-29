@@ -371,7 +371,7 @@ final class PlayerRuntime {
             player.sendMessage(message, false);
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
-        voice = new PlayerVoice(this::voiceFacts, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
+        voice = new PlayerVoice(this::voiceFacts, this::voiceAsk, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
         socials.setVoice(voice);
         if (strategist.isPresent()) KindredMod.LOGGER.info("Kindred voice {}", voiceOn ? "on: replies in chat are phrased by the strategist's model"
                 : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
@@ -5291,6 +5291,9 @@ final class PlayerRuntime {
             if (entry.awaitingRespawn && body.entity().deathTime >= 19) respawnNative(entry, body);
             return;
         }
+
+        // An ask said yes to in chat goes in between its tasks, as a command would, once its look at the speaker is over (E-20b).
+        if (entry.voiceAsk != null) voiceAskDue(entry);
 
         if (body.entity() != null) {
             applyDimensionTransit(entry, body);
@@ -10542,6 +10545,103 @@ final class PlayerRuntime {
                 strategist.map(bridge -> bridge.remembered(id)).orElse(List.of()));
     }
 
+    /** An ask from chat: who asked, what of, until when it waits for the player's look at the speaker, and where a refusal goes. */
+    private record VoiceAsk(UUID speaker, dev.kindred.model.Strategist.Ask ask, String item, long untilTick, java.util.function.Consumer<String> refused) { }
+
+    /**
+     * An ask the player said yes to in chat (E-20b), once its line was said: kept until its next tick, when it goes in
+     * through the matching command's own method, with the speaker's own authority; the newest replaces any waiting.
+     */
+    private void voiceAsk(UUID id, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
+        Entry entry = entries.get(id);
+        if (entry == null || ask == dev.kindred.model.Strategist.Ask.NONE) return;
+        var asked = new VoiceAsk(speaker.getUuid(), ask, item, server.getTicks() + VOICE_ASK_WAIT_TICKS, refused);
+        if (entry.nativeState == null) voiceAskNow(entry, asked); // No native body: the command's own refusal, at once.
+        else entry.voiceAsk = asked;
+    }
+
+    /** How long an ask waits for the player's own look at whoever spoke to it (two seconds) to end: three seconds. */
+    static final int VOICE_ASK_WAIT_TICKS = 60;
+
+    /** The ask now, unless the player is still in its look at the speaker or settling its last task (a stop never waits). */
+    private void voiceAskDue(Entry entry) {
+        var asked = entry.voiceAsk;
+        // Its look at the speaker, from its admission until its activity settles: a task the command would refuse to start over.
+        boolean attending = entry.attentionTaskId != null && entry.attentionTaskId.equals(entry.currentTaskId)
+                && (entry.nativeWorkPending || entry.runner != null && runnerBusy(entry)
+                    || entry.activity != null && entry.activity.phase() != PaidActivitySession.Phase.IDLE);
+        // Running nothing but still settling what it last did: a moment more, as a command typed then would be refused.
+        boolean settling = !(entry.runner != null && runnerBusy(entry)) && (entry.nativeWorkPending || entry.nativeActionPending
+                || !entry.activityFlush.isDone() || !entry.nativeActionFlush.isDone()
+                || entry.activity != null && entry.activity.phase() != PaidActivitySession.Phase.IDLE);
+        if (asked.ask() != dev.kindred.model.Strategist.Ask.STOP && (attending || settling) && server.getTicks() < asked.untilTick()) return;
+        entry.voiceAsk = null;
+        voiceAskNow(entry, asked);
+    }
+
+    /**
+     * The ask through the method its command calls (`/aiplayer native goto`, `wait`, `stop`, `toss`), as the speaker
+     * would run it, so its authority, the player's readiness, the edit and area rules and the arbiter are all checked
+     * again here; a refusal is said in the command's own words.
+     */
+    private void voiceAskNow(Entry entry, VoiceAsk asked) {
+        ServerPlayerEntity speaker = server.getPlayerManager().getPlayer(asked.speaker());
+        if (speaker == null) return;
+        var heard = new ArrayList<String>();
+        var output = new net.minecraft.server.command.CommandOutput() {
+            @Override public void sendMessage(Text message) { heard.add(message.getString()); }
+            @Override public boolean shouldReceiveFeedback() { return true; }
+            @Override public boolean shouldTrackOutput() { return true; }
+            @Override public boolean shouldBroadcastConsoleToOps() { return false; }
+        };
+        ServerCommandSource as = speaker.getCommandSource().withOutput(output);
+        UUID id = entry.data.id();
+        int done = switch (asked.ask()) {
+            case COME -> nativeGoto(as, id, speaker.getBlockPos(), 1.5);
+            case WAIT -> nativeSkill(as, id, "native_wait", 4);
+            case STOP -> nativeLifecycle(as, "stop", id);
+            case TOSS -> nativeToss(as, id, asked.item(), dev.kindred.model.ConversationPrompt.TOSS_COUNT);
+            case NONE -> 1;
+        };
+        String refusal = heard.isEmpty() ? "That can't be done now." : heard.getLast();
+        KindredMod.LOGGER.info("{} asked in chat by {}: {}{}: {}", entry.data.displayName(), speaker.getName().getString(), asked.ask(),
+                asked.item() == null ? "" : " " + asked.item(), done == 1 ? "done" : "refused (" + refusal + ")");
+        entry.voiceAsked = asked.ask() + (done == 1 ? ": done" : ": refused");
+        if (done != 1) asked.refused().accept(refusal);
+    }
+
+    /** How the last ask in chat went ("COME: done", "TOSS: refused"), for fixtures (E-20b); null before any. */
+    String voiceAskedForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.voiceAsked;
+    }
+
+    /**
+     * Tosses up to {@code count} of {@code item}, from one stack of its own, to the player running the command (E-20b,
+     * QOL-05's toss). The item is named by its registry id ("bread" is minecraft:bread); one unknown, or one it does not
+     * carry, is refused, never guessed at.
+     */
+    int nativeToss(ServerCommandSource source, UUID id, String item, int count) {
+        requireThread();
+        if (!(source.getEntity() instanceof ServerPlayerEntity to)) return reject(source, "Only a player can be tossed to.");
+        UUID target = id == null ? defaultBotId() : id;
+        Entry entry = target == null ? null : entries.get(target);
+        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)
+                || entry.nativeBody == null || !entry.nativeBody.connected()) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        var named = item == null ? null : net.minecraft.util.Identifier.tryParse(item.strip().toLowerCase(java.util.Locale.ROOT).replace(' ', '_'));
+        if (named == null || !net.minecraft.registry.Registries.ITEM.containsId(named)) return reject(source, "There is no item called " + item + ".");
+        var kind = net.minecraft.registry.Registries.ITEM.get(named);
+        var inventory = entry.nativeBody.entity().getInventory();
+        int slot = -1;
+        for (int i = 0; i < inventory.main.size() && slot < 0; i++) if (inventory.main.get(i).isOf(kind)) slot = i;
+        if (slot < 0) return reject(source, entry.data.displayName() + " has no " + kind.getName().getString().toLowerCase(java.util.Locale.ROOT) + ".");
+        int tossed = Math.min(Math.max(1, count), inventory.main.get(slot).getCount());
+        return nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
+                "target", to.getUuid().toString()));
+    }
+
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
     void strategistForFixtures(dev.kindred.model.Strategist given) {
         strategist.ifPresent(StrategistBridge::close);
@@ -12011,6 +12111,9 @@ final class PlayerRuntime {
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
+        /** An ask made of it in chat and said yes to, waiting for the end of its look at the speaker (E-20b); how the last went, for fixtures. */
+        private VoiceAsk voiceAsk;
+        private String voiceAsked;
         /** Chests it saw a player use, by place (E-44); what it decided of each opponent's, and until when; a question out. */
         private final Map<Long, ChestUse> chestsUsed = new HashMap<>();
         private final Map<Long, RaidDecision> raids = new HashMap<>();

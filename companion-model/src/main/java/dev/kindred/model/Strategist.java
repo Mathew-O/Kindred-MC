@@ -102,29 +102,55 @@ public interface Strategist extends AutoCloseable {
     int MAX_SAID = 240;
 
     /**
-     * Someone spoke to the player (E-20a): who it is and how it talks, in {@code system}; what it knows that this
-     * listener may know, and the message quoted as data, in {@code text}; and whether this listener may be told
-     * where things are, which decides whether a reply may give a place.
+     * What a reply may ask of the player (E-20b), from one who may already command it: come to the speaker, wait where
+     * it stands, stop, or toss the speaker some of an item it carries. Each becomes what the matching command does,
+     * checked as the command checks it; none, for every other listener.
      */
-    record Conversation(String system, String text, boolean mayGivePlaces) {
+    enum Ask { NONE, COME, WAIT, STOP, TOSS }
+
+    /**
+     * Someone spoke to the player (E-20a): who it is and how it talks, in {@code system}; what it knows that this
+     * listener may know, and the message quoted as data, in {@code text}; whether this listener may be told where
+     * things are, which decides whether a reply may give a place; and whether it may ask the player to do something
+     * (E-20b), which decides whether a reply may carry an ask.
+     */
+    record Conversation(String system, String text, boolean mayGivePlaces, boolean mayAsk) {
         public Conversation {
             Objects.requireNonNull(system);
             Objects.requireNonNull(text);
         }
+
+        /** A conversation in which no ask may be made. */
+        public Conversation(String system, String text, boolean mayGivePlaces) {
+            this(system, text, mayGivePlaces, false);
+        }
     }
 
     /**
-     * What a conversation came to: the line to say, if the reply was usable; why it was said; the tokens and time it
-     * took; and why it failed, if it did. A refused reply is a failure: nothing of it is said, and the player's
-     * fixed reply is used instead.
+     * What a conversation came to: the line to say, if the reply was usable; what it asks of the player and the item
+     * a toss is of (E-20b); why it was said; the tokens and time it took; and why it failed, if it did. A refused reply
+     * is a failure: nothing of it is said or done, and the player's fixed reply is used instead.
      */
-    record Line(Optional<String> say, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis,
-                Optional<String> failure) {
+    record Line(Optional<String> say, Ask ask, Optional<String> item, String reason, long inputTokens, long cachedTokens, long outputTokens,
+                long millis, Optional<String> failure) {
+        public Line {
+            Objects.requireNonNull(ask);
+            Objects.requireNonNull(item);
+        }
+
+        /** A line that asks nothing. */
+        public Line(Optional<String> say, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis, Optional<String> failure) {
+            this(say, Ask.NONE, Optional.empty(), reason, inputTokens, cachedTokens, outputTokens, millis, failure);
+        }
+
         static Line failed(String why, long millis) { return new Line(Optional.empty(), "", 0, 0, 0, millis, Optional.of(why)); }
 
         static Line failed(String why, long in, long cached, long out, long millis) {
             return new Line(Optional.empty(), "", in, cached, out, millis, Optional.of(why));
         }
+
+        /** An item as a reply may name it: a registry id's characters, at most 64 of them. */
+        private static final java.util.regex.Pattern ITEM = java.util.regex.Pattern.compile("[a-z0-9_.:/ -]{1,64}");
 
         /** Words no player says in chat while every listener gets clean speech (E-18's presets come later). */
         private static final java.util.regex.Pattern UNCLEAN = java.util.regex.Pattern.compile(
@@ -137,6 +163,31 @@ public interface Strategist extends AutoCloseable {
          * not know where things are.
          */
         public static Line checked(Conversation conversation, String say, String reason, long in, long cached, long out, long millis) {
+            return checked(conversation, say, null, null, reason, in, cached, out, millis);
+        }
+
+        /**
+         * As {@link #checked(Conversation, String, String, long, long, long, long)}, with what the reply asks (E-20b):
+         * one of the asks or none; an ask only from one who may command the player; a toss with the item it is of.
+         * Anything else refuses the whole reply, words and all.
+         */
+        public static Line checked(Conversation conversation, String say, String ask, String item, String reason,
+                                   long in, long cached, long out, long millis) {
+            String asked = ask == null || ask.isBlank() ? "NONE" : ask.strip().toUpperCase(java.util.Locale.ROOT);
+            Ask wanted = java.util.Arrays.stream(Ask.values()).filter(a -> a.name().equals(asked)).findFirst().orElse(null);
+            String of = item == null ? "" : item.strip().toLowerCase(java.util.Locale.ROOT);
+            String refusedAsk = wanted == null ? "not one of the asks: " + asked
+                    : wanted != Ask.NONE && !conversation.mayAsk() ? "an ask from one who may not command it"
+                    : wanted == Ask.TOSS && !ITEM.matcher(of).matches() ? "a toss of no item it could name"
+                    : null;
+            if (refusedAsk != null) return new Line(Optional.empty(), Ask.NONE, Optional.empty(), "", in, cached, out, millis, Optional.of(refusedAsk));
+            Line words = checkedWords(conversation, say, reason, in, cached, out, millis);
+            if (words.failure().isPresent() || wanted == Ask.NONE) return words;
+            return new Line(words.say(), wanted, wanted == Ask.TOSS ? Optional.of(of) : Optional.empty(), words.reason(), in, cached, out, millis,
+                    Optional.empty());
+        }
+
+        private static Line checkedWords(Conversation conversation, String say, String reason, long in, long cached, long out, long millis) {
             String why = reason == null ? "" : reason.strip();
             if (why.length() > 300) why = why.substring(0, 300);
             String said = say == null ? "" : say.strip();

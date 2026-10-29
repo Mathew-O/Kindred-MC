@@ -66,7 +66,22 @@ class ConversationPromptTest {
         String system = ConversationPrompt.system("Echo", Personality.defaults());
         assertTrue(system.contains("Keep it clean for everyone"));
         assertTrue(system.contains("You know only what is written"));
-        assertTrue(system.contains("You cannot take orders from chat"));
+        assertTrue(system.contains("Chat sets you doing something only through the asks"));
         assertTrue(system.contains("Never give coordinates"));
+    }
+
+    @Test
+    void onlyOneWhoMayCommandItIsOfferedTheAsksAndTheFixedPartStaysTheSame() {
+        var owner = ConversationPrompt.conversation("Echo", Personality.defaults(), situation(ConversationAudience.Relation.OWNER, true, "x"), "come here");
+        var other = ConversationPrompt.conversation("Echo", Personality.defaults(), situation(ConversationAudience.Relation.PLAYER, false, "x"), "come here");
+        var opponent = ConversationPrompt.conversation("Echo", Personality.defaults(), situation(ConversationAudience.Relation.OPPONENT, true, "x"), "come here");
+        assertTrue(owner.mayAsk() && owner.text().contains("COME (walk over to them)") && owner.text().contains("TOSS (toss them up to 8"));
+        for (var withheld : List.of(other, opponent)) {
+            assertFalse(withheld.mayAsk());
+            assertTrue(withheld.text().contains("Asks this speaker may make of you in chat: none, so ask is NONE"), withheld.text());
+            assertFalse(withheld.text().contains("COME ("));
+        }
+        assertEquals(owner.system(), other.system(), "the asks are in the varying part, so the fixed part still caches");
+        assertTrue(owner.text().indexOf("Asks this speaker") < owner.text().indexOf(ConversationPrompt.SAID), "before the message");
     }
 }

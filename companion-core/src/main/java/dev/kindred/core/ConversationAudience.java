@@ -82,6 +82,14 @@ public final class ConversationAudience {
         return tier(situation.relation(), situation.speakerControls()) == Tier.CONTROLLER;
     }
 
+    /**
+     * Whether this speaker may ask the player to do something in chat (E-20b): only one who may already command it, and
+     * never an opponent in a match, whatever else it is. An ask still goes through the command's own checks.
+     */
+    public static boolean mayAsk(Situation situation) {
+        return tier(situation.relation(), situation.speakerControls()) == Tier.CONTROLLER;
+    }
+
     /** Three numbers in a row, or numbers marked x, y and z: a place, however it is written. */
     private static final Pattern PLACE = Pattern.compile("-?\\d+\\s*[,/ ]\\s*-?\\d+\\s*[,/ ]\\s*-?\\d+|\\b[xyz]\\s*[=:]?\\s*-?\\d+",
             Pattern.CASE_INSENSITIVE);
