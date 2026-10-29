@@ -108,10 +108,20 @@ final class CompanionSocials {
     private long nextAmbient = Long.MIN_VALUE;
     private PeerConferenceHandler conferenceHandler;
     private Voice voice;
+    /** Whether a person may command an AI player: such a one is as good as its owner in conversation (F-18a). */
+    private java.util.function.BiPredicate<ServerPlayerEntity, Participant> controls = (player, companion) -> false;
     /** Players with a line being phrased, by the turn of their talk it answers; a turn ended by discard is not said. */
     private final Map<UUID, Long> voicing = new HashMap<>();
     private final Map<UUID, Waiting> waiting = new HashMap<>();
     private long turns;
+
+    /**
+     * Who may command each AI player, as the runtime's access rules say: they are talked with as its owner is, in
+     * private (F-18a). A native player's own record is its identity, so without this nobody was its owner here.
+     */
+    void setControllers(java.util.function.BiPredicate<ServerPlayerEntity, Participant> controls) {
+        this.controls = controls;
+    }
 
     /** The player's voice, or null for the fixed replies alone. */
     void setVoice(Voice voice) {
@@ -199,7 +209,7 @@ final class CompanionSocials {
         if ((speaker.body().age + Math.floorMod(speaker.id().hashCode(), 20)) % 20 != 0) return;
         notice(speaker, now);
         maybePeerConference(speaker, now);
-        List<ServerPlayerEntity> audience = SocialPerception.listeners(speaker.body(), speaker.owner(), speaker.profile(), aiPlayer);
+        List<ServerPlayerEntity> audience = SocialPerception.listeners(speaker.body(), owns(speaker), speaker.profile(), aiPlayer);
         if (audience.isEmpty()) {
             // Nobody to talk to: drop pending remarks, but keep knowing who is already standing here.
             SocialBrain brain = brains.get(speaker.id());
@@ -208,7 +218,7 @@ final class CompanionSocials {
             recentHarm.remove(speaker.id());
             return;
         }
-        var observed = withRecentDamage(speaker.id(), now, SocialPerception.observe(speaker.body(), speaker.owner(), speaker.profile(), true,
+        var observed = withRecentDamage(speaker.id(), now, SocialPerception.observe(speaker.body(), owns(speaker), speaker.profile(), true,
                 aiPlayer, body -> {
                     UUID id = aiPlayer.apply(body);
                     Participant other = id == null ? null : lookup.apply(id);
@@ -220,7 +230,7 @@ final class CompanionSocials {
     private void maybePeerConference(Participant speaker, long now) {
         if (conferenceHandler == null) return;
         if (speaker.body().age % 100 != Math.floorMod(speaker.id().hashCode(), 100)) return;
-        List<SocialSnapshot.Contact> contacts = SocialPerception.noticeable(speaker.body(), speaker.owner(), aiPlayer);
+        List<SocialSnapshot.Contact> contacts = SocialPerception.noticeable(speaker.body(), owns(speaker), aiPlayer);
         for (var contact : contacts) {
             if (contact.kind() != SocialSnapshot.Kind.COMPANION) continue;
             Participant peer = lookup.apply(contact.id());
@@ -250,7 +260,7 @@ final class CompanionSocials {
     private void notice(Participant speaker, long now) {
         AttentionPolicy.Phase phase = habits.phase(speaker.id());
         if (phase == null) return;
-        List<SocialSnapshot.Contact> people = SocialPerception.noticeable(speaker.body(), speaker.owner(), aiPlayer);
+        List<SocialSnapshot.Contact> people = SocialPerception.noticeable(speaker.body(), owns(speaker), aiPlayer);
         Set<UUID> ids = new HashSet<>();
         for (var contact : people) ids.add(contact.id());
         var glance = attention.computeIfAbsent(speaker.id(), ignored -> new AttentionPolicy()).observe(ids, phase, true,
@@ -306,7 +316,12 @@ final class CompanionSocials {
 
     boolean canTalk(ServerPlayerEntity player, Participant companion) {
         return companion != null && SocialPerception.visible(companion.body(), player)
-                && (companion.owner().equals(player.getUuid()) || companion.profile().publicConversation());
+                && (owns(companion).test(player) || companion.profile().publicConversation());
+    }
+
+    /** Its owners in the lane: its saved owner, and whoever may command it (F-18a). */
+    private java.util.function.Predicate<ServerPlayerEntity> owns(Participant companion) {
+        return player -> companion.owner().equals(player.getUuid()) || controls.test(player, companion);
     }
 
     boolean reply(ServerPlayerEntity player, Participant companion, String message) {
@@ -332,7 +347,7 @@ final class CompanionSocials {
 
     private String fixedReply(Participant companion, String message, long now) {
         var observed = withRecentDamage(companion.id(), now,
-                SocialPerception.observe(companion.body(), companion.owner(), companion.profile(), companion.active(), aiPlayer, ignored -> false));
+                SocialPerception.observe(companion.body(), owns(companion), companion.profile(), companion.active(), aiPlayer, ignored -> false));
         return SocialDialogue.reply(message, observed, companion.profile());
     }
 

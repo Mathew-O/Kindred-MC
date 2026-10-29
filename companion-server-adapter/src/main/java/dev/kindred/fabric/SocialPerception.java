@@ -56,8 +56,18 @@ final class SocialPerception {
 
     /** The people who can hear it: its owner, and others only when it talks in public; never another AI player's body. */
     static List<ServerPlayerEntity> listeners(LivingEntity body, UUID owner, SocialProfile profile, Function<Entity, UUID> aiPlayer) {
+        return listeners(body, ownedBy(owner), profile, aiPlayer);
+    }
+
+    /** As above, its owners being whoever {@code owns} admits: for a native player, whoever may command it (F-18a). */
+    static List<ServerPlayerEntity> listeners(LivingEntity body, Predicate<ServerPlayerEntity> owns, SocialProfile profile, Function<Entity, UUID> aiPlayer) {
         return ((ServerWorld) body.getWorld()).getPlayers(player -> aiPlayer.apply(player) == null && visible(body, player)
-                && (profile.publicConversation() || player.getUuid().equals(owner)), 16);
+                && (profile.publicConversation() || owns.test(player)), 16);
+    }
+
+    /** The one person whose id is {@code owner}. */
+    static Predicate<ServerPlayerEntity> ownedBy(UUID owner) {
+        return player -> player.getUuid().equals(owner);
     }
 
     static List<SocialSnapshot.Contact> noticeable(CompanionEntity body) {
@@ -69,6 +79,11 @@ final class SocialPerception {
      * public-conversation setting; the social brain still applies privacy before any remark.
      */
     static List<SocialSnapshot.Contact> noticeable(LivingEntity body, UUID owner, Function<Entity, UUID> aiPlayer) {
+        return noticeable(body, ownedBy(owner), aiPlayer);
+    }
+
+    /** As above, its owners being whoever {@code owns} admits (F-18a). */
+    static List<SocialSnapshot.Contact> noticeable(LivingEntity body, Predicate<ServerPlayerEntity> owns, Function<Entity, UUID> aiPlayer) {
         List<LivingEntity> nearby = new ArrayList<>();
         body.getWorld().collectEntitiesByType(TypeFilter.instanceOf(LivingEntity.class),
                 body.getBoundingBox().expand(8), entity -> entity != body, nearby, 32);
@@ -79,7 +94,7 @@ final class SocialPerception {
             if (peer != null) {
                 contacts.add(new SocialSnapshot.Contact(peer, entity.getName().getString(), SocialSnapshot.Kind.COMPANION));
             } else if (entity instanceof ServerPlayerEntity player) {
-                boolean isOwner = player.getUuid().equals(owner);
+                boolean isOwner = owns.test(player);
                 contacts.add(new SocialSnapshot.Contact(player.getUuid(), player.getName().getString(),
                         isOwner ? SocialSnapshot.Kind.OWNER : SocialSnapshot.Kind.PLAYER));
             }
@@ -94,6 +109,12 @@ final class SocialPerception {
     }
 
     static SocialSnapshot observe(LivingEntity body, UUID owner, SocialProfile profile, boolean active,
+                                  Function<Entity, UUID> aiPlayer, Predicate<Entity> socialCompanion) {
+        return observe(body, ownedBy(owner), profile, active, aiPlayer, socialCompanion);
+    }
+
+    /** As above, its owners being whoever {@code owns} admits (F-18a). */
+    static SocialSnapshot observe(LivingEntity body, Predicate<ServerPlayerEntity> owns, SocialProfile profile, boolean active,
                                   Function<Entity, UUID> aiPlayer, Predicate<Entity> socialCompanion) {
         List<LivingEntity> nearby = new ArrayList<>();
         // Cap candidates BEFORE visibility raycasts. This never scans remote/unloaded regions.
@@ -111,7 +132,7 @@ final class SocialPerception {
                     contacts.add(new SocialSnapshot.Contact(peer, entity.getName().getString(), SocialSnapshot.Kind.COMPANION));
                 }
             } else if (entity instanceof ServerPlayerEntity player) {
-                boolean isOwner = player.getUuid().equals(owner);
+                boolean isOwner = owns.test(player);
                 if (isOwner || profile.publicConversation()) contacts.add(new SocialSnapshot.Contact(player.getUuid(),
                         player.getName().getString(), isOwner ? SocialSnapshot.Kind.OWNER : SocialSnapshot.Kind.PLAYER));
             }

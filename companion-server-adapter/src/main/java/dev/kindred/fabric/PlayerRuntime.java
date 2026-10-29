@@ -373,6 +373,11 @@ final class PlayerRuntime {
         }, new HabitHooks(), this::aiPlayerOf);
         voice = new PlayerVoice(this::voiceFacts, this::voiceAsk, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
         socials.setVoice(voice);
+        // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
+        socials.setControllers((player, participant) -> {
+            Entry entry = entries.get(participant.id());
+            return entry != null && entry.nativeState != null && entry.nativeState.access().mayControl(new Actor(player.getUuid(), player.hasPermissionLevel(2)));
+        });
         if (strategist.isPresent()) KindredMod.LOGGER.info("Kindred voice {}", voiceOn ? "on: replies in chat are phrased by the strategist's model"
                 : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
         socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {

@@ -28,10 +28,9 @@ import java.util.function.Function;
  * listener may know, through the social lane's own checks, and says its fixed reply whenever that fails. A stub stands
  * in for the model: it records each conversation it is given and answers as the fixture sets, as a provider would
  * before its own checks, so the refusals seen here are the runtime's. The owner is a mock player who created the
- * player (its controller); the others are mock players who did not. The social lane admits anyone to a native player's
- * conversation only while it talks in public, its controller included (a native player's own record is its identity,
- * so the lane's owner check is its own), so each fixture that talks turns public chat on, and its ambient remarks off
- * so that only replies are heard.
+ * player (its controller, and an operator so that it may create one); the others are mock players who did not. Since
+ * F-18a its controller is talked with in private; the fixtures with others in them turn public chat on, and each turns
+ * the player's ambient remarks off so that only replies are heard.
  */
 public final class NativeVoiceGameTests implements FabricGameTest {
     /** A strategist that records each conversation and answers as set; it gives no advice and answers no question. */
@@ -433,6 +432,76 @@ public final class NativeVoiceGameTests implements FabricGameTest {
                     context.assertTrue(idle(f), "Nothing started: " + f.runtime.nativeActivityStatus(Actor.console(), f.id).phase());
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(action == null || action.state().terminal(), "No action under way: " + (action == null ? null : action.state()));
+                    t.cleanup(context);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Talking to your own player in private (F-18a): with public chat off and no model at all, the player who created
+     * Echo (its controller) is answered with the fixed reply; a bystander who may not command it is not, and nobody
+     * else hears either. Before F-18a a native player's own record was its only "owner", so even its creator went
+     * unanswered until public chat was turned on.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voice", tickLimit = 1200)
+    public void itsControllerIsAnsweredWithPublicChatOff(TestContext context) {
+        var t = new Talk(context, false);
+        var f = t.f;
+        ServerPlayerEntity[] bystander = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> t.quiet(context))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    // No strategist: only what the lane says is heard.
+                    f.runtime.heardForFixtures((player, text) -> t.heard.add(new Heard(player.getUuid(), text.getString(), Talk.now())));
+                    bystander[0] = t.player(context, new Vec3d(6.5, 2, 3.5), 90);
+                })
+                .createAndAdd(() -> context.assertTrue(idle(f), "Settled"))
+                .createAndAdd(() -> {
+                    f.runtime.chat(bystander[0].getUuid(), "Echo, what are you doing?");
+                    Talk.waitFor(3_100); // Past the player's three seconds between direct replies.
+                })
+                .createAndAdd(() -> f.runtime.chat(t.owner.getUuid(), "Echo, what are you doing?"))
+                .createAndAdd(() -> context.assertTrue(!t.heardBy(t.owner).isEmpty(), "Its controller is answered in private: " + t.heard))
+                .createAndAdd(() -> {
+                    context.assertTrue(t.heardBy(t.owner).getFirst().text().equals("[Kindred] Echo: I'm watching what's nearby."), "The fixed reply: " + t.heard);
+                    context.assertTrue(t.heardBy(bystander[0]).isEmpty(), "Nothing to a bystander in private: " + t.heard);
+                    context.assertTrue(t.heard.size() == 1, "Said to no one else: " + t.heard);
+                    t.cleanup(context);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its own remarks in private (F-18a): with public chat off and its ambient remarks on, what the player says of itself
+     * unasked (here, greeting whoever it notices) reaches its controller, and not a bystander beside them.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voice", tickLimit = 2400)
+    public void itsControllerHearsItsRemarksWithPublicChatOff(TestContext context) {
+        var t = new Talk(context, false);
+        var f = t.f;
+        ServerPlayerEntity[] bystander = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    f.runtime.heardForFixtures((player, text) -> t.heard.add(new Heard(player.getUuid(), text.getString(), Talk.now())));
+                    bystander[0] = t.player(context, new Vec3d(6.5, 2, 3.5), 90);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> {
+                    Talk.waitFor(20); // Real time for the lane's own clock.
+                    context.assertTrue(!t.heardBy(t.owner).isEmpty(), "A remark to its controller: " + t.heard);
+                })
+                .createAndAdd(() -> Talk.waitFor(1_000))
+                .createAndAdd(() -> {
+                    context.assertTrue(t.heardBy(bystander[0]).isEmpty(), "Nothing to a bystander in private: " + t.heard);
                     t.cleanup(context);
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
