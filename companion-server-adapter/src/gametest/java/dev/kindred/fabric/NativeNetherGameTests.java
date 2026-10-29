@@ -370,6 +370,11 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     traveler.getInventory().selectedSlot = 1;
                     BlazeEntity blaze = new BlazeEntity(EntityType.BLAZE, nether);
                     blaze.refreshPositionAndAngles(traveler.getX(), traveler.getY(), traveler.getZ() + 2.5, 0.0f, 0.0f);
+                    // Room for it wherever the arrival portal stands (a one-health blaze in the rock suffocates first).
+                    for (int up = 0; up <= 1; up++) {
+                        BlockPos cell = blaze.getBlockPos().up(up);
+                        if (!nether.getBlockState(cell).isOf(Blocks.NETHER_PORTAL) && !nether.getBlockState(cell).isOf(Blocks.OBSIDIAN)) nether.setBlockState(cell, Blocks.AIR.getDefaultState());
+                    }
                     blaze.setAiDisabled(true);
                     blaze.setHealth(1.0f);
                     context.assertTrue(nether.spawnEntity(blaze), "Fixture Blaze spawned in the arrived Nether world");
@@ -382,7 +387,9 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     var attackRecord = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(attackRecord != null && attackRecord.state() == ActionRecord.State.VERIFIED
                                     && attackRecord.kind().equals("native_attack"),
-                            "Blaze combat completed through a verified native attack receipt");
+                            "Blaze combat completed through a verified native attack receipt: " + attackRecord + "; the blaze "
+                                    + blaze.getRemovalReason() + " at " + blaze.getPos() + " in " + blaze.getWorld().getRegistryKey().getValue()
+                                    + ", " + f.runtime.nativeActivityStatus(Actor.console(), f.id));
                     context.assertTrue(traveler.getInventory().getStack(1).isOf(Items.IRON_SWORD)
                                     && traveler.getInventory().getStack(1).getDamage() == 1,
                             "Owned sword is conserved with authentic one-hit durability wear");

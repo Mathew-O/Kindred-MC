@@ -6069,6 +6069,7 @@ final class PlayerRuntime {
                 entry.patchDropRetries = 0;
             }
             if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null) entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            if ("native_goto".equals(entry.skillId) && entry.patchDropWalk < 0 && entry.patchWalkTo != null) entry.patchWalks++;
             // A drop it could not walk to (fallen into a hole too low to step into), or that it reached twice and is still
             // lying there out of its reach: set aside while the mining goes on.
             if ("native_goto".equals(entry.skillId) && entry.patchDropWalk >= 0 && entry.nativeBody != null) {
@@ -10178,6 +10179,11 @@ final class PlayerRuntime {
             return List.of(new NativeTaskCandidate(task.apply("drop:" + drop.getId()), "native_goto", Map.of("x", String.valueOf(at.getX()),
                     "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0.6")));
         }
+        // A drop still falling (a block just out) waited for: "mined out" said over it, the player went off and left it.
+        if (best == null && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box, e -> e.isAlive() && !e.isOnGround()
+                && entry.patchDrops.contains(Registries.ITEM.getId(e.getStack().getItem()).toString()) && !entry.patchDropsAside.contains(e.getId())).isEmpty()) {
+            return List.of(new NativeTaskCandidate(task.apply("settle"), "native_wait", Map.of("seconds", "1")));
+        }
         if (best == null) {
             // Its last block may be out while the mine that took it is still finishing: it is counted once that ends.
             if (!entry.patchMineIds.isEmpty() && (runnerBusy(entry) || entry.nativeActionPending)) return null;
@@ -10206,13 +10212,23 @@ final class PlayerRuntime {
             entry.patchMineIds.add(mine.id());
             return List.of(new NativeTaskCandidate(mine, "native_mine", Map.copyOf(args)));
         }
-        if (++entry.patchWalks > 3) {
+        // Three walks to it ended (counted as each ends, not as it is planned) without it in sight and reach: set aside.
+        if (entry.patchWalks >= 3) {
             entry.patchSkipped.add(best.asLong());
             KindredMod.LOGGER.info("{} could not get {} at {} in sight to mine; set aside", entry.data.displayName(), name, best.toShortString());
             return null;
         }
         var args = new HashMap<>(coords);
         args.put("range", "2.5");
+        // A block high over open ground (a cut trunk's top log): to the ground under it, where it is in reach overhead.
+        BlockPos under = best.down();
+        for (int down = 0; down < 6 && world.getBlockState(under).isAir() && world.getBlockState(under.down()).isAir(); down++) under = under.down();
+        if (under.getY() < best.getY() - 1 && world.getBlockState(under).isAir() && world.getBlockState(under.down()).isSideSolidFullSquare(world, under.down(), Direction.UP)) {
+            args.put("x", String.valueOf(under.getX()));
+            args.put("y", String.valueOf(under.getY()));
+            args.put("z", String.valueOf(under.getZ()));
+            args.put("range", "1.0");
+        }
         return List.of(new NativeTaskCandidate(task.apply("walk:" + best.asLong() + ":" + entry.patchWalks), "native_goto", Map.copyOf(args)));
     }
 
