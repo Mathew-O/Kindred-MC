@@ -26,6 +26,22 @@ import net.minecraft.util.math.Box;
 public final class NativeLifeFirstGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-night", tickLimit = 30000)
     public void atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning(TestContext context) {
+        night(context, 1000);
+    }
+
+    /**
+     * The same, its first night falling while its cabin is still going up (F-25c9a): it sleeps in the cabin's bed, which
+     * becomes its spawn, builds on, and the next night goes to that bed again. Before, its walk home for the night aimed
+     * at the bed itself, behind the cabin's walls, and kept it outside till the fixture's end ("Its body").
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-second-night", tickLimit = 30000)
+    public void itsFirstNightFallingAsItsCabinGoesUpItSleepsThereThenGoesBackTheNextNight(TestContext context) {
+        night(context, 9000);
+    }
+
+    /** The night fixture, its day begun at {@code start}: from 9,000 its first night falls before its cabin stands. */
+    private static void night(TestContext context, long start) {
+        boolean firstNightInCabin = start > 1000;
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
         var hut = Generators.hut(5, 5, 3);
@@ -42,7 +58,7 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     NativeBaseGameTests.ground(context, trunks);
-                    context.getWorld().setTimeOfDay(1000);
+                    context.getWorld().setTimeOfDay(start);
                     var player = f.player();
                     var inventory = player.getInventory();
                     inventory.clear();
@@ -72,6 +88,8 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                         if (b.spec().block().endsWith("_bed") && "head".equals(b.spec().property("part"))) bed[0] = BuildRunner.blockPos(b.at());
                     }
                     context.assertTrue(bed[0] != null && context.getWorld().getBlockState(bed[0]).isOf(net.minecraft.block.Blocks.RED_BED), "Its bed");
+                    context.assertTrue(!firstNightInCabin || bed[0].equals(f.player().getSpawnPointPosition()),
+                            "Its first night slept in its cabin's bed: " + f.player().getSpawnPointPosition());
                     // A build of its own besides, begun by day.
                     context.assertTrue(f.runtime.startBuild(f.source, f.id, hut, hutAt, 0) == 1, "Hut begun");
                 })

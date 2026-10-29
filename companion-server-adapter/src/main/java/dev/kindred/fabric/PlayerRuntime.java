@@ -2839,7 +2839,13 @@ final class PlayerRuntime {
             }
             if (entry.expeditionState.status() == ExpeditionStatus.RETURNING) {
                 ReturnReason reason = entry.expeditionState.returnReason();
-                if (reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM || reason == ReturnReason.LOW_HEALTH) {
+                // A bed of its own to sleep in tonight is its way home (F-25c9a): the walk back to its anchor outranks
+                // the walk to its bed, and once it had slept in its cabin its anchor was that bed, behind the cabin's
+                // walls, never within the two blocks the walk ends at. It stood outside its cabin all night.
+                if ((reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM) && lifeFirst(entry)
+                        && (player.isSleeping() || nearestOwnBed(entry, world, player.getBlockPos()) != null)) {
+                    entry.expeditionState.arriveAtBase();
+                } else if (reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM || reason == ReturnReason.LOW_HEALTH) {
                     ExpeditionPlan plan = ExpeditionPlanner.plan(entry.expeditionState, expObs);
                     if ("native_traverse".equals(plan.action()) && plan.blocks() > 0) {
                         UUID taskId = UUID.nameUUIDFromBytes(("urgent_expedition_return:" + entry.data.id() + ":" + plan.direction() + ":" + reason).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -3141,8 +3147,7 @@ final class PlayerRuntime {
         // What keeps it alive comes before its ranch, its build or its base (F-25c9): its own bed at night, food enough
         // to last when hunger is low. A running goal weighs food and the night itself; the routine work of a work
         // area keeps its own order for now.
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
-                && (entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled())) {
+        if (lifeFirst(entry)) {
             var life = lifeCandidates(entry, body);
             if (!life.isEmpty()) {
                 candidates.addAll(life);
@@ -4537,6 +4542,12 @@ final class PlayerRuntime {
     }
 
     private static final int FOOD_LOOKS = 3, FOOD_RETRY = 6000, SLEEP_RETRY = 600, BED_REACH = 96;
+
+    /** Life comes first for it (F-25c9): no running goal, and work of its own (a ranch, a field, a build or its base). */
+    private boolean lifeFirst(Entry entry) {
+        return entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
+                && (entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled());
+    }
 
     /**
      * What keeps the player alive, ahead of its ranch, build or base (F-25c9), as {@link dev.kindred.core.survival.LifeFirst}
