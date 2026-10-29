@@ -157,8 +157,12 @@ public final class ConstructionPlanner {
             if (cell.isPresent() && !cell.get().passable() && !scaffold.contains(p) && cell.get().kind() != BuildSite.Kind.DANGER) inTheWay.add(p);
         }
         inTheWay.sort(Comparator.<Pos>comparingInt(p -> -p.y()).thenComparingLong(p -> p.distanceSquared(feet)));
-        // Where it can walk to from here: only those spots are stood on, and only those grounds scaffolded from.
+        // Where it can walk to from here: only those spots are stood on, and only those grounds scaffolded from. Off
+        // the build and the ground round it, only spots it can walk back from: a drop off the edge of its ground is
+        // walkable one way, and stood down there (three below a cabin's ring, run 5 of 29 October), the scaffolding
+        // beside it was out of reach and the way back up a wall.
         Set<Pos> walk = walkable(site, feet, scaffold);
+        walk.retainAll(returnable(site, walk, feet, scaffold, box));
         walk.removeAll(shunned);
         for (Pos p : inTheWay) {
             if (site.cell(p).get().kind() == BuildSite.Kind.PROTECTED) return Step.blocked("In the way and not the build's to break: " + p);
@@ -433,21 +437,64 @@ public final class ConstructionPlanner {
             if (scaffold.contains(at.down()) && site.cell(at.down().down()).map(Cell::floor).orElse(false) && seen.add(at.down())) {
                 queue.add(at.down());
             }
-            for (Face f : List.of(Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST)) {
-                Pos side = at.offset(f);
-                for (int dy = 1; dy >= -MAX_DROP; dy--) {
-                    Pos to = side.add(0, dy, 0);
-                    // Up a step needs the head room for the jump; down, the body falls through the side's open cells.
-                    if (dy == 1 && !through(site, at.add(0, 2, 0))) continue;
-                    if (site.cell(to.down()).map(Cell::floor).orElse(false) && through(site, to) && through(site, to.up())) {
-                        if (seen.add(to)) queue.add(to);
-                        break;
-                    }
-                    if (dy <= 0 && !through(site, to.up())) break;
-                }
+            for (Face f : SIDES) {
+                Pos to = stepTo(site, at, f);
+                if (to != null && seen.add(to)) queue.add(to);
             }
         }
         return seen;
+    }
+
+    private static final List<Face> SIDES = List.of(Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
+
+    /** Where one step from {@code at} toward {@code f} lands: up one, level, or down as far as {@link #MAX_DROP}; or null. */
+    private static Pos stepTo(BuildSite site, Pos at, Face f) {
+        Pos side = at.offset(f);
+        for (int dy = 1; dy >= -MAX_DROP; dy--) {
+            Pos to = side.add(0, dy, 0);
+            // Up a step needs the head room for the jump; down, the body falls through the side's open cells.
+            if (dy == 1 && !through(site, at.add(0, 2, 0))) continue;
+            if (site.cell(to.down()).map(Cell::floor).orElse(false) && through(site, to) && through(site, to.up())) return to;
+            if (dy <= 0 && !through(site, to.up())) break;
+        }
+        return null;
+    }
+
+    /**
+     * The spots of {@code walk} from which a player can walk back to the work: to where it stands, or onto the build or
+     * the ground a block round it, by steps taken the other way. Spots there count as back already.
+     */
+    static Set<Pos> returnable(BuildSite site, Set<Pos> walk, Pos feet, Set<Pos> scaffold, Box box) {
+        var back = new HashSet<Pos>();
+        var queue = new ArrayDeque<Pos>();
+        for (Pos p : walk) {
+            if (p.equals(feet) || p.x() >= box.minX() - 1 && p.x() <= box.maxX() + 1 && p.z() >= box.minZ() - 1 && p.z() <= box.maxZ() + 1) {
+                back.add(p);
+                queue.add(p);
+            }
+        }
+        int budget = WALK_BUDGET;
+        while (!queue.isEmpty() && budget-- > 0) {
+            Pos to = queue.poll();
+            // A spot from which one step lands here: beside, from one lower to as far up as a drop.
+            for (Face f : SIDES) {
+                Pos from = to.offset(f.opposite());
+                for (int dy = -1; dy <= MAX_DROP; dy++) {
+                    Pos at = from.add(0, dy, 0);
+                    if (walk.contains(at) && !back.contains(at) && to.equals(stepTo(site, at, f))) {
+                        back.add(at);
+                        queue.add(at);
+                    }
+                }
+            }
+            // Down a scaffold column it stands on.
+            Pos above = to.up();
+            if (scaffold.contains(to) && walk.contains(above) && !back.contains(above) && site.cell(to.down()).map(Cell::floor).orElse(false)) {
+                back.add(above);
+                queue.add(above);
+            }
+        }
+        return back;
     }
 
     /** How far {@code yaw} is from the middle of the quarter it falls in, in degrees. */

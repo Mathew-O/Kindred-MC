@@ -157,6 +157,34 @@ class ConstructionPlannerTest {
         assertEquals(new Pos(2, 2, 0), step.target(), "the top first");
     }
 
+    /**
+     * The edge of its ground three blocks over lower ground, as a fixture's field ends (run 5 of 29 October): the only
+     * spot in reach of the last scaffold is down off the edge, walkable one way. Stood there, the scaffolding beside it
+     * was out of reach and the way back up a wall, all night. A spot it could not walk back to the build from is never
+     * chosen.
+     */
+    @Test
+    void neverABreakFromWhereItCouldNotWalkBackToTheBuild() {
+        var cells = BuildTestSites.flat();
+        // The plateau, z up to 0, three higher than the ground beyond.
+        for (int x = -20; x <= 20; x++) for (int z = -20; z <= 0; z++) for (int y = 1; y <= 3; y++) cells.put(new Pos(x, y, z), BuildTestSites.STONE);
+        // The build, done: a wall two high along z -1.
+        var blocks = new java.util.ArrayList<Blueprint.Block>();
+        for (int x = -2; x <= 2; x++) for (int y = 4; y <= 5; y++) {
+            blocks.add(block(x, y, -1, "minecraft:cobblestone"));
+            cells.put(new Pos(x, y, -1), BuildTestSites.solid("minecraft:cobblestone"));
+        }
+        // Its last scaffold on the plateau's edge row, stone two high either side of it.
+        cells.put(new Pos(0, 4, 0), BuildTestSites.solid("minecraft:cobblestone"));
+        for (int x : new int[] {-1, 1}) for (int y = 4; y <= 5; y++) cells.put(new Pos(x, y, 0), BuildTestSites.STONE);
+        var feet = new Pos(5, 4, 0);
+        var walk = ConstructionPlanner.walkable(new BuildSite(cells), feet, Set.of(new Pos(0, 4, 0)));
+        assertTrue(walk.contains(new Pos(0, 1, 1)), "down off the edge is walkable one way");
+        var step = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, ALL, Set.of(new Pos(0, 4, 0)));
+        assertTrue(step.kind() != ConstructionPlanner.Kind.BREAK || step.stance().y() >= 4, "never from below the edge: " + step);
+        assertEquals(ConstructionPlanner.Kind.BLOCKED, step.kind(), "out of reach from where it can come back: " + step);
+    }
+
     @Test
     void whatIsInTheWayIsBrokenFirstButNeverWhatIsNotTheBuildsToBreak() {
         var cells = BuildTestSites.flat();
