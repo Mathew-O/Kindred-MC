@@ -44,11 +44,13 @@ Talk to it by name in chat: `Ada, what are you doing?`. Whoever made it (and any
 
 ### ⚡ In a hurry? Use a starter
 
-Three ready-made players come with the mod, each with its own name and skin: **Kindred**, **Sol** and **Echo**. Spawn one and get going:
+Three ready-made players come with the mod, each with its own name, skin and personality: **Kindred** (helpful and sociable, loves farming), **Sol** (bold and quick to fight) and **Echo** (careful and curious, loves mining). Spawn one and get going:
 
 ```text
 /aiplayer roster spawn Kindred
 ```
+
+A starter takes its personality when it is first made; after that it is its own, and only you change it. Starters made before this version keep the one they have: set it with `/aiplayer personality`.
 
 ---
 

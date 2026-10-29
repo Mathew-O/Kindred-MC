@@ -13,6 +13,10 @@ On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merge
   - on the code before: fails, the bystander heard nothing;
   - after, with the voice, ask and social classes: 21 of 21 in each of three runs.
   - Evidence: [E-20c](evidence/E-20c.md).
+- E-10d (starters' personalities), `21a8a3d`. `SocialProfileTest` 1 of 1. The new `NativePlayerRuntimeGameTests` fixture:
+  - on the code before: fails, Sol at every trait 50;
+  - after, with the rest of its class and `NativeSkinGameTests`: 5 of 5 in each of three runs.
+  - Evidence: [E-10d](evidence/E-10d.md).
 
 ## Asks in chat (E-20b) — 29 October 2026 (`claude/player-voice-e20`)
 

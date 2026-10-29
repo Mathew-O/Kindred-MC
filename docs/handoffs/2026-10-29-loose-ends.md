@@ -60,6 +60,8 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
     Echo, but `spawnCanonicalRoster` → `createNative` gives them the defaults, so the three differ only in name and
     skin. Apply the preset to the new player's profile on creation (with a fixture), or drop the presets and the
     titles.
+    **Done in `21a8a3d` (E-10d):** applied on creation, read back after a restart, never reset on a saved player. The
+    titles are still shown nowhere.
 14. **Old worlds still show "Vesp".** E-10c keeps a saved player's name; renaming a saved display name needs a tested
     migration (the name is in the companions table and the native save).
 15. **"AI" is still in the command and in-game text** (`/aiplayer`, "AI player panel", the panel's messages) after the
