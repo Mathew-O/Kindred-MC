@@ -1,5 +1,15 @@
 # AI-player development validation
 
+## Loose ends — 29 October 2026 (`claude/loose-ends-1029`)
+
+On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merged in (`ebe16aa`). Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints and restore them after each run.
+
+- F-18a (talking to your own player in private), `249f476`. Two new `NativeVoiceGameTests` fixtures:
+  - on the code before the change: "Its controller is answered in private: []";
+  - the remark fixture with the `canTalk` change alone: "A remark to its controller: []";
+  - after the change, with the voice, ask, social, gaze and mannerism classes: 29 of 29 in each of three runs.
+  - Evidence: [F-18a](evidence/F-18a.md).
+
 ## Asks in chat (E-20b) — 29 October 2026 (`claude/player-voice-e20`)
 
 On E-20a. Code `64f4ac1`. Linux x64 cloud container (4 cores), OpenJDK 21.

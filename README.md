@@ -40,6 +40,8 @@ The traits are **initiative, caution, curiosity, sociability, humor, combativene
 
 A server can have up to three of these players at once.
 
+Talk to it by name in chat: `Ada, what are you doing?`. Whoever made it (and any operator) can talk with it at any time; anyone else only once you let it talk in public: `/aiplayer social public true Ada`.
+
 ### ⚡ In a hurry? Use a starter
 
 Three ready-made players come with the mod, each with its own name and skin: **Kindred**, **Sol** and **Echo**. Spawn one and get going:
