@@ -6,6 +6,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the checkpoints of a speedrun race: they are the game's own advancements from
+ * getting iron to killing the dragon, each runner's checkpoint is counted once at the time since the start,
+ * and times read like a stopwatch.
+ */
 class SpeedrunSplitsTest {
     private final UUID ada = UUID.randomUUID(), bram = UUID.randomUUID();
 

@@ -23,10 +23,17 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Raiding an opponent's storage in a match (E-44): in a manhunt, the hunter Hal sees the runner Rue use a chest, out
- * of the hunter's striking range; Rue goes on its way. With no model, Hal's own rule raids the chest of what is worth
- * taking and tells its own side; a model's LEAVE is followed and nothing taken; outside a match nothing Rue does at a
- * chest is anything to Hal; and a fellow hunter's chest is never its to raid.
+ * In plain terms: a GameTest: in a real test world, during a manhunt a hunter sees the runner use a chest
+ * from too far away to strike it, and the runner then moves off. The test checks the hunter, by its own rule,
+ * takes what is worth taking from the chest (leaving the dirt) and tells its side what it took; that it
+ * leaves the chest alone when a test stand-in adviser says to; that outside a match a chest it sees used
+ * means nothing to it; and that it never raids a fellow hunter's chest.
+ *
+ * Technical: Raiding an opponent's storage in a match (E-44): in a manhunt, the hunter Hal sees the runner
+ * Rue use a chest, out of the hunter's striking range; Rue goes on its way. With no model, Hal's own rule
+ * raids the chest of what is worth taking and tells its own side; a model's LEAVE is followed and nothing
+ * taken; outside a match nothing Rue does at a chest is anything to Hal; and a fellow hunter's chest is never
+ * its to raid.
  */
 public final class NativeRaidGameTests implements FabricGameTest {
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID nativeId) {

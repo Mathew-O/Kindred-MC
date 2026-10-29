@@ -21,7 +21,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native tilling action using the durable action ledger (E-13).
+ * In plain terms: an AI player turning dirt or grass into farmland with its own hoe, as a human does. It
+ * checks it may change that block, and afterwards that the farmland is there and nothing it carries changed
+ * except the hoe's wear.
+ *
+ * Technical: Checkpointed native tilling action using the durable action ledger (E-13).
  * Evaluates server edit policy, acquires block claims, tills dirt/grass into farmland
  * using an owned hoe, and verifies tool conservation and farmland creation.
  */
@@ -49,6 +53,7 @@ final class NativeTillAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Tilling the given block with the hoe in a hotbar slot, inside its assigned area. */
     NativeTillAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer,
@@ -56,6 +61,10 @@ final class NativeTillAction extends NativeRecordedAction {
         this(body, lease, worldId, setup, policy, claims, writer, dispatch, target, slot, false);
     }
 
+    /**
+     * As above; when roaming, in a field of its own outside any assigned area, under the server's rules for roaming
+     * players.
+     */
     NativeTillAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer,
@@ -76,6 +85,7 @@ final class NativeTillAction extends NativeRecordedAction {
         if (!roam && (s == null || s.area() == null)) throw new IllegalArgumentException("No work area is assigned.");
     }
 
+    /** Moves the tilling on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

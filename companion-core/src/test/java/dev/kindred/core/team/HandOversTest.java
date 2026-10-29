@@ -9,6 +9,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that sharing out a find becomes one team task per piece, that only the finder hands
+ * pieces over, and that the find is set aside from what the finder carries so the same items are never
+ * promised twice.
+ */
 class HandOversTest {
     private static final UUID WREN = new UUID(0, 1), MASON = new UUID(0, 2);
     private static final List<ShareOut.Grant> ELEVEN = List.of(new ShareOut.Grant(WREN, "Wren", Slot.BOOTS, Material.DIAMOND, 4),

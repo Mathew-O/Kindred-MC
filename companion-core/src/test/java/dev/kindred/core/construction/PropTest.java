@@ -8,7 +8,13 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Builds with blocks a hut never has, played through the planner as the runner plays them (M-05). */
+/**
+ * In plain terms: checks that when a player builds a log lying on its side with nothing to set it against, it
+ * puts in a temporary block to hold it and takes that away after, and does not when something is already
+ * there to set it against.
+ *
+ * Technical: Builds with blocks a hut never has, played through the planner as the runner plays them (M-05).
+ */
 class PropTest {
     private static final Set<String> HELD = Set.of("minecraft:cobblestone", "minecraft:oak_planks", "minecraft:oak_log",
             "minecraft:glass", "minecraft:stone_brick_stairs", "minecraft:lantern", "minecraft:dirt");

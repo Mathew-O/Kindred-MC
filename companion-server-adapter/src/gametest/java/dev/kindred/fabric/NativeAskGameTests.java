@@ -16,12 +16,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Asks in chat (E-20b): one who may already command a native player asks it to come, wait, stop or toss them
- * something, and the model's reply carries the ask. The reply is said first; then the ask goes in through the method the
- * matching `/aiplayer native` command calls, with the speaker's own authority, so it is checked as the command is. A
- * refusal there is said in the command's own words. Anyone else's ask refuses the reply, and the fixed reply is said.
- * The stub stands in for the model as in {@link NativeVoiceGameTests}; nothing is given to the player, and the one log
- * it tosses it gathers itself.
+ * In plain terms: a GameTest: in a real test world, someone chats to a player asking it to come, wait, stop
+ * or toss them something, with a test stand-in supplying the player's reply. The test checks that for its
+ * owner the player says its reply first and then does what was asked, under the same permission checks as the
+ * matching command (a refused ask is answered in the command's own words), while a bystander's ask gets a
+ * fixed reply and changes nothing.
+ *
+ * Technical: Asks in chat (E-20b): one who may already command a native player asks it to come, wait, stop or
+ * toss them something, and the model's reply carries the ask. The reply is said first; then the ask goes in
+ * through the method the matching `/aiplayer native` command calls, with the speaker's own authority, so it
+ * is checked as the command is. A refusal there is said in the command's own words. Anyone else's ask refuses
+ * the reply, and the fixed reply is said. The stub stands in for the model as in {@link
+ * NativeVoiceGameTests}; nothing is given to the player, and the one log it tosses it gathers itself.
  */
 public final class NativeAskGameTests implements FabricGameTest {
     private static CompletableFuture<Strategist.Line> says(String text, Strategist.Ask ask, String item) {

@@ -6,6 +6,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that a building plan turns as a whole, each block's facing included, and that a plan
+ * holds no air blocks, no two blocks in one place, and nothing too far apart.
+ */
 class BlueprintTest {
     @Test
     void placedTurnedItsBlocksAndTheirStatesGoRoundTogether() {

@@ -18,9 +18,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * What an AI player's body can see and hear of the people about it, for its social lane: the legacy companion body and
- * the native player's alike. {@code aiPlayer} names the AI player a body belongs to, so that another AI player is a
- * companion contact and not a person, whatever its body.
+ * In plain terms: what an AI player can see and hear of the people near it, for its chat and small talk: who
+ * is in plain sight, who can hear it speak, and what hurt it last. Another AI player counts as a fellow AI
+ * player, not as a person.
+ *
+ * Technical: What an AI player's body can see and hear of the people about it, for its social lane: the
+ * legacy companion body and the native player's alike. {@code aiPlayer} names the AI player a body belongs
+ * to, so that another AI player is a companion contact and not a person, whatever its body.
  */
 final class SocialPerception {
     static final double RANGE_SQUARED = 8 * 8;
@@ -32,6 +36,10 @@ final class SocialPerception {
         return entity instanceof CompanionEntity companion ? companion.companionId() : null;
     }
 
+    /**
+     * Whether the body can plainly see the other: alive, not hidden, within eight blocks and in its line of
+     * sight.
+     */
     static boolean visible(LivingEntity body, Entity other) {
         return other != body && other.isAlive() && !other.isSpectator() && !other.isInvisible()
                 && body.getWorld() == other.getWorld() && body.squaredDistanceTo(other) <= RANGE_SQUARED
@@ -50,6 +58,7 @@ final class SocialPerception {
         return true;
     }
 
+    /** The people an older-style body's talk reaches. */
     static List<ServerPlayerEntity> listeners(CompanionEntity body, SocialProfile profile) {
         return listeners(body, body.ownerId(), profile, SocialPerception::companionOf);
     }
@@ -70,6 +79,7 @@ final class SocialPerception {
         return player -> player.getUuid().equals(owner);
     }
 
+    /** The people and AI players an older-style body notices nearby. */
     static List<SocialSnapshot.Contact> noticeable(CompanionEntity body) {
         return noticeable(body, body.ownerId(), SocialPerception::companionOf);
     }
@@ -102,12 +112,14 @@ final class SocialPerception {
         return List.copyOf(contacts);
     }
 
+    /** What an older-style body sees around it now, for its chat and small talk. */
     static SocialSnapshot observe(CompanionEntity body, SocialProfile profile, boolean active,
                                   Predicate<CompanionEntity> socialCompanion) {
         return observe(body, body.ownerId(), profile, active, SocialPerception::companionOf,
                 entity -> entity instanceof CompanionEntity companion && socialCompanion.test(companion));
     }
 
+    /** What a body sees around it now, its owner named by id. */
     static SocialSnapshot observe(LivingEntity body, UUID owner, SocialProfile profile, boolean active,
                                   Function<Entity, UUID> aiPlayer, Predicate<Entity> socialCompanion) {
         return observe(body, ownedBy(owner), profile, active, aiPlayer, socialCompanion);

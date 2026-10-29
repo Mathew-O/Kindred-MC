@@ -6,6 +6,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the work area a player is given: its edges count correctly at negative coordinates,
+ * a matching block gives no permission to break it until a work area is set up, and a new work area may not
+ * quietly leave out the saved home.
+ */
 class SupportBatch03WorkSetupTest {
 
     @Test void negativeCoordinateChunkEdgesAndVolumeAreInclusive() {

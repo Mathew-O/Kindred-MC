@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the trick of saving yourself from a fall by pouring water: how much a fall hurts,
+ * when a fall is bad enough to try it, and the moment to pour.
+ */
 class FallClutchTest {
     @Test
     void aFallHurtsAPointABlockPastThree() {

@@ -9,6 +9,11 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
+/**
+ * In plain terms: checks where a player puts its base: on flat ground it is centred on the chosen spot, it
+ * moves off water, trees and steps to the nearest good ground, it needs head room over every square, and each
+ * new stage goes beside the last, never on ground it has not seen.
+ */
 class BaseSiteTest {
     /** Flat ground at y 63 everywhere in a square, open to the sky, with cells set apart. */
     private static final class Field implements BaseSite.Ground {

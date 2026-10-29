@@ -14,6 +14,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player judges what an item is worth to it: gear better than its own is put on,
+ * what its run is short of is carried, useful things are kept for later and junk is left, it goes further out
+ * of its way for richer finds, and with a full bag it gives up the least useful thing, never what its run
+ * needs.
+ */
 class WorthTest {
     /** Early on: stone tools, leather boots, a few logs and some bread. */
     private static final Holding EARLY = Holding.of(

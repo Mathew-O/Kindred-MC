@@ -7,10 +7,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Where a player puts a base (M-01c): the nearest flat, open ground to its anchor big enough for the stage, with a
- * ring of ground round it to walk and scaffold on, clear of its other bases. Ground is read from what the player could
- * see standing there: the top of each column, whether that top is ground to build on (not water, lava, a tree, a
- * container or another's build), and how many open cells are over it. Pure.
+ * In plain terms: where a player puts a base: the nearest flat, open ground to a chosen spot that is big
+ * enough, with room round it to walk and stand on, kept apart from its other bases. It judges only ground it
+ * has seen.
+ *
+ * Technical: Where a player puts a base (M-01c): the nearest flat, open ground to its anchor big enough for
+ * the stage, with a ring of ground round it to walk and scaffold on, clear of its other bases. Ground is read
+ * from what the player could see standing there: the top of each column, whether that top is ground to build
+ * on (not water, lava, a tree, a container or another's build), and how many open cells are over it. Pure.
  */
 public final class BaseSite {
     /**
@@ -18,6 +22,7 @@ public final class BaseSite {
      * and whether that top is water (a rail line is laid over it on a bridge, E-45e).
      */
     public record Column(int top, boolean firm, int open, boolean water) {
+        /** A column of ground that is not water. */
         public Column(int top, boolean firm, int open) {
             this(top, firm, open, false);
         }
@@ -35,6 +40,7 @@ public final class BaseSite {
             if (maxX < minX || maxZ < minZ) throw new IllegalArgumentException("An empty footprint");
         }
 
+        /** Whether this footprint shares any ground with the given area. */
         boolean overlaps(int x0, int z0, int x1, int z1) {
             return x0 <= maxX && x1 >= minX && z0 <= maxZ && z1 >= minZ;
         }

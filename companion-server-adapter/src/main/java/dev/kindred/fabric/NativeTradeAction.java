@@ -22,12 +22,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Trades with a villager as a player does (E-45b): its trading screen opened with a use click, its offers seen as the
- * screen shows them, the villager's prices; then what is worth trading by the value model (E-45a), as many times as it
- * plans, each taken from the result slot one at a time; and shut. Or, only looking, opened and shut, its offers seen. A
- * recorded action under the durable ledger: what the inventory lost and gained is exactly what the trades it made ask
- * and yield, item by item, and nothing else of the player's moves. An offer the villager is out of until it restocks
- * yields nothing and is left.
+ * In plain terms: an AI player trading with a villager as a human does: opening its trading screen, looking
+ * at the offers and prices, making the trades worth making, and closing it again; or just looking. Exactly
+ * what the trades ask and give changes in its inventory, and nothing else.
+ *
+ * Technical: Trades with a villager as a player does (E-45b): its trading screen opened with a use click, its
+ * offers seen as the screen shows them, the villager's prices; then what is worth trading by the value model
+ * (E-45a), as many times as it plans, each taken from the result slot one at a time; and shut. Or, only
+ * looking, opened and shut, its offers seen. A recorded action under the durable ledger: what the inventory
+ * lost and gained is exactly what the trades it made ask and yield, item by item, and nothing else of the
+ * player's moves. An offer the villager is out of until it restocks yields nothing and is left.
  */
 final class NativeTradeAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -49,6 +53,7 @@ final class NativeTradeAction extends NativeRecordedAction {
     private boolean halted, unknown, opened;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Trading with the given villager, or only looking at its offers. */
     NativeTradeAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, ClaimRegistry claims, ActionAdmission.Writer writer,
                       Consumer<Runnable> dispatch, UUID villager, boolean look, Supplier<Worth.Holding> holding) {
         this.body = body;
@@ -71,6 +76,7 @@ final class NativeTradeAction extends NativeRecordedAction {
         return trader().map(t -> body.entity().canInteractWithEntity(t, 0)).orElse(false);
     }
 
+    /** Moves the trading on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded trade cannot replay after cancellation/restart", true);

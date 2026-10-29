@@ -12,6 +12,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks where a player looks: at a threat in sight first, then at someone speaking to it or
+ * at its work, back for a moment at a player close by who looks at it, and otherwise around it, holding each
+ * way a few seconds, its head turning smoothly the short way round.
+ */
 class GazeTest {
     private static final Personality PLAIN = new Personality(50, 50, 50, 50, 50, 0);
     private static final UUID ZOMBIE = new UUID(0, 1), WREN = new UUID(0, 2), MASON = new UUID(0, 3);

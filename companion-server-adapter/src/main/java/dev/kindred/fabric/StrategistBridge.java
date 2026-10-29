@@ -16,17 +16,23 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Consults the optional model strategist for AI players with a standing goal (F-19b). Never per tick: only when
- * something changed that a player would stop and think about (the goal starting, a new stage, a death, and at most
- * every two minutes a spell with no progress) and otherwise at most every five minutes. Within the planning lane's
- * bounds (AI-05): one request in flight per player and one at a time in all, at most six a minute per player and
- * twelve in all, and daily token budgets per player and in all (50,000 and 100,000 unless the operator sets others),
- * reserved before each request for its largest possible size and settled to what it used; a failure with no usage
- * keeps its reservation; input read back from the provider's prompt cache counts for a tenth, as it is billed, since
- * the instructions and the Minecraft guide (F-19e) are the same on every request. Requests go out off the game thread; the advice comes back to it and is applied only if the
- * same goal is still running. Each player's memory in this world (notes, deaths, advice, cost) lives in its context
- * file. Off unless {@code KINDRED_STRATEGIST=on} and {@code ANTHROPIC_API_KEY} are set; the game plays the same
- * without it.
+ * In plain terms: asks the optional AI adviser how an AI player should go about its goal, now and then and
+ * never every moment: when something worth stopping to think about happens, and otherwise every few minutes.
+ * It keeps to set limits on how often and how much it asks, never holds up the game, and the game plays the
+ * same without it.
+ *
+ * Technical: Consults the optional model strategist for AI players with a standing goal (F-19b). Never per
+ * tick: only when something changed that a player would stop and think about (the goal starting, a new stage,
+ * a death, and at most every two minutes a spell with no progress) and otherwise at most every five minutes.
+ * Within the planning lane's bounds (AI-05): one request in flight per player and one at a time in all, at
+ * most six a minute per player and twelve in all, and daily token budgets per player and in all (50,000 and
+ * 100,000 unless the operator sets others), reserved before each request for its largest possible size and
+ * settled to what it used; a failure with no usage keeps its reservation; input read back from the provider's
+ * prompt cache counts for a tenth, as it is billed, since the instructions and the Minecraft guide (F-19e)
+ * are the same on every request. Requests go out off the game thread; the advice comes back to it and is
+ * applied only if the same goal is still running. Each player's memory in this world (notes, deaths, advice,
+ * cost) lives in its context file. Off unless {@code KINDRED_STRATEGIST=on} and {@code ANTHROPIC_API_KEY} are
+ * set; the game plays the same without it.
  */
 final class StrategistBridge implements AutoCloseable {
     static final int PLAYER_PER_MINUTE = 6, GLOBAL_PER_MINUTE = 12;
@@ -365,6 +371,7 @@ final class StrategistBridge implements AutoCloseable {
         return true;
     }
 
+    /** Closes the connection to the adviser and stops the memory's saving. */
     @Override
     public void close() {
         strategist.close();

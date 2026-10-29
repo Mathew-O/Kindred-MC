@@ -7,9 +7,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * What vanilla 1.21.1 says about the needs: how each crafted one is made, where each gathered one comes from, and what
- * each larger objective needs in hand before it begins. The local planner reads it to break an objective into the
- * gathering and crafting it takes ({@link NeedsAssessment}); the strategist's guide says the same in words. Pure data.
+ * In plain terms: what the game says about the things a player may need: how each crafted one is made, where
+ * each gathered one comes from, and what each larger task needs in hand before it starts, such as food and
+ * blocks for the Nether or a bow and arrows for the End.
+ *
+ * Technical: What vanilla 1.21.1 says about the needs: how each crafted one is made, where each gathered one
+ * comes from, and what each larger objective needs in hand before it begins. The local planner reads it to
+ * break an objective into the gathering and crafting it takes ({@link NeedsAssessment}); the strategist's
+ * guide says the same in words. Pure data.
  */
 public final class MinecraftGuide {
     /**

@@ -5,12 +5,17 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Preferences the goal's task choice keeps to, beyond the route itself (F-19c): habits learned in this world, each
- * kept with the note that explains it, and a short focus on what to do next. They come from the optional strategist
- * but are plain data here, from fixed sets; the planner and the goal read them and nothing else. They change the
- * order and amount of ordinary work only: no step is skipped that the route needs, no item is given, and the
- * survival checks (fights, shelter, healing) always come first. The playbook's mode (normal play or speedrun) and a
- * way it was advised to take choose between the ways of doing a part of the run (F-25c8).
+ * In plain terms: habits a player has learned in a world, such as carrying more food or digging in early at
+ * dusk, and a short focus on what to do next. They only change the order and amount of ordinary work: nothing
+ * the route needs is skipped, nothing is handed out, and staying alive always comes first.
+ *
+ * Technical: Preferences the goal's task choice keeps to, beyond the route itself (F-19c): habits learned in
+ * this world, each kept with the note that explains it, and a short focus on what to do next. They come from
+ * the optional strategist but are plain data here, from fixed sets; the planner and the goal read them and
+ * nothing else. They change the order and amount of ordinary work only: no step is skipped that the route
+ * needs, no item is given, and the survival checks (fights, shelter, healing) always come first. The
+ * playbook's mode (normal play or speedrun) and a way it was advised to take choose between the ways of doing
+ * a part of the run (F-25c8).
  */
 public record PlanPreferences(Set<Habit> habits, Focus focus, dev.kindred.core.guide.Playbook.Mode mode,
                               dev.kindred.core.guide.Playbook.Approach advised) {

@@ -7,12 +7,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * What a player does when something it stored is gone (E-43), by what it saw and the mode it plays, as the owner set
- * it out (2026-10-25): in co-op it asks its team before reckoning anything lost; in a match others play against it, it
- * reckons its storage raided and may move what is left; alone, it reckons the items lost. In every mode it never
- * accuses anyone it did not see take them, never retaliates (rapport never justifies revenge), and names whoever it saw
- * take them only to its own team, or with no team, to those it plays for. Speech is of what it counted and saw, nothing
- * more. Pure: the adapter says what a look found, who was seen at the container, and what is left there worth.
+ * In plain terms: what a player does when things it stored have gone missing. With a team it first asks
+ * whether a teammate took them; in a match it treats the chest as raided and may move what is left; alone it
+ * counts them lost. It never accuses anyone it did not see, never takes revenge, and tells only its own side
+ * who it saw.
+ *
+ * Technical: What a player does when something it stored is gone (E-43), by what it saw and the mode it
+ * plays, as the owner set it out (2026-10-25): in co-op it asks its team before reckoning anything lost; in a
+ * match others play against it, it reckons its storage raided and may move what is left; alone, it reckons
+ * the items lost. In every mode it never accuses anyone it did not see take them, never retaliates (rapport
+ * never justifies revenge), and names whoever it saw take them only to its own team, or with no team, to
+ * those it plays for. Speech is of what it counted and saw, nothing more. Pure: the adapter says what a look
+ * found, who was seen at the container, and what is left there worth.
  */
 public final class Missing {
     private Missing() { }

@@ -23,13 +23,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * The strategist's memory for each AI player in each world (F-19b): one small JSON file per player in the world's
- * {@code kindred/model-context} folder, holding its notes, its deaths, the advice it was given and what the
- * consultations cost. A note may carry a habit the player keeps in this world (F-19c); the habits are read from the
- * notes, so removing a note from the file, or the file, removes its habit too. It also keeps the follow-ups the strategist
- * queued (F-19e) until they are met or their task is behind the player. Each world keeps its own, so a player remembers this world's caves, not another's. Reads and
- * writes run on their own thread, never the game's; a write replaces the file whole, so a crash leaves the last
- * complete one. It holds only the player's own game events and the model's notes about them, nothing from people.
+ * In plain terms: what the optional adviser remembers about each AI player in each world: notes and the
+ * habits they teach, its deaths, the advice it was given, the follow-ups it asked for and what asking cost.
+ * Each world keeps its own, saved to small files without holding up the game, and it holds only the player's
+ * own game events, nothing from people.
+ *
+ * Technical: The strategist's memory for each AI player in each world (F-19b): one small JSON file per player
+ * in the world's {@code kindred/model-context} folder, holding its notes, its deaths, the advice it was given
+ * and what the consultations cost. A note may carry a habit the player keeps in this world (F-19c); the
+ * habits are read from the notes, so removing a note from the file, or the file, removes its habit too. It
+ * also keeps the follow-ups the strategist queued (F-19e) until they are met or their task is behind the
+ * player. Each world keeps its own, so a player remembers this world's caves, not another's. Reads and writes
+ * run on their own thread, never the game's; a write replaces the file whole, so a crash leaves the last
+ * complete one. It holds only the player's own game events and the model's notes about them, nothing from
+ * people.
  */
 final class ModelContextStore implements AutoCloseable {
     static final int MAX_NOTES = 20, MAX_DEATHS = 20, MAX_ADVICE = 20;
@@ -55,6 +62,7 @@ final class ModelContextStore implements AutoCloseable {
             return new TaskQueue(wants);
         }
 
+        /** Keeps these follow-ups in place of those kept before. */
         void queue(TaskQueue kept) {
             queue = new ArrayList<>(kept.advised().stream().map(w -> new QueuedRecord(w.need().name(), w.count(), w.objective().name(), w.why())).toList());
         }
@@ -72,6 +80,7 @@ final class ModelContextStore implements AutoCloseable {
             return habits;
         }
 
+        /** Keeps a note that teaches no habit. */
         void addNote(long tick, String text) {
             addNote(tick, text, PlanPreferences.Habit.NONE);
         }
@@ -141,11 +150,16 @@ final class ModelContextStore implements AutoCloseable {
             return changed;
         }
 
+        /**
+         * Records a death: when, where, what caused it and the stage of the run it came at; only the latest
+         * are kept.
+         */
         void addDeath(long tick, int x, int y, int z, String cause, String stage) {
             deaths.add(new DeathRecord(tick, x, y, z, cause, stage));
             while (deaths.size() > MAX_DEATHS) deaths.removeFirst();
         }
 
+        /** Records advice it was given: when, the overall approach and why; only the latest are kept. */
         void addAdvice(long tick, String stance, String reason) {
             advice.add(new AdviceRecord(tick, stance, reason));
             while (advice.size() > MAX_ADVICE) advice.removeFirst();
@@ -155,6 +169,7 @@ final class ModelContextStore implements AutoCloseable {
     /** A note, and the habit it teaches by name (absent in files from before habits). */
     record Note(long tick, String text, String habit) { }
 
+    /** The habit a note teaches, or none when its name is missing or unknown. */
     static PlanPreferences.Habit habitOf(Note note) {
         if (note.habit() == null) return PlanPreferences.Habit.NONE;
         try {
@@ -175,6 +190,7 @@ final class ModelContextStore implements AutoCloseable {
         return thread;
     });
 
+    /** The memory kept in the given world's mod folder. */
     ModelContextStore(Path worldKindredFolder) {
         this.folder = worldKindredFolder.resolve("model-context");
     }
@@ -220,6 +236,7 @@ final class ModelContextStore implements AutoCloseable {
         });
     }
 
+    /** Stops the background saving once the writes already asked for are done. */
     @Override
     public void close() {
         io.shutdown();

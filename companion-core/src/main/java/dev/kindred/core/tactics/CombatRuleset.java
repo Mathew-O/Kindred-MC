@@ -1,8 +1,12 @@
 package dev.kindred.core.tactics;
 
 /**
- * Vanilla Java Edition 1.21.1's melee rules as the combat controller relies on them (E-41a), each read from the game's
- * own code on the pinned stack, where no mod changes them:
+ * In plain terms: the game's own rules for close fighting: how a swing charges up, when a hit is strong,
+ * critical or sweeps, how long a creature is protected after being hit, how armour softens a blow, when a
+ * shield blocks and how far a player reaches.
+ *
+ * Technical: Vanilla Java Edition 1.21.1's melee rules as the combat controller relies on them (E-41a), each
+ * read from the game's own code on the pinned stack, where no mod changes them:
  * <ul>
  *   <li>how far a swing has charged, and when a hit is strong, critical, sweeping or knocks back further;</li>
  *   <li>how damage immunity after a hit works;</li>

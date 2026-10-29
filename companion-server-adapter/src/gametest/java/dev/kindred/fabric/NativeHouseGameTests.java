@@ -11,9 +11,15 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * A base's first stage (M-01b). A player builds a cabin from the blocks it holds: a plank floor, stone walls on log
- * corners, a gabled roof, open windows, a door, a bed, a crafting table, a furnace, two chests and a torch, every block
- * in its exact state. Then, from outside, it walks in through the door, opening it ahead and shutting it behind.
+ * In plain terms: a GameTest: in a real test world, a player holding all the blocks for each stage of a home
+ * is checked to build it exactly to plan: a furnished cabin, a two-floor house, and a manor whose enchanting
+ * table is ringed by enough bookshelves to work. After each build it walks in from outside, opening the door
+ * ahead of it and shutting it behind, and in the two larger homes climbs its own stairs to the floor above.
+ *
+ * Technical: A base's first stage (M-01b). A player builds a cabin from the blocks it holds: a plank floor,
+ * stone walls on log corners, a gabled roof, open windows, a door, a bed, a crafting table, a furnace, two
+ * chests and a torch, every block in its exact state. Then, from outside, it walks in through the door,
+ * opening it ahead and shutting it behind.
  */
 public final class NativeHouseGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "house", tickLimit = 20000)

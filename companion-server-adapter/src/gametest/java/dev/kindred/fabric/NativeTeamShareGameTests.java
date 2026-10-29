@@ -19,10 +19,17 @@ import net.minecraft.util.math.Box;
 import java.util.UUID;
 
 /**
- * A find shared out within a team and handed over (E-40a): eleven diamonds come to Mason, in full iron with a diamond
- * pickaxe; Wren, beside it, wears only an iron chestplate and leggings. Mason tells its team what it found and who gets
- * what, by what each lacks; makes each piece at the table; carries Wren's over and tosses them across; and Wren puts
- * them on. Every diamond is accounted for, and each promise is kept: what was said is what was made and given.
+ * In plain terms: a GameTest: in a real test world, one teammate in full iron suddenly holds eleven diamonds
+ * while the other wears only an iron chestplate and leggings. The test checks the first tells the team how it
+ * will share them out by what each lacks, crafts the pieces at a table, throws the boots and helmet over for
+ * the other to put on, and that every diamond is accounted for and every promised piece was made and handed
+ * over.
+ *
+ * Technical: A find shared out within a team and handed over (E-40a): eleven diamonds come to Mason, in full
+ * iron with a diamond pickaxe; Wren, beside it, wears only an iron chestplate and leggings. Mason tells its
+ * team what it found and who gets what, by what each lacks; makes each piece at the table; carries Wren's
+ * over and tosses them across; and Wren puts them on. Every diamond is accounted for, and each promise is
+ * kept: what was said is what was made and given.
  */
 public final class NativeTeamShareGameTests implements FabricGameTest {
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID nativeId) {

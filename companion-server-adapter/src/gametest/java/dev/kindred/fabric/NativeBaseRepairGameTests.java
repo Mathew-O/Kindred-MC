@@ -10,9 +10,14 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * What a player built it keeps whole (E-31a). Its cabin built as its base, a chest of it broken with nothing left of
- * it and its north wall blown out, the player sees its base out of place and builds what is missing back on the
- * cabin's own plan, with what it holds, what the blast dropped and a chest it crafts from planks.
+ * In plain terms: a GameTest: in a real test world, a player given all the materials for its cabin builds it
+ * as its base; the test then breaks a chest in it and blows a hole in its north wall, and checks the player
+ * notices and puts back every missing block, the chest included, exactly to the cabin's plan.
+ *
+ * Technical: What a player built it keeps whole (E-31a). Its cabin built as its base, a chest of it broken
+ * with nothing left of it and its north wall blown out, the player sees its base out of place and builds what
+ * is missing back on the cabin's own plan, with what it holds, what the blast dropped and a chest it crafts
+ * from planks.
  */
 public final class NativeBaseRepairGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "base-repair", tickLimit = 30000)

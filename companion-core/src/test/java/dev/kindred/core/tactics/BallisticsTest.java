@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the player's aim with a bow and with ender pearls: it works out the angle that lands
+ * a shot on the target, high targets such as crystals on their pillars included, and gives up when the target
+ * is out of reach.
+ */
 class BallisticsTest {
     private static double landing(Ballistics.Shot shot, double distance) {
         return Ballistics.heightAt(shot.pitch(), Ballistics.FULL_DRAW, distance).orElseThrow()[0];

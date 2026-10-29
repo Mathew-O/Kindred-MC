@@ -18,9 +18,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Feeds an animal the food it breeds on from an owned hotbar slot, as a player's use click does (M-01a): exactly one of
- * the food is spent under the durable ledger and the animal is then in love. An animal not ready to breed (a young one,
- * one in love already or still cooling down) is never fed; nothing else of the player's is touched.
+ * In plain terms: an AI player feeding an animal the food it breeds on, from its own hotbar, as a human does.
+ * Exactly one piece of food is used and the animal is then ready to breed; an animal that is young, already
+ * in love or still resting is not fed.
+ *
+ * Technical: Feeds an animal the food it breeds on from an owned hotbar slot, as a player's use click does
+ * (M-01a): exactly one of the food is spent under the durable ledger and the animal is then in love. An
+ * animal not ready to breed (a young one, one in love already or still cooling down) is never fed; nothing
+ * else of the player's is touched.
  */
 final class NativeFeedAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -38,6 +43,7 @@ final class NativeFeedAction extends NativeRecordedAction {
     private int waited;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Feeding the given animal from a hotbar slot. */
     NativeFeedAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                      int slot, UUID target) {
         this.body = body;
@@ -58,6 +64,7 @@ final class NativeFeedAction extends NativeRecordedAction {
         return animal().map(AnimalEntity::isInLove).orElse(false);
     }
 
+    /** Moves the feeding on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded feeding cannot replay after cancellation/restart", true);

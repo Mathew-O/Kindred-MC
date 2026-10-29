@@ -6,9 +6,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * The items a build takes (E-08a): one a block, from the item it is placed from, less what the world already holds in
- * place, and what the player holds against it. Blocks whose placement is not modelled yet are listed apart, not
- * counted. Pure.
+ * In plain terms: the items a build still takes, less what is already in place, and how many the player is
+ * short of from what it holds. Blocks it cannot yet place are listed apart.
+ *
+ * Technical: The items a build takes (E-08a): one a block, from the item it is placed from, less what the
+ * world already holds in place, and what the player holds against it. Blocks whose placement is not modelled
+ * yet are listed apart, not counted. Pure.
  */
 public record BillOfMaterials(Map<String, Integer> needed, Map<String, Integer> missing, List<String> unsupported) {
     public BillOfMaterials {
@@ -38,6 +41,7 @@ public record BillOfMaterials(Map<String, Integer> needed, Map<String, Integer> 
         return new BillOfMaterials(needed, missing, List.copyOf(unsupported));
     }
 
+    /** Whether the player holds everything the build still takes. */
     public boolean complete() {
         return missing.isEmpty();
     }

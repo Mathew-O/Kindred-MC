@@ -17,7 +17,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native attack action using the durable action ledger.
+ * In plain terms: an AI player striking one creature with a real attack, as a human does: only when the
+ * target is within reach and in sight, and once its swing has recharged. Afterwards it checks that nothing it
+ * carries changed beyond a little wear on the weapon.
+ *
+ * Technical: Checkpointed native attack action using the durable action ledger.
  * Admits durably before strike, verifies reach and line of sight, executes authentic vanilla attack,
  * and verifies complete 100% item conservation (at most 2 durability loss on the attack weapon, zero slot tampering).
  */
@@ -36,6 +40,7 @@ final class NativeAttackAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** An attack on the given creature, with the weapon in the given hotbar slot or whatever is in hand. */
     NativeAttackAction(SkillBody operation, NativePlayerBody body, Supplier<ActionLease> lease,
                        ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                        UUID targetId, Integer slot) {
@@ -48,6 +53,7 @@ final class NativeAttackAction extends NativeRecordedAction {
         this.slot = slot;
     }
 
+    /** Moves the attack on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

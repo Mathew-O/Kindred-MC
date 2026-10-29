@@ -16,10 +16,16 @@ import net.minecraft.util.math.BlockPos;
 import java.util.UUID;
 
 /**
- * One portal for the team (E-40a): two players set the Nether-portal goal together. Mason, with a diamond pickaxe and
- * the frame's obsidian, takes the portal and says so; Wren, with iron, says it will get iron, food and wood, and with
- * its iron in and stocked for the run it waits for the team's portal rather than building one of its own. Mason builds
- * and lights it; Wren takes it as its own, and says the team's portal is lit, claiming none of it.
+ * In plain terms: a GameTest: in a real test world, two players take on the Nether portal goal together. The
+ * one with the diamond pickaxe and obsidian says it will build the portal and the other says it will get
+ * iron, food and wood; the test checks the second waits for the team's portal instead of building its own,
+ * the first builds and lights it, and each reports truthfully, the second claiming none of the building.
+ *
+ * Technical: One portal for the team (E-40a): two players set the Nether-portal goal together. Mason, with a
+ * diamond pickaxe and the frame's obsidian, takes the portal and says so; Wren, with iron, says it will get
+ * iron, food and wood, and with its iron in and stocked for the run it waits for the team's portal rather
+ * than building one of its own. Mason builds and lights it; Wren takes it as its own, and says the team's
+ * portal is lit, claiming none of it.
  */
 public final class NativeTeamPortalGameTests implements FabricGameTest {
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID nativeId) {

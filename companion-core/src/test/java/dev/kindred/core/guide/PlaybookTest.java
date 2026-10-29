@@ -11,6 +11,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player picks a way of doing each part of the run: in normal play the ordinary
+ * way unless a faster one is close at hand, in a speedrun the fastest, a way that has failed twice is set
+ * aside for the next, and an adviser's suggestion is taken only when it can be done and is not far worse.
+ */
 class PlaybookTest {
     private static Optional<Approach> choose(Part part, List<Option> options, Mode mode) {
         return Playbook.choose(part, options, mode, Optional.empty());

@@ -23,10 +23,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A ranch in progress for one player (M-01a): the pen's fences and gate crafted from the player's own wood, the pen
- * built through the build runner, then the {@link Ranch} plan's steps turned into the runtime's own skills: walk with the
- * food in hand for the animals to follow, open and shut the gate, feed the pair. What stands and what it sees is read
- * from the world each pass.
+ * In plain terms: an AI player starting a small ranch: crafting fence and gate from its own wood, building
+ * the pen, then leading a pair of animals in with food in hand, shutting the gate and feeding them so they
+ * breed. It looks at the pen and the animals in the world each time to see what is still to do.
+ *
+ * Technical: A ranch in progress for one player (M-01a): the pen's fences and gate crafted from the player's
+ * own wood, the pen built through the build runner, then the {@link Ranch} plan's steps turned into the
+ * runtime's own skills: walk with the food in hand for the animals to follow, open and shut the gate, feed
+ * the pair. What stands and what it sees is read from the world each pass.
  */
 final class RanchRunner {
     final Ranch ranch;
@@ -49,6 +53,7 @@ final class RanchRunner {
     private int openFailures;
     private String ranched;
 
+    /** A ranch for the given kind of animal, its pen made of the given wood at the given spot. */
     RanchRunner(BlockPos origin, Ranch.Kind kind, String wood) {
         this(origin, kind, wood, null, null);
     }
@@ -90,6 +95,7 @@ final class RanchRunner {
         return wood.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
     }
 
+    /** The next thing to do for the ranch, or nothing once it is done. */
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body, PortalRunCampaign campaign) {
         if (done) return Optional.empty();
         // Its animals in: the doorway shut behind them, from the blocks it dug out of it.

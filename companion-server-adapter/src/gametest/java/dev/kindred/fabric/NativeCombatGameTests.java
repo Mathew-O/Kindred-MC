@@ -16,7 +16,14 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * Acceptance GameTests for Defensive Combat Execution, Entity Retreat, and Night Shelter (E-07c):
+ * In plain terms: a GameTest: in a real test world, a player's basic fighting moves are checked. A sword hit
+ * damages a zombie and wears the sword by exactly one, nothing else in its inventory changing; a raised
+ * shield takes a hit from the front without harm and is lowered afterwards; it runs from a lit creeper by
+ * itself; at night with a zombie near it puts down a cobblestone barricade, using exactly one block; and it
+ * fights with whichever hotbar weapon deals the most, judging the zombie by what it has seen rather than its
+ * hidden health.
+ *
+ * Technical: Acceptance GameTests for Defensive Combat Execution, Entity Retreat, and Night Shelter (E-07c):
  * 1. Native attack with iron sword damages target, wears weapon durability, and conserves inventory.
  * 2. Native block raises shield in offhand, absorbs frontal mob damage, and lowers shield on completion.
  * 3. Ignited creeper triggers autonomous emergency retreat fleeing the blast radius.

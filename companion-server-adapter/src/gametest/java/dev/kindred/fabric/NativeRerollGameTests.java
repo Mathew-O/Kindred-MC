@@ -16,13 +16,19 @@ import net.minecraft.village.VillagerProfession;
 import net.minecraft.village.VillagerType;
 
 /**
- * A librarian of its own (E-45c): a villager with no job and Hal in one small pen, walled so that the villager stays
- * near, Hal holding a lectern. Hal puts the lectern down beside the villager; the villager takes it up, by vanilla's
- * own rules, and is a librarian; Hal looks at its offers, never trading; not worth keeping, it breaks the lectern,
- * takes it back, and puts it down again once the villager has let the job go, which rerolls its offers. What the
- * librarian offers is vanilla's draw, so the fixture asks for a reroll seen (two looks at different offers) or a
- * librarian kept at the first look; then for its own end, kept or given up, and what that leaves; and that no trade was
- * ever made.
+ * In plain terms: a GameTest: in a real test world, a player shut in a small pen with a jobless villager puts
+ * down a lectern so the villager becomes a librarian, looks at its offers without trading and, if they are
+ * not worth keeping, breaks and replaces the lectern to get new ones. The test checks the player either saw
+ * the offers change or kept the first librarian, finished by its own rule (keeping the librarian, or taking
+ * its lectern back and saying why), and never traded.
+ *
+ * Technical: A librarian of its own (E-45c): a villager with no job and Hal in one small pen, walled so that
+ * the villager stays near, Hal holding a lectern. Hal puts the lectern down beside the villager; the villager
+ * takes it up, by vanilla's own rules, and is a librarian; Hal looks at its offers, never trading; not worth
+ * keeping, it breaks the lectern, takes it back, and puts it down again once the villager has let the job go,
+ * which rerolls its offers. What the librarian offers is vanilla's draw, so the fixture asks for a reroll
+ * seen (two looks at different offers) or a librarian kept at the first look; then for its own end, kept or
+ * given up, and what that leaves; and that no trade was ever made.
  */
 public final class NativeRerollGameTests implements FabricGameTest {
     private static final BlockPos VILLAGER = new BlockPos(8, 2, 5), HAL = new BlockPos(7, 2, 6);

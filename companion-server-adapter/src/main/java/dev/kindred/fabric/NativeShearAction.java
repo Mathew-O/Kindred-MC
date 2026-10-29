@@ -19,10 +19,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Shears a sheep with the shears in an owned hotbar slot, as a player's use click does (E-45d): the sheep drops its
- * wool beside it, to be picked up as any drop is, and the shears wear by one, under the durable ledger. A sheep without
- * its wool, or a lamb, is never sheared; nothing of the player's is spent but the shears' wear (and the shears, worn
- * out on the click).
+ * In plain terms: an AI player shearing a sheep with its own shears, as a human does: the wool drops beside
+ * the sheep to be picked up, and the shears wear a little. A sheep already shorn, or a lamb, is never
+ * sheared.
+ *
+ * Technical: Shears a sheep with the shears in an owned hotbar slot, as a player's use click does (E-45d):
+ * the sheep drops its wool beside it, to be picked up as any drop is, and the shears wear by one, under the
+ * durable ledger. A sheep without its wool, or a lamb, is never sheared; nothing of the player's is spent but
+ * the shears' wear (and the shears, worn out on the click).
  */
 final class NativeShearAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -39,6 +43,7 @@ final class NativeShearAction extends NativeRecordedAction {
     private int waited;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Shearing the given sheep with the shears in a hotbar slot. */
     NativeShearAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       int slot, UUID target) {
         this.body = body;
@@ -59,6 +64,7 @@ final class NativeShearAction extends NativeRecordedAction {
         return sheep().map(SheepEntity::isSheared).orElse(false);
     }
 
+    /** Moves the shearing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded shearing cannot replay after cancellation/restart", true);

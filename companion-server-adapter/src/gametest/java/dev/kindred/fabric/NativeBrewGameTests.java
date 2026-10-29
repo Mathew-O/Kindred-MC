@@ -13,10 +13,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Brewing (E-16b): a player holding three glass bottles, nether wart, magma cream, blaze powder and a brewing stand,
- * by a pool, fills its bottles at the water, puts its stand down beside it, makes the water awkward with the wart (the
- * stand fuelled with the powder), waits the brew out, takes the awkward potions, brews them into fire resistance with
- * the cream and takes those: three potions of fire resistance, the wart, the cream and the powder spent, and it says so.
+ * In plain terms: a GameTest: in a real test world, a player beside a small pool with empty bottles, nether
+ * wart, magma cream, blaze powder and a brewing stand is checked to fill its bottles with water, put the
+ * stand down and brew three potions of fire resistance, using up exactly those ingredients and saying it did
+ * so.
+ *
+ * Technical: Brewing (E-16b): a player holding three glass bottles, nether wart, magma cream, blaze powder
+ * and a brewing stand, by a pool, fills its bottles at the water, puts its stand down beside it, makes the
+ * water awkward with the wart (the stand fuelled with the powder), waits the brew out, takes the awkward
+ * potions, brews them into fire resistance with the cream and takes those: three potions of fire resistance,
+ * the wart, the cream and the powder spent, and it says so.
  */
 public final class NativeBrewGameTests implements FabricGameTest {
     private static int count(net.minecraft.inventory.Inventory inventory, Item item) {

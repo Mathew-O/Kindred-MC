@@ -15,11 +15,17 @@ import net.minecraft.village.VillagerProfession;
 import net.minecraft.village.VillagerType;
 
 /**
- * A minecart pushed by a player along its rails (E-45e): Hal walks into an empty cart two blocks behind a villager
- * standing on the line; rolling, the cart takes the villager up and runs on eleven blocks into a cell one block wide,
- * stopping at the rail's end against the bed. With a lectern put across the cell's front and the cart broken, the
- * villager is set down inside the cell. The villager's AI is off so that it stands where it was put; the lectern and
- * the cart's breaking are the fixture's here (bringing a villager home whole is {@link NativeBringGameTests}).
+ * In plain terms: a GameTest: in a real test world, a player is told to push an empty minecart along a rail
+ * line. The cart is checked to pick up a villager standing on the line and stop inside a one-block-wide cell
+ * at the end; once the test itself blocks the cell's front with a lectern and breaks the cart, the villager
+ * is checked to be left inside the cell.
+ *
+ * Technical: A minecart pushed by a player along its rails (E-45e): Hal walks into an empty cart two blocks
+ * behind a villager standing on the line; rolling, the cart takes the villager up and runs on eleven blocks
+ * into a cell one block wide, stopping at the rail's end against the bed. With a lectern put across the
+ * cell's front and the cart broken, the villager is set down inside the cell. The villager's AI is off so
+ * that it stands where it was put; the lectern and the cart's breaking are the fixture's here (bringing a
+ * villager home whole is {@link NativeBringGameTests}).
  */
 public final class NativeCartGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "cartPush", tickLimit = 3000)

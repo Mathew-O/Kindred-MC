@@ -13,6 +13,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player names its best gear: only the best piece of each kind that is worth a
+ * name, weapons first, nothing named twice and only as far as its experience levels go; its own names come
+ * from what the piece is and how it is enchanted, and a name suggested by an optional adviser must pass the
+ * same rules.
+ */
 class KitNamesTest {
     private static final UUID WREN = new UUID(7, 11);
     private static final Personality NEUTRAL = Personality.defaults();

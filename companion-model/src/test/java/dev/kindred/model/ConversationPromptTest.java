@@ -8,6 +8,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the message a player sends to an optional AI adviser when someone talks to it: the
+ * fixed instructions are the same every time and keep it clean, grounded and out of orders, the speaker's
+ * words are quoted as plain text after what the player knows, and coordinates and the list of requests appear
+ * only for someone who may command it.
+ */
 class ConversationPromptTest {
     private static ConversationAudience.Situation situation(ConversationAudience.Relation relation, boolean controls, String doing) {
         return new ConversationAudience.Situation("Echo", "Steve", relation, controls, 20, 18, "", "the Overworld", "day", "clear",

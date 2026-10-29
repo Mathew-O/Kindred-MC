@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
+/**
+ * In plain terms: checks what a player puts before its building work: at night it sleeps in its own bed
+ * first, a hungry player short of food gets more and keeps on until it has enough to last, and otherwise the
+ * build goes on.
+ */
 class LifeFirstTest {
     private static LifeFirst.State state(int hunger, int carried, boolean night, boolean bed, boolean getting, boolean sought) {
         return new LifeFirst.State(hunger, carried, night, bed, getting, sought);

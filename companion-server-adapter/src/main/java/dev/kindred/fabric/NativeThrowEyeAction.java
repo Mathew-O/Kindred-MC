@@ -22,11 +22,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Throws one owned eye of ender and watches it fly, as a player does to find a stronghold: the eye rises and drifts
- * twelve blocks along the way to the stronghold, then drops or shatters. What is reported is only what the player saw:
- * where it threw from and the heading of the eye's flight. Exactly one eye is spent under the durable ledger; whether
- * it drops to be picked up again is vanilla's chance. An eye that finds no stronghold to fly to is kept, and the step
- * says so.
+ * In plain terms: an AI player throwing one of its own eyes of ender and watching which way it flies, as a
+ * human does to find a stronghold. It reports only what it saw: where it threw from and the eye's heading.
+ * Whether the eye drops back to be picked up is the game's own chance.
+ *
+ * Technical: Throws one owned eye of ender and watches it fly, as a player does to find a stronghold: the eye
+ * rises and drifts twelve blocks along the way to the stronghold, then drops or shatters. What is reported is
+ * only what the player saw: where it threw from and the heading of the eye's flight. Exactly one eye is spent
+ * under the durable ledger; whether it drops to be picked up again is vanilla's chance. An eye that finds no
+ * stronghold to fly to is kept, and the step says so.
  */
 final class NativeThrowEyeAction extends NativeRecordedAction {
     /** Ticks to watch: an eye flies for eighty, then drops or breaks. */
@@ -51,6 +55,7 @@ final class NativeThrowEyeAction extends NativeRecordedAction {
     private boolean halted, unknown, thrown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Throwing the eye in a hotbar slot, facing the given way. */
     NativeThrowEyeAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer,
                          Consumer<Runnable> dispatch, int slot, float yaw) {
         this.body = body;
@@ -62,6 +67,7 @@ final class NativeThrowEyeAction extends NativeRecordedAction {
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("A throw needs an owned hotbar slot 0..8");
     }
 
+    /** Moves the throw on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded throw cannot replay after cancellation/restart", true);

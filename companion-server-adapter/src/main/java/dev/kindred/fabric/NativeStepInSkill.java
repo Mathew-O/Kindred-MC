@@ -11,10 +11,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * The last step into a portal (E-39a): from the frame ring of an End portal, or beside one, straight into the portal's
- * own block, as a player steps or jumps in. A walk's route never goes there, since an End portal's blocks have no
- * floor under them; this step goes nowhere else: it is refused unless the target is a portal block a few blocks off,
- * and it ends when the player has gone through or after a few seconds.
+ * In plain terms: an AI player taking the last step into a portal: from beside it straight into the portal
+ * itself, walking or hopping as a human does. It ends once the player has gone through, or gives up after a
+ * few seconds.
+ *
+ * Technical: The last step into a portal (E-39a): from the frame ring of an End portal, or beside one,
+ * straight into the portal's own block, as a player steps or jumps in. A walk's route never goes there, since
+ * an End portal's blocks have no floor under them; this step goes nowhere else: it is refused unless the
+ * target is a portal block a few blocks off, and it ends when the player has gone through or after a few
+ * seconds.
  */
 final class NativeStepInSkill implements SkillBody {
     private static final int MAX_TICKS = 100;
@@ -25,6 +30,7 @@ final class NativeStepInSkill implements SkillBody {
     private final String world;
     private int ticks;
 
+    /** A step into the portal block at the target, refused unless it is a portal within a step's reach. */
     NativeStepInSkill(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos target) {
         this.body = body;
         this.lease = lease;
@@ -36,6 +42,7 @@ final class NativeStepInSkill implements SkillBody {
         this.world = player.getWorld().getRegistryKey().getValue().toString();
     }
 
+    /** Moves the step on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         var player = body.entity();

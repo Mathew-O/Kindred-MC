@@ -9,6 +9,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that creating a player is safe to repeat: asking again, even after a restart,
+ * returns the same player and makes no new body, and a conflicting request or out-of-date receipt cannot
+ * rewrite who the player is.
+ */
 class SupportBatch02NativeIdentityTest {
     @TempDir Path dir;
     @Test void operationRetryAndSaveReceiptSurviveReopenWithoutNewBody() {

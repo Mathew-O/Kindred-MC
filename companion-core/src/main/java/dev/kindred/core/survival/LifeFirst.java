@@ -3,9 +3,12 @@ package dev.kindred.core.survival;
 import java.util.Optional;
 
 /**
- * One weighted list for what a player does (F-25c9, the owner's note of 2026-10-23): what keeps it alive comes first,
- * an ongoing build near the bottom. Pure: the adapter says what the player knows of itself, and gives each need its
- * weight here against the build's.
+ * In plain terms: what keeps the player alive comes before its building: first sleep in its own bed at night,
+ * then getting enough food to last when it is hungry.
+ *
+ * Technical: One weighted list for what a player does (F-25c9, the owner's note of 2026-10-23): what keeps it
+ * alive comes first, an ongoing build near the bottom. Pure: the adapter says what the player knows of
+ * itself, and gives each need its weight here against the build's.
  * <ul>
  *   <li><b>Sleep at night</b> in a bed of its own, which sets its spawn there.</li>
  *   <li><b>Food enough to last</b> when hunger is low: it gets food until a full bar and a reserve are in its body and
@@ -46,6 +49,10 @@ public final class LifeFirst {
 
     private LifeFirst() { }
 
+    /**
+     * What comes first for the player right now: sleep at night, food when it is hungry, or nothing ahead of
+     * the build.
+     */
     public static Decision next(State s) {
         if (s.sleepTime() && s.ownBed()) return new Decision(Optional.of(Need.SLEEP), SLEEP, "Night: to its own bed, to sleep and set its spawn there");
         if (!s.foodSought() && (s.gettingFood() || s.hunger() <= LOW_HUNGER) && !enough(s.hunger(), s.foodCarried())) {

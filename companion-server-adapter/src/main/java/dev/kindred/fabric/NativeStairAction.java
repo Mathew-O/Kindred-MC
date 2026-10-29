@@ -29,11 +29,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A flight of stairs built up as the player walks (F-10h), the way a player builds one: it jumps on the move, and once
- * its feet have risen past the step it sets an owned block in the cell ahead under where it will land, then lands on
- * it and jumps again, step after step, never stopping against a block's side. Each block goes against a face of
- * something solid under, beside or ahead of it. In the open a filler block goes in first, from the ground, against the
- * block the player stands on, so a step that fails in the air drops it no more than a block.
+ * In plain terms: an AI player building a staircase up as it walks, as a human does: jumping on the move and
+ * placing one of its own blocks under where it will land, step after step. Each block uses exactly one item
+ * and is checked against the server's building rules.
+ *
+ * Technical: A flight of stairs built up as the player walks (F-10h), the way a player builds one: it jumps
+ * on the move, and once its feet have risen past the step it sets an owned block in the cell ahead under
+ * where it will land, then lands on it and jumps again, step after step, never stopping against a block's
+ * side. Each block goes against a face of something solid under, beside or ahead of it. In the open a filler
+ * block goes in first, from the ground, against the block the player stands on, so a step that fails in the
+ * air drops it no more than a block.
  * <p>
  * Every block is its own durable record under the edit policy and a claim, as for {@link NativePlaceAction}, and
  * exactly one block item is spent on it. The next step's records are prepared while the player is in the air, so it
@@ -93,6 +98,7 @@ final class NativeStairAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** A staircase from the given start, going the given ways, built with the block in a hotbar slot. */
     NativeStairAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                       Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                       Consumer<Runnable> dispatch, BlockPos start, List<Direction> directions, int slot) {
@@ -133,6 +139,7 @@ final class NativeStairAction extends NativeRecordedAction {
         return null;
     }
 
+    /** Moves the stair building on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded staircase cannot replay after cancellation/restart", true);

@@ -13,6 +13,12 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player places a build block by block: the nearest block first, from a spot it
+ * can walk to and reach, stairs, slabs, logs and furnaces turned the right way, scaffolding put up to reach
+ * high blocks and taken down after, what is in the way cleared without breaking anything not its to break,
+ * and never shutting itself in.
+ */
 class ConstructionPlannerTest {
     private static final Set<String> ALL = Set.of("minecraft:cobblestone", "minecraft:oak_planks", "minecraft:oak_stairs",
             "minecraft:oak_slab", "minecraft:oak_log", "minecraft:furnace");
@@ -192,6 +198,10 @@ class ConstructionPlannerTest {
         for (var b : blocks) assertNotEquals(b.at(), step.stance(), "never where a block is to go");
     }
 
+    /**
+     * Counts how much is built and which materials are still needed, and lists the blocks it cannot place
+     * yet.
+     */
     @Test
     void progressAndTheBillCountWhatIsLeftAndListWhatItCannotPlaceYet() {
         var cells = BuildTestSites.flat();

@@ -8,6 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks how a player upgrades its diamond gear to netherite: its sword first, an ingot made
+ * from scrap and gold and the scrap from ancient debris, and a spare upgrade template copied before the last
+ * is used, unless its diamonds are needed for its run.
+ */
 class NetheriteTest {
     private static final Map<Integer, String> PIECES = Map.of(3, "minecraft:diamond_chestplate", 0, "minecraft:diamond_sword", 1, "minecraft:diamond_pickaxe");
 

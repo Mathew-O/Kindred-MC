@@ -18,10 +18,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A staircase built up as the player walks (F-10h). On a course in the air with no way up but its own blocks, a route
- * to a ledge ten blocks up and ten on is climbed by a flight of stairs: each block set in the air under the feet,
- * against the wall alongside, and landed on in the same jump. Every block is its own verified record, the flight is
- * one task, and the player never stands still between the first step and the last.
+ * In plain terms: a GameTest: in a real test world, a player on a platform high in the air, with only
+ * cobblestone to reach a ledge, is checked to climb by building a staircase under its feet as it jumps,
+ * without stopping: beside a wall ten blocks high in one test, and in the open, with a support block under
+ * each step, in the other. Every block it used must be one it placed and recorded, and the whole climb counts
+ * as one task.
+ *
+ * Technical: A staircase built up as the player walks (F-10h). On a course in the air with no way up but its
+ * own blocks, a route to a ledge ten blocks up and ten on is climbed by a flight of stairs: each block set in
+ * the air under the feet, against the wall alongside, and landed on in the same jump. Every block is its own
+ * verified record, the flight is one task, and the player never stands still between the first step and the
+ * last.
  */
 public final class NativeStairGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "stairWall", tickLimit = 1400)
@@ -38,6 +45,10 @@ public final class NativeStairGameTests implements FabricGameTest {
         climb(context, false, 6);
     }
 
+    /**
+     * Sets up the pad, the ledge and (if asked) the wall, sends the player up, and checks what it built and
+     * how steadily it climbed.
+     */
     private static void climb(TestContext context, boolean wall, int height) {
         Set<UUID> flights = ConcurrentHashMap.newKeySet();
         AtomicInteger verified = new AtomicInteger();

@@ -13,7 +13,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Native GameTests for survival eating and defense behaviors (E-07).
+ * In plain terms: a GameTest: in a real test world, the older mob-style body is checked to eat a piece of
+ * bread when it is hurt and to leave its food alone at full health. A third check, on the rules alone,
+ * confirms the survival rules never choose to fight the Wither or another boss, even for the most combative
+ * personality.
+ *
+ * Technical: Native GameTests for survival eating and defense behaviors (E-07).
  */
 public final class SurvivalGameTests implements FabricGameTest {
 

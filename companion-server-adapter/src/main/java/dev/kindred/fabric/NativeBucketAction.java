@@ -27,8 +27,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Recorded bucket use: fill an empty bucket from a water or lava source, or pour a water bucket into a
- * position. Vanilla bucket use decides the outcome from where the player looks; this action only aims.
+ * In plain terms: an AI player using a bucket as a human does: filling an empty one from water or lava, or
+ * pouring water or lava out at a spot. The game decides what happens from where the player looks; this only
+ * aims.
+ *
+ * Technical: Recorded bucket use: fill an empty bucket from a water or lava source, or pour a water bucket
+ * into a position. Vanilla bucket use decides the outcome from where the player looks; this action only aims.
  */
 final class NativeBucketAction extends NativeRecordedAction {
     enum Mode { FILL, POUR, POUR_LAVA }
@@ -55,6 +59,10 @@ final class NativeBucketAction extends NativeRecordedAction {
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
+    /**
+     * A bucket use at the given spot (fill, pour water or pour lava), refused unless the right bucket is at
+     * hand and the spot can be reached.
+     */
     NativeBucketAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                        ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, Mode mode) {
         this.body = body; this.lease = lease; this.policy = policy; this.claims = claims; this.writer = writer;
@@ -149,6 +157,7 @@ final class NativeBucketAction extends NativeRecordedAction {
 
     private Step waiting() { return Step.running(Map.of("durableAction", phase(), "used", String.valueOf(used)), false); }
 
+    /** Moves the bucket use on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("Recorded bucket use never replays", true);

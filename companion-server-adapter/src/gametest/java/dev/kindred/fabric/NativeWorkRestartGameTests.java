@@ -16,8 +16,14 @@ import net.minecraft.util.math.BlockPos;
 import java.util.TreeMap;
 
 /**
- * Work kept across a restart (F-13): what an operator set a player to is saved with it, and taken up again from the
- * world when the server's runtime starts again and the player reconnects. Nothing is placed, sown or spent twice.
+ * In plain terms: a GameTest: in a real test world, a player's work is checked to survive a server restart. A
+ * hut build, and in the second test a farm field, is interrupted partway, the player is stopped and the
+ * server's runtime started again on the same world; when the player reconnects it takes the work up again by
+ * itself but stays stopped until resumed, then finishes it with nothing placed, sown or spent twice.
+ *
+ * Technical: Work kept across a restart (F-13): what an operator set a player to is saved with it, and taken
+ * up again from the world when the server's runtime starts again and the player reconnects. Nothing is
+ * placed, sown or spent twice.
  */
 public final class NativeWorkRestartGameTests implements FabricGameTest {
     /** A check retried each tick until it passes or the test runs out, its first failure kept as the message. */

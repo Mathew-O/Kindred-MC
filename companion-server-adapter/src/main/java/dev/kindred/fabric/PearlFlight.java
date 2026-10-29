@@ -16,10 +16,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Where an ender pearl thrown from here lands, followed tick by tick through the real blocks as vanilla 1.21.1 flies it
- * (E-39f): it moves, is slowed by drag (0.99, 0.8 in water) and pulled down by 0.03; the first block in its way stops
- * it, and vanilla puts the thrower where the pearl was when it struck, from where the player falls to the ground.
- * Throws are chosen so that nearly every throw vanilla's spread makes of them lands on the same ground.
+ * In plain terms: works out where a thrown ender pearl would land, following its flight through the real
+ * blocks the way the game does. It is used to pick throws that bring an AI player to the spot it wants nearly
+ * every time, even with the game's small random wobble.
+ *
+ * Technical: Where an ender pearl thrown from here lands, followed tick by tick through the real blocks as
+ * vanilla 1.21.1 flies it (E-39f): it moves, is slowed by drag (0.99, 0.8 in water) and pulled down by 0.03;
+ * the first block in its way stops it, and vanilla puts the thrower where the pearl was when it struck, from
+ * where the player falls to the ground. Throws are chosen so that nearly every throw vanilla's spread makes
+ * of them lands on the same ground.
  */
 final class PearlFlight {
     private static final Ballistics.Projectile PEARL = Ballistics.Projectile.PEARL;

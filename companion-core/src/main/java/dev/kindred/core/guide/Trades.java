@@ -11,12 +11,18 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * What a villager's trade is worth (E-45a), reckoned as a player who knows the game reckons it. The owner's direction
- * (2026-10-25): a player understands what is valuable and how to profit by villagers. Emeralds are the currency. A
- * player earns them by selling a villager what it buys (wheat to a farmer, sticks to a fletcher, paper to a librarian),
- * and an emerald costs it what the cheapest of those it can feed costs to gather. It spends them on what is worth more
- * to it than they cost: a Mending book, diamond kit better than its own, ender pearls its run is short of. What a trade
- * is worth to it follows from {@link Worth}, in minutes of play, against what it holds and wears.
+ * In plain terms: what a villager's trades are worth to a player, as a player who knows the game reckons it:
+ * it earns emeralds by selling villagers what they buy, and spends them only on what is worth more to it than
+ * it costs, such as a Mending book or diamond gear better than its own. It also judges which villagers are
+ * worth keeping in a trading hall.
+ *
+ * Technical: What a villager's trade is worth (E-45a), reckoned as a player who knows the game reckons it.
+ * The owner's direction (2026-10-25): a player understands what is valuable and how to profit by villagers.
+ * Emeralds are the currency. A player earns them by selling a villager what it buys (wheat to a farmer,
+ * sticks to a fletcher, paper to a librarian), and an emerald costs it what the cheapest of those it can feed
+ * costs to gather. It spends them on what is worth more to it than they cost: a Mending book, diamond kit
+ * better than its own, ender pearls its run is short of. What a trade is worth to it follows from {@link
+ * Worth}, in minutes of play, against what it holds and wears.
  *
  * <p>What each profession buys and sells, by level, is vanilla's own table as a player learns it (the wiki's), so that it
  * knows what to look for and whom; what a particular villager offers it knows only from its trading screen, opened as a
@@ -265,6 +271,10 @@ public final class Trades {
         public boolean empty() { return sell.isEmpty() && buy.isEmpty(); }
     }
 
+    /**
+     * What to trade at one villager: the purchases worth making, best value first, and what to sell to pay
+     * for them.
+     */
     public static Plan plan(List<Offer> offers, Worth.Holding holding, int emeralds) {
         double emerald = emeraldPrice(offers);
         var buys = new ArrayList<Deal>();
@@ -550,6 +560,7 @@ public final class Trades {
         return out.toString();
     }
 
+    /** One side of a trade in words: how many, and of what. */
     static String words(Goods goods) {
         String name = name(goods.item());
         if (goods.count() == 1) return (name.matches("^[aeiou].*") ? "an " : "a ") + name;

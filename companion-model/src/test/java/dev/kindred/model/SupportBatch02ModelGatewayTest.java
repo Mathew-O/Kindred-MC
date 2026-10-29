@@ -7,6 +7,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how requests to an optional AI adviser are counted against their budget: a request
+ * the caller gave up on keeps its share until the service is done, one request ending never frees another's
+ * place, usage that is not known is charged in full, out-of-date or expired requests are never sent, and a
+ * player may send at most six in any minute.
+ */
 class SupportBatch02ModelGatewayTest {
 
     private ModelGateway.Request req(UUID id, ModelGateway.Lane lane) {

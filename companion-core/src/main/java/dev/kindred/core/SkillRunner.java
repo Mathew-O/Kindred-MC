@@ -8,10 +8,15 @@ import java.util.UUID;
 import java.util.function.LongSupplier;
 
 /**
- * Drives one {@link SkillBody} under one arbiter lease, one tick at a time, on the owning server thread.
- * Pause is distinct from stop: it ends the lease at a checkpoint (or cancels after the pause deadline) while
- * retaining progress for an explicit resume. Stop comes from the arbiter; the runner then observes a stale
- * lease and halts without starting anything else. There is no queue here, so nothing can restart on its own.
+ * In plain terms: carries out one skill, such as mining or crafting, a tick at a time while the player holds
+ * control of its body. A pause keeps its progress so it can carry on later; a stop halts it at once; and
+ * nothing starts again on its own.
+ *
+ * Technical: Drives one {@link SkillBody} under one arbiter lease, one tick at a time, on the owning server
+ * thread. Pause is distinct from stop: it ends the lease at a checkpoint (or cancels after the pause
+ * deadline) while retaining progress for an explicit resume. Stop comes from the arbiter; the runner then
+ * observes a stale lease and halts without starting anything else. There is no queue here, so nothing can
+ * restart on its own.
  */
 public final class SkillRunner {
     public static final Duration PAUSE_DEADLINE = Duration.ofMillis(500);
@@ -35,6 +40,7 @@ public final class SkillRunner {
     private boolean freshStart;
     private String reason;
 
+    /** A runner for skills under the given body gatekeeper. */
     public SkillRunner(ActionArbiter arbiter, LongSupplier nanoTime) {
         this.arbiter = Objects.requireNonNull(arbiter);
         this.nanoTime = Objects.requireNonNull(nanoTime);
@@ -108,6 +114,7 @@ public final class SkillRunner {
         finish(State.CANCELLED, why);
     }
 
+    /** Moves the running skill on by one tick, or finishes it once its end has settled. */
     public void tick() {
         long now = nanoTime.getAsLong();
         switch (state) {

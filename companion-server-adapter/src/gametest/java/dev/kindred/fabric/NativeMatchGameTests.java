@@ -16,10 +16,18 @@ import net.minecraft.util.math.BlockPos;
 import java.util.UUID;
 
 /**
- * A duel between two AI players (M-00a, D7). Players may attack one another only while a match both joined runs, and
- * only where the server allows PvP at all. Before it a strike at the other is refused; with the server's PvP off no duel
- * is proposed; during its countdown neither is hurt; once it runs they fight until one falls, and the other wins; once
- * it is over, a strike is refused again.
+ * In plain terms: a GameTest: in a real test world, two AI players are checked to fight only while a duel
+ * they both joined is running: a strike is refused before the match, during its countdown and after it ends,
+ * no duel can be set up with the server's player-versus-player setting off, and once it runs they fight until
+ * one falls and the other is shown the win. A second test checks a player taken out of the game mid-duel
+ * forfeits it. A third sets up a speedrun race that needs a fresh start and leave for the dragon fight, and
+ * checks its timed splits follow the runner's advancements (granted by the test itself, since a test cannot
+ * play a whole run) until the dragon one ends the race.
+ *
+ * Technical: A duel between two AI players (M-00a, D7). Players may attack one another only while a match
+ * both joined runs, and only where the server allows PvP at all. Before it a strike at the other is refused;
+ * with the server's PvP off no duel is proposed; during its countdown neither is hurt; once it runs they
+ * fight until one falls, and the other wins; once it is over, a strike is refused again.
  */
 public final class NativeMatchGameTests implements FabricGameTest {
     private static final String REFUSED = "No running match allows striking that player";

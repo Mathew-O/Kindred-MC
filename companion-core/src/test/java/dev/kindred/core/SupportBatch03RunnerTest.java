@@ -6,6 +6,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a skill finishes: it waits for the body to settle without running again, a stop
+ * while it is finishing makes it cancelled even if the body settles later, and saved progress from a
+ * different run is refused before anything starts.
+ */
 class SupportBatch03RunnerTest {
 
     private final AtomicLong nanos=new AtomicLong();private final AtomicBoolean settled=new AtomicBoolean(true);

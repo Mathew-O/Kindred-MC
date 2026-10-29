@@ -7,6 +7,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks how a player brews potions: water bottles are made awkward with nether wart and then
+ * brewed into the potion it wants first, nothing is brewed without the ingredients, bottles are filled only
+ * when there is something to brew, and it says what it brewed.
+ */
 class BrewingTest {
     @Test
     void waterMadeAwkwardThenBrewedIntoThePotionItWantsFirst() {

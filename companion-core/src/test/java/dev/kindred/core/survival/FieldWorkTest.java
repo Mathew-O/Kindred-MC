@@ -10,6 +10,11 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player makes a farm field: it pours water down the middle channel first, then
+ * tills and sows every square from the edges without stepping on the farmland, and when it lacks water, a hoe
+ * or seeds, or a square cannot be worked, it does what it can and says why.
+ */
 class FieldWorkTest {
     /** A nine-square field, its soil from (10, 64, 20) to (18, 64, 28), its channel down x 14. */
     private static FieldWork field() {
@@ -194,6 +199,7 @@ class FieldWorkTest {
         fail("never done");
     }
 
+    /** Asked again before the water has run, it pours again instead of waiting for water that never came. */
     @Test
     void aPourAskedForAgainBeforeItRunsIsStillPoured() {
         var work = field();

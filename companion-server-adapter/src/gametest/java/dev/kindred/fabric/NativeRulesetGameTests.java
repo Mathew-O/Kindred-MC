@@ -15,11 +15,18 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * The native body against the combat ruleset (E-41a): its own tick must drive the mechanics a player's does. These
- * fixtures check that a swing charges, a raised shield comes into use and an axe's disabling wears off tick by tick as
- * {@link CombatRuleset} says, that damage immunity holds a second hit to its excess, and that a strike reaches as far as
- * a client's and no further. Vanilla's own code computes each outcome; what is under test is the body ticking as a
- * player's would, and the adapter's own limits.
+ * In plain terms: a GameTest: in a real test world, the player's body is checked to follow the game's combat
+ * rules tick by tick as an ordinary player's does: a sword swing charges up over time, a raised shield blocks
+ * only after five ticks, an axe hit on the shield puts it out of use for a hundred ticks, a second hit soon
+ * after the first lands only what it exceeds the first by, and a strike reaches three blocks and no further.
+ * A last test checks the player judges a mob's health only from the hits it saw land, not from the server's
+ * true number.
+ *
+ * Technical: The native body against the combat ruleset (E-41a): its own tick must drive the mechanics a
+ * player's does. These fixtures check that a swing charges, a raised shield comes into use and an axe's
+ * disabling wears off tick by tick as {@link CombatRuleset} says, that damage immunity holds a second hit to
+ * its excess, and that a strike reaches as far as a client's and no further. Vanilla's own code computes each
+ * outcome; what is under test is the body ticking as a player's would, and the adapter's own limits.
  */
 public final class NativeRulesetGameTests implements FabricGameTest {
     /** An iron sword swings 1.6 times a second: the charge after each tick of the body's is the ruleset's. */

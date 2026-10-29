@@ -13,7 +13,14 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Acceptance GameTests for Shared Projects and AI-Player Task Assignments (E-11, TEAM-01, TEAM-02):
+ * In plain terms: a GameTest: in a real test world, a player's team bookkeeping is checked. A task that
+ * depends on another cannot be taken until that one is done; a task one player has taken cannot be taken by
+ * another; materials set aside for one task cannot be promised to a second; a player that stops or dies gives
+ * up its task and the materials it set aside, so a teammate can take them; and a stored project's progress is
+ * saved as it happens, crediting only what was really gathered.
+ *
+ * Technical: Acceptance GameTests for Shared Projects and AI-Player Task Assignments (E-11, TEAM-01,
+ * TEAM-02):
  * 1. Cooperative task dependency order enforced across peers.
  * 2. Contending claims rejected with atomic single-assignee ownership.
  * 3. Shared stock reservations prevent double spending of materials across peers.

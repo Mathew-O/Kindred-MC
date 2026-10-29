@@ -10,6 +10,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the gate every request to an optional AI adviser passes through: a request the
+ * caller gave up on still holds its place until the service answers, so its cost is counted, and huge usage
+ * cannot wrap the running totals round and let more requests through.
+ */
 class SupportBatch03GatewayRegressionTest {
     private static ModelGateway.Request request(UUID player, ModelGateway.Lane lane) {
         return new ModelGateway.Request(UUID.randomUUID(), player, lane, "fixture",

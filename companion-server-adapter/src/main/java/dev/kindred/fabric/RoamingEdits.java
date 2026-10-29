@@ -13,9 +13,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
 /**
- * Standing server policy for an AI player working out in the world (decision D4, recorded by an operator):
- * ordinary survival breaking and placing anywhere the player itself may edit, never containers or other
- * block entities except an empty furnace it can pick back up, and never a break that would release lava.
+ * In plain terms: the server's standing rules for an AI player working out in the world with no assigned
+ * area: it may break and place blocks the normal survival way wherever it itself is allowed to, but it does
+ * not break chests and the like, protected blocks or anything that would let lava out, and it opens only
+ * storage that is its own, a structure's unopened loot, or an opponent's storage during a match.
+ *
+ * Technical: Standing server policy for an AI player working out in the world (decision D4, recorded by an
+ * operator): ordinary survival breaking and placing anywhere the player itself may edit, never containers or
+ * other block entities except an empty furnace it can pick back up, and never a break that would release
+ * lava.
  */
 final class RoamingEdits {
     private RoamingEdits() { }
@@ -106,6 +112,7 @@ final class RoamingEdits {
         return false;
     }
 
+    /** Why the player may not place a block here, or nothing when it may. */
     static String placeDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
         String common = common(player, pos, policy);
         if (common != null) return common;
@@ -161,6 +168,7 @@ final class RoamingEdits {
         return opponents ? null : "Only an opponent's storage, in a running match both joined, is raided";
     }
 
+    /** Why the player may not use a workstation here, or nothing when it may. */
     static String workstationDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
         return common(player, pos, policy);
     }

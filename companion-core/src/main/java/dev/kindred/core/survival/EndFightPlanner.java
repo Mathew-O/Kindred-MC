@@ -5,12 +5,18 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Local, deterministic plan from the End portal to beating the game, the way players do it: fill the frame with eyes
- * and jump in; get onto the main island; shoot the End crystals off their pillars from the ground, and pillar up to the
- * two in iron cages to open them first; then the dragon, struck on the head while it perches on the exit portal's pillar
- * and kept clear of while it flies, out of its breath and away from the void; and when it is dead, home through the exit
- * portal. Like the other planners it reads only the player's own items and sightings and names the next steps; the
- * adapter turns each into one bounded, admitted skill and skips what it cannot act on yet.
+ * In plain terms: the plan a player follows from the End portal to beating the game: fill the portal with
+ * eyes and jump in, reach the main island, shoot or break the End crystals, then fight the Ender Dragon,
+ * striking its head when it lands and keeping clear while it flies, and go home through the exit portal once
+ * it is dead.
+ *
+ * Technical: Local, deterministic plan from the End portal to beating the game, the way players do it: fill
+ * the frame with eyes and jump in; get onto the main island; shoot the End crystals off their pillars from
+ * the ground, and pillar up to the two in iron cages to open them first; then the dragon, struck on the head
+ * while it perches on the exit portal's pillar and kept clear of while it flies, out of its breath and away
+ * from the void; and when it is dead, home through the exit portal. Like the other planners it reads only the
+ * player's own items and sightings and names the next steps; the adapter turns each into one bounded,
+ * admitted skill and skips what it cannot act on yet.
  */
 public final class EndFightPlanner {
     /** Health below which the player keeps out of the dragon's way until it has healed. */
@@ -54,6 +60,7 @@ public final class EndFightPlanner {
 
     private EndFightPlanner() { }
 
+    /** Which part of the fight the player is at, from what it carries and sees. */
     public static Stage stage(EndFightSnapshot s) {
         Objects.requireNonNull(s);
         if (!s.inEnd()) {

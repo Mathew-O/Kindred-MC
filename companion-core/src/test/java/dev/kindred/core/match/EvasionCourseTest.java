@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+/**
+ * In plain terms: checks which way a chased player runs: straight away from whoever chases it, but never
+ * toward its own home while any other way is open.
+ */
 class EvasionCourseTest {
     @Test
     void withNoHomeToKeepFromItRunsStraightAwayFirst() {
@@ -29,6 +33,7 @@ class EvasionCourseTest {
         assertEquals(0.0, EvasionCourse.turns(0, -1, 0, 1).getFirst());
     }
 
+    /** A turn to the left or right means the same here as it does in the game. */
     @Test
     void theTurnsMatchTheAdaptersWayOfTurning() {
         // A quarter turn of north (0, -1) as Minecraft turns it: x' = x cos + z sin = -1, z' = z cos - x sin = 0, west.

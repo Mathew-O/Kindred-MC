@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Which way a chased player runs (M-02c, the owner's note of 2026-10-23). Straight away from its pursuer first, then
- * a little to either side, then square to it, then back past it at an angle; but never toward its own home: a player
- * chased in a world of others does not lead them to its base. Only when every way off is toward home does it run that
- * way all the same, as away matters more than where. Pure.
+ * In plain terms: which way a chased player runs: straight away from its pursuer if it can, otherwise off to
+ * one side or back past it, but never toward its own home, so it does not lead the chaser to its base unless
+ * there is no other way.
+ *
+ * Technical: Which way a chased player runs (M-02c, the owner's note of 2026-10-23). Straight away from its
+ * pursuer first, then a little to either side, then square to it, then back past it at an angle; but never
+ * toward its own home: a player chased in a world of others does not lead them to its base. Only when every
+ * way off is toward home does it run that way all the same, as away matters more than where. Pure.
  */
 public final class EvasionCourse {
     /** The turns from straight away it tries, in order, in degrees. */

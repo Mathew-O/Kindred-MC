@@ -3,9 +3,12 @@ package dev.kindred.core.tactics;
 import java.util.OptionalInt;
 
 /**
- * When something flying comes within reach of a point if it keeps its velocity (E-39h): the Ender Dragon closing on a
- * player up a tower, whose wings fling anyone near its body. Re-reckoned every tick, so a turning dragon is followed as
- * it turns. Pure.
+ * In plain terms: how soon something flying, such as the Ender Dragon, will come within reach of a spot if it
+ * keeps its course, so a player can get clear of its wings in time.
+ *
+ * Technical: When something flying comes within reach of a point if it keeps its velocity (E-39h): the Ender
+ * Dragon closing on a player up a tower, whose wings fling anyone near its body. Re-reckoned every tick, so a
+ * turning dragon is followed as it turns. Pure.
  */
 public final class Approach {
     /**

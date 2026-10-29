@@ -10,6 +10,11 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player breaks what a goal such as the End fight needs into things to gather
+ * and things to craft: ingredients come before what they make, what it already holds is taken off at once,
+ * and a craft is ready only with its ingredients in hand.
+ */
 class NeedsAssessmentTest {
     private static final Set<Objective> END = Set.of(Objective.END_FIGHT);
 
@@ -80,6 +85,7 @@ class NeedsAssessmentTest {
         assertTrue(NeedsAssessment.ready(new Chunk(Need.GOLD_ARMOR, Kind.CRAFT, 1, Objective.SURVIVAL, ""), Map.of(Need.GOLD, 5)));
     }
 
+    /** Every need is listed before the ingredients it is made from, and each says where it comes from. */
     @Test
     void productsAreDeclaredBeforeTheirInputs() {
         for (Need need : Need.values()) {

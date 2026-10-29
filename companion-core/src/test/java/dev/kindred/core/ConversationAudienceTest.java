@@ -6,6 +6,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what a player tells each person who talks to it: whoever may command it hears
+ * everything, its position included; another player hears no position, no exact belongings and no places; an
+ * opponent hears only what it could see for itself; and coordinates are spotted however they are written.
+ */
 class ConversationAudienceTest {
     private static ConversationAudience.Situation situation(ConversationAudience.Relation relation, boolean controls, boolean stopped) {
         return new ConversationAudience.Situation("Echo", "Steve", relation, controls, 17, 15, "a Zombie",

@@ -21,10 +21,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A minecart put on a rail and broken again, as a player brings a villager home in one (E-45e). {@code place} puts one
- * owned minecart on the rail at a block within reach: one minecart item is spent under the ledger, and the cart is then
- * in the world on that rail. {@code break} hits a cart within reach until it breaks, setting down whoever rides it, so
- * that it drops as an item to be picked up again; nothing owned is lost. Pushing it is {@link NativePushSkill}'s.
+ * In plain terms: an AI player setting one of its own minecarts on a rail, or breaking a cart again so it
+ * drops to be picked up, as players do to bring a villager home. Pushing the cart is done separately.
+ *
+ * Technical: A minecart put on a rail and broken again, as a player brings a villager home in one (E-45e).
+ * {@code place} puts one owned minecart on the rail at a block within reach: one minecart item is spent under
+ * the ledger, and the cart is then in the world on that rail. {@code break} hits a cart within reach until it
+ * breaks, setting down whoever rides it, so that it drops as an item to be picked up again; nothing owned is
+ * lost. Pushing it is {@link NativePushSkill}'s.
  */
 final class NativeCartAction extends NativeRecordedAction {
     enum Mode { PLACE, BREAK }
@@ -49,6 +53,7 @@ final class NativeCartAction extends NativeRecordedAction {
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Placing a minecart from a hotbar slot on the given rail, or breaking the given cart. */
     NativeCartAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                      Mode mode, int slot, BlockPos rail, UUID cart) {
         this.body = body;
@@ -63,6 +68,7 @@ final class NativeCartAction extends NativeRecordedAction {
         if (mode == Mode.BREAK && cart == null) throw new IllegalArgumentException("A cart to break");
     }
 
+    /** Moves the cart work on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded cart step cannot replay after cancellation/restart", true);

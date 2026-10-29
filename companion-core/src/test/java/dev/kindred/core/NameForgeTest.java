@@ -9,6 +9,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player makes up names for pets, places and tools: the same request always
+ * gives the same name while different players come up with different ones, personality changes the flavour
+ * but not the rules, a taken name moves on to the next try, and names from elsewhere must pass the same
+ * rules.
+ */
 class NameForgeTest {
     private static final Personality NEUTRAL = Personality.defaults();
 

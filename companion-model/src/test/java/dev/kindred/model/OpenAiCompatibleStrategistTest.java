@@ -19,7 +19,15 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** The OpenAI-compatible strategist against a local fake server: no network, no keys, no cost. */
+/**
+ * In plain terms: checks the connection to the many optional AI services that share one common format,
+ * against a stand-in server on this computer with no network, keys or cost: a well-formed reply becomes
+ * checked advice with its cost counted, a reply format the service refuses is asked for once more in a
+ * simpler form, failures are reported and not retried, chat replies are checked the same way and give up
+ * after eight seconds, and anything outside the fixed choices is dropped.
+ *
+ * Technical: The OpenAI-compatible strategist against a local fake server: no network, no keys, no cost.
+ */
 class OpenAiCompatibleStrategistTest {
     private HttpServer server;
     private final List<String> bodies = new ArrayList<>();

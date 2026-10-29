@@ -11,6 +11,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a team splits the work of a run to the dragon at each stage: everyone gathers
+ * before the portal, one builds the portal while the rest gather supplies, the best protected goes to the
+ * Nether for blaze rods, the one with the most eyes finds the stronghold, and all meet there when ready.
+ */
 class RunDivisionTest {
     private static final UUID WREN = new UUID(0, 1), MASON = new UUID(0, 2), RUE = new UUID(0, 3);
 
@@ -70,6 +75,9 @@ class RunDivisionTest {
         assertTrue(parts.values().stream().allMatch(p -> p.work() == Work.STRONGHOLD), parts.toString());
     }
 
+    /**
+     * A lone player does each part itself, and a tie between equal players is always settled the same way.
+     */
     @Test
     void aLonePlayerDoesEachPartItselfAndBetweenEqualsTheLowerId() {
         assertEquals(Work.NETHER, RunDivision.divide(List.of(mason), new Run(true, 2, 0, 0, false, false)).get(MASON).work());

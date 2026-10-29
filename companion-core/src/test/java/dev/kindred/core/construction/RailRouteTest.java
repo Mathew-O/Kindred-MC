@@ -10,6 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks how a player plans a rail line to bring a villager by minecart into its cell in the
+ * trading hall: the line takes as few corners as it can, goes round what it cannot lay rails on, bridges
+ * water, climbs only on straight stretches, leaves room behind the villager to push the cart off, and never
+ * doubles back beside itself.
+ */
 class RailRouteTest {
     /** Flat firm ground at 63, open over it, with {@code changes} by column: a top, or a column that is no ground. */
     private static BaseSite.Ground ground(Map<Long, BaseSite.Column> changes) {
@@ -232,6 +238,10 @@ class RailRouteTest {
         }
     }
 
+    /**
+     * For a villager riding in a boat in the cart, only the wall over the door and the cell's lintel are in
+     * its way.
+     */
     @Test
     void theHallsOnlyBlocksAtARidersEyesInABoatAreTheWallOverTheDoorAndTheCellsLintel() {
         for (int cells : new int[] {1, 3, 4}) {

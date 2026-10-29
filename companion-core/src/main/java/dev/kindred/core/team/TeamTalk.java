@@ -8,8 +8,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * What a player tells its team of a find (E-40a, F-18): what it found, counted from what it holds, and who gets which
- * piece of it, from {@link ShareOut}. Only what it holds and the share-out say; nothing promised that is not there.
+ * In plain terms: what a player tells its team about something it found and who gets which piece made from
+ * it, or about what it put in or took from a team chest. It says only what it really holds and has worked
+ * out.
+ *
+ * Technical: What a player tells its team of a find (E-40a, F-18): what it found, counted from what it holds,
+ * and who gets which piece of it, from {@link ShareOut}. Only what it holds and the share-out say; nothing
+ * promised that is not there.
  */
 public final class TeamTalk {
     private TeamTalk() { }

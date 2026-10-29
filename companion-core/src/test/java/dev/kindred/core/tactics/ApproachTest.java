@@ -6,6 +6,10 @@ import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks when the player expects the dragon to reach it: one flying or diving straight at it
+ * is timed to the moment its wings reach, while one flying away, passing wide or still far off is no threat.
+ */
 class ApproachTest {
     private static final double[] TOWER = {0, 80, 0};
 

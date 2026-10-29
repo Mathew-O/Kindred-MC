@@ -27,9 +27,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * One recorded survival break of any block the server's roaming policy allows, with the best owned tool, then
- * collection of that break's own drops by walking over them. The block's loot table decides the drops; the
- * only way anything enters the inventory is vanilla pickup.
+ * In plain terms: an AI player breaking a block the normal survival way with the best tool it has, then
+ * walking over the drops to pick them up. The block itself decides what drops, nothing reaches the inventory
+ * except by being picked up, and it breaks only what the server's rules for roaming players allow.
+ *
+ * Technical: One recorded survival break of any block the server's roaming policy allows, with the best owned
+ * tool, then collection of that break's own drops by walking over them. The block's loot table decides the
+ * drops; the only way anything enters the inventory is vanilla pickup.
  */
 final class NativeBreakAction extends NativeRecordedAction {
     private static final int COLLECT_TICKS = 70;
@@ -65,6 +69,10 @@ final class NativeBreakAction extends NativeRecordedAction {
     private boolean holding;
     private final boolean underfoot;
 
+    /**
+     * Breaking the given block, picking up its drops if asked; when guarded, a block by lava may be mined
+     * where water will fill the gap.
+     */
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
                       boolean guarded) {
@@ -175,6 +183,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     }
     private Step waiting() { return Step.running(Map.of("phase", phase.name(), "durableAction", phase()), false); }
 
+    /** Moves the breaking on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded break never replays a saved attempt", true);

@@ -17,9 +17,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Fight records written off the server thread (E-41a): a file a fight, {@code kindred/encounters/<player>/<encounter>.jsonl}
- * under the server's directory, and only the newest {@link #KEPT} of a player's kept. The lines are built on the server
- * thread from the finished record; only the writing waits on the disk.
+ * In plain terms: keeps a written record of each fight an AI player has, one file per fight on the server's
+ * disk. Only the newest fifty for each player are kept, and the writing never holds up the game.
+ *
+ * Technical: Fight records written off the server thread (E-41a): a file a fight, {@code
+ * kindred/encounters/<player>/<encounter>.jsonl} under the server's directory, and only the newest {@link
+ * #KEPT} of a player's kept. The lines are built on the server thread from the finished record; only the
+ * writing waits on the disk.
  */
 final class EncounterLog {
     static final int KEPT = 50;
@@ -31,10 +35,12 @@ final class EncounterLog {
 
     private EncounterLog() { }
 
+    /** The folder where a player's fight records are kept. */
     static Path directory(MinecraftServer server, UUID player) {
         return server.getRunDirectory().resolve("kindred").resolve("encounters").resolve(player.toString());
     }
 
+    /** Writes a finished fight's record in the background, then removes the oldest beyond those kept. */
     static CompletableFuture<Path> write(MinecraftServer server, UUID player, EncounterRecorder recorder) {
         List<String> lines = recorder.jsonLines();
         Path directory = directory(server, player);

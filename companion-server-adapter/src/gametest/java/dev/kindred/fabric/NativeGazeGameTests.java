@@ -15,9 +15,15 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * A native player looks at what matters while it waits (E-33a): at a monster once it is in plain sight, quickly but
- * never in one snap; at what it waits on; back at a player close by who looks at it, for a moment, and then back to
- * its waiting; and never into an enderman's eyes. Each fixture samples the head every tick.
+ * In plain terms: a GameTest: in a real test world, a waiting player's head is watched tick by tick to check
+ * it looks where a person would: at a monster only once it can see it, turning quickly but never in one snap;
+ * at the furnace it is waiting on, and back at a nearby player looking at it for a moment only; at someone
+ * who speaks its name, but only if it can see them; and never straight into an enderman's eyes.
+ *
+ * Technical: A native player looks at what matters while it waits (E-33a): at a monster once it is in plain
+ * sight, quickly but never in one snap; at what it waits on; back at a player close by who looks at it, for a
+ * moment, and then back to its waiting; and never into an enderman's eyes. Each fixture samples the head
+ * every tick.
  */
 public final class NativeGazeGameTests implements FabricGameTest {
 

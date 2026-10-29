@@ -6,12 +6,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Where to aim a bow or a thrown item, as vanilla 1.21.1 flies them (E-39b, E-39f): each tick the projectile moves by
- * its velocity, then its velocity is slowed by drag and pulled down by gravity. An arrow from a full draw leaves at
- * three blocks a tick with drag 0.99 and gravity 0.05; a thrown ender pearl (any thrown item) at one and a half with
- * drag 0.99 and gravity 0.03. Pure: the adapter supplies where the projectile starts (a little below the eyes) and
- * where the target is. Vanilla adds a small random spread to every player's throw or shot (up to about a degree), so
- * a solution is where the throw is aimed, not a promise of where it lands to the inch.
+ * In plain terms: where to aim a bow or a thrown ender pearl so it reaches a target, following how the game
+ * makes them fly and drop. It can choose a flat, quick shot or a high lob over a wall.
+ *
+ * Technical: Where to aim a bow or a thrown item, as vanilla 1.21.1 flies them (E-39b, E-39f): each tick the
+ * projectile moves by its velocity, then its velocity is slowed by drag and pulled down by gravity. An arrow
+ * from a full draw leaves at three blocks a tick with drag 0.99 and gravity 0.05; a thrown ender pearl (any
+ * thrown item) at one and a half with drag 0.99 and gravity 0.03. Pure: the adapter supplies where the
+ * projectile starts (a little below the eyes) and where the target is. Vanilla adds a small random spread to
+ * every player's throw or shot (up to about a degree), so a solution is where the throw is aimed, not a
+ * promise of where it lands to the inch.
  */
 public final class Ballistics {
     /** Speed of an arrow from a full draw, in blocks a tick. */
@@ -37,6 +41,7 @@ public final class Ballistics {
 
     private Ballistics() { }
 
+    /** The height an arrow shot at a given angle and speed reaches at a given distance, and when. */
     static Optional<double[]> heightAt(double pitch, double speed, double distance) {
         return heightAt(pitch, new Projectile(speed, GRAVITY, DRAG), distance);
     }

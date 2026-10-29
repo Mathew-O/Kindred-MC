@@ -19,6 +19,12 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * In plain terms: the mod's starting point. As the game loads it, this registers what the mod adds (the older
+ * mob-style body, the control panel, skins and commands) and ties the AI players' runtime to the server: it
+ * starts and stops with the server, hears chat, and is told when blocks are broken, players die and players
+ * leave.
+ */
 public final class KindredMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("Kindred");
     public static final EntityType<CompanionEntity> COMPANION = Registry.register(
@@ -30,6 +36,7 @@ public final class KindredMod implements ModInitializer {
 
     static PlayerRuntime runtime() { return runtime; }
 
+    /** Sets everything up once, as the mod is loaded. */
     @Override
     public void onInitialize() {
         PolymerEntityUtils.registerType(COMPANION);

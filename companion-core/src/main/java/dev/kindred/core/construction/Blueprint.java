@@ -7,9 +7,13 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Something to build (E-08a): blocks in exact states at positions in its own frame, from a schematic, the user's
- * library or a local generator, with where it came from and under what license (D8). Air in a blueprint is space to
- * keep clear, not a block to place. Bounded, immutable and pure.
+ * In plain terms: something to build: its blocks and their exact places, the spaces to keep clear, and where
+ * the plan came from, who made it and under what terms. It can be turned, placed in the world, or done in
+ * other materials.
+ *
+ * Technical: Something to build (E-08a): blocks in exact states at positions in its own frame, from a
+ * schematic, the user's library or a local generator, with where it came from and under what license (D8).
+ * Air in a blueprint is space to keep clear, not a block to place. Bounded, immutable and pure.
  *
  * @param name    a short name for the log and the player's speech
  * @param source  where it came from: a file, a link, or the generator that made it

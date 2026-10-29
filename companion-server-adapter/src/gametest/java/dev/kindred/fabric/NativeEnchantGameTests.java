@@ -12,10 +12,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Enchanting (E-16a): a player with thirty levels, lapis, a diamond sword and an enchanting table of its own puts its
- * table down inside a ring of fifteen bookshelves where it stands, opens it, and takes the best offer it can pay for on
- * its sword: the sword enchanted, the lapis and the levels spent alike (the button's number and one), nothing else
- * changed, and it says what it gained. Short of the levels, it does not go to the table.
+ * In plain terms: a GameTest: in a real test world, a player with thirty levels, lapis, a diamond sword and
+ * an enchanting table is checked to put the table down inside a ring of bookshelves and enchant its sword,
+ * spending one to three levels and the same number of lapis, nothing else, and saying what it got. A second
+ * test checks that with only twenty levels it keeps the table in hand and enchants nothing.
+ *
+ * Technical: Enchanting (E-16a): a player with thirty levels, lapis, a diamond sword and an enchanting table
+ * of its own puts its table down inside a ring of fifteen bookshelves where it stands, opens it, and takes
+ * the best offer it can pay for on its sword: the sword enchanted, the lapis and the levels spent alike (the
+ * button's number and one), nothing else changed, and it says what it gained. Short of the levels, it does
+ * not go to the table.
  */
 public final class NativeEnchantGameTests implements FabricGameTest {
     private static int count(net.minecraft.inventory.Inventory inventory, Item item) {

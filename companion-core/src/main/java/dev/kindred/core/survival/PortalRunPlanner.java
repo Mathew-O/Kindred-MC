@@ -6,9 +6,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Local, deterministic plan for earning a Nether portal from an empty inventory. It reads only the player's
- * own items and observations and names the next material step; the adapter turns a step into one bounded,
- * admitted skill and may skip steps it cannot act on yet (for example hunting with no animal in sight).
+ * In plain terms: the plan a player follows to build a Nether portal from an empty inventory: wood, stone
+ * tools, iron, a water bucket, diamonds, obsidian and flint, then the frame lit with flint and steel. It
+ * picks the cheapest way for the world it is in, such as making obsidian from lava and water when it has no
+ * diamonds, and names only the next steps from what the player carries and has seen.
+ *
+ * Technical: Local, deterministic plan for earning a Nether portal from an empty inventory. It reads only the
+ * player's own items and observations and names the next material step; the adapter turns a step into one
+ * bounded, admitted skill and may skip steps it cannot act on yet (for example hunting with no animal in
+ * sight).
  *
  * <p>Route: logs, wooden pickaxe, cobblestone, stone pickaxe and sword, furnace, fifteen iron (iron pickaxe,
  * bucket, chestplate, flint and steel), a water bucket, three diamonds and a diamond pickaxe, ten obsidian made by pouring
@@ -210,6 +216,7 @@ public final class PortalRunPlanner {
         return steps;
     }
 
+    /** How far along the route the player is, in an ordinary world. */
     public static Stage stage(PortalRunSnapshot s) {
         return stage(s, WorldFacts.ordinary());
     }
@@ -231,6 +238,10 @@ public final class PortalRunPlanner {
         return s.shields() > 0 || s.woodUnits() < SHIELD_PLANKS;
     }
 
+    /**
+     * How far along the route the player is: wood, stone, iron, diamonds, obsidian, flint, the portal, or
+     * done.
+     */
     public static Stage stage(PortalRunSnapshot s, WorldFacts facts) {
         if (s.portalLit()) return Stage.DONE;
         if (s.portalFramed() || s.obsidian() >= PORTAL_OBSIDIAN && s.flintAndSteel() > 0) return Stage.PORTAL;
@@ -510,6 +521,7 @@ public final class PortalRunPlanner {
         return sticksKept(s, frame, true);
     }
 
+    /** As above, with whether there are caves to dig in. */
     static int sticksKept(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
         boolean iron = caves || frame == WorldFacts.Method.MINE_OBSIDIAN;
         return (iron && s.pickaxeTier() < 3 ? 2 : 0) + (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4 ? 2 : 0);

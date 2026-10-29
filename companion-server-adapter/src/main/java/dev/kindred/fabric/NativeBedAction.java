@@ -26,9 +26,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Sets an owned bed down in the Overworld and uses it, so that the player wakes there after a death (E-39g), as players
- * do by the End portal before going through: the server's edit policy and a claim cover both of the bed's blocks,
- * exactly one bed item is spent, and the step is verified only once vanilla has set the respawn point at the bed.
+ * In plain terms: an AI player setting one of its own beds down in the Overworld and using it, so that it
+ * wakes there if it dies, as players do near the End portal before going through. It counts as done only once
+ * the game has really moved its respawn point to the bed.
+ *
+ * Technical: Sets an owned bed down in the Overworld and uses it, so that the player wakes there after a
+ * death (E-39g), as players do by the End portal before going through: the server's edit policy and a claim
+ * cover both of the bed's blocks, exactly one bed item is spent, and the step is verified only once vanilla
+ * has set the respawn point at the bed.
  */
 final class NativeBedAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -51,6 +56,7 @@ final class NativeBedAction extends NativeRecordedAction {
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Setting the bed from a hotbar slot down on the given floor, facing the given way. */
     NativeBedAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                     Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                     Consumer<Runnable> dispatch, BlockPos floor, Direction facing, int slot) {
@@ -72,6 +78,7 @@ final class NativeBedAction extends NativeRecordedAction {
     private BlockPos foot() { return floor.up(); }
     private BlockPos head() { return floor.up().offset(facing); }
 
+    /** Moves the bed placing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded bed cannot replay after cancellation/restart", true);

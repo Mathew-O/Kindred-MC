@@ -4,10 +4,15 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * How far each mob notices a player, as vanilla 1.21.1 has it, so a route can keep out of range of a mob it does not
- * mean to fight and a fight can be taken on purpose. A hostile mob picks a player as its target within its follow
- * range when it can see it (a few, like the enderman, only when provoked); a sneaking player is noticed at four
- * fifths of that. Ranges are the mobs' own attributes: 16 blocks unless the mob says otherwise.
+ * In plain terms: how far each kind of mob notices a player, and whether it then attacks, as the game has it.
+ * The player uses it to plan a route that stays out of a mob's notice, or to start a fight on purpose;
+ * sneaking shortens the distance.
+ *
+ * Technical: How far each mob notices a player, as vanilla 1.21.1 has it, so a route can keep out of range of
+ * a mob it does not mean to fight and a fight can be taken on purpose. A hostile mob picks a player as its
+ * target within its follow range when it can see it (a few, like the enderman, only when provoked); a
+ * sneaking player is noticed at four fifths of that. Ranges are the mobs' own attributes: 16 blocks unless
+ * the mob says otherwise.
  */
 public final class MobSenses {
     /** What a mob does about a player it notices. */

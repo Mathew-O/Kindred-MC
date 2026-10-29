@@ -6,6 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks who may give a player orders: the list of those allowed cannot be changed from
+ * outside once set, the server console always may, and the player's own identity gives no control over it.
+ */
 class SupportBatch03AccessTest {
 
     @Test void controllerSetCannotBeMutatedThroughOriginalOrAccessor() {

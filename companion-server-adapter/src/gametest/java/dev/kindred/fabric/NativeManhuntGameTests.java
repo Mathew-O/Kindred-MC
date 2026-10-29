@@ -20,9 +20,16 @@ import net.minecraft.util.math.Vec3d;
 import java.util.UUID;
 
 /**
- * A manhunt (M-02a, D6, D7): a runner and a hunter, both AI players. The hunter is handed the announced tracking
- * compass, follows its needle round a wall it cannot see through, finds the runner and fights it; the runner's fall ends
- * the hunt for the hunters, and the compass is taken back.
+ * In plain terms: a GameTest: in a real test world, two AI players play a manhunt. The hunter is handed the
+ * tracking compass under the match's announced rule, follows it round a wall to the runner and fights it, the
+ * runner's fall ends the hunt and the compass is taken back; a hunter with iron crafts its sword, shield and
+ * armour before it hunts and strikes at nothing until then; a runner keeps away from a hunter it can see and
+ * fights only once caught; and a hurt, hungry runner being chased never runs towards its home and eats only
+ * once it is clear.
+ *
+ * Technical: A manhunt (M-02a, D6, D7): a runner and a hunter, both AI players. The hunter is handed the
+ * announced tracking compass, follows its needle round a wall it cannot see through, finds the runner and
+ * fights it; the runner's fall ends the hunt for the hunters, and the compass is taken back.
  */
 public final class NativeManhuntGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "manhunt", tickLimit = 3000)

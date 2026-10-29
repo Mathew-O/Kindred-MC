@@ -15,8 +15,15 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * Boats (F-10f): across water the way players cross it, in their own boat. Fixtures build the water and hand over the
- * boat a player would have made; the launch, the rowing and the landing go through the paid activity and the ledger.
+ * In plain terms: a GameTest: in a real test world, a player with its own boat is told to put it on a water
+ * channel, row across and land; the test checks it gets out on the far shore and breaks the boat so it can be
+ * picked up again, with exactly one boat spent and none made from nothing. A second test starts it underwater
+ * in open sea on its way to a stronghold and checks it swims up before putting the boat in, then rows on
+ * without drowning.
+ *
+ * Technical: Boats (F-10f): across water the way players cross it, in their own boat. Fixtures build the
+ * water and hand over the boat a player would have made; the launch, the rowing and the landing go through
+ * the paid activity and the ledger.
  */
 public final class NativeBoatGameTests implements FabricGameTest {
     private static void forceChunks(net.minecraft.server.world.ServerWorld world, BlockPos o, boolean forced) {

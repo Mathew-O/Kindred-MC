@@ -6,6 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that an action may go ahead only after each step of it has been saved and confirmed
+ * in order, and only once, and that a confirmation that does not match holds it up without carrying it out.
+ */
 class SupportBatch03AdmissionTest {
 
     private ActionRecord intent(){return ActionRecord.prepare(UUID.randomUUID(),new ActionLease(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),1,2,3),"transfer","observed source");}

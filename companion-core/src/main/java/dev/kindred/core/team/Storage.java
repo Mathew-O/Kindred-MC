@@ -9,11 +9,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * What a player has stored, as it knows it (E-43): each container it keeps things in, what it last counted there and
- * when, and whose it is, its own or its team's. With what it holds, this is its extended inventory, which its plans
- * and the value model count from. What it puts in and takes out, and what a teammate tells it it put in or took, change
- * the counts as they happen; a look inside sets them to what it sees, and what is short that nobody accounted for is
- * reported as gone. Pure: the adapter reports each look, each deposit and withdrawal, and each teammate's word.
+ * In plain terms: what a player remembers having stored in chests, its own or its team's, and how many of
+ * each thing. The counts change as things are put in or taken out, and a look inside that finds things short
+ * with nobody accounting for them tells it they are gone.
+ *
+ * Technical: What a player has stored, as it knows it (E-43): each container it keeps things in, what it last
+ * counted there and when, and whose it is, its own or its team's. With what it holds, this is its extended
+ * inventory, which its plans and the value model count from. What it puts in and takes out, and what a
+ * teammate tells it it put in or took, change the counts as they happen; a look inside sets them to what it
+ * sees, and what is short that nobody accounted for is reported as gone. Pure: the adapter reports each look,
+ * each deposit and withdrawal, and each teammate's word.
  */
 public final class Storage {
     /** Whose a container is: the player's own, or one its team shares. */
@@ -112,6 +117,7 @@ public final class Storage {
         return Map.copyOf(all);
     }
 
+    /** What it last knew of one chest, if it knows it. */
     public Optional<Store> store(Place place) {
         return Optional.ofNullable(stores.get(place));
     }

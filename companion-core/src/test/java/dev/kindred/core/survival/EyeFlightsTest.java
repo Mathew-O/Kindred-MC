@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player finds the stronghold by throwing eyes of ender from two places: where
+ * the two flights cross is the stronghold, flights too nearly parallel or crossing somewhere impossible are
+ * not trusted, and the second throw is made off to one side of the first.
+ */
 class EyeFlightsTest {
     /** A flight thrown from (x, z) toward a stronghold at (sx, sz), seen with a small error in its heading. */
     private static Flight toward(double x, double z, double sx, double sz, double errorDegrees) {

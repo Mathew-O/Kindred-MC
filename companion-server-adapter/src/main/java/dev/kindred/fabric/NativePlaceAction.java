@@ -23,7 +23,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native block placement action using the durable action ledger.
+ * In plain terms: an AI player placing one block from its own hotbar, as a human does. It checks it may build
+ * there, uses exactly one block item, and afterwards checks that the block is in place and nothing else it
+ * carries changed.
+ *
+ * Technical: Checkpointed native block placement action using the durable action ledger.
  * Evaluates server edit policy, acquires block claims, consumes exactly one block item
  * from the owned hotbar slot, and verifies placement and item conservation.
  */
@@ -55,6 +59,7 @@ final class NativePlaceAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Placing the block in a hotbar slot at the given spot, against the given side. */
     NativePlaceAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                       Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer,
@@ -82,6 +87,7 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Placement needs an owned hotbar slot 0..8");
     }
 
+    /** Moves the placing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

@@ -20,12 +20,18 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The hunters' tracking compass (M-02a, D6): the one item a manhunt hands out, by a rule announced at its start and the
- * same for every hunter, human or AI. Each hunter holds one while the manhunt runs. It points at the nearest runner in the
- * hunter's world, or where a runner last left it, and spins when there is neither. It carries the curse of vanishing, so
- * a hunter's death takes it with it rather than leaving it to be picked up, and a new one is handed to the hunter on its
- * feet again. When the manhunt ends, every one is taken back. An AI hunter reads it as a player reads a compass: the
- * needle's bearing, never the place itself.
+ * In plain terms: the hunters' tracking compass in a manhunt: the one item the match hands out, by a rule
+ * announced at the start and the same for human and AI hunters. It points at the nearest runner, vanishes
+ * when its holder dies, and is taken back from everyone when the hunt ends. An AI hunter reads only which way
+ * the needle points, as a human would.
+ *
+ * Technical: The hunters' tracking compass (M-02a, D6): the one item a manhunt hands out, by a rule announced
+ * at its start and the same for every hunter, human or AI. Each hunter holds one while the manhunt runs. It
+ * points at the nearest runner in the hunter's world, or where a runner last left it, and spins when there is
+ * neither. It carries the curse of vanishing, so a hunter's death takes it with it rather than leaving it to
+ * be picked up, and a new one is handed to the hunter on its feet again. When the manhunt ends, every one is
+ * taken back. An AI hunter reads it as a player reads a compass: the needle's bearing, never the place
+ * itself.
  */
 final class HuntCompass {
     private static final String KEY = "kindred_hunt";

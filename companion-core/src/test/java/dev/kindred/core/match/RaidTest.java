@@ -11,6 +11,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks when a player in a match raids an opponent's chest: only an opponent in a running
+ * match counts, what it is asked says only what it saw and never what the chest holds, its own rule raids an
+ * unwatched chest close by but not with an opponent in sight or while badly hurt, and it tells its team
+ * exactly what it took.
+ */
 class RaidTest {
     private static final UUID STEVE = new UUID(0, 1), WREN = new UUID(0, 2), MASON = new UUID(0, 3), ADA = new UUID(0, 4);
 

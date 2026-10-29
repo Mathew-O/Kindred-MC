@@ -7,9 +7,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Bases that grow with the world (M-01b, the owner's note of 2026-10-23): three stages, each a functional build a
- * player makes from earned blocks, each room with a purpose. The origin is the ground floor's north-west corner; the
- * floor lies on the ground and the entrance is in the middle of the south wall.
+ * In plain terms: the plans for a player's base in its three stages: a one-room cabin, a two-floor house with
+ * storage and a workshop, and a larger manor with an enchanting room and a library. Each comes in several
+ * shapes and sizes, so the base differs from world to world.
+ *
+ * Technical: Bases that grow with the world (M-01b, the owner's note of 2026-10-23): three stages, each a
+ * functional build a player makes from earned blocks, each room with a purpose. The origin is the ground
+ * floor's north-west corner; the floor lies on the ground and the entrance is in the middle of the south
+ * wall.
  * <ul>
  *   <li>{@link Stage#CABIN}: one room to start the world: a bed, a crafting table, a furnace, two chests, light.</li>
  *   <li>{@link Stage#HOUSE}: two floors. Below, a storage wall of chests and a workshop of a table and two furnaces;
@@ -106,6 +111,7 @@ public final class Houses {
         };
     }
 
+    /** A stage's first plan in the given wood and stone. */
     public static Blueprint of(Stage stage, String wood, String stone) {
         return of(stage, new BuildStyle("", wood, stone, 0, 0));
     }
@@ -246,6 +252,7 @@ public final class Houses {
         private final Map<Pos, BlockSpec> at = new LinkedHashMap<>();
         private final List<Pos> open = new ArrayList<>();
 
+        /** An empty plan of a given size, in a wood and a stone. */
         Builder(int width, int depth, String wood, String stone) {
             this.width = width;
             this.depth = depth;
@@ -261,6 +268,7 @@ public final class Houses {
 
         boolean edge(int x, int z) { return x == 0 || z == 0 || x == width - 1 || z == depth - 1; }
 
+        /** A floor of planks across the whole plan at a given height. */
         void floor(int y) {
             for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) put(x, y, z, planks());
         }
@@ -293,6 +301,7 @@ public final class Houses {
             put(x, y + 1, z, "minecraft:" + wood + "_door[facing=" + facing + ",half=upper,hinge=left,open=false]");
         }
 
+        /** A window: a cell of wall left open. */
         void window(int x, int y, int z) {
             remove(x, y, z);
             open.add(new Pos(x, y, z));
@@ -318,6 +327,7 @@ public final class Houses {
             }
         }
 
+        /** A flat roof of planks across the whole plan at a given height. */
         void flatRoof(int y) {
             for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) put(x, y, z, planks());
         }
@@ -409,12 +419,14 @@ public final class Houses {
             }
         }
 
+        /** The blocks laid out so far, cell by cell. */
         List<Blueprint.Block> blocks() {
             var out = new ArrayList<Blueprint.Block>();
             for (var e : at.entrySet()) out.add(new Blueprint.Block(e.getKey(), e.getValue()));
             return out;
         }
 
+        /** The cells to keep open that no block has taken. */
         List<Pos> clear() {
             return open.stream().filter(p -> !at.containsKey(p)).distinct().toList();
         }

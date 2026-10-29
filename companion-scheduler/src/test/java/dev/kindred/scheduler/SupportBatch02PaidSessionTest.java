@@ -7,6 +7,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that a stretch of play time cannot start once it has been stopped or closed, even
+ * when the database confirms late, and that a confirmation that does not match holds it up instead of trying
+ * again.
+ */
 class SupportBatch02PaidSessionTest {
 
     private final Instant now=Instant.parse("2026-10-24T12:00:00Z");

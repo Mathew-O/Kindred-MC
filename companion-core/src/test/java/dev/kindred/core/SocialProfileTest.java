@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that giving a player a whole new personality keeps its other social settings and
+ * counts as a change to both its profile and its personality.
+ */
 class SocialProfileTest {
     @Test
     void aWholePersonalityIsTakenWithItsSettingsKeptAndBothRevisionsMovedOn() {

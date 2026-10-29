@@ -6,10 +6,15 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Netherite (E-16c), as players get it: ancient debris smelted into scrap, four scrap and four gold made into an ingot,
- * and a diamond piece upgraded at a smithing table with an ingot and an upgrade template, which is spent (a template is
- * copied from another with seven diamonds and a block of netherrack). The pieces in the order a run upgrades them: its
- * sword and pickaxe first, then its armour, chest to boots, then its axe. Pure: the adapter says what it holds.
+ * In plain terms: how a player earns netherite gear: ancient debris smelted into scrap, scrap and gold made
+ * into ingots, then its diamond pieces upgraded at a smithing table, sword and pickaxe first. It copies the
+ * upgrade templates it needs when it has diamonds to spare.
+ *
+ * Technical: Netherite (E-16c), as players get it: ancient debris smelted into scrap, four scrap and four
+ * gold made into an ingot, and a diamond piece upgraded at a smithing table with an ingot and an upgrade
+ * template, which is spent (a template is copied from another with seven diamonds and a block of netherrack).
+ * The pieces in the order a run upgrades them: its sword and pickaxe first, then its armour, chest to boots,
+ * then its axe. Pure: the adapter says what it holds.
  */
 public final class Netherite {
     private Netherite() { }

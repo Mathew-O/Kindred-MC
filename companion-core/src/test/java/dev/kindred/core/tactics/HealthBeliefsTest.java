@@ -6,6 +6,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the player's guess at how hurt each creature is: one it never saw hit is taken to be
+ * at full health, each hit it saw counts, players are expected to heal over time and mobs not, and the oldest
+ * guesses are forgotten first.
+ */
 class HealthBeliefsTest {
     @Test
     void aCreatureNeverSeenHitIsBelievedAtItsKindsFullHealth() {

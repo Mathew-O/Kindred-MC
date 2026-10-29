@@ -9,9 +9,14 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Deterministic, curated naming. The same brief and attempt always produce the same name; different
- * companions with identical traits produce different names through their UUID. A name is a memory fact
- * with provenance, never evidence that the named thing exists or is present. No model is involved.
+ * In plain terms: how a player makes up names for its pets, places, buildings and tools, from short word
+ * lists in a style that suits its personality: playful, descriptive or classic. The same request always gives
+ * the same name, two players alike in every trait still get different ones, and a name given by anyone else
+ * must pass the same rules.
+ *
+ * Technical: Deterministic, curated naming. The same brief and attempt always produce the same name;
+ * different companions with identical traits produce different names through their UUID. A name is a memory
+ * fact with provenance, never evidence that the named thing exists or is present. No model is involved.
  */
 public final class NameForge {
     public static final int MIN_LENGTH = 2;
@@ -24,6 +29,10 @@ public final class NameForge {
     public enum Flavor {
         PLAYFUL, DESCRIPTIVE, CLASSIC;
 
+        /**
+         * The naming style a personality leans to: playful for the funny, descriptive for the curious,
+         * otherwise classic.
+         */
         public static Flavor of(Personality personality) {
             Objects.requireNonNull(personality);
             if (personality.humor() >= 65) return PLAYFUL;
@@ -95,6 +104,9 @@ public final class NameForge {
         return new Name(valid, subject, source, 0);
     }
 
+    /**
+     * A name tidied and checked: 2 to 32 letters, spaces, apostrophes or hyphens, starting with a capital.
+     */
     static String validate(String text) {
         if (text == null) throw new IllegalArgumentException("Name is required");
         String trimmed = text.strip().replaceAll("\\s+", " ");

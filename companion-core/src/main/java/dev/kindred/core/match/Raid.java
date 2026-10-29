@@ -10,13 +10,17 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
- * Raiding an opponent's storage in a match (E-44), as the owner set it out (2026-10-25): a player that finds a chest
- * belonging to another player, in a match whose sides are opponents, asks the model whether to take that hostile
- * action and take its valuables. A chest is an opponent's only by what the player saw: it saw them use it. The model
- * answers from three choices; with none set up, or no usable answer, the player's own rule answers on the same facts.
- * What it tells afterwards it tells its own team only. Whether the two are opponents at all is the match's to say
- * ({@link MatchRegistry#opponents}); nothing here makes anyone one. Pure: the adapter says what the player saw and
- * knows.
+ * In plain terms: whether a player raids a chest it saw an opponent use, in a match it is playing: an
+ * optional AI adviser picks raid, leave or watch from what the player knows, and the player's own rule
+ * decides when there is no adviser or no usable answer. It tells only its own team what it took.
+ *
+ * Technical: Raiding an opponent's storage in a match (E-44), as the owner set it out (2026-10-25): a player
+ * that finds a chest belonging to another player, in a match whose sides are opponents, asks the model
+ * whether to take that hostile action and take its valuables. A chest is an opponent's only by what the
+ * player saw: it saw them use it. The model answers from three choices; with none set up, or no usable
+ * answer, the player's own rule answers on the same facts. What it tells afterwards it tells its own team
+ * only. Whether the two are opponents at all is the match's to say ({@link MatchRegistry#opponents}); nothing
+ * here makes anyone one. Pure: the adapter says what the player saw and knows.
  */
 public final class Raid {
     private Raid() { }

@@ -19,10 +19,14 @@ import java.util.PriorityQueue;
 import java.util.function.Predicate;
 
 /**
- * Bounded A* over standing positions for a player-sized body. It only reads loaded blocks the body could see
- * by walking there; it never edits the world. Moves: walk (including diagonals without corner cutting), step
- * up one block with a jump, drop up to three blocks (further into water), and swim. Lava, fire and other
- * damaging blocks are never entered, and positions beside lava cost extra.
+ * In plain terms: finds a walking route for an AI player through the world as it really is: walking, stepping
+ * up, dropping a few blocks or swimming, but never into lava, fire or other harmful blocks. It only looks at
+ * parts of the world that are loaded, and never changes anything.
+ *
+ * Technical: Bounded A* over standing positions for a player-sized body. It only reads loaded blocks the body
+ * could see by walking there; it never edits the world. Moves: walk (including diagonals without corner
+ * cutting), step up one block with a jump, drop up to three blocks (further into water), and swim. Lava, fire
+ * and other damaging blocks are never entered, and positions beside lava cost extra.
  */
 final class NativeNavigator {
     static final int DEFAULT_MAX_NODES = 6_000;
@@ -50,6 +54,7 @@ final class NativeNavigator {
     private final it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap terrain = new it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap();
     private final int maxDrop;
 
+    /** A navigator for the given world that drops the body no further than is safe. */
     NativeNavigator(ServerWorld world) {
         this(world, MAX_SAFE_DROP);
     }
@@ -89,6 +94,7 @@ final class NativeNavigator {
     /** Whether a closed wooden door counts as a way through: for a walk that opens the doors on its way (M-01b). */
     private boolean doors;
 
+    /** The same navigator, now counting closed wooden doors as a way through. */
     NativeNavigator throughDoors() {
         doors = true;
         passables.clear();
@@ -169,6 +175,7 @@ final class NativeNavigator {
 
     private static final int[][] HORIZONTAL = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
+    /** Every move a body standing at the given spot can make next, with what each costs. */
     List<Move> moves(BlockPos from) {
         var moves = new ArrayList<Move>(12);
         boolean inWater = swimmable(from);
@@ -363,6 +370,7 @@ final class NativeNavigator {
         return loaded(pos) && state(pos).getFluidState().isIn(FluidTags.LAVA);
     }
 
+    /** Whether the block there would hurt or trap the body. */
     boolean hazard(BlockPos pos) {
         return loaded(pos) && hazard(state(pos));
     }
@@ -422,6 +430,7 @@ final class NativeNavigator {
         return state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL) || state.isOf(Blocks.END_GATEWAY);
     }
 
+    /** Whether the spot is in a loaded part of the world, inside its border. */
     boolean loaded(BlockPos pos) {
         if (!world.isInBuildLimit(pos)) return false;
         int cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
@@ -431,6 +440,7 @@ final class NativeNavigator {
         return known == 1 && world.getWorldBorder().contains(pos);
     }
 
+    /** The block at the spot, read once and remembered for this search. */
     BlockState state(BlockPos pos) {
         long key = pos.asLong();
         BlockState state = states.get(key);

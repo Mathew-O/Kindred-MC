@@ -17,11 +17,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * What each AI player has learnt about each world by playing in it, kept across restarts: the places that matter on
- * the way to the End (the portals it went through, the fortress it found, where its eyes' flights cross, the End
- * portal) and each eye flight it watched. One small JSON file per player in the world's {@code kindred/memory} folder.
- * Only what the player saw itself is kept, as it saw it; a restart no longer sends it to throw eyes again, or to find
- * a fortress again that it already found. Reads and writes run on their own thread; a write replaces the file whole.
+ * In plain terms: what each AI player remembers about each world from playing in it, kept across restarts:
+ * the places that matter on the way to the End, the bases and trading hall it built, and any work an
+ * administrator set it to. Only what it saw for itself is kept, and it is saved to small files without
+ * holding up the game.
+ *
+ * Technical: What each AI player has learnt about each world by playing in it, kept across restarts: the
+ * places that matter on the way to the End (the portals it went through, the fortress it found, where its
+ * eyes' flights cross, the End portal) and each eye flight it watched. One small JSON file per player in the
+ * world's {@code kindred/memory} folder. Only what the player saw itself is kept, as it saw it; a restart no
+ * longer sends it to throw eyes again, or to find a fortress again that it already found. Reads and writes
+ * run on their own thread; a write replaces the file whole.
  */
 final class PlayerMemoryStore implements AutoCloseable {
     /** A place in one dimension, by its id ("minecraft:the_nether"). */
@@ -50,10 +56,12 @@ final class PlayerMemoryStore implements AutoCloseable {
      * its origin its floor's north-west corner.
      */
     record Base(String stage, String dimension, int x, int y, int z, boolean complete, String seed, String wood, int variant, int turns) {
+        /** A base recorded before building styles existed: the first plan, in oak. */
         Base(String stage, String dimension, int x, int y, int z, boolean complete) {
             this(stage, dimension, x, y, z, complete, null, null, 0, 0);
         }
 
+        /** The same base, now standing whole. */
         Base finished() {
             return new Base(stage, dimension, x, y, z, true, seed, wood, variant, turns);
         }
@@ -64,6 +72,7 @@ final class PlayerMemoryStore implements AutoCloseable {
      * turned), how many cells it has, its wood, and whether it stands whole. A file from before E-45d has none.
      */
     record Hall(String dimension, int x, int y, int z, int cells, String wood, boolean complete) {
+        /** The same hall, now standing whole. */
         Hall finished() {
             return new Hall(dimension, x, y, z, cells, wood, true);
         }
@@ -96,6 +105,7 @@ final class PlayerMemoryStore implements AutoCloseable {
         return thread;
     });
 
+    /** The memory kept in the given world's mod folder. */
     PlayerMemoryStore(Path worldKindredFolder) {
         this.folder = worldKindredFolder.resolve("memory");
     }
@@ -194,6 +204,7 @@ final class PlayerMemoryStore implements AutoCloseable {
         });
     }
 
+    /** Stops the background saving once the writes already asked for are done. */
     @Override
     public void close() {
         io.shutdown();

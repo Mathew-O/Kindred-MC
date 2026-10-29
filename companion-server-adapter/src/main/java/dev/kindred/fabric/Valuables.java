@@ -19,12 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A player's things as the value model sees them (E-42): what a stack is, what the player holds, wears and is short
- * of, and what kind of container a chest is from what stands round it. Server thread only.
+ * In plain terms: how an AI player judges what things are worth to it: what an item is, what it already
+ * carries and wears, what it still needs, what a villager is offering, and what kind of chest it has found
+ * from what stands around it.
+ *
+ * Technical: A player's things as the value model sees them (E-42): what a stack is, what the player holds,
+ * wears and is short of, and what kind of container a chest is from what stands round it. Server thread only.
  */
 final class Valuables {
     private Valuables() { }
 
+    /** The item's name in the game, such as minecraft:iron_ingot. */
     static String id(ItemStack stack) {
         return Registries.ITEM.getId(stack.getItem()).toString();
     }
@@ -38,6 +43,7 @@ final class Valuables {
         return levels;
     }
 
+    /** An item as the worth reckoning sees it: what it is, how many, and how enchanted. */
     static Worth.Stack stack(ItemStack stack) {
         return new Worth.Stack(id(stack), stack.getCount(), enchantments(stack));
     }
@@ -97,6 +103,7 @@ final class Valuables {
         return new dev.kindred.core.guide.Trades.Enchant(key.getKey().map(k -> k.getValue().toString()).orElse("minecraft:unknown"), Math.max(1, level));
     }
 
+    /** How much an item is worth to this player, given what it already holds. */
     static Worth.Judgement judge(ItemStack stack, Worth.Holding holding) {
         return Worth.judge(stack(stack), holding);
     }
@@ -109,6 +116,7 @@ final class Valuables {
         return world.isChunkLoaded(pos) && world.getBlockEntity(pos) instanceof LootableContainerBlockEntity chest && chest.getLootTable() != null;
     }
 
+    /** A chest minecart nobody has opened yet, so what is inside is still to be decided. */
     static boolean unrolled(StorageMinecartEntity cart) {
         return cart.isAlive() && cart.getLootTable() != null;
     }

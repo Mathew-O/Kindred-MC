@@ -16,6 +16,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player carries out one skill, such as walking somewhere: a pause keeps its
+ * progress so it can carry on from there, a stop ends it at once and nothing later revives it, a skill making
+ * no progress retries at most twice and then gives up, a lasting problem or running out of time ends it, and
+ * bad settings are refused.
+ */
 class SkillRunnerTest {
     private static final SkillDescriptor WALK = new SkillDescriptor("move_to", Set.of("x", "z"), Set.of("note"), Set.of("navigate"),
             Set.of(), Duration.ofSeconds(10), Duration.ofSeconds(2), 2);

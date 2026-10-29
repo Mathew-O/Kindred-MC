@@ -17,9 +17,14 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * A build grown from a seed block (E-29a). Given a cherry log as its seed, a player with stone tools grows its cabin in
- * cherry, on the plan and facing its world draws, not the first plan every world would get, and builds it exact. With
- * no seed it grows it in the wood it has to hand.
+ * In plain terms: a GameTest: in a real test world, a player holding enough for any cabin design is checked
+ * to build its cabin base exactly to plan, on a design its own world picks rather than the same first design
+ * for every world: in cherry wood when given a cherry log as its seed, in the wood it holds when given none,
+ * and, in four more tests, in each fixed cabin shape and facing.
+ *
+ * Technical: A build grown from a seed block (E-29a). Given a cherry log as its seed, a player with stone
+ * tools grows its cabin in cherry, on the plan and facing its world draws, not the first plan every world
+ * would get, and builds it exact. With no seed it grows it in the wood it has to hand.
  */
 public final class NativeSeedBuildGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seed-build", tickLimit = 30000)

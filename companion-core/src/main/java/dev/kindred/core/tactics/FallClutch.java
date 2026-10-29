@@ -1,11 +1,14 @@
 package dev.kindred.core.tactics;
 
 /**
- * Breaking a fall with a water bucket (E-07d), as vanilla 1.21.1 reckons a fall: a landing hurts one point for each
- * block fallen past three (armour does not soften it), and a landing in water hurts nothing, as the water is felt
- * before the ground (`LivingEntity.fall` checks for water first). The water is poured on the block the player will land
- * on, from where its face is within reach, and as late as the fall allows; it is worth the time only for a fall that
- * would hurt. Pure.
+ * In plain terms: saving a long fall by pouring a water bucket where the player is about to land. It works
+ * out how much the fall would hurt, whether it is worth saving, and the moment to pour.
+ *
+ * Technical: Breaking a fall with a water bucket (E-07d), as vanilla 1.21.1 reckons a fall: a landing hurts
+ * one point for each block fallen past three (armour does not soften it), and a landing in water hurts
+ * nothing, as the water is felt before the ground (`LivingEntity.fall` checks for water first). The water is
+ * poured on the block the player will land on, from where its face is within reach, and as late as the fall
+ * allows; it is worth the time only for a fall that would hurt. Pure.
  */
 public final class FallClutch {
     /** How far a player reaches to use an item on a block face (vanilla's block interaction range). */

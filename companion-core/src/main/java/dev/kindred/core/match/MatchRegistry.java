@@ -11,12 +11,18 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Matches and who may attack whom (M-00a, D7). A match is proposed with the players invited to it and runs only once
- * every one of them has joined: a human joins only by its own choice, and an AI player is entered by an operator.
- * While a duel runs, and only then, its joined participants may attack one another; no other mode lets players strike
- * one another, and players outside a match are never attacked. A match ends on its mode's terms (a fall in a duel, the
- * first runner to finish a speedrun), a forfeit, its time running out or a stop, and its leave to attack ends with it at
- * once. One match at a time a player. Owner-thread only.
+ * In plain terms: keeps track of matches between players, such as duels, speedrun races, manhunts and build
+ * battles: who was invited, who joined, the countdown, the clock and who won. It is also the one place that
+ * says who may attack whom: only players on opposite sides of the same running match that allows it, never
+ * anyone outside a match.
+ *
+ * Technical: Matches and who may attack whom (M-00a, D7). A match is proposed with the players invited to it
+ * and runs only once every one of them has joined: a human joins only by its own choice, and an AI player is
+ * entered by an operator. While a duel runs, and only then, its joined participants may attack one another;
+ * no other mode lets players strike one another, and players outside a match are never attacked. A match ends
+ * on its mode's terms (a fall in a duel, the first runner to finish a speedrun), a forfeit, its time running
+ * out or a stop, and its leave to attack ends with it at once. One match at a time a player. Owner-thread
+ * only.
  */
 public final class MatchRegistry {
     public enum Mode {
@@ -41,6 +47,7 @@ public final class MatchRegistry {
         /** Its time from the start of the fight, then a draw; zero for none. */
         public final int ticks;
 
+        /** A mode with its player limits, whether players may strike one another, and its time. */
         Mode(int minPlayers, int maxPlayers, boolean pvp, int ticks) {
             this.minPlayers = minPlayers;
             this.maxPlayers = maxPlayers;
@@ -87,6 +94,7 @@ public final class MatchRegistry {
         Match counting(long until) { return new Match(id, mode, invited, runners, joined, out, State.COUNTDOWN, until, endsAt, winner, winners, result); }
         Match running(long until) { return new Match(id, mode, invited, runners, joined, out, State.RUNNING, countdownEnds, until, winner, winners, result); }
         Match voting(long until) { return new Match(id, mode, invited, runners, joined, out, State.VOTING, countdownEnds, until, winner, winners, result); }
+        /** The same match ended, with its winner, its winning side and how it ended. */
         Match ended(UUID winner, Set<UUID> winners, String result) {
             return new Match(id, mode, invited, runners, joined, out, State.ENDED, countdownEnds, endsAt, winner, winners, result);
         }

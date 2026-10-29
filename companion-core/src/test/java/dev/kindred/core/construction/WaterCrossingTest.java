@@ -9,6 +9,12 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks how a player plans to bring a villager across a lake too wide to bridge: it rows
+ * over in a boat to the hall's bank and lays a rail line home from there, picks the landing that needs the
+ * least rowing and rail, and gives up when there is no level ground to the water, no bank to step onto, or
+ * too much water to row.
+ */
 class WaterCrossingTest {
     private static final Pos HALL = new Pos(0, 64, 0);
 

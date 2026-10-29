@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
+/**
+ * In plain terms: checks when a player's home grows to its next stage: a cabin once it can mine stone, a
+ * house once it has iron tools and its chests are filling or some days have passed, and a manor round its
+ * enchanting table as the last stage.
+ */
 class BaseProgressionTest {
     private static BaseProgression.Progress at(Houses.Stage built, boolean stone, boolean iron, boolean table, int free, int slots, long days) {
         return new BaseProgression.Progress(Optional.ofNullable(built), stone, iron, table, free, slots, days);

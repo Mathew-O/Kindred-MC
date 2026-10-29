@@ -13,6 +13,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the build battle: each builder gets its own plot in a row, builders score each
+ * other's builds from one to five and the best average wins, every theme's design fits a plot, and the
+ * player's own judging rewards size, variety and height.
+ */
 class BuildBattleTest {
     private final UUID ada = UUID.randomUUID(), bram = UUID.randomUUID(), cy = UUID.randomUUID(), dee = UUID.randomUUID();
 

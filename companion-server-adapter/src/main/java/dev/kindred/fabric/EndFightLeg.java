@@ -32,9 +32,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The dragon goal past the End portal (E-39): fills the frame with eyes and goes in, and in the End plays the fight
- * the planner names ({@link EndFightPlanner}), each step one ordinary bounded skill. Only where the server allows the
- * fight; otherwise the goal stops by the portal as the End-portal goal does.
+ * In plain terms: the last stretch of an AI player's run: filling the End portal with eyes and going through,
+ * then fighting in the End as players do: shooting the crystals from a safe distance (opening their cages
+ * where needed), fighting the dragon and keeping out of its breath. Beforehand it sets a bed down by the
+ * portal so a death in the End does not send it all the way back. It fights only where the server allows it.
+ *
+ * Technical: The dragon goal past the End portal (E-39): fills the frame with eyes and goes in, and in the
+ * End plays the fight the planner names ({@link EndFightPlanner}), each step one ordinary bounded skill. Only
+ * where the server allows the fight; otherwise the goal stops by the portal as the End-portal goal does.
  */
 final class EndFightLeg {
     private final PortalRunCampaign campaign;
@@ -64,6 +69,7 @@ final class EndFightLeg {
     /** Where the bow is drawn from: far enough that a crystal's blast does not reach, near enough to hit. */
     static final double NEAREST_SHOT = 16, FARTHEST_SHOT = 56;
 
+    /** The End part of the given goal, following on from its trip to the stronghold. */
     EndFightLeg(PortalRunCampaign campaign, StrongholdLeg leg) {
         this.campaign = campaign;
         this.leg = leg;
@@ -135,6 +141,10 @@ final class EndFightLeg {
         return Optional.empty();
     }
 
+    /**
+     * Where the fight stands now: the portal's frames and eyes, its bow, arrows, blocks and health, and in
+     * the End the crystals and the dragon as it sees them.
+     */
     EndFightSnapshot snapshot(ServerPlayerEntity player, PortalRunSnapshot p) {
         var world = player.getServerWorld();
         int eyes = player.getInventory().count(Items.ENDER_EYE);
@@ -362,6 +372,7 @@ final class EndFightLeg {
         return s.inEnd() ? Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Wait a moment")) : Optional.empty();
     }
 
+    /** A stage of the fight in words, such as Fill portal. */
     static String label(EndFightPlanner.Stage stage) {
         String name = stage.name().toLowerCase(Locale.ROOT).replace('_', ' ');
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);

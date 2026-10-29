@@ -25,11 +25,19 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Named kit (E-16d): a player at the enchanting stage (an enchanting table of its own) names its best weapons and
- * tools at an anvil, a level each. With iron to spare and no anvil, it makes one at a crafting table (three blocks of
- * iron and four ingots), puts it down, and names its enchanted diamond sword and its diamond pickaxe names of its own,
- * not its plain iron sword; holding an anvil, it puts that down and takes the model's name, and its own when the model
- * names a name it has used; and short of the stage it names nothing and makes no anvil.
+ * In plain terms: a GameTest: in a real test world, a player that has reached the enchanting stage is checked
+ * to name its best weapon and tool at an anvil, one level each. With spare iron and no anvil it crafts and
+ * places one and gives its enchanted diamond sword and diamond pickaxe names of its own, leaving its plain
+ * iron sword unnamed; holding an anvil, it places it and takes a name offered by a test stand-in adviser,
+ * choosing its own when that name is already used; and short of the enchanting stage it names nothing and
+ * makes no anvil.
+ *
+ * Technical: Named kit (E-16d): a player at the enchanting stage (an enchanting table of its own) names its
+ * best weapons and tools at an anvil, a level each. With iron to spare and no anvil, it makes one at a
+ * crafting table (three blocks of iron and four ingots), puts it down, and names its enchanted diamond sword
+ * and its diamond pickaxe names of its own, not its plain iron sword; holding an anvil, it puts that down and
+ * takes the model's name, and its own when the model names a name it has used; and short of the stage it
+ * names nothing and makes no anvil.
  */
 public final class NativeKitNameGameTests implements FabricGameTest {
     /** A strategist that answers every name question with one name, and records the questions; it gives no advice. */

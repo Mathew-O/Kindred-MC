@@ -11,7 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** The player's own melee weapons as {@link DamageModel} sees them (E-39e): kind, material and Sharpness. */
+/**
+ * In plain terms: how an AI player weighs up its own swords, axes and mace: what kind, what material and how
+ * sharp, so it can pick the right one to fight with.
+ *
+ * Technical: The player's own melee weapons as {@link DamageModel} sees them (E-39e): kind, material and
+ * Sharpness.
+ */
 final class Weapons {
     private Weapons() { }
 
@@ -44,6 +50,7 @@ final class Weapons {
     /** A weapon the player holds, and the inventory slot it is in. */
     record Held(int slot, DamageModel.Weapon weapon) { }
 
+    /** Every weapon in the player's inventory, with the slot it is in. */
     static List<Held> held(ServerPlayerEntity player) {
         var held = new ArrayList<Held>();
         for (int slot = 0; slot < 36; slot++) {

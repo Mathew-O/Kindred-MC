@@ -5,6 +5,11 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player looks over nearby blocks: each tick it does only a limited amount and
+ * finishes on later ticks, it skips unloaded and empty areas without going through their blocks, it forgets
+ * what it saw once an area unloads or it looks elsewhere, and it does no work while idle.
+ */
 class SupportBatch04PerceptionTest {
 
     private final String log="minecraft:oak_log";private final SectionKey a=new SectionKey(0,0,0),b=new SectionKey(1,0,0);

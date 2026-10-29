@@ -6,12 +6,17 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * One edit decision for native actions. A player with an operator-assigned work area keeps that area's
- * bounded rules; a player without one works under the server's standing roaming policy.
+ * In plain terms: decides whether an AI player may break, place or open a block, till soil, sow seed or use a
+ * furnace. Inside a work area an administrator gave it, that area's rules apply; anywhere else, the server's
+ * rules for players roaming freely.
+ *
+ * Technical: One edit decision for native actions. A player with an operator-assigned work area keeps that
+ * area's bounded rules; a player without one works under the server's standing roaming policy.
  */
 final class NativeEdits {
     private NativeEdits() { }
 
+    /** Whether the player may break, place or use a container at this block. */
     static EditPolicy.Decision decide(ServerPlayerEntity player, WorkSetup setup, EditPolicy.Kind kind, BlockPos pos,
                                       String blockId, EditPolicy.ServerPolicy policy) {
         String dimension = player.getServerWorld().getRegistryKey().getValue().toString();

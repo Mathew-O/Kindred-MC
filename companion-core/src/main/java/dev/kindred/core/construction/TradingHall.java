@@ -6,16 +6,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A trading hall (E-45d): a row of cells, one for each villager kept, along a corridor the player walks and trades
- * from, as players build them. Each cell is one block wide and three deep: its bed along it, head to the back wall, and
- * the villager's floor before the bed's foot (a villager standing on a bed's top never took up a job block before it:
- * no path from there, in a fixture). Walled from the next, floored and roofed, it is open to the corridor only across
- * its front, where the villager's job block goes at its feet once the villager is in, which shuts it in: a lintel over
- * the job block leaves no room to stand on it, and the one block open between the two is where the player trades
- * across. The corridor is walled three high, lit within and shut by a door at its middle, against zombies, and open to
- * the sky: a roof seven deep over a closed hall left its middle row out of any reach to place it (a fixture's build
- * stopped short of it). Its origin is the north-west corner of the floor; the cells' fronts face south. Kindred's own
- * (D8). Pure.
+ * In plain terms: the plan for a trading hall: a row of small cells, one for each villager, each with a bed
+ * and the villager's work block, along a walled corridor the player walks and trades from. Each villager is
+ * shut in so it stays put, with a gap left to trade across.
+ *
+ * Technical: A trading hall (E-45d): a row of cells, one for each villager kept, along a corridor the player
+ * walks and trades from, as players build them. Each cell is one block wide and three deep: its bed along it,
+ * head to the back wall, and the villager's floor before the bed's foot (a villager standing on a bed's top
+ * never took up a job block before it: no path from there, in a fixture). Walled from the next, floored and
+ * roofed, it is open to the corridor only across its front, where the villager's job block goes at its feet
+ * once the villager is in, which shuts it in: a lintel over the job block leaves no room to stand on it, and
+ * the one block open between the two is where the player trades across. The corridor is walled three high,
+ * lit within and shut by a door at its middle, against zombies, and open to the sky: a roof seven deep over a
+ * closed hall left its middle row out of any reach to place it (a fixture's build stopped short of it). Its
+ * origin is the north-west corner of the floor; the cells' fronts face south. Kindred's own (D8). Pure.
  */
 public final class TradingHall {
     private TradingHall() { }

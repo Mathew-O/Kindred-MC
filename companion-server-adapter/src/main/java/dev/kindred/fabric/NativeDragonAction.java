@@ -26,13 +26,19 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Recorded fight with the Ender Dragon while it perches on the exit portal's pillar (E-39d), as players fight it: from
- * a spot in front of its head, a little more than a block off it, where vanilla 1.21.1's wings do not fling a player
- * away (each wing's box widened by four) and the head's own touch does not hurt (its box widened by one), striking the
- * head whenever reach and the swing allow, jumping for critical hits, and out of its breath the moment a cloud of it
- * comes down by the player. One continuous action for as long as the dragon sits, at most twenty seconds; it ends when
- * the dragon takes off or dies. Its only effects on owned items are the weapon's wear (or its breaking) and pickups.
- * The head takes the full blow; with the head out of reach a while, the neck or body is struck, for a quarter.
+ * In plain terms: an AI player fighting the Ender Dragon while it rests on the pillar in the middle of the
+ * End, as players do: standing just in front of its head where the wings cannot fling it away, striking the
+ * head when it can, jumping for harder hits, and stepping out of the dragon's breath. It lasts while the
+ * dragon sits, twenty seconds at most.
+ *
+ * Technical: Recorded fight with the Ender Dragon while it perches on the exit portal's pillar (E-39d), as
+ * players fight it: from a spot in front of its head, a little more than a block off it, where vanilla
+ * 1.21.1's wings do not fling a player away (each wing's box widened by four) and the head's own touch does
+ * not hurt (its box widened by one), striking the head whenever reach and the swing allow, jumping for
+ * critical hits, and out of its breath the moment a cloud of it comes down by the player. One continuous
+ * action for as long as the dragon sits, at most twenty seconds; it ends when the dragon takes off or dies.
+ * Its only effects on owned items are the weapon's wear (or its breaking) and pickups. The head takes the
+ * full blow; with the head out of reach a while, the neck or body is struck, for a quarter.
  */
 final class NativeDragonAction extends NativeRecordedAction {
     static final int MAX_TICKS = 400;
@@ -54,6 +60,7 @@ final class NativeDragonAction extends NativeRecordedAction {
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
+    /** A fight with the given dragon from the given spot, with the weapon in a hotbar slot. */
     NativeDragonAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                        UUID dragonId, int slot, BlockPos spot) {
         this.body = body; this.lease = lease; this.writer = writer; this.dispatch = dispatch;
@@ -69,6 +76,7 @@ final class NativeDragonAction extends NativeRecordedAction {
         return type == PhaseType.SITTING_SCANNING || type == PhaseType.SITTING_ATTACKING || type == PhaseType.SITTING_FLAMING;
     }
 
+    /** The dragon's body part with the given name (its head, neck, body and so on), or none. */
     static EnderDragonPart part(EnderDragonEntity dragon, String name) {
         for (var part : dragon.getBodyParts()) if (name.equals(part.name)) return part;
         return null;
@@ -145,6 +153,7 @@ final class NativeDragonAction extends NativeRecordedAction {
 
     private Step waiting() { return Step.running(Map.of("durableAction", phase(), "hits", String.valueOf(hits)), false); }
 
+    /** Moves the fight on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded fight never replays", true);

@@ -4,10 +4,14 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Things a player can find itself short of for what it means to do later, from a fixed set. Each is one the local
- * planner knows how to gather or craft from what it finds, so a need queued by the planner or by the optional
- * strategist is always one the player can act on. Declared so that what is crafted comes before what it is crafted
- * from ({@link NeedsAssessment} relies on it).
+ * In plain terms: the fixed list of things a player can find itself short of for what it plans to do later,
+ * such as a bow, arrows, a water bucket, a bed, blocks or food. Every one is something the player knows how
+ * to gather or craft itself.
+ *
+ * Technical: Things a player can find itself short of for what it means to do later, from a fixed set. Each
+ * is one the local planner knows how to gather or craft from what it finds, so a need queued by the planner
+ * or by the optional strategist is always one the player can act on. Declared so that what is crafted comes
+ * before what it is crafted from ({@link NeedsAssessment} relies on it).
  */
 public enum Need {
     BOW("bow", 1),

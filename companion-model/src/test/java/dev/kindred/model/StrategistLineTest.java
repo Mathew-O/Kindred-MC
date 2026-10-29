@@ -7,7 +7,15 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** A conversation's reply is checked before anything of it is said (E-20a): every refusal is a failure, nothing used. */
+/**
+ * In plain terms: checks every line an optional AI adviser writes for a player before any of it is said:
+ * empty or too long lines, commands, formatting codes, rude words, and coordinates for someone who may not
+ * know them are refused, and a request to come, wait, stop or toss an item is accepted only from someone who
+ * may command the player.
+ *
+ * Technical: A conversation's reply is checked before anything of it is said (E-20a): every refusal is a
+ * failure, nothing used.
+ */
 class StrategistLineTest {
     private static final Strategist.Conversation PLAYER = new Strategist.Conversation("s", "t", false);
     private static final Strategist.Conversation CONTROLLER = new Strategist.Conversation("s", "t", true);

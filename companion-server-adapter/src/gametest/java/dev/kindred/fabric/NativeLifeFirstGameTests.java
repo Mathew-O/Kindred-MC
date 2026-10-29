@@ -15,7 +15,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 
 /**
- * One weighted list, life first (F-25c9). A player with its own base:
+ * In plain terms: a GameTest: in a real test world, a player with its own base is checked to put staying
+ * alive before building. When night falls mid-build it leaves the build for its own bed and sleeps, which
+ * sets its spawn point and passes the night, places nothing while asleep and finishes the build in the
+ * morning; and when hungry with too little food it hunts cows first, starting its base only once it has
+ * enough food to last.
+ *
+ * Technical: One weighted list, life first (F-25c9). A player with its own base:
  * <ul>
  *   <li>at night leaves its build for its own bed and sleeps there, which sets its spawn. Alone in the world, its
  *   sleep passes the night, as any player's does. It places nothing while it sleeps, and builds on in the morning;</li>

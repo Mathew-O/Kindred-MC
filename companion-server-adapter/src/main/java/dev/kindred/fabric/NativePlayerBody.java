@@ -84,7 +84,12 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 /**
- * Native survival-mechanics backend; full player qualification remains F-25b.
+ * In plain terms: the AI player's actual body in the world: a real server player, moved, turned and acted
+ * through the same game mechanics a human's player is (walking, jumping, mining, placing, using items,
+ * fighting, eating, sleeping). It only carries out what it is told one step at a time; deciding what to do,
+ * saving and permissions all live elsewhere.
+ *
+ * Technical: Native survival-mechanics backend; full player qualification remains F-25b.
  * The caller owns registration, saves, admission, claims and the existing arbiter. No autonomous
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */

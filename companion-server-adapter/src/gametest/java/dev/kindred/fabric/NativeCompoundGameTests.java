@@ -16,10 +16,18 @@ import net.minecraft.util.math.Box;
 import java.util.UUID;
 
 /**
- * A walled base's first stage (M-06a): the keep. A player builds its cabin inside a walled yard from the blocks it holds:
- * a stone wall four high from its foundation, lined inside with planks and lit by torches on the lining, and no gate,
- * the way in a stair down beside the west wall, a passage under it and a stair up into the yard, all lined with stone.
- * Every block ends in its exact state. Then, from outside, it walks in by the passage.
+ * In plain terms: a GameTest: in a real test world, a player is checked to build a walled base stage by
+ * stage, each exactly to plan from the blocks it holds and each entered by a passage under the wall rather
+ * than a gate: a cabin keep in a lined, torch-lit walled yard; a farm ward beside it whose field it then
+ * waters, tills and sows, one seed to each plot; a pasture ward with a pen, into which it leads two cows
+ * through a doorway, breeds them and shuts the doorway behind them; and a hall with a two-floor house and
+ * towers at the corners. After each build it walks in from outside.
+ *
+ * Technical: A walled base's first stage (M-06a): the keep. A player builds its cabin inside a walled yard
+ * from the blocks it holds: a stone wall four high from its foundation, lined inside with planks and lit by
+ * torches on the lining, and no gate, the way in a stair down beside the west wall, a passage under it and a
+ * stair up into the yard, all lined with stone. Every block ends in its exact state. Then, from outside, it
+ * walks in by the passage.
  */
 public final class NativeCompoundGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundKeep", tickLimit = 48000)

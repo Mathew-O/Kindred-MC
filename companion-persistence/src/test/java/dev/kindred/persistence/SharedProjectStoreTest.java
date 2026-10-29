@@ -22,6 +22,11 @@ import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that the team's shared projects and tasks are saved and loaded back intact, that an
+ * out-of-date write is refused, and that on startup unfinished tasks are reopened and their set-aside items
+ * freed, except a task whose player's last action has an unknown outcome, which stays held.
+ */
 class SharedProjectStoreTest {
     @TempDir
     Path tempDir;

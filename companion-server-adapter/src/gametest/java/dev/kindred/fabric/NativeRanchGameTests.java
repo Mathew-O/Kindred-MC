@@ -19,9 +19,15 @@ import net.minecraft.util.math.Box;
 import java.util.UUID;
 
 /**
- * A ranch in Co-op Survival (M-01a). An AI player with fourteen oak logs it cut and eight wheat it grew crafts a pen's
- * fences and gate, builds the pen, leads two cows from across a field into it with the wheat in hand, shuts them in,
- * feeds them, and leaves with the gate shut once the calf is born: two wheat spent, the cows still penned after.
+ * In plain terms: a GameTest: in a real test world, a player with fourteen oak logs and eight wheat is set to
+ * start a cow ranch. The test checks it crafts and builds a fenced pen with a gate, leads two cows in from
+ * across the field with the wheat, breeds them and leaves with the gate shut: the pen complete, two wheat
+ * used, both cows and a calf inside, and still inside ten seconds later.
+ *
+ * Technical: A ranch in Co-op Survival (M-01a). An AI player with fourteen oak logs it cut and eight wheat it
+ * grew crafts a pen's fences and gate, builds the pen, leads two cows from across a field into it with the
+ * wheat in hand, shuts them in, feeds them, and leaves with the gate shut once the calf is born: two wheat
+ * spent, the cows still penned after.
  */
 public final class NativeRanchGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "ranch", tickLimit = 6000)

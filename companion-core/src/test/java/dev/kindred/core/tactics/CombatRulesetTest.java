@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the game's combat rules as the player reckons them: how a swing charges up, what
+ * makes a critical hit, when a hit knocks back or sweeps, the short safe spell after being hit, and how
+ * armour and a shield cut damage.
+ */
 class CombatRulesetTest {
     /** A sword swings 1.6 times a second at full charge, an iron axe 0.9 times: twelve and a half and 22.2 ticks. */
     @Test

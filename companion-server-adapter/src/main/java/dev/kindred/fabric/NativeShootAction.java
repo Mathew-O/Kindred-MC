@@ -24,11 +24,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * One arrow from an owned bow at one target, as a player shoots (E-39b): the bow is drawn for a full second with the aim
- * kept on the target, on the low arc vanilla's arrow flies ({@link Ballistics}) and ahead of a target that moves, then
- * loosed, and the arrow watched until it lands. Exactly one arrow is spent under the durable ledger and the bow wears
- * by one; the step reports whether the target fell. The player stands still while it draws, as a moving shooter's arrow
- * is thrown off.
+ * In plain terms: an AI player shooting one arrow from its own bow at one target, as a human does: standing
+ * still, drawing for a full second while aiming ahead of a moving target, then letting go and watching where
+ * the arrow lands. Exactly one arrow is used and the bow wears a little; it reports whether the target fell.
+ *
+ * Technical: One arrow from an owned bow at one target, as a player shoots (E-39b): the bow is drawn for a
+ * full second with the aim kept on the target, on the low arc vanilla's arrow flies ({@link Ballistics}) and
+ * ahead of a target that moves, then loosed, and the arrow watched until it lands. Exactly one arrow is spent
+ * under the durable ledger and the bow wears by one; the step reports whether the target fell. The player
+ * stands still while it draws, as a moving shooter's arrow is thrown off.
  */
 final class NativeShootAction extends NativeRecordedAction {
     /** Ticks of draw: a bow is at full strength after twenty. */
@@ -53,11 +57,13 @@ final class NativeShootAction extends NativeRecordedAction {
     private Vec3d lastTarget, targetMotion = Vec3d.ZERO, landed;
     private CompletableFuture<ActionRecord> flush;
 
+    /** A shot on the low arc at the given target, with the bow in a hotbar slot. */
     NativeShootAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       int slot, UUID targetId) {
         this(body, lease, writer, dispatch, slot, targetId, false);
     }
 
+    /** As above; when high, the arrow goes up and comes down steeply, as through a cage's broken roof. */
     NativeShootAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       int slot, UUID targetId, boolean high) {
         this.high = high;
@@ -104,6 +110,7 @@ final class NativeShootAction extends NativeRecordedAction {
         return new float[] {(float) Math.toDegrees(Math.atan2(-dx, dz)), shot.get().pitch()};
     }
 
+    /** Moves the shot on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded shot cannot replay after cancellation/restart", true);

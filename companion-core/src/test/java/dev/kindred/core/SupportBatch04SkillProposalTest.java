@@ -5,6 +5,11 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks a plan suggested from outside before it is used: each step's settings are limited in
+ * size, copied and may not carry anything unknown, and a plan needs one to six installed skills, an adviser
+ * that is set up, and must be current and not expired.
+ */
 class SupportBatch04SkillProposalTest {
 
     private SkillDescriptor descriptor(){return new SkillDescriptor("move_to",Set.of("x"),Set.of("note"),Set.of(),Set.of(),Duration.ofSeconds(2),Duration.ofSeconds(1),2);}

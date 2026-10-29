@@ -24,9 +24,13 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Shows a match to the players in it (M-00b), as {@link MatchPresentation} works it out: titles with their sounds for
- * the countdown, the start and each player's result, and a boss bar with the players and the clock while it lasts.
- * All of it is what a vanilla client shows unaided. Server thread only.
+ * In plain terms: shows a match to the players in it, the way an ordinary game shows things: big titles with
+ * sounds for the countdown, the start and each player's result, and a bar at the top of the screen with the
+ * players and the clock while it lasts.
+ *
+ * Technical: Shows a match to the players in it (M-00b), as {@link MatchPresentation} works it out: titles
+ * with their sounds for the countdown, the start and each player's result, and a boss bar with the players
+ * and the clock while it lasts. All of it is what a vanilla client shows unaided. Server thread only.
  */
 final class MatchPresenter {
     /** Titles kept for each player, most recent last: what a fixture or a status line reads back. */
@@ -116,6 +120,7 @@ final class MatchPresenter {
         return bar == null ? List.of() : bar.getPlayers().stream().map(ServerPlayerEntity::getUuid).toList();
     }
 
+    /** The words a match's bar shows now, for checking. */
     String barText(UUID matchId) {
         var bar = bars.get(matchId);
         return bar == null ? "" : bar.getName().getString();

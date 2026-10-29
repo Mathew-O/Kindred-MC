@@ -12,10 +12,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * A build's needs as a queue (E-08c). A player builds a hut holding only part of it: its planks, some cobblestone
- * and four logs. Its own storage close by holds the torch and the rest of the cobblestone, taken at once. It builds what
- * it can, then, stuck for the roof's stairs and slabs and the corners' logs, cuts all the logs the rest takes in one
- * trip, crafts the planks, stairs and slabs, and finishes the hut.
+ * In plain terms: a GameTest: in a real test world, a player told to build a small hut holds only part of
+ * what it needs; more cobblestone and the torch are in its own chest nearby, and the rest must come from
+ * trees. The test checks it takes from its chest first, builds all it can, fetches the missing logs in a
+ * single trip, crafts what it still lacks and finishes the hut exactly to plan. A second test checks that a
+ * player short of logs cuts trees, not the corner posts of a hut standing nearer.
+ *
+ * Technical: A build's needs as a queue (E-08c). A player builds a hut holding only part of it: its planks,
+ * some cobblestone and four logs. Its own storage close by holds the torch and the rest of the cobblestone,
+ * taken at once. It builds what it can, then, stuck for the roof's stairs and slabs and the corners' logs,
+ * cuts all the logs the rest takes in one trip, crafts the planks, stairs and slabs, and finishes the hut.
  *
  * <p>Short of logs, a player cuts trees, never the logs of a build standing nearer (E-08d): before, a log column on
  * solid ground was a tree wherever it stood, and a player that came up short for its hut cut the corner posts out of

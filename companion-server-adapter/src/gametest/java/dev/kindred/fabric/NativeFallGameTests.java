@@ -12,10 +12,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * A long fall broken with a water bucket (E-07d), as a player knocked off a pillar would break it: the native player,
- * idle, is put twenty-two blocks above stone, falls, pours its water on the block it is about to land on, lands in it
- * unhurt and scoops it back up. The control falls twelve blocks with no bucket and is hurt as vanilla reckons it. Both
- * drop only after vanilla's sixty ticks of grace for a player that has just joined, in which it takes no fall damage.
+ * In plain terms: a GameTest: in a real test world, a player dropped twenty-two blocks with a water bucket is
+ * checked to pour the water where it is about to land, land unhurt and scoop the water back up, and a player
+ * stepping off a sixteen-block pillar onto end stone is checked to do the same. A player with no bucket,
+ * dropped twelve blocks, is checked to take exactly the damage the game's own fall rules give.
+ *
+ * Technical: A long fall broken with a water bucket (E-07d), as a player knocked off a pillar would break it:
+ * the native player, idle, is put twenty-two blocks above stone, falls, pours its water on the block it is
+ * about to land on, lands in it unhurt and scoops it back up. The control falls twelve blocks with no bucket
+ * and is hurt as vanilla reckons it. Both drop only after vanilla's sixty ticks of grace for a player that
+ * has just joined, in which it takes no fall damage.
  */
 public final class NativeFallGameTests implements FabricGameTest {
     /** Ticks after joining past which vanilla's join invulnerability (sixty ticks) is over. */

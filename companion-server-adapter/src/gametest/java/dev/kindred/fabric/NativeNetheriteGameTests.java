@@ -14,10 +14,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Netherite (E-16c): a player holding a diamond sword enchanted with Sharpness III, an upgrade template, four ancient
- * debris, four gold ingots, coal, and a furnace, a crafting table and a smithing table, smelts the debris into scrap in
- * a furnace it puts down, makes the scrap and gold into an ingot at a table it puts down, puts its smithing table down
- * and upgrades the sword: a netherite sword, its Sharpness III kept, the template and the ingot spent, and it says so.
+ * In plain terms: a GameTest: in a real test world, a player given ancient debris, gold, coal, an upgrade
+ * template, a furnace, a crafting table and a smithing table is checked to smelt the debris, make a netherite
+ * ingot and upgrade its enchanted diamond sword to netherite, keeping the enchantment, using up exactly those
+ * materials and saying it did so.
+ *
+ * Technical: Netherite (E-16c): a player holding a diamond sword enchanted with Sharpness III, an upgrade
+ * template, four ancient debris, four gold ingots, coal, and a furnace, a crafting table and a smithing
+ * table, smelts the debris into scrap in a furnace it puts down, makes the scrap and gold into an ingot at a
+ * table it puts down, puts its smithing table down and upgrades the sword: a netherite sword, its Sharpness
+ * III kept, the template and the ingot spent, and it says so.
  */
 public final class NativeNetheriteGameTests implements FabricGameTest {
     private static int count(net.minecraft.inventory.Inventory inventory, Item item) {

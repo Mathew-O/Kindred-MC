@@ -22,10 +22,17 @@ import java.nio.file.Files;
 import java.util.TreeMap;
 
 /**
- * The trading hall (E-45d): a hall of two cells built by Mason from exactly the blocks it takes, every block in its
- * state, its cells and corridor clear; then a librarian in a cell, its lectern across the cell's front, kept in by the
- * cell and keeping its profession, as the hall is meant to hold it. The villager is set in its cell by the fixture:
- * bringing one there is E-45e's.
+ * In plain terms: a GameTest: in a real test world, a player is checked to build a trading hall of villager
+ * cells exactly to plan from just the blocks it needs, and a librarian set in a cell is checked to stay
+ * inside at its lectern and keep its job. Further tests check that a player with a cabin base that finds a
+ * librarian worth keeping builds a hall beside its cabin of its own accord, that it makes the hall's beds
+ * from wool it shears without killing any sheep, and that it repairs a damaged hall around the villager
+ * inside, leaving the lectern and the villager in place.
+ *
+ * Technical: The trading hall (E-45d): a hall of two cells built by Mason from exactly the blocks it takes,
+ * every block in its state, its cells and corridor clear; then a librarian in a cell, its lectern across the
+ * cell's front, kept in by the cell and keeping its profession, as the hall is meant to hold it. The villager
+ * is set in its cell by the fixture: bringing one there is E-45e's.
  */
 public final class NativeTradingHallGameTests implements FabricGameTest {
     private static void check(TestContext context, String[] first, boolean ok, String message) {

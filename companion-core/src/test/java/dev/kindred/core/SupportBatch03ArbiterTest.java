@@ -6,6 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the one controller of a player's body: after a hundred stops and restarts no old
+ * order can act again, and no new order can take the body until the cancelled one has fully stopped.
+ */
 class SupportBatch03ArbiterTest {
 
     @Test void hundredsOfStopResumeCyclesNeverReviveStaleAuthority() {

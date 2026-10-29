@@ -9,8 +9,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * The paddles answer a native AI player's inputs (forward, left, right) where a client's would, at the same point in
- * the boat's tick: after drag and buoyancy, before the move. The inputs are the ordinary ones a player's client sets.
+ * In plain terms: a small patch so a boat's paddles work when an AI player rows it, just as they do when a
+ * human presses the keys.
+ *
+ * Technical: The paddles answer a native AI player's inputs (forward, left, right) where a client's would, at
+ * the same point in the boat's tick: after drag and buoyancy, before the move. The inputs are the ordinary
+ * ones a player's client sets.
  */
 @Mixin(BoatEntity.class)
 public abstract class BoatPaddleMixin {

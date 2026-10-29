@@ -5,6 +5,12 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the skin images a server owner supplies: a file's name gives the same short name
+ * whatever the computer's language, a file that is broken, empty, too big or lies about its size is refused,
+ * a name ending in slim or classic decides the arm shape, and an accepted skin keeps its own copy of the
+ * image.
+ */
 class SupportBatch04SkinTest {
 
     private byte[] png(int height,boolean wide)throws Exception{

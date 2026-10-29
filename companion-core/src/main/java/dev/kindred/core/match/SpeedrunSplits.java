@@ -9,9 +9,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A speedrun's splits (M-03a): the points on the way to the dragon a runner's time is taken at, each one a vanilla
- * advancement, so the game itself says when a runner got there, the same for humans and AIs. The time is the game's
- * own: ticks since the start, twenty to a second, unaffected by how fast the server runs them.
+ * In plain terms: the checkpoints of a speedrun race, from smelting iron to killing the Ender Dragon, each
+ * marked by the game's own advancement so humans and AI players are timed alike. It records when each runner
+ * reached each one and shows the time as a speedrun timer does.
+ *
+ * Technical: A speedrun's splits (M-03a): the points on the way to the dragon a runner's time is taken at,
+ * each one a vanilla advancement, so the game itself says when a runner got there, the same for humans and
+ * AIs. The time is the game's own: ticks since the start, twenty to a second, unaffected by how fast the
+ * server runs them.
  */
 public final class SpeedrunSplits {
     /** One point on the route, and the advancement that marks it. */

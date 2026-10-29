@@ -10,6 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks the player's plan from an empty inventory to a lit Nether portal: it follows the
+ * whole route in a stand-in inventory, on ordinary worlds and sky islands, chooses between mining and casting
+ * the obsidian frame, packs a spare pickaxe, sticks and food before going underground, does not let hunting
+ * push the route aside, and waits for a teammate's portal instead of building its own.
+ */
 class PortalRunPlannerTest {
 
     /** Mutable stand-in for a player's inventory that applies each step's vanilla outcome. */
@@ -124,6 +130,9 @@ class PortalRunPlannerTest {
         }
     }
 
+    /**
+     * With the portal lit, iron wanted for other work, such as rails, is still mined, smelted and collected.
+     */
     @Test
     void ironForWorkOfItsOwnIsMinedAndSmeltedWhenTheRunHasNoMoreUseForIron() {
         // The portal lit and its iron long made: seventeen ingots more for rails and a minecart (E-45e), with a stone
@@ -466,6 +475,7 @@ class PortalRunPlannerTest {
         assertEquals(WorldFacts.Method.MINE_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH), "a diamond pickaxe already owned");
     }
 
+    /** Seeing diamond ore switches the plan from casting the portal frame to mining it. */
     @Test
     void theChoiceChangesAsSoonAsTheWorldDoes() {
         Sim sim = ironDone();
@@ -681,6 +691,10 @@ class PortalRunPlannerTest {
                 .noneMatch(step -> step.why().contains("Wood first")));
     }
 
+    /**
+     * On a sky island with no tree grown yet, a wood-first player has nothing to cut and goes on with the
+     * route.
+     */
     @Test
     void woodFirstLeavesSaplingWaitsToTheRouteOnASkyIsland() {
         Sim sim = skyIsland();

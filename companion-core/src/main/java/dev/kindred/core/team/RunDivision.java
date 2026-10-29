@@ -9,10 +9,16 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * A run divided between the players on it (E-40a), as players share one out: while one goes to the Nether for blaze
- * rods and pearls, another gathers iron and diamonds, food, wool for beds and arrows, and once there are eyes enough,
- * one goes to find the stronghold; at the end they all meet there for the End. Pure: the adapter says who is on the
- * team, what each has of the kit that decides it, and where the run stands; this says what each is to do, and why.
+ * In plain terms: how a team splits up a run to the Ender Dragon: who builds the Nether portal, who goes to
+ * the Nether for blaze rods and pearls, who gathers supplies, who finds the stronghold, and when they all
+ * meet there. Each player gets a part, a reason and a line to tell the team; a player on its own does each
+ * part in turn.
+ *
+ * Technical: A run divided between the players on it (E-40a), as players share one out: while one goes to the
+ * Nether for blaze rods and pearls, another gathers iron and diamonds, food, wool for beds and arrows, and
+ * once there are eyes enough, one goes to find the stronghold; at the end they all meet there for the End.
+ * Pure: the adapter says who is on the team, what each has of the kit that decides it, and where the run
+ * stands; this says what each is to do, and why.
  *
  * <ul>
  *   <li>Before the portal is lit, everyone gathers: the one with the best pickaxe digs for the portal's obsidian and
@@ -50,6 +56,7 @@ public final class RunDivision {
             Objects.requireNonNull(pickaxe);
         }
 
+        /** A player with no portal of its own begun. */
         public Player(UUID id, String name, int protection, ShareOut.Material pickaxe, int gold, int eyes) {
             this(id, name, protection, pickaxe, gold, eyes, false);
         }

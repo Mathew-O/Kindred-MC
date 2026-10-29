@@ -13,13 +13,16 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * A minecart on its rails pushed by walking into it, as a player pushes one (E-45e): a cart is not solid to a player,
- * and a player inside its bounds shoves it away from where the player stands. Walked into from behind at a walk, never
- * running or jumping (a body running through a cart pushed it back out again as it passed its middle), until the cart
- * rolls on of itself, as a cart on level rails does a long way loaded and a short way empty. It ends once the cart rolls,
- * the player clear behind it; or when the cart is gone or its time is up. Given a block to {@code clear}, it is a nudge:
- * it ends once the cart has come to rest clear of that block (a cart stopped half in a cell's front, nudged on into the
- * cell against the bed).
+ * In plain terms: an AI player pushing a minecart along its rails by walking into it from behind, as a human
+ * does, until it rolls on by itself. It can also nudge a stopped cart just far enough to clear a spot.
+ *
+ * Technical: A minecart on its rails pushed by walking into it, as a player pushes one (E-45e): a cart is not
+ * solid to a player, and a player inside its bounds shoves it away from where the player stands. Walked into
+ * from behind at a walk, never running or jumping (a body running through a cart pushed it back out again as
+ * it passed its middle), until the cart rolls on of itself, as a cart on level rails does a long way loaded
+ * and a short way empty. It ends once the cart rolls, the player clear behind it; or when the cart is gone or
+ * its time is up. Given a block to {@code clear}, it is a nudge: it ends once the cart has come to rest clear
+ * of that block (a cart stopped half in a cell's front, nudged on into the cell against the bed).
  */
 final class NativePushSkill implements SkillBody {
     /** How fast the cart must roll, blocks a tick, for the push to count: an empty cart this fast picks up a mob it touches. */
@@ -32,6 +35,10 @@ final class NativePushSkill implements SkillBody {
     private final int maxTicks;
     private int ticks;
 
+    /**
+     * A push of the given cart for at most the given seconds; with a block to clear, a nudge until the cart
+     * has stopped off that block.
+     */
     NativePushSkill(NativePlayerBody body, Supplier<ActionLease> lease, UUID cart, int seconds, net.minecraft.util.math.BlockPos clear) {
         if (seconds < 1 || seconds > 30) throw new IllegalArgumentException("A push lasts 1..30 seconds");
         this.body = body;
@@ -41,6 +48,7 @@ final class NativePushSkill implements SkillBody {
         this.maxTicks = seconds * 20;
     }
 
+    /** Moves the push on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         var player = body.entity();

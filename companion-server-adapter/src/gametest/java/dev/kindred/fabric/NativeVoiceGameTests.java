@@ -24,13 +24,23 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
- * The player's voice (E-20a): spoken to, a native player has the model phrase its reply from what it knows that this
- * listener may know, through the social lane's own checks, and says its fixed reply whenever that fails. A stub stands
- * in for the model: it records each conversation it is given and answers as the fixture sets, as a provider would
- * before its own checks, so the refusals seen here are the runtime's. The owner is a mock player who created the
- * player (its controller, and an operator so that it may create one); the others are mock players who did not. Since
- * F-18a its controller is talked with in private; the fixtures with others in them turn public chat on, and each turns
- * the player's ambient remarks off so that only replies are heard.
+ * In plain terms: a GameTest: in a real test world, people chat to a player while a test stand-in writes its
+ * replies, to check what it may say and to whom. Its owner gets a reply in good time while its work goes on,
+ * and a far-off player hears nothing; a bystander is answered only when public chat is on, and the reply is
+ * never given the player's position or belongings; an opponent asking for its coordinates gets only a fixed
+ * reply; when no reply comes, or the voice is switched off, the fixed reply is said; a message that arrives
+ * while a reply is being written waits, and a newer one takes its place (the one replaced gets the fixed
+ * reply); a stopped player still answers without starting anything; and with public chat off its controller
+ * still hears its replies and remarks while bystanders do not.
+ *
+ * Technical: The player's voice (E-20a): spoken to, a native player has the model phrase its reply from what
+ * it knows that this listener may know, through the social lane's own checks, and says its fixed reply
+ * whenever that fails. A stub stands in for the model: it records each conversation it is given and answers
+ * as the fixture sets, as a provider would before its own checks, so the refusals seen here are the
+ * runtime's. The owner is a mock player who created the player (its controller, and an operator so that it
+ * may create one); the others are mock players who did not. Since F-18a its controller is talked with in
+ * private; the fixtures with others in them turn public chat on, and each turns the player's ambient remarks
+ * off so that only replies are heard.
  */
 public final class NativeVoiceGameTests implements FabricGameTest {
     /** A strategist that records each conversation and answers as set; it gives no advice and answers no question. */

@@ -10,6 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks how a player enchants its gear: its best sword first, then its bow and armour, never
+ * anything already enchanted; it goes to the table with thirty levels and three lapis, picks the best offer
+ * it can pay for, and says what it did.
+ */
 class EnchantingTest {
     @Test
     void itsSwordFirstThenItsBowAndArmourTheBestOfEachAndNothingAlreadyEnchanted() {

@@ -15,12 +15,18 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The next step of a build, re-planned from the world every time it is asked (E-08a), as a player builds: what is
- * already there in the state wanted is done; a block in the way of a target or of space to keep clear is broken; of
- * the rest, the lowest layer first and then the nearest, each placed against a face it can be set on, from a spot the
- * player can stand on and reach the face from, looking the way that gives the state wanted. With no such spot, a
- * scaffold column of its own blocks is built to stand on, and taken down at the end. It never stands where it would
- * seal itself in, never builds against what it cannot see, and never breaks what is not the build's to change. Pure.
+ * In plain terms: the next step of a build, worked out fresh from the world each time, as a player builds:
+ * break what is in the way, then place blocks from the bottom layer up, nearest first, from a spot it can
+ * stand on and reach. With nowhere to stand it builds a pillar of its own blocks and takes it down at the
+ * end, and it never walls itself in or breaks what is not part of the build.
+ *
+ * Technical: The next step of a build, re-planned from the world every time it is asked (E-08a), as a player
+ * builds: what is already there in the state wanted is done; a block in the way of a target or of space to
+ * keep clear is broken; of the rest, the lowest layer first and then the nearest, each placed against a face
+ * it can be set on, from a spot the player can stand on and reach the face from, looking the way that gives
+ * the state wanted. With no such spot, a scaffold column of its own blocks is built to stand on, and taken
+ * down at the end. It never stands where it would seal itself in, never builds against what it cannot see,
+ * and never breaks what is not the build's to change. Pure.
  */
 public final class ConstructionPlanner {
     /** How far from the eyes a face can be clicked: vanilla's block interaction range. */
@@ -91,6 +97,7 @@ public final class ConstructionPlanner {
         /** Blocked over {@code target}: nothing to be done from here, but there may be from nearer it. */
         static Step blockedAt(Pos target, String reason) { return new Step(Kind.BLOCKED, target, null, null, null, null, null, null, 0, 0, 0, reason); }
 
+        /** A step to break one block, standing at a given spot. */
         static Step breaking(Pos target, Pos stance, String reason) {
             return new Step(Kind.BREAK, target, null, null, stance, null, null, null, 0, 0, 0, reason);
         }
@@ -414,6 +421,7 @@ public final class ConstructionPlanner {
         return walkable(steps(blocks, clear, site), feet, scaffold);
     }
 
+    /** Every spot the player can walk to from where it stands, up a block or down a short drop. */
     public static Set<Pos> walkable(BuildSite site, Pos feet, Set<Pos> scaffold) {
         var seen = new HashSet<Pos>();
         var queue = new ArrayDeque<Pos>();
@@ -513,6 +521,7 @@ public final class ConstructionPlanner {
 
     /** The build's bounding box, by x and z: inside it a player is among the build. */
     record Box(int minX, int minZ, int maxX, int maxZ) {
+        /** The box round a set of blocks. */
         static Box of(List<Blueprint.Block> blocks) {
             int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
             for (var b : blocks) {
@@ -522,6 +531,7 @@ public final class ConstructionPlanner {
             return new Box(minX, minZ, maxX, maxZ);
         }
 
+        /** Whether a spot lies within the box. */
         boolean inside(Pos p) {
             return p.x() >= minX && p.x() <= maxX && p.z() >= minZ && p.z() <= maxZ;
         }

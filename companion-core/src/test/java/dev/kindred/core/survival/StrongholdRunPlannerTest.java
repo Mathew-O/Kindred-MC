@@ -15,6 +15,11 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the player's plan from a lit portal to the stronghold's portal room: stock up first,
+ * get blaze rods at a fortress and ender pearls, make and throw eyes back home, follow them and dig down, and
+ * pick up what the End fight needs along the way without stopping the trip.
+ */
 class StrongholdRunPlannerTest {
     /** A player just through lighting its portal: a stone sword and pickaxe, little food, few blocks. */
     private static Builder justLit() {
@@ -214,6 +219,7 @@ class StrongholdRunPlannerTest {
         assertEquals(Stage.NETHER, StrongholdRunPlanner.stage(ready, new Provisions(trip, Map.of(), Set.of(), held)));
     }
 
+    /** The guide's list of what a Nether trip needs uses the same amounts as the plan. */
     @Test
     void theGuidesNetherTripNeedsAreThePlannersOwn() {
         var needs = dev.kindred.core.guide.MinecraftGuide.requirements(Objective.NETHER_TRIP);

@@ -10,8 +10,13 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * One real consultation, run only when {@code KINDRED_LIVE_MODEL_TEST} and {@code ANTHROPIC_API_KEY} are set: the
- * ordinary build never calls the network or spends money.
+ * In plain terms: checks, only when someone asks for it and a key is set, that a real optional AI adviser
+ * gives sensible advice: a hurt, hungry player that keeps dying is not told to press on, repeated hunger
+ * brings a focus on food, deaths to skeletons queue something useful it does not already hold, and in chat it
+ * answers from what the player is doing and comes when its owner asks.
+ *
+ * Technical: One real consultation, run only when {@code KINDRED_LIVE_MODEL_TEST} and {@code
+ * ANTHROPIC_API_KEY} are set: the ordinary build never calls the network or spends money.
  */
 class ClaudeStrategistLiveTest {
 

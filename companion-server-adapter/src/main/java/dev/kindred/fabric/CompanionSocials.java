@@ -27,8 +27,13 @@ import java.util.function.Function;
 import java.util.function.LongSupplier;
 
 /**
- * Server-thread social lane. No task mutation, navigation, memory invention or model requests. Its speakers are AI
- * players in either body, the legacy companion's or the native player's.
+ * In plain terms: the AI players' small talk on the server: glancing at people who come near, passing
+ * remarks, answering when spoken to (in their own words when the optional voice is on, otherwise with a fixed
+ * reply), chatting with each other about how their work is going, and mentioning work done or stuck. It only
+ * handles words and glances; what a player does is decided elsewhere.
+ *
+ * Technical: Server-thread social lane. No task mutation, navigation, memory invention or model requests. Its
+ * speakers are AI players in either body, the legacy companion's or the native player's.
  */
 final class CompanionSocials {
     record Participant(UUID id, UUID owner, String name, LivingEntity body, SocialProfile profile, boolean active) { }
@@ -128,6 +133,7 @@ final class CompanionSocials {
         this.voice = voice;
     }
 
+    /** Who handles two AI players comparing notes on their progress when they meet. */
     void setConferenceHandler(PeerConferenceHandler handler) {
         this.conferenceHandler = handler;
     }
@@ -143,16 +149,22 @@ final class CompanionSocials {
         }
     }
 
+    /**
+     * The small talk, finding each AI player by id, keeping time by the given clock and saying lines through
+     * the given output.
+     */
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output) {
         this(lookup, clock, output, Habits.NONE);
     }
 
+    /** As above, with the players' habits. */
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output, Habits habits) {
         this(lookup, clock, output, habits, SocialPerception::companionOf);
     }
 
+    /** As above, with a way to tell which body belongs to which AI player. */
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output, Habits habits, Function<Entity, UUID> aiPlayer) {
         this.lookup = lookup;
@@ -162,6 +174,10 @@ final class CompanionSocials {
         this.aiPlayer = aiPlayer;
     }
 
+    /**
+     * Forgets what the player had noticed and drops remarks it had not made yet; replies already due are
+     * kept.
+     */
     void reset(UUID id) {
         SocialBrain brain = brains.get(id);
         if (brain != null) brain.clearObservations();
@@ -197,6 +213,10 @@ final class CompanionSocials {
         said.forEach(Runnable::run); // What follows a line, once the lines are said.
     }
 
+    /**
+     * Once a tick for an active player: notes when it is hurt, and now and then looks about, meets fellow AI
+     * players and makes a remark.
+     */
     void tick(Participant speaker) {
         if (!speaker.active()) return;
         long now = clock.getAsLong();
@@ -314,6 +334,10 @@ final class CompanionSocials {
         // An exchange is terminal: system chat never enters the player-chat handler.
     }
 
+    /**
+     * Whether the player can talk with this person: in sight, and either one who may command it or the player
+     * talks in public.
+     */
     boolean canTalk(ServerPlayerEntity player, Participant companion) {
         return companion != null && SocialPerception.visible(companion.body(), player)
                 && (owns(companion).test(player) || companion.profile().publicConversation());
@@ -324,6 +348,9 @@ final class CompanionSocials {
         return player -> companion.owner().equals(player.getUuid()) || controls.test(player, companion);
     }
 
+    /**
+     * Answers a person who spoke to the player, if it can talk with them now; false when it does not answer.
+     */
     boolean reply(ServerPlayerEntity player, Participant companion, String message) {
         if (!canTalk(player, companion)) return false;
         long now = clock.getAsLong();
@@ -407,6 +434,10 @@ final class CompanionSocials {
         while (pending.size() > 64) pending.removeFirst();
     }
 
+    /**
+     * Whether two AI players may chat with each other: both active, both talk in public, and each can see the
+     * other.
+     */
     static boolean eligiblePartner(Participant a, Participant b) {
         return b != null && !a.id().equals(b.id()) && a.active() && b.active()
                 && a.profile().publicConversation() && b.profile().publicConversation()
@@ -421,6 +452,7 @@ final class CompanionSocials {
                 snapshot.contacts(), snapshot.harm() != null ? snapshot.harm() : recent ? recentHarm.get(id) : null);
     }
 
+    /** Lets the player mention a piece of work it finished. */
     void workCompleted(UUID companionId, String skill, String detail) {
         SocialBrain b = brain(companionId);
         Participant p = lookup.apply(companionId);
@@ -429,6 +461,7 @@ final class CompanionSocials {
         }
     }
 
+    /** Lets the player mention a piece of work it could not do, and why. */
     void workBlocked(UUID companionId, String skill, String reason) {
         SocialBrain b = brain(companionId);
         Participant p = lookup.apply(companionId);

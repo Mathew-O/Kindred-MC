@@ -12,9 +12,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Walks to a block position along a bounded A* route using only ordinary movement inputs (forward, yaw, jump).
- * It never breaks or places blocks. A route that cannot reach the goal may still be followed toward the
- * closest explored point when {@code partial} is requested, which is how exploration makes headway.
+ * In plain terms: an AI player walking to a spot the way a human does, using only ordinary movement: forward,
+ * turning, jumping and sprinting. It never digs or builds. It cuts straight across open ground, slows for
+ * sharp turns, can keep clear of monsters it does not mean to fight, and opens and shuts doors on its way.
+ *
+ * Technical: Walks to a block position along a bounded A* route using only ordinary movement inputs (forward,
+ * yaw, jump). It never breaks or places blocks. A route that cannot reach the goal may still be followed
+ * toward the closest explored point when {@code partial} is requested, which is how exploration makes
+ * headway.
  * <p>
  * It moves as a player does. Across level, clear ground it heads straight for the furthest of the next few
  * waypoints it can reach in a line, rather than zigzagging from block centre to block centre. It turns smoothly and
@@ -95,6 +100,7 @@ final class NativeGoToSkill implements SkillBody {
         if (player.getPos().distanceTo(Vec3d.ofBottomCenter(target)) > 160) throw new IllegalArgumentException("Goto target is too far for one route");
     }
 
+    /** Whether a body standing there has arrived. */
     boolean goalReached(BlockPos feet) {
         return Math.sqrt(feet.getSquaredDistance(target)) <= range + 0.01;
     }
@@ -111,12 +117,14 @@ final class NativeGoToSkill implements SkillBody {
     private int leg;
     private Vec3d start;
 
+    /** Walks with the item in the given hotbar slot in hand, as with food out for animals to follow. */
     NativeGoToSkill holding(int slot) {
         if (slot < -1 || slot > 8) throw new IllegalArgumentException("A held hotbar slot is 0..8");
         hold = slot;
         return this;
     }
 
+    /** Stops after this many blocks along the way, to look back at what follows. */
     NativeGoToSkill leg(int blocks) {
         if (blocks < 0 || blocks > 64) throw new IllegalArgumentException("A leg is 0..64 blocks");
         leg = blocks;
@@ -149,6 +157,7 @@ final class NativeGoToSkill implements SkillBody {
         return true;
     }
 
+    /** Moves the walk on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         var player = body.entity();
