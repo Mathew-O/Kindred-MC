@@ -53,7 +53,7 @@ final class StrategistBridge implements AutoCloseable {
 
     private static final class State {
         ModelContextStore.PlayerContext context;
-        boolean loading, inFlight, asking;
+        boolean loading, inFlight, asking, talking;
         long lastAt, tokensToday;
         int deaths = -1, stuck = -1, deathsRecorded, events = -1;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
@@ -157,6 +157,71 @@ final class StrategistBridge implements AutoCloseable {
             answered.complete(answer.failure().isPresent() ? Optional.empty() : Optional.of(answer));
         }));
         return answered;
+    }
+
+    /**
+     * Answer someone who spoke to a player (E-20a), on the game thread: within the same rates and daily budgets as its
+     * advice and questions, one conversation at a time for each player (its own lane, apart from advice and questions),
+     * off the game thread, the line handed back on it. Nothing, at once, when the budgets or rates leave no room or a
+     * line of its is already being phrased: its fixed reply is then said. Each exchange is one line in the log.
+     */
+    java.util.concurrent.CompletableFuture<Optional<Strategist.Line>> converse(UUID id, String name, String listener,
+                                                                                 Strategist.Conversation conversation, MinecraftServer server) {
+        State state = states.computeIfAbsent(id, key -> new State());
+        var answered = new java.util.concurrent.CompletableFuture<Optional<Strategist.Line>>();
+        long reserved = Strategist.reservation(conversation);
+        if (state.talking || !admit(System.currentTimeMillis(), state, reserved)) {
+            answered.complete(Optional.empty());
+            return answered;
+        }
+        if (state.context == null && !state.loading) { // Its memory of this world, for the counters and what it remembers.
+            state.loading = true;
+            store.load(id, name).whenComplete((context, failure) -> server.execute(() -> {
+                state.loading = false;
+                if (state.context == null) state.context = context != null ? context : new ModelContextStore.PlayerContext();
+            }));
+        }
+        state.talking = true;
+        strategist.converse(conversation).whenComplete((given, failure) -> server.execute(() -> {
+            state.talking = false;
+            // Checked here again, whoever served it: a provider that let a place or a command through is still refused.
+            var line = given == null || given.say().isEmpty() ? given : Strategist.Line.checked(conversation, given.say().get(), given.reason(),
+                    given.inputTokens(), given.cachedTokens(), given.outputTokens(), given.millis());
+            if (failure != null || line == null) { // The reservation stands: it may still have been billed.
+                KindredMod.LOGGER.warn("{} voice: no line for {}: {}", name, listener, String.valueOf(failure));
+                answered.complete(Optional.empty());
+                return;
+            }
+            long used = line.inputTokens() - line.cachedTokens() + (line.cachedTokens() + 9) / 10 + line.outputTokens();
+            if (used > 0) {
+                tokensToday = Math.max(0, tokensToday + used - reserved);
+                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
+            }
+            if (state.context != null) {
+                state.context.conversations++;
+                state.context.inputTokens += line.inputTokens();
+                state.context.outputTokens += line.outputTokens();
+                store.save(id, state.context);
+            }
+            String cost = String.format(java.util.Locale.ROOT, "to %s, %,d in / %,d out, %.1f s", listener, line.inputTokens(), line.outputTokens(),
+                    line.millis() / 1000.0);
+            if (line.say().isPresent()) KindredMod.LOGGER.info("<{}> {} ({})", name, line.say().get(), cost);
+            else KindredMod.LOGGER.info("{} voice: no line ({}); the fixed reply instead ({})", name, line.failure().orElse("refused"), cost);
+            answered.complete(line.say().isPresent() ? Optional.of(line) : Optional.empty());
+        }));
+        return answered;
+    }
+
+    /**
+     * What a player remembers of this world, as its context file holds it: its notes (each with the habit it carries)
+     * and its deaths, newest last; nothing until the file is read.
+     */
+    java.util.List<String> remembered(UUID id) {
+        State state = states.get(id);
+        if (state == null || state.context == null) return java.util.List.of();
+        var kept = new ArrayList<String>(state.context.noteTexts());
+        for (var death : state.context.deaths) kept.add("you died at " + death.x() + ", " + death.y() + ", " + death.z() + ": " + death.cause());
+        return kept.size() <= 8 ? kept : kept.subList(kept.size() - 8, kept.size());
     }
 
     /** Called on the game thread after a goal's step was chosen; cheap when nothing changed. */

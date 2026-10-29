@@ -177,6 +177,11 @@ final class PlayerRuntime {
     private CompletableFuture<LoadedRegistry> startup;
     private CompletableFuture<Void> shutdown = CompletableFuture.completedFuture(null);
     private final CompanionSocials socials;
+    /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
+    private final PlayerVoice voice;
+    private boolean voiceOn = PlayerVoice.switchedOn(System.getenv());
+    /** What the social lane says to whom, for fixtures; null otherwise. */
+    private java.util.function.BiConsumer<ServerPlayerEntity, Text> heardForFixtures;
     private EditPolicy.ServerPolicy edits = EditPolicy.ServerPolicy.deferredD4();
     /**
      * Whether the server allows an AI player to fight the Ender Dragon (E-39a): off until an operator turns it on, as
@@ -362,8 +367,14 @@ final class PlayerRuntime {
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
-        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now,
-                (player, message) -> player.sendMessage(message, false), new HabitHooks(), this::aiPlayerOf);
+        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now, (player, message) -> {
+            player.sendMessage(message, false);
+            if (heardForFixtures != null) heardForFixtures.accept(player, message);
+        }, new HabitHooks(), this::aiPlayerOf);
+        voice = new PlayerVoice(this::voiceFacts, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
+        socials.setVoice(voice);
+        if (strategist.isPresent()) KindredMod.LOGGER.info("Kindred voice {}", voiceOn ? "on: replies in chat are phrased by the strategist's model"
+                : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
         socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {
             @Override
             public void onConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
@@ -10493,6 +10504,42 @@ final class PlayerRuntime {
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return null;
         var name = entry.nativeBody.entity().getInventory().getStack(slot).get(net.minecraft.component.DataComponentTypes.CUSTOM_NAME);
         return name == null ? null : name.getString();
+    }
+
+    /** The voice switched on or off, for fixtures (E-20a): as {@code KINDRED_VOICE} would at startup. */
+    void voiceForFixtures(boolean on) {
+        voiceOn = on;
+    }
+
+    /** What the social lane says to whom, for fixtures (E-20a). */
+    void heardForFixtures(java.util.function.BiConsumer<ServerPlayerEntity, Text> heard) {
+        heardForFixtures = heard;
+    }
+
+    /**
+     * What a player knows of itself as {@code speaker} speaks to it (E-20a), beyond what its body shows: who the speaker
+     * is to it, what it is at, its goal, its run's last events, what it last said and what it remembers of this world.
+     * Null when it cannot be voiced now.
+     */
+    private PlayerVoice.Facts voiceFacts(UUID id, ServerPlayerEntity speaker) {
+        Entry entry = entries.get(id);
+        if (entry == null || !running || !ready) return null;
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        UUID bodyId = self != null ? self.getUuid() : entry.body != null ? entry.body.getUuid() : null;
+        UUID who = speaker.getUuid();
+        // A native player's own record is its identity: whoever controls it (who created it) is its owner here.
+        boolean owner = entry.nativeState != null ? entry.nativeState.access().controllers().contains(who) : who.equals(entry.data.ownerId());
+        boolean controls = owner || entry.nativeState != null && entry.nativeState.access().mayControl(new Actor(who, speaker.hasPermissionLevel(2)));
+        boolean teammate = bodyId != null && matches.running(bodyId).filter(match -> match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT
+                && match.participant(who) && match.runners().contains(bodyId) == match.runners().contains(who)).isPresent();
+        var relation = bodyId != null && matches.opponents(bodyId, who) ? dev.kindred.core.ConversationAudience.Relation.OPPONENT
+                : owner ? dev.kindred.core.ConversationAudience.Relation.OWNER : controls ? dev.kindred.core.ConversationAudience.Relation.ADMIN
+                : teammate ? dev.kindred.core.ConversationAudience.Relation.TEAMMATE : dev.kindred.core.ConversationAudience.Relation.PLAYER;
+        boolean busy = entry.runner != null && runnerBusy(entry);
+        return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
+                busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
+                entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
+                strategist.map(bridge -> bridge.remembered(id)).orElse(List.of()));
     }
 
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */

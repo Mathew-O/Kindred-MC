@@ -190,6 +190,12 @@ final class PortalRunCampaign {
     /** How many events the player has reported: a strategist that follows play asks again when this moves on. */
     int eventCount() { return eventCount; }
 
+    /** The last {@code count} events, oldest first, as logged: what the player can tell of its run lately (E-20a). */
+    java.util.List<String> lastEvents(int count) {
+        var all = new java.util.ArrayList<>(events);
+        return java.util.List.copyOf(all.subList(Math.max(0, all.size() - count), all.size()));
+    }
+
     /**
      * Report what is happening as it happens, for a strategist that follows play: a fight with a new foe, a heavy hit
      * since the last report, nightfall and daybreak.

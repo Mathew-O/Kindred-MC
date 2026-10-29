@@ -44,6 +44,8 @@ final class ModelContextStore implements AutoCloseable {
         /** The strategist's follow-ups still queued, by name (absent in files from before the queue). */
         List<QueuedRecord> queue = new ArrayList<>();
         long consultations, inputTokens, outputTokens;
+        /** Replies the model phrased for it in chat (E-20a); their tokens are in the totals above. */
+        long conversations;
 
         /** The follow-ups as a queue; one edited by hand into something unknown is left out. */
         TaskQueue taskQueue() {

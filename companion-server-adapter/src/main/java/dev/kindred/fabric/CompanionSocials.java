@@ -62,6 +62,24 @@ final class CompanionSocials {
         };
     }
 
+    /**
+     * The player's voice (E-20a): a reply phrased by the model from what the player knows that this listener may know.
+     * Words only; whatever it returns goes through {@link #schedule} and the same checks as a fixed reply.
+     */
+    interface Voice {
+        /**
+         * Ask for a line answering {@code message}, handing it to {@code answered} on the server thread, or empty for the
+         * fixed reply; false at once, {@code answered} never called, when it cannot ask now (off, budgets, rates).
+         */
+        boolean answer(ServerPlayerEntity speaker, Participant player, String message, java.util.function.Consumer<Optional<String>> answered);
+
+        /** A direct reply was said to {@code speaker}, the model's or the fixed one: the exchange as it went. */
+        default void replied(ServerPlayerEntity speaker, Participant player, String said, String spoken) { }
+    }
+
+    /** A message that came while a line was being phrased: only the newest waits. */
+    private record Waiting(ServerPlayerEntity speaker, String message) { }
+
     private final Function<UUID, Participant> lookup;
     private final LongSupplier clock;
     private final BiConsumer<ServerPlayerEntity, Text> output;
@@ -79,12 +97,27 @@ final class CompanionSocials {
     private final List<Pending> pending = new ArrayList<>();
     private long nextAmbient = Long.MIN_VALUE;
     private PeerConferenceHandler conferenceHandler;
+    private Voice voice;
+    /** Players with a line being phrased, by the turn of their talk it answers; a turn ended by discard is not said. */
+    private final Map<UUID, Long> voicing = new HashMap<>();
+    private final Map<UUID, Waiting> waiting = new HashMap<>();
+    private long turns;
+
+    /** The player's voice, or null for the fixed replies alone. */
+    void setVoice(Voice voice) {
+        this.voice = voice;
+    }
 
     void setConferenceHandler(PeerConferenceHandler handler) {
         this.conferenceHandler = handler;
     }
 
-    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct) { }
+    /** A line to say when due; a voiced one ({@code voiced}) is checked at delivery against the player as it is then. */
+    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct, boolean voiced) {
+        Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct) {
+            this(speaker, recipient, text, due, direct, false);
+        }
+    }
 
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output) {
@@ -119,13 +152,17 @@ final class CompanionSocials {
     void discard(UUID id) {
         reset(id);
         pending.removeIf(p -> p.speaker().id().equals(id));
+        voicing.remove(id);
+        waiting.remove(id);
     }
 
     /** Say the lines whose reading time has elapsed, and drop any whose listener has walked off. */
     void deliverDue(UUID companionId, long now) {
         pending.removeIf(pendingLine -> {
             if (!pendingLine.speaker().id().equals(companionId) || pendingLine.due() > now) return false;
-            if (canTalk(pendingLine.recipient(), pendingLine.speaker())) output.accept(pendingLine.recipient(), pendingLine.text());
+            // A voiced line was asked for a while back: it is said only if the player, as it is now, may still say it.
+            Participant speaker = pendingLine.voiced() ? lookup.apply(companionId) : pendingLine.speaker();
+            if (canTalk(pendingLine.recipient(), speaker)) output.accept(pendingLine.recipient(), pendingLine.text());
             return true;
         });
     }
@@ -260,13 +297,64 @@ final class CompanionSocials {
         remember(directSpeakers, player.getUuid(), now + 3_000);
         // A remark about a habit gets a character answer; it is still finite dialogue with no task or settings effect.
         Optional<String> habitReply = habits.feedback(player, companion, message, now);
-        String spoken = habitReply.orElseGet(() -> {
-            var observed = withRecentDamage(companion.id(), now,
-                    SocialPerception.observe(companion.body(), companion.owner(), companion.profile(), companion.active(), aiPlayer, ignored -> false));
-            return SocialDialogue.reply(message, observed, companion.profile());
-        });
+        if (habitReply.isEmpty() && voice != null) {
+            if (voicing.containsKey(companion.id())) { // One line phrased at a time: this one waits, the newest in place of any waiting.
+                waiting.put(companion.id(), new Waiting(player, message));
+                return true;
+            }
+            if (voiced(player, companion, message, now)) return true;
+        }
+        String spoken = habitReply.orElseGet(() -> fixedReply(companion, message, now));
         schedule(companion, player, spoken, now + SpeechTiming.delayMillis(spoken), true);
+        if (voice != null) voice.replied(player, companion, message, spoken);
         return true;
+    }
+
+    private String fixedReply(Participant companion, String message, long now) {
+        var observed = withRecentDamage(companion.id(), now,
+                SocialPerception.observe(companion.body(), companion.owner(), companion.profile(), companion.active(), aiPlayer, ignored -> false));
+        return SocialDialogue.reply(message, observed, companion.profile());
+    }
+
+    /**
+     * Ask the voice to phrase the reply. Its line, or the fixed reply when it has none, is scheduled when it comes, the
+     * time it took counted as typing; then the message that waited meanwhile, if any, is answered in turn.
+     */
+    private boolean voiced(ServerPlayerEntity player, Participant companion, String message, long asked) {
+        long turn = ++turns;
+        voicing.put(companion.id(), turn);
+        boolean asking = voice.answer(player, companion, message, line -> {
+            if (!Long.valueOf(turn).equals(voicing.get(companion.id()))) return; // Discarded meanwhile: nothing is said.
+            voicing.remove(companion.id());
+            Participant now = lookup.apply(companion.id());
+            long at = clock.getAsLong();
+            if (now != null && canTalk(player, now)) {
+                String spoken = line.orElseGet(() -> fixedReply(now, message, at));
+                scheduleInTurn(now, player, spoken, at + Math.max(0, SpeechTiming.delayMillis(spoken) - (at - asked)));
+                voice.replied(player, now, message, spoken);
+            }
+            Waiting next = waiting.remove(companion.id());
+            if (next != null && now != null && canTalk(next.speaker(), now)) answerWaiting(next, now, at);
+        });
+        if (!asking && Long.valueOf(turn).equals(voicing.get(companion.id()))) voicing.remove(companion.id());
+        return asking;
+    }
+
+    /** The message that waited: phrased in turn if the voice can ask now, else the fixed reply. */
+    private void answerWaiting(Waiting next, Participant companion, long now) {
+        if (voice != null && voiced(next.speaker(), companion, next.message(), now)) return;
+        String spoken = fixedReply(companion, next.message(), now);
+        scheduleInTurn(companion, next.speaker(), spoken, now + SpeechTiming.delayMillis(spoken));
+        if (voice != null) voice.replied(next.speaker(), companion, next.message(), spoken);
+    }
+
+    /** A reply after a voiced exchange: said after any reply to the same listener not yet said, never in its place. */
+    private void scheduleInTurn(Participant speaker, ServerPlayerEntity recipient, String spoken, long due) {
+        for (Pending p : pending) {
+            if (p.direct() && p.speaker().id().equals(speaker.id()) && p.recipient().getUuid().equals(recipient.getUuid())) due = Math.max(due, p.due() + 1);
+        }
+        pending.add(new Pending(speaker, recipient, line(speaker, spoken), due, true, true));
+        while (pending.size() > 64) pending.removeFirst();
     }
 
     private void schedule(Participant speaker, ServerPlayerEntity recipient, String spoken, long due, boolean direct) {
