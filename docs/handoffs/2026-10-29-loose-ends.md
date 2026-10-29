@@ -140,5 +140,11 @@ The remaining work as each row states it on 29 October. Pull from here after A t
 
 ## My re-run of the voice branch
 
-A build and a focused run of `NativeVoiceGameTests` and `NativeAskGameTests` on `147cb0f`, in a scratch worktree,
-was still running when this page was committed; its result follows in the next commit to this page.
+On `147cb0f` in a clean scratch worktree, Linux x64 cloud container, OpenJDK 21, 2026-10-29:
+- `./gradlew build`: 787 JUnit results, none failed, six skipped (the opt-in live model tests).
+- `NativeVoiceGameTests` and `NativeAskGameTests` together, the entrypoints narrowed for the run and restored after:
+  all 13 fixtures passed in one run. That agrees with the branch's own evidence; the full suite was not rerun here.
+- Read in full: `ConversationAudience`, `ConversationPrompt`, `PlayerVoice`, the `Strategist` and `StrategistBridge`
+  changes, the `CompanionSocials` hook and the ask dispatch in `PlayerRuntime`. The tiers are enforced in code, the
+  reply is checked by the provider and again by the bridge, and an ask runs through the speaker's own command source
+  into the method the command calls. Items A1 to A4 above are what the read found.
