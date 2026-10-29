@@ -135,16 +135,20 @@ public final class FightOdds {
     /**
      * Its answer to a lethal hit in a duel it joined: both came to fight, so a hard hit is the fight going on, judged by
      * the kit on each side ({@code kitOdds}: the odds with both at full health) rather than by the health the hit
-     * already took, which the fight's own melee weighs as it goes (E-41b). Outclassed, it gets away; else it fights on.
+     * already took, which the fight's own melee weighs as it goes (E-41b). Outclassed, it gets away, unless there is no
+     * way away ({@code cornered}: a walled arena), where it fights on with what it has; else it fights on.
      */
-    public static Answer answerInDuel(boolean equipped, Odds kitOdds) {
+    public static Answer answerInDuel(boolean equipped, Odds kitOdds, boolean cornered) {
         Objects.requireNonNull(kitOdds);
-        return equipped && kitOdds.verdict() != Verdict.LOSING ? Answer.DEFEND : Answer.GET_AWAY;
+        return equipped && (kitOdds.verdict() != Verdict.LOSING || cornered) ? Answer.DEFEND : Answer.GET_AWAY;
     }
 
-    /** {@code side} at {@code health}, all else as it is: the kit alone, for {@link #answerInDuel}. */
+    /**
+     * {@code side} at {@code health}, its kit as it is: the kit alone, for {@link #answerInDuel}. The hardest hit it was
+     * seen to deal is left out, as one critical landed is how a fight between equals goes, not its kit.
+     */
     public static Side at(Side side, double health) {
         return new Side(health, side.armour(), side.toughness(), side.protection(), side.armourGlints(), side.weapon(), side.weaponGlints(),
-                side.crits(), side.shield(), side.healing(), side.hardestHit());
+                side.crits(), side.shield(), side.healing(), 0);
     }
 }

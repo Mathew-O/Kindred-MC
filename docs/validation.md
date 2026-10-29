@@ -10,6 +10,34 @@ Linux x64 / OpenJDK 21.0.2 standalone validation: **64 support tests in 22 class
 
 Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0.19.5 / Fabric API 0.116.17. Branch `claude/modest-faraday-r3spro`.
 
+- Combat milestones 1, 2, 4 and 5 (E-41b, E-41c, E-41e, E-41f), the bunker's first stage (M-06b), pets (E-36, E-37, E-38), design uniqueness (E-30) and live run 70, on `6db4b3b`, `856cfe8`, `56c022f`, `a1f044f` and the commit after it ("final", 2026-10-28 to 2026-10-29).
+  - JUnit (light runner, final):
+    - `MeleeTest` 5 of 5, `TendenciesTest` 3 of 3, `FightOddsTest` 5 of 5;
+    - `LearnedMeleeTest` 4 of 4, `CombatProposalsTest` 3 of 3;
+    - `BunkersTest` 2 of 2 (the planner digs the hideout out in simulation), `DesignFingerprintTest` 3 of 3.
+  - The baseline-duel benchmark (`NativeDuelBenchmarkGameTests`, run apart from the suite, each run alone):
+    - 0 of 20, then 13 of 20, then 41 of 200, each failure fixed in turn (see [E-41b](evidence/E-41b.md)); then 200 of 200 [0.981, 1.0], twice.
+    - After a1f044f: 55 of 100 once the shield was taken at once (the jump's swing never landed), 50 of 50 once a strike under way was finished, 200 of 200 [0.981, 1.0] (r6); final, 200 of 200 [0.981, 1.0] (r8).
+    - With no shields: 1 of 200, then 20 of 50 once the critical is wound up; 24 and 25 of 50 with the step back as spacing; final, 28 of 50 [0.423, 0.688] (q7). The control, baseline against baseline: 102 of 200, then 54 of 100; final, 48 of 100 [0.385, 0.577] (c3).
+  - The declared opponents, with each part's control off (see [E-41c](evidence/E-41c.md)):
+    - the turtle: stalled at first (t1 to t4); 52 of 60 with tendencies against 33 of 60 without (t12, t13); then 60 of 60 either way (t15, t16); final, 60 of 60 either way (t19, t20);
+    - the spammer: 100 of 100 with tendencies on and off, then 50 of 50 either way; final, 50 of 50 either way (sp6, sp7);
+    - a runner: caught in 189 ticks on average with prediction on and off; then, running along the walls, 33 of 40 in 1207 ticks with prediction against 28 of 40 in 1932 without; final, 31 of 40 in 1500 ticks with prediction against 32 of 40 in 1353 without (ev5, ev6): no gain.
+  - The melee mechanics suite (`NativeMeleeMechanicsGameTests`, apart; strike, strafe, shield, step back, get away, eat, of twenty each): m1 17/0/20/0/9/0; m2 17/20/20/0/18/20; m5 20/20/20/0/18/20; m7 20/20/20/20/17/20; m9 the same; m10, the flee keeping its very turn, 16 in the getaway; final, 20/20/20/20/20/20 (m11). Every run stopped clean.
+  - Narrow native runs:
+    - `NativeBunkerGameTests` b2: 1 of 1, the hideout dug, lined and furnished exact (345 blocks) and walked down to. Run b1 was cut short: the worktree was compiled while its server ran.
+    - `NativePetGameTests` p4: 1 of 1. Runs p1 to p3 failed and were fixed in turn:
+      - p1: no playstyle, so no routine;
+      - p2: the tag's lettering said as kit naming;
+      - p3: the fixture killed the wolf the tick it was named, and the naming was blocked for reconciliation; and a pet's death went unheard, as fixtures run their own runtime and the mod's death hook does not reach it.
+  - Full suite run 51 on `a1f044f`: `./gradlew build` passed (771 JUnit results, four skipped, none failed); the GameTest run did not finish inside its 70 minutes, sharing four cores with the benchmarks and the live run, so it gives no verdict.
+  - [Live run 70](evidence/live-run-70.md): three players from empty inventories reached iron in about seven in-game days. It found players with no goal not progressing, a hole-up that never ended (fixed) and a suffocation digging out of a block that refilled (open).
+  - Found along the way:
+    - In a duel, a hard hit sent a player out of its own fight; later, the critical it was hit with made it judge itself outclassed, and it ran for a way out past the arena's wall.
+    - Players kept beliefs of each other's health from before a death.
+    - The runtime's gate refused the bite a fight chose; a bite called away mid-way blocked the player for reconciliation; a shield worn out in a long fight did too.
+    - The shield came up up to five ticks late, held back by the move in hand; mid-jump it then took the place of the swing.
+    - A getaway ran into the arena's wall, and along it turned back and forth; and its trial started in corners with no room to get away (it now starts with room behind).
 - Chores in a work area (E-01, E-02, E-03, E-06), the auto-smelter (M-01d) and the pasture's cattle (M-06a), on `dbea53e` and the working tree committed after it (2026-10-28).
   - JUnit (light runner): `LightingTest` 3 of 3; `MachinesTest` 2 of 2 with `PlacementTest`, `GeneratorsTest`, `BlockSpecTest` and `BuildNeedsTest`, 19 of 19; `CompoundsTest` 11 of 11 (the doorway two wide); `RanchTest` 10 of 10.
   - Narrow run c1 (the cattle four times, the seed-build and base classes): 9 of 11. The seven seed-build fixtures and the base fixture passed, among them the one stuck in run 49 (#82's scaffold fix). The cattle 2 of 4: both cows pressed into the one-wide doorway's mouth and neither got in.

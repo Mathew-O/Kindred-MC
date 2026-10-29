@@ -266,6 +266,16 @@
       "playerEquivalentObservation": false,
       "evidence": "docs/evidence/E-41a.md",
       "qualified": false
+    },
+    "playerMelee": {
+      "implementation": "dev.kindred.core.tactics.Melee: a fixed utility with commitment over what the player sees, never a model",
+      "opponentTendencies": "dev.kindred.core.tactics.Tendencies: counted over chances, decayed, with a confidence; with a lead of at most ten ticks",
+      "learnedPolicy": "dev.kindred.core.tactics.LearnedMelee: trained offline and versioned, used only when an operator loads one (/aiplayer combat model)",
+      "strategistProposals": "dev.kindred.core.tactics.CombatProposals: advisory, bounded and off by default (/aiplayer combat advice)",
+      "scope": "duels both players joined (D7); fights with mobs keep the goal's own controller",
+      "benchmarks": "dev.kindred.fabric.NativeDuelBenchmarkGameTests and NativeMeleeMechanicsGameTests, run apart from the regression suite",
+      "evidence": ["docs/evidence/E-41b.md", "docs/evidence/E-41c.md", "docs/evidence/E-41e.md", "docs/evidence/E-41f.md"],
+      "qualified": false
     }
   },
   "npcLibrary": null,

@@ -20,16 +20,18 @@ import java.util.UUID;
 
 /**
  * The melee mechanics suite (E-41b): each move of the player's melee tried on its own, from randomised legal starts in a
- * walled arena, in a duel both joined, against a declared opponent that stands (the strike, getting away, eating), swings
- * as fast as it can (the strafe) or fights as the baseline does (the shield, the step back), in equal kit where it
+ * walled arena, in a duel both joined, against a declared opponent that stands (the strike, the step back, getting away,
+ * eating), swings as fast as it can (the strafe) or fights as the baseline does (the shield), in equal kit where it
  * fights. Each trial passes when the move is seen made in the world, from what the game shows, within its time:
  * <ul>
  *   <li>strike: its first blow on the opponent lands a full swing (at least an iron sword's full hit through iron);</li>
  *   <li>strafe: against one that swings as fast as it can, between its blows it steps sideways round it, ten degrees or
  *   more;</li>
  *   <li>shield: a blow of the opponent's is taken on its raised shield (the shield wears);</li>
- *   <li>step back: after its first blow, it walks backward out of the opponent's way;</li>
- *   <li>get away: losing (five health against twenty, too hungry to heal), it gets five blocks further off;</li>
+ *   <li>step back: with no shield, its own swing just spent and in reach of an opponent ready to swing, it walks backward
+ *   out of reach, two steps or more within two seconds;</li>
+ *   <li>get away: losing (five health against twenty, too hungry to heal), with room behind it, it gets five blocks further
+ *   off;</li>
  *   <li>eat: hurt and well out of reach, it eats, and its weapon is back in hand after.</li>
  * </ul>
  * Then a fight stopped half way: nothing more is struck, and nothing of the fight moves the body. Run apart from the
@@ -40,6 +42,10 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
     static final int TRIALS = Integer.getInteger("kindred.trials", 20);
 
     enum Skill { STRIKE, STRAFE, SHIELD, BACK_OFF, GET_AWAY, EAT }
+
+    /** The moves tried: all, or those named in {@code kindred.trial.skills} (comma separated), to look at one alone. */
+    static final java.util.List<Skill> SKILLS = System.getProperty("kindred.trial.skills", "").isBlank() ? java.util.List.of(Skill.values())
+            : java.util.Arrays.stream(System.getProperty("kindred.trial.skills").split(",")).map(String::trim).map(Skill::valueOf).toList();
 
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID id) {
         return id == null ? null : f.source.getServer().getPlayerManager().getPlayer(id);
@@ -61,6 +67,8 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
         int backward, bread;
         boolean ate, passed, failed;
         String why = "";
+        /** The player's last ticks, for a trial not made. */
+        final java.util.ArrayDeque<String> trace = new java.util.ArrayDeque<>();
 
         Watch(Skill skill) { this.skill = skill; }
     }
@@ -79,7 +87,7 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
         Watch[] watch = {null};
         long[] stoppedAt = {0}, waiting = {-1};
         float[] stoppedHealth = {0};
-        int total = TRIALS * Skill.values().length;
+        int total = TRIALS * SKILLS.size();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))
@@ -128,7 +136,7 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                 break;
                             }
                             waiting[0] = -1;
-                            var skill = Skill.values()[trial[0] % Skill.values().length];
+                            var skill = SKILLS.get(trial[0] % SKILLS.size());
                             for (var drop : world.getEntitiesByClass(ItemEntity.class, new Box(o).expand(16), e -> true)) drop.discard();
                             boolean halShield = skill == Skill.STRIKE || skill == Skill.SHIELD || skill == Skill.GET_AWAY || skill == Skill.EAT;
                             for (var p : new ServerPlayerEntity[]{hal, wren}) {
@@ -147,7 +155,7 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                             // Out of each other's way until the fight starts.
                             hal.teleport(world, o.getX() - 6.5, o.getY() + 2, o.getZ() + 0.5, 0, 0);
                             wren.teleport(world, o.getX() + 6.5, o.getY() + 2, o.getZ() + 0.5, 0, 0);
-                            boolean stands = skill == Skill.STRIKE || skill == Skill.GET_AWAY || skill == Skill.EAT;
+                            boolean stands = skill == Skill.STRIKE || skill == Skill.BACK_OFF || skill == Skill.GET_AWAY || skill == Skill.EAT;
                             // Strafing is for the swings between its own: against one that swings as fast as it can.
                             f.runtime.meleeStyle(ids[1], stands ? "idle" : skill == Skill.STRAFE ? "spammer" : null);
                             f.runtime.forgetHealth(players[0]);
@@ -164,6 +172,7 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                             if (duel == null || duel.state() != MatchRegistry.State.RUNNING) break;
                             var w = watch[0];
                             double near = switch (w.skill) {
+                                case BACK_OFF -> 2 + rng.nextDouble() * 0.8;
                                 case GET_AWAY -> 3 + rng.nextDouble() * 2;
                                 case EAT -> 8 + rng.nextDouble() * 3;
                                 default -> 4 + rng.nextDouble() * 5;
@@ -177,7 +186,9 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                 double angle = rng.nextDouble() * Math.PI * 2;
                                 hx = wx + Math.cos(angle) * near;
                                 hz = wz + Math.sin(angle) * near;
-                            } while (Math.abs(hx) > 7.5 || Math.abs(hz) > 7.5);
+                            } while (Math.abs(hx) > 7.5 || Math.abs(hz) > 7.5
+                                    // A getaway with room for one: six blocks of floor straight away from the opponent.
+                                    || w.skill == Skill.GET_AWAY && (Math.abs(hx + (hx - wx) / near * 6) > 7.5 || Math.abs(hz + (hz - wz) / near * 6) > 7.5));
                             wren.teleport(world, o.getX() + wx, o.getY() + 2, o.getZ() + wz, rng.nextFloat() * 360 - 180, 0);
                             hal.teleport(world, o.getX() + hx, o.getY() + 2, o.getZ() + hz, rng.nextFloat() * 360 - 180, 0);
                             if (w.skill == Skill.GET_AWAY) {
@@ -190,6 +201,8 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                 hal.setHealth(10);
                                 hal.getHungerManager().setFoodLevel(14);
                             }
+                            // Its swing just spent: as after a blow.
+                            if (w.skill == Skill.BACK_OFF) hal.resetLastAttackedTicks();
                             w.start = now;
                             w.wrenHealth = wren.getHealth();
                             w.startDistance = hal.distanceTo(wren);
@@ -207,6 +220,11 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                             double angle = Math.toDegrees(Math.atan2(dz, dx));
                             switch (w.skill) {
                                 case STRIKE -> {
+                                    w.trace.addLast(String.format(java.util.Locale.ROOT, "%d y%+.2f vy%+.2f %s c%.2f %s fall%.1f d%.1f %s", t, hal.getY() - o.getY() - 2,
+                                            hal.getVelocity().y, hal.isOnGround() ? "ground" : "air", hal.getAttackCooldownProgress(0.5f),
+                                            hal.isBlocking() ? "blocking" : hal.isUsingItem() ? "using" : "-", hal.fallDistance, hal.distanceTo(wren),
+                                            f.runtime.nativeLastResult(ids[0])));
+                                    if (w.trace.size() > 24) w.trace.removeFirst();
                                     if (struck) {
                                         // An iron sword's full hit through an iron chestplate is 5.28; anything less was early.
                                         if (drop >= 5.0f) w.passed = true;
@@ -216,7 +234,7 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                         w.failed = true;
                                         w.why = String.format(java.util.Locale.ROOT, "no blow landed; it at %.1f %.1f %.1f, the opponent at %.1f %.1f %.1f; %s",
                                                 hal.getX() - o.getX(), hal.getY() - o.getY(), hal.getZ() - o.getZ(), wren.getX() - o.getX(), wren.getY() - o.getY(),
-                                                wren.getZ() - o.getZ(), f.runtime.nativeLastResult(ids[0]));
+                                                wren.getZ() - o.getZ(), f.runtime.nativeLastResult(ids[0])) + "; last ticks: " + String.join(" | ", w.trace);
                                     }
                                 }
                                 case STRAFE -> {
@@ -240,16 +258,24 @@ public final class NativeMeleeMechanicsGameTests implements FabricGameTest {
                                     if (!hal.isAlive() || t > 400 && !w.passed) { w.failed = true; w.why = "no blow taken on the shield, health " + hal.getHealth(); }
                                 }
                                 case BACK_OFF -> {
-                                    if (w.hits >= 1) {
-                                        w.backward = hal.forwardSpeed < 0 ? w.backward + 1 : 0;
-                                        if (w.backward >= 3) w.passed = true;
-                                        if (w.hits >= 4 && !w.passed) { w.failed = true; w.why = "no step back between its blows"; }
+                                    // Steps walked backward on the ground (an opponent that never swings is always ready).
+                                    if (hal.isOnGround() && hal.forwardSpeed < 0) w.backward++;
+                                    if (w.backward >= 2) w.passed = true;
+                                    if (!hal.isAlive() || t > 40 && !w.passed) {
+                                        w.failed = true;
+                                        w.why = "no step back: " + w.backward + " backward, " + f.runtime.nativeLastResult(ids[0]);
                                     }
-                                    if (!hal.isAlive() || t > 300 && !w.passed) { w.failed = true; w.why = "no step back, " + w.hits + " blows"; }
                                 }
                                 case GET_AWAY -> {
+                                    w.trace.addLast(String.format(java.util.Locale.ROOT, "%d at %.1f %.1f %s%s d%.1f h%.1f %s", t, hal.getX() - o.getX(), hal.getZ() - o.getZ(),
+                                            hal.isOnGround() ? "ground" : "air", hal.horizontalCollision ? " wall" : "", hal.distanceTo(wren), hal.getHealth(),
+                                            f.runtime.nativeLastResult(ids[0])));
+                                    if (w.trace.size() > 24) w.trace.removeFirst();
                                     if (hal.distanceTo(wren) >= w.startDistance + 5) w.passed = true;
-                                    if (t > 120 && !w.passed) { w.failed = true; w.why = "only " + hal.distanceTo(wren) + " off, from " + w.startDistance; }
+                                    if (t > 120 && !w.passed) {
+                                        w.failed = true;
+                                        w.why = "only " + hal.distanceTo(wren) + " off, from " + w.startDistance + "; last ticks: " + String.join(" | ", w.trace);
+                                    }
                                 }
                                 case EAT -> {
                                     if (hal.getInventory().count(Items.BREAD) < w.bread) w.ate = true;

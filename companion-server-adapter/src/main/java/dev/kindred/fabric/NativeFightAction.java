@@ -24,7 +24,7 @@ import java.util.function.Supplier;
  * Recorded fight with one mob: chase it with ordinary movement and strike with vanilla attacks whenever reach and
  * the attack cooldown allow, until it dies, gets away or the bounded time runs out. One continuous action, as a
  * player fights, rather than a walk and a single swing per task while a skeleton keeps shooting. The only effects
- * a fight may have on owned items are weapon and armor wear (or the weapon breaking) and drops picked up on the way.
+ * a fight may have on owned items are weapon, shield and armor wear (or one breaking) and drops picked up on the way.
  * The chase never steps into lava, fire or a drop deeper than the navigator allows; when that leaves no way to the
  * target, the player backs away from the edge before giving up. A creeper is fought hit and run, backing off while
  * the cooldown recovers, and any creeper that starts to hiss nearby is run from, or faced behind a raised shield when
@@ -75,11 +75,22 @@ final class NativeFightAction extends NativeRecordedAction {
     private boolean opponentWasSwinging;
     /** Food eaten in the fight, by item: what eating may take from the pack. */
     private final Map<Item, Integer> eaten = new HashMap<>();
+    /** Bites it began, by food: each may take one of it, whenever the game finishes it (one called away mid-bite too). */
+    private final Map<Item, Integer> bitten = new HashMap<>();
+    /** Each owned item's breakings as the game counts them, at the start: a shield or armor worn out in the fight is wear. */
+    private final Map<Item, Integer> brokenBefore = new HashMap<>();
+    /** What conservation last found lost, for the log. */
+    private String loss = "";
     private Item eating;
     private int eatingBefore;
     /** What it has learned of this opponent (E-41c), kept across its fights with it; null with it off (the control). */
     private final dev.kindred.core.tactics.Tendencies tendencies;
-    private boolean wasFull;
+    private boolean wasGuardable, guardWatched, guardSeen;
+    /** The turn off straight away it last fled along, and when: the side it keeps to. */
+    private float fleeTurn = Float.NaN;
+    private long fledAt;
+    /** When it last jumped for a critical, until it swings or lands; -1 when not in one. */
+    private long jumpedAt = -1;
     /** Whether it closes in on where the opponent will be rather than where it is (E-41c); off for the control. */
     private final boolean predicts;
     private double lastOpponentX = Double.NaN, lastOpponentZ;
@@ -130,6 +141,7 @@ final class NativeFightAction extends NativeRecordedAction {
         if (admission == null) {
             issuedLease = lease.get();
             before = InventoryEvidence.capture(body);
+            for (ItemStack stack : before.stacks()) if (stack.isDamageable()) brokenBefore.put(stack.getItem(), broken(stack.getItem()));
             admission = new ActionAdmission(ActionRecord.prepare(issuedLease.actionId(), issuedLease, "native_fight",
                     "target=" + targetId + "; slot=" + slot), before.description(), writer, dispatch);
         }
@@ -206,7 +218,7 @@ final class NativeFightAction extends NativeRecordedAction {
         }
         record(player, target, visible, distance);
         if (!moved) settle("Movement authority denied", false);
-        return Step.running(Map.of("hits", String.valueOf(hits), "distance", String.format("%.1f", distance)), true);
+        return Step.running(Map.of("hits", String.valueOf(hits), "distance", String.format("%.1f", distance), "decision", decision == null ? "" : decision), true);
     }
 
 
@@ -233,10 +245,27 @@ final class NativeFightAction extends NativeRecordedAction {
         opponentWasSwinging = opponent.handSwinging;
         // Ready, or near enough that a shield raised now (it guards only after five ticks up) is up in time for it.
         boolean opponentReady = now - opponentSwungAt >= opponentCooldown - SHIELD_WARMUP - 1;
-        // Its own swing come full in reach: the opponent's chance to raise its shield against it, and whether it did.
-        boolean full = player.getAttackCooldownProgress(0.5f) >= dev.kindred.core.tactics.Melee.FULL && distance <= STRIKE_RANGE && visible;
-        if (full && !wasFull && tendencies != null) tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS, opponent.isBlocking());
-        wasFull = full;
+        // The opponent's chance to raise its shield against the player, and whether it did: once a swing, whether its
+        // shield came up at any time while that swing recovered with the player a few blocks off (one that shields only
+        // while its swing recovers is a blocker as much as one that never lowers it); or, never seen to swing, each time
+        // the player comes near. Raised, as a player sees a shield come up, whether or not it guards yet.
+        long sinceSwing = now - opponentSwungAt;
+        boolean near = distance <= STRIKE_RANGE + 3 && visible;
+        boolean raised = opponent.isUsingItem() && opponent.getActiveItem().isOf(Items.SHIELD);
+        if (opponentSwungAt < 0) {
+            if (near && !wasGuardable) blocksChance(raised);
+            wasGuardable = near;
+        } else {
+            boolean recovering = sinceSwing > 0 && sinceSwing < opponentCooldown;
+            if (recovering && near) {
+                guardWatched = true;
+                guardSeen |= raised;
+            }
+            if (!recovering && guardWatched) {
+                blocksChance(guardSeen);
+                guardWatched = guardSeen = false;
+            }
+        }
         var inventory = player.getInventory();
         int food = -1;
         for (int s = 0; s < 9 && food < 0; s++) {
@@ -277,14 +306,22 @@ final class NativeFightAction extends NativeRecordedAction {
             melee.lean(tactic);
         }
         var choice = melee.next(sight, now);
+        var move = choice.move();
         decision = choice.why();
-        if (choice.move() != dev.kindred.core.tactics.Melee.Move.EAT && eating != null) {
+        // A jump for a critical, once made, ends in its swing on the way down (the jump itself lifts it a little out of
+        // the reach the melee reckons by), unless the fight is being lost.
+        if (jumpedAt >= 0 && (player.isOnGround() && now - jumpedAt > 1 || now - jumpedAt > 20)) jumpedAt = -1;
+        if (jumpedAt >= 0 && move != dev.kindred.core.tactics.Melee.Move.RETREAT) {
+            move = dev.kindred.core.tactics.Melee.Move.STRIKE;
+            decision = "the jump's swing on the way down";
+        }
+        if (move != dev.kindred.core.tactics.Melee.Move.EAT && eating != null) {
             // Called away from eating: the weapon back in hand.
             body.stopInputs();
             eating = null;
             if (slot >= 0 && slot < 9) body.selectHotbar(issuedLease, slot);
         }
-        switch (choice.move()) {
+        switch (move) {
             case APPROACH -> {
                 double tx = opponent.getX(), tz = opponent.getZ();
                 if (predicts) {
@@ -324,11 +361,18 @@ final class NativeFightAction extends NativeRecordedAction {
                     eating = inventory.getStack(food).getItem();
                     eatingBefore = inventory.count(eating);
                     if (!body.selectHotbar(issuedLease, food) || !body.eat(issuedLease)) eating = null;
+                    else bitten.merge(eating, 1, Integer::sum);
                 }
                 return body.move(issuedLease, 0, 0, false, false, yaw);
             }
         }
         return body.move(issuedLease, 0, 0, false, false, yaw);
+    }
+
+    private void blocksChance(boolean took) {
+        if (tendencies == null) return;
+        tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS, took);
+        events.add("chance blocks=" + took);
     }
 
     /** A declared opponent's fight in its fixed {@link #style}. */
@@ -409,7 +453,8 @@ final class NativeFightAction extends NativeRecordedAction {
         // In reach, a player jumps as the swing recovers and strikes on the way down: a falling hit is a critical one,
         // half as much again (an iron sword's kill on a zombie takes three of those, not four). A creeper keeps to hit
         // and run, and in water or on a ladder a jump is no fall.
-        boolean jumping = jumps(player, target);
+        // A blow on a raised shield only disables it (with an axe): no jump for a critical there.
+        boolean jumping = jumps(player, target) && !target.isBlocking();
         boolean airborne = !player.isOnGround();
         boolean jump = jumping && !airborne && player.getAttackCooldownProgress(0.5f) >= JUMP_AT;
         // With an edge behind (lava, a drop), a hit would knock the player over it: a player sidesteps round the mob
@@ -418,12 +463,14 @@ final class NativeFightAction extends NativeRecordedAction {
                 ? offTheEdge(navigator, target, yaw) : new int[]{0, 0};
         boolean stepping = step[0] != 0 || step[1] != 0;
         moved = body.move(issuedLease, step[0], step[1], jump && !stepping, false, yaw);
+        if (moved && jump && !stepping) jumpedAt = player.getServerWorld().getTime();
         decision = stepping ? "sidestep off the edge" : jump && !stepping ? "jump for a critical" : "wait for the swing";
         boolean falling = airborne && player.getVelocity().y < 0 && player.fallDistance > 0;
         if (moved && ready && (!jumping || falling)) {
             guard(false); // The shield comes down for the swing.
             boolean critical = critical(player);
             decision = critical ? "strike, critical" : "strike";
+            jumpedAt = -1;
             if (body.attack(issuedLease, targetId, slot)) {
                 hits++;
                 if (critical) crits++;
@@ -516,17 +563,40 @@ final class NativeFightAction extends NativeRecordedAction {
     private boolean flee(NativeNavigator navigator, net.minecraft.entity.Entity threat) {
         var player = body.entity();
         float away = (float) Math.toDegrees(Math.atan2(-(player.getX() - threat.getX()), player.getZ() - threat.getZ()));
-        for (float turn : new float[]{0, 35, -35, 70, -70, 105, -105}) {
-            float yaw = away + turn;
-            if (!navigator.safeHeading(player, yaw)) continue;
-            return body.move(issuedLease, 1.0f, 0, player.isOnGround() && player.horizontalCollision || player.isTouchingWater(), true, yaw);
+        long now = player.getServerWorld().getTime();
+        // Straight away where that is open; else along the wall rather than into it; else wherever is safe; the least
+        // turn first, and of two as small, the side it turned to a moment ago: running along a wall, one way, not back
+        // and forth.
+        float side = Float.isNaN(fleeTurn) || now - fledAt > 20 || fleeTurn == 0 ? 1 : Math.signum(fleeTurn);
+        for (boolean wanted : new boolean[]{true, false}) {
+            for (float magnitude : new float[]{0, 35, 70, 105, 140}) {
+                for (float turn : magnitude == 0 ? new float[]{0} : new float[]{side * magnitude, -side * magnitude}) {
+                    float yaw = away + turn;
+                    if (!navigator.safeHeading(player, yaw) || wanted && !open(player, yaw)) continue;
+                    fleeTurn = turn;
+                    fledAt = now;
+                    return body.move(issuedLease, 1.0f, 0, player.isOnGround() && player.horizontalCollision || player.isTouchingWater(), true, yaw);
+                }
+            }
         }
         return body.move(issuedLease, 0, 0, false, false, away);
     }
 
+    /** No wall a stride ahead along {@code yaw}: nothing solid at head height (a step at the feet alone is jumped). */
+    private static boolean open(net.minecraft.server.network.ServerPlayerEntity player, float yaw) {
+        double radians = Math.toRadians(yaw);
+        var world = player.getServerWorld();
+        for (double reach : new double[]{0.8, 1.6}) {
+            BlockPos head = BlockPos.ofFloored(player.getX() - Math.sin(radians) * reach, player.getY() + 1.2, player.getZ() + Math.cos(radians) * reach);
+            if (!world.getBlockState(head).getCollisionShape(world, head).isEmpty()) return false;
+        }
+        return true;
+    }
+
     /**
-     * Lost nothing but weapon or armor wear (a worn-out weapon may break); anything gained was picked up. A hunt's
-     * compass is the match's: taken back when the fight ends the hunt, it was never the player's to lose.
+     * Lost nothing but weapon, shield or armor wear (one worn out, as the game counts breakings); anything gained was
+     * picked up. A hunt's compass is the match's: taken back when the fight ends the hunt, it was never the player's to
+     * lose.
      */
     private boolean conserved(InventoryEvidence after) {
         creditEating();
@@ -535,12 +605,20 @@ final class NativeFightAction extends NativeRecordedAction {
         for (ItemStack stack : after.stacks()) if (!stack.isEmpty() && !HuntCompass.handed(stack)) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
         for (var entry : lost.entrySet()) {
             if (entry.getValue() <= 0) continue;
-            if (entry.getValue() <= eaten.getOrDefault(entry.getKey(), 0)) continue; // Eaten in the fight (E-41b).
-            boolean brokenWeapon = entry.getValue() == 1 && slot >= 0 && slot < before.stacks().length
-                    && before.stacks()[slot].isOf(entry.getKey()) && before.stacks()[slot].isDamageable();
-            if (!brokenWeapon) return false;
+            // Eaten in the fight (E-41b): no more than the bites it began.
+            if (entry.getValue() <= Math.max(eaten.getOrDefault(entry.getKey(), 0), bitten.getOrDefault(entry.getKey(), 0))) continue;
+            // Worn out in the fight: the weapon, the shield or armor, as many as the game counts broken.
+            Integer was = brokenBefore.get(entry.getKey());
+            if (was == null || entry.getValue() > broken(entry.getKey()) - was) {
+                loss = entry.getValue() + " " + net.minecraft.registry.Registries.ITEM.getId(entry.getKey()).getPath();
+                return false;
+            }
         }
         return true;
+    }
+
+    private int broken(Item item) {
+        return body.entity().getStatHandler().getStat(net.minecraft.stat.Stats.BROKEN.getOrCreateStat(item));
     }
 
     /**
@@ -597,8 +675,8 @@ final class NativeFightAction extends NativeRecordedAction {
             result = won ? Step.completed(Map.of("hits", String.valueOf(hits), "outcome", reason)) : Step.blocked(reason, true);
         } else {
             unknown = true;
-            KindredMod.LOGGER.warn("{} fight: owned items changed beyond wear and pickups: before {}, after {}, eaten {}", body.entity().getName().getString(),
-                    before.description(), after.description(), eaten);
+            KindredMod.LOGGER.warn("{} fight: owned items changed beyond wear and pickups: {} lost; eaten {}, bites begun {}",
+                    body.entity().getName().getString(), loss, eaten, bitten);
             admission.uncertain(reason + "; owned items changed beyond wear and pickups");
             result = Step.blocked("Fight outcome requires reconciliation", true);
         }

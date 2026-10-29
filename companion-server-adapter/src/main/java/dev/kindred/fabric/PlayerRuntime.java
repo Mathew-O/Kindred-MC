@@ -7597,14 +7597,19 @@ final class PlayerRuntime {
         boolean mayStrike = matches.mayAttack(hit.getUuid(), by.getUuid());
         boolean equipped = Weapons.choose(hit, NativePlayerBody.believedHealth(hit, by), false)
                 .filter(w -> w.weapon().kind() != dev.kindred.core.tactics.DamageModel.Kind.HAND).isPresent();
-        boolean cornered = openWayFrom(entry, hit, by) == null;
-        // In a duel both joined, judged by the kit on each side (E-41b): the health already lost is the melee's to weigh.
+        // In a duel both joined, judged by the kit on each side (E-41b), and those the odds it speaks of: the health already
+        // lost is the melee's to weigh.
         boolean duel = matches.running(hit.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL
                 && m.invited().contains(by.getUuid())).isPresent();
-        var answer = duel && mayStrike
-                ? dev.kindred.core.tactics.FightOdds.answerInDuel(equipped, dev.kindred.core.tactics.FightOdds.of(
-                        dev.kindred.core.tactics.FightOdds.at(fightSide(entry, hit, null), hit.getMaxHealth()),
-                        dev.kindred.core.tactics.FightOdds.at(fightSide(entry, by, hit), by.getMaxHealth())))
+        // No way off, or in a duel none it can walk to (a walled arena's open ground lies past its wall).
+        BlockPos way = openWayFrom(entry, hit, by);
+        boolean cornered = way == null || duel && !new NativeNavigator(hit.getServerWorld())
+                .find(hit.getBlockPos(), way, feet -> feet.isWithinDistance(way, 3), 600, 24).complete();
+        if (duel && mayStrike) {
+            odds = dev.kindred.core.tactics.FightOdds.of(dev.kindred.core.tactics.FightOdds.at(fightSide(entry, hit, null), hit.getMaxHealth()),
+                    dev.kindred.core.tactics.FightOdds.at(fightSide(entry, by, hit), by.getMaxHealth()));
+        }
+        var answer = duel && mayStrike ? dev.kindred.core.tactics.FightOdds.answerInDuel(equipped, odds, cornered)
                 : dev.kindred.core.tactics.FightOdds.answer(mayStrike, equipped, odds, cornered);
         boolean fresh = held == null || !held.who().equals(by.getUuid()) || held.answer() != answer;
         entry.aggressor = new Aggressor(by.getUuid(), by.getName().getString(), answer, now + AGGRESSION_HOLD, odds);

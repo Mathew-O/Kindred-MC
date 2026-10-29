@@ -28,10 +28,18 @@ class MeleeTest {
     void itAnswersASwingAboutToComeWithItsShieldOrBySteppingOutOfReach() {
         assertEquals(Move.BLOCK, new Melee().next(sight(2.5, 0.4, 20, false, true, true), 0).move(), "the shield up");
         assertEquals(Move.BACK_OFF, new Melee().next(sight(2.5, 0.4, 20, false, false, true), 0).move(), "no shield: out of its reach");
+        // Its swing nearly back, with no shield: out of reach while the opponent's swing is still to come, and in for the
+        // critical once it is spent.
+        assertEquals(Move.BACK_OFF, new Melee().next(sight(2.5, 0.7, 20, false, false, true), 0).move(), "spacing");
+        assertEquals(Move.STRIKE, new Melee().next(sight(2.5, 0.7, 20, false, false, false), 0).move(), "in for its own");
         // Its swing full and the opponent's about to come: the opponent's swing on the shield first, and with no shield
         // the strike at once; at a raised shield only if nothing better is open.
         assertEquals(Move.BLOCK, new Melee().next(sight(2.5, 1, 20, false, true, true), 0).move());
         assertEquals(Move.STRIKE, new Melee().next(sight(2.5, 1, 20, false, false, true), 0).move());
+        // The shield comes up the moment the opponent's swing is about to: not held back by the move it was making.
+        var strafing = new Melee();
+        assertEquals(Move.STRAFE, strafing.next(sight(2.5, 0.4, 20, false, true, false), 0).move());
+        assertEquals(Move.BLOCK, strafing.next(sight(2.5, 0.4, 20, false, true, true), 1).move(), "at once");
         // The opponent's swing taken (no longer ready): the strike while it recovers.
         var melee = new Melee();
         melee.next(sight(2.5, 1, 20, false, true, true), 0);

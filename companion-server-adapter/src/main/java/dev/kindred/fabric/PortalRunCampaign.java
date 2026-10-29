@@ -951,7 +951,7 @@ final class PortalRunCampaign {
         // fall below six health ends a fight early; a retreat turns to fight only when there is nowhere to back off to.
         boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
         boolean retreating = lastTick < retreatHeldUntil;
-        Optional<Task> hole = fighting ? Optional.empty() : holeUp(body);
+        Optional<Task> hole = fighting ? Optional.empty() : holeUp(body, snapshot);
         if (hole.isPresent()) {
             retreatHeldUntil = Math.max(retreatHeldUntil, lastTick + RETREAT_HOLD);
             progress = stageLabel(stage) + ": outmatched - " + hole.get().label();
@@ -3791,11 +3791,19 @@ final class PortalRunCampaign {
      * behind its blocks until healed, with the cave marked dangerous for a few minutes and the wall left standing,
      * so the dig goes on somewhere else.
      */
-    private Optional<Task> holeUp(NativePlayerBody body) {
+    private Optional<Task> holeUp(NativePlayerBody body, PortalRunSnapshot snapshot) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         if (!underground(player)) {
+            holedUpSince = -1;
+            return Optional.empty();
+        }
+        // Hurt with nothing to eat and too hungry to heal, waiting heals nothing: by day it climbs out for food instead
+        // (live run 70 waited behind its wall for sixteen minutes at four health); and no wait lasts for ever.
+        boolean dark = world.isNight() && world.getDimension().hasSkyLight();
+        boolean starving = player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18;
+        if (starving && !dark || holedUpSince >= 0 && lastTick - holedUpSince > 2400) {
             holedUpSince = -1;
             return Optional.empty();
         }

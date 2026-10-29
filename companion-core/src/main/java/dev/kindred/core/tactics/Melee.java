@@ -64,6 +64,8 @@ public final class Melee implements MeleePolicy {
 
     private Move current;
     private long since;
+    /** When it last gave up waiting behind its shield. */
+    private long gaveUpAt = Long.MIN_VALUE / 2;
     /** A strategist's proposal leaning the moves (E-41f), or null. */
     private CombatProposals.Tactic lean;
 
@@ -92,7 +94,12 @@ public final class Melee implements MeleePolicy {
         if (inReach && s.charge() >= WIND_UP && s.charge() < FULL && !s.opponentBlocking()) u.put(Move.STRIKE, 0.7);
         // Against one that swings uncharged, its weak blows are not worth the shield every time.
         if (s.shield() && s.distance() <= REACH + 1 && threat) u.put(Move.BLOCK, s.spams() > 0.65 ? 0.55 : 0.85);
-        if (s.distance() <= REACH + 0.5 && s.charge() < 0.6) u.put(Move.BACK_OFF, s.opponentReady() && !s.shield() ? 0.75 : 0.3);
+        // With no shield, the opponent's swing about to come and its own not back: out of its reach, so the swing is spent on
+        // air, and in again for its own (spacing) rather than into the trade.
+        if (s.distance() <= REACH + 0.5 && s.charge() < FULL) {
+            if (s.opponentReady() && !s.shield()) u.put(Move.BACK_OFF, 0.75);
+            else if (s.charge() < 0.6) u.put(Move.BACK_OFF, 0.3);
+        }
         if (s.distance() <= REACH + 1 && s.charge() < FULL) u.put(Move.STRAFE, 0.6);
         if (s.distance() > REACH || !s.visible()) {
             // Arriving with the swing recovered: from just out of reach, closed only once it nearly is.
@@ -110,11 +117,18 @@ public final class Melee implements MeleePolicy {
         // Waited long enough behind the shield for a swing that has not come: the best of the rest (the strike, its swing
         // full and in reach; else closing in), so a player that does not swing is not waited on for ever.
         boolean impatient = best == Move.BLOCK && current == Move.BLOCK && tick - since >= PATIENCE && u.size() > 1;
-        if (impatient) best = u.entrySet().stream().filter(e -> e.getKey() != Move.BLOCK).max(Map.Entry.comparingByValue()).orElseThrow().getKey();
+        if (impatient) {
+            best = u.entrySet().stream().filter(e -> e.getKey() != Move.BLOCK).max(Map.Entry.comparingByValue()).orElseThrow().getKey();
+            gaveUpAt = tick;
+        }
+        // A strike under way is finished (a jump for a critical swings on the way down); having given up on a swing that
+        // did not come, the shield waits its turn again for a while.
+        boolean shieldAtOnce = best == Move.BLOCK && current != Move.STRIKE && tick - gaveUpAt >= PATIENCE;
         double top = u.get(best);
         Move move = best;
-        // A strike or a getaway at once; else the move it is making, while it is still open and nearly as good.
-        if (!impatient && current != null && current != best && best != Move.STRIKE && best != Move.RETREAT && u.containsKey(current)
+        // A strike, the shield (it guards only after five ticks up, so a late one is no shield) or a getaway at once;
+        // else the move it is making, while it is still open and nearly as good.
+        if (!impatient && current != null && current != best && best != Move.STRIKE && !shieldAtOnce && best != Move.RETREAT && u.containsKey(current)
                 && (tick - since < COMMIT || top < u.get(current) + MARGIN)) {
             move = current;
         }
