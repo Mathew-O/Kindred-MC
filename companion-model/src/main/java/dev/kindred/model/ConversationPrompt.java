@@ -23,7 +23,8 @@ public final class ConversationPrompt {
     /** The reply's fields, for a schema's descriptions and for JSON mode. */
     public static final String SAY = "Your reply, said aloud in chat: one or two short sentences, at most 240 characters, one line, "
             + "plain words with no formatting, no stage directions and no slash at the start.";
-    public static final String REASON = "One sentence: which of the facts you were given the reply rests on.";
+    /** Kept to a few words: the reply and its reason share the chat lane's 120 output tokens. */
+    public static final String REASON = "A few words, at most ten: the fact the reply rests on.";
 
     private static final String INSTRUCTIONS = """
             You are %s, a player on a Minecraft survival server. Someone just spoke to you in chat and you answer them.
