@@ -28,6 +28,8 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
    README and operator guide updated in `d9b1b91`.
 2. **FOLLOW as an ask** needs a native follow task first (none exists for the native body; the legacy
    `FollowBehavior` is the mob body's).
+   **Not done.** Confirmed: no native follow skill in `NativePlayerSkills`. It is a new skill (a goto that re-aims at a
+   moving player, its own stop and range), then FOLLOW in `Strategist.Ask`, the prompt and the ask dispatch.
 3. **Coalescing drops a speaker.** A message waiting behind one in flight is replaced by any newer message, from anyone,
    so the first speaker can get no reply at all. Keep one waiting message per speaker, or answer the displaced one
    with the fixed reply.
@@ -35,24 +37,40 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
    for the newest.
 4. **Innocent refusals.** The clean-word list and the "three numbers in a row" place check can refuse an ordinary
    line; the cost is the fixed reply. Watch the `voice: no line (...)` log lines in play and loosen only what they show.
+   **Not done: no play yet.** The only `voice: no line` lines so far are the fixtures' own refusals.
 5. My re-run of the branch: see the end of this page.
+   **Answered on the voice branch itself:** the full native suite on `64f4ac1` (E-20b's code) passed 393 of 393, with
+   the build's 787 JUnit results, none failed ([validation](../validation.md)).
 
 ## B. The optional model (F-19, E-20)
 
 6. **The Anthropic SDK is not bundled in the release jar**, so Claude (the default) only works in development runs;
    the other providers work in the jar. Bundling it (`include`) and checking the jar's size and licence is F-19b's
    last step.
+   **Checked, not bundled: the owner's call.**
+   - Size: the SDK and the 26 libraries it needs come to 48 MB without SLF4J, which Minecraft supplies. Of that,
+     `anthropic-java-core` alone is 40 MB, then Kotlin's reflect and stdlib, Jackson, OkHttp, Okio, OpenTelemetry and
+     victools. The release jar would grow from 17.3 MB to about 65 MB.
+   - Licences: all MIT (the SDK, standardwebhooks) or Apache-2.0 (the rest), so bundling is allowed.
+   - Options: bundle them all; ship an optional add-on jar that carries the SDK; or keep it out of the release and point
+     release servers at the other providers, which already work there.
 7. **Never compared with and without it.** F-19b/c ask for paired runs on one build (deaths an hour, stage times); none
    run. Until then the strategist's value is a story, not a number.
 8. **No live call through a non-Anthropic provider** (F-19d): one consultation with an OpenAI key, checking the log
    line and the reply.
+   **Not run:** no OpenAI (or other non-Anthropic) key in this session's environment.
 9. **Follow-ups never seen in a live run** (F-19e).
 10. **Habits only come from the model.** A player without a key never learns "carry more food" or "shelter early".
     A local rule for the plain lessons (two deaths hungry; two night deaths on the surface) would give every player
     the same memory.
+    **Not done:** the rule is simple, but it has to be wired where a death is recorded and habits are given to the goal.
+    That is `PlayerRuntime` and `PortalRunCampaign`, both changed by `modest-faraday`, and today the habit memory
+    (`ModelContextStore`) exists only inside the strategist's bridge. After that branch merges.
 11. **Speech is clean for everyone** until E-18's presets and E-19's recipient caps exist.
+    **No action:** waits on E-18 and E-19.
 12. **`ModelGateway` and `ReasoningPolicy` are unwired** (F-19a's foundation). Decide: wire them as the gate the bridge
     now is, or retire them and say so in F-19.
+    **The owner's decision; untouched.** Both are still unreferenced outside their own tests.
 
 ## C. Roster, identity and wording
 
