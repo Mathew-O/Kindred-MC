@@ -1866,18 +1866,45 @@ final class PortalRunCampaign {
     /**
      * Where a player stands to chop {@code log}: on solid ground under its trunk, at most {@link #TRUNK_REACH} blocks
      * below it, through the trunk or the cells where its lower logs were cut. Nothing for logs held up by leaves, or
-     * hanging higher, which would need a pillar. Planning and gathering both use it, so a log the player would not go
-     * for is never a tree in sight either.
+     * hanging higher, which would need a pillar, or for a column of logs built into something ({@link #builtIn}): a
+     * player short of logs cut the corner posts out of its own cabin (E-08d). Planning and gathering both use it, so a
+     * log the player would not go for is never a tree in sight either.
      */
     private static Optional<BlockPos> trunkFoot(ServerWorld world, BlockPos log) {
+        if (builtIn(world, log)) return Optional.empty();
         BlockPos below = log.down();
         for (int depth = 1; depth <= TRUNK_REACH + 1; depth++, below = below.down()) {
             BlockState state = world.getBlockState(below);
             // The rest of a trunk whose bottom logs were cut is still chopped from the ground beneath it.
-            if (state.isIn(BlockTags.LOGS) || state.isAir()) continue;
+            if (state.isAir()) continue;
+            if (state.isIn(BlockTags.LOGS)) {
+                if (builtIn(world, below)) return Optional.empty();
+                continue;
+            }
             return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES) ? Optional.of(below.up()) : Optional.empty();
         }
         return Optional.empty();
+    }
+
+    /**
+     * A log built into something rather than grown: touching planks, stairs, slabs, a wall, a door, a fence, glass, a
+     * pane, wool or a bed, as a hut's or a cabin's corner post does (its floor under it, its roof over it). Never
+     * cobblestone or dirt, which the player's own scaffolding beside a trunk is, nor stone, which trees grow against.
+     * A neighbour in a chunk not loaded counts as nothing built.
+     */
+    private static boolean builtIn(ServerWorld world, BlockPos log) {
+        for (Direction direction : Direction.values()) {
+            BlockPos next = log.offset(direction);
+            if (!world.isChunkLoaded(next.getX() >> 4, next.getZ() >> 4)) continue;
+            BlockState state = world.getBlockState(next);
+            if (state.isIn(BlockTags.PLANKS) || state.isIn(BlockTags.STAIRS) || state.isIn(BlockTags.SLABS) || state.isIn(BlockTags.WALLS)
+                    || state.isIn(BlockTags.DOORS) || state.isIn(BlockTags.TRAPDOORS) || state.isIn(BlockTags.FENCES)
+                    || state.isIn(BlockTags.FENCE_GATES) || state.isIn(BlockTags.WOOL) || state.isIn(BlockTags.BEDS)
+                    || state.isIn(BlockTags.IMPERMEABLE) || state.getBlock() instanceof net.minecraft.block.PaneBlock) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

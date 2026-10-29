@@ -637,7 +637,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
     }
 
     /** The block a plan's spec names, in its state. */
-    private static net.minecraft.block.BlockState state(dev.kindred.core.construction.BlockSpec spec) {
+    static net.minecraft.block.BlockState state(dev.kindred.core.construction.BlockSpec spec) {
         try {
             return net.minecraft.command.argument.BlockArgumentParser.block(net.minecraft.registry.Registries.BLOCK.getReadOnlyWrapper(), spec.toString(), false)
                     .blockState();
