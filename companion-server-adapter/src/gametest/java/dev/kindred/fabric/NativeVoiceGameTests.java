@@ -349,8 +349,9 @@ public final class NativeVoiceGameTests implements FabricGameTest {
 
     /**
      * Two messages while a line is being phrased: the second replaces the first in waiting. When the line comes, it is
-     * said, then the waiting message is asked and answered: two replies in all, in order, and the replaced one is never
-     * asked. Each comes past the player's three seconds between direct replies.
+     * said, then the waiting message is asked and answered: two replies to the owner, in order, and the replaced one is
+     * never asked of the model. The bystander it replaced is not left unanswered: it is given the fixed reply as it is
+     * replaced (E-20c). Each message comes past the player's three seconds between direct replies.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voice", tickLimit = 1200)
     public void messagesDuringAFlightWaitTheNewestInPlaceOfTheRest(TestContext context) {
@@ -390,7 +391,9 @@ public final class NativeVoiceGameTests implements FabricGameTest {
                     var said = t.heardBy(t.owner);
                     context.assertTrue(said.get(0).text().equals("[Kindred] Echo: Waiting on you, mostly.")
                             && said.get(1).text().equals("[Kindred] Echo: And now I'm answering your second question."), "In order: " + said);
-                    context.assertTrue(t.heardBy(bystander[0]).isEmpty(), "The replaced message is not answered: " + t.heard);
+                    var replaced = t.heardBy(bystander[0]);
+                    context.assertTrue(replaced.size() == 1 && replaced.getFirst().text().equals("[Kindred] Echo: I can chat about what's nearby. "
+                            + "Try hello, how are you, what are you doing, weather, or what do you see."), "The replaced speaker given the fixed reply: " + t.heard);
                     context.assertTrue(t.stub.asked.size() == 2 && t.stub.asked.get(1).text().endsWith("\"test-mock-player: and after that?\""),
                             "The newest asked next: " + t.stub.asked.size());
                     context.assertTrue(t.stub.asked.stream().noneMatch(c -> c.text().contains("nice day")), "The replaced message never asked");

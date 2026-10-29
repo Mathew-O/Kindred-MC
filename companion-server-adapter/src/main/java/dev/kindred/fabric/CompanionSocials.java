@@ -334,7 +334,13 @@ final class CompanionSocials {
         Optional<String> habitReply = habits.feedback(player, companion, message, now);
         if (habitReply.isEmpty() && voice != null) {
             if (voicing.containsKey(companion.id())) { // One line phrased at a time: this one waits, the newest in place of any waiting.
-                waiting.put(companion.id(), new Waiting(player, message));
+                Waiting displaced = waiting.put(companion.id(), new Waiting(player, message));
+                // Someone else's waiting message is not dropped unanswered: they are given the fixed reply now (E-20c).
+                if (displaced != null && !displaced.speaker().getUuid().equals(player.getUuid())) {
+                    String spoken = fixedReply(companion, displaced.message(), now);
+                    scheduleInTurn(companion, displaced.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
+                    voice.replied(displaced.speaker(), companion, displaced.message(), spoken);
+                }
                 return true;
             }
             if (voiced(player, companion, message, now)) return true;
