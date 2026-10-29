@@ -64,11 +64,17 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
     titles are still shown nowhere.
 14. **Old worlds still show "Vesp".** E-10c keeps a saved player's name; renaming a saved display name needs a tested
     migration (the name is in the companions table and the native save).
+    **Not done, by choice.** The migration would run in `PlayerRuntime`'s startup load, which `modest-faraday` changes
+    heavily, and would rewrite the companion record, the arbiter's snapshot and the native record's copy with their
+    revisions: not a small, local change. E-10c chose to keep saved names, and whether an old world's Vesp should be
+    renamed at all is the owner's call. After `modest-faraday` merges, if wanted.
 15. **"AI" is still in the command and in-game text** (`/aiplayer`, "AI player panel", the panel's messages) after the
     front page dropped it. Decide whether to add an alias (`/player`?) and reword the panel; renaming the command
     breaks habits and the docs.
+    **Owner's decision; not touched.**
 16. **`docs/optimization-and-qol-guide.md` still says Vesp** (a note at its top says so); the E-10a evidence keeps the
     old name on purpose.
+    **Done in `5fdb7bd`:** its text says Echo; its code excerpts stay as written, and the note says what the code is now.
 
 ## D. Docs and comments
 
