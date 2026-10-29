@@ -38,6 +38,14 @@ public record SocialProfile(UUID companionId, Personality personality, boolean a
                 publicConversation, Math.incrementExact(revision));
     }
 
+    /** The same settings with a whole personality, as a starter's preset gives a player when it is made (C13). */
+    public SocialProfile withPersonality(Personality next) {
+        Objects.requireNonNull(next);
+        var kept = new Personality(next.initiative(), next.caution(), next.curiosity(), next.sociability(), next.humor(),
+                next.combativeness(), next.helpfulness(), next.farming(), next.mining(), Math.incrementExact(personality.revision()));
+        return new SocialProfile(companionId, kept, ambientEnabled, publicConversation, Math.incrementExact(revision));
+    }
+
     /** How long between bits of small talk: more sociable players talk more often. */
     public long ambientIntervalMillis() { return 180_000L - personality.sociability() * 1_200L; }
 }

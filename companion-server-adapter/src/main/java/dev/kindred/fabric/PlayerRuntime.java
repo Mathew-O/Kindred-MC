@@ -584,6 +584,11 @@ final class PlayerRuntime {
     boolean shutdownComplete() { requireThread(); return !running && shutdown.isDone() && !shutdown.isCompletedExceptionally(); }
 
     int createNative(ServerCommandSource source, String name) {
+        return createNative(source, name, null);
+    }
+
+    /** As above; a starter's preset personality, if given, becomes the new player's own before it first acts (C13). */
+    private int createNative(ServerCommandSource source, String name, Personality preset) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         Actor actor = nativeActor(source);
@@ -607,6 +612,7 @@ final class PlayerRuntime {
             entry.nativeState = record;
             entry.ledgerState = LedgerCheckState.KNOWN_LEDGER_CLEAR;
             entries.put(entry.data.id(), entry);
+            if (preset != null) startWithPersonality(entry, preset);
             feedback(source, "Allocated " + name + " (" + entry.data.id() + "). Preparing its native body.");
             if (nativeActor(source) == null || !nativeActor(source).operator()) {
                 entry.reconciliationBlocked = true;
@@ -7290,6 +7296,12 @@ final class PlayerRuntime {
         entry.runPart = steered ? part : null;
     }
 
+    /** A player's personality as its profile holds it now, for fixtures (C13). */
+    Personality personalityForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.profile.personality();
+    }
+
     /** What a player last said aloud, for fixtures. */
     String lastSaid(UUID id) {
         Entry entry = entries.get(id);
@@ -13154,13 +13166,13 @@ final class PlayerRuntime {
                 connectNative(source, existing, false);
                 return 1;
             }
-            return createNative(source, preset.name());
+            return createNative(source, preset.name(), preset.defaultPersonality());
         }
         int spawned = 0;
         for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
             var existing = rosterEntry(preset);
             if (existing == null) {
-                createNative(source, preset.name());
+                createNative(source, preset.name(), preset.defaultPersonality());
                 spawned++;
             } else if (existing.nativeBody == null || !existing.nativeBody.connected()) {
                 feedback(source, "Reconnecting saved " + existing.data.displayName() + "...");
@@ -13172,6 +13184,23 @@ final class PlayerRuntime {
             feedback(source, "All canonical players (Kindred, Sol, Echo) are already active in the world.");
         }
         return 1;
+    }
+
+    /**
+     * A starter just made takes up its preset personality, saved as any profile change is (C13). Only ever for a player
+     * being created: a saved player's personality is its own and is never reset.
+     */
+    private void startWithPersonality(Entry entry, Personality preset) {
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = previous.withPersonality(preset);
+        entry.profile = changed;
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || failure == null) return;
+            entry.metadataFault = true;
+            halt(entry, Actor.console(), "Profile save failed; player stopped for storage inspection.");
+            KindredMod.LOGGER.error("Starter personality write failed for {}", entry.data.id(), failure);
+        }));
     }
 
     /** The saved player a starter is, under its name now or one it had before (E-10c: a world's Vesp is Echo). */

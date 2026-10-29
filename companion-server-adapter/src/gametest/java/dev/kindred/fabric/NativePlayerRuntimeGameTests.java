@@ -151,6 +151,57 @@ public final class NativePlayerRuntimeGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /** A personality's nine traits, for comparing two whatever their revisions. */
+    private static java.util.List<Integer> traits(dev.kindred.core.Personality personality) {
+        return java.util.Arrays.stream(dev.kindred.core.Personality.Trait.values()).map(personality::value).toList();
+    }
+
+    /**
+     * C13: a starter made from the roster begins with its own preset personality (Sol's, not the defaults), saved: read
+     * back after a restart. A saved player's personality is its own from then on: a trait its operator changed stays
+     * changed across the restart, and spawning the starter again reconnects it without resetting anything.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
+    public void aStarterBeginsWithItsPresetPersonalityKeptAcrossARestartAndNeverReset(TestContext context) {
+        Fixture f = new Fixture(context);
+        UUID[] sol = {null};
+        var preset = dev.kindred.core.CanonicalRoster.SOL.defaultPersonality();
+        var changed = new java.util.ArrayList<>(traits(preset));
+        changed.set(dev.kindred.core.Personality.Trait.CURIOSITY.ordinal(), 10);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, "Sol") == 1, "Sol spawned from the roster"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Sol established");
+                    sol[0] = statuses.getFirst().id();
+                })
+                .createAndAdd(() -> context.assertTrue(traits(f.runtime.personalityForFixtures(sol[0])).equals(traits(preset)),
+                        "Sol begins with Sol's personality, not the defaults: " + f.runtime.personalityForFixtures(sol[0])))
+                // Its operator changes a trait once the first save is in (a profile change waits for the last).
+                .createAndAdd(() -> context.assertTrue(f.runtime.socialSetting(f.source, sol[0], null, false,
+                        dev.kindred.core.Personality.Trait.CURIOSITY, 10) == 1, "Curiosity set to 10"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.socialSetting(f.source, sol[0], "ambient", true, null, 0) == 1,
+                        "And saved: the next change is let in"))
+                .createAndAdd(() -> f.runtime.stop())
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Closed"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(context.getWorld().getServer(), f.directory); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Reopened"))
+                .createAndAdd(() -> context.assertTrue(traits(f.runtime.personalityForFixtures(sol[0])).equals(changed),
+                        "Read back after the restart, the change kept: " + f.runtime.personalityForFixtures(sol[0])))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, "Sol") == 1, "Sol spawned again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).getFirst().connected(), "The saved Sol reconnected"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Still one Sol");
+                    context.assertTrue(traits(f.runtime.personalityForFixtures(sol[0])).equals(changed),
+                            "Never reset to the preset: " + f.runtime.personalityForFixtures(sol[0]));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     private static final class Fixture {
         PlayerRuntime runtime;
         final Path directory;
