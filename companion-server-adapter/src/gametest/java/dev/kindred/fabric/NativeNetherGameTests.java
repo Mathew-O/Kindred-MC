@@ -73,6 +73,11 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertFalse(f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Resource patch acknowledged"))
                 .createAndAdd(() -> {
                     f.runtime.nativeBody(f.id).orElseThrow().setPortalTravelAuthorized(true);
+                    // The wart's Nether chunk held loaded while the test runs (fresh ground a teleport lands on loaded its
+                    // entities too late in one run in three), and let go as it ends.
+                    int cx = wart.getX() >> 4, cz = wart.getZ() >> 4;
+                    nether.setChunkForced(cx, cz, true);
+                    FixtureGround.whenDone(context, () -> nether.setChunkForced(cx, cz, false));
                     context.assertTrue(fixtureTeleport(f.runtime.nativeBody(f.id).orElseThrow(), nether,
                             new Vec3d(wart.getX() + 0.5, wart.getY(), wart.getZ() + 1.5)), "Fixture places native body in Nether");
                 })
@@ -213,25 +218,47 @@ public final class NativeNetherGameTests implements FabricGameTest {
         }));
     }
 
-    /** Walks a block out of the portal it stands in, whichever side is open, and back in. */
+    /**
+     * Walks two blocks straight out of the portal it stands in, square to the portal's face, stays out while the portal's
+     * cooldown runs down, and walks straight back in. The ground about a portal vanilla made is whatever was there, so
+     * the fixture opens and floors that line first (two blocks out: a body standing just beside the portal still touches
+     * it, and every tick it touches it the cooldown starts again).
+     */
     private static void stepOutAndBack(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
-        BlockPos start = f.player().getBlockPos();
-        String out = f.runtime.nativeWalk(f.source, f.id, "north", 1) == 1 ? "north"
-                : f.runtime.nativeWalk(f.source, f.id, "south", 1) == 1 ? "south" : null;
-        if (out == null) {
+        var world = f.player().getServerWorld();
+        BlockPos portal = f.player().getBlockPos();
+        var state = world.getBlockState(portal);
+        if (!state.isOf(Blocks.NETHER_PORTAL)) { context.throwGameTestException("Not in the arrival portal: " + state + " at " + portal.toShortString()); return; }
+        var direction = state.get(net.minecraft.block.NetherPortalBlock.AXIS) == net.minecraft.util.math.Direction.Axis.X
+                ? net.minecraft.util.math.Direction.NORTH : net.minecraft.util.math.Direction.EAST;
+        if (attempts == 0) {
+            // Three wide, so a body a little off the middle has room either side.
+            var side = direction.rotateYClockwise();
+            for (int k = 1; k <= 2; k++) for (int across = -1; across <= 1; across++) {
+                BlockPos cell = portal.offset(direction, k).offset(side, across);
+                world.setBlockState(cell, Blocks.AIR.getDefaultState());
+                world.setBlockState(cell.up(), Blocks.AIR.getDefaultState());
+                if (!world.getBlockState(cell.down()).isSideSolidFullSquare(world, cell.down(), net.minecraft.util.math.Direction.UP)) {
+                    world.setBlockState(cell.down(), Blocks.NETHERRACK.getDefaultState());
+                }
+            }
+        }
+        // To the middle of the cell two out, so the straight walk back has the body's whole width over its line.
+        if (f.runtime.nativeGotoCentred(f.source, f.id, portal.offset(direction, 2)) != 1) {
             if (attempts >= 40) { context.throwGameTestException("No walk out of the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
             later(context, () -> stepOutAndBack(context, f, attempts + 1, next));
             return;
         }
-        String back = out.equals("north") ? "south" : "north";
-        waitForStepped(context, f, start, 0, () -> waitForPortalCooldown(context, f, 0, () -> walkBack(context, f, back, 0, next)));
+        waitForStepped(context, f, portal, 0, () -> {
+            context.assertTrue(!world.getBlockState(f.player().getBlockPos()).isOf(Blocks.NETHER_PORTAL), "Out of the portal: at " + f.player().getPos());
+            waitForPortalCooldown(context, f, 0, () -> walkBack(context, f, direction.getOpposite().asString(), 0, next));
+        });
     }
 
-    /** Out of the portal its cooldown (300 ticks, reset each tick spent inside) runs down before it will take it again. */
-    private static void waitForPortalCooldown(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
-        if (f.player().getPortalCooldown() == 0) { next.run(); return; }
-        if (attempts >= 400) { context.throwGameTestException("Portal cooldown did not run down: " + f.player().getPortalCooldown()); return; }
-        later(context, () -> waitForPortalCooldown(context, f, attempts + 1, next));
+    private static void walkBack(TestContext context, NativePaidSkillsGameTests.Fixture f, String direction, int attempts, Runnable next) {
+        if (f.runtime.nativeWalk(f.source, f.id, direction, 2) == 1) { next.run(); return; }
+        if (attempts >= 40) { context.throwGameTestException("No walk back into the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
+        later(context, () -> walkBack(context, f, direction, attempts + 1, next));
     }
 
     /** A walk keeps no action receipt: it is done once the player stands elsewhere and its activity is idle again. */
@@ -242,10 +269,11 @@ public final class NativeNetherGameTests implements FabricGameTest {
         later(context, () -> waitForStepped(context, f, start, attempts + 1, next));
     }
 
-    private static void walkBack(TestContext context, NativePaidSkillsGameTests.Fixture f, String direction, int attempts, Runnable next) {
-        if (f.runtime.nativeWalk(f.source, f.id, direction, 1) == 1) { next.run(); return; }
-        if (attempts >= 40) { context.throwGameTestException("No walk back into the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
-        later(context, () -> walkBack(context, f, direction, attempts + 1, next));
+    /** Out of the portal its cooldown (300 ticks, reset each tick spent inside) runs down before it will take it again. */
+    private static void waitForPortalCooldown(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
+        if (f.player().getPortalCooldown() == 0) { next.run(); return; }
+        if (attempts >= 400) { context.throwGameTestException("Portal cooldown did not run down: " + f.player().getPortalCooldown()); return; }
+        later(context, () -> waitForPortalCooldown(context, f, attempts + 1, next));
     }
 
     private static void waitForNewAction(TestContext context, NativePaidSkillsGameTests.Fixture f, java.util.UUID before, int attempts, Runnable next) {

@@ -1086,6 +1086,12 @@ final class PlayerRuntime {
                 "z", String.valueOf(target.getZ()), "range", String.valueOf(range)));
     }
 
+    /** As {@link #nativeGoto}, to the middle of the target block, as a straight walk on from there wants. */
+    int nativeGotoCentred(ServerCommandSource source, UUID id, BlockPos target) {
+        return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", "0", "centre", "true"));
+    }
+
     /** As {@link #nativeGoto}, allowing one deliberate drop of up to {@code drop} blocks (broken with water when deep). */
     int nativeGotoDropping(ServerCommandSource source, UUID id, BlockPos target, double range, int drop) {
         return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
@@ -6141,6 +6147,7 @@ final class PlayerRuntime {
             if ("native_push".equals(entry.skillId)) {
                 entry.bring.pushes++;
                 entry.bring.rollAt = null; // A roll judged afresh from the end of each push.
+                entry.bring.repush = false;
                 KindredMod.LOGGER.info("{} bringing: a push ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
             }
             if ("native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
@@ -7909,6 +7916,8 @@ final class PlayerRuntime {
         Vec3d rollAt;
         long rollSince;
         boolean rollMoved = true;
+        /** Gone back along the line to push the stopped cart on again: kept to until the push is given. */
+        boolean repush;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -8396,14 +8405,16 @@ final class PlayerRuntime {
                 boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) <= 0.25;
                 if (!still) {
                     b.since = now;
+                    b.repush = false;
                     if (!behind && !cart.getBlockPos().equals(b.push)) {
                         KindredMod.LOGGER.info("{} bringing: back behind the line's start at {} while the cart rolls", entry.data.displayName(), b.push.toShortString());
                         return List.of(standAt(bringTask(entry, "back behind:" + b.pushes), b.push));
                     }
                     return List.of(waitTask(task, "For the cart to roll in"));
                 }
-                if (now - b.since < 40) return List.of(waitTask(task, "For the cart to roll in"));
+                if (!b.repush && now - b.since < 40) return List.of(waitTask(task, "For the cart to roll in"));
                 // Stopped short: pushed on again from behind it, along the line (from behind the line's start, at its first rail).
+                // The walk back to it is kept to, not given up for the wait above at the next look.
                 int at = b.rails.indexOf(cart.getBlockPos());
                 if (at < 0 || b.pushes >= 8) {
                     KindredMod.LOGGER.info("{} bringing: the cart stopped at {} ({}), rail {} of {}, {} pushes; the line from {} to {}", entry.data.displayName(),
@@ -8414,6 +8425,7 @@ final class PlayerRuntime {
                 // On the rail behind it: two behind ran through a turn into the corridor's wall.
                 var stand = at >= 1 ? b.rails.get(at - 1) : b.push;
                 b.since = now;
+                b.repush = true;
                 if (player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
                             "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "centre", "true")));
