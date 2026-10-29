@@ -17,6 +17,8 @@ On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merge
   - on the code before: fails, Sol at every trait 50;
   - after, with the rest of its class and `NativeSkinGameTests`: 5 of 5 in each of three runs.
   - Evidence: [E-10d](evidence/E-10d.md).
+- Fixtures off the deprecated mock player, and `NativePlayerBody`'s unchecked cast removed, `a841f6b`: no deprecation or unchecked warnings with `-Xlint:unchecked`. `NativeCraftGameTests`, `CompanionGameTests`, `NativeCombatGameTests`, `NativeGazeGameTests`, `NativeVoiceGameTests` and `NativeAskGameTests` together: 45 of 45 in each of three runs.
+- CI (`.github/workflows/build.yml`) on `main`, run 223 on `91f408a`: build and testkit pass; the native suite 373 of 379 in 41 minutes (six open failures, listed on the loose-ends page). From `fa0466b` a newer push cancels the run it supersedes.
 
 ## Asks in chat (E-20b) — 29 October 2026 (`claude/player-voice-e20`)
 

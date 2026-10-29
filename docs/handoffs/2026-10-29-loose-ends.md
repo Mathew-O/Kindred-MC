@@ -125,9 +125,17 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
 22. **The suite takes about an hour on four cores** and did not finish inside 70 minutes when it shared them (run 51).
     Check that the GitHub workflow, which runs the whole suite on every push, is green on `main` and how long it takes;
     consider splitting the gametest job or running the long fixtures nightly.
+    **Checked.** `main` has been red on every run: the build (17 min) and the testkit pass, then the native suite fails.
+    Run 223 on `91f408a` failed 6 of 379 in 41 minutes: the lava-pool portal cast, the build that fetches its
+    shortfall, the walled keep, the night-and-bed fixture, the furnished cabin and the off-line librarian bring. All
+    six are in validation's open lists, and several have fixes on `modest-faraday`. Done in `fa0466b`: a newer push to a
+    branch cancels the run it supersedes (pushes had queued an hour each). Splitting the job, or moving the long
+    fixtures to a nightly run, is the owner's call.
 23. **Five fixtures use `createMockCreativeServerPlayerInWorld`, deprecated for removal** (`NativeGazeGameTests`,
     `NativeVoiceGameTests`, `CompanionGameTests`, `NativeCombatGameTests`); `NativePlayerBody` compiles with unchecked
     warnings. Clear them before the next Fabric API bump forces it.
+    **Done in `a841f6b`:** a `MockPlayers` helper built from the same, non-deprecated parts; the one unchecked cast replaced.
+    The six classes involved (crafting, combat, gaze, voice, ask, companion) passed 45 of 45, three times.
 
 ## F. Structure (needs the owner's decision)
 
