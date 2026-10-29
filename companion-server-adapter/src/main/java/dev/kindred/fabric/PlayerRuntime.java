@@ -6139,6 +6139,7 @@ final class PlayerRuntime {
             }
             if ("native_push".equals(entry.skillId)) {
                 entry.bring.pushes++;
+                entry.bring.rollAt = null; // A roll judged afresh from the end of each push.
                 KindredMod.LOGGER.info("{} bringing: a push ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
             }
             if ("native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
@@ -7900,6 +7901,13 @@ final class PlayerRuntime {
         int pushes, failed, doorTries, pickups;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
         long fetchFrom;
+        /**
+         * Where the rolling cart was two seconds ago, when, and whether it had moved a quarter of a block since the time
+         * before: a cart pressed against something, or rocking in a dip, keeps a speed it gets nowhere by.
+         */
+        Vec3d rollAt;
+        long rollSince;
+        boolean rollMoved = true;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -8362,34 +8370,48 @@ final class PlayerRuntime {
                 if (cart == null) return giveUp(entry, body, "The cart for the " + b.noun + " is gone.");
                 if (villager.getRootVehicle() != cart) return giveUp(entry, body, "The " + b.noun + " got out of the cart.");
                 double speed = cart.getVelocity().horizontalLength();
+                if (b.rollAt == null || now - b.rollSince >= 40) {
+                    b.rollMoved = b.rollAt == null || cart.getPos().squaredDistanceTo(b.rollAt) > 0.0625;
+                    b.rollAt = cart.getPos();
+                    b.rollSince = now;
+                }
+                // Still: no speed, or none it got a quarter of a block by in the last two seconds.
+                boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
-                if (cart.getBlockPos().equals(b.floor) && speed < 0.01 && !inFront) {
+                if (cart.getBlockPos().equals(b.floor) && still && !inFront) {
                     b.phase = Bring.Phase.LINTEL;
                     return bringCandidates(entry, body);
                 }
                 // At rest on the cell's floor but still half in its front: nudged on in from the corridor, against the bed.
-                if (cart.getBlockPos().equals(b.floor) && speed < 0.01) {
+                if (cart.getBlockPos().equals(b.floor) && still) {
                     if (b.pushes >= 8) return giveUp(entry, body, "The cart with the " + b.noun + " stopped half in its cell.");
                     var by = b.slot.south();
                     if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(by)) > 0.25) return List.of(standAt(bringTask(entry, "to nudge"), by));
                     return List.of(new NativeTaskCandidate(bringTask(entry, "nudge:" + b.pushes), "native_push", Map.of("target", cart.getUuid().toString(),
                             "seconds", "5", "x", String.valueOf(b.slot.getX()), "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()))));
                 }
-                if (speed > 0.01) {
+                // While it rolls, back behind the line's start, as a player keeps a cart from running off its end: one that
+                // runs out of way short of the cell and rolls back meets the player there and is sent on again.
+                boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) <= 0.25;
+                if (!still) {
                     b.since = now;
+                    if (!behind && !cart.getBlockPos().equals(b.push)) {
+                        KindredMod.LOGGER.info("{} bringing: back behind the line's start at {} while the cart rolls", entry.data.displayName(), b.push.toShortString());
+                        return List.of(standAt(bringTask(entry, "back behind:" + b.pushes), b.push));
+                    }
                     return List.of(waitTask(task, "For the cart to roll in"));
                 }
                 if (now - b.since < 40) return List.of(waitTask(task, "For the cart to roll in"));
-                // Stopped short: pushed on again from behind it, along the line.
+                // Stopped short: pushed on again from behind it, along the line (from behind the line's start, at its first rail).
                 int at = b.rails.indexOf(cart.getBlockPos());
-                if (at < 1 || b.pushes >= 8) {
+                if (at < 0 || b.pushes >= 8) {
                     KindredMod.LOGGER.info("{} bringing: the cart stopped at {} ({}), rail {} of {}, {} pushes; the line from {} to {}", entry.data.displayName(),
                             cart.getPos(), world.getBlockState(cart.getBlockPos()), at, b.rails.size(), b.pushes, b.rails.getFirst().toShortString(),
                             b.rails.getLast().toShortString());
                     return giveUp(entry, body, "The cart with the " + b.noun + " stopped short of its cell.");
                 }
                 // On the rail behind it: two behind ran through a turn into the corridor's wall.
-                var stand = b.rails.get(at - 1);
+                var stand = at >= 1 ? b.rails.get(at - 1) : b.push;
                 b.since = now;
                 if (player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
@@ -10157,6 +10179,8 @@ final class PlayerRuntime {
                     "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0.6")));
         }
         if (best == null) {
+            // Its last block may be out while the mine that took it is still finishing: it is counted once that ends.
+            if (!entry.patchMineIds.isEmpty() && (runnerBusy(entry) || entry.nativeActionPending)) return null;
             if (entry.patchMined > 0) {
                 say(entry, (logs ? "I cut the patch down: " : "I mined out the patch: ") + entry.patchMined + " " + name + (logs && entry.patchMined != 1 ? "s." : "."), "");
                 KindredMod.LOGGER.info("{} mined out its patch: {} {}", entry.data.displayName(), entry.patchMined, name);

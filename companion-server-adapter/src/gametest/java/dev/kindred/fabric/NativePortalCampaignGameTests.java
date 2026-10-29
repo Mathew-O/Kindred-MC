@@ -1840,7 +1840,9 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     for (int k = 1; k <= 8; k++) for (int y = 8 - k; y <= 10 - k; y++) world.setBlockState(b.add(k, y, 0), Blocks.AIR.getDefaultState());
                     world.setBlockState(b.add(9, 1, 0), Blocks.AIR.getDefaultState());
                     world.setBlockState(b.add(9, 0, 0), Blocks.IRON_ORE.getDefaultState());
-                    // A wall round the top, two high, so the staircase is the only way on from there.
+                    // Open sky over it, whatever a fixture beside it left there; then a wall round the top, two high, so
+                    // the staircase is the only way on from there.
+                    for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 8; y <= 24; y++) world.setBlockState(b.add(x, y, z), Blocks.AIR.getDefaultState());
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 8; y <= 9; y++) {
                         if (x == -2 || x == 10 || z == -2 || z == 2) world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
@@ -1984,6 +1986,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // The pit under the ore, two deep.
                     world.setBlockState(b.add(9, -1, 0), Blocks.AIR.getDefaultState());
                     world.setBlockState(b.add(9, -2, 0), Blocks.AIR.getDefaultState());
+                    // Open sky over it, whatever a fixture beside it left there.
+                    for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 8; y <= 24; y++) world.setBlockState(b.add(x, y, z), Blocks.AIR.getDefaultState());
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = 8; y <= 9; y++) {
                         if (x == -2 || x == 10 || z == -2 || z == 2) world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }

@@ -166,19 +166,7 @@ public final class NativePaidSkillsGameTests implements FabricGameTest {
          * of the suite (nothing ticks the test's own scheduled stop once it is done): stop it as the test ends.
          */
         private void stopWhenDone(TestContext context) {
-            try {
-                var field = TestContext.class.getDeclaredField("test");
-                field.setAccessible(true);
-                ((net.minecraft.test.GameTestState) field.get(context)).addListener(new net.minecraft.test.TestListener() {
-                    @Override public void onStarted(net.minecraft.test.GameTestState test) { }
-                    @Override public void onPassed(net.minecraft.test.GameTestState test, net.minecraft.test.TestRunContext run) { stopIfRunning(); }
-                    @Override public void onFailed(net.minecraft.test.GameTestState test, net.minecraft.test.TestRunContext run) { stopIfRunning(); }
-                    @Override public void onRetry(net.minecraft.test.GameTestState previous, net.minecraft.test.GameTestState next,
-                                                  net.minecraft.test.TestRunContext run) { stopIfRunning(); }
-                });
-            } catch (ReflectiveOperationException | RuntimeException unavailable) {
-                KindredMod.LOGGER.warn("Fixture cannot stop its runtime when its test ends: {}", unavailable.toString());
-            }
+            FixtureGround.whenDone(context, this::stopIfRunning);
         }
 
         private void stopIfRunning() {

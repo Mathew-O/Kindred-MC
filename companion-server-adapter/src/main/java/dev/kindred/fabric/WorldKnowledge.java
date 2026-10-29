@@ -58,6 +58,9 @@ final class WorldKnowledge {
     static final int VERTICAL_RADIUS = 24;
     private static final int BLOCK_READS_PER_SCAN = 6_000;
     private static final int RAYCASTS_PER_SCAN = 24;
+    /** Cave floors passed in a sweep while their sight lines were spent, looked at first in the scans after. */
+    private static final int CAVE_BACKLOG = 1024;
+    private final java.util.ArrayDeque<BlockPos> caveBacklog = new java.util.ArrayDeque<>();
     private static final int MAX_PER_KIND = 2_000;
 
     private final Map<Kind, Map<Long, BlockPos>> known = new EnumMap<>(Kind.class);
@@ -132,10 +135,18 @@ final class WorldKnowledge {
             dimension = dim;
             for (var map : known.values()) map.clear();
             sweep.clear();
+            caveBacklog.clear();
         }
-        if (cursor >= sweep.size()) rebuildSweep(player);
+        // A sweep ends once the cave floors it passed over are looked at too: what was not seen in it is known not there.
+        if (cursor >= sweep.size() && caveBacklog.isEmpty()) rebuildSweep(player);
         int reads = 0;
-        int raycasts = 0;
+        int raycasts = 0, caveRaycasts = 0;
+        while (!caveBacklog.isEmpty() && caveRaycasts < RAYCASTS_PER_SCAN) {
+            BlockPos floor = caveBacklog.poll();
+            if (known.get(Kind.CAVE).containsKey(cell(floor)) || !world.isChunkLoaded(floor)) continue;
+            caveRaycasts++;
+            if (visible(player, floor)) remember(Kind.CAVE, floor);
+        }
         while (cursor < sweep.size() && reads < BLOCK_READS_PER_SCAN) {
             ChunkSectionPos sectionPos = sweep.get(cursor);
             var chunk = world.getChunkManager().getWorldChunk(sectionPos.getSectionX(), sectionPos.getSectionZ());
@@ -158,10 +169,16 @@ final class WorldKnowledge {
                     // Stone with a cave floor on top: one sighting per cell is enough to know there is a cave there.
                     BlockPos floor = pos.up();
                     boolean airAbove = y < 15 ? section.getBlockState(x, y + 1, z).isAir() : world.getBlockState(floor).isAir();
+                    // Cave floors have sight lines of their own to spend: a wide floor of open stone (a hillside, a quarry)
+                    // took them all, scan after scan, and the ore beside it went unseen. Those it has none left for are
+                    // looked at first in the scans after.
                     if (kind == Kind.STONE && airAbove && !known.get(Kind.CAVE).containsKey(cell(floor)) && caveFloor(world, floor)) {
-                        if (raycasts >= RAYCASTS_PER_SCAN) return;
-                        raycasts++;
-                        if (visible(player, floor)) remember(Kind.CAVE, floor);
+                        if (caveRaycasts < RAYCASTS_PER_SCAN) {
+                            caveRaycasts++;
+                            if (visible(player, floor)) remember(Kind.CAVE, floor);
+                        } else if (caveBacklog.size() < CAVE_BACKLOG) {
+                            caveBacklog.add(floor.toImmutable());
+                        }
                     }
                     if (exposed(world, pos, kind)) {
                         if (needsSight(kind)) {
