@@ -56,10 +56,36 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
      release servers at the other providers, which already work there.
 7. **Never compared with and without it.** F-19b/c ask for paired runs on one build (deaths an hour, stage times); none
    run. Until then the strategist's value is a story, not a number.
+   **Run, one pair; it shows no gain.** The three starters on the Nether goal, a fresh world on seed 8675309, two game
+   hours sprinted, on the same build (`f7f206a`), strategist off and then on, in a worktree of their own. Fixture runs
+   shared the four cores during both, so the sprints ran at 46 and 58 ticks a second.
+
+   | | Off | On |
+   | --- | --- | --- |
+   | Deaths | 2 (Sol drowned; Kindred, a spider) | 10 (Echo 8: zombies 4, creepers 2, a witch 2; Sol suffocated; Kindred, a skeleton) |
+   | Iron pickaxe | all three | Echo, Kindred |
+   | Iron armour (Suit Up) | Echo, Sol | Kindred |
+   | Furthest | Echo casting the portal frame (branch mining for lava) | Kindred casting the portal frame (had a lava bucket) |
+   | Portal lit | none | none |
+   | Strategist | none | 54 replies: 381,612 input tokens, 327,805 of them read from the cache, and 8,634 output. The all-player daily budget (100,000, cache reads counting a tenth) ran out four minutes before the end |
+
+   One pair on one seed proves nothing either way: play varies from run to run on the same seed. The on run's extra
+   deaths are mostly one player's, Echo's, underground at night. The strategist answered them: it gave Echo the habit
+   "dig in at dusk" and twice asked for a shield. It cannot be said the strategist caused them, or that it helps;
+   several pairs on several seeds would be needed. The key was read from a file into the server's environment only,
+   and appears in neither log.
 8. **No live call through a non-Anthropic provider** (F-19d): one consultation with an OpenAI key, checking the log
    line and the reply.
    **Not run:** no OpenAI (or other non-Anthropic) key in this session's environment.
 9. **Follow-ups never seen in a live run** (F-19e).
+   **Seen, in B7's strategist run:** seven replies queued follow-ups, each logged as `<name> strategist: queued [...]`:
+   - food for the Nether trip ("Only 1 food carried; the Nether trip needs 12 or more");
+   - sticks and flint for the frame's flint and steel;
+   - a shield for Echo, twice ("three deaths to mobs underground, and no shield yet");
+   - wool for a bed.
+   Whether each was then fetched was not measured one by one. Echo crafted its first shield a minute and a half after
+   the first request, and four more after that, each lost at its next death; the log does not say whether the
+   follow-up or its own plan made it craft them.
 10. **Habits only come from the model.** A player without a key never learns "carry more food" or "shelter early".
     A local rule for the plain lessons (two deaths hungry; two night deaths on the surface) would give every player
     the same memory.
