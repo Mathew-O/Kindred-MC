@@ -5275,6 +5275,8 @@ final class PlayerRuntime {
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
+        // What it died in, for a run's report to weigh deaths by (B7): read before its work is stopped below.
+        String circumstances = deathCircumstances(entry, player);
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
         if (entry.runner != null && runnerBusy(entry)) {
@@ -5291,8 +5293,29 @@ final class PlayerRuntime {
         if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks(), killedByMob,
                 player.getDamageTracker().getDeathMessage().getString());
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
-        KindredMod.LOGGER.info("{} died at {}: {}", entry.data.displayName(), deathPos.toShortString(),
-                player.getDamageTracker().getDeathMessage().getString());
+        KindredMod.LOGGER.info("{} died at {}: {} ({})", entry.data.displayName(), deathPos.toShortString(),
+                player.getDamageTracker().getDeathMessage().getString(), circumstances);
+    }
+
+    /**
+     * What a death happened in: the tick and the time of day, under the sky or not, its hunger, armour, hands and
+     * shield, what it was doing, its goal's stage, and the strategist's advice and the habits in force.
+     */
+    private String deathCircumstances(Entry entry, ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        var hand = player.getMainHandStack();
+        boolean shield = player.getOffHandStack().isOf(Items.SHIELD) || hand.isOf(Items.SHIELD);
+        var task = entry.activeCampaignTask != null ? entry.activeCampaignTask : entry.activeBuildTask;
+        String doing = task != null ? task.label() : entry.skillId != null ? entry.skillId : "nothing";
+        var campaign = entry.campaign;
+        String advice = campaign == null ? "no goal" : "stance " + campaign.stance() + ", focus " + campaign.focus()
+                + ", habits " + campaign.preferences().habits();
+        return "tick " + server.getTicks() + ", " + (world.isNight() ? "night" : "day")
+                + ", " + (world.isSkyVisible(player.getBlockPos().up()) ? "under the sky" : "under cover")
+                + ", hunger " + player.getHungerManager().getFoodLevel() + ", armour " + player.getArmor()
+                + ", holding " + (hand.isEmpty() ? "nothing" : Registries.ITEM.getId(hand.getItem()).getPath())
+                + (shield ? ", a shield" : ", no shield") + "; doing \"" + doing + "\""
+                + (campaign == null ? "" : " in \"" + campaign.progress() + "\"") + "; " + advice;
     }
 
     /** After the exit portal's credits, the request home a client would make, and the runtime's state for the new entity. */

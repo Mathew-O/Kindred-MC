@@ -77,7 +77,7 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
    - sticks and flint for the frame's flint and steel;
    - a shield for Echo, twice ("three deaths to mobs underground, and no shield yet");
    - wool for a bed.
-   **Closed with a control (`NEXT`):**
+   **Closed with a control (`e375d25`):**
    - The stronghold fixture already queues a shield as a strategist reply would, and checks it is crafted before going
      down. Its new control is the same with nothing queued: it goes down with no shield, its iron and planks unspent,
      3 of 3. So the shield is the follow-up's, not the leg's own plan's (the End fight's own needs hold none).
