@@ -68,6 +68,30 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
 
    One pair on one seed says nothing either way. Next: two pairs on two seeds, nothing else on the cores, with each
    death logged with what it happened in. The key stayed in the server's environment; neither log has it.
+
+   **Run again, two pairs on two seeds (30 October), on `4d0884a`, nothing else on the cores; no gain shown.** The
+   starters on the Nether goal, 144,000 ticks each, each death logged with what it happened in. On seed 20261030 the
+   harness found no room at spawn for Echo, in both runs, so that pair is two players.
+
+   | | 8675309 off | 8675309 on | 20261030 off | 20261030 on |
+   | --- | --- | --- | --- | --- |
+   | Deaths | 9 | 5 | 2 | 1 |
+   | Most iron toward its need | 14 of 15 | 14 of 15 | 14 of 15 | 14 of 15 |
+   | Furthest | iron | iron | obsidian: Kindred found diamonds digging down for lava, so its frame was to be mined | iron |
+   | Strategist | none | 52 replies; 366,807 tokens in (315,435 from the cache), 8,365 out | none | 25 replies; 172,919 in (148,440 cached), 3,523 out |
+
+   - With the strategist on there were fewer deaths on both seeds (5 against 9, 1 against 2), and no more progress: no
+     portal lit, the same iron. Its advice was mostly to play safe or to surface and recover, food first. Two pairs are
+     still too few to say whether it helps.
+   - Of the first run's nine deaths, five came while the player held a block for cover from a skeleton or a witch, with
+     a zombie or a spider in reach; two backing off; two holing up. Three of the 26 deaths in B7's logs were
+     suffocation, climbing up into gravel.
+   - Found in these logs and in reading the code they led to: waits below for daylight to go up for logs (up to 19% of a
+     player's time), coal hunts (16%), climbs out for food on raw meat that was never cooked (18%), a crafting table
+     put down and picked up again 113 times in one run, and the stick reserve burnt as fuel. With the cast fixture's
+     frame site past its wall, from the closing suite, each is now a slice of F-25c4 (F-25c4a to F-25c4h, in the
+     tracker).
+   - The key stayed in the server's environment; no log has it.
 8. **No live call through a non-Anthropic provider** (F-19d): one consultation with an OpenAI key, checking the log
    line and the reply.
    **Not run:** no OpenAI (or other non-Anthropic) key in this session's environment.
@@ -253,7 +277,72 @@ The remaining work as each row states it on 29 October. Pull from here after A t
 | F-11, F-07 | Unattended admission and schedules; restart while dead, the remaining transfers |
 | F-03/04/05/10, F-01/02/15, F-22, F-23 | Native cancellation and reconciliation; no live release gate has ever been completed; operator diagnostics and installation evidence; the release package |
 
-## My re-run of the voice branch
+## Handoff, 30 October (`claude/loose-ends-1029`)
 
-A build and a focused run of `NativeVoiceGameTests` and `NativeAskGameTests` on `147cb0f`, in a scratch worktree,
-was still running when this page was committed; its result follows in the next commit to this page.
+The page's items, A to E and G, worked in that order on `claude/loose-ends-1029`; F not touched. `modest-faraday` not
+edited; where an item needed files it changes, the item waits for its merge.
+
+### Each item
+
+| Item | State | Commit |
+| --- | --- | --- |
+| A1 talking to your own player | Done: whoever may control it is its owner in the lane (F-18a) | `249f476`, docs `d9b1b91` |
+| A2 FOLLOW as an ask | Not done: it needs a native follow skill first | |
+| A3 coalescing drops a speaker | Done (E-20c) | `6ea5681` |
+| A4 innocent refusals | Not done: no play has logged one yet | |
+| A5 the voice branch re-run | Answered: 393 of 393 on `64f4ac1`; on this branch the closing suite ran all nine voice and six ask fixtures, all passed | |
+| B6 the SDK in the release jar | Checked (about 48 MB more, all MIT or Apache-2.0); not bundled, the owner's call | |
+| B7 paired runs | Run: one pair, then two pairs on two seeds. Fewer deaths with the strategist on, no more progress; too few runs to say it helps | `fbdb8ed` (death logging) |
+| B8 a non-Anthropic provider live | Not run: no such key here | |
+| B9 follow-ups fetched | Closed: a queued shield is crafted from the follow-up, and without it no shield | `e375d25` |
+| B10 habits without the model | Not done: after `modest-faraday` merges | |
+| B11 clean speech | Waits on E-18 and E-19 | |
+| B12 `ModelGateway`, `ReasoningPolicy` | The owner's decision | |
+| C13 the starters' personalities | Done (E-10d) | `21a8a3d` |
+| C14 old worlds' Vesp | Not done, by choice: the owner's call, after `modest-faraday` | |
+| C15 "AI" in the command and panel | The owner's decision | |
+| C16 the guide's Vesp | Done | `5fdb7bd` |
+| D17 plain comments | Done but for `modest-faraday`'s twenty files | `b4fe930` |
+| D18 README's vanilla wording | Done | `0fe4b39` |
+| D19, D20 download, GitHub settings | Owner only | |
+| E21 intermittent fixtures | The night-and-bed fixture: two causes, both fixed (E-08d, F-25c9a). Found doing it: the hungry fixture stranded by its scaffold (E-08e). The pit climb and the portal restart: fixes on `modest-faraday`. The cattle: not reproduced. The keep's roof stairs: failed again in the closing suite (8 short), open | `2b1f325`, `bc1690a`, `323d852` |
+| E22 the suite's hour on CI | Checked; a newer push now cancels the run it supersedes. Splitting the job is the owner's call | `fa0466b` |
+| E23 the deprecated mock player | Done | `a841f6b` |
+| G an open feature slice | F-25c9b: hungry, food from its own storage before it hunts | `5ebb9f7` |
+| Per-death logging (for B7) | Done | `fbdb8ed` |
+
+### Validation
+
+- On `fbdb8ed`, nothing else running:
+  - `./gradlew build`: 789 JUnit results, none failed, six skipped (the opt-in live model tests).
+  - `:companion-testkit:run` and `:companion-testkit:runPersonalityDemo`: both pass.
+  - The full native suite: 396 of 400 in 58 minutes. Against validation's open list:
+    - three failures open before this session: the lava-pool portal cast; the keep's roof stairs (#82); the pit
+      climb (`modest-faraday`'s `292852f`);
+    - one this session's: F-25c9a's second-night fixture ran out before morning, because other fixtures' players
+      were awake and vanilla skips a night only when all sleep.
+- `4d0884a`, the last code change, gives both night fixtures a whole night's time. With
+  `NativePortalCampaignGameTests` beside them: 56 of 56. No full suite has run on it.
+- Each fix's fixture failed on the code before it and passed after: see validation's section for this branch and
+  each item's evidence page.
+- Live, on `4d0884a`: B7's two pairs (item 7), no portal lit, the furthest at obsidian.
+
+### The owner's decisions
+
+- F24, F25: carving `PlayerRuntime` into collaborators; a retirement path for the mob body.
+- A1: I took the lane fix (whoever may control a player is its owner when it talks). If talking to your own player
+  should stay public-only, revert `249f476` and say so in the README.
+- C14: whether old worlds' Vesp is renamed at all; if so, a tested migration after `modest-faraday`.
+- C15: an alias for `/aiplayer`, and the panel's wording.
+- Also: B6 (bundle the SDK, an add-on jar, or neither), B12, D19, D20, E22 (split the suite or run it nightly).
+- Recommended: keep `companion-server-adapter/build/gametest-results.xml` as a CI artifact. Without it no CI failure
+  can be traced from GitHub.
+
+### Next dependency
+
+- Merging `modest-faraday` unblocks the pit climb (`292852f`), the portal restart (`9f354b4`), D17's last twenty
+  files, B10 and C14.
+- Then the core playthrough: no live run in an ordinary world has yet lit a portal it earned. F-25c4a to F-25c4h,
+  claimed in the tracker, are the fixes the second pairs pointed to: deaths under cover, night waits below, fuel, food,
+  the table loop, gravel overhead, and the cast site. Each needs its fixture failing before and passing after, then live
+  runs on both seeds.
