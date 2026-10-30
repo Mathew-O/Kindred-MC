@@ -132,6 +132,8 @@ final class PortalRunCampaign {
     /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
     private int lookUntilSweep = 1;
     private long dropSiteUntil;
+    /** Whether a mob killed it there: the drops are gone back for only once no hostile mob has them in sight. */
+    private boolean dropsGuarded;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
@@ -467,6 +469,16 @@ final class PortalRunCampaign {
         if (task != null && task.label().startsWith("Recover") && dropSite != null && completed) {
             dropSiteUntil = Math.min(dropSiteUntil, tick + 600); // One more look around, then move on.
         }
+        if (task != null && task.label().startsWith(LAVA_LEG_LABEL)) {
+            boolean nearer = completed && lavaLegFrom != null && lavaLegFrom.getSquaredDistance(lastFeet) >= 8 * 8;
+            lavaLegStalls = nearer ? 0 : lavaLegStalls + 1;
+            lavaLegFrom = null;
+            if (lavaLegStalls >= 2 && castLava != null) {
+                avoid(castLava, false, tick);
+                castLava = null;
+                lavaLegStalls = 0;
+            }
+        }
         if (task != null && completed && "native_bucket".equals(task.skill()) && "pour".equals(task.args().get("mode"))) {
             BlockPos poured = position(task.args());
             if (poured != null) knowledge.remember(WorldKnowledge.Kind.WATER, poured); // It knows where it poured.
@@ -603,10 +615,13 @@ final class PortalRunCampaign {
         fightHeldUntil = -1;
         retreatHeldUntil = -1;
         // Lava burns the drops; anything else stays on the ground for about five minutes. Whatever killed the
-        // player is probably still standing over them, so a mob kill is not worth walking back into.
+        // player is probably still standing over them: after a mob kill it goes back only once no hostile mob has them
+        // in sight. In the live runs on fb02bc3 and 10a60d5 all fourteen deaths were to mobs, and each left its whole
+        // kit on the ground.
         boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
-        dropSite = burned || killedByMob ? null : pos.toImmutable();
+        dropSite = burned ? null : pos.toImmutable();
         dropSiteUntil = tick + 5_000;
+        dropsGuarded = killedByMob;
         if (killedByMob) markDanger(pos, tick + DANGER_TICKS);
     }
 
@@ -1043,8 +1058,7 @@ final class PortalRunCampaign {
         // Nights on the surface belong to skeletons: get below ground, and leave surface jobs for daylight. A player that
         // learned to shelter early counts the last of the afternoon as night already.
         var here = player.getServerWorld();
-        boolean night = here.getDimension().hasSkyLight() && (here.isNight()
-                || habits.contains(PlanPreferences.Habit.SHELTER_EARLY) && here.getTimeOfDay() % 24_000 >= DUSK && here.getTimeOfDay() % 24_000 < 13_000);
+        boolean night = night(here);
         if (night && !sheltered(player)) {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
@@ -1351,7 +1365,18 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         ItemEntity nearest = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        if (watched(world, nearest)) return Optional.empty(); // It waits for the mob to go, the site kept meanwhile.
         return Optional.of(go(nearest.getBlockPos(), 0.8, true, "Recover dropped items near " + dropSite.toShortString()));
+    }
+
+    /**
+     * After a mob kill, whether a hostile mob has this drop of its in sight, as whatever killed it stands over them:
+     * neither it nor anything round it is gone back for meanwhile. Mobs in caves behind the rock do not count; a fixture
+     * by caves at Y=-60 had two dozen within twelve blocks of its drops.
+     */
+    private boolean watched(ServerWorld world, ItemEntity drop) {
+        return dropsGuarded && dropSite != null && drop.getBlockPos().getSquaredDistance(dropSite) <= 12 * 12
+                && !world.getEntitiesByClass(HostileEntity.class, new Box(dropSite).expand(16, 8, 16), mob -> mob.isAlive() && mob.canSee(drop)).isEmpty();
     }
 
     private String stageLabel(PortalRunPlanner.Stage stage) {
@@ -1562,7 +1587,8 @@ final class PortalRunCampaign {
                     ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
                     // No water known down here: up to the surface, where lakes and rivers are, rather than tunnel about
                     // blind at depth (live run 55 met a skeleton doing that at Y=12).
-                    .or(() -> fillWater(body)).or(() -> underground(player) ? wayUp(body, "Climb toward the surface for water") : Optional.<Task>empty())
+                    .or(() -> fillWater(body)).or(() -> !underground(player) ? Optional.<Task>empty()
+                            : night(player.getServerWorld()) ? daylightBelow(body) : wayUp(body, "Climb toward the surface for water"))
                     .or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
@@ -1760,6 +1786,13 @@ final class PortalRunCampaign {
 
     static Task go(BlockPos target, double range, boolean partial, String label) {
         return new Task("native_goto", coords(target, Map.of("range", String.valueOf(range), "partial", String.valueOf(partial))), label);
+    }
+
+    /** The point {@code leg} blocks from {@code from} on the straight line to {@code to}. */
+    static BlockPos legToward(BlockPos from, BlockPos to, int leg) {
+        double dx = to.getX() - from.getX(), dy = to.getY() - from.getY(), dz = to.getZ() - from.getZ();
+        double scale = leg / Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return BlockPos.ofFloored(from.getX() + 0.5 + dx * scale, from.getY() + dy * scale, from.getZ() + 0.5 + dz * scale);
     }
 
     /** As {@link #go}, keeping out of the notice of hostile mobs other than the {@code engage} kinds (F-10g). */
@@ -2778,8 +2811,10 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        // At night below ground, only water down there too: water under the sky waits for daylight (see daylightBelow).
+        boolean below = underground(player) && night(world);
         var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
-                && p.getSquaredDistance(feet) < 64 * 64);
+                && p.getSquaredDistance(feet) < 64 * 64 && !(below && world.isSkyVisible(p.up())));
         if (source.isEmpty()) return Optional.empty();
         BlockPos water = source.get();
         if (eyeDistance(player, water) <= 4.0) {
@@ -2791,6 +2826,23 @@ final class PortalRunCampaign {
             if (up.isPresent()) return up;
         }
         return Optional.of(go(water, 2.5, false, "Walk to water at " + water.toShortString()));
+    }
+
+    /**
+     * Night on the surface belongs to skeletons, so a player below ground with the water it wants up there waits for
+     * daylight where it is, its way in closed first, as for logs. Climbing out for it, it was dug in again at the top
+     * for the night, and climbed out again: Sol went up and down a step a second for most of a night (live runs on
+     * 10a60d5).
+     */
+    private Optional<Task> daylightBelow(NativePlayerBody body) {
+        Optional<Task> seal = body.entity().isOnGround() ? seal(body) : Optional.empty();
+        return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
+    }
+
+    /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */
+    private boolean night(ServerWorld here) {
+        return here.getDimension().hasSkyLight() && (here.isNight()
+                || habits.contains(PlanPreferences.Habit.SHELTER_EARLY) && here.getTimeOfDay() % 24_000 >= DUSK && here.getTimeOfDay() % 24_000 < 13_000);
     }
 
     private Optional<Task> obsidian(NativePlayerBody body) {
@@ -2974,6 +3026,11 @@ final class PortalRunCampaign {
     private BlockPos castLava;
     /** Where the player stood when a cast was last refused or failed. */
     private BlockPos castFailedFrom;
+    /** Where the leg toward lava beyond a walk's reach set out from, and legs in a row that got it no nearer. */
+    private BlockPos lavaLegFrom;
+    private int lavaLegStalls;
+    private static final int LAVA_LEG = 96;
+    private static final String LAVA_LEG_LABEL = "Cast: walk toward the lava at ";
     /** Lava fills refused per source; the first refusal leads to a closer try, not to setting the source aside. */
     private final Map<Long, Integer> fillRefusals = new HashMap<>();
     /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
@@ -2999,6 +3056,13 @@ final class PortalRunCampaign {
                 return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
             }
             if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
+            // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set
+            // aside, and Kindred dug down to Y=-55 for lava instead (live runs on 10a60d5); legs that get it no nearer
+            // set it aside as before.
+            if (feet.getSquaredDistance(castLava) > LAVA_LEG * LAVA_LEG) {
+                if (lavaLegFrom == null) lavaLegFrom = feet;
+                return Optional.of(go(legToward(feet, castLava, LAVA_LEG), 3, true, LAVA_LEG_LABEL + castLava.toShortString()));
+            }
             if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
             if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
             return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
@@ -4197,7 +4261,7 @@ final class PortalRunCampaign {
         var holding = Valuables.holding(player, lootWanted(player));
         var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(LOOSE_REACH, 4, LOOSE_REACH),
                 drop -> (keep(drop.getStack(), saplings) && near.contains(drop.getPos()) || worthTheWay(player, drop, holding))
-                        && player.canSee(drop) && !blocked(drop.getBlockPos())
+                        && player.canSee(drop) && !blocked(drop.getBlockPos()) && !watched(world, drop)
                         && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
         if (drops.isEmpty()) {
             // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
@@ -4360,7 +4424,7 @@ final class PortalRunCampaign {
         Box area = player.getBoundingBox().expand(24, 8, 24);
         var drops = world.getEntitiesByClass(ItemEntity.class, area.contract(16, 4, 16),
                 drop -> drop.getStack().contains(DataComponentTypes.FOOD) && safeFood(drop.getStack()) && player.canSee(drop)
-                        && !blocked(drop.getBlockPos()));
+                        && !blocked(drop.getBlockPos()) && !watched(world, drop));
         if (!drops.isEmpty()) {
             ItemEntity drop = drops.getFirst();
             return Optional.of(go(drop.getBlockPos(), 0.6, false, "Pick up food"));

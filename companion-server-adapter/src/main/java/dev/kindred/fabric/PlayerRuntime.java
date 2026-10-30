@@ -1614,6 +1614,10 @@ final class PlayerRuntime {
                     || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
                 entry.nativeWorkPending = false;
                 admission.release(id);
+                if (running) dispatchDropped(entry, skill, "generation=" + (entry.generation == generation)
+                        + " fault=" + entry.metadataFault + " reconciling=" + entry.reconciliationBlocked + " ledger=" + entry.ledgerState
+                        + " stop=" + entry.snapshot().stopLatched() + " cancelling=" + entry.arbiter.cancellationPending()
+                        + " hazard=" + entry.hazardInterrupted);
                 return;
             }
             if (failure != null) { nativeActivityFailure(entry, "Activity budget could not be loaded"); return; }
@@ -1661,6 +1665,11 @@ final class PlayerRuntime {
                         entry.activity.stop(); admission.release(id);
                         if (running && generation == entry.generation) entry.blocker = entry.activity.blocker().isBlank()
                                 ? "Native request cancelled before paid dispatch." : entry.activity.blocker();
+                        if (running) dispatchDropped(entry, skill, "paid=" + paid + "/" + entry.activity.paid() + " generation="
+                                + (entry.generation == generation) + " stop=" + entry.snapshot().stopLatched() + " cancelling="
+                                + entry.arbiter.cancellationPending() + " hazard=" + entry.hazardInterrupted + " connected="
+                                + (entry.nativeBody != null && entry.nativeBody.connected()) + " ledger=" + entry.ledgerState
+                                + " blocker=" + entry.activity.blocker());
                         return;
                     }
                     try {
@@ -1676,6 +1685,7 @@ final class PlayerRuntime {
                     } catch (RuntimeException denied) {
                         entry.activity.stop(); admission.release(id);
                         entry.blocker = "Native skill denied: " + denied.getMessage();
+                        dispatchDropped(entry, skill, entry.blocker);
                     }
                 });
             } catch (RuntimeException invalid) { nativeActivityFailure(entry, "Activity state requires reconciliation"); }
@@ -1805,6 +1815,19 @@ final class PlayerRuntime {
         var window = entry.activityLimit == null ? java.util.Optional.<dev.kindred.scheduler.ActivityWindow>empty() : activityWindow(entry.activityLimit);
         return ScheduleClock.windowInterval(window, period, now).map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(now);
     }
+
+    /**
+     * A task accepted for dispatch and dropped before its skill started: said at most once a minute, with the gates that
+     * dropped it. Its decision loop saw it accepted, and a goal that offers it again each tick would stand still unsaid (F-25c4m).
+     */
+    private void dispatchDropped(Entry entry, String skill, String gates) {
+        if (server.getTicks() - entry.lastDropReportTick < STALL_TICKS) return;
+        entry.lastDropReportTick = server.getTicks();
+        KindredMod.LOGGER.info("{} {} dropped before it ran: {}", entry.data.displayName(), skill, gates);
+    }
+
+    /** Game time with a goal and no skill started, after which a player says once what holds it (F-25c4m). */
+    private static final int STALL_TICKS = 1200;
 
     private void nativeActivityFailure(Entry entry, String reason) {
         entry.metadataFault = true;
@@ -5585,6 +5608,18 @@ final class PlayerRuntime {
                 busy, false, false, autonomyAdmitted || mayDecide && !essentialCandidates.isEmpty(), entry.currentTaskId, candidates),
                 entry.profile.personality());
         entry.mindStatus = decision.reason();
+        // On a goal with no skill started for a minute of game time, it says once which of its gates holds it: a player
+        // stood seven minutes in play with its goal still offering steps and nothing in its log to say why (F-25c4m).
+        int tick = server.getTicks();
+        if (busy || entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE || entry.lastBusyTick < 0) {
+            entry.lastBusyTick = tick;
+            entry.stallReported = false;
+        } else if (!entry.stallReported && tick - entry.lastBusyTick > STALL_TICKS) {
+            entry.stallReported = true;
+            KindredMod.LOGGER.info("{} has started nothing for {} ticks on its goal: mayDecide={} admitted={} candidates={} decision={} {}"
+                    + " current={} [{}]", entry.data.displayName(), tick - entry.lastBusyTick, mayDecide, autonomyAdmitted, candidates.size(),
+                    decision.action(), decision.reason(), entry.currentTaskId != null, nativeStatusLine(entry.data.id()));
+        }
         if (!candidates.isEmpty() || decision.action() != dev.kindred.core.PlayerDecisionLoop.Action.WAIT) {
             KindredMod.LOGGER.debug("Autonomy tick for {}: state={}, usable={}, stopLatched={}, busy={}, autonomyAdmitted={}, candidates={}, decision={}",
                     entry.data.displayName(), (entry.attentionSnapshot != null ? entry.attentionSnapshot.state() : "null"),
@@ -5607,6 +5642,7 @@ final class PlayerRuntime {
                     entry.routineRefreshPending = true;
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
                     entry.currentTaskId = null;
+                    dispatchDropped(entry, candidateToDispatch.skill(), "no longer executable " + candidateToDispatch.arguments());
                 } else {
                     TaskId tId = TaskId.of(candidateToDispatch.candidate().id());
                     var optShared = teamCoordinator.findTask(tId);
@@ -5616,6 +5652,7 @@ final class PlayerRuntime {
                             var claimed = teamCoordinator.claimTask(tId, entry.data.id(), server.getTicks(), 1200L);
                             if (claimed.isEmpty()) {
                                 entry.currentTaskId = null;
+                                dispatchDropped(entry, candidateToDispatch.skill(), "the team's task could not be claimed: " + task.title());
                                 return;
                             }
                             // What it holds of the task's output now, so that its completion credits what it made.
@@ -11050,6 +11087,15 @@ final class PlayerRuntime {
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
     }
 
+    /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
+    PortalRunCampaign campaignForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null) return null;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        return entry.campaign;
+    }
+
     LedgerCheckState ledgerStateForTest(UUID id) {
         Entry entry = entries.get(id);
         return entry != null ? entry.ledgerState : null;
@@ -12327,6 +12373,11 @@ final class PlayerRuntime {
         private boolean metadataFault;
         private boolean reconciliationBlocked;
         private boolean hazardInterrupted;
+        /** The last tick it had a skill running or no goal, whether its stall since was reported, and when a dispatch it was
+         * given was last dropped unrun and said so (F-25c4m). */
+        private long lastBusyTick = -1;
+        private boolean stallReported;
+        private long lastDropReportTick = Long.MIN_VALUE / 2;
         /** No accounting period opens before this instant, and why (F-11e); null when one may. */
         private java.time.Instant noPeriodUntil;
         private String noPeriodReason;

@@ -561,6 +561,35 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void onTheCastRouteAnIronPickaxeLostOnceTheBucketsAreMadeIsNotMadeAgain() {
+        // The live runs on 10a60d5: Kindred's iron pickaxe wore out by Y=-55 on its way to the lava; the iron for another,
+        // and the coal to smelt it, took it back up sixty blocks.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 30; sim.sticks = 8; sim.shields = 1; sim.chest = 3;
+        sim.tableNearby = true; sim.iron = 2; sim.buckets = 1; sim.water = 1; sim.food = 20;
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH));
+        assertEquals(1, PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN, true), "the flint and steel's iron only");
+        // On the mined route the frame's diamonds want it, buckets made or not.
+        assertEquals(4, PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN, true), "the pickaxe's three and the flint and steel's");
+        var next = PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast();
+        assertEquals(Action.CAST_PORTAL, next.action(), "on to the cast with the stone pickaxe: " + next);
+        List<String> steps = new ArrayList<>();
+        for (int i = 0; i < 40 && !sim.lit; i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast();
+            steps.add(step.action() + (step.item().isEmpty() ? "" : " " + step.item()));
+            sim.apply(step);
+        }
+        assertTrue(sim.lit, "lit: " + steps);
+        assertTrue(steps.stream().noneMatch(s -> s.startsWith("MINE_IRON") || s.startsWith("MINE_COAL") || s.equals("CRAFT iron_pickaxe")),
+                "no iron mined, no coal hunted, no iron pickaxe made: " + steps);
+        // Before the buckets, the iron pickaxe comes first as ever, for the digging the iron takes.
+        Sim early = new Sim();
+        early.pick = 2; early.pickaxes = 2; early.sword = 2; early.cobble = 30; early.sticks = 8; early.shields = 1; early.tableNearby = true;
+        early.iron = 3;
+        assertEquals("iron_pickaxe", PortalRunPlanner.plan(early.snapshot(), BOTH).getLast().item(), "the iron pickaxe first");
+    }
+
+    @Test
     void theStickReserveIsPackedFromATreeFurtherOffBeforeTheWorkBelow() {
         // Live run 68 went into a cave by spawn with few sticks and no wood, the nearest tree forty blocks off, and at
         // Y=19 had none left: it climbed fifty-five blocks for logs and wore out its pickaxes on the way.

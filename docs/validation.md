@@ -1,5 +1,27 @@
 # AI-player development validation
 
+## What the live runs on 10a60d5 found, met — 30 October 2026 (`claude/loose-ends-1029`)
+
+Four slices of F-25c4 from the live runs on `10a60d5`, on top of `100bf95`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- `:companion-core:test`: 616 of 616. `PortalRunPlannerTest`: 37 of 37; the new case fails on the old planner ("the flint and steel's iron only ==> expected: <1> but was: <4>").
+- The three new fixtures, three runs each alone: 9 of 9. On the old campaign and planner, one run each, all three fail, each for what it is about:
+  - the far lava: "Explore the cave toward lava", no bucket filled;
+  - the night's water: "It stayed below, the water left for the morning";
+  - the drops: no recovery, "waiting for a feasible step".
+- Found making the fixtures:
+  - The test's ground lies at Y=-60 among caves. Two dozen hostile mobs stood within twelve blocks of the drops behind the rock, so a mob counts only if it can see a drop.
+  - A first knowledge sweep starts from nothing known, so a sighting staged before it is wiped.
+  - A player that has just joined takes no damage for a moment. The fixture's kill is retried on its own, not with the zombie's spawn, which had put 58 zombies by the drops.
+- The full native suite, nothing else on the cores: 404 of 409 in 51 minutes. `NativePortalCampaignGameTests` 61 of 61, the three new fixtures among them. The five failures, none in what these slices change (the cast's lava, the night's water, drops after a mob kill, the planner's iron pickaxe; the new lines change nothing in play):
+  - the pasture's cattle (loose-ends page);
+  - the keep's roof stairs (#82), which had passed in the two suites before on this branch;
+  - the ranch's pen ("Two wheat fed: 8 left"): 2 of 3 alone after;
+  - the librarian off the line, known;
+  - the second-night fixture: "Its body", out of time. Its sleep passes the night only when every player in the world sleeps, and the players of four fixtures that failed before it were still about.
+- The pasture's cattle, with the line-up wait begun afresh each time it backs out for a cow, and a pair abreast waited for one behind the other (`Ranch`; two `RanchTest` cases that fail before and pass after): 8 of 10 alone. Neither failure was the pair abreast. One cow stood outside and never came through, the player going out and back for it, as before; once the doorway's blocks were not put back. Not committed; open.
+- Evidence: [F-25c4j](evidence/F-25c4j.md), [F-25c4k](evidence/F-25c4k.md), [F-25c4l](evidence/F-25c4l.md), [F-25c4m](evidence/F-25c4m.md).
+
 ## The portal run in play, and the trip's wood — 30 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. Nothing else ran on the cores during the live runs.
