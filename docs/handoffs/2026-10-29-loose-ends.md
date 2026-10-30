@@ -369,19 +369,19 @@ The owner's next block: back to the core playthrough, clean and complete.
 | Item | Outcome | Commits |
 | --- | --- | --- |
 | F-25c4a to h, the slices B7's second pairs pointed to | Each fixture failed before its fix and passed after, 10 of 10 in each of three runs alone; the full suite 402 of 405, its three failures in other classes and older | `fb02bc3` |
-| Live runs on `fb02bc3`, both seeds, strategist off | b, c, e, g and h met their in-play rows and are complete; a was complete on its fixtures. d was not met. f is shown natively only, and the iron's load now names its fuel, so the next runs can show it | HASH |
-| F-25c4i, the trip's wood | Found in those runs: three of five players stranded below with no pickaxe and no sticks. The fixture fails before and passes after, 3 of 3; the planner case fails with either half switched off | HASH |
-| The pasture's cattle (E21) | Cause found: a pair side by side jams any opening one wide. A doorway two wide only moved the jam to the pen's gate, so it was put back. Open | HASH |
+| Live runs on `fb02bc3`, both seeds, strategist off | b, c, e, g and h met their in-play rows and are complete; a was complete on its fixtures. d was not met. f is shown natively only, and the iron's load now names its fuel, so the next runs can show it | `10a60d5` |
+| F-25c4i, the trip's wood | Found in those runs: three of five players stranded below with no pickaxe and no sticks. The fixture fails before and passes after, 3 of 3; the planner case fails with either half switched off | `10a60d5` |
+| The pasture's cattle (E21) | Cause found: a pair side by side jams any opening one wide. A doorway two wide only moved the jam to the pen's gate, so it was put back. Open | `10a60d5` |
 
 ### Validation
 
 - `fb02bc3`: `./gradlew build` 792, none failed, six skipped; testkit and personality demo pass; the full native suite 402 of 405.
-- The working tree after it, as committed in HASH: `:companion-core:test` 615 of 615; the full native suite 401 of 406. Its five failures, alone after, are all intermittents seen before; one, the librarian off the line, fails 2 of 3 on the code before too.
+- The working tree after it, as committed in `10a60d5`: `:companion-core:test` 615 of 615; the full native suite 401 of 406. Its five failures, alone after, are all intermittents seen before; one, the librarian off the line, fails 2 of 3 on the code before too.
 - The live table, against B7's: validation's section for this block.
 
 ### Next dependency
 
-- Live runs on HASH on both seeds, for F-25c4d, f and i's in-play rows.
+- Live runs on `10a60d5` on both seeds, for F-25c4d, f and i's in-play rows.
 - Then, from these runs' logs, what costs most now:
   - deaths holing up or backing off in the caves under spawn (6 of 8 on the first seed);
   - drops never picked up after a mob kills the player (`died()` skips them: every death there started over from logs);
