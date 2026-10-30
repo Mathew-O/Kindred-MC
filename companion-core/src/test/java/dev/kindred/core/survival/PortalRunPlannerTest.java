@@ -582,11 +582,36 @@ class PortalRunPlannerTest {
         assertTrue(sim.lit, "lit: " + steps);
         assertTrue(steps.stream().noneMatch(s -> s.startsWith("MINE_IRON") || s.startsWith("MINE_COAL") || s.equals("CRAFT iron_pickaxe")),
                 "no iron mined, no coal hunted, no iron pickaxe made: " + steps);
-        // Before the buckets, the iron pickaxe comes first as ever, for the digging the iron takes.
-        Sim early = new Sim();
-        early.pick = 2; early.pickaxes = 2; early.sword = 2; early.cobble = 30; early.sticks = 8; early.shields = 1; early.tableNearby = true;
-        early.iron = 3;
-        assertEquals("iron_pickaxe", PortalRunPlanner.plan(early.snapshot(), BOTH).getLast().item(), "the iron pickaxe first");
+    }
+
+    @Test
+    void onTheCastRouteTheIronPickaxeIsMadeWithTheRestOfTheIronNotFirst() {
+        // The long live run on a286cc8: Kindred made its iron pickaxe from its first three iron and wore it out before it
+        // found the rest; the next three went to another, and so on: four in all, and never a bucket.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 30; sim.sticks = 8; sim.shields = 1; sim.coal = 30;
+        sim.tableNearby = true; sim.furnaceNearby = true; sim.food = 20;
+        sim.iron = 3;
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH));
+        // Mined as Kindred mined it: each iron pickaxe worn out by the third iron found after it.
+        int ironPickaxes = 0, mined = 0, wornAt = Integer.MAX_VALUE;
+        List<String> steps = new ArrayList<>();
+        for (int i = 0; i < 300 && sim.buckets + sim.water < 2; i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).stream().filter(candidate -> candidate.action() != Action.HUNT).findFirst().orElseThrow();
+            steps.add(step.action() + (step.item().isEmpty() ? "" : " " + step.item()));
+            if (step.action() == Action.CRAFT && "iron_pickaxe".equals(step.item())) { ironPickaxes++; wornAt = mined + 3; }
+            sim.apply(step);
+            if (step.action() == Action.MINE_IRON) mined++;
+            if (sim.pick == 3 && mined >= wornAt) sim.pick = 2;
+        }
+        assertTrue(sim.buckets + sim.water >= 2, "both buckets made: " + steps);
+        assertEquals(1, ironPickaxes, "one iron pickaxe, made with the rest of the iron: " + steps);
+        assertEquals("MINE_IRON", steps.getFirst(), "its first three iron kept for the rest");
+        // Where the frame is mined, it still comes first: the diamonds want it.
+        Sim mine = new Sim();
+        mine.pick = 2; mine.pickaxes = 2; mine.sword = 2; mine.cobble = 30; mine.sticks = 8; mine.shields = 1; mine.tableNearby = true;
+        mine.iron = 3;
+        assertEquals("iron_pickaxe", PortalRunPlanner.plan(mine.snapshot()).getLast().item(), "the iron pickaxe first on the mined route");
     }
 
     @Test

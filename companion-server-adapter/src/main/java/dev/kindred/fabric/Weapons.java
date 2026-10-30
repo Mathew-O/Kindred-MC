@@ -2,6 +2,9 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.tactics.DamageModel;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
@@ -45,6 +48,30 @@ final class Weapons {
             if (entry.getKey().matchesKey(Enchantments.SHARPNESS)) return entry.getIntValue();
         }
         return 0;
+    }
+
+    /**
+     * With no weapon to strike with, the hotbar slot of what hits hardest instead, by vanilla's own attack damage for the
+     * main hand, as a player with no sword fights with its pickaxe; -1 when nothing there beats the hand.
+     */
+    static int hardestInHotbar(ServerPlayerEntity player) {
+        int best = -1;
+        double most = 1.0; // The hand.
+        for (int slot = 0; slot < 9; slot++) {
+            var stack = player.getInventory().getStack(slot);
+            if (stack.isEmpty()) continue;
+            double[] damage = {1.0};
+            stack.applyAttributeModifiers(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+                if (attribute.equals(EntityAttributes.GENERIC_ATTACK_DAMAGE) && modifier.operation() == EntityAttributeModifier.Operation.ADD_VALUE) {
+                    damage[0] += modifier.value();
+                }
+            });
+            if (damage[0] > most + 1e-6) {
+                most = damage[0];
+                best = slot;
+            }
+        }
+        return best;
     }
 
     /** A weapon the player holds, and the inventory slot it is in. */

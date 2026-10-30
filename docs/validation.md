@@ -1,6 +1,6 @@
 # AI-player development validation
 
-## The long run on a286cc8: a pickaxe worn out in a fight, a fall not broken — 30 October 2026 (`claude/loose-ends-1029`)
+## The long run on a286cc8, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
 
@@ -9,14 +9,14 @@ Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametes
   - Four deaths, none gone back for to any end:
     - Sol, to a spider at night, at Y=37;
     - Echo, a fall at night to Y=-18, the water it carried to break it never poured (F-25c4p);
-    - Kindred, to a zombie by day and a skeleton at night, both at Y=36 to 37.
+    - Kindred, to a zombie by day, fought with an empty hand (F-25c4r), and to a skeleton at night, both at Y=36 to 37.
     - Echo's and Kindred's walks back were refused ("Route … is blocked"), the deaths being deep below spawn.
   - Sol was out of the world for the run's last seventeen minutes:
     - it had no sword and no way back from a zombie, so it fought it with its stone pickaxe;
     - the pickaxe broke on the blow that killed the zombie;
     - the fight's record took the broken pickaxe for an outcome to reconcile ("Native action outcome requires reconciliation"), and the body was taken out. F-25c4o.
   - Sol's stall line twice (F-25c4m): at Y=47 its tunnel past liquid toward iron had no step left (candidates=0), and the walk elsewhere was refused. It ended forty seconds later in a fight, where it died. No skill was dropped before it ran.
-  - Iron mined, of each player's time: Kindred 62%, Sol 51%, Echo 36%; iron pickaxes made: 4, 1 and 3. Kindred never left the iron.
+  - Iron mined, of each player's time: Kindred 62%, Sol 51%, Echo 36%; iron pickaxes made: 4, 1 and 3. Kindred never left the iron, and never made a bucket (F-25c4q).
   - Echo waited for daylight below ground at night 34 times for its water (F-25c4k), 17% of its time.
 - F-25c4o (a tool worn out in a fight), on top of `a286cc8`:
   - its fixture fails on `a286cc8`'s fight code: "Native action outcome requires reconciliation", the body taken out;
@@ -28,7 +28,17 @@ Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametes
   - its fixture fails on `7a510b2`: "Unhurt by a twenty-two block fall: 1.0";
   - after, three runs alone: 3 of 3, each landing at 20 of 20;
   - `NativeFallGameTests`, `NativePortalCampaignGameTests`, `NativeCompoundGameTests`, `NativeFollowUpGameTests` and `NativeTeamPortalGameTests` alone on the same code: 79 of 79.
-- Evidence: [F-25c4m](evidence/F-25c4m.md), [F-25c4o](evidence/F-25c4o.md), [F-25c4p](evidence/F-25c4p.md).
+- F-25c4q (the iron pickaxe made with the rest of the iron on the cast route), on top of `011a579`:
+  - found in the same run: Kindred made four iron pickaxes and never a bucket. Each wore out before the rest of the route's iron was found, and the next three iron went to another;
+  - its planner case fails on the old planner, the same loop: "CRAFT iron_pickaxe, MINE_IRON ×3, SMELT, AWAIT_SMELT, COLLECT_SMELTED, CRAFT iron_pickaxe, …", never a bucket;
+  - `:companion-core:test`: 617 of 617;
+  - `NativePortalCampaignGameTests` and `NativeTeamPortalGameTests` alone: 64 of 64. Two of them, staged with three raw iron, relied on the pickaxe first to smelt them at once; staged as before, both fail on the new planner ("It placed its own furnace"), and they now have both buckets and a chestplate made.
+- F-25c4r (with no sword or axe, a fight strikes with the pickaxe), on top of `011a579`:
+  - found in the same run: Kindred fought a zombie with an empty hand, an iron pickaxe in its hotbar. Nine critical punches did not kill it, and the zombie killed Kindred;
+  - its fixture fails on the old fight code: "Struck with its iron pickaxe, not the empty hand: minecraft:air";
+  - after, three runs alone: 3 of 3;
+  - the fixture classes with fights alone on this code (with F-25c4q): 89 of 89.
+- Evidence: [F-25c4m](evidence/F-25c4m.md), [F-25c4o](evidence/F-25c4o.md), [F-25c4p](evidence/F-25c4p.md), [F-25c4q](evidence/F-25c4q.md), [F-25c4r](evidence/F-25c4r.md).
 
 ## What the live runs on 10a60d5 found, met — 30 October 2026 (`claude/loose-ends-1029`)
 

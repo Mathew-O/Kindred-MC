@@ -111,7 +111,11 @@ final class NativeFightAction extends NativeRecordedAction {
             fighting = true;
             recorder = new dev.kindred.core.tactics.EncounterRecorder(issuedLease.actionId().toString(), player.getUuidAsString(),
                     player.getServerWorld().getTime());
-            if (slot >= 0 && slot < 9) body.selectHotbar(issuedLease, slot);
+            // Given no weapon, none being in its hotbar, it strikes with what there hits hardest, as a player with no sword
+            // fights with its pickaxe. In the long run on a286cc8 Kindred, its last torch just placed, fought a zombie with
+            // the empty hand left selected: nine critical punches did not kill it, and the zombie went on to (F-25c4r).
+            int strikeWith = slot >= 0 ? slot : Weapons.hardestInHotbar(player);
+            if (strikeWith >= 0 && strikeWith < 9) body.selectHotbar(issuedLease, strikeWith);
         }
         if (admission.phase() != ActionAdmission.Phase.ISSUED || !fighting) return waiting();
         if (target == null) { settle("The target was defeated or is gone", true); return waiting(); }

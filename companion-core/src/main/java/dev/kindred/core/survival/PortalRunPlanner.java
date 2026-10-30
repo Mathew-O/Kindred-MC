@@ -364,7 +364,11 @@ public final class PortalRunPlanner {
         boolean shieldFirst = s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS;
         // Then the iron pickaxe as soon as there is iron for it: it lasts twice as long as stone, and staircases and
         // branch mines wear a stone one out every few minutes (live run 50 used six in one life before its iron).
-        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3 && ironPickaxeWanted(s, facts, frame);
+        // Not where the frame is cast: there it is made with the rest, once all the route's iron is in hand, for the way
+        // down to the lava. One made first wore out before the rest of the iron was found, and the next three went to
+        // another: in the long run on a286cc8 Kindred made four that way, and never a bucket (F-25c4q).
+        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3 && ironPickaxeWanted(s, facts, frame)
+                && frame != WorldFacts.Method.CAST_OBSIDIAN;
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
         // Wood for another table, should the carried one be lost below, taken while trees are in sight.
         if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
@@ -571,10 +575,10 @@ public final class PortalRunPlanner {
     }
 
     /**
-     * As above, with whether there are caves to dig in. When the frame is cast, the pickaxe is for the digging the
-     * iron takes: one lost once both buckets are made is not made again, and stone ones from the stone round it dig
-     * what is left, the way down to the lava. In the live runs on 10a60d5, Kindred's wore out by Y=-55 on its way to
-     * the lava; the iron for another, and the coal to smelt it, took it back up sixty blocks.
+     * As above, with whether there are caves to dig in. When the frame is cast, the pickaxe is made with the rest of
+     * the route's iron, for the way down to the lava: one lost once both buckets are made is not made again, and stone
+     * ones from the stone round it dig what is left. In the live runs on 10a60d5, Kindred's wore out by Y=-55 on its
+     * way to the lava; the iron for another, and the coal to smelt it, took it back up sixty blocks.
      */
     static boolean ironPickaxeWanted(PortalRunSnapshot s, boolean caves, WorldFacts.Method frame) {
         if (frame == WorldFacts.Method.MINE_OBSIDIAN) return true;

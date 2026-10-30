@@ -2631,7 +2631,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * No coal, three raw iron, planks and the sticks kept for pickaxes: the goal smelts with two planks, which burn
      * just the three, keeps its sticks, and takes its emptied furnace on with it. Sticks ranked above planks as fuel,
      * so a coal-less smelt burnt the stick reserve kept for the pickaxes still to make (B7's second pairs climbed out
-     * for sticks again and again). Its stock is given as though gathered.
+     * for sticks again and again). Its stock is given as though gathered, with both buckets and a chestplate made: the
+     * three are more than the route still wants, and so are smelted now (F-25c4q).
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 2400)
     public void withNoCoalItSmeltsWithPlanksKeepsItsSticksAndTakesItsFurnaceBack(TestContext context) {
@@ -2663,6 +2664,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(8, new ItemStack(Items.CRAFTING_TABLE));
                     inventory.setStack(9, new ItemStack(Items.SHIELD));
                     inventory.setStack(10, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(11, new ItemStack(Items.BUCKET, 2));
+                    inventory.setStack(12, new ItemStack(Items.IRON_CHESTPLATE));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
@@ -2700,7 +2703,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * Its iron smelted in its own furnace, with raw porkchops carried and coal left: the goal cooks them there before it
      * takes the furnace on with it, as players cook before a trip (cooked, a porkchop fills eight where a raw one fills
      * three; B7's second pairs never cooked, and climbed out for food again and again). Its stock is given as though
-     * gathered.
+     * gathered, with both buckets and a chestplate made, so its three raw iron are smelted now (F-25c4q).
      */
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 3600)
     public void itCooksItsRawMeatInItsOwnFurnaceBeforeTakingItOn(TestContext context) {
@@ -2731,6 +2734,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(8, new ItemStack(Items.CRAFTING_TABLE));
                     inventory.setStack(9, new ItemStack(Items.SHIELD));
                     inventory.setStack(10, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(11, new ItemStack(Items.BUCKET, 2));
+                    inventory.setStack(12, new ItemStack(Items.IRON_CHESTPLATE));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
@@ -3061,6 +3066,67 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     context.assertTrue(ItemMoves.count(player.getInventory(), Items.STONE_PICKAXE) == 0, "The pickaxe broke on it");
                     var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
                     context.assertTrue(status.connected() && !status.stopped(), "Not stopped for reconciliation: " + status);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * With no sword or axe, a fight strikes with the pickaxe in its hotbar, not the empty hand left selected (F-25c4r).
+     * In the long run on `a286cc8` Kindred, its last torch just placed, fought a zombie it could not back away from with
+     * that empty hand, an iron pickaxe beside it: nine critical punches did not kill the zombie, and the zombie killed
+     * Kindred. Staged: a closed, lit stone room it cannot back out of, an iron pickaxe and bread as though made, the
+     * selected slot empty, and a zombie on it, without AI, wounded.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "noWeapon", tickLimit = 1400)
+    public void withNoSwordOrAxeAFightStrikesWithThePickaxeNotTheEmptyHand(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        // What was in its hand once the first blow had landed: what it struck with (a pickaxe can wear from digging too).
+        net.minecraft.item.Item[] struckWith = new net.minecraft.item.Item[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bare"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    FixtureGround.keep(context, p.add(-3, -2, -3), p.add(3, 3, 3));
+                    for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) for (int y = -2; y <= 3; y++) {
+                        boolean room = Math.abs(x) <= 1 && Math.abs(z) <= 1 && y >= 0 && y <= 1;
+                        world.setBlockState(p.add(x, y, z), (room ? Blocks.AIR : Blocks.STONE).getDefaultState());
+                    }
+                    world.setBlockState(p.add(-1, 0, -1), Blocks.TORCH.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(1, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    inventory.selectedSlot = 0;
+                    world.setTimeOfDay(1000);
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    if (zombie[0] == null) return;
+                    zombie[0].refreshPositionAndAngles(p.getX() + 1.5, p.getY(), p.getZ() + 0.5, 90, 0);
+                    zombie[0].setAiDisabled(true);
+                    zombie[0].setPersistent();
+                    zombie[0].setHealth(8);
+                    world.spawnEntity(zombie[0]);
+                    zombie[0].setTarget(f.player());
+                })
+                .createAndAdd(() -> context.assertTrue(zombie[0] != null, "A zombie"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> {
+                    if (struckWith[0] == null && zombie[0].getHealth() < 8 && f.player() != null) struckWith[0] = f.player().getMainHandStack().getItem();
+                    context.assertFalse(zombie[0].isAlive(), "The zombie killed");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    context.assertTrue(struckWith[0] == Items.IRON_PICKAXE, "Struck with its iron pickaxe, not the empty hand: " + struckWith[0]);
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();
