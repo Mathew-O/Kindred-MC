@@ -30,7 +30,7 @@ import net.minecraft.util.math.Box;
  * </ul>
  */
 public final class NativeLifeFirstGameTests implements FabricGameTest {
-    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-night", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-night", tickLimit = 42000)
     public void atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning(TestContext context) {
         night(context, 1000);
     }
@@ -40,7 +40,7 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
      * becomes its spawn, builds on, and the next night goes to that bed again. Before, its walk home for the night aimed
      * at the bed itself, behind the cabin's walls, and kept it outside till the fixture's end ("Its body").
      */
-    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-second-night", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-second-night", tickLimit = 42000)
     public void itsFirstNightFallingAsItsCabinGoesUpItSleepsThereThenGoesBackTheNextNight(TestContext context) {
         night(context, 9000);
     }
@@ -48,7 +48,10 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
     /** The night fixture, its day begun at {@code start}: from 9,000 its first night falls before its cabin stands. */
     private static void night(TestContext context, long start) {
         boolean firstNightInCabin = start > 1000;
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
+        // Time for a whole night as well: its sleep passes the night only when every player in the world sleeps, and in a
+        // full suite other fixtures' players are about (the second-night fixture slept the night through in run final,
+        // 30 October, with two awake, and the fixture ran out before morning).
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 41500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
         var hut = Generators.hut(5, 5, 3);
         BlockPos o = NativeBaseGameTests.origin(context);
