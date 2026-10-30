@@ -29,10 +29,14 @@ class PortalRunPlannerTest {
         /** Logs smelting into charcoal, and charcoal waiting in the furnace (counted as coal, as the goal counts it). */
         int charcoalIn, charcoalOut;
 
+        /** Raw meat carried, and raw meat cooking in the furnace. */
+        int rawMeat, meatCooking;
+
         PortalRunSnapshot snapshot() {
             return new PortalRunSnapshot(logs, planks, sticks, cobble, coal + charcoalOut, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
                     flint, gravel, obsidian, buckets, lava, water, fns, tables, furnaces, saplings, food, pick, Math.max(pickaxes, pick >= 2 ? 1 : 0), sword, chest, shields,
-                    tableNearby, furnaceNearby, furnaceInput + charcoalIn > 0, furnaceOutput + charcoalOut, foodLevel, framed, lit);
+                    tableNearby, furnaceNearby, furnaceInput + charcoalIn + meatCooking > 0, furnaceOutput + charcoalOut, foodLevel, framed, lit,
+                    rawMeat, meatCooking > 0);
         }
 
         /** What a player on the sky island sees: its tree while it stands, leaves, its saplings and generator, the ore islands. */
@@ -310,6 +314,80 @@ class PortalRunPlannerTest {
         assertNotEquals("log", PortalRunPlanner.plan(near.snapshot(), WorldFacts.ordinary()).getLast().item(), "an ordinary world digs coal");
     }
 
+    /**
+     * Before the work below, with trees in sight and no coal, wood to smelt the route's iron with is taken along; below,
+     * with that wood carried, the raw iron is smelted with it and no coal is sought.
+     */
+    @Test
+    void fuelForTheSmeltingBelowIsPackedWhileTreesAreInSight() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 40; sim.shields = 1; sim.tableNearby = true;
+        sim.planks = 4; // A spare table's wood, packed already.
+        var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 8), WorldFacts.ordinary().methods());
+        var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
+        assertEquals(Action.GATHER_LOGS, step.action(), "wood for fuel first: " + step);
+        assertTrue(step.why().contains("fuel"), step.why());
+        // Fifteen iron to smelt is ten planks beyond the table's four: fourteen in all, three logs more.
+        assertEquals(3, step.count());
+        sim.logs = 3;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), trees).getLast().action(), "then the iron");
+        // Below, out of sight of trees, raw iron in hand and only logs carried: made into planks, which smelt four times
+        // what a log burnt whole does, then the iron is smelted with them.
+        sim.rawIron = 5; sim.furnaceNearby = true; sim.planks = 0; sim.logs = 4;
+        var planks = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast();
+        assertEquals(Action.CRAFT, planks.action(), "no coal sought with wood to burn: " + planks);
+        assertEquals("planks", planks.item());
+        sim.apply(planks);
+        var smelt = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast();
+        assertEquals(Action.SMELT, smelt.action(), "then smelted with them: " + smelt);
+        // Coal enough for the rest is wood not taken.
+        Sim coal = new Sim();
+        coal.pick = 2; coal.pickaxes = 2; coal.sword = 2; coal.cobble = 24; coal.sticks = 40; coal.shields = 1; coal.tableNearby = true;
+        coal.coal = 2; coal.logs = 1;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(coal.snapshot(), trees).getLast().action(), "two coal smelt sixteen");
+    }
+
+    /**
+     * Raw meat carried and its furnace at hand and idle: it is cooked, and waited for while it cooks; not while raw iron
+     * waits for the furnace, nor with no fuel but the wood kept for a spare table.
+     */
+    @Test
+    void rawMeatIsCookedInItsIdleFurnaceAndWaitedFor() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 40; sim.shields = 1; sim.tableNearby = true;
+        sim.furnaceNearby = true; sim.coal = 1; sim.rawMeat = 6; sim.food = 6;
+        var cook = PortalRunPlanner.plan(sim.snapshot()).stream().filter(step -> step.action() == Action.COOK).findFirst();
+        assertTrue(cook.isPresent(), "cooked: " + PortalRunPlanner.plan(sim.snapshot()));
+        assertEquals(6, cook.get().count());
+        sim.rawMeat = 0; sim.meatCooking = 6;
+        var steps = PortalRunPlanner.plan(sim.snapshot());
+        assertTrue(steps.stream().anyMatch(step -> step.action() == Action.AWAIT_SMELT && step.why().contains("food")), "waited for: " + steps);
+        sim.meatCooking = 0; sim.rawMeat = 6; sim.rawIron = 3;
+        assertTrue(PortalRunPlanner.plan(sim.snapshot()).stream().noneMatch(step -> step.action() == Action.COOK), "not while iron waits");
+        sim.rawIron = 0; sim.coal = 0; sim.logs = 1; // Four planks' worth, all kept for a spare table below.
+        assertTrue(PortalRunPlanner.plan(sim.snapshot()).stream().noneMatch(step -> step.action() == Action.COOK), "not with the kept wood");
+    }
+
+    /**
+     * Iron for the pickaxe in hand but no sticks or wood to make it with: the route's next step is logs. Below ground at
+     * night the iron still wanted is the work meanwhile; with the iron all in hand, or no pickaxe for ore, there is none.
+     */
+    @Test
+    void theRoutesIronIsTheWorkBelowGroundWhileTheNextStepWaitsForTrees() {
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.shields = 1; sim.tableNearby = true; sim.iron = 3;
+        var step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.GATHER_LOGS, step.action(), "sticks for the iron pickaxe: " + step);
+        var meanwhile = PortalRunPlanner.withoutWood(sim.snapshot(), WorldFacts.ordinary()).orElseThrow();
+        assertEquals(Action.MINE_IRON, meanwhile.action());
+        assertEquals(12, meanwhile.count(), "fifteen for the route, three in hand");
+        sim.iron = 15;
+        assertTrue(PortalRunPlanner.withoutWood(sim.snapshot(), WorldFacts.ordinary()).isEmpty(), "all its iron in hand");
+        Sim wooden = new Sim();
+        wooden.pick = 1;
+        assertTrue(PortalRunPlanner.withoutWood(wooden.snapshot(), WorldFacts.ordinary()).isEmpty(), "no pickaxe for iron ore");
+    }
+
     @Test
     void aLimitedIslandWithoutStarterBucketsGetsItsIronBeforeItsStoneRunsOut() {
         // Sixteen stone blocks and no starter chest: the stockpile waits until iron has made the buckets for a generator.
@@ -411,6 +489,7 @@ class PortalRunPlannerTest {
         Sim sim = new Sim();
         // The reserve's eighteen sticks and the spare's two (sticks used for a spare are topped up like any others).
         sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 24; sim.sticks = 20; sim.shields = 1; sim.tableNearby = true;
+        sim.coal = 2; // Its iron's fuel, so no wood is packed for it.
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals("stone_pickaxe", step.item(), "a spare pickaxe, made while it is cheap");
@@ -432,7 +511,7 @@ class PortalRunPlannerTest {
         assertTrue(PortalRunPlanner.plan(sim.snapshot(), trees).stream().noneMatch(candidate -> candidate.action() == Action.HUNT));
 
         // The table's wood is not burnt as fuel.
-        sim.logs = 0; sim.planks = 4; sim.rawIron = 3; sim.furnaceNearby = true;
+        sim.logs = 0; sim.planks = 4; sim.rawIron = 3; sim.furnaceNearby = true; sim.coal = 0;
         assertEquals(Action.MINE_COAL, PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast().action());
 
         // Nothing to pack for where there is no ground below.
@@ -518,6 +597,7 @@ class PortalRunPlannerTest {
         Sim sim = new Sim();
         sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.shields = 1; sim.tableNearby = true;
         sim.planks = 4; // A spare table's wood.
+        sim.coal = 3; // Its iron's fuel, so no wood is packed for it.
         assertEquals(2, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN), "the iron pickaxe's two");
         assertEquals(4, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN), "and the diamond one's two more");
         // The spares follow the digging still ahead instead: casting's second bucket is three more iron to mine.
@@ -535,6 +615,7 @@ class PortalRunPlannerTest {
     void aShieldIsMadeFromWoodKeptNearTheTreesAndTheFirstIron() {
         Sim sim = new Sim();
         sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 24; sim.tableNearby = true; // Pickaxe sticks and the digging's spares.
+        sim.coal = 2; // Its iron's fuel, so no wood is packed for it.
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 12), WorldFacts.ordinary().methods());
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals(Action.GATHER_LOGS, step.action(), "wood for a shield before going down for iron, while trees are in sight");
@@ -609,11 +690,11 @@ class PortalRunPlannerTest {
                 () -> new WorldFacts(java.util.Map.of(WorldFacts.Source.LAVA, -1), java.util.Set.of()));
     }
 
-    /** Iron stage below ground, stocked as usual (six food), a table at hand, trees in sight. */
+    /** Iron stage below ground, stocked as usual (six food), coal for its iron, a table at hand, trees in sight. */
     private static Sim ironWork() {
         Sim sim = new Sim();
         sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 20; sim.shields = 1; sim.tableNearby = true;
-        sim.food = 6; sim.planks = 4;
+        sim.food = 6; sim.planks = 4; sim.coal = 2;
         return sim;
     }
 

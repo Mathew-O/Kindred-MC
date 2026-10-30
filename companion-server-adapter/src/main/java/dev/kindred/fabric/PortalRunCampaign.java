@@ -1031,7 +1031,9 @@ final class PortalRunCampaign {
         }
         // Leaving to gather: take the table and an emptied furnace along, as a player would. Not while it is to make a
         // rod at the table to fish for food it has none of (E-05): picked up as it was put down, the rod was never made.
-        if (TRAVEL.contains(steps.getLast().action()) && !(snapshot.edibleFood() == 0 && rodMakings(player))) {
+        // Nor while meat is to be cooked in its furnace first (F-25c4e).
+        if (TRAVEL.contains(steps.getLast().action()) && !(snapshot.edibleFood() == 0 && rodMakings(player))
+                && steps.stream().noneMatch(queued -> queued.action() == PortalRunPlanner.Action.COOK)) {
             Optional<Task> pickup = pickUpWorkstation(body, snapshot);
             if (pickup.isPresent()) {
                 progress = stageLabel(stage) + ": take workstations along - " + pickup.get().label();
@@ -1081,6 +1083,11 @@ final class PortalRunCampaign {
                 return loose;
             }
         }
+        // Below ground the night changes nothing: the route's iron is mined meanwhile, and only the climb out to the trees
+        // waits for morning (in B7's first paired run up to a tenth of a player's time was spent waiting below).
+        Optional<PortalRunPlanner.Step> meanwhile = night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS && underground(player)
+                ? PortalRunPlanner.withoutWood(snapshot, facts) : Optional.empty();
+        if (meanwhile.isPresent()) steps.set(steps.size() - 1, meanwhile.get());
         if (night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS) {
             // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
             Optional<Task> seal = underground(player) && player.isOnGround() ? seal(body) : Optional.empty();
@@ -1088,7 +1095,7 @@ final class PortalRunCampaign {
                 progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
                 return seal;
             }
-            progress = stageLabel(stage) + ": wait for daylight before going up for logs";
+            progress = stageLabel(stage) + ": wait for daylight before going up for logs - " + steps.getLast().why();
             return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
         }
         Optional<Task> recover = recoverDrops(player, tick);
@@ -1359,7 +1366,7 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         int logs = 0, planks = 0, sticks = 0, cobble = 0, coal = 0, rawIron = 0, iron = 0, diamonds = 0, flint = 0, gravel = 0,
                 obsidian = 0, buckets = 0, lavaBuckets = 0, water = 0, fns = 0, tables = 0, furnaces = 0, saplings = 0, food = 0, pick = 0, pickaxes = 0, sword = 0,
-                chest = 0, shields = 0;
+                chest = 0, shields = 0, rawMeat = 0;
         for (ItemStack worn : player.getArmorItems()) {
             if (!worn.isEmpty() && Registries.ITEM.getId(worn.getItem()).getPath().endsWith("_chestplate")) chest = Math.max(chest, tier(worn.getItem()));
         }
@@ -1391,6 +1398,7 @@ final class PortalRunCampaign {
             else if (item == Items.SHIELD) shields += n; // The inventory's last slot is the off hand.
             else if (stack.isIn(ItemTags.SAPLINGS)) saplings += n;
             if (stack.contains(DataComponentTypes.FOOD) && safeFood(stack)) food += n;
+            if (RAW_MEAT.contains(item)) rawMeat += n;
             pick = Math.max(pick, stack.isIn(ItemTags.PICKAXES) ? tier(item) : 0);
             if (stack.isIn(ItemTags.PICKAXES) && tier(item) >= 2) pickaxes += n;
             sword = Math.max(sword, stack.isIn(ItemTags.SWORDS) ? tier(item) : 0);
@@ -1399,7 +1407,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         boolean tableNearby = nearestWorkstation(player, Blocks.CRAFTING_TABLE, 16).isPresent();
         Optional<BlockPos> furnacePos = nearestWorkstation(player, Blocks.FURNACE, 16);
-        boolean furnaceSmelting = false;
+        boolean furnaceSmelting = false, furnaceCooking = false;
         int furnaceOutput = 0;
         if (furnacePos.isPresent() && player.getServerWorld().getBlockEntity(furnacePos.get()) instanceof AbstractFurnaceBlockEntity furnace) {
             // Smelting only while it burns or has fuel waiting; input left in a cold, empty furnace needs fuel.
@@ -1409,6 +1417,7 @@ final class PortalRunCampaign {
             if (furnace.getStack(0).isOf(Items.RAW_IRON)) rawIron += furnace.getStack(0).getCount();
             if (furnace.getStack(2).isOf(Items.IRON_INGOT)) iron += furnace.getStack(2).getCount();
             if (furnace.getStack(2).isOf(Items.CHARCOAL)) coal += furnace.getStack(2).getCount(); // As the planner counts it.
+            furnaceCooking = furnaceSmelting && RAW_MEAT.contains(furnace.getStack(0).getItem());
         }
         // Obsidian already set into the frame still counts toward the ten. The site is in the Overworld: from another
         // dimension the same coordinates are somewhere else entirely.
@@ -1421,7 +1430,34 @@ final class PortalRunCampaign {
         boolean lit = siteHere && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, lavaBuckets,
                 water, fns, tables, furnaces, saplings, food, pick, pickaxes, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
-                player.getHungerManager().getFoodLevel(), framed, lit);
+                player.getHungerManager().getFoodLevel(), framed, lit, rawMeat, furnaceCooking);
+    }
+
+    /** Raw meat and fish a furnace cooks into food that fills more than twice as much. */
+    private static final java.util.Set<Item> RAW_MEAT = java.util.Set.of(Items.BEEF, Items.PORKCHOP, Items.CHICKEN, Items.MUTTON,
+            Items.RABBIT, Items.COD, Items.SALMON);
+
+    /**
+     * The first stack of raw meat carried into its own furnace, as much of it as the fuel it burns (the most-preferred
+     * fuel carried, as the furnace is loaded with) will cook, so none is left in a cold furnace.
+     */
+    private Optional<Task> cook(NativePlayerBody body) {
+        var inventory = body.entity().getInventory();
+        ItemStack meat = ItemStack.EMPTY, fuel = ItemStack.EMPTY;
+        int fuelScore = -1;
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (meat.isEmpty() && RAW_MEAT.contains(stack.getItem())) meat = stack;
+            if (NativePlayerBody.isSafeAutonomousFuel(stack) && !RAW_MEAT.contains(stack.getItem())
+                    && NativePlayerBody.fuelPriorityScore(stack) > fuelScore) {
+                fuelScore = NativePlayerBody.fuelPriorityScore(stack);
+                fuel = stack;
+            }
+        }
+        if (meat.isEmpty() || fuel.isEmpty()) return Optional.empty();
+        int count = Math.min(meat.getCount(), NativePlayerBody.itemsSmelted(fuel));
+        if (count <= 0) return Optional.empty();
+        return smeltItem(body, meat.getItem(), count, "Cook " + count + " " + Registries.ITEM.getId(meat.getItem()).getPath().replace('_', ' '));
     }
 
     private static boolean safeFood(ItemStack stack) {
@@ -1460,8 +1496,11 @@ final class PortalRunCampaign {
     private Optional<BlockPos> nearestWorkstation(ServerPlayerEntity player, net.minecraft.block.Block block, int radius) {
         var kind = block == Blocks.CRAFTING_TABLE ? WorldKnowledge.Kind.CRAFTING_TABLE : WorldKnowledge.Kind.FURNACE;
         BlockPos feet = player.getBlockPos();
+        // One in reach is at hand, whatever walks failed round it: a table it had just put down inside the cells marked
+        // after a walk beside it failed was not "nearby", so the plan sent it for logs to make another and the table was
+        // picked straight back up, 113 times in one live run (B7's second pairs).
         return knowledge.nearest(player.getServerWorld(), kind, feet, p -> p.getSquaredDistance(feet) <= radius * radius
-                && ownWorkstations.contains(p.asLong()) && !blocked(p) && !unreachable(p));
+                && ownWorkstations.contains(p.asLong()) && (eyeDistance(player, p) <= 4.5 || !blocked(p) && !unreachable(p)));
     }
 
     // ------------------------------------------------------------------ steps
@@ -1532,6 +1571,7 @@ final class PortalRunCampaign {
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
             case CAST_PORTAL -> castPortal(body);
+            case COOK -> cook(body);
         };
     }
 
@@ -2241,6 +2281,12 @@ final class PortalRunCampaign {
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
                 if (refused || passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
+                // Not the block over its head with sand or gravel resting on it: dug out, that falls onto the player, one
+                // block after another as each is dug out of its head room (Kindred suffocated twice so in B7's second pairs).
+                if (cell.equals(feet.up(2)) && world.getBlockState(cell.up()).getBlock() instanceof net.minecraft.block.FallingBlock) {
+                    refused = true;
+                    break;
+                }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 // Its last pickaxe gone below ground: punch the way up, slowly, as a player would (live run 57 broke
                 // its last one climbing out and stood at Y 54 for good).
@@ -3054,9 +3100,12 @@ final class PortalRunCampaign {
     /** Where a site search last found no room, so it is not repeated every tick from the same spot. */
     private BlockPos noSiteFrom;
 
+    /** Nodes a walk to a frame site's stand may search, from within a few blocks of it. */
+    private static final int SITE_ROUTE_NODES = 600;
+
     /**
      * A frame site in front of where the player stands, or else in front of the nearest open spot within a few
-     * blocks that has room, as a player steps aside to find a clear patch of ground.
+     * blocks that has room and that it can walk to, as a player steps aside to find a clear patch of ground.
      */
     private Optional<PortalSite> choosePortalSite(ServerPlayerEntity player) {
         var world = player.getServerWorld();
@@ -3070,7 +3119,9 @@ final class PortalRunCampaign {
                     BlockPos stand = feet.add(dx, dy, dz);
                     if (r > 0 && blocked(stand)) continue;
                     Optional<PortalSite> site = portalSiteFrom(world, navigator, stand, s -> !abandonedSites.contains(siteKey(s)));
-                    if (site.isPresent()) return site;
+                    // Ground past a wall or across a drop is no site: in a full suite run the cast fixture chose one on
+                    // the far side of its own wall, and its walks there failed until the watchdog moved it on.
+                    if (site.isPresent() && (r == 0 || navigator.find(feet, stand, stand::equals, SITE_ROUTE_NODES, 12).complete())) return site;
                 }
             }
         }
@@ -3184,7 +3235,11 @@ final class PortalRunCampaign {
         // A shooter with a clear line of fire that cannot be fought now (too hurt, or out of reach last time): get
         // out of its line of fire behind an owned block, as a player ducks behind cover.
         HostileEntity shooter = shooter(player);
-        if (shooter != null && (player.getHealth() < 6 || ignoredFoes.getOrDefault(shooter.getUuid(), Long.MIN_VALUE) >= lastTick)) {
+        // A mob on foot already in reach is past any block put up: no cover is taken while one is (in the first of B7's
+        // second pairs, five of nine deaths were a zombie's or a spider's while the player held a block for cover from a
+        // skeleton or a witch, or after a way off failed).
+        HostileEntity close = onFootInReach(player);
+        if (shooter != null && close == null && (player.getHealth() < 6 || ignoredFoes.getOrDefault(shooter.getUuid(), Long.MIN_VALUE) >= lastTick)) {
             Optional<Task> cover = cover(body, shooter);
             if (cover.isPresent()) return cover;
         }
@@ -3248,20 +3303,23 @@ final class PortalRunCampaign {
             Task strike = strike(player, last, "Fight " + Registries.ENTITY_TYPE.getId(last.getType()).getPath());
             return Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
-        if (player.getHealth() < 6) return backOff(player).or(() -> coverFromHunters(body));
-        // Outnumbered and already hurt: do not take them on one by one in the dark; get some distance first.
-        if (player.getHealth() < 14 && hunters(player) >= 3) return backOff(player).or(() -> coverFromHunters(body));
+        // Too hurt, or outnumbered and already hurt: get some distance first, rather than take them on one by one in the
+        // dark. Cover only from none in reach; with no way off from one that is, it is fought.
+        if (player.getHealth() < 6 || player.getHealth() < 14 && hunters(player) >= 3) {
+            Optional<Task> away = backOff(player).or(() -> close == null ? coverFromHunters(body) : Optional.empty());
+            if (away.isPresent() || close == null) return away;
+        }
         // No weapon in hand (just respawned, say): a fist fight with a zombie or a skeleton is lost, so keep away, as
         // a player with nothing does. Something that has closed right in is still struck below.
         if (!armed(player)) {
-            boolean closeIn = threats(player).stream().anyMatch(mob -> player.squaredDistanceTo(mob) < 2.5 * 2.5);
+            boolean closeIn = close != null || threats(player).stream().anyMatch(mob -> player.squaredDistanceTo(mob) < 2.5 * 2.5);
             // Walking away from a skeleton stays in its line of fire; a block between them does not.
             Optional<Task> away = closeIn || shooter == null ? Optional.empty() : cover(body, shooter);
             if (away.isEmpty() && !closeIn) away = backOff(player);
             if (away.isPresent()) return away;
         }
         var threats = threats(player);
-        HostileEntity nearest = threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        HostileEntity nearest = close != null ? close : threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
         if (nearest == null) return Optional.empty();
         // A skeleton that steps behind cover is still out there: keep after it for a few seconds.
@@ -4071,6 +4129,14 @@ final class PortalRunCampaign {
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
                                 && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < reach
                                 && player.canSee(mob) && NativePlayerBody.believedHealth(player, mob) <= 2 * damage)
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** The nearest mob on foot after the player and in sight, close enough to strike it within a step. */
+    private static HostileEntity onFootInReach(ServerPlayerEntity player) {
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3.0, 1.5, 3.0),
+                        mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0 && player.canSee(mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 

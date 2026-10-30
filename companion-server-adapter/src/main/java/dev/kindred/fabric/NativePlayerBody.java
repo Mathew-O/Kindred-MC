@@ -1136,9 +1136,11 @@ final class NativePlayerBody implements BodyAdapter {
         if (item == Items.COAL || item == Items.CHARCOAL) return 100;
         if (item == Items.COAL_BLOCK) return 90;
         if (item == Items.BLAZE_ROD) return 80;
-        if (item == Items.STICK || item == Items.BAMBOO) return 60;
+        if (item == Items.BAMBOO) return 60;
         if (stack.isIn(ItemTags.PLANKS)) return 50;
         if (stack.isIn(ItemTags.LOGS_THAT_BURN)) return 20;
+        // Sticks last: they make the pickaxes for the work below, and two planks smelt more than the four sticks they make.
+        if (item == Items.STICK) return 10;
         return 30;
     }
 
@@ -1149,6 +1151,11 @@ final class NativePlayerBody implements BodyAdapter {
         if (item == Items.STICK || item == Items.BAMBOO) return 100;
         if (item == Items.LAVA_BUCKET) return 20000;
         return 300;
+    }
+
+    /** Items the whole of {@code fuel} smelts, at 200 ticks an item. */
+    static int itemsSmelted(ItemStack fuel) {
+        return fuel.getCount() * approximateFuelBurnTicks(fuel.getItem()) / 200;
     }
 
     Optional<SmeltPlan> planSmelt(BlockPos targetPos, String action, Integer fuelSlotArg, Integer inputSlotArg, Integer countArg) {
@@ -1205,8 +1212,7 @@ final class NativePlayerBody implements BodyAdapter {
                     if (!stack.isEmpty() && AbstractFurnaceBlockEntity.canUseAsFuel(stack)
                             && (currentFuel.isEmpty() || ItemStack.areItemsAndComponentsEqual(currentFuel, stack))) {
                         chosenFuelSlot = fuelSlotArg;
-                        int maxAvail = countArg != null && countArg > 0 ? Math.min(countArg, stack.getCount()) : stack.getCount();
-                        fuelToInsert = Math.min(maxAvail, fuelSpace);
+                        fuelToInsert = Math.min(stack.getCount(), fuelSpace);
                     }
                 } else {
                     int bestFuelScore = Integer.MIN_VALUE;
@@ -1223,9 +1229,7 @@ final class NativePlayerBody implements BodyAdapter {
                         }
                     }
                     if (chosenFuelSlot >= 0) {
-                        var stack = player.getInventory().getStack(chosenFuelSlot);
-                        int maxAvail = countArg != null && countArg > 0 ? Math.min(countArg, stack.getCount()) : stack.getCount();
-                        fuelToInsert = Math.min(maxAvail, fuelSpace);
+                        fuelToInsert = Math.min(player.getInventory().getStack(chosenFuelSlot).getCount(), fuelSpace);
                     }
                 }
             }
@@ -1260,7 +1264,7 @@ final class NativePlayerBody implements BodyAdapter {
 
         // Ore matched to fuel: with too little fuel for the whole stack, load only what the fuel at hand (in the
         // furnace and in the inventory) can smelt, so the rest stays with the player rather than in a cold furnace.
-        if (chosenInputSlot >= 0 && inputToInsert > 0 && countArg == null) {
+        if (chosenInputSlot >= 0 && inputToInsert > 0) {
             int fuelTicks = currentFuel.isEmpty() ? 0 : currentFuel.getCount() * approximateFuelBurnTicks(currentFuel.getItem());
             if (chosenFuelSlot >= 0) {
                 var playerFuel = player.getInventory().getStack(chosenFuelSlot);
@@ -1282,11 +1286,11 @@ final class NativePlayerBody implements BodyAdapter {
             int neededFuelUnits = neededTicks == 0
                     ? (currentFuel.isEmpty() ? 1 : 0)
                     : (int) Math.ceil((double) neededTicks / Math.max(1, burnTicksPerUnit));
-            int maxAvail = countArg != null && countArg > 0
-                    ? Math.min(countArg, playerFuel.getCount())
-                    : playerFuel.getCount();
+            // A count is how many to smelt: the fuel is what those burn, as for any load. It was as many pieces as the
+            // count, so six raw porkchops took six coal, where one smelts eight.
+            int maxAvail = playerFuel.getCount();
             int fuelSpace = currentFuel.isEmpty() ? playerFuel.getMaxCount() : (currentFuel.getMaxCount() - currentFuel.getCount());
-            int desiredUnits = countArg != null ? maxAvail : Math.max(1, neededFuelUnits);
+            int desiredUnits = Math.max(1, neededFuelUnits);
             fuelToInsert = Math.min(desiredUnits, Math.min(maxAvail, Math.max(0, fuelSpace)));
         }
 

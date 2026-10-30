@@ -201,11 +201,19 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
         lines of their own, and clears the sky over the staircase fixtures.
       - It spans `WorldKnowledge` and the fixture's file, in a commit that also changes `PlayerRuntime`, all files that
         branch changes, so it waits for the merge.
-    - **The pasture's cattle: not reproduced; open.**
+    - **The pasture's cattle: reproduced alone once (2026-10-30); open.**
       - It failed in suite runs 46, 48 and 49 with "the player at none": its body was gone at the scheduled stop, so a
         timeout while still leading cows.
       - It passed in all seven suite runs since (s52 to s56, v1, v2). No commit names a fix, and its cause is not
         established.
+      - 2026-10-30: it failed again in the suite on the portal run's slices (F-25c4a to h), and once in three runs
+        alone after. Alone, the player went "To the gate", waited for the cow, went "Back out through the doorway for
+        the cow" and "Through the doorway, the cow behind", over and over until the fixture ran out. The cow stood a
+        block west of the doorway, at the wall's foot outside, and never came through.
+      - Back at the doorway it never waited for the cow to come up behind it in line: the wait's clock
+        (`Ranch.alignSince`) is reset only on the first walk up to the doorway, not on the walk back out. Why the cow
+        stays put through each 120-tick wait at the gate, the player six blocks off with wheat, is not established.
+        Still open.
     - **A base's roof stairs (#82): `28395df`'s fix has now run natively.**
       - The keep passed in all seven suite runs on this branch since it.
       - CI run 223 on `main` (which has the fix) failed the keep, but CI's log gives only the test's name: the results
@@ -305,7 +313,7 @@ edited; where an item needed files it changes, the item waits for its merge.
 | D17 plain comments | Done but for `modest-faraday`'s twenty files | `b4fe930` |
 | D18 README's vanilla wording | Done | `0fe4b39` |
 | D19, D20 download, GitHub settings | Owner only | |
-| E21 intermittent fixtures | The night-and-bed fixture: two causes, both fixed (E-08d, F-25c9a). Found doing it: the hungry fixture stranded by its scaffold (E-08e). The pit climb and the portal restart: fixes on `modest-faraday`. The cattle: not reproduced. The keep's roof stairs: failed again in the closing suite (8 short), open | `2b1f325`, `bc1690a`, `323d852` |
+| E21 intermittent fixtures | The night-and-bed fixture: two causes, both fixed (E-08d, F-25c9a). Found doing it: the hungry fixture stranded by its scaffold (E-08e). The pit climb and the portal restart: fixes on `modest-faraday`. The cattle: reproduced alone once (2026-10-30), open. The keep's roof stairs: failed again in the closing suite (8 short), open | `2b1f325`, `bc1690a`, `323d852` |
 | E22 the suite's hour on CI | Checked; a newer push now cancels the run it supersedes. Splitting the job is the owner's call | `fa0466b` |
 | E23 the deprecated mock player | Done | `a841f6b` |
 | G an open feature slice | F-25c9b: hungry, food from its own storage before it hunts | `5ebb9f7` |

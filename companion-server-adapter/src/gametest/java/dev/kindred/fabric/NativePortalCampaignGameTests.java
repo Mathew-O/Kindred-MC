@@ -1165,6 +1165,74 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Badly hurt, a skeleton shooting from across a lava moat and a wounded zombie in the next cell: the goal fights the
+     * zombie and takes no cover until it is dead. A block put up against the skeleton does not stop a zombie already in
+     * reach, and holding one leaves no sword in hand (in the first of B7's second pairs, five of nine deaths were a
+     * zombie's or a spider's while the player held a block for cover from a skeleton or a witch). The zombie's wounds
+     * are staged as the player's own earlier blows, and the skeleton is spawned without its AI, so it never shoots.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 900)
+    public void goalFightsAZombieInReachBeforeTakingCoverFromASkeleton(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.SkeletonEntity[] skeleton = new net.minecraft.entity.mob.SkeletonEntity[1];
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        boolean[] coveredFirst = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 3; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    for (int x = 1; x <= 6; x++) for (int z = 1; z <= 6; z++) {
+                        if (x < 4 && z < 4 || x == 6 && z == 6) continue;
+                        context.setBlockState(x, 0, z, Blocks.STONE);
+                        context.setBlockState(x, 1, z, Blocks.LAVA);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Pressed");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.setStack(0, new ItemStack(Items.IRON_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(10); // No natural healing while it fights.
+                    player.getHungerManager().setSaturationLevel(0);
+                    BlockPos at = player.getBlockPos();
+                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
+                    skeleton[0].setTarget(player);
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(context.getWorld());
+                    zombie[0].refreshPositionAndAngles(at.getX() - 0.5, at.getY(), at.getZ() + 0.5, 270, 0); // The next cell west.
+                    zombie[0].setPersistent();
+                    zombie[0].setHealth(8);
+                    context.getWorld().spawnEntity(zombie[0]);
+                    zombie[0].setTarget(player);
+                    f.runtime.nativeBody(f.id).orElseThrow().beliefs().hit(zombie[0].getUuid(), zombie[0].getMaxHealth(), false, 12,
+                            context.getWorld().getTime());
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    if (zombie[0].isAlive()) coveredFirst[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("Take cover");
+                    context.assertFalse(zombie[0].isAlive(), "The zombie in reach was fought");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertFalse(coveredFirst[0], "No cover taken while the zombie was in reach");
+                    context.assertTrue(player.isAlive(), "Alive: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Night in a pit open to the sky with an empty inventory, as after a respawn: the goal digs one staircase step
      * into the hill around it, whichever way it faces, and once under cover seals both openings with the dirt the
      * dig gave it.
@@ -1287,6 +1355,68 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     context.assertTrue(ItemMoves.count(inventory, Items.COAL) == 3 && ItemMoves.count(inventory, Items.STICK) == 18,
                             "One coal and one spare stick became torches: coal " + ItemMoves.count(inventory, Items.COAL)
                                     + ", sticks " + ItemMoves.count(inventory, Items.STICK));
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Night, in a passage sealed in stone, with three iron for its pickaxe but no sticks or wood to make it with: the
+     * route's next step is logs from the surface. Below ground the night changes nothing, so it mines the iron ore in
+     * view meanwhile rather than wait for morning, as players mine on through the night (in B7's first paired run up
+     * to a tenth of a player's time was spent waiting below for daylight). Its stock is given as though gathered.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightMining", tickLimit = 1200)
+    public void atNightBelowGroundItMinesTheRoutesIronRatherThanWaitForLogs(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] ore = new BlockPos[1];
+        int[] settle = new int[1];
+        boolean[] waited = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Nightshift"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(14000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
+                        world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
+                    }
+                    // A short passage east, sealed inside the stone, the ore at its end in plain view.
+                    for (int i = 0; i <= 2; i++) {
+                        world.setBlockState(p.east(i), Blocks.AIR.getDefaultState());
+                        world.setBlockState(p.east(i).up(), Blocks.AIR.getDefaultState());
+                    }
+                    ore[0] = p.east(3);
+                    world.setBlockState(ore[0], Blocks.IRON_ORE.getDefaultState());
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settling"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.IRON_INGOT, 3));
+                    inventory.setStack(5, new ItemStack(Items.COAL, 4));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(7, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(8, new ItemStack(Items.SHIELD));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    waited[0] |= f.runtime.panelBots(Actor.console()).getFirst().goalProgress().contains("wait for daylight");
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.RAW_IRON) >= 1, "Mined the iron in the night");
+                })
+                .createAndAdd(() -> {
+                    context.assertFalse(waited[0], "It did not wait for daylight");
+                    context.assertTrue(context.getWorld().isNight(), "Still night");
                     context.assertTrue(f.player().isAlive(), "Alive");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
@@ -2498,6 +2628,200 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * No coal, three raw iron, planks and the sticks kept for pickaxes: the goal smelts with two planks, which burn
+     * just the three, keeps its sticks, and takes its emptied furnace on with it. Sticks ranked above planks as fuel,
+     * so a coal-less smelt burnt the stick reserve kept for the pickaxes still to make (B7's second pairs climbed out
+     * for sticks again and again). Its stock is given as though gathered.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 2400)
+    public void withNoCoalItSmeltsWithPlanksKeepsItsSticksAndTakesItsFurnaceBack(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] furnace = new BlockPos[1];
+        boolean[] sticksBurnt = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.OBSIDIAN);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Kindler");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 24));
+                    inventory.setStack(5, new ItemStack(Items.OAK_PLANKS, 8));
+                    inventory.setStack(6, new ItemStack(Items.RAW_IRON, 3));
+                    inventory.setStack(7, new ItemStack(Items.FURNACE));
+                    inventory.setStack(8, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(9, new ItemStack(Items.SHIELD));
+                    inventory.setStack(10, new ItemStack(Items.STONE_PICKAXE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    furnace[0] = BlockPos.streamOutwards(f.player().getBlockPos(), 6, 3, 6)
+                            .filter(pos -> context.getWorld().getBlockState(pos).isOf(Blocks.FURNACE)).findFirst().map(BlockPos::toImmutable).orElse(null);
+                    context.assertTrue(furnace[0] != null, "It placed its own furnace");
+                })
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    if (context.getWorld().getBlockEntity(furnace[0]) instanceof net.minecraft.block.entity.AbstractFurnaceBlockEntity block) {
+                        sticksBurnt[0] |= block.getStack(1).isOf(Items.STICK);
+                    }
+                    context.assertTrue(ItemMoves.count(inventory, Items.IRON_INGOT) + 3 * ItemMoves.count(inventory, Items.IRON_PICKAXE) >= 3,
+                            "The three smelted and taken: ingots " + ItemMoves.count(inventory, Items.IRON_INGOT));
+                })
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    context.assertFalse(sticksBurnt[0], "No stick went in as fuel");
+                    context.assertTrue(ItemMoves.count(inventory, Items.STICK) + 2 * ItemMoves.count(inventory, Items.IRON_PICKAXE) == 24,
+                            "Its sticks kept: " + ItemMoves.count(inventory, Items.STICK));
+                    context.assertTrue(ItemMoves.count(inventory, Items.OAK_PLANKS) == 6, "Two planks burnt: " + ItemMoves.count(inventory, Items.OAK_PLANKS));
+                })
+                .createAndAdd(() -> context.assertTrue(!context.getWorld().getBlockState(furnace[0]).isOf(Blocks.FURNACE)
+                                && ItemMoves.count(f.player().getInventory(), Items.FURNACE) == 1, "Its emptied furnace taken back"))
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its iron smelted in its own furnace, with raw porkchops carried and coal left: the goal cooks them there before it
+     * takes the furnace on with it, as players cook before a trip (cooked, a porkchop fills eight where a raw one fills
+     * three; B7's second pairs never cooked, and climbed out for food again and again). Its stock is given as though
+     * gathered.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 3600)
+    public void itCooksItsRawMeatInItsOwnFurnaceBeforeTakingItOn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] furnace = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        if (x != 0 && x != 7 && z != 0 && z != 7) continue;
+                        for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.OBSIDIAN);
+                    }
+                    roof(context);
+                    f.runtime.createNative(f.source, "Cook");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.PORKCHOP, 6));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 24));
+                    inventory.setStack(5, new ItemStack(Items.COAL, 2));
+                    inventory.setStack(6, new ItemStack(Items.RAW_IRON, 3));
+                    inventory.setStack(7, new ItemStack(Items.FURNACE));
+                    inventory.setStack(8, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(9, new ItemStack(Items.SHIELD));
+                    inventory.setStack(10, new ItemStack(Items.STONE_PICKAXE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    furnace[0] = BlockPos.streamOutwards(f.player().getBlockPos(), 6, 3, 6)
+                            .filter(pos -> context.getWorld().getBlockState(pos).isOf(Blocks.FURNACE)).findFirst().map(BlockPos::toImmutable).orElse(null);
+                    context.assertTrue(furnace[0] != null, "It placed its own furnace");
+                })
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.COOKED_PORKCHOP) == 6 && ItemMoves.count(inventory, Items.PORKCHOP) == 0,
+                            "All six cooked and taken: cooked " + ItemMoves.count(inventory, Items.COOKED_PORKCHOP) + ", raw "
+                                    + ItemMoves.count(inventory, Items.PORKCHOP) + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> context.assertTrue(!context.getWorld().getBlockState(furnace[0]).isOf(Blocks.FURNACE)
+                                && ItemMoves.count(f.player().getInventory(), Items.FURNACE) == 1, "Then its emptied furnace taken on"))
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Hurt, out of food and below ground, it climbs out; over its head a column of gravel rests on the block above its
+     * head room. It does not dig that block out, which would bring the gravel down onto it one block after another as
+     * each was dug out of its head room (Kindred suffocated twice so, climbing out for food, in B7's second pairs): it
+     * climbs from the end of its passage instead. The passage and the gravel are staged.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "gravelOverhead", tickLimit = 1800)
+    public void climbingOutItNeverDigsOutTheBlockGravelRestsOnOverItsHead(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] start = new BlockPos[1];
+        boolean[] buried = new boolean[1];
+        int[] settle = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Burrower"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    start[0] = p;
+                    // Solid stone round a passage seven long, east to west, sealed: no daylight, no way but up.
+                    for (int dx = -4; dx <= 4; dx++) for (int dz = -2; dz <= 2; dz++) for (int dy = -1; dy <= 12; dy++) {
+                        world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
+                    }
+                    for (int dx = -3; dx <= 3; dx++) {
+                        world.setBlockState(p.add(dx, 0, 0), Blocks.AIR.getDefaultState());
+                        world.setBlockState(p.add(dx, 1, 0), Blocks.AIR.getDefaultState());
+                    }
+                    // Six gravel resting on the block over its head room.
+                    for (int dy = 3; dy <= 8; dy++) world.setBlockState(p.up(dy), Blocks.GRAVEL.getDefaultState());
+                })
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 20, "Light settling"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    inventory.setStack(3, new ItemStack(Items.STICK, 8));
+                    player.setHealth(8);
+                    player.getHungerManager().setFoodLevel(10); // No natural healing, and nothing to eat.
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    buried[0] |= f.player().isInsideWall();
+                    context.assertTrue(f.player().getBlockY() > start[0].getY(), "Climbed a step: " + f.player().getBlockPos() + "; "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    int gravel = 0;
+                    for (int dy = 3; dy <= 8; dy++) if (world.getBlockState(start[0].up(dy)).isOf(Blocks.GRAVEL)) gravel++;
+                    context.assertFalse(buried[0], "Never buried");
+                    context.assertTrue(gravel == 6, "The gravel still rests where it was: " + gravel);
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The night pit again, but with water under the whole floor, as over an aquifer: every staircase step would
      * end in the water, so the goal turns away from each without digging anything, and no hole is opened into it.
      */
@@ -2797,6 +3121,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * No diamonds anywhere, only a lava pool: the goal casts the whole frame instead of mining obsidian. Each frame
      * block is lava carried from the pool in its own bucket and hardened in place under water from its other
      * bucket, against a mould of its own cobblestone; the corners are cobblestone; then flint and steel lights it.
+     * Past its west wall lies ground it has no way to, and it is set down by the pool's west end, from where the
+     * nearest room for a frame is on that ground: it builds within its walls, where it can walk (F-25c4a).
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "castPortal", tickLimit = 7000)
     public void goalCastsAWholePortalFrameFromALavaPoolWithoutDiamonds(TestContext context) {
@@ -2815,8 +3141,11 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos p = f.player().getBlockPos().toImmutable();
                     feet[0] = p;
-                    for (int x = -6; x <= 6; x++) for (int z = -7; z <= 6; z++) {
-                        boolean edge = Math.abs(x) == 6 || z == -7 || z == 6;
+                    FixtureGround.keep(context, p.add(-12, -2, -7), p.add(6, 8, 6));
+                    // Beyond the west wall, ground at the floor's height that it has no way to: in full suite runs an
+                    // earlier test's floor lay there, and the frame site was chosen on it (closing suite on fbdb8ed).
+                    for (int x = -12; x <= 6; x++) for (int z = -7; z <= 6; z++) {
+                        boolean edge = x >= -6 && (Math.abs(x) == 6 || z == -7 || z == 6);
                         world.setBlockState(p.add(x, -2, z), Blocks.STONE.getDefaultState());
                         world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 8; y++) {
@@ -2824,6 +3153,9 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         }
                     }
                     for (int x = -3; x <= 3; x++) for (int z = 3; z <= 4; z++) world.setBlockState(p.add(x, -1, z), Blocks.LAVA.getDefaultState());
+                    // Set down where the suite run's player had walked to fill its bucket, by the pool's west end: from
+                    // there the nearest room for a frame, lava aside, is the ground past the wall.
+                    f.player().refreshPositionAndAngles(p.getX() - 3.5, p.getY(), p.getZ() + 2.5, 0, 0);
                     var inventory = f.player().getInventory();
                     inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
                     inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
@@ -2860,6 +3192,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 

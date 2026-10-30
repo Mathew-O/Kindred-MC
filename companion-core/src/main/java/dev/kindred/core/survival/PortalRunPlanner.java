@@ -83,6 +83,8 @@ public final class PortalRunPlanner {
         BUILD_PORTAL, IGNITE_PORTAL,
         /** Cast the frame in place: lava poured into each frame cell and hardened with water. */
         CAST_PORTAL,
+        /** Cook the raw meat or fish carried in its own furnace. */
+        COOK,
         /** Fill an empty bucket at a lava source. */
         FILL_LAVA,
         /** Build a cobblestone generator: a short channel where lava flows into water. */
@@ -196,6 +198,15 @@ public final class PortalRunPlanner {
         }
         if (s.furnaceNearby() && s.furnaceOutput() > 0) {
             steps.add(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect smelted items from the furnace"));
+        }
+        // Raw meat cooked in its own furnace while it is at hand and idle, as players cook before a trip: cooked, it fills
+        // more than twice as much (a raw porkchop three, a cooked one eight). B7's second pairs never cooked, and climbed
+        // out for food again and again. Not while raw iron waits for the furnace, nor with only the kept wood to burn.
+        if (s.furnaceNearby() && s.furnaceCooking()) {
+            steps.add(Step.of(Action.AWAIT_SMELT, stage(s, facts), "Wait for the food to cook"));
+        } else if (s.rawMeat() > 0 && s.furnaceNearby() && !s.furnaceSmelting() && s.furnaceOutput() == 0 && s.rawIron() == 0
+                && (s.coal() > 0 || s.woodUnits() - woodKept(s, facts) >= 2)) {
+            steps.add(new Step(Action.COOK, "", s.rawMeat(), stage(s, facts), "Cook the raw meat"));
         }
         if (!foodFirst && s.edibleFood() == 0 && s.foodLevel() <= 14) {
             steps.add(new Step(Action.HUNT, "", 1, stage(s, facts), "Out of food; hunt an animal in sight"));
@@ -347,6 +358,15 @@ public final class PortalRunPlanner {
         if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for a spare crafting table");
         }
+        // Fuel for the smelting ahead, taken along while trees are in sight: coal below is found only by chance, and in
+        // B7's second pairs a player with no wood to burn spent a sixth of its time looking for it.
+        // A smelt it has the fuel for now goes first: the shield's first iron, the pickaxe's three.
+        boolean smeltNow = s.rawIron() > 0 && (s.coal() > 0 || spareWood >= (s.rawIron() * 2 + 2) / 3);
+        int packedFuel = below && !smeltNow ? fuelPlanks(s, ironWanted) : 0;
+        int woodPacked = tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) + packedFuel;
+        if (packedFuel > 0 && s.woodUnits() < woodPacked && treesNear) {
+            return new Step(Action.GATHER_LOGS, "", (woodPacked - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for fuel to smelt with below");
+        }
         if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
@@ -372,6 +392,8 @@ public final class PortalRunPlanner {
                 }
                 return new Step(Action.MINE_COAL, "", 1, Stage.IRON, "Find fuel to smelt iron");
             }
+            // Burnt whole, a log smelts what one of the four planks it makes does.
+            if (s.coal() == 0 && s.planks() < fuelWood && s.logs() > 0) return Step.craft("planks", Stage.IRON, "Craft planks to smelt with");
             if (!s.furnaceNearby() && s.furnaces() == 0) {
                 if (s.cobble() < 8) return stone(s, facts, 8 - s.cobble(), Stage.IRON, "Mine cobblestone for a furnace");
                 return craftAtTable(s, facts, "furnace", 0, 0, Stage.IRON);
@@ -579,6 +601,30 @@ public final class PortalRunPlanner {
         }
         // The smelt puts down a furnace it holds where none of its own is near, as the run's does.
         return Optional.of(new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron"));
+    }
+
+    /**
+     * Work below ground that takes no wood, for a night when the route's next step is logs from the surface: the iron
+     * the route still needs, mined with the pickaxe in hand. Below ground the night changes nothing; only the climb out
+     * to the trees waits for morning. Empty with no pickaxe that mines iron, or with the route's iron all in hand.
+     */
+    public static Optional<Step> withoutWood(PortalRunSnapshot s, WorldFacts facts) {
+        Objects.requireNonNull(s);
+        Objects.requireNonNull(facts);
+        if (s.pickaxeTier() < 2) return Optional.empty();
+        int wanted = ironShortfall(s, frameMethod(s, facts), caves(facts));
+        int have = s.ironIngots() + s.rawIron();
+        if (have >= wanted) return Optional.empty();
+        return Optional.of(new Step(Action.MINE_IRON, "", wanted - have, Stage.IRON, "Mine iron ore while the night passes (" + have + "/" + wanted + ")"));
+    }
+
+    /**
+     * Planks that would smelt the iron still to be smelted, raw and still to mine, beyond what the coal carried smelts:
+     * a plank smelts one and a half items, a coal eight.
+     */
+    static int fuelPlanks(PortalRunSnapshot s, int ironWanted) {
+        int smelts = Math.max(0, ironWanted - s.ironIngots()) - s.coal() * 8;
+        return smelts <= 0 ? 0 : (smelts * 2 + 2) / 3;
     }
 
     /** {@link #ironShortfall(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to go down into. */

@@ -1,5 +1,35 @@
 # AI-player development validation
 
+## The earned portal run, cleaned — 30 October 2026 (`claude/loose-ends-1029`)
+
+Eight slices of F-25c4 from what B7's second pairs showed (loose-ends page, item 7), on top of `2ddefc4`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed) that calls only the fixtures named, and restore them after each run. Nothing else ran on the cores.
+
+- `./gradlew build`: 792 JUnit results, none failed, six skipped (the opt-in live model tests).
+- `:companion-testkit:run` and `:companion-testkit:runPersonalityDemo`: both pass.
+- `:companion-core:test`: 614 of 614.
+  - New `PortalRunPlannerTest` cases: wood packed to smelt with, and planks made from logs before a coal-less smelt; the route's iron as the night's work below; raw meat cooked and waited for.
+  - The iron stage's shared setup, and three cases that pack a spare pickaxe, a table's wood or a shield's, now carry coal for their iron, so fuel stays out of what they test.
+  - The fuel case fails with the packing switched off ("Mine iron ore (0/15)" where logs for fuel are wanted), and with the planks rule switched off (the logs smelted with whole).
+- The new fixtures on the code before their fixes (main sources set aside, fixtures kept), one run alone with the fixtures beside them: 5 of 10.
+  - Failed:
+    - the night's mining: "Mined the iron in the night";
+    - the zombie in reach: "No cover taken while the zombie was in reach";
+    - planks, not sticks: "No stick went in as fuel";
+    - cooking: "cooked 0, raw 6";
+    - the gravel overhead: it suffocated after "Climbed a step".
+  - Passed: the four beside them (finishing a wounded zombie, breaking off a fight, cover from a skeleton it cannot reach, the cold furnace), and the lava-pool cast as it was staged then.
+  - Restaged by the pool's west end, the cast fixture in a run of its own on the code before: fails, "0 portal blocks, 0 obsidian".
+- After the fixes, the same scratch class alone three times: 10 of 10 in each.
+  - A first version of F-25c4e also counted the iron's smelt, and failed planks and cooking in each of three runs: a counted load took a piece of fuel per item, so three iron burnt three planks and left no coal to cook with. It is fixed in `NativePlayerBody.planSmelt` (a counted load gets the fuel those items burn), and the iron's smelt is uncounted again.
+- The full native suite on this code, nothing else on the cores: 402 of 405 in 41 minutes.
+  - `NativePortalCampaignGameTests` 57 of 57; `NativeCraftGameTests` 13 of 13; `NativeSmeltGameTests` 5 of 5; `NativeNetheriteGameTests` 1 of 1.
+  - The closing run's four failures on `fbdb8ed` all pass: the lava-pool cast (F-25c4a), the keep's roof stairs, the pit climb and F-25c9a's second night.
+  - Its three failures are in classes this work does not change, and each failed before it. Each alone three times on this code:
+    - the axe on a raised shield: 3 of 3. It also failed once in an earlier suite on older code (`ab-1`);
+    - the hungry life-first fixture: 3 of 3. In the suite its ridge slab was out of reach ("No way to reach minecraft:oak_slab"), the cabin stopped after eight failed steps, and the fixture ended with five roof stairs unplaced: the #82 family, open, as in F-25c9b's third run;
+    - the pasture's cattle: 2 of 3. The failure reproduced alone for the first time: the player went "To the gate", "Back out through the doorway for the cow" and "Through the doorway, the cow behind" in a loop, about every second, until the fixture ran out. The cause is in the ranch's leading, not in this work; it stays open (loose-ends page).
+- Evidence: [F-25c4a](evidence/F-25c4a.md), [F-25c4b](evidence/F-25c4b.md), [F-25c4c](evidence/F-25c4c.md), [F-25c4d](evidence/F-25c4d.md), [F-25c4e](evidence/F-25c4e.md), [F-25c4f](evidence/F-25c4f.md), [F-25c4g](evidence/F-25c4g.md), [F-25c4h](evidence/F-25c4h.md). F-25c4a is complete; the rest wait for their in-play row from the next live runs.
+
 ## Loose ends — 29 October 2026 (`claude/loose-ends-1029`)
 
 On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merged in (`ebe16aa`). Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints and restore them after each run.
