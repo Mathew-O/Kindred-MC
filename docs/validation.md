@@ -1,5 +1,31 @@
 # AI-player development validation
 
+## The live run on 03faab9, and three fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `03faab9` (F-25c4o to r): seed 8675309, the starters on the Nether goal, 240,000 ticks, strategist off, nothing else on the cores. The second seed was not run: what the first showed was fixed first.
+  - No portal lit. Furthest: Echo, digging down for the cast's lava, until a skeleton shot it at Y=-14.
+  - Ten deaths, eight of them Sol's: to a creeper, suffocation in a wall, two spiders, two skeletons, drowning as it fled a drowned, and a zombie villager. Echo's to a skeleton, Kindred's by drowning.
+  - Kindred spent 46 minutes, from 16:33 until it drowned at 17:20, in a flooded pit it had let the water into, its climb out cut short some 250 times a minute (F-25c4t). The run took 56 minutes against the long run's 33 on `a286cc8`.
+  - Sol was out of the world from 16:57:32 to the end: a seal of dirt was recorded as an outcome that could not be verified (F-25c4u).
+  - Sol's three walks back to its drops, after deaths at Y=36 to 39, each stopped eight to fifteen blocks short of the one drop it went for, and the rest were given up (F-25c4s).
+  - No fall was broken with water, and no fight ended in a reconciliation stop. Two of 21 recorded fights were fought mostly with an empty hand.
+- F-25c4s (a drop a walk back ended short of passed over), on top of `03faab9`: its fixture fails on the old campaign ("Its pickaxe picked up: Wood: waiting for a feasible step"); after, three runs alone: 3 of 3.
+- F-25c4t (out of a flooded pit by a step dug out of its side), on top of `03faab9`:
+  - its fixture fails on the old code: the player drowned in the pit;
+  - three things were missing, each found making the fixture: the climb out as the swim's own step, the way over to the pit's side across water, and the climb from the water's top cell (with it bobbing, two of three runs, then one of three, climbed out);
+  - after, ten runs alone: 10 of 10.
+- F-25c4u (a placement whose support is gone refused), on top of `03faab9`:
+  - its fixture fails on the old code with the live run's record: "Native placement effect cannot be verified; reconcile", the player blocked;
+  - after, three runs alone: 3 of 3;
+  - a pickup while a placement waits its turn was tried first and does not stop the player: the placement is refused before it acts.
+- The full native suite on this code (F-25c4o to u): 414 of 416 in 44 minutes. The two failures:
+  - the pasture's cattle, known (loose-ends page);
+  - `goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe`, which never saw its iron ore from the start ("Explore the cave toward iron"). Alone after, 10 of 10: the course runs into the next plot, as its own doc says.
+  - F-25c4u's check on the block clicked against was narrowed after the suite to a replaceable block with nothing to collide with, so that layered snow still takes a block. Its fixture alone on the narrowed check: 3 of 3.
+- Evidence: [F-25c4s](evidence/F-25c4s.md), [F-25c4t](evidence/F-25c4t.md), [F-25c4u](evidence/F-25c4u.md).
+
 ## The long run on a286cc8, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

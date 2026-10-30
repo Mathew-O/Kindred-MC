@@ -159,10 +159,13 @@ final class NativeBreakAction extends NativeRecordedAction {
         var player = body.entity();
         double dx = anchor.x - player.getX(), dz = anchor.z - player.getZ();
         boolean drifted = dx * dx + dz * dz > 0.15 * 0.15;
-        if (!drifted && !holding) return;
-        holding = drifted;
+        // Afloat under a block it digs above its eyes, it treads water to keep its head up, as a player digs a step out
+        // of a flooded pit: one that does nothing sinks, and with its eyes under the dig goes five times slower (F-25c4t).
+        boolean tread = player.isTouchingWater() && !player.isOnGround() && target.getY() + 0.5 > player.getEyeY();
+        if (!drifted && !holding && !tread) return;
+        holding = drifted || tread;
         float yaw = drifted ? (float) Math.toDegrees(Math.atan2(-dx, dz)) : player.getYaw();
-        body.move(issuedLease, drifted ? 0.5f : 0f, 0, false, false, yaw);
+        body.move(issuedLease, drifted ? 0.5f : 0f, 0, tread, false, yaw);
     }
 
     private static int swapDestination(NativePlayerBody body) {

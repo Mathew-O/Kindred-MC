@@ -201,7 +201,8 @@ final class NativePlaceAction extends NativeRecordedAction {
             } else {
                 unknown = true;
                 result = Step.blocked("Native placement effect cannot be verified; reconcile", true);
-                admission.uncertain(result.reason());
+                admission.uncertain(result.reason() + " (placed=" + placed + ", at " + placedPos.toShortString() + ": "
+                        + Registries.BLOCK.getId(state.getBlock()).getPath() + "; slots changed: " + changedSlots(before) + ")");
             }
         } catch (RuntimeException failure) {
             unknown = true;
@@ -226,6 +227,13 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (!currentResolved.equals(placedPos)) return false;
 
         if (!world.getBlockState(placedPos).isReplaceable()) return false;
+        // The block clicked against still there: gone (dug out meanwhile, say), vanilla puts the block in its cell instead
+        // of the one planned, and the outcome cannot be verified. A seal of Sol's went so in the live pair on 03faab9, and
+        // Sol was taken out of the world for the rest of the run (F-25c4u).
+        BlockPos clicked = currentTargetReplaceable ? target.offset(side.getOpposite()) : target;
+        if (!world.isChunkLoaded(clicked)) return false;
+        var clickedState = world.getBlockState(clicked);
+        if (clickedState.isReplaceable() && clickedState.getCollisionShape(world, clicked).isEmpty()) return false;
         if (player.getEyePos().squaredDistanceTo(placedPos.getX() + 0.5, placedPos.getY() + 0.5, placedPos.getZ() + 0.5) > 25.0) return false;
 
         if (before != null && !before.matches(body)) return false;
@@ -270,6 +278,20 @@ final class NativePlaceAction extends NativeRecordedAction {
             }
         }
         return true;
+    }
+
+    /** The slots that are not as they were, for the record of an outcome that could not be verified. */
+    private String changedSlots(InventoryEvidence before) {
+        var inventory = body.entity().getInventory();
+        var changed = new StringBuilder();
+        for (int i = 0; i < Math.min(before.stacks().length, inventory.size()); i++) {
+            ItemStack b = before.stacks()[i], a = inventory.getStack(i);
+            if (b.getCount() == a.getCount() && ItemStack.areItemsAndComponentsEqual(b, a)) continue;
+            if (!changed.isEmpty()) changed.append(", ");
+            changed.append(i).append(": ").append(b.getCount()).append(' ').append(Registries.ITEM.getId(b.getItem()).getPath())
+                    .append(" -> ").append(a.getCount()).append(' ').append(Registries.ITEM.getId(a.getItem()).getPath());
+        }
+        return changed.isEmpty() ? "none" : changed.toString();
     }
 
     @Override

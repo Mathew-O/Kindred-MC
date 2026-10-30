@@ -197,6 +197,69 @@ public final class NativeCraftGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * A placement whose block to click against is gone by the time it acts is refused, not an outcome to reconcile
+     * (F-25c4u). Vanilla puts the block in the gone block's cell instead of the one planned, and the outcome could not be
+     * verified: in the live pair on `03faab9` a seal of Sol's, dirt, went so, and Sol was taken out of the world for the
+     * rest of the run. Staged: the placement's write held back while the block under its target is taken away, as a dig
+     * planned meanwhile would take it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "placeSupport", tickLimit = 400)
+    public void aPlacementWhoseSupportIsGoneIsRefusedNotAnOutcomeToReconcile(TestContext context) {
+        var gate = new java.util.concurrent.CompletableFuture<Void>();
+        boolean[] held = {false};
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> new dev.kindred.core.ActionAdmission.Writer() {
+            @Override public java.util.concurrent.CompletableFuture<ActionRecord> prepare(ActionRecord intent) {
+                if (!"native_place".equals(intent.kind())) return writer.prepare(intent);
+                held[0] = true;
+                return gate.thenCompose(ignored -> writer.prepare(intent));
+            }
+            @Override public java.util.concurrent.CompletableFuture<ActionRecord> transition(ActionRecord next, long expectedRevision) {
+                return writer.transition(next, expectedRevision);
+            }
+        }, true);
+        BlockPos support = context.getAbsolutePos(new BlockPos(5, 1, 3));
+        BlockPos target = support.up();
+        var min = context.getAbsolutePos(new BlockPos(0, 0, 0));
+        var max = context.getAbsolutePos(new BlockPos(7, 5, 7));
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready with enabled edits"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sealer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    context.getWorld().setBlockState(support, Blocks.STONE.getDefaultState());
+                    context.getWorld().setBlockState(target, Blocks.AIR.getDefaultState());
+                    f.player().getInventory().setStack(0, new ItemStack(Items.DIRT, 4));
+                    f.runtime.nativePatch(f.source, f.id, min, max, "minecraft:stone");
+                })
+                .createAndAdd(() -> context.assertTrue(!f.runtime.nativeSetupStatus(Actor.console(), f.id).pending(), "Scope acknowledged"))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativePlace(f.source, f.id, target, "up", 0) == 1, "Native place accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(held[0], "Its write held back"))
+                .createAndAdd(() -> {
+                    context.getWorld().setBlockState(support, Blocks.AIR.getDefaultState());
+                    gate.complete(null);
+                })
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_place")
+                            && (record.state().terminal() || record.state() == ActionRecord.State.UNCERTAIN), "Its placement settled: " + record);
+                })
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record.state() != ActionRecord.State.UNCERTAIN, "Refused, not an outcome to reconcile: " + record);
+                    context.assertTrue(!context.getWorld().getBlockState(support).isOf(Blocks.DIRT) && !context.getWorld().getBlockState(target).isOf(Blocks.DIRT)
+                            && countItem(f, Items.DIRT) == 4, "No dirt placed or spent");
+                    var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
+                    context.assertTrue(status.connected() && !status.stopped() && f.player() != null, "Its body still in the world: " + status);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
     public void craft3x3WoodenPickaxeAtReachableCraftingTable(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);

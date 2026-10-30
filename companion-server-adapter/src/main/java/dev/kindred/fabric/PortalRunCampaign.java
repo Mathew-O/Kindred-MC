@@ -134,6 +134,10 @@ final class PortalRunCampaign {
     private long dropSiteUntil;
     /** Whether a mob killed it there: the drops are gone back for only once no hostile mob has them in sight. */
     private boolean dropsGuarded;
+    /** Drops its walks back ended short of since it died, each passed over for the next nearest; and how many (F-25c4s). */
+    private final java.util.Set<Long> unreachedDrops = new java.util.HashSet<>();
+    private int recoverMisses;
+    private static final int RECOVER_TRIES = 3;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
@@ -466,8 +470,16 @@ final class PortalRunCampaign {
             }
             blockedUntil.merge(aside.asLong(), tick + 1200, Math::max);
         }
-        if (task != null && task.label().startsWith("Recover") && dropSite != null && completed) {
-            dropSiteUntil = Math.min(dropSiteUntil, tick + 600); // One more look around, then move on.
+        // A walk back to a drop: one that ends by it, one more look round and on. One that ends short of it, refused or
+        // stopped at the nearest it could get to, passes that drop over for the next nearest, three times at most. A kit
+        // scatters over a few blocks as it falls, and in the live pair on 03faab9 each of Sol's three walks back stopped
+        // eight to fifteen blocks short of the one drop it went for, and gave up the rest with it (F-25c4s).
+        if (task != null && task.label().startsWith("Recover") && dropSite != null) {
+            BlockPos aimed = position(task.args());
+            boolean reached = aimed != null && lastFeet != null && lastFeet.getSquaredDistance(aimed) <= 1.5 * 1.5;
+            if (reached && completed) dropSiteUntil = Math.min(dropSiteUntil, tick + 600);
+            else if (aimed != null && ++recoverMisses < RECOVER_TRIES) unreachedDrops.add(aimed.asLong());
+            else dropSite = null;
         }
         if (task != null && task.label().startsWith(LAVA_LEG_LABEL)) {
             boolean nearer = completed && lavaLegFrom != null && lavaLegFrom.getSquaredDistance(lastFeet) >= 8 * 8;
@@ -571,7 +583,6 @@ final class PortalRunCampaign {
         }
         if (task.label().equals("Run from creeper")) runFailedUntil = tick + 200;
         if (task.label().startsWith("Back off")) backOffFailedUntil = tick + 100; // No way off: cover instead, for now.
-        if (task.label().startsWith("Recover")) dropSite = null;
         if (task.label().startsWith("Cut through")) exploreStalls = 0; // That way is closed too; walk and look again.
         // A foe in a hole or across a ravine cannot be reached; leave it be for a while rather than try forever.
         if ((task.label().startsWith("Close in") || task.label().startsWith("Fight")) && foe != null) {
@@ -622,6 +633,8 @@ final class PortalRunCampaign {
         dropSite = burned ? null : pos.toImmutable();
         dropSiteUntil = tick + 5_000;
         dropsGuarded = killedByMob;
+        unreachedDrops.clear();
+        recoverMisses = 0;
         if (killedByMob) markDanger(pos, tick + DANGER_TICKS);
     }
 
@@ -946,7 +959,7 @@ final class PortalRunCampaign {
             return trapped;
         }
         // In deep water nothing else matters until it can breathe and stand.
-        Optional<Task> air = surface(player);
+        Optional<Task> air = surface(body);
         if (air.isPresent()) {
             progress = stageLabel(stage) + ": " + air.get().label();
             return air;
@@ -1196,7 +1209,8 @@ final class PortalRunCampaign {
      * must. Live run 69 drowned twice holed up in a flooded passage, sinking while it waited behind its wall, and each
      * wait was cut short by the runtime's drowning check without anything taking it up.
      */
-    private Optional<Task> surface(ServerPlayerEntity player) {
+    private Optional<Task> surface(NativePlayerBody body) {
+        var player = body.entity();
         if (!PlayerRuntime.inDeepWater(player)) return Optional.empty();
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
         // staged End run was turned back to the shore on every pass across a bay).
@@ -1228,7 +1242,9 @@ final class PortalRunCampaign {
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
-        return Optional.empty();
+        // No dry ground it can swim to, as in a flooded pit, and its head above water: a step dug out of the side and
+        // climbed onto, as a player gets out, before anything else is dug from the water (F-25c4t).
+        return climb(body, "Climb out of the water");
     }
 
     /** A goal task taking the player up out of deep water, which the runtime's drowning check leaves to finish. */
@@ -1239,6 +1255,11 @@ final class PortalRunCampaign {
      */
     static boolean surfacing(Task task) {
         return task != null && (task.label().startsWith("Get out of the water") || "native_boat".equals(task.skill()));
+    }
+
+    /** A step of a climb: the cells cleared for a staircase step up, or the step itself. */
+    static boolean climbingOut(Task task) {
+        return task != null && task.label().toLowerCase(java.util.Locale.ROOT).startsWith("climb");
     }
 
     /**
@@ -1360,7 +1381,8 @@ final class PortalRunCampaign {
             dropSite = null;
             return Optional.empty();
         }
-        var drops = world.getEntitiesByClass(ItemEntity.class, new Box(dropSite).expand(8), drop -> drop.isAlive() && !drop.isInLava());
+        var drops = world.getEntitiesByClass(ItemEntity.class, new Box(dropSite).expand(8),
+                drop -> drop.isAlive() && !drop.isInLava() && !unreachedDrops.contains(drop.getBlockPos().asLong()));
         if (drops.isEmpty()) {
             dropSite = null;
             return Optional.empty();
@@ -2322,6 +2344,10 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        // Swimming, from the water's top cell: bobbing at the surface its feet go from one cell to the next, and the step
+        // planned from each was another, none dug through before the next (the flooded pit fixture, F-25c4t).
+        boolean swimming = PlayerRuntime.inDeepWater(player);
+        while (swimming && world.getFluidState(feet.up()).isIn(net.minecraft.registry.tag.FluidTags.WATER)) feet = feet.up();
         for (int turn = 0; turn < 4; turn++) {
             BlockPos step = feet.offset(digDirection);
             BlockPos landing = step.up();
@@ -2346,7 +2372,8 @@ final class PortalRunCampaign {
             digDirection = digDirection.rotateYClockwise();
         }
         // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
-        // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square).
+        // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square). Swimming,
+        // across the water to it (F-25c4t).
         Direction toWall = null;
         int nearest = Integer.MAX_VALUE;
         for (Direction side : Direction.Type.HORIZONTAL) {
@@ -2359,7 +2386,7 @@ final class PortalRunCampaign {
                     }
                     break;
                 }
-                if (!passable(world, cell.up()) || passable(world, cell.down())) break;
+                if (!passable(world, cell.up()) || passable(world, cell.down()) && !swimming) break;
             }
         }
         if (toWall == null) return Optional.empty();
@@ -4135,8 +4162,10 @@ final class PortalRunCampaign {
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         // Sinking or swimming in a task that will not take it out of the water (a wait, a seal, a fight): up for air first.
+        // A climb out digs on while its breath lasts: in a flooded pit with no dry ground in reach it is the way out, and
+        // cut short each time it left Kindred swimming there for the rest of the live run on 03faab9 (F-25c4t).
         if (running != null && !surfacing(running) && PlayerRuntime.inDeepWater(player)
-                && (player.getAir() < player.getMaxAir() * 2 / 3 || !running.skill().equals("native_goto"))) {
+                && (player.getAir() < player.getMaxAir() * 2 / 3 || !running.skill().equals("native_goto") && !climbingOut(running))) {
             return "In deep water; up for air first";
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
