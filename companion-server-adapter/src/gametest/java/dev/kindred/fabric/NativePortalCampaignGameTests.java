@@ -3009,6 +3009,67 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * At night below ground, the water at the surface waiting for daylight, the cast's lava is fetched meanwhile with
+     * one of its two empty buckets (F-25c4n). On `ace1d80` Sol waited out a night for its water with both buckets empty,
+     * then dug down for the lava by day. Staged: a chamber eight blocks down in a block of stone with a lava source set
+     * into its floor in plain sight, the night, and the cast route's kit as though made, its two buckets empty.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightLava", tickLimit = 2400)
+    public void atNightBelowGroundTheCastsLavaIsFetchedWhileTheWaterWaits(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        int[] start = new int[1];
+        boolean[] climbed = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Nightlava"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    FixtureGround.keep(context, p.add(-6, -3, -6), p.add(6, 11, 6));
+                    for (int x = -6; x <= 6; x++) for (int z = -6; z <= 6; z++) for (int y = -3; y <= 11; y++) {
+                        boolean chamber = Math.abs(x) <= 3 && Math.abs(z) <= 1 && y >= 0 && y <= 1;
+                        world.setBlockState(p.add(x, y, z), (y <= 8 && !chamber ? Blocks.STONE : Blocks.AIR).getDefaultState());
+                    }
+                    world.setBlockState(p.add(3, -1, 0), Blocks.LAVA.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.IRON_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BUCKET, 2));
+                    inventory.setStack(3, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.BREAD, 32));
+                    inventory.setStack(6, new ItemStack(Items.STICK, 16));
+                    f.player().equipStack(net.minecraft.entity.EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+                    world.setTimeOfDay(14000);
+                    start[0] = p.getY();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    climbed[0] |= goal.contains("Climb toward the surface for water") || f.player().getBlockY() > start[0] + 1;
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.LAVA_BUCKET) == 1, "The cast's lava, at night: " + goal);
+                })
+                .createAndAdd(() -> {
+                    String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    climbed[0] |= goal.contains("Climb toward the surface for water") || f.player().getBlockY() > start[0] + 1;
+                    context.assertTrue(goal.contains("Wait for daylight"), "Then waiting for daylight for the water: " + goal);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(!climbed[0], "It stayed below through the night");
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.BUCKET) == 1, "One bucket left empty for the water");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * After a mob kill it goes back for its drops once no hostile mob has them in sight (Q4). In the live runs on fb02bc3
      * and 10a60d5 all fourteen deaths were to mobs, and each left its whole kit on the ground for good. Staged: a closed,
      * lit stone room, so nothing from the caves round the test comes in; a respawn point eight blocks from where it

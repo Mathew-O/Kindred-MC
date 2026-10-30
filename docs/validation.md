@@ -2,7 +2,7 @@
 
 ## What the live runs on 10a60d5 found, met — 30 October 2026 (`claude/loose-ends-1029`)
 
-Four slices of F-25c4 from the live runs on `10a60d5`, on top of `100bf95`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+Five slices of F-25c4: four from the live runs on `10a60d5`, in `ace1d80` on top of `100bf95`, and one from the runs on `ace1d80`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
 
 - `:companion-core:test`: 616 of 616. `PortalRunPlannerTest`: 37 of 37; the new case fails on the old planner ("the flint and steel's iron only ==> expected: <1> but was: <4>").
 - The three new fixtures, three runs each alone: 9 of 9. On the old campaign and planner, one run each, all three fail, each for what it is about:
@@ -20,7 +20,27 @@ Four slices of F-25c4 from the live runs on `10a60d5`, on top of `100bf95`. Linu
   - the librarian off the line, known;
   - the second-night fixture: "Its body", out of time. Its sleep passes the night only when every player in the world sleeps, and the players of four fixtures that failed before it were still about.
 - The pasture's cattle, with the line-up wait begun afresh each time it backs out for a cow, and a pair abreast waited for one behind the other (`Ranch`; two `RanchTest` cases that fail before and pass after): 8 of 10 alone. Neither failure was the pair abreast. One cow stood outside and never came through, the player going out and back for it, as before; once the doorway's blocks were not put back. Not committed; open.
-- Evidence: [F-25c4j](evidence/F-25c4j.md), [F-25c4k](evidence/F-25c4k.md), [F-25c4l](evidence/F-25c4l.md), [F-25c4m](evidence/F-25c4m.md).
+- Live, on `ace1d80` (F-25c4j to m), seeds 8675309 and 20261030, the starters on the Nether goal, 144,000 ticks each, strategist off, nothing else on the cores:
+
+  | | 8675309, `10a60d5` | 8675309, `ace1d80` | 20261030, `10a60d5` | 20261030, `ace1d80` |
+  | --- | --- | --- | --- | --- |
+  | Deaths | 4 | 2 | 2 | 1 |
+  | A player standing still with its goal running | Kindred, 7 minutes | none | none | none |
+  | Switches between the climb for water and the night's dig-in, the most of any player | 147 (Kindred; Sol 107) | 4 | 1 | 1 |
+  | Mob kills gone back for | 0 of 4 | 1 of 2 | 0 of 1 (and a slime's, which does not count as a mob) | 1 of 1 |
+  | Iron mined, the most of any player | 40% | 55% | 49% | 35% |
+  | Lava for the cast | none | Echo's bucket filled at Y=-55 | none | none (Kindred 55% of its time at Y=-55) |
+  | Furthest | casting the frame | clearing the frame's site, lava in hand | casting the frame | casting the frame |
+
+  - No portal lit. On the first seed the run ended as Echo cleared its frame's site at Y=-55 with its lava.
+  - F-25c4k and l met their in-play rows: complete. F-25c4j's far lava was not met, as no player knew of lava beyond one walk. F-25c4m's stall did not recur.
+  - Neither kit gone back for came back: one walk back was blocked, and one gave way to the night's dig-in at dusk.
+  - What took the time now: waiting out a night with both buckets empty (Sol, 17%), which F-25c4n takes up; and lava looked for at Y=-55, where a tunnel finds it only by breaking into an open cave.
+- F-25c4n (the cast's lava at night), on top of `ace1d80`:
+  - its fixture fails on `ace1d80`'s campaign: "Fill a bucket with water - Wait for daylight", no lava fetched;
+  - after, three runs alone: 3 of 3;
+  - the F-25c4j, k and l fixtures alone on the same code: 3 of 3.
+- Evidence: [F-25c4j](evidence/F-25c4j.md), [F-25c4k](evidence/F-25c4k.md), [F-25c4l](evidence/F-25c4l.md), [F-25c4m](evidence/F-25c4m.md), [F-25c4n](evidence/F-25c4n.md).
 
 ## The portal run in play, and the trip's wood — 30 October 2026 (`claude/loose-ends-1029`)
 

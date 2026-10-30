@@ -906,6 +906,7 @@ final class PortalRunCampaign {
         PortalRunSnapshot snapshot = snapshot(body);
         lastSnapshot = snapshot;
         WorldFacts facts = facts(player);
+        castRoute = PortalRunPlanner.frameMethod(snapshot, facts) == WorldFacts.Method.CAST_OBSIDIAN;
         stage = PortalRunPlanner.stage(snapshot, facts, team);
         if (loggedStage != stage) {
             if (loggedStage != null) event("stage " + stageLabel(loggedStage) + " -> " + stageLabel(stage));
@@ -1588,7 +1589,8 @@ final class PortalRunCampaign {
                     // No water known down here: up to the surface, where lakes and rivers are, rather than tunnel about
                     // blind at depth (live run 55 met a skeleton doing that at Y=12).
                     .or(() -> fillWater(body)).or(() -> !underground(player) ? Optional.<Task>empty()
-                            : night(player.getServerWorld()) ? daylightBelow(body) : wayUp(body, "Climb toward the surface for water"))
+                            : night(player.getServerWorld()) ? lavaMeanwhile(body).or(() -> daylightBelow(body))
+                            : wayUp(body, "Climb toward the surface for water"))
                     .or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
@@ -3031,10 +3033,62 @@ final class PortalRunCampaign {
     private int lavaLegStalls;
     private static final int LAVA_LEG = 96;
     private static final String LAVA_LEG_LABEL = "Cast: walk toward the lava at ";
+    /** Whether the frame is to be cast, as the last plan reckoned it. */
+    private boolean castRoute;
     /** Lava fills refused per source; the first refusal leads to a closer try, not to setting the source aside. */
     private final Map<Long, Integer> fillRefusals = new HashMap<>();
     /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
     private final Set<Long> castFailedStands = new java.util.HashSet<>();
+
+    /**
+     * The cast's bucket of lava: filled at a source it has seen (walked to a leg at a time when far off), else looked for
+     * in caves and then dug down for toward the deep lava.
+     */
+    private Optional<Task> lavaForCast(NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        BlockPos feet = player.getBlockPos();
+        if (knownCastLava(player) == null) {
+            return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
+        }
+        if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
+        // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set aside,
+        // and Kindred dug down to Y=-55 for lava instead (live runs on 10a60d5); legs that get it no nearer set it aside
+        // as before.
+        if (feet.getSquaredDistance(castLava) > LAVA_LEG * LAVA_LEG) {
+            if (lavaLegFrom == null) lavaLegFrom = feet;
+            return Optional.of(go(legToward(feet, castLava, LAVA_LEG), 3, true, LAVA_LEG_LABEL + castLava.toShortString()));
+        }
+        if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
+        if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
+        return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+    }
+
+    /**
+     * Below ground at night with the water it wants up at the surface, the cast's lava, which lies below, is fetched
+     * meanwhile with one of its two empty buckets, as players make the deep trip at night. Only on the cast route, and
+     * only while both buckets are empty, so one is left for the water. On ace1d80 Sol waited out a night for its water
+     * with both buckets empty (17% of its time), then dug down for the lava by day.
+     */
+    private Optional<Task> lavaMeanwhile(NativePlayerBody body) {
+        var inventory = body.entity().getInventory();
+        if (!castRoute || ItemMoves.count(inventory, Items.LAVA_BUCKET) > 0 || ItemMoves.count(inventory, Items.BUCKET) < 2) return Optional.empty();
+        // Lava it knows of below ground, within a walk: no dig into the dark for some, which the night may not see the
+        // end of, and no walk across the surface at night to lava up there.
+        var player = body.entity();
+        BlockPos lava = knownCastLava(player);
+        boolean below = lava != null && !player.getServerWorld().isSkyVisible(lava.up()) && lava.getSquaredDistance(player.getBlockPos()) <= 64 * 64;
+        return below ? lavaForCast(body) : Optional.empty();
+    }
+
+    /** The lava the cast fills its bucket at: the one chosen, while it is still there, else the nearest it knows of. */
+    private BlockPos knownCastLava(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        // A source that was taken, or that could not be reached or filled from here (set aside), gives way to the next.
+        if (castLava != null && (blocked(castLava) || !(world.getFluidState(castLava).isIn(FluidTags.LAVA) && world.getFluidState(castLava).isStill()))) castLava = null;
+        if (castLava == null) castLava = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, player.getBlockPos(), p -> !blocked(p) && !generatorCell(p)).orElse(null);
+        return castLava;
+    }
 
     /**
      * Cast the frame in place, as speedrunners build a portal without a diamond pickaxe: a bucket of lava from a
@@ -3047,26 +3101,7 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         var inventory = player.getInventory();
-        BlockPos feet = player.getBlockPos();
-        // A source that was taken, or that could not be reached or filled from here (set aside), gives way to the next.
-        if (castLava != null && (blocked(castLava) || !(world.getFluidState(castLava).isIn(FluidTags.LAVA) && world.getFluidState(castLava).isStill()))) castLava = null;
-        if (castLava == null) castLava = knowledge.nearest(world, WorldKnowledge.Kind.LAVA, feet, p -> !blocked(p) && !generatorCell(p)).orElse(null);
-        if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) {
-            if (castLava == null) {
-                return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
-            }
-            if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
-            // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set
-            // aside, and Kindred dug down to Y=-55 for lava instead (live runs on 10a60d5); legs that get it no nearer
-            // set it aside as before.
-            if (feet.getSquaredDistance(castLava) > LAVA_LEG * LAVA_LEG) {
-                if (lavaLegFrom == null) lavaLegFrom = feet;
-                return Optional.of(go(legToward(feet, castLava, LAVA_LEG), 3, true, LAVA_LEG_LABEL + castLava.toShortString()));
-            }
-            if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
-            if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
-            return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
-        }
+        if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) return lavaForCast(body);
         if (portalSite == null) {
             portalSite = choosePortalSite(player).orElse(null);
             if (portalSite == null) return tunnel(body, "Cast: look for room for the frame");

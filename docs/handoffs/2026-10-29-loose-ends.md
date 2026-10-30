@@ -392,3 +392,36 @@ The owner's next block: back to the core playthrough, clean and complete.
   - falls into caves while digging stone near spawn (Echo; not reproduced in a fixture).
 - The cattle: lead a pair so that one comes first through an opening one wide.
 - `modest-faraday`'s merge, as before.
+
+## Handoff, evening of 30 October 2026: what stopped the lit portal, worked on
+
+The owner: work through what is left, leaving the decisions only the owner can make (they are as listed above).
+
+### What was done
+
+| Item | Outcome | Commits |
+| --- | --- | --- |
+| Kindred's stall on the first seed (the furnace collect never carried out) | Not explained. Four places in the code could drop a step without a word. They are the decision gates, the dispatch's asynchronous half, a step that fails its still-executable check, and a team task that cannot be claimed. Each now logs, and a player that starts nothing on its goal for a minute logs its gates once (F-25c4m, open). It did not recur on `ace1d80` | `ace1d80` |
+| Lava for the cast | Lava seen beyond one walk's reach is walked to a leg at a time. After both buckets are made, a worn-out iron pickaxe is not made again (F-25c4j, open: no player knew of far lava in the runs). Fixture and planner case fail before and pass after | `ace1d80` |
+| Water at night | Below ground at night, water at the surface waits for daylight (F-25c4k, complete). The two players that went up and down 147 and 107 times between the climb and the dig-in now wait below | `ace1d80` |
+| Drops after a mob kill | Gone back for once no hostile mob has them in sight (F-25c4l, complete). Two mob kills were gone back for in play, where none ever was, though neither kit came back | `ace1d80` |
+| The night waited out with both buckets empty (Sol, 17%) | The cast's lava, known below within a walk, fetched meanwhile (F-25c4n, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `ace1d80` |
+| The pasture's cattle | The line-up wait begun afresh each time it backs out, and a pair abreast waited for one behind the other: 8 of 10 alone. Neither failure was the pair abreast: one cow never came through, as before. Not committed; open | none |
+| Live runs on `ace1d80`, both seeds, strategist off | 3 deaths against 6 on `10a60d5`; no stall; the first lava bucket for a cast (Echo, at Y=-55; the run ended as it cleared the frame's site). No portal lit | |
+
+### Validation
+
+- `ace1d80`: `:companion-core:test` 616 of 616. The full native suite 404 of 409, with `NativePortalCampaignGameTests` 61 of 61. The five failures were the cattle, the keep's roof stairs, the ranch's pen (2 of 3 alone after), the librarian off the line, and the second-night fixture, out of time with other fixtures' players awake.
+- The F-25c4n fixture fails on `ace1d80` and passes 3 of 3 after; the F-25c4j, k and l fixtures pass on the same code.
+- The live table: validation's section for this block.
+
+### Next dependency
+
+- The lit portal, from the runs on `ace1d80`:
+  - lava at depth. The deep search tunnels at Y=-55 (its target, -58, plus three), and a tunnel finds lava only by breaking into an open cave, while the lava aquifers lie below -55. Kindred spent 55% of its time so. Next: tunnel lower for lava than for diamonds, or explore the deep caves first;
+  - F-25c4n in play, and a longer run on seed 8675309, where Echo held lava at the end;
+  - the stall's cause, once F-25c4m's lines catch it;
+  - deaths at night are not gone back for: the night's dig-in comes first, and drops last five minutes, less than a night.
+- Not yet checked alone: the keep and the second-night fixture, each failing once in the suite on `ace1d80`; the ranch's pen on the code before.
+- The cattle: a single cow that never comes through the doorway, the player going out and back for it.
+- `modest-faraday`'s merge, as before.
