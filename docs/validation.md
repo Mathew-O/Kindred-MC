@@ -1,5 +1,38 @@
 # AI-player development validation
 
+## The portal run in play, and the trip's wood — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. Nothing else ran on the cores during the live runs.
+
+- Live, on `fb02bc3` (F-25c4a to h), against B7's runs with the strategist off on `4d0884a`. Seeds 8675309 and 20261030, the starters on the Nether goal, 144,000 ticks each, every death logged with what it happened in. Echo again found no room at spawn on the second seed.
+
+  | | 8675309, B7 | 8675309, now | 20261030, B7 | 20261030, now |
+  | --- | --- | --- | --- | --- |
+  | Deaths | 9 | 8 | 2 | 0 |
+  | Furthest | iron | casting the frame (Echo) | obsidian | casting the frame (Kindred) |
+  | Deaths taking cover with a mob on foot in reach | 5 | 0 | 0 | 0 |
+  | Climbing out for food, Kindred | 18% | 0% | 0% | 0% |
+  | Coal hunts, Kindred and Echo | 15% and 0% | 18% and 18% | 0% | 0% |
+  | Tables put down, per player | 60, 55, 23 | 31, 11, 26 | 12, 137 | 9, 8 |
+
+  - No portal lit in either.
+  - F-25c4b, c, e, g and h met their in-play criteria: no death taking cover with a mob on foot in reach; the route's iron mined through the night; meat cooked; no suffocation; the table no longer put down and picked up in a loop (at most five times in a minute, where B7's loop did 26).
+  - F-25c4d was not met: the fuel was packed once.
+  - Three of the five players were stranded below with no pickaxe and no sticks: Sol on the first seed, Kindred and Sol on the second. They spent 35 to 43% of their time gathering logs for sticks and 24 to 29% waiting for daylight to go up for them. That is F-25c4i.
+  - Falls into caves while gathering stone (Echo, here and in B7) were tried in a scratch fixture: a stone floor three thick over a cavern twelve deep, the goal needing cobblestone. It never fell through in three runs, so the fall is not reproduced.
+- F-25c4i (the trip's wood):
+  - `PortalRunPlannerTest`: 36 of 36. The new case fails with the packing switched off, and with the spare pickaxe's guard switched off.
+  - `:companion-core:test`: 615 of 615.
+  - The new fixture on the code before: fails, 3 planks' worth at its first stone.
+  - After, three runs alone, before `underTrunk`: 1 of 3 (19 and 11). With it: 3 of 3.
+  - The full native suite, nothing else on the cores: 401 of 406 in 45 minutes. `NativePortalCampaignGameTests` 57 of 58, the new fixture among those passing; `NativeCraftGameTests` 13 of 13; `NativeSmeltGameTests` 5 of 5; the cattle and the hungry fixture passed. Its five failures, each alone after:
+    - the two seed-build cabins: 3 of 3 each. In the suite, each cabin stopped after eight failed steps, the last a scaffold block whose route was blocked;
+    - the pit climb: 3 of 3. It is open, and its fix is on `modest-faraday`;
+    - the strolling librarian: 6 of 7;
+    - the librarian off the line: 1 of 3, and 1 of 3 on the code before as well ("Bringing the librarian home", out of time). Open.
+  - Evidence: [F-25c4i](evidence/F-25c4i.md); the in-play rows: [F-25c4b](evidence/F-25c4b.md) to [F-25c4h](evidence/F-25c4h.md).
+- The pasture's cattle (loose-ends page), with each cow's position, path and goals logged every second, five runs alone: 4 of 5. In the failure the pair stood side by side in the doorway's mouth, one block wide, each overhanging the wall beside it, for thousands of ticks. A doorway two wide, eight runs: 6 of 8. The pair came in together and jammed the same way at the pen's gate, one wide (the other failure: no calf). The doorway was put back; still open.
+
 ## The earned portal run, cleaned — 30 October 2026 (`claude/loose-ends-1029`)
 
 Eight slices of F-25c4 from what B7's second pairs showed (loose-ends page, item 7), on top of `2ddefc4`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed) that calls only the fixtures named, and restore them after each run. Nothing else ran on the cores.

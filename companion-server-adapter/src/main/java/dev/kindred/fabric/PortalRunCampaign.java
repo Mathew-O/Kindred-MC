@@ -1616,7 +1616,9 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         var nearest = new java.util.EnumMap<WorldFacts.Source, Integer>(WorldFacts.Source.class);
-        boolean below = underground(player);
+        // Under the logs left of a trunk it is cutting is not below ground: stepping in under them for a log it dropped,
+        // its trees went out of its plan and back each time, and the trip's wood was left half packed (F-25c4i).
+        boolean below = underground(player) && !underTrunk(world, feet);
         // On an island (nothing under it but the void) a tree far off is on another island: across the void, not in reach.
         boolean island = !groundBelow(player);
         for (var source : SOURCES.entrySet()) {
@@ -2013,6 +2015,18 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // Below the ground surface (leaves do not count as cover) with no open sky: a shaft or a cave, not a forest floor.
         return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 2;
+    }
+
+    /** Nothing over its head but the logs (and leaves) of a trunk up to the open sky: one it is cutting from below. */
+    private static boolean underTrunk(ServerWorld world, BlockPos feet) {
+        int top = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ());
+        boolean log = false;
+        for (BlockPos at = feet.up(); at.getY() < top; at = at.up()) {
+            BlockState state = world.getBlockState(at);
+            if (state.isIn(BlockTags.LOGS)) log = true;
+            else if (!state.isAir() && !state.isIn(BlockTags.LEAVES)) return false;
+        }
+        return log;
     }
 
     /**
@@ -2678,7 +2692,9 @@ final class PortalRunCampaign {
         }
         args.put("input_slot", String.valueOf(input));
         if (fuel >= 0) args.put("fuel_slot", String.valueOf(fuel));
-        return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Load raw iron and fuel"));
+        // The fuel named, so a run's log shows what it burns (F-25c4f: sticks last).
+        String burns = fuel < 0 ? "" : " (" + Registries.ITEM.getId(inventory.getStack(fuel).getItem()).getPath().replace('_', ' ') + ")";
+        return atWorkstation(player, furnace.get(), new Task("native_smelt", coords(furnace.get(), args), "Load raw iron and fuel" + burns));
     }
 
     /**

@@ -304,6 +304,14 @@ public final class PortalRunPlanner {
         }
         // Stone: cobblestone for a stone pickaxe, sword, furnace and portal corners.
         if (s.pickaxeTier() == 1) {
+            // The trip's wood first, while among the trees, as players take a stack of logs before going down: the first
+            // cobblestone takes it below, out of sight of them, and the packing further on found no tree from there. In
+            // the live runs that checked F-25c4b to h, three of five players ran out of sticks and wood below, and were
+            // left with no pickaxe.
+            int trip = tripWood(s, facts, frame);
+            if (s.woodUnits() < trip && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_RANGE) {
+                return logs(facts, (trip - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for the trip below");
+            }
             if (s.cobble() < 3) return stone(s, facts, 3 - s.cobble(), Stage.STONE, "Mine cobblestone for a stone pickaxe");
             return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE);
         }
@@ -339,7 +347,11 @@ public final class PortalRunPlanner {
         // A spare pickaxe, made while it is cheap: one wearing out halfway up a climb never leaves the player with none.
         // Two spares where it learned that one is not enough.
         int pickaxesPacked = prefs.has(PlanPreferences.Habit.SPARE_PICKAXE) ? 3 : 2;
-        if (below && s.pickaxes() < pickaxesPacked && s.cobble() >= 3) {
+        // Only from sticks or wood in hand, or a tree close by: fetched from the surface, a spare sent the player up a
+        // fresh staircase that wore out the pickaxe it had (two players in the runs that checked F-25c4b to h, from Y=8
+        // and Y=18).
+        boolean spareWithin = s.sticks() >= 2 || spareWood >= 2 || treesNear;
+        if (below && s.pickaxes() < pickaxesPacked && s.cobble() >= 3 && spareWithin) {
             return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE, "Craft a spare stone pickaxe for the work below");
         }
 
@@ -625,6 +637,18 @@ public final class PortalRunPlanner {
     static int fuelPlanks(PortalRunSnapshot s, int ironWanted) {
         int smelts = Math.max(0, ironWanted - s.ironIngots()) - s.coal() * 8;
         return smelts <= 0 ? 0 : (smelts * 2 + 2) / 3;
+    }
+
+    /**
+     * The wood, in planks, that the trip below takes: sticks for the stone pickaxe, its spare and the sword still to
+     * make and the stick reserve, beyond the sticks carried (two planks make four); a spare table's; a shield's still to
+     * make; and the fuel for the route's iron beyond what its coal smelts. None where there is no ground to go down into.
+     */
+    static int tripWood(PortalRunSnapshot s, WorldFacts facts, WorldFacts.Method frame) {
+        if (!caves(facts)) return 0;
+        int sticks = (s.pickaxeTier() < 2 ? 4 : 0) + (s.swordTier() < 2 ? 1 : 0) + sticksReserved(s, frame, true);
+        int stickPlanks = (Math.max(0, sticks - s.sticks()) + 3) / 4 * 2;
+        return stickPlanks + SPARE_TABLE_PLANKS + (s.shields() == 0 ? SHIELD_PLANKS : 0) + fuelPlanks(s, ironShortfall(s, frame, true));
     }
 
     /** {@link #ironShortfall(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to go down into. */

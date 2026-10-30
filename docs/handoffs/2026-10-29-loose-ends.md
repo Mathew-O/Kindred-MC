@@ -201,7 +201,7 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
         lines of their own, and clears the sky over the staircase fixtures.
       - It spans `WorldKnowledge` and the fixture's file, in a commit that also changes `PlayerRuntime`, all files that
         branch changes, so it waits for the merge.
-    - **The pasture's cattle: reproduced alone once (2026-10-30); open.**
+    - **The pasture's cattle: reproduced alone, cause found (2026-10-30); open.**
       - It failed in suite runs 46, 48 and 49 with "the player at none": its body was gone at the scheduled stop, so a
         timeout while still leading cows.
       - It passed in all seven suite runs since (s52 to s56, v1, v2). No commit names a fix, and its cause is not
@@ -210,10 +210,15 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
         alone after. Alone, the player went "To the gate", waited for the cow, went "Back out through the doorway for
         the cow" and "Through the doorway, the cow behind", over and over until the fixture ran out. The cow stood a
         block west of the doorway, at the wall's foot outside, and never came through.
-      - Back at the doorway it never waited for the cow to come up behind it in line: the wait's clock
-        (`Ranch.alignSince`) is reset only on the first walk up to the doorway, not on the walk back out. Why the cow
-        stays put through each 120-tick wait at the gate, the player six blocks off with wheat, is not established.
-        Still open.
+      - The cause, from both cows' positions, paths and goals logged every second in five more runs alone (one
+        failed): tempted together, the pair came up side by side to the doorway, one block wide, at 0.0 and 1.0 from
+        its west edge. Each overhung the wall beside it, so neither could step in past the other. Their paths reached
+        the player inside, but they stood there for thousands of ticks; going back out for them led them up to the same
+        jam. In the runs that passed they came one after the other. (Back at the doorway the player also never waited
+        for them in line: the wait's clock, `Ranch.alignSince`, is reset only on the first walk up to it.)
+      - A doorway two wide was tried and taken back. The pair came in together, then jammed the same way at the pen's
+        gate, one wide: 2 of 8 runs alone failed, one of them so. A pair brought through any opening one wide needs
+        leading so that one comes first. Still open.
     - **A base's roof stairs (#82): `28395df`'s fix has now run natively.**
       - The keep passed in all seven suite runs on this branch since it.
       - CI run 223 on `main` (which has the fix) failed the keep, but CI's log gives only the test's name: the results
@@ -313,7 +318,7 @@ edited; where an item needed files it changes, the item waits for its merge.
 | D17 plain comments | Done but for `modest-faraday`'s twenty files | `b4fe930` |
 | D18 README's vanilla wording | Done | `0fe4b39` |
 | D19, D20 download, GitHub settings | Owner only | |
-| E21 intermittent fixtures | The night-and-bed fixture: two causes, both fixed (E-08d, F-25c9a). Found doing it: the hungry fixture stranded by its scaffold (E-08e). The pit climb and the portal restart: fixes on `modest-faraday`. The cattle: reproduced alone once (2026-10-30), open. The keep's roof stairs: failed again in the closing suite (8 short), open | `2b1f325`, `bc1690a`, `323d852` |
+| E21 intermittent fixtures | The night-and-bed fixture: two causes, both fixed (E-08d, F-25c9a). Found doing it: the hungry fixture stranded by its scaffold (E-08e). The pit climb and the portal restart: fixes on `modest-faraday`. The cattle: reproduced alone, cause found (a pair side by side jams any opening one wide), open. The keep's roof stairs: failed again in the closing suite (8 short), open | `2b1f325`, `bc1690a`, `323d852` |
 | E22 the suite's hour on CI | Checked; a newer push now cancels the run it supersedes. Splitting the job is the owner's call | `fa0466b` |
 | E23 the deprecated mock player | Done | `a841f6b` |
 | G an open feature slice | F-25c9b: hungry, food from its own storage before it hunts | `5ebb9f7` |
@@ -354,3 +359,33 @@ edited; where an item needed files it changes, the item waits for its merge.
   claimed in the tracker, are the fixes the second pairs pointed to: deaths under cover, night waits below, fuel, food,
   the table loop, gravel overhead, and the cast site. Each needs its fixture failing before and passing after, then live
   runs on both seeds.
+
+## Handoff, later on 30 October 2026: the portal run cleaned, then checked in play
+
+The owner's next block: back to the core playthrough, clean and complete.
+
+### What was done
+
+| Item | Outcome | Commits |
+| --- | --- | --- |
+| F-25c4a to h, the slices B7's second pairs pointed to | Each fixture failed before its fix and passed after, 10 of 10 in each of three runs alone; the full suite 402 of 405, its three failures in other classes and older | `fb02bc3` |
+| Live runs on `fb02bc3`, both seeds, strategist off | b, c, e, g and h met their in-play rows and are complete; a was complete on its fixtures. d was not met. f is shown natively only, and the iron's load now names its fuel, so the next runs can show it | HASH |
+| F-25c4i, the trip's wood | Found in those runs: three of five players stranded below with no pickaxe and no sticks. The fixture fails before and passes after, 3 of 3; the planner case fails with either half switched off | HASH |
+| The pasture's cattle (E21) | Cause found: a pair side by side jams any opening one wide. A doorway two wide only moved the jam to the pen's gate, so it was put back. Open | HASH |
+
+### Validation
+
+- `fb02bc3`: `./gradlew build` 792, none failed, six skipped; testkit and personality demo pass; the full native suite 402 of 405.
+- The working tree after it, as committed in HASH: `:companion-core:test` 615 of 615; the full native suite 401 of 406. Its five failures, alone after, are all intermittents seen before; one, the librarian off the line, fails 2 of 3 on the code before too.
+- The live table, against B7's: validation's section for this block.
+
+### Next dependency
+
+- Live runs on HASH on both seeds, for F-25c4d, f and i's in-play rows.
+- Then, from these runs' logs, what costs most now:
+  - deaths holing up or backing off in the caves under spawn (6 of 8 on the first seed);
+  - drops never picked up after a mob kills the player (`died()` skips them: every death there started over from logs);
+  - water fetched from the surface by a fresh staircase, which wore out Sol's last pickaxe;
+  - falls into caves while digging stone near spawn (Echo, in B7's runs and these; not reproduced in a fixture).
+- The cattle: lead a pair so that one comes first through an opening one wide.
+- `modest-faraday`'s merge, as before.

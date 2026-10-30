@@ -520,6 +520,46 @@ class PortalRunPlannerTest {
         assertNotEquals("stone_pickaxe", PortalRunPlanner.plan(sky.snapshot(), sky.skyFacts()).getLast().item());
     }
 
+    /**
+     * With its wooden pickaxe among the trees, the trip's wood is taken before the first cobblestone takes it below, and
+     * below, out of sight of any tree, the iron stage asks for no more wood and hunts no coal. In the live runs on
+     * fb02bc3 the packing came only after the first stone, and three of five players ran out of sticks and wood below.
+     * Out of sight of trees there is nothing to pack; and a spare pickaxe it has neither sticks nor wood for is not
+     * fetched from the surface.
+     */
+    @Test
+    void theTripsWoodIsTakenAmongTheTreesBeforeTheFirstStone() {
+        var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 6), WorldFacts.ordinary().methods());
+        Sim sim = new Sim();
+        sim.pick = 1; sim.planks = 3; sim.tableNearby = true;
+        var pack = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
+        assertEquals(Action.GATHER_LOGS, pack.action(), "the trip's wood first: " + pack);
+        assertTrue(pack.why().contains("trip below"), pack.why());
+        assertEquals(Action.GATHER_STONE, PortalRunPlanner.plan(sim.snapshot()).getLast().action(), "no tree in sight: the stone");
+        var farTree = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 40), WorldFacts.ordinary().methods());
+        assertEquals(Action.GATHER_STONE, PortalRunPlanner.plan(sim.snapshot(), farTree).getLast().action(), "nor from forty blocks off");
+        // Among the trees until the first stone; then below, with no tree in sight, on to the frame's diamonds.
+        List<Action> below = new ArrayList<>();
+        boolean down = false;
+        for (int i = 0; i < 600; i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), down ? WorldFacts.ordinary() : trees).stream()
+                    .filter(candidate -> candidate.action() != Action.HUNT).findFirst().orElseThrow();
+            if (step.action() == Action.MINE_DIAMOND) break;
+            if (step.action() == Action.GATHER_STONE) down = true;
+            if (down) below.add(step.action());
+            sim.apply(step);
+        }
+        assertEquals(3, sim.pick, "the iron pickaxe made: " + below);
+        assertTrue(sim.chest >= 3 && sim.shields == 1 && sim.buckets >= 1, "its iron all made: " + below);
+        assertTrue(!below.contains(Action.GATHER_LOGS), "no wood fetched from below: " + below);
+        assertTrue(!below.contains(Action.MINE_COAL), "no coal hunted: " + below);
+        // Below with no sticks or wood: on with the pickaxe it has, not up a staircase to the trees for a spare.
+        Sim spare = new Sim();
+        spare.pick = 2; spare.pickaxes = 1; spare.sword = 2; spare.cobble = 24; spare.shields = 1; spare.tableNearby = true;
+        var next = PortalRunPlanner.plan(spare.snapshot()).getLast();
+        assertEquals(Action.MINE_IRON, next.action(), "no spare fetched from the surface: " + next);
+    }
+
     @Test
     void theStickReserveIsPackedFromATreeFurtherOffBeforeTheWorkBelow() {
         // Live run 68 went into a cave by spawn with few sticks and no wood, the nearest tree forty blocks off, and at

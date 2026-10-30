@@ -2822,6 +2822,60 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * With its wooden pickaxe made and trees round it, the goal takes the trip's wood before its first cobblestone, which
+     * takes it below and out of sight of them: sticks for its stone tools and their reserve, a spare table's, a shield's
+     * and the fuel for its iron. In the live runs that checked F-25c4b to h it went straight for stone, packed nothing
+     * once below, and three of five players ran out of sticks and wood there and were left with no pickaxe. The stone
+     * plot, its four trunks and the wooden pickaxe, table and planks are staged.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "tripWood", tickLimit = 2400)
+    public void withItsWoodenPickaxeAmongTheTreesItTakesTheTripsWoodBeforeItsFirstStone(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        int[] woodAtFirstStone = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Packer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    FixtureGround.keep(context, p.add(-10, -3, -10), p.add(10, 6, 10));
+                    for (int x = -10; x <= 10; x++) for (int z = -10; z <= 10; z++) {
+                        for (int y = -3; y <= -1; y++) world.setBlockState(p.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 6; y++) world.setBlockState(p.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    // Four trunks of five, enough for the trip and a little over.
+                    for (int[] t : new int[][] {{5, 3}, {-4, 6}, {6, -5}, {-6, -4}}) {
+                        for (int y = 0; y <= 4; y++) world.setBlockState(p.add(t[0], y, t[1]), Blocks.OAK_LOG.getDefaultState());
+                    }
+                    world.setBlockState(p.add(1, 0, 0), Blocks.CRAFTING_TABLE.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.WOODEN_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.OAK_PLANKS, 3));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    world.setTimeOfDay(1000);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    int wood = ItemMoves.count(inventory, Items.OAK_PLANKS) + 4 * ItemMoves.count(inventory, Items.OAK_LOG);
+                    if (woodAtFirstStone[0] < 0 && ItemMoves.count(inventory, Items.COBBLESTONE) > 0) woodAtFirstStone[0] = wood;
+                    context.assertTrue(woodAtFirstStone[0] >= 0, "Its first cobblestone: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(woodAtFirstStone[0] >= 28, "The trip's wood in hand before its first stone, in planks: " + woodAtFirstStone[0]);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The night pit again, but with water under the whole floor, as over an aquifer: every staircase step would
      * end in the water, so the goal turns away from each without digging anything, and no hole is opened into it.
      */
