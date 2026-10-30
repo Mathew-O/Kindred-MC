@@ -615,6 +615,39 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void whereThereAreCavesTheChestplateIsMadeAsSoonAsItsIronIsInHandBeforeTheRest() {
+        // In the live runs from fb02bc3 to 458d192, 44 of 52 deaths came with no armour on, four of them carrying twelve
+        // to sixteen iron that waited for the rest of the route's before any of it was made into gear.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 30; sim.sticks = 8; sim.shields = 1; sim.coal = 30;
+        sim.tableNearby = true; sim.furnaceNearby = true; sim.food = 20;
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH));
+        int wanted = PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN);
+        int mined = 0, minedBeforeChest = -1;
+        List<String> steps = new ArrayList<>();
+        for (int i = 0; i < 300 && sim.buckets + sim.water < 2; i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).stream().filter(candidate -> candidate.action() != Action.HUNT).findFirst().orElseThrow();
+            steps.add(step.action() + (step.item().isEmpty() ? "" : " " + step.item()));
+            if (step.action() == Action.CRAFT && "iron_chestplate".equals(step.item())) minedBeforeChest = mined;
+            sim.apply(step);
+            if (step.action() == Action.MINE_IRON) mined++;
+        }
+        assertEquals(8, minedBeforeChest, "the chestplate from the first eight iron: " + steps);
+        assertEquals(3, sim.chest, "worn for the rest: " + steps);
+        assertTrue(sim.buckets + sim.water >= 2 && sim.pick == 3, "the rest of the route's iron made after it: " + steps);
+        assertEquals(wanted, mined, "no more iron mined in all than the route wants: " + steps);
+        // Where there are no caves to go down into, none is made; and a shield's first iron still comes before it.
+        Sim sky = skyIsland();
+        sky.pick = 2; sky.pickaxes = 1; sky.sword = 2; sky.cobble = 20; sky.sticks = 8; sky.shields = 1; sky.tableNearby = true;
+        sky.furnaceNearby = true; sky.iron = 8; sky.generator = true;
+        assertNotEquals("iron_chestplate", PortalRunPlanner.plan(sky.snapshot(), sky.skyFacts()).getLast().item(), "no caves on a sky island");
+        Sim shield = new Sim();
+        shield.pick = 2; shield.pickaxes = 2; shield.sword = 2; shield.cobble = 30; shield.sticks = 8; shield.planks = 6; shield.coal = 30;
+        shield.tableNearby = true; shield.furnaceNearby = true; shield.food = 20; shield.iron = 8;
+        assertEquals("shield", PortalRunPlanner.plan(shield.snapshot(), BOTH).getLast().item(), "the shield's iron first");
+    }
+
+    @Test
     void theStickReserveIsPackedFromATreeFurtherOffBeforeTheWorkBelow() {
         // Live run 68 went into a cave by spawn with few sticks and no wood, the nearest tree forty blocks off, and at
         // Y=19 had none left: it climbed fifty-five blocks for logs and wore out its pickaxes on the way.

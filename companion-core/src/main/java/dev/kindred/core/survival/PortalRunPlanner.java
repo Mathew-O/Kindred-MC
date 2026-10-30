@@ -36,6 +36,8 @@ public final class PortalRunPlanner {
     public static final int COBBLE_TARGET = 24;
     /** Planks in a shield, with one iron ingot. */
     public static final int SHIELD_PLANKS = 6;
+    /** Iron ingots in a chestplate. */
+    static final int CHESTPLATE_IRON = 8;
     /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
     static final int TREE_RANGE = 24;
     /**
@@ -369,7 +371,13 @@ public final class PortalRunPlanner {
         // another: in the long run on a286cc8 Kindred made four that way, and never a bucket (F-25c4q).
         boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3 && ironPickaxeWanted(s, facts, frame)
                 && frame != WorldFacts.Method.CAST_OBSIDIAN;
+        // Then the chestplate, once there is iron for it, before the rest of the iron is looked for: that is where the
+        // caves are. In the live runs from fb02bc3 to 458d192, 44 of 52 deaths came with no armour on, four of them
+        // carrying twelve to sixteen iron that waited for the rest before any of it was made into gear (F-25c4x).
+        boolean chestFirst = !shieldFirst && !pickaxeFirst && caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4
+                && ironHave >= CHESTPLATE_IRON;
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
+        if (chestFirst && s.ironIngots() >= CHESTPLATE_IRON) return craftAtTable(s, facts, "iron_chestplate", 0, 0, Stage.IRON);
         // Wood for another table, should the carried one be lost below, taken while trees are in sight.
         if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for a spare crafting table");
@@ -378,12 +386,12 @@ public final class PortalRunPlanner {
         // B7's second pairs a player with no wood to burn spent a sixth of its time looking for it.
         // A smelt it has the fuel for now goes first: the shield's first iron, the pickaxe's three.
         boolean smeltNow = s.rawIron() > 0 && (s.coal() > 0 || spareWood >= (s.rawIron() * 2 + 2) / 3);
-        int packedFuel = below && !smeltNow ? fuelPlanks(s, ironWanted) : 0;
+        int packedFuel = below && !smeltNow ? fuelPlanks(s, ironWanted, caves) : 0;
         int woodPacked = tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) + packedFuel;
         if (packedFuel > 0 && s.woodUnits() < woodPacked && treesNear) {
             return new Step(Action.GATHER_LOGS, "", (woodPacked - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for fuel to smelt with below");
         }
-        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst) {
+        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst && !chestFirst) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {
@@ -646,11 +654,15 @@ public final class PortalRunPlanner {
 
     /**
      * Planks that would smelt the iron still to be smelted, raw and still to mine, beyond what the coal carried smelts:
-     * a plank smelts one and a half items, a coal eight.
+     * a plank smelts one and a half items, a coal eight. Where there are caves, the chestplate's iron is smelted on its
+     * own before the rest (F-25c4x), and the plank part burnt for it is one more.
      */
-    static int fuelPlanks(PortalRunSnapshot s, int ironWanted) {
+    static int fuelPlanks(PortalRunSnapshot s, int ironWanted, boolean caves) {
         int smelts = Math.max(0, ironWanted - s.ironIngots()) - s.coal() * 8;
-        return smelts <= 0 ? 0 : (smelts * 2 + 2) / 3;
+        if (smelts <= 0) return 0;
+        boolean chestApart = caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4 && s.ironIngots() < CHESTPLATE_IRON
+                && smelts > CHESTPLATE_IRON;
+        return (smelts * 2 + 2) / 3 + (chestApart ? 1 : 0);
     }
 
     /**
@@ -662,7 +674,7 @@ public final class PortalRunPlanner {
         if (!caves(facts)) return 0;
         int sticks = (s.pickaxeTier() < 2 ? 4 : 0) + (s.swordTier() < 2 ? 1 : 0) + sticksReserved(s, frame, true);
         int stickPlanks = (Math.max(0, sticks - s.sticks()) + 3) / 4 * 2;
-        return stickPlanks + SPARE_TABLE_PLANKS + (s.shields() == 0 ? SHIELD_PLANKS : 0) + fuelPlanks(s, ironShortfall(s, frame, true));
+        return stickPlanks + SPARE_TABLE_PLANKS + (s.shields() == 0 ? SHIELD_PLANKS : 0) + fuelPlanks(s, ironShortfall(s, frame, true), true);
     }
 
     /** {@link #ironShortfall(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to go down into. */
@@ -678,7 +690,7 @@ public final class PortalRunPlanner {
         int wanted = 0;
         if (s.pickaxeTier() < 3 && ironPickaxeWanted(s, caves, frame)) wanted += 3;
         wanted += Math.max(0, bucketsWanted(frame) - s.emptyBuckets() - s.waterBuckets()) * 3;
-        if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
+        if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += CHESTPLATE_IRON;
         if (s.flintAndSteel() == 0) wanted += 1;
         if (s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS) wanted += 1; // Only with the wood for it in hand.
         return wanted;

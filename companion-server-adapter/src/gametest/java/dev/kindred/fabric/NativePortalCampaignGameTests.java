@@ -3426,6 +3426,159 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Dead again before it had its things back, it leaves what it dropped the second time too (F-25c4v). In the live pair
+     * on `458d192` Kindred died eight times in one cave, each time on its way back for what it had dropped before.
+     * Staged: the closed, lit stone room of the drops fixture above, with its respawn point eight blocks from where it
+     * first dies; that death (not to a mob); and a second, once its walk back for its drops is under way. Its kit is given
+     * as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "deadAgain", tickLimit = 2400)
+    public void deadAgainOnItsWayBackItLeavesWhatItDroppedTheSecondTime(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.server.network.ServerPlayerEntity[] dead = new net.minecraft.server.network.ServerPlayerEntity[1];
+        BlockPos[] respawn = new BlockPos[1];
+        // What its goal said as it died the second time, still shown until its next life plans; what said after that sent it
+        // back for its things; and how long it was watched.
+        String[] dying = new String[1];
+        String[] wentBack = new String[1];
+        int[] watched = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Gatherer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    respawn[0] = p.add(8, 0, 0);
+                    FixtureGround.keep(context, p.add(-12, -3, -12), p.add(12, 7, 12));
+                    for (int x = -12; x <= 12; x++) for (int z = -12; z <= 12; z++) for (int y = -3; y <= 7; y++) {
+                        boolean shell = y < 0 || y == 7 || Math.abs(x) == 12 || Math.abs(z) == 12;
+                        world.setBlockState(p.add(x, y, z), (shell ? Blocks.STONE : Blocks.AIR).getDefaultState());
+                    }
+                    for (int[] t : new int[][] {{6, 6}, {-6, 6}, {6, -6}, {-6, -6}}) world.setBlockState(p.add(t[0], 0, t[1]), Blocks.TORCH.getDefaultState());
+                    f.player().setSpawnPoint(world.getRegistryKey(), respawn[0], 0, true, false);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 20));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 12));
+                    inventory.setStack(4, new ItemStack(Items.OAK_PLANKS, 8));
+                    world.setTimeOfDay(1000);
+                    // Its campaign, as its goal makes one, so that its deaths are remembered; the goal is set once it is back.
+                    f.runtime.campaignForTest(f.id);
+                })
+                // Retried until the blow lands: a player that has just joined takes no damage for a moment.
+                .createAndAdd(() -> {
+                    dead[0] = f.player();
+                    dead[0].damage(context.getWorld().getDamageSources().generic(), 1000f);
+                    context.assertTrue(!dead[0].isAlive(), "Dead");
+                })
+                .createAndAdd(() -> {
+                    var fresh = f.player();
+                    context.assertTrue(fresh != null && fresh != dead[0] && fresh.isAlive(), "Respawned");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                // On its way back for its drops, three blocks from where it came back: it dies again there. A kill that a
+                // player who has just come back is not spared, as it is spared other harm for its first three seconds.
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    context.assertTrue(goal.contains("dropped at death") && player.getX() <= respawn[0].getX() - 2.5,
+                            "On its way back for its drops: " + goal + " at " + player.getBlockPos().toShortString());
+                    dead[0] = player;
+                    dying[0] = goal;
+                    dead[0].damage(context.getWorld().getDamageSources().genericKill(), 1000f);
+                    context.assertTrue(!dead[0].isAlive(), "Dead again");
+                })
+                .createAndAdd(() -> {
+                    var fresh = f.player();
+                    context.assertTrue(fresh != null && fresh != dead[0] && fresh.isAlive(), "Respawned again");
+                })
+                // Watched for half a minute once it is back: its goal never sets out for what it dropped either time.
+                .createAndAdd(() -> {
+                    String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (wentBack[0] == null && goal.contains("dropped at death") && !goal.equals(dying[0])) wentBack[0] = goal;
+                    context.assertTrue(++watched[0] >= 600, "Watched for half a minute");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(wentBack[0] == null, "Went back for its things again: " + wentBack[0]);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Water level with the floor it stands on is not jumped into (F-25c4w). In the live pair on `458d192` Echo, in a
+     * pocket it dug beside an underground lake, waded into the lake and swam straight back out 107 times in twelve minutes.
+     * Staged: a closed obsidian room it cannot dig with a stone pickaxe, as Echo could dig nothing beside the water; a shore
+     * one block across, walled on three sides, and in front of it a pool three deep, the water level with the floor it
+     * stands on, lit from the pool's bottom. Its kit is given as though made, a table and wood with it, so that nothing is
+     * left to do there.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "poolShore", tickLimit = 2400)
+    public void waterLevelWithItsFloorIsNotJumpedIntoWhenNothingElseIsFeasible(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        String[] jumped = new String[1];
+        int[] watched = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wader"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    FixtureGround.keep(context, p.add(-2, -4, -3), p.add(5, 3, 3));
+                    for (int x = -2; x <= 5; x++) for (int z = -3; z <= 3; z++) for (int y = -4; y <= 3; y++) {
+                        boolean shell = x == -2 || x == 5 || Math.abs(z) == 3 || y == -4 || y == 3;
+                        boolean shore = x <= 0;
+                        boolean open = shore ? x == 0 && z == 0 && y >= 0 : y >= 0;
+                        boolean pool = !shore && y <= -1;
+                        var state = shell || shore && !open ? Blocks.OBSIDIAN.getDefaultState()
+                                : pool ? Blocks.WATER.getDefaultState() : Blocks.AIR.getDefaultState();
+                        world.setBlockState(p.add(x, y, z), state);
+                    }
+                    world.setBlockState(p.add(3, -4, 0), Blocks.SEA_LANTERN.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(5, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(6, new ItemStack(Items.OAK_PLANKS, 16));
+                    inventory.setStack(7, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(8, new ItemStack(Items.TORCH, 16));
+                    world.setTimeOfDay(1000);
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                // Watched for a minute, less than its watchdog waits before it leaves for somewhere else.
+                .createAndAdd(() -> {
+                    String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (jumped[0] == null && goal.contains("Jump down from the ledge")) jumped[0] = f.player().getBlockPos().toShortString() + ": " + goal;
+                    context.assertTrue(++watched[0] >= 1200, "Watched for a minute");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(jumped[0] == null, "Jumped into the pool: " + jumped[0]);
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The night pit again, but with water under the whole floor, as over an aquifer: every staircase step would
      * end in the water, so the goal turns away from each without digging anything, and no hole is opened into it.
      */
@@ -3791,6 +3944,95 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     context.assertTrue(ItemMoves.count(inventory, Items.DIAMOND) == 0 && ItemMoves.count(inventory, Items.OBSIDIAN) == 0,
                             "No diamonds and no mined obsidian: the frame was cast where it stands");
                     context.assertTrue(player.isAlive() && player.getHealth() >= 10, "Unhurt by the lava: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * The cast fixture above under a roof at the height of the frame's top row, as where Echo cast its frame into the
+     * deepslate at Y=-55 in the live pair on `458d192` (F-25c4y). The cell over each side's top block must
+     * be dug out before that block is cast, and from the pool, where it fills its bucket, that cell is out of reach: it
+     * goes back to the frame and digs it, and the ten frame blocks are cast in one frame. Before, the frame was given up
+     * there, with seven cast, and another begun beside it. Staged as the cast fixture is, the roof's glowstone with it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "castRoofed", tickLimit = 9000)
+    public void aFrameCastUnderARoofIsNotGivenUpForACellOutOfReachFromTheLava(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Caster"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-12, -2, -7), p.add(6, 8, 6));
+                    for (int x = -12; x <= 6; x++) for (int z = -7; z <= 6; z++) {
+                        boolean edge = x >= -6 && (Math.abs(x) == 6 || z == -7 || z == 6);
+                        boolean roof = x >= -6;
+                        world.setBlockState(p.add(x, -2, z), Blocks.STONE.getDefaultState());
+                        world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 8; y++) {
+                            boolean solid = edge && y <= 3 || roof && y == 4;
+                            world.setBlockState(p.add(x, y, z), solid ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    for (int[] g : new int[][] {{-5, -6}, {5, -6}, {-5, 5}, {5, 5}}) world.setBlockState(p.add(g[0], 4, g[1]), Blocks.GLOWSTONE.getDefaultState());
+                    for (int x = -3; x <= 3; x++) for (int z = 3; z <= 4; z++) world.setBlockState(p.add(x, -1, z), Blocks.LAVA.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() - 3.5, p.getY(), p.getZ() + 2.5, 0, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.BUCKET));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    // The lit portal's blocks, anywhere it staged (a side may stand in the room's wall); the frame is the box round
+                    // them, one block out.
+                    var world = context.getWorld();
+                    int portal = 0, minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+                    int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+                    for (BlockPos pos : BlockPos.iterate(feet[0].add(-12, -2, -7), feet[0].add(6, 8, 6))) {
+                        if (!world.getBlockState(pos).isOf(Blocks.NETHER_PORTAL)) continue;
+                        portal++;
+                        minX = Math.min(minX, pos.getX()); minY = Math.min(minY, pos.getY()); minZ = Math.min(minZ, pos.getZ());
+                        maxX = Math.max(maxX, pos.getX()); maxY = Math.max(maxY, pos.getY()); maxZ = Math.max(maxZ, pos.getZ());
+                    }
+                    // Its ten blocks, and none cast anywhere else in the room above the pool.
+                    int frame = 0, stray = 0;
+                    var cast = new java.util.ArrayList<String>();
+                    for (BlockPos pos : BlockPos.iterate(feet[0].add(-12, -3, -7), feet[0].add(6, 8, 6))) {
+                        if (!world.getBlockState(pos).isOf(Blocks.OBSIDIAN)) continue;
+                        boolean inFrame = portal > 0 && pos.getX() >= minX - 1 && pos.getX() <= maxX + 1 && pos.getY() >= minY - 1
+                                && pos.getY() <= maxY + 1 && pos.getZ() >= minZ - 1 && pos.getZ() <= maxZ + 1;
+                        cast.add(pos.subtract(feet[0]).toShortString());
+                        if (inFrame) frame++;
+                        else if (pos.getY() >= feet[0].getY()) stray++;
+                    }
+                    var player = f.player();
+                    context.assertTrue(portal == 6, "A cast frame stands lit: " + portal + " portal blocks, " + frame + " obsidian; at "
+                            + (player == null ? "no body" : player.getBlockPos().toShortString()) + " from " + feet[0] + "; "
+                            + f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel"));
+                    context.assertTrue(frame == 10 && stray == 0, "Its ten frame blocks all in that frame, none in another begun beside it: "
+                            + frame + " in it, " + stray + " elsewhere; obsidian at " + cast);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive() && player.getHealth() >= 10, "Unhurt by the lava");
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();

@@ -630,7 +630,13 @@ final class PortalRunCampaign {
         // in sight. In the live runs on fb02bc3 and 10a60d5 all fourteen deaths were to mobs, and each left its whole
         // kit on the ground.
         boolean burned = world.getFluidState(pos).isIn(FluidTags.LAVA) || world.getBlockState(pos).isOf(Blocks.FIRE);
-        dropSite = burned ? null : pos.toImmutable();
+        // Dead again before it had its things back from the last death, on the way back or by them: going back once more
+        // ends the same way, so it leaves what it dropped this time too, as a player stops going back unarmed into the cave
+        // that keeps killing it (F-25c4v: in the live pair on 458d192 Kindred died eight times in one cave, each time on its
+        // way back for what it had dropped before).
+        boolean again = dropSite != null && tick <= dropSiteUntil;
+        if (again && !burned) event("leaves what it dropped at " + pos.toShortString().replace(",", "") + ": it died again before it had its things back");
+        dropSite = burned || again ? null : pos.toImmutable();
         dropSiteUntil = tick + 5_000;
         dropsGuarded = killedByMob;
         unreachedDrops.clear();
@@ -1281,7 +1287,10 @@ final class PortalRunCampaign {
             for (int k = 1; k <= Math.max(24, deepest); k++) {
                 BlockPos landing = edge.down(k);
                 if (navigator.swimmable(landing)) {
-                    if (k <= 12 && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
+                    // Water level with the floor it stands on is no drop: it would only wade in off the shore, and the swim
+                    // out of the water takes it straight back to where it stood (F-25c4w: Echo, in a pocket it dug beside an
+                    // underground lake in the live pair on 458d192, did that 107 times in twelve minutes).
+                    if (k >= 2 && k <= 12 && k < bestDrop && !blocked(landing)) { bestDrop = k; best = landing; }
                     break;
                 }
                 if (!navigator.passable(landing)) break; // Lava and fire are not passable either.
@@ -3151,6 +3160,17 @@ final class PortalRunCampaign {
                 if (world.getBlockState(open).isAir()) continue;
                 if (!world.getFluidState(open).isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
                 if (breakableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));
+                // Out of reach from where it stands, back from the lava say: nearer the frame first, and only a block it
+                // cannot dig from there gives the site up. In the live pair on 458d192 Echo, back from the lava with the
+                // bucket for its seventh frame block, gave up the frame with six cast, the deepslate over the next out of
+                // reach, and began another beside it (F-25c4y).
+                if (eyeDistance(player, open) > REACH) {
+                    Optional<Task> closer = stepCloser(body, site, at[0], open);
+                    if (closer.isEmpty() && !player.getBlockPos().equals(site.stand())) {
+                        closer = Optional.of(go(site.stand(), 0.3, false, "Cast: stand in front of the frame site"));
+                    }
+                    if (closer.isPresent()) return closer;
+                }
                 portalSite = null;
                 return Optional.empty();
             }

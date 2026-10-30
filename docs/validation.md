@@ -1,5 +1,34 @@
 # AI-player development validation
 
+## The live pair on 458d192, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `458d192` (F-25c4o to u): seeds 8675309 then 20261030, the starters on the Nether goal, 240,000 ticks each, strategist off, nothing else on the cores. On the second seed Echo's spawn was refused room on the spawn point, beside the other two; it was spawned a few blocks off at tick 57,000.
+  - No portal lit. Furthest yet: on the second seed Echo filled its water at Y=16, dug down to lava at Y=-55, and cast ten obsidian there, but in two frames: six in the first, given up when a cell to dig before the next cast was out of reach from the lava (F-25c4y), and four in another beside it. A zombie killed it there, hungry, at 19:57.
+  - First seed, 21 deaths against 10 on `03faab9`, all with no armour on. 11 came while a walk back for the last drops was still under way: Kindred died eight times in one cave around 14, 42, 57 in 7,600 ticks, each time on its way back (F-25c4v). Second seed, 3 deaths, two with a chestplate on.
+  - Echo, at 12 of its 18 iron in a pocket it had dug beside an underground lake at Y=40, waded into the lake and swam straight back out 107 times in twelve minutes (F-25c4w). It had dug out the floor of its own staircase's lowest step, and its watchdog's moves elsewhere all ended at once.
+  - Of 52 deaths in the live runs since `fb02bc3`, 44 came with no armour on (F-25c4x).
+  - No reconciliation stop on either seed. No fall was broken with water; F-25c4t's climb out of water was not needed. 40 fights recorded, none fought mostly with an empty hand (F-25c4r). On the second seed each player made its shield from its first iron, then the iron pickaxe, both buckets and the chestplate together from the rest, and no iron pickaxe was made again (F-25c4q).
+  - Of the 95 walks elsewhere the watchdog started in the run on `03faab9` and this pair, 2 were completed: each is judged on the next planning pass, before it has gone a block, and the moves went on by digging.
+- F-25c4v (dead again before it had its things back, those drops left too), on top of `458d192`:
+  - its fixture fails on the old campaign: "Went back for its things again: Wood: pick up what was dropped at death - Recover dropped items near …", 3 of 3;
+  - found making it: a player that has just come back is spared other harm for three seconds, so the second death is a kill that is not spared;
+  - after, three runs alone: 3 of 3.
+- F-25c4w (water level with its floor not jumped into), on top of `458d192`:
+  - its fixture fails on the old campaign: "Jumped into the pool: … Iron: no way on from here - Jump down from the ledge", 3 of 3. Staged first with a wider shore and no table, the player paced to its walls for logs and never reached the jump, on the old code too;
+  - after, three runs alone: 3 of 3.
+- F-25c4x (the chestplate from the first eight iron), on top of `458d192`:
+  - its planner case fails on the old planner: the 18 iron mined, then the pickaxe and both buckets, no chestplate before them;
+  - found making it: smelted in two lots, the iron wants a plank more than the trip's packed wood held, and the trip-wood case hunted coal. The chestplate's own smelt now counts in the packed fuel;
+  - `PortalRunPlannerTest`: 39 of 39; `build` successful, with `:companion-core:test` 618 of 618.
+- F-25c4y (a frame being cast not given up for a cell out of reach from the lava), on top of `458d192`:
+  - its fixture, the whole-frame cast under a roof at the frame's top row, fails on the old campaign: no portal lit, the frame given up after seven and another begun beside it, 3 of 3;
+  - under a roof two blocks thick, the new code kept one frame and cast eight, and could not cast the top row: the water over it is out of reach. The roof was made one block thick;
+  - after, three runs alone: 3 of 3; the other cast fixtures (the whole frame, one block, the refused pour, beside leaves, and F-25c4n's night lava) alone: 5 of 5.
+- The full native suite on this code, before F-25c4y: 416 of 418 in 44 minutes. The two failures were the cattle: the ranch's pen ("Two wheat fed: 8 left") and the pasture's doorway pair, both known.
+- Evidence: [F-25c4v](evidence/F-25c4v.md), [F-25c4w](evidence/F-25c4w.md), [F-25c4x](evidence/F-25c4x.md), [F-25c4y](evidence/F-25c4y.md); F-25c4q and F-25c4r complete on this pair.
+
 ## The live run on 03faab9, and three fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
