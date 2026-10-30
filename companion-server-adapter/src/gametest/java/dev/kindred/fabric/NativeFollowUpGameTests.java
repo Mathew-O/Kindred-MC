@@ -143,11 +143,26 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "followUps", tickLimit = 2400)
     public void whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold(TestContext context) {
+        provision(context, true);
+    }
+
+    /**
+     * The control (B9): the same stronghold, kit and iron and planks, and no strategist. The End fight's own needs
+     * hold no shield, so it goes down with none and its iron unspent: the shield above is the strategist's follow-up,
+     * not the leg's own plan.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "followUpsControl", tickLimit = 2400)
+    public void withNoShieldQueuedItGoesDownWithoutOneAndKeepsItsIron(TestContext context) {
+        provision(context, false);
+    }
+
+    /** The stronghold provisioning fixture, with the strategist's queued shield or ({@code queued} false) without. */
+    private static void provision(TestContext context, boolean queued) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         boolean[] provisioned = {false};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Provisioner"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, queued ? "Provisioner" : "Unqueued"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
@@ -185,9 +200,11 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                     inventory.setStack(11, new ItemStack(Items.OAK_PLANKS, 6));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
                     // A follow-up from the strategist, as its reply would carry it.
-                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", List.of(), "", "Skeletons in strongholds", List.of(),
-                            "NONE", "NONE", "NONE", dev.kindred.core.guide.Want.parse("SHIELD", 1, "END_FIGHT", "skeletons").stream().toList()).orElseThrow();
-                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                    if (queued) {
+                        var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", List.of(), "", "Skeletons in strongholds", List.of(),
+                                "NONE", "NONE", "NONE", dev.kindred.core.guide.Want.parse("SHIELD", 1, "END_FIGHT", "skeletons").stream().toList()).orElseThrow();
+                        context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                    }
                 })
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(1000);
@@ -198,12 +215,19 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var player = f.player();
                     String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
-                    KindredMod.LOGGER.info("Provisioner: provisioned first {}, blocks {}, shield {}, iron {}, planks {}, then {}", provisioned[0],
-                            count(player, Items.COBBLESTONE), count(player, Items.SHIELD), count(player, Items.IRON_INGOT), count(player, Items.OAK_PLANKS), progress);
+                    KindredMod.LOGGER.info("{}: provisioned first {}, blocks {}, shield {}, iron {}, planks {}, then {}", queued ? "Provisioner" : "Unqueued",
+                            provisioned[0], count(player, Items.COBBLESTONE), count(player, Items.SHIELD), count(player, Items.IRON_INGOT),
+                            count(player, Items.OAK_PLANKS), progress);
                     context.assertTrue(provisioned[0], "It gathered before going down");
                     context.assertTrue(count(player, Items.COBBLESTONE) >= 64, "Blocks for the caged crystals: " + count(player, Items.COBBLESTONE));
-                    context.assertTrue(count(player, Items.SHIELD) == 1 && count(player, Items.IRON_INGOT) == 0 && count(player, Items.OAK_PLANKS) == 0,
-                            "The queued shield made from its own iron and planks");
+                    if (queued) {
+                        context.assertTrue(count(player, Items.SHIELD) == 1 && count(player, Items.IRON_INGOT) == 0 && count(player, Items.OAK_PLANKS) == 0,
+                                "The queued shield made from its own iron and planks");
+                    } else {
+                        context.assertTrue(count(player, Items.SHIELD) == 0 && count(player, Items.IRON_INGOT) == 1,
+                                "No shield without the follow-up, its iron kept: " + count(player, Items.SHIELD) + " shield, "
+                                        + count(player, Items.IRON_INGOT) + " iron");
+                    }
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
                     f.runtime.stop();

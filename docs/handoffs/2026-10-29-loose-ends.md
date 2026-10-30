@@ -77,9 +77,13 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
    - sticks and flint for the frame's flint and steel;
    - a shield for Echo, twice ("three deaths to mobs underground, and no shield yet");
    - wool for a bed.
-   Whether each was then fetched was not measured one by one. Echo crafted its first shield a minute and a half after
-   the first request, and four more after that, each lost at its next death; the log does not say whether the
-   follow-up or its own plan made it craft them.
+   **Closed with a control (`NEXT`):**
+   - The stronghold fixture already queues a shield as a strategist reply would, and checks it is crafted before going
+     down. Its new control is the same with nothing queued: it goes down with no shield, its iron and planks unspent,
+     3 of 3. So the shield is the follow-up's, not the leg's own plan's (the End fight's own needs hold none).
+   - On the Nether goal a queued shield adds nothing, by design: the route plans its own iron and wood, so the
+     follow-up skips a shield there. The plan itself makes one whenever it has six planks and an ingot. Echo's five
+     shields in B7 were the plan's ("Craft shield"), not the follow-up's ("on the way, for what comes later").
 10. **Habits only come from the model.** A player without a key never learns "carry more food" or "shelter early".
     A local rule for the plain lessons (two deaths hungry; two night deaths on the surface) would give every player
     the same memory.
