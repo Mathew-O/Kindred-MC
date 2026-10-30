@@ -1,6 +1,6 @@
 # AI-player development validation
 
-## The long run on a286cc8, and a pickaxe worn out in a fight — 30 October 2026 (`claude/loose-ends-1029`)
+## The long run on a286cc8: a pickaxe worn out in a fight, a fall not broken — 30 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
 
@@ -8,7 +8,7 @@ Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametes
   - No portal lit. Furthest: Echo, on "Cast the portal frame from lava and water", digging down toward lava it had not found.
   - Four deaths, none gone back for to any end:
     - Sol, to a spider at night, at Y=37;
-    - Echo, a fall during a fight with a creeper at night, at Y=-18;
+    - Echo, a fall at night to Y=-18, the water it carried to break it never poured (F-25c4p);
     - Kindred, to a zombie by day and a skeleton at night, both at Y=36 to 37.
     - Echo's and Kindred's walks back were refused ("Route … is blocked"), the deaths being deep below spawn.
   - Sol was out of the world for the run's last seventeen minutes:
@@ -23,7 +23,12 @@ Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametes
   - after, three runs alone: 3 of 3;
   - `NativePortalCampaignGameTests`, `NativeCombatGameTests` and `NativeEndGameTests` alone on the same code: 77 of 77;
   - `build`: successful, with `:companion-core:test` 616 of 616 (the adapter has no unit tests of its own).
-- Evidence: [F-25c4m](evidence/F-25c4m.md), [F-25c4o](evidence/F-25c4o.md).
+- F-25c4p (a fall broken with water before the goal's own fight), on top of `7a510b2`:
+  - found in the same run: Echo, one iron short of its flint and steel and digging down for the cast's lava, jumped twenty-four blocks to break the fall with water. Its goal's fights with a zombie and a creeper outranked the water, each cut short for the fall and chosen again, and the fall killed it;
+  - its fixture fails on `7a510b2`: "Unhurt by a twenty-two block fall: 1.0";
+  - after, three runs alone: 3 of 3, each landing at 20 of 20;
+  - `NativeFallGameTests`, `NativePortalCampaignGameTests`, `NativeCompoundGameTests`, `NativeFollowUpGameTests` and `NativeTeamPortalGameTests` alone on the same code: 79 of 79.
+- Evidence: [F-25c4m](evidence/F-25c4m.md), [F-25c4o](evidence/F-25c4o.md), [F-25c4p](evidence/F-25c4p.md).
 
 ## What the live runs on 10a60d5 found, met — 30 October 2026 (`claude/loose-ends-1029`)
 

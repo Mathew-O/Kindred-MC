@@ -5591,7 +5591,14 @@ final class PlayerRuntime {
 
         // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
-        if (routineCandidates.isEmpty()) {
+        // A fall to break with water comes before anything else (E-07d), a goal's own urgent steps among them: those are
+        // ranked with how much its player likes the work, and a keen miner's fight back outranked the water. In the long
+        // run on a286cc8 Echo, falling twenty-four blocks to break the fall, fought a zombie and then a creeper on the
+        // way down, each fight cut short for the fall and chosen again, and the fall killed it (F-25c4p).
+        var clutch = essentialCandidates.stream().filter(candidate -> "native_clutch".equals(candidate.skill())).findFirst();
+        if (clutch.isPresent()) {
+            taskCandidates = List.of(clutch.get());
+        } else if (routineCandidates.isEmpty()) {
             taskCandidates = essentialCandidates;
         } else if (essentialCandidates.isEmpty()) {
             taskCandidates = routineCandidates;

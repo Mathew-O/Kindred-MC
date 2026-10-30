@@ -87,6 +87,88 @@ public final class NativeFallGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /** Feet heights above the test's origin of the zombies down the shaft's side: six apart, two blocks off the way down. */
+    private static final int[] LEDGES = {22, 16, 10, 4};
+
+    /**
+     * A fall to break with water comes before the goal's fight with the mobs about it (F-25c4p). In the long run on
+     * `a286cc8`, Echo jumped twenty-four blocks down to break the fall with water, a zombie by it and a creeper below.
+     * A goal's steps are ranked with its player's liking for the work, and Echo likes mining best of the three: its
+     * goal's fight with each outranked the water. Each fight was cut short for the fall and chosen again, and the fall
+     * killed it. Staged: the shaft; four zombies on ledges down its side, each within four blocks of the way down so
+     * that none is left alone after a fight that failed, after the player but without AI and unhurt by blows; the
+     * player's liking for mining set to Echo's; its goal running. The sword, the bread and the water are given.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "fallFight", tickLimit = 900)
+    public void aFallIsBrokenWithWaterBeforeTheGoalsFightWithTheMobsAboutIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var zombies = new java.util.ArrayList<net.minecraft.entity.mob.ZombieEntity>();
+        // The least health from the drop on: health comes back as it eats, and the last check is tried each tick.
+        float[] lowest = {20};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Leaper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player().age > JOINED, "Past the join's sixty ticks of grace: " + f.player().age))
+                .createAndAdd(() -> context.assertTrue(f.runtime.socialSetting(f.source, f.id, null, false,
+                        dev.kindred.core.Personality.Trait.MINING, 95) == 1, "Its liking for mining set to Echo's"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.personalityForFixtures(f.id).mining() == 95, "Mining at 95"))
+                .createAndAdd(() -> {
+                    shaft(context);
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int y : LEDGES) context.getWorld().setBlockState(o.add(1, y - 1, 3), Blocks.STONE.getDefaultState());
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 4));
+                    inventory.setStack(3, new ItemStack(Items.WATER_BUCKET));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(16);
+                    player.getHungerManager().setSaturationLevel(0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1,
+                        "Goal accepted"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    var player = f.player();
+                    for (int y : LEDGES) {
+                        var zombie = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                        if (zombie == null) continue;
+                        zombie.refreshPositionAndAngles(o.getX() + 1.5, o.getY() + y, o.getZ() + 3.5, -90, 0);
+                        zombie.setAiDisabled(true);
+                        zombie.setInvulnerable(true);
+                        zombie.setPersistent();
+                        world.spawnEntity(zombie);
+                        zombie.setTarget(player);
+                        zombies.add(zombie);
+                    }
+                    player.refreshPositionAndAngles(o.getX() + 3.5, o.getY() + 24, o.getZ() + 3.5, 0, 0);
+                    player.fallDistance = 0;
+                })
+                .createAndAdd(() -> context.assertTrue(zombies.size() == LEDGES.length, "Zombies down the shaft"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    if (player != null) lowest[0] = Math.min(lowest[0], player.getHealth());
+                    context.assertTrue(player != null && player.isOnGround() && player.getY() < context.getAbsolutePos(BlockPos.ORIGIN).getY() + 2.5,
+                            "Down the shaft");
+                    KindredMod.LOGGER.info("Leaper: down at {} with health {}; {}", player.getBlockPos().toShortString(), player.getHealth(),
+                            f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    lowest[0] = Math.min(lowest[0], player.getHealth());
+                    context.assertTrue(player.isAlive() && lowest[0] >= 19.5, "Unhurt by a twenty-two block fall: " + lowest[0]);
+                    zombies.forEach(net.minecraft.entity.Entity::discard);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "fallBare", tickLimit = 600)
     public void withoutABucketAFallHurtsAsVanillaSays(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
