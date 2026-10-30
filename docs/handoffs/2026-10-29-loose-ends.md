@@ -405,22 +405,27 @@ The owner: work through what is left, leaving the decisions only the owner can m
 | Lava for the cast | Lava seen beyond one walk's reach is walked to a leg at a time. After both buckets are made, a worn-out iron pickaxe is not made again (F-25c4j, open: no player knew of far lava in the runs). Fixture and planner case fail before and pass after | `ace1d80` |
 | Water at night | Below ground at night, water at the surface waits for daylight (F-25c4k, complete). The two players that went up and down 147 and 107 times between the climb and the dig-in now wait below | `ace1d80` |
 | Drops after a mob kill | Gone back for once no hostile mob has them in sight (F-25c4l, complete). Two mob kills were gone back for in play, where none ever was, though neither kit came back | `ace1d80` |
-| The night waited out with both buckets empty (Sol, 17%) | The cast's lava, known below within a walk, fetched meanwhile (F-25c4n, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `ace1d80` |
+| The night waited out with both buckets empty (Sol, 17%) | The cast's lava, known below within a walk, fetched meanwhile (F-25c4n, open: the live runs). Fixture fails before, 3 of 3 after | `a286cc8` |
 | The pasture's cattle | The line-up wait begun afresh each time it backs out, and a pair abreast waited for one behind the other: 8 of 10 alone. Neither failure was the pair abreast: one cow never came through, as before. Not committed; open | none |
 | Live runs on `ace1d80`, both seeds, strategist off | 3 deaths against 6 on `10a60d5`; no stall; the first lava bucket for a cast (Echo, at Y=-55; the run ended as it cleared the frame's site). No portal lit | |
+| A long run on `a286cc8`, seed 8675309, 240,000 ticks, strategist off | No portal lit; Echo got as far as looking for the cast's lava. Four deaths, deep below spawn or at night; two walks back refused, none gone back for to any end. Kindred never left the iron: four iron pickaxes made, 62% of its time mining iron. Sol's stall line twice, with no step left at Y=47 (F-25c4m) | |
+| Sol out of the world for that run's last seventeen minutes | Its stone pickaxe, fought with for want of a sword, broke on the blow that killed a zombie. The fight's record took it for an outcome to reconcile, and the body was taken out. A weapon, tool, armour piece or shield worn out in a fight is now lost as wear (F-25c4o, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `a286cc8` |
 
 ### Validation
 
 - `ace1d80`: `:companion-core:test` 616 of 616. The full native suite 404 of 409, with `NativePortalCampaignGameTests` 61 of 61. The five failures were the cattle, the keep's roof stairs, the ranch's pen (2 of 3 alone after), the librarian off the line, and the second-night fixture, out of time with other fixtures' players awake.
 - The F-25c4n fixture fails on `ace1d80` and passes 3 of 3 after; the F-25c4j, k and l fixtures pass on the same code.
 - The live table: validation's section for this block.
+- On top of `a286cc8`: the F-25c4o fixture fails before and passes 3 of 3 after; `NativePortalCampaignGameTests`, `NativeCombatGameTests` and `NativeEndGameTests` alone 77 of 77; `build` successful, with `:companion-core:test` 616 of 616.
 
 ### Next dependency
 
-- The lit portal, from the runs on `ace1d80`:
-  - lava at depth. The deep search tunnels at Y=-55 (its target, -58, plus three), and a tunnel finds lava only by breaking into an open cave, while the lava aquifers lie below -55. Kindred spent 55% of its time so. Next: tunnel lower for lava than for diamonds, or explore the deep caves first;
-  - F-25c4n in play, and a longer run on seed 8675309, where Echo held lava at the end;
-  - the stall's cause, once F-25c4m's lines catch it;
+- The lit portal, from the runs on `ace1d80` and `a286cc8`:
+  - iron pickaxes that wear out before the buckets are made again. Kindred made four in the long run and never left the iron. A stone pickaxe mines iron ore; on the cast route nothing before the frame needs an iron one;
+  - lava at depth. The deep search tunnels at Y=-55, and its digging never opens a cell beside lava, so a tunnel finds lava only by breaking into a cave whose floor is a lava lake. The lakes' surface lies at -55, so that is the right height, but it is slow: Kindred spent 55% of its time so. Next: the deep caves explored first, and lava seen anywhere on the way down kept for the cast;
+  - deaths deep below spawn: the walk back from the surface is refused ("Route … is blocked"), as Echo's from Y=-18 and Kindred's were. Next: the way down kept, to walk back by;
+  - F-25c4n and F-25c4o in play, on both seeds;
+  - the stall's cause, once F-25c4m's lines catch it. The long run's lines named another stall, with no step left;
   - deaths at night are not gone back for: the night's dig-in comes first, and drops last five minutes, less than a night.
 - Not yet checked alone: the keep and the second-night fixture, each failing once in the suite on `ace1d80`; the ranch's pen on the code before.
 - The cattle: a single cow that never comes through the doorway, the player going out and back for it.

@@ -269,16 +269,19 @@ final class NativeDragonAction extends NativeRecordedAction {
         return body.move(issuedLease, 0, 0, false, false, away);
     }
 
-    /** Lost nothing but weapon wear (a worn-out weapon may break); anything gained was picked up. */
+    /** Lost nothing but wear (one worn-out weapon, tool, armor piece or shield may break); anything gained was picked up. */
     private boolean conserved(InventoryEvidence after) {
         Map<Item, Integer> lost = new HashMap<>();
         for (ItemStack stack : before.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), stack.getCount(), Integer::sum);
         for (ItemStack stack : after.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
         for (var entry : lost.entrySet()) {
             if (entry.getValue() <= 0) continue;
-            boolean brokenWeapon = entry.getValue() == 1 && slot >= 0 && slot < before.stacks().length
-                    && before.stacks()[slot].isOf(entry.getKey()) && before.stacks()[slot].isDamageable();
-            if (!brokenWeapon) return false;
+            // One worn-out item broke: whatever it struck with, held from the hotbar (a pickaxe, with no sword), or the
+            // armour or shield it was struck through. Counted as lost, not as an outcome to reconcile: in the live run
+            // on a286cc8, Sol's stone pickaxe broke on its last blow, and its body was taken out for the rest of the run.
+            boolean brokenWorn = entry.getValue() == 1 && java.util.stream.IntStream.range(0, before.stacks().length)
+                    .anyMatch(i -> (i == slot || i < 9 || i >= 36) && before.stacks()[i].isOf(entry.getKey()) && before.stacks()[i].isDamageable());
+            if (!brokenWorn) return false;
         }
         return true;
     }

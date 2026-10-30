@@ -3009,6 +3009,68 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A tool worn out in a fight is lost as wear, not an outcome to reconcile (F-25c4o). In the live run on `a286cc8`,
+     * Sol had no sword, fought a zombie it could not back away from with the stone pickaxe in its hand, and the pickaxe
+     * broke on its last blow: the fight's record counted that as items changed beyond wear, and Sol's body was taken out
+     * of the world to be reconciled for the seventeen minutes left of the run. Staged: a closed, lit stone room it cannot
+     * back out of, a stone pickaxe one use from breaking and no sword, as though made and worn, and a wounded zombie on it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wornTool", tickLimit = 1400)
+    public void aToolThatWearsOutInAFightIsLostAsWearAndTheGoalGoesOn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        int[] waited = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Worn"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    FixtureGround.keep(context, p.add(-3, -2, -3), p.add(3, 3, 3));
+                    for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) for (int y = -2; y <= 3; y++) {
+                        boolean room = Math.abs(x) <= 1 && Math.abs(z) <= 1 && y >= 0 && y <= 1;
+                        world.setBlockState(p.add(x, y, z), (room ? Blocks.AIR : Blocks.STONE).getDefaultState());
+                    }
+                    world.setBlockState(p.add(-1, 0, -1), Blocks.TORCH.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    var pickaxe = new ItemStack(Items.STONE_PICKAXE);
+                    pickaxe.setDamage(pickaxe.getMaxDamage() - 1);
+                    inventory.setStack(0, pickaxe);
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    inventory.selectedSlot = 0;
+                    world.setTimeOfDay(1000);
+                    zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    if (zombie[0] == null) return;
+                    zombie[0].refreshPositionAndAngles(p.getX() + 1.5, p.getY(), p.getZ() + 0.5, 90, 0);
+                    zombie[0].setPersistent();
+                    zombie[0].setHealth(2);
+                    world.spawnEntity(zombie[0]);
+                    zombie[0].setTarget(f.player());
+                })
+                .createAndAdd(() -> context.assertTrue(zombie[0] != null, "A zombie"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> context.assertFalse(zombie[0].isAlive(), "The zombie killed"))
+                // The fight's record settles off the game thread, and only then is a player stopped whose record is uncertain.
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 100, "Its record settled"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body still in the world, not taken out to be reconciled");
+                    context.assertTrue(ItemMoves.count(player.getInventory(), Items.STONE_PICKAXE) == 0, "The pickaxe broke on it");
+                    var status = f.runtime.nativeStatuses(Actor.console()).getFirst();
+                    context.assertTrue(status.connected() && !status.stopped(), "Not stopped for reconciliation: " + status);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * At night below ground, the water at the surface waiting for daylight, the cast's lava is fetched meanwhile with
      * one of its two empty buckets (F-25c4n). On `ace1d80` Sol waited out a night for its water with both buckets empty,
      * then dug down for the lava by day. Staged: a chamber eight blocks down in a block of stone with a lava source set

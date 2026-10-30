@@ -1,5 +1,30 @@
 # AI-player development validation
 
+## The long run on a286cc8, and a pickaxe worn out in a fight — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `a286cc8` (F-25c4j to n): seed 8675309, the starters on the Nether goal, 240,000 ticks, strategist off, nothing else on the cores.
+  - No portal lit. Furthest: Echo, on "Cast the portal frame from lava and water", digging down toward lava it had not found.
+  - Four deaths, none gone back for to any end:
+    - Sol, to a spider at night, at Y=37;
+    - Echo, a fall during a fight with a creeper at night, at Y=-18;
+    - Kindred, to a zombie by day and a skeleton at night, both at Y=36 to 37.
+    - Echo's and Kindred's walks back were refused ("Route … is blocked"), the deaths being deep below spawn.
+  - Sol was out of the world for the run's last seventeen minutes:
+    - it had no sword and no way back from a zombie, so it fought it with its stone pickaxe;
+    - the pickaxe broke on the blow that killed the zombie;
+    - the fight's record took the broken pickaxe for an outcome to reconcile ("Native action outcome requires reconciliation"), and the body was taken out. F-25c4o.
+  - Sol's stall line twice (F-25c4m): at Y=47 its tunnel past liquid toward iron had no step left (candidates=0), and the walk elsewhere was refused. It ended forty seconds later in a fight, where it died. No skill was dropped before it ran.
+  - Iron mined, of each player's time: Kindred 62%, Sol 51%, Echo 36%; iron pickaxes made: 4, 1 and 3. Kindred never left the iron.
+  - Echo waited for daylight below ground at night 34 times for its water (F-25c4k), 17% of its time.
+- F-25c4o (a tool worn out in a fight), on top of `a286cc8`:
+  - its fixture fails on `a286cc8`'s fight code: "Native action outcome requires reconciliation", the body taken out;
+  - after, three runs alone: 3 of 3;
+  - `NativePortalCampaignGameTests`, `NativeCombatGameTests` and `NativeEndGameTests` alone on the same code: 77 of 77;
+  - `build`: successful, with `:companion-core:test` 616 of 616 (the adapter has no unit tests of its own).
+- Evidence: [F-25c4m](evidence/F-25c4m.md), [F-25c4o](evidence/F-25c4o.md).
+
 ## What the live runs on 10a60d5 found, met — 30 October 2026 (`claude/loose-ends-1029`)
 
 Five slices of F-25c4: four from the live runs on `10a60d5`, in `ace1d80` on top of `100bf95`, and one from the runs on `ace1d80`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
@@ -35,7 +60,7 @@ Five slices of F-25c4: four from the live runs on `10a60d5`, in `ace1d80` on top
   - No portal lit. On the first seed the run ended as Echo cleared its frame's site at Y=-55 with its lava.
   - F-25c4k and l met their in-play rows: complete. F-25c4j's far lava was not met, as no player knew of lava beyond one walk. F-25c4m's stall did not recur.
   - Neither kit gone back for came back: one walk back was blocked, and one gave way to the night's dig-in at dusk.
-  - What took the time now: waiting out a night with both buckets empty (Sol, 17%), which F-25c4n takes up; and lava looked for at Y=-55, where a tunnel finds it only by breaking into an open cave.
+  - What took the time now: waiting out a night with both buckets empty (Sol, 17%), which F-25c4n takes up; and lava looked for at Y=-55, where a tunnel finds it only by breaking into a cave over a lava lake.
 - F-25c4n (the cast's lava at night), on top of `ace1d80`:
   - its fixture fails on `ace1d80`'s campaign: "Fill a bucket with water - Wait for daylight", no lava fetched;
   - after, three runs alone: 3 of 3;
