@@ -31,6 +31,23 @@ Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametes
     - the strolling librarian: 6 of 7;
     - the librarian off the line: 1 of 3, and 1 of 3 on the code before as well ("Bringing the librarian home", out of time). Open.
   - Evidence: [F-25c4i](evidence/F-25c4i.md); the in-play rows: [F-25c4b](evidence/F-25c4b.md) to [F-25c4h](evidence/F-25c4h.md).
+- Live, on `10a60d5` (F-25c4i), the same two seeds and settings, nothing else on the cores:
+
+  | | 8675309, `fb02bc3` | 8675309, `10a60d5` | 20261030, `fb02bc3` | 20261030, `10a60d5` |
+  | --- | --- | --- | --- | --- |
+  | Deaths | 8 | 4 | 0 | 2 |
+  | Gathering logs for sticks, the worst player | 35% | 0% | 43% | 0% |
+  | Waiting for daylight, the worst player | 24% | 5% | 29% | 7% |
+  | Coal hunts, the worst player | 18% | 0% | 0% | 11% |
+  | Furthest | casting the frame | casting the frame | casting the frame | casting the frame |
+
+  - Every player packed the trip's wood; none was stranded with no pickaxe. Iron loads burnt coal and planks, never sticks.
+  - No portal lit. What took the time now:
+    - Kindred's furnace output on the first seed, at Y=9: a "Take smelted iron" was asked for and never carried out, with no action and no log line until the watchdog moved it on, and then asked for again; seven times, 28% of its time. Not yet explained;
+    - lava for the cast looked for down to Y=−55 on the second seed (25% of Kindred's time);
+    - climbs for water (up to 18%), at night undone by the night's dig-in;
+    - the one late coal hunt (11%), for iron wanted after the trip's, at Y=−55.
+  - F-25c4d, f and i met their in-play rows: all of F-25c4a to i are complete.
 - The pasture's cattle (loose-ends page), with each cow's position, path and goals logged every second, five runs alone: 4 of 5. In the failure the pair stood side by side in the doorway's mouth, one block wide, each overhanging the wall beside it, for thousands of ticks. A doorway two wide, eight runs: 6 of 8. The pair came in together and jammed the same way at the pen's gate, one wide (the other failure: no calf). The doorway was put back; still open.
 
 ## The earned portal run, cleaned — 30 October 2026 (`claude/loose-ends-1029`)

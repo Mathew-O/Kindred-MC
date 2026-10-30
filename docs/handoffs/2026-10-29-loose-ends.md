@@ -372,6 +372,7 @@ The owner's next block: back to the core playthrough, clean and complete.
 | Live runs on `fb02bc3`, both seeds, strategist off | b, c, e, g and h met their in-play rows and are complete; a was complete on its fixtures. d was not met. f is shown natively only, and the iron's load now names its fuel, so the next runs can show it | `10a60d5` |
 | F-25c4i, the trip's wood | Found in those runs: three of five players stranded below with no pickaxe and no sticks. The fixture fails before and passes after, 3 of 3; the planner case fails with either half switched off | `10a60d5` |
 | The pasture's cattle (E21) | Cause found: a pair side by side jams any opening one wide. A doorway two wide only moved the jam to the pen's gate, so it was put back. Open | `10a60d5` |
+| Live runs on `10a60d5`, both seeds, strategist off | d, f and i met their in-play rows: all of F-25c4a to i are complete. No player stranded, no stick burnt, the first seed's coal hunts gone; 6 deaths in the two runs against 8 on `fb02bc3`. No portal lit | run on `10a60d5`; recorded in the commit after `5685f08` |
 
 ### Validation
 
@@ -381,11 +382,13 @@ The owner's next block: back to the core playthrough, clean and complete.
 
 ### Next dependency
 
-- Live runs on `10a60d5` on both seeds, for F-25c4d, f and i's in-play rows.
-- Then, from these runs' logs, what costs most now:
-  - deaths holing up or backing off in the caves under spawn (6 of 8 on the first seed);
-  - drops never picked up after a mob kills the player (`died()` skips them: every death there started over from logs);
-  - water fetched from the surface by a fresh staircase, which wore out Sol's last pickaxe;
-  - falls into caves while digging stone near spawn (Echo, in B7's runs and these; not reproduced in a fixture).
+- The lit portal: from the runs on `10a60d5`, what stops it now (validation's section for this block):
+  - Kindred's furnace collect that was asked for and never carried out, seven times until the watchdog (28% of its
+    time on the first seed): no action and no log line, so it begins with logging the smelt action's admission;
+  - lava for the cast looked for down to Y=−55 (25% of Kindred's time on the second seed);
+  - a climb for water at night, undone by the night's dig-in (Sol, 18%);
+  - deaths holing up or backing off in the caves under spawn, and drops never picked up after a mob kill (`died()`
+    skips them, so each such death starts over from logs);
+  - falls into caves while digging stone near spawn (Echo; not reproduced in a fixture).
 - The cattle: lead a pair so that one comes first through an opening one wide.
 - `modest-faraday`'s merge, as before.
