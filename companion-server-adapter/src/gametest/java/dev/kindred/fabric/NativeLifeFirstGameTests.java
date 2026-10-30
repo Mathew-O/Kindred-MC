@@ -139,11 +139,25 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
 
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-food", tickLimit = 30000)
     public void hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase(TestContext context) {
+        hungry(context, 0);
+    }
+
+    /**
+     * The same with twenty loaves in its own storage, a walk off (F-25c9b): it takes what it lacks from there, not a
+     * cow, then builds its base. The storage and its bread are staged, as though it had put them by.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-store", tickLimit = 30000)
+    public void hungryWithBreadInItsStorageItTakesThatNotACowThenBuildsItsBase(TestContext context) {
+        hungry(context, 20);
+    }
+
+    /** The hungry fixture, with {@code stored} loaves in a storage of its own (none: no storage). */
+    private static void hungry(TestContext context, int stored) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(40, 7, 4), o.add(40, 7, 40)};
-        BlockPos home = o.add(16, 7, 16);
+        BlockPos home = o.add(16, 7, 16), chest = o.add(4, 7, 4);
         int[] stockAtBase = {-1};
         boolean[] noted = {false};
         Box field = new Box(o.add(-12, 0, -12).toCenterPos(), o.add(44, 24, 44).toCenterPos());
@@ -179,10 +193,20 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(8);
                     player.getHungerManager().setSaturationLevel(0);
                     player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                    if (stored > 0) {
+                        world.setBlockState(chest, net.minecraft.block.Blocks.CHEST.getDefaultState());
+                        ((net.minecraft.block.entity.ChestBlockEntity) world.getBlockEntity(chest)).setStack(0, new ItemStack(Items.BREAD, stored));
+                        context.assertTrue(f.runtime.storageSetAt(f.source, f.id, chest) == 1, "Storage assigned");
+                    }
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
                     // Its base on the first plan in oak, as this fixture's bill is made for, not grown (E-29a).
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                // Setting its storage stops a player until it is resumed, as an operator does once the storage is saved.
+                .createAndAdd(() -> context.assertTrue(stored == 0 || !f.runtime.nativeSetupSaving(f.id), "Storage saved"))
+                .createAndAdd(() -> {
+                    if (stored > 0) f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
                 .createAndAdd(() -> {
                     if (f.runtime.lifeNote(f.id).startsWith("Hungry")) noted[0] = true;
@@ -195,9 +219,20 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     int cows = context.getWorld().getEntitiesByClass(CowEntity.class, field, CowEntity::isAlive).size();
-                    KindredMod.LOGGER.info("Life first: {} cows hunted; {} food in its body and pack when it began its base", 8 - cows, stockAtBase[0]);
+                    int left = 0;
+                    if (stored > 0 && context.getWorld().getBlockEntity(chest) instanceof net.minecraft.block.entity.ChestBlockEntity box) {
+                        for (int slot = 0; slot < box.size(); slot++) if (box.getStack(slot).isOf(Items.BREAD)) left += box.getStack(slot).getCount();
+                    }
+                    // The cows it killed, as the game counts a player's kills: a cow that wanders off the field is not one of them.
+                    int killed = body(context, f).getStatHandler().getStat(net.minecraft.stat.Stats.KILLED, EntityType.COW);
+                    KindredMod.LOGGER.info("Life first: {} cows killed by it ({} of 8 left in the field); {} of {} loaves taken from its storage; {} food "
+                            + "in its body and pack when it began its base", killed, cows, stored - left, stored, stockAtBase[0]);
                     context.assertTrue(noted[0], "It said why: hungry");
-                    context.assertTrue(cows < 8, "It hunted: " + cows + " cows left");
+                    if (stored == 0) context.assertTrue(killed > 0, "It hunted: " + killed + " cows killed");
+                    // One loaf and a bar of eight: four more loaves bring it to the bar and the reserve (32), five or six if its
+                    // hunger fell on the walk to its storage; not the whole store.
+                    else context.assertTrue(killed == 0 && stored - left >= 4 && stored - left <= 6,
+                            "From its storage what it lacks, not a cow: " + (stored - left) + " loaves, " + killed + " cows killed");
                     context.assertTrue(stockAtBase[0] >= dev.kindred.core.survival.LifeFirst.FULL + dev.kindred.core.survival.LifeFirst.RESERVE,
                             "Food to last before the base: " + stockAtBase[0]);
                     f.runtime.stop();

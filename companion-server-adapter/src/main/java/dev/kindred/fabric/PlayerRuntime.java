@@ -4584,36 +4584,77 @@ final class PlayerRuntime {
                     "z", String.valueOf(bed.getZ())), "Sleep in its own bed");
         } else {
             entry.gettingFood = true;
-            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
-            entry.campaign.policy(edits);
-            // Never the kind of animal its ranch is penning: those are its pair to breed.
-            var ranch = entry.ranch;
-            var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
-                    net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
-            // No animal in sight: fish at water close by with a rod it holds, before it walks out to look (E-05).
-            if (found.isEmpty()) found = entry.campaign.fish(body);
-            if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
-            if (found.isEmpty()) {
-                entry.gettingFood = false;
-                entry.foodLooks = 0;
-                entry.foodSoughtUntil = now + FOOD_RETRY;
-                noteLife(entry, "No food to be had about here for now: back to its work, and it looks again later");
-                return List.of();
+            // What it put by in its own storage first (F-25c9b): bread in its chest is eaten before a cow is hunted.
+            var stored = storedFood(entry, player, hunger + carried);
+            if (stored.isPresent()) {
+                task = stored.get();
+            } else {
+                if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.policy(edits);
+                // Never the kind of animal its ranch is penning: those are its pair to breed.
+                var ranch = entry.ranch;
+                var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
+                        net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
+                // No animal in sight: fish at water close by with a rod it holds, before it walks out to look (E-05).
+                if (found.isEmpty()) found = entry.campaign.fish(body);
+                if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
+                if (found.isEmpty()) {
+                    entry.gettingFood = false;
+                    entry.foodLooks = 0;
+                    entry.foodSoughtUntil = now + FOOD_RETRY;
+                    noteLife(entry, "No food to be had about here for now: back to its work, and it looks again later");
+                    return List.of();
+                }
+                task = found.get();
             }
-            task = found.get();
         }
         UUID id = UUID.nameUUIDFromBytes(("life:" + entry.data.id() + ":" + task.skill() + ":" + new java.util.TreeMap<>(task.args()))
                 .getBytes(StandardCharsets.UTF_8));
         entry.lifeTaskId = id;
         entry.lifeTask = task;
         // Its hunt is the goal's own, so the goal's record of how its steps went keeps it from the same dead end again.
-        if (decision.need().get() == dev.kindred.core.survival.LifeFirst.Need.FOOD) {
+        if (decision.need().get() == dev.kindred.core.survival.LifeFirst.Need.FOOD && !task.label().endsWith(FROM_STORAGE)) {
             entry.campaignTasks.clear();
             entry.campaignTasks.put(id, task);
         }
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, decision.weight(),
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, task.skill(), task.args()));
+    }
+
+    private static final String FROM_STORAGE = "from its storage";
+
+    /**
+     * Food in its own storage, taken before it hunts (F-25c9b): to its storage when it is out of reach, then the most
+     * filling safe food there, as much as brings it to enough to last ({@code has} is what it has in its body and pack).
+     * Empty when it has no storage near, or none of the food there is safe to eat.
+     */
+    private java.util.Optional<PortalRunCampaign.Task> storedFood(Entry entry, ServerPlayerEntity player, int has) {
+        if (entry.setup == null || entry.setup.storage() == null) return java.util.Optional.empty();
+        var at = entry.setup.storage().position();
+        BlockPos storage = new BlockPos(at.x(), at.y(), at.z());
+        var world = player.getServerWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(entry.setup.dimension()) || !world.isChunkLoaded(storage)
+                || player.getBlockPos().getSquaredDistance(storage) > BED_REACH * BED_REACH
+                || !(world.getBlockEntity(storage) instanceof net.minecraft.inventory.Inventory chest)) return java.util.Optional.empty();
+        ItemStack best = null;
+        for (int slot = 0; slot < chest.size(); slot++) {
+            var stack = chest.getStack(slot);
+            if (isEligibleFood(stack, true, false) && (best == null
+                    || stack.get(DataComponentTypes.FOOD).nutrition() > best.get(DataComponentTypes.FOOD).nutrition())) best = stack;
+        }
+        if (best == null) return java.util.Optional.empty();
+        String name = best.getName().getString().toLowerCase(java.util.Locale.ROOT);
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(storage)) > 4.2 * 4.2) {
+            return java.util.Optional.of(PortalRunCampaign.go(storage, 2.5, false, "To its storage for " + name));
+        }
+        int each = best.get(DataComponentTypes.FOOD).nutrition(), held = 0;
+        for (int slot = 0; slot < chest.size(); slot++) if (chest.getStack(slot).isOf(best.getItem())) held += chest.getStack(slot).getCount();
+        int short_ = dev.kindred.core.survival.LifeFirst.FULL + dev.kindred.core.survival.LifeFirst.RESERVE - has;
+        int count = Math.min(held, Math.max(1, (short_ + each - 1) / each));
+        return java.util.Optional.of(new PortalRunCampaign.Task("native_take", Map.of("item",
+                net.minecraft.registry.Registries.ITEM.getId(best.getItem()).toString(), "count", String.valueOf(count)),
+                "Take " + count + " " + name + " " + FROM_STORAGE));
     }
 
     /** The food points of the safe food it carries, as it would eat it. */
