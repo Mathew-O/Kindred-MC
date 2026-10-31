@@ -286,6 +286,31 @@ each death, the game time, its height, whether it was night or under the sky or 
 came (a mob, a fall, or else) and whether a mob in its own tunnel struck it; nothing of anyone else. Set
 `KINDRED_LESSONS=off` in the server's environment to turn the lessons off (an evaluation scenario says `lessons=off`).
 
+### The atlas (F-30)
+
+Each player keeps a map of each world from its own play, in its own file beside its memory
+(`kindred/memory/<uuid>.atlas.json` in the world's folder), read once when it connects, written once a game minute and
+when the server stops, off the game thread. It holds:
+
+- the chunks it stood in, with the biome and when, and the chunks it saw iron, diamonds, coal, lava, water, trees, a
+  fortress's or a stronghold's blocks in, with where it last saw each. Only what its sweep saw goes in: blocks in its line
+  of sight and open to the air, as it already remembers them; nothing is read from the world it could not see;
+- where it was hurt by a hostile mob or killed, by 16-block cell, by night or by day, fading to nothing over three game
+  days;
+- its bed and the holes it sealed itself into for the night.
+
+At most 4,096 chunks are kept (a chunk it never stood in goes first, the one longest unseen), 1,024 danger cells and 64
+shelters. Where each resource is likely in 1.21.1 (diamonds near the bottom of the world, iron and coal in their bands,
+villages by biome) comes with the mod as data.
+
+What changes in play: wanting iron or diamonds with none in reach, a player goes back to where it last saw some, a leg of
+up to 96 blocks at a time ("Back to where it saw diamond ore at ..."), before it explores a cave or digs; stood there with
+none in view, it lets that place go. At night a walk pays extra for each block in a cell where it was hurt or killed at
+night (up to three times an ordinary block's cost), so it takes a way round of about the same length, never a long
+detour. The strategist's report has one line: how many chunks it knows and where it last saw iron and diamonds. Set
+`KINDRED_ATLAS=off` in the server's environment to turn the atlas off: nothing is kept or read (an evaluation scenario
+says `atlas=off`).
+
 ### The player's voice in chat (E-20a)
 With the strategist on, a player spoken to by name ("Echo, what are you doing?") answers in its own words: the same model phrases one short, clean line in the player's personality from what the player knows right now. It is told only what that listener may know. Whoever may command the player (its controller, an operator) is told everything, its position included. Another player is told what anyone beside it could see or ask, never where it is or what exactly it carries. An opponent in a match is told only what it could see for itself. The line is said through the same social lane as the fixed replies, with the same limits: eight blocks and in sight, public chat for anyone who may not command the player, a player's three seconds between direct replies, and each speaker's three seconds. Words alone never make the player do anything; only the asks below, from someone who may command it, do. A line that is too long, starts with `/`, carries formatting codes or rough words, or gives a place to someone who may not know it is refused. Then, or when anything else goes wrong (a timeout, an error, the budgets or rates spent, a line already being phrased for that player), the player says its fixed reply, as it does with no model. While one reply is being phrased, the newest message to the player waits for it; someone else whose message that one replaced is given the fixed reply at once.
 
@@ -389,7 +414,7 @@ A build can be played unattended on many seeds and scored, so that a change is j
 started it spawns the starters (Kindred, Sol and Echo, or those named) a few blocks apart at the world's spawn, sets the
 edits switch and their goal, sprints the ticks asked for (`/tick sprint`), writes `logs/eval-result.json` and stops the
 server. The value is `key=value` pairs separated by `;`, for example
-`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on`.
+`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on`.
 Missing keys take those defaults; a key or value it does not know is refused with an error in the log, and no run is
 made. Without `KINDRED_EVAL` nothing of this happens: the setting is read when the mod loads and nowhere else.
 

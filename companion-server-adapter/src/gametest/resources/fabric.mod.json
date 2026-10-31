@@ -53,6 +53,7 @@
       "dev.kindred.fabric.NativeRespawnGameTests",
       "dev.kindred.fabric.NativePortalCampaignGameTests",
       "dev.kindred.fabric.NativeLessonsGameTests",
+      "dev.kindred.fabric.NativeAtlasGameTests",
       "dev.kindred.fabric.NativeSkinGameTests",
       "dev.kindred.fabric.NativeStrongholdGameTests",
       "dev.kindred.fabric.NativeBoatGameTests",

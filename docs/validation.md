@@ -16,6 +16,22 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The atlas (F-30) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to a scratch class (not committed), and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 832 JUnit tests, 6 skipped, 0 failures (the 8 more
+  are `AtlasTest`).
+- `NativeAtlasGameTests` 3 of 3 in each of three runs alone on the final code (a comment changed after). Its night
+  walk went one block into the marked cell at the deepest in each run (the body's line cuts a corner of the way round),
+  and the day control eight, through the middle. A first form of the night fixture counted any block in the cell, so a
+  cut corner failed it (2 of 3). In another, the fixture staged its death twice, because its night check retried after
+  the harm was put in. Before, with the atlas off: 1 of 3 (the day control). The diamonds were searched for ("Explore the
+  cave toward diamonds"), and the night walk went eight blocks into the cell.
+- The neighbours, each alone in its batch: 12 of 12. They were the iron and cave fixtures, the pit, the island's outcrop,
+  two lessons fixtures, the walks round a wither skeleton and a wall, and the End fixture that reads a memory file.
+
 ## The drowning replay (F-27) and lessons from its own play (E-46) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two or three evaluation servers on the same cores throughout. Focused

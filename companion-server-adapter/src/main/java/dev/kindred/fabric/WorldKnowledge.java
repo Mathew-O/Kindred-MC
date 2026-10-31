@@ -313,11 +313,16 @@ final class WorldKnowledge {
         return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos);
     }
 
+    /** Told of each block of a kind remembered for the first time (F-30's atlas), on the server thread; none by default. */
+    private java.util.function.BiConsumer<Kind, BlockPos> firstSight;
+
+    void onFirstSight(java.util.function.BiConsumer<Kind, BlockPos> listener) { firstSight = listener; }
+
     void remember(Kind kind, BlockPos pos) {
         var map = known.get(kind);
         long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
         if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
-        map.put(key, pos.toImmutable());
+        if (map.put(key, pos.toImmutable()) == null && firstSight != null) firstSight.accept(kind, pos.toImmutable());
     }
 
     void forget(BlockPos pos) {

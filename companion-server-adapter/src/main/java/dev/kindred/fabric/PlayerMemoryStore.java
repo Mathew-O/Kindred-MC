@@ -116,6 +116,36 @@ final class PlayerMemoryStore implements AutoCloseable {
 
     private Path workFile(UUID id) { return folder.resolve(id + ".work.json"); }
 
+    private Path atlasFile(UUID id) { return folder.resolve(id + ".atlas.json"); }
+
+    /** This player's atlas of this world (F-30), or none; read off the game thread. */
+    CompletableFuture<dev.kindred.core.atlas.Atlas.Snapshot> loadAtlas(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (Files.isRegularFile(atlasFile(id))) {
+                    return gson.fromJson(Files.readString(atlasFile(id), StandardCharsets.UTF_8), dev.kindred.core.atlas.Atlas.Snapshot.class);
+                }
+            } catch (IOException | RuntimeException unreadable) {
+                KindredMod.LOGGER.warn("The atlas of {} could not be read; starting afresh: {}", name, unreadable.toString());
+            }
+            return null;
+        }, io);
+    }
+
+    /** Write the atlas's snapshot, a copy taken on the game thread: turned into its file off it, after any write before it. */
+    void saveAtlas(UUID id, String name, dev.kindred.core.atlas.Atlas.Snapshot snapshot) {
+        io.execute(() -> {
+            String json;
+            try {
+                json = gson.toJson(snapshot);
+            } catch (RuntimeException failed) {
+                KindredMod.LOGGER.warn("The atlas of {} could not be written: {}", name, failed.toString());
+                return;
+            }
+            writeNow(atlasFile(id), json, name);
+        });
+    }
+
     /** The work this player was at in this world, or null; read off the game thread. */
     CompletableFuture<Work> loadWork(UUID id, String name) {
         return CompletableFuture.supplyAsync(() -> {
@@ -188,20 +218,23 @@ final class PlayerMemoryStore implements AutoCloseable {
     }
 
     private void write(UUID id, Path target, String json, String player) {
-        io.execute(() -> {
+        io.execute(() -> writeNow(target, json, player));
+    }
+
+    /** On the store's own thread: the file replaced whole, so a crash leaves the last complete one. */
+    private void writeNow(Path target, String json, String player) {
+        try {
+            Files.createDirectories(folder);
+            Path temp = target.resolveSibling(target.getFileName() + ".tmp");
+            Files.writeString(temp, json, StandardCharsets.UTF_8);
             try {
-                Files.createDirectories(folder);
-                Path temp = target.resolveSibling(target.getFileName() + ".tmp");
-                Files.writeString(temp, json, StandardCharsets.UTF_8);
-                try {
-                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException plain) {
-                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } catch (IOException failed) {
-                KindredMod.LOGGER.warn("Memory of {} could not be written: {}", player, failed.toString());
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException plain) {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
             }
-        });
+        } catch (IOException failed) {
+            KindredMod.LOGGER.warn("Memory of {} could not be written: {}", player, failed.toString());
+        }
     }
 
     /** Stops the background saving once the writes already asked for are done. */

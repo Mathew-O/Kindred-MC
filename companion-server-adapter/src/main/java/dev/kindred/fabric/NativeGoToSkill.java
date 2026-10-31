@@ -124,6 +124,15 @@ final class NativeGoToSkill implements SkillBody {
         return this;
     }
 
+    /** The atlas's night cost of a place (F-30), or none. */
+    private java.util.function.ToDoubleFunction<BlockPos> shun;
+
+    /** A route that keeps out of places dear by {@code cost}, where it was hurt or killed at night (F-30). */
+    NativeGoToSkill shunning(java.util.function.ToDoubleFunction<BlockPos> cost) {
+        shun = cost;
+        return this;
+    }
+
     /** Stops after this many blocks along the way, to look back at what follows. */
     NativeGoToSkill leg(int blocks) {
         if (blocks < 0 || blocks > 64) throw new IllegalArgumentException("A leg is 0..64 blocks");
@@ -137,6 +146,7 @@ final class NativeGoToSkill implements SkillBody {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
         if (engage != null) navigator.avoiding(dangers());
+        if (shun != null) navigator.shunning(shun);
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
         // A body over an edge searches from the block below its feet; when that is the goal, the route is the step off.

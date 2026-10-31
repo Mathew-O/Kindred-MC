@@ -166,6 +166,12 @@ final class PlayerRuntime {
      */
     private StrategistBridge memory;
     private boolean lessons = true;
+    /** Whether the players keep an atlas of the world and use it (F-30): on unless {@code KINDRED_ATLAS=off} or a scenario says so. */
+    private boolean atlasOn = true;
+    /** Where things are likely in this version of the game: the atlas's priors, read once. */
+    private static final dev.kindred.core.atlas.Priors PRIORS = dev.kindred.core.atlas.Priors.standard();
+    /** The most a block of a walk costs extra for a night's danger where it is (F-30), and how much a unit of danger adds. */
+    static final double SHUN_CAP = 2.0, SHUN_PER_DANGER = 0.5;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
     /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
@@ -1879,7 +1885,23 @@ final class PlayerRuntime {
             entry.gazePersonality = personality;
         }
         return new NativePlayerSkills.NativeMovementHabits(entry.mannerisms, personality, PlayerRuntime::now, entry.gaze,
-                () -> server.getTicks() - entry.addressedAt <= NativeWaitSkill.SPOKEN ? entry.addressedBy : null);
+                () -> server.getTicks() - entry.addressedAt <= NativeWaitSkill.SPOKEN ? entry.addressedBy : null, nightShun(entry));
+    }
+
+    /**
+     * At night, the extra cost of each block of a walk through a place its atlas marks as dangerous then (F-30): half
+     * the danger, at most {@link #SHUN_CAP}, so a way round of about the same length is taken and a long one is not.
+     * None by day, with the atlas off, or with no danger near.
+     */
+    private java.util.function.ToDoubleFunction<BlockPos> nightShun(Entry entry) {
+        var atlas = entry.atlas;
+        if (!atlasOn || atlas == null || entry.nativeBody == null || !entry.nativeBody.connected()) return null;
+        var world = entry.nativeBody.entity().getServerWorld();
+        if (!world.isNight()) return null;
+        long now = world.getTime();
+        var here = PortalRunCampaign.place(world, entry.nativeBody.entity().getBlockPos());
+        if (atlas.dangerNear(here, 96, true, now, 0.05).isEmpty()) return null;
+        return pos -> Math.min(SHUN_CAP, SHUN_PER_DANGER * atlas.dangerAt(PortalRunCampaign.place(world, pos), true, now));
     }
 
     private boolean nativeMutationAllowed(Entry entry, ActionLease lease, NativePlayerBody.Intent intent, BlockPos target) {
@@ -2222,6 +2244,7 @@ final class PlayerRuntime {
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
+                if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 refreshTacticalObservation(entry, tick);
                 SignalFrame frame = createSignalFrame(entry, tick);
                 entry.attentionSnapshot = entry.attention.observe(frame);
@@ -3904,6 +3927,43 @@ final class PlayerRuntime {
 
     /** The standing goal's next concrete step, as one ordinary candidate; survival needs still outrank it. */
     /**
+     * The player's atlas (F-30), on the server thread: read from its file once; then, once a second, the chunk it
+     * stands in with its biome, and its bed as a shelter; each hurt by a hostile mob as it is taken; and saved once a game
+     * minute, the copy turned into its file off the thread.
+     */
+    private void keepAtlas(Entry entry, net.minecraft.server.network.ServerPlayerEntity player, long tick) {
+        if (entry.atlas == null) {
+            if (entry.atlasLoading) return;
+            entry.atlasLoading = true;
+            UUID id = entry.data.id();
+            memories.loadAtlas(id, entry.data.displayName()).whenComplete((snapshot, failure) -> server.execute(() -> {
+                entry.atlasLoading = false;
+                if (!running || entries.get(id) != entry || entry.atlas != null) return;
+                entry.atlas = dev.kindred.core.atlas.Atlas.restore(failure == null ? snapshot : null, PRIORS);
+                entry.atlasSavedAt = server.getTicks();
+            }));
+            return;
+        }
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (player.hurtTime == player.maxHurtTime && player.maxHurtTime > 0 && player.getRecentDamageSource() != null
+                && player.getRecentDamageSource().getAttacker() instanceof net.minecraft.entity.mob.HostileEntity) {
+            entry.atlas.harmed(PortalRunCampaign.place(world, feet), world.isNight(), world.getTime(), 1);
+        }
+        if (tick % 20 != 0) return;
+        String biome = world.getBiome(feet).getKey().map(key -> key.getValue().toString()).orElse(null);
+        entry.atlas.visit(PortalRunCampaign.place(world, feet), biome, world.getTime());
+        var bed = player.getSpawnPointPosition();
+        if (bed != null && player.getSpawnPointDimension() == world.getRegistryKey() && tick % 1200 == 0) {
+            entry.atlas.shelter(PortalRunCampaign.place(world, bed), "bed");
+        }
+        if (tick - entry.atlasSavedAt >= 1200) {
+            entry.atlasSavedAt = tick;
+            memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
+        }
+    }
+
+    /**
      * The player's memory of this world: read once for each campaign and recalled into it, then written whenever it
      * learns something worth keeping. Reads and writes are off the game thread.
      */
@@ -3935,6 +3995,7 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> campaignCandidates(Entry entry, NativePlayerBody body) {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
+        entry.campaign.atlas(atlasOn ? entry.atlas : null);
         entry.campaign.pursue(entry.goal);
         entry.campaign.dragonAllowed(dragonFight);
         entry.campaign.huntersKit(gearingHunter(body));
@@ -5347,6 +5408,9 @@ final class PlayerRuntime {
                 fell ? dev.kindred.core.survival.Lessons.How.FALL : killedByMob ? dev.kindred.core.survival.Lessons.How.MOB
                         : dev.kindred.core.survival.Lessons.How.OTHER, false);
         BlockPos killerAt = killedByMob ? player.getAttacker().getBlockPos().toImmutable() : null;
+        if (atlasOn && entry.atlas != null) {
+            entry.atlas.harmed(PortalRunCampaign.place(world, deathPos), world.isNight(), world.getTime(), dev.kindred.core.atlas.Atlas.DEATH);
+        }
         if (entry.campaign != null) entry.campaign.died(deathPos, world, server.getTicks(), killedByMob,
                 player.getDamageTracker().getDeathMessage().getString(), facts, killerAt);
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
@@ -5487,6 +5551,7 @@ final class PlayerRuntime {
             // A goal looks around as it goes, and so does a build, for the trees and stone its needs may send it to (E-08c).
             if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.atlas(atlasOn ? entry.atlas : null); // What it sees goes into its atlas from the first look (F-30).
                 entry.campaign.observe(body.entity());
             }
         }
@@ -10868,6 +10933,15 @@ final class PlayerRuntime {
         return entry == null || entry.campaign == null ? java.util.Set.of() : entry.campaign.preferences().habits();
     }
 
+    /** The atlas on or off (F-30): on by default; {@code KINDRED_ATLAS=off} or a scenario turns it off, and then nothing reads it. */
+    void atlas(boolean on) { atlasOn = on; }
+
+    /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
+    dev.kindred.core.atlas.Atlas atlasForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.atlas;
+    }
+
     /** Its own lessons from its deaths on or off (E-46): on by default; {@code KINDRED_LESSONS=off} or a scenario turns them off. */
     void lessons(boolean on) {
         lessons = on;
@@ -11170,6 +11244,9 @@ final class PlayerRuntime {
         matches.stopAll();
         presenter.clear();
         memory.close(); // The strategist's bridge, when there is one.
+        for (Entry entry : entries.values()) {
+            if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
+        }
         memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
@@ -12345,6 +12422,10 @@ final class PlayerRuntime {
         /** The campaign whose memory was read, whether the read is in, and the leg's revision last written. */
         private PortalRunCampaign memoryCampaign;
         private boolean memoryLoaded;
+        /** Its atlas of this world (F-30), kept across goals; read from its file once, saved once a game minute and at the end. */
+        dev.kindred.core.atlas.Atlas atlas;
+        private boolean atlasLoading;
+        private long atlasSavedAt;
         private int memorySaved = -1;
         private final dev.kindred.core.PlayerDecisionLoop mind;
         private String mindStatus = "Awaiting local decision";

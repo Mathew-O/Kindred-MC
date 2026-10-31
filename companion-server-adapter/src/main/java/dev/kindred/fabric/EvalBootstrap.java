@@ -88,9 +88,11 @@ final class EvalBootstrap implements RunObserver {
             case 0 -> { // The runtime's records loaded: set the world up as an operator would, then the starters one by one.
                 if (!runtime.isReady()) return;
                 runtime.observeRun(this);
-                KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}", scenario.edits() ? "on" : "off", scenario.lessons() ? "on" : "off");
+                KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}", scenario.edits() ? "on" : "off", scenario.lessons() ? "on" : "off",
+                        scenario.atlas() ? "on" : "off");
                 runtime.setWorldEdits(server.getCommandSource(), scenario.edits());
                 runtime.lessons(scenario.lessons());
+                runtime.atlas(scenario.atlas());
                 if (worldRules) {
                     command(server, "gamerule keepInventory " + (scenario.keep() == EvalScenario.Keep.INVENTORY));
                     command(server, "gamerule doDaylightCycle true");

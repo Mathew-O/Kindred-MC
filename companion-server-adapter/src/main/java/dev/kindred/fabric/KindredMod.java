@@ -39,6 +39,8 @@ public final class KindredMod implements ModInitializer {
     private static boolean replays;
     /** Whether the players draw their own lessons from their deaths (E-46): {@code KINDRED_LESSONS=off} turns them off. */
     private static boolean lessons;
+    /** Whether the players keep and use an atlas of the world (F-30): {@code KINDRED_ATLAS=off} turns it off. */
+    private static boolean atlas;
 
     static PlayerRuntime runtime() { return runtime; }
 
@@ -77,6 +79,7 @@ public final class KindredMod implements ModInitializer {
         String replaysAsked = System.getenv("KINDRED_REPLAYS");
         replays = replaysAsked != null ? replaysAsked.equalsIgnoreCase("on") : eval != null;
         lessons = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_LESSONS")).trim());
+        atlas = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_ATLAS")).trim());
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
         }
@@ -86,6 +89,10 @@ public final class KindredMod implements ModInitializer {
             if (!lessons) {
                 runtime.lessons(false);
                 LOGGER.info("The players' own lessons from their deaths are off (KINDRED_LESSONS=off)");
+            }
+            if (!atlas) {
+                runtime.atlas(false);
+                LOGGER.info("The players' atlas of the world is off (KINDRED_ATLAS=off)");
             }
             if (replays) {
                 var run = server.getRunDirectory();

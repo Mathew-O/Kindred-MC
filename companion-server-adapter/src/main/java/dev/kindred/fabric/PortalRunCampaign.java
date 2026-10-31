@@ -82,6 +82,12 @@ final class PortalRunCampaign {
 
     private boolean huntersKit;
     private final WorldKnowledge knowledge = new WorldKnowledge();
+    /** Its map of this world from its own play (F-30), kept across goals by the runtime; none with the atlas off. */
+    private dev.kindred.core.atlas.Atlas atlas;
+    /** The world it last planned in: the dimension and the time its sightings are kept with. */
+    private ServerWorld atlasWorld;
+    /** A walk back to a sighting that failed: no lead again until then. */
+    private long leadFailedUntil;
     private final Set<Long> ownWorkstations = new HashSet<>();
     private final Map<Long, Long> blockedUntil = new HashMap<>();
     /** Targets the player could not walk to; consulted when choosing what to gather, never when digging. */
@@ -384,6 +390,14 @@ final class PortalRunCampaign {
         out.append("Pace: ").append(pace == dev.kindred.core.guide.Playbook.Mode.SPEEDRUN ? "speedrun (the quickest way of each part)"
                 : "normal play (a speedrunner's way only when the chance is at hand)").append(".\n");
         out.append("Habits kept in this world: ").append(habits.isEmpty() ? "none" : habits.toString()).append(".\n");
+        if (atlas != null) {
+            out.append("Its atlas: ").append(atlas.explored()).append(" chunks known");
+            for (var resource : List.of(dev.kindred.core.atlas.Atlas.Resource.IRON, dev.kindred.core.atlas.Atlas.Resource.DIAMOND)) {
+                atlas.lastSeen(resource).ifPresent(seen -> out.append("; ").append(resource == dev.kindred.core.atlas.Atlas.Resource.IRON ? "iron" : "diamonds")
+                        .append(" last seen at ").append(seen.at().x()).append(" ").append(seen.at().y()).append(" ").append(seen.at().z()));
+            }
+            out.append(".\n");
+        }
         out.append("Queue: ").append(followUps.describe(player)).append('\n');
         if (!events.isEmpty()) {
             out.append("Recent events, oldest first:\n");
@@ -403,6 +417,49 @@ final class PortalRunCampaign {
         return out.toString();
     }
     WorldKnowledge knowledge() { return knowledge; }
+
+    /**
+     * The player's atlas (F-30), or none. What it sees of iron, diamonds, coal, lava, water, trees and a fortress's or a
+     * stronghold's blocks, as WorldKnowledge remembers them (in its line of sight, exposed to air), goes into it.
+     */
+    void atlas(dev.kindred.core.atlas.Atlas given) {
+        if (given == atlas) return;
+        atlas = given;
+        knowledge.onFirstSight(given == null ? null : (kind, pos) -> {
+            var resource = resource(kind);
+            if (resource != null && atlasWorld != null) atlas.sighted(resource, place(atlasWorld, pos), atlasWorld.getTime(), null);
+        });
+        // What it saw before its atlas was read from its file goes in now: the file is read off the thread, after the
+        // first looks round.
+        if (given == null || atlasWorld == null) return;
+        for (var kind : WorldKnowledge.Kind.values()) {
+            var resource = resource(kind);
+            if (resource == null) continue;
+            for (BlockPos pos : knowledge.all(kind)) given.sighted(resource, place(atlasWorld, pos), atlasWorld.getTime(), null);
+        }
+    }
+
+    dev.kindred.core.atlas.Atlas atlas() { return atlas; }
+
+    /** The atlas's name for what WorldKnowledge has seen, or none for what it does not keep. */
+    static dev.kindred.core.atlas.Atlas.Resource resource(WorldKnowledge.Kind kind) {
+        return switch (kind) {
+            case IRON_ORE -> dev.kindred.core.atlas.Atlas.Resource.IRON;
+            case DIAMOND_ORE -> dev.kindred.core.atlas.Atlas.Resource.DIAMOND;
+            case COAL_ORE -> dev.kindred.core.atlas.Atlas.Resource.COAL;
+            case LAVA -> dev.kindred.core.atlas.Atlas.Resource.LAVA;
+            case WATER -> dev.kindred.core.atlas.Atlas.Resource.WATER;
+            case LOG -> dev.kindred.core.atlas.Atlas.Resource.TREES;
+            case NETHER_BRICK -> dev.kindred.core.atlas.Atlas.Resource.FORTRESS;
+            case STONE_BRICK, END_PORTAL_FRAME -> dev.kindred.core.atlas.Atlas.Resource.STRONGHOLD;
+            default -> null;
+        };
+    }
+
+    /** A block as the atlas keeps it: its dimension by name ({@code overworld}, {@code the_nether}, {@code the_end}). */
+    static dev.kindred.core.atlas.Atlas.Place place(ServerWorld world, BlockPos pos) {
+        return new dev.kindred.core.atlas.Atlas.Place(world.getRegistryKey().getValue().getPath(), pos.getX(), pos.getY(), pos.getZ());
+    }
 
     /** Which goal this campaign serves: the portal alone, or on from it to the End portal. */
     void pursue(SurvivalGoal goal) {
@@ -482,6 +539,7 @@ final class PortalRunCampaign {
 
     /** Bounded perception each tick; cheap enough to run while other work proceeds. */
     void observe(ServerPlayerEntity player) {
+        atlasWorld = player.getServerWorld();
         knowledge.scan(player);
     }
 
@@ -560,7 +618,9 @@ final class PortalRunCampaign {
                 && position(task.args()) != null) {
             if (ownSeals.size() > 64) ownSeals.clear();
             ownSeals.put(position(task.args()).asLong(), tick);
+            if (atlas != null && atlasWorld != null) atlas.shelter(place(atlasWorld, lastFeet), "seal");
         }
+        if (task != null && !completed && task.label().startsWith(LEAD_LABEL)) leadFailedUntil = tick + 1200;
         if (task != null && completed && task.label().contains(": open its shelter at ") && position(task.args()) != null) {
             ownSeals.remove(position(task.args()).asLong());
         }
@@ -1073,6 +1133,7 @@ final class PortalRunCampaign {
     private Optional<Task> plan(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
+        atlasWorld = body.entity().getServerWorld();
         // A pickaxe broken below ground with none left (E-46's trouble), seen as a player sees a tool break: vanilla
         // counts each broken item in the player's statistics.
         int broken = brokenPickaxes(body.entity());
@@ -1881,10 +1942,13 @@ final class PortalRunCampaign {
                     // Coal is scarce deep down: climb toward where it is common before tunnelling for it.
                     .or(() -> player.getBlockY() < COAL_TARGET - 12 ? climb(body, "Climb toward coal") : Optional.<Task>empty())
                     .or(() -> groundBelow(player) ? tunnel(body, "Tunnel for coal") : Optional.<Task>empty());
+            // Ore it saw before, out of reach now, is gone back to before it is searched for again (F-30).
             case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore")
+                    .or(() -> lead(body, dev.kindred.core.atlas.Atlas.Resource.IRON, "iron ore"))
                     .or(() -> cave(body, "iron", IRON_TARGET)).or(this::lookAround).or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
             case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
                     .or(() -> gather(body, WorldKnowledge.Kind.IRON_ORE, 6, "iron ore on the way"))
+                    .or(() -> lead(body, dev.kindred.core.atlas.Atlas.Resource.DIAMOND, "diamond ore"))
                     .or(() -> cave(body, "diamonds", DIAMOND_TARGET))
                     .or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "diamonds"));
             case CRAFT -> craft(body, step.item());
@@ -1988,6 +2052,28 @@ final class PortalRunCampaign {
     private static int oreRadius(ServerPlayerEntity player, int surfaceRadius) {
         return underground(player) ? 24 : surfaceRadius;
     }
+
+    /**
+     * Ore it saw before and is out of its gathering reach now (F-30): back to where it saw it, a leg at a time, rather
+     * than searching anew; once there, the ore in view is gathered. Stood where it saw it with none in view any more
+     * (mined, or hidden from here), that sighting is let go. A walk back that fails leaves the leads alone for a minute.
+     */
+    private Optional<Task> lead(NativePlayerBody body, dev.kindred.core.atlas.Atlas.Resource resource, String what) {
+        if (atlas == null || lastTick < leadFailedUntil) return Optional.empty();
+        var world = body.entity().getServerWorld();
+        var lead = atlas.whereToLookFor(resource, place(world, lastFeet)).filter(dev.kindred.core.atlas.Atlas.Lead::seen);
+        if (lead.isEmpty()) return Optional.empty();
+        var seen = lead.get().at();
+        BlockPos at = new BlockPos(seen.x(), seen.y(), seen.z());
+        if (at.getSquaredDistance(lastFeet) <= 6 * 6) {
+            atlas.gone(resource, seen);
+            return Optional.empty();
+        }
+        BlockPos toward = at.getSquaredDistance(lastFeet) > LAVA_LEG * LAVA_LEG ? legToward(lastFeet, at, LAVA_LEG) : at;
+        return Optional.of(go(toward, 3, true, LEAD_LABEL + what + " at " + at.toShortString()));
+    }
+
+    static final String LEAD_LABEL = "Back to where it saw ";
 
     /**
      * Walk on into a cave it has seen, toward the depth where {@code what} is common, as players go caving: the

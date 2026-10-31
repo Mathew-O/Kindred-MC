@@ -75,6 +75,16 @@ final class NativeNavigator {
         return false;
     }
 
+    /** An extra cost for each block of the route at a place, as its atlas weighs a night's danger there (F-30); none by default. */
+    private java.util.function.ToDoubleFunction<BlockPos> shun;
+
+    /** Routes priced dearer through places it has been hurt or killed (F-30): {@code cost} is the extra for each block there. */
+    NativeNavigator shunning(java.util.function.ToDoubleFunction<BlockPos> cost) {
+        this.shun = cost;
+        terrain.clear();
+        return this;
+    }
+
     /** Routes priced to keep out of these mobs' notice: dearer the nearer they pass (F-10g). */
     NativeNavigator avoiding(List<Danger> dangers) {
         this.dangers = List.copyOf(dangers);
@@ -403,7 +413,7 @@ final class NativeNavigator {
             double distance = Math.sqrt(danger.at().squaredDistanceTo(feet.getX() + 0.5, feet.getY() + 0.5, feet.getZ() + 0.5));
             unease += dev.kindred.core.tactics.MobSenses.unease(danger.profile(), distance, danger.seen());
         }
-        return DANGER_WEIGHT * unease + groundCost(feet);
+        return DANGER_WEIGHT * unease + groundCost(feet) + (shun == null ? 0 : shun.applyAsDouble(feet));
     }
 
     private double groundCost(BlockPos feet) {

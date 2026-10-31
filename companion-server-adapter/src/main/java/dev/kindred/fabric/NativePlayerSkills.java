@@ -32,11 +32,16 @@ import java.util.function.Supplier;
 final class NativePlayerSkills {
     /**
      * The player's own ways of moving and looking: its mannerisms and personality, and for a wait its gaze and who last
-     * spoke to it (E-33a), when it has them.
+     * spoke to it (E-33a), when it has them; for a walk, the atlas's extra cost of a place at night (F-30), or none.
      */
-    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker) {
+    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker,
+                                java.util.function.ToDoubleFunction<net.minecraft.util.math.BlockPos> shun) {
         NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis) {
-            this(mannerisms, personality, nowMillis, null, null);
+            this(mannerisms, personality, nowMillis, null, null, null);
+        }
+
+        NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker) {
+            this(mannerisms, personality, nowMillis, gaze, speaker, null);
         }
     }
     static SkillDescriptor descriptor(String id) {
@@ -196,6 +201,7 @@ final class NativePlayerSkills {
                     Boolean.parseBoolean(arguments.getOrDefault("avoid", "false"))
                             ? new java.util.HashSet<>(java.util.Arrays.asList(arguments.getOrDefault("engage", "").split(","))) : null);
             if (arguments.containsKey("hold")) go.holding(Integer.parseInt(arguments.get("hold")));
+            if (habits != null && habits.shun() != null) go.shunning(habits.shun());
             if (arguments.containsKey("leg")) go.leg(Integer.parseInt(arguments.get("leg")));
             return Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
         }
