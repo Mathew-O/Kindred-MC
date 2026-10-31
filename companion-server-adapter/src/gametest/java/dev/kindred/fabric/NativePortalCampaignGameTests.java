@@ -4042,6 +4042,139 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * With its lava in hand at the level of lava lakes, it climbs a few blocks into the rock over them for a frame site,
+     * rather than tunnel along their shore for one (F-25c4z). No site may lie within three blocks of lava, and in the live
+     * pair on `458d192` Echo, at Y=-55 between lava lakes, tunnelled 209 blocks of deepslate before it found one, and its
+     * iron pickaxe wore out. Staged: a tunnel through a block of stone with a channel of lava under the rock on each side
+     * of it, a block off, its whole length; glowstone over it; the kit, a bucket of lava and one of water with it, given as
+     * though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "castOverLava", tickLimit = 2400)
+    public void withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        String[] site = new String[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Shore"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-14, -3, -10), p.add(14, 12, 10));
+                    for (int x = -14; x <= 14; x++) for (int z = -10; z <= 10; z++) for (int y = -3; y <= 12; y++) {
+                        boolean tunnel = Math.abs(x) <= 12 && z == 0 && (y == 0 || y == 1);
+                        boolean lava = Math.abs(x) <= 12 && Math.abs(z) == 2 && y == -1;
+                        var state = tunnel ? Blocks.AIR.getDefaultState() : lava ? Blocks.LAVA.getDefaultState() : Blocks.STONE.getDefaultState();
+                        world.setBlockState(p.add(x, y, z), state);
+                    }
+                    for (int x : new int[] {-9, -3, 3, 9}) world.setBlockState(p.add(x, 2, 0), Blocks.GLOWSTONE.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.LAVA_BUCKET));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                // A site chosen: its work on the frame begun, clearing it, a corner, a mould or a cast, three blocks or more up.
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    String goal = f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel");
+                    boolean framing = goal.contains("Cast: clear") || goal.contains("Cast: stand in front") || goal.contains("Cast: corner")
+                            || goal.contains("Cast: mould") || goal.contains("Cast obsidian");
+                    if (site[0] == null && framing && player != null) site[0] = player.getBlockPos().subtract(feet[0]).toShortString() + ": " + goal;
+                    context.assertTrue(site[0] != null && player != null && player.getBlockY() >= feet[0].getY() + 3, "Working on a frame site above the lava: "
+                            + site[0] + "; now " + (player == null ? "no body" : player.getBlockPos().subtract(feet[0]).toShortString()) + ", " + goal);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive() && player.getHealth() >= 10, "Unhurt by the lava");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Dry ground its walk out of the water failed to get to is passed over for the next nearest (F-25c4aa). In the live pair
+     * on `a4df9b4` Echo, in a stream down a hillside, set out for the same spot on its bank again and again, the current
+     * carrying it past each time; Sol did so 375 times on `458d192`. Staged: a closed stone room, its floor a pool five deep,
+     * a notch of shore one block across near the player and a ledge along the far wall, lit from the pool's bottom; the
+     * player in the water by the notch; and one walk out to the notch reported to its goal as failed, as the current made
+     * Echo's. Its kit is given as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "shorePassedOver", tickLimit = 1800)
+    public void dryGroundAWalkOutOfTheWaterFailedToReachIsPassedOverForTheNextNearest(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        // Where it first stood on dry ground out of the pool.
+        BlockPos[] landed = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Swimmer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().up(6);
+                    at[0] = p;
+                    FixtureGround.keep(context, p.add(-8, -6, -4), p.add(8, 4, 4));
+                    for (int x = -8; x <= 8; x++) for (int z = -4; z <= 4; z++) for (int y = -6; y <= 4; y++) {
+                        boolean shell = Math.abs(x) == 8 || Math.abs(z) == 4 || y == -6 || y == 4;
+                        boolean pool = Math.abs(x) <= 6 && y <= -1;
+                        boolean notch = x == 7 && z == 0 && y >= 0 && y <= 1;
+                        boolean ledge = x == -7 && y >= 0;
+                        boolean wall = x == 7 && y >= -1 && !notch || x == -7 && y == -1;
+                        var state = shell || wall ? Blocks.STONE.getDefaultState() : pool ? Blocks.WATER.getDefaultState()
+                                : notch || ledge || Math.abs(x) <= 6 ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState();
+                        world.setBlockState(p.add(x, y, z), state);
+                    }
+                    world.setBlockState(p.add(0, -6, 0), Blocks.SEA_LANTERN.getDefaultState());
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    world.setTimeOfDay(1000);
+                    f.player().refreshPositionAndAngles(p.getX() + 4.5, p.getY() - 1, p.getZ() + 0.5, 0, 0);
+                    // One walk out to the notch, failed, as its goal hears of a walk that fails; then the goal is set.
+                    var campaign = f.runtime.campaignForTest(f.id);
+                    campaign.taskFinished(PortalRunCampaign.go(p.add(7, 0, 0), 0.8, true, "Get out of the water: to dry ground"), false,
+                            context.getWorld().getServer().getTicks());
+                })
+                .createAndAdd(() -> context.assertTrue(PlayerRuntime.inDeepWater(f.player()), "In the pool"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    if (landed[0] == null && player != null && player.isOnGround() && !player.isTouchingWater()) landed[0] = player.getBlockPos().subtract(at[0]);
+                    context.assertTrue(landed[0] != null, "Out of the water: "
+                            + f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel"));
+                    context.assertTrue(landed[0].getX() <= -6, "Out on the far ledge, not the notch it failed to reach: " + landed[0].toShortString());
+                })
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     /** What became of the cast fixture's lava pool, for a failure message. */
     private static String pool(TestContext context, BlockPos p) {
         int sources = 0, flowing = 0, obsidian = 0, stone = 0, air = 0;

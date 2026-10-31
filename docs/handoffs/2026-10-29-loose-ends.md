@@ -422,6 +422,10 @@ The owner: work through what is left, leaving the decisions only the owner can m
 | Echo wading into an underground lake and back out 107 times in twelve minutes, from a pocket it had dug beside it | Water level with its own floor is no longer a jump off a ledge: the swim out took it straight back (F-25c4w, open: the live runs). Fixture fails before, 3 of 3 after. The pocket itself had no way out but by water, Echo having dug out its own staircase's lowest step | the commit after `458d192` |
 | 44 of 52 deaths since `fb02bc3` with no armour on | Where there are caves, the chestplate is made from the first eight iron, before the rest is looked for, and its own smelt counts in the packed fuel (F-25c4x, open: the live runs). The planner case fails before; `PortalRunPlannerTest` 39 of 39 | the commit after `458d192` |
 | Echo's frame given up with six of its ten cast, and another begun beside it | Back from the lava, a cell to dig before the next cast was out of reach, and the frame was given up. It is now approached first, as the casts are (F-25c4y, open: the live runs). Fixture fails before (split frames, none lit), 3 of 3 after, the other casts 5 of 5 | the commit after `458d192` |
+| A live pair on `a4df9b4`, both seeds, 240,000 ticks each, strategist off | No portal lit and no lava bucket filled: on the second seed Kindred branch-mined at Y=-55 for thirteen minutes without coming on lava. 18 deaths against 24 on `458d192`, six of the first seed's in the caves under the spawn point. F-25c4v and x complete in play: three second deaths before the drops were back, none gone back for; every life with eight iron made its chestplate first, and 7 of 18 deaths came with one on. w and y not met. No reconciliation stop | |
+| Sol walking toward Echo 7,389 times on the first seed, each walk done at once, for twenty of its forty-four minutes | A hand-over walk that ends short of tossing reach, no nearer than the last, is now a failed step, and six let the hand-over go (E-40a1, open: the live runs). Fixture (Wren walled in stone) fails before, 3 of 3 after | the commit after `a4df9b4` |
+| Echo tunnelling 209 blocks of deepslate between lava lakes for room for its frame, on `458d192` | With no site found and lava at or below its feet within six blocks, it climbs up out of the lava's reach first (F-25c4z, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `a4df9b4` |
+| Echo setting out for the same spot on a stream's bank 173 times; Sol 375 times on `458d192` | Dry ground a walk out failed to reach is passed over for the next nearest (F-25c4aa, open: the live runs). Fixture fails before, judged by where it first stands out of the water, 3 of 3 after | the commit after `a4df9b4` |
 
 ### Validation
 
@@ -433,19 +437,16 @@ The owner: work through what is left, leaving the decisions only the owner can m
 - On top of `011a579`: the F-25c4q planner case fails before and passes after, `:companion-core:test` 617 of 617, the goal's fixture classes 64 of 64; the F-25c4r fixture fails before and passes 3 of 3 after, the fixture classes with fights alone 89 of 89.
 - On top of `03faab9`: the F-25c4s and u fixtures fail before and pass 3 of 3 after, the F-25c4t fixture fails before and passes 10 of 10; the full native suite 414 of 416: the pasture's cattle, known, and `goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe`, which never saw its ore from the start (10 of 10 alone after, the neighbouring plot its own doc names).
 - On top of `458d192`: the F-25c4v, w and y fixtures fail before and pass 3 of 3 after; the F-25c4x planner case fails before and passes, `build` successful with `:companion-core:test` 618 of 618; the full native suite before F-25c4y 416 of 418, the cattle's two; the other cast fixtures with F-25c4y alone, 5 of 5.
+- On top of `a4df9b4`: the E-40a1, F-25c4z and F-25c4aa fixtures fail before and pass 3 of 3 after; `build` successful; the full native suite 421 of 422: the one failure, the life-first fixture that hunts before building its base (its cabin's stairs out of reach), passed 3 of 3 alone after, its cause not found; the cattle passed.
 
 ### Next dependency
 
-- The lit portal, from the runs on `ace1d80`, `a286cc8`, `03faab9` and `458d192`:
-  - a live pair on this code, both seeds: F-25c4v to y in play, and n, o, p, s, t and u, which the pair on `458d192` did not exercise;
-  - room for the frame at Y=-55: with lava and water in hand, Echo tunnelled 209 blocks of deepslate for a site, wearing out its iron pickaxe; the frame could go where it already stands, or up its staircase;
-  - food at depth: Echo died at the frame with hunger 6, its last steps the climb for food;
-  - deaths in caves: 21 on the first seed, all with no armour on; F-25c4v ends the walks back into the same cave, F-25c4x puts the chestplate on sooner;
-  - the watchdog's walks elsewhere: 2 of 95 completed, each judged before it has gone a block. A dead end walled by water, as Echo's pocket, has no way out the watchdog takes;
-  - a tunnel may dig out the floor under a step of the way it came: Echo's way back up became a two-block step;
-  - the night's water, waited for: on the second seed Sol waited for daylight 341 times for it, 230 of them on the surface, and Kindred 195; F-25c4n fetches lava meanwhile only below ground, with lava known;
-  - lava at depth found only by tunnelling into a cave over a lava lake; the stall's cause (F-25c4m); a goal's urgent steps ranked with the liking for mining, not seen in play.
-- The run script now spawns the three a few blocks apart: on the second seed the third was refused room.
-- Not yet checked alone: the keep and the second-night fixture, each failing once in the suite on `ace1d80`; the ranch's pen failed again in the suite on this code.
+- The lit portal, from the runs on `ace1d80` to `a4df9b4`:
+  - a live pair on this code, both seeds: E-40a1, F-25c4z and aa in play, and w, y, n, o, p, s, t and u, which the pairs have not yet exercised;
+  - lava at depth: on `a4df9b4` no player filled a lava bucket. Kindred branch-mined thirteen minutes at Y=-55 without coming on lava; there it lies in caves, which a branch mine breaks into only by chance;
+  - food at depth: on the first seed Echo was hurt and out of food for twenty minutes and never got to the surface, its climb for food taken turns with digging down for iron and with its watchdog's moves elsewhere; it died with hunger 2;
+  - deaths in caves: six of the first seed's 14 in the caves under the spawn point;
+  - the watchdog's walks elsewhere, which also break into a climb for food; a tunnel that digs out a step of the way it came; the night's water waited for on the surface; the stall's cause (F-25c4m), Echo's three lines on `a4df9b4`.
+- Not yet checked alone: the keep and the second-night fixture, each failing once in the suite on `ace1d80`; the ranch's pen failed again in the suite on `458d192`. The life-first fixture that hunts before building its base failed once in the suite on this code (3 of 3 alone).
 - The cattle: a single cow that never comes through the doorway, the player going out and back for it.
 - `modest-faraday`'s merge, as before.

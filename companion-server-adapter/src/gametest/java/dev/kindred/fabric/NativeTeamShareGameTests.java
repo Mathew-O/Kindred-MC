@@ -131,4 +131,93 @@ public final class NativeTeamShareGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A hand-over to a teammate it cannot get to is let go (E-40a1). A walk toward a teammate with no way to it ends at
+     * once, where it can get no closer; it counted as done, and in the live pair on `a4df9b4` Sol walked so 7,389 times,
+     * for twenty of its forty-four minutes, ahead of its goal. Staged as the fixture above, but Wren is walled into a cell
+     * of stone in the ring, out of sight and reach; the diamonds are given as though found.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "teamShareWalled", tickLimit = 3000)
+    public void aHandOverToATeammateItCannotGetToIsLetGo(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        UUID[] ids = new UUID[2], players = new UUID[2]; // Mason, Wren
+        int[] waited = {0};
+        BlockPos table = new BlockPos(1, 2, 1);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> {
+                    for (int x = -1; x <= 8; x++) for (int z = -1; z <= 8; z++) {
+                        if (x > -1 && x < 8 && z > -1 && z < 8) continue;
+                        for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    context.setBlockState(table, Blocks.CRAFTING_TABLE);
+                    f.runtime.createNative(f.source, "Mason");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Mason allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wren"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "Both established");
+                    for (var status : statuses) {
+                        int i = player(f, status.nativeId()).getName().getString().equals("Mason") ? 0 : 1;
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    var mason = player(f, players[0]);
+                    var wren = player(f, players[1]);
+                    context.assertTrue(mason.isOnGround() && wren.isOnGround(), "Both standing");
+                    mason.getInventory().clear();
+                    wren.getInventory().clear();
+                    mason.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+                    mason.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+                    mason.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+                    mason.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+                    mason.getInventory().setStack(0, new ItemStack(Items.DIAMOND_PICKAXE));
+                    mason.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    mason.getInventory().setStack(2, new ItemStack(Items.STICK, 4));
+                    mason.getInventory().setStack(3, new ItemStack(Items.BREAD, 8));
+                    wren.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+                    wren.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+                    wren.getInventory().setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    wren.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    wren.getInventory().setStack(2, new ItemStack(Items.BREAD, 8));
+                    BlockPos a = context.getAbsolutePos(new BlockPos(2, 2, 2)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
+                    mason.refreshPositionAndAngles(a.getX() + 0.5, a.getY(), a.getZ() + 0.5, 0, 0);
+                    wren.refreshPositionAndAngles(b.getX() + 0.5, b.getY(), b.getZ() + 0.5, 180, 0);
+                    // Wren's cell: stone all round its two blocks, and over them.
+                    for (int x = 5; x <= 7; x++) for (int z = 5; z <= 7; z++) for (int y = 2; y <= 4; y++) {
+                        if (x == 6 && z == 6 && y <= 3) continue;
+                        context.setBlockState(x, y, z, Blocks.STONE);
+                    }
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", ids[0]) == 1
+                            && f.runtime.nativeLifecycle(f.source, "resume", ids[1]) == 1, "Both resumed");
+                })
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 60, "Settling"))
+                .createAndAdd(() -> player(f, players[0]).getInventory().setStack(8, new ItemStack(Items.DIAMOND, 11)))
+                .createAndAdd(() -> context.assertTrue(
+                        "I've got 11 diamonds: diamond boots and a diamond helmet for Wren and a diamond sword for me.".equals(f.runtime.teamLine(ids[0])),
+                        "Told its team the find and the share-out: " + f.runtime.teamLine(ids[0])))
+                // Wren's pieces made, then let go: no longer Mason's to hand over.
+                .createAndAdd(() -> {
+                    var mason = player(f, players[0]);
+                    var tasks = f.runtime.teamCoordinator().listProjects().stream().flatMap(p -> p.tasks().values().stream())
+                            .filter(t -> HandOvers.Piece.of(t) != null && !HandOvers.Piece.of(t).to().equals(ids[0])).toList();
+                    boolean made = mason.getInventory().count(Items.DIAMOND_BOOTS) == 1 && mason.getInventory().count(Items.DIAMOND_HELMET) == 1;
+                    boolean letGo = !tasks.isEmpty() && tasks.stream().noneMatch(t -> ids[0].equals(t.assignedPlayerId())
+                            && (t.state() == SharedTask.TaskState.CLAIMED || t.state() == SharedTask.TaskState.IN_PROGRESS));
+                    context.assertTrue(made && letGo, "Wren's pieces made and let go: made " + made + "; "
+                            + tasks.stream().map(t -> t.title() + " " + t.state()).toList() + " / " + f.runtime.nativeActivityStatus(Actor.console(), ids[0]).work());
+                })
+                .createAndAdd(() -> {
+                    var wren = player(f, players[1]);
+                    context.assertTrue(wren.getInventory().count(Items.DIAMOND_BOOTS) == 0, "Nothing reached Wren through the stone");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

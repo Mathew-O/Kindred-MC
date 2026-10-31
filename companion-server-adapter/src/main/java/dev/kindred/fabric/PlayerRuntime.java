@@ -7632,15 +7632,31 @@ final class PlayerRuntime {
         if (taskId == null) return;
         var task = teamCoordinator.findTask(taskId).orElse(null);
         if (task == null || HandOvers.Piece.of(task) == null) return;
-        if (state == SkillRunner.State.COMPLETED) {
+        // A walk to its teammate that ends with it still out of tossing reach, and no nearer than the last ended, is a failed
+        // step too. A route that can get no closer ends at once as done, and was chosen again and again ahead of the goal:
+        // in the live pair on a4df9b4 Sol walked so 7,389 times, for twenty of its forty-four minutes (E-40a1).
+        boolean fruitless = false;
+        if (state == SkillRunner.State.COMPLETED && "native_goto".equals(skill)) {
+            Entry mateEntry = entries.get(HandOvers.Piece.of(task).to());
+            var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
+            var self = entry.nativeBody != null ? entry.nativeBody.entity() : null;
+            double away = mate != null && self != null && mate.getWorld() == self.getWorld() ? self.distanceTo(mate) : Double.MAX_VALUE;
+            boolean inReach = away <= 3 && self.canSee(mate);
+            fruitless = !inReach && away >= entry.handOverLastDistance - 1;
+            entry.handOverLastDistance = inReach ? Double.MAX_VALUE : away;
+        }
+        if (state == SkillRunner.State.COMPLETED && !fruitless) {
             entry.handOverFailures = 0;
             if ("native_toss".equals(skill)) {
+                entry.handOverLastDistance = Double.MAX_VALUE;
                 teamCoordinator.completeTask(taskId, entry.data.id(), "Handed over " + task.title());
                 KindredMod.LOGGER.info("{} handed over {}", entry.data.displayName(), task.title());
             }
-        } else if (state == SkillRunner.State.BLOCKED && ++entry.handOverFailures >= 6) {
+        } else if ((state == SkillRunner.State.BLOCKED || fruitless) && ++entry.handOverFailures >= 6) {
             entry.handOverFailures = 0;
+            entry.handOverLastDistance = Double.MAX_VALUE;
             teamCoordinator.revokeTask(taskId, "Six steps of the hand-over failed");
+            KindredMod.LOGGER.info("{} lets go of handing over {}: six of its steps failed", entry.data.displayName(), task.title());
             entry.handOversWaitUntil = server.getTicks() + 1200;
         }
     }
@@ -12253,6 +12269,8 @@ final class PlayerRuntime {
         private String handOverStepSkill;
         private long handOversWaitUntil;
         private int handOverFailures;
+        /** How far its teammate was when its last walk to it ended, short of tossing reach (E-40a1). */
+        private double handOverLastDistance = Double.MAX_VALUE;
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;

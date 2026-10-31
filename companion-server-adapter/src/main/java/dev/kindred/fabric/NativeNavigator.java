@@ -255,8 +255,14 @@ final class NativeNavigator {
      * routes, so dry ground behind a ceiling or across a wall, however close, is passed over.
      */
     java.util.Optional<BlockPos> nearestReachableDryStand(BlockPos from, int maxNodes, int maxHorizontalRadius) {
+        return nearestReachableDryStand(from, maxNodes, maxHorizontalRadius, feet -> true);
+    }
+
+    /** As above, passing over dry ground {@code allowed} refuses: one a walk out of the water could not get to, say. */
+    java.util.Optional<BlockPos> nearestReachableDryStand(BlockPos from, int maxNodes, int maxHorizontalRadius,
+                                                          java.util.function.Predicate<BlockPos> allowed) {
         Path path = find(from, from, feet -> standable(feet) && state(feet).getFluidState().isEmpty()
-                && state(feet.down()).getFluidState().isEmpty(), maxNodes, maxHorizontalRadius);
+                && state(feet.down()).getFluidState().isEmpty() && allowed.test(feet), maxNodes, maxHorizontalRadius);
         return path.complete() && !path.nodes().isEmpty() ? java.util.Optional.of(path.nodes().getLast()) : java.util.Optional.empty();
     }
 

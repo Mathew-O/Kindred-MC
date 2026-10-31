@@ -1239,11 +1239,13 @@ final class PortalRunCampaign {
             // Its face at the surface already, a block below it at most, and dry ground a few steps off: it climbs out.
             // Bobbing under on the way out and sent up for air again, it cut short each climb out of a flooded shaft's
             // top, and drowned there.
-            var ashore = above.getY() - feet.getY() <= 1 ? navigator.nearestReachableDryStand(feet, 400, 3) : Optional.<BlockPos>empty();
+            var ashore = above.getY() - feet.getY() <= 1 ? navigator.nearestReachableDryStand(feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
             if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
-        var dry = navigator.nearestReachableDryStand(feet, 4000, 16);
+        // Not dry ground a walk out has failed to get to: in a stream down a hillside the current carried Echo past it each
+        // time, and it set out for the same spot 173 times in the live pair on a4df9b4, Sol 375 times on 458d192 (F-25c4aa).
+        var dry = navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p));
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
@@ -1312,6 +1314,18 @@ final class PortalRunCampaign {
                 mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty()) return Optional.empty();
         return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
                 "drop", String.valueOf(Math.min(deepest, bestDrop)))), bestDrop > 12 ? "Jump down from the ledge and break the fall with water" : "Jump down from the ledge"));
+    }
+
+    /**
+     * Lava within six blocks across and three down of {@code feet}, or level with it: where any frame site it could choose
+     * would have lava within three blocks of it, which no site may ({@code lavaNear}). Loaded ground only.
+     */
+    private static boolean lavaAtOrBelow(ServerWorld world, BlockPos feet) {
+        for (int dy = -3; dy <= 0; dy++) for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
+            BlockPos at = feet.add(dx, dy, dz);
+            if (world.isChunkLoaded(at) && world.getFluidState(at).isIn(FluidTags.LAVA)) return true;
+        }
+        return false;
     }
 
     /** Lava within {@code radius} blocks across and two down of {@code feet}, loaded ground only. */
@@ -3140,7 +3154,17 @@ final class PortalRunCampaign {
         if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) return lavaForCast(body);
         if (portalSite == null) {
             portalSite = choosePortalSite(player).orElse(null);
-            if (portalSite == null) return tunnel(body, "Cast: look for room for the frame");
+            if (portalSite == null) {
+                // No site will do within three blocks of lava, and along a lava lake's shore none is found: a few steps up
+                // into the rock over it instead, out of the lava's reach. In the live pair on 458d192 Echo, its lava in hand
+                // at Y=-55, tunnelled 209 blocks of deepslate between lava lakes for a site, and its iron pickaxe wore out
+                // (F-25c4z).
+                if (lavaAtOrBelow(world, player.getBlockPos())) {
+                    Optional<Task> up = climb(body, "Cast: up out of the lava's reach for the frame");
+                    if (up.isPresent()) return up;
+                }
+                return tunnel(body, "Cast: look for room for the frame");
+            }
         }
         PortalSite site = portalSite;
         if (!player.getBlockPos().equals(site.stand()) && clearPortalSiteNeeded(world, site)) {

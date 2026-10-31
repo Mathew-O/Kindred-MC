@@ -1,5 +1,32 @@
 # AI-player development validation
 
+## The live pair on a4df9b4, and three fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `a4df9b4` (F-25c4v to y): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - No portal lit, and no lava bucket filled. On the second seed Kindred dug a staircase from Y=44 to Y=-55 in three and a half minutes and branch-mined there for thirteen without coming on lava, until a skeleton killed it at 23:00. Sol spent 15% of its time on the way toward lava, Echo 9%.
+  - 18 deaths, 14 on the first seed (21 on `458d192`) and 4 on the second. Six of the first seed's came in the caves 25 to 35 blocks under the spawn point, around 21 to 32, 32 to 40, 81 to 93: Kindred three times, Sol three.
+  - F-25c4v met in play: three times a player died again before it had its things back, and none went back for either lot; no death came on a walk back after another (11 on `458d192`).
+  - F-25c4x met in play: every life that held eight iron made its chestplate before it mined on, eight in all. 7 of the 18 deaths came with one on (2 of 24 on `458d192`), and none of the 11 with no armour held the eight iron one takes.
+  - F-25c4w and y not met: no player jumped into water from a ledge and swam back, and none stood on a shore level with water with nothing else to do; no frame was cast.
+  - No reconciliation stop on either seed.
+  - On the first seed Sol, with an iron sword and boots promised to Echo, walked toward Echo 7,389 times, each walk ending at once as done, for about twenty of its forty-four minutes, ahead of its goal; Echo did the same 546 times (E-40a1). Its watchdog gave up the spot again and again: "no progress here", 40% of Sol's time.
+  - On the second seed Echo, in a stream running down a hillside, set out for the same spot on its bank 173 times; Kindred did so 57 times on the first (F-25c4aa).
+  - On the first seed Echo was hurt and out of food from 22:11 at Y=19 to 47, and never got to the surface. It went back and forth between its climb for food and digging down for iron, and from 22:24 its watchdog took it elsewhere eight times in seven minutes. Three stall lines came in that time, "candidates=0 decision=WAIT" (F-25c4m), and at 22:31 a zombie killed it in water at 90, 40, 60, hunger 2.
+- E-40a1 (a hand-over to a teammate it cannot get to let go), on top of `a4df9b4`:
+  - its fixture, the share-out's find of diamonds with Wren walled into stone, fails on the old runtime: "[diamond boots for Wren CLAIMED, a diamond helmet for Wren CLAIMED]", 3 of 3;
+  - after, three runs alone: 3 of 3, with the share-out's own hand-over fixture.
+- F-25c4z (up out of the lava's reach for a frame site), on top of `a4df9b4`:
+  - its fixture, a tunnel with lava under the rock a block off on each side, fails on the old campaign: no site three blocks up within two minutes, 3 of 3. It tunnelled along the lava; in one run it found a site level with the lava ten blocks off, in another it went back to looking for lava;
+  - after, three runs alone: 3 of 3, with the whole-frame cast and F-25c4y's roofed cast.
+- F-25c4aa (dry ground a walk out failed to reach passed over), on top of `a4df9b4`:
+  - its fixture, a pool with a notch of shore near it and a ledge along the far wall, one walk to the notch reported failed, fails on the old campaign: "Out on the far ledge, not the notch it failed to reach: 6, 0, 0", 3 of 3. Asserting where it ended up passed on the old code too: from the notch it moved on later, so the fixture judges where it first stands out of the water;
+  - after, three runs alone: 3 of 3.
+- `build` successful.
+- The full native suite on this code: 421 of 422 in 46 minutes. The one failure, `hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase` ("No way to reach minecraft:oak_stairs" in its cabin), passed 3 of 3 alone after; its cause in the suite is not found. The ranch's pen and the pasture's doorway pair, the cattle, passed.
+- Evidence: [E-40a1](evidence/E-40a1.md), [F-25c4z](evidence/F-25c4z.md), [F-25c4aa](evidence/F-25c4aa.md); F-25c4v and F-25c4x complete on this pair.
+
 ## The live pair on 458d192, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
