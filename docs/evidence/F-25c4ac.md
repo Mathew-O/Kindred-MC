@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `41f9de9`; recorded in [validation](../validation.md)
-Status: in progress (native passed; live runs pending); F-25c4 stays open
+Status: complete 2026-10-31 (native and live)
 
 ## Scope and implementation
 
@@ -26,7 +26,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | In a closed obsidian chamber, a corridor of stone the only way on, a lava pool sealed under the corridor's far half, a water bucket and an empty one: its bucket is filled with the pool's lava, and it is unhurt | `lookingForItsLavaItsTunnelOpensTheCellOverAPoolAndFillsItsBucketThere` | Fails on the old campaign, 3 of 3: "Its bucket filled with the pool's lava: now 3, 0, 0, Obsidian: waiting for a feasible step", the cell over the pool refused. Passes after, 3 of 3 alone | native |
 | The other lava searches and casts unchanged | alone on this code: obsidian from poured water, the lava legs, F-25c4n's night lava, F-25c4z's climb over the lava lakes; the full native suite | 4 of 4 alone. The full native suite on `77ddbb4`, 419 of 425. The six failures ran while log and world-save analyses ran on the same cores, three back to back as a log report ran; alone on the same code the follow-up without a shield queued, the ruined portal's chest, the long fall broken with water, the route that bridges a gap and digs through a wall, and the librarian off the line pass, 5 of 5. The second-night fixture, 42,000 ticks long, was not run alone: its cabin's repair ended short, its roof stairs out of reach, as the life-first fixture's has before | native |
-| In play | live runs on this code | Pending | live |
+| In play | the live pair on `64c298d`, both seeds, strategist off | Met on the second seed: Kindred, on its branch mine at Y=-54, opened a cell over lava and filled its bucket; Sol, digging toward a pool it could not walk to, opened eight cells over it and filled sixteen buckets. None had been filled in the two pairs before. On the first seed no lava was filled: the one pool seen was dug toward and passed (F-25c4ad) | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the chamber, its corridor, the pool and the glowstone are staged; the kit is given as though made.

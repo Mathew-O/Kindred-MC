@@ -21,7 +21,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | Health 8, hunger 10, nothing to eat, by day on stone ground under a lit roof of stone four thick and forty-one blocks across, walled round, the sky showing only through a gap over its head: for twenty seconds it looks for animals under the roof and never turns back to the climb | `hurtAndOutOfFoodUpUnderAGapInTheRockItGoesOnLookingForAnimals` | Before, the change set aside, it fails 3 of 3: "Back to the climb: Iron: hurt and out of food - Climb toward the surface for food: back the way it came". After, 3 of 3 alone | native |
 | The way up for food, the hunt and fishing unchanged | alone on this code: the search once up (F-25c4ab), the climb with gravel overhead, food first as advised, fishing at a pond | 4 of 4 | native |
-| In play | live runs on this code | Pending | live |
+| In play | the live pair on `64c298d`, both seeds, strategist off | Not met yet: two spells hurt and out of food on the first seed, neither climbing up into the open | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the ground, its roof, walls and lights, and the four cows, kept from wandering, are staged, and any animal another fixture left on the ground is taken away first; so are the player's health and hunger. The kit is given as though made.

@@ -109,6 +109,8 @@ final class PortalRunCampaign {
     private BlockPos underWaterAt;
     private long underWaterTick;
     private Direction underWaterHeading;
+    /** When the water step last climbed toward the surface: the top of that staircase is still part of the climb. */
+    private long waterClimbTick = Long.MIN_VALUE;
     private Direction exploreHeading;
     private int exploreFailures;
     private BlockPos exploredFrom;
@@ -1678,9 +1680,12 @@ final class PortalRunCampaign {
                     ? obsidian(body).or(() -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 8, "obsidian", true)) : Optional.<Task>empty())
                     // No water known down here: up to the surface, where lakes and rivers are, rather than tunnel about
                     // blind at depth (live run 55 met a skeleton doing that at Y=12).
-                    .or(() -> fillWater(body)).or(() -> !underground(player) ? Optional.<Task>empty()
+                    // Out at the top of its staircase with the ground still two or more blocks over its feet, the climb goes
+                    // on: there its head is in the open, and a walk to look about led back down the stair (F-25c4ah).
+                    .or(() -> fillWater(body)).or(() -> !underground(player)
+                            && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos())) ? Optional.<Task>empty()
                             : night(player.getServerWorld()) ? lavaMeanwhile(body).or(() -> daylightBelow(body))
-                            : wayUp(body, "Climb toward the surface for water"))
+                            : wayUp(body, "Climb toward the surface for water").map(climb -> { waterClimbTick = lastTick; return climb; }))
                     .or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
@@ -2141,6 +2146,15 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // Below the ground surface (leaves do not count as cover) with no open sky: a shaft or a cave, not a forest floor.
         return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 2;
+    }
+
+    /** The ground beside it, on some side, two or more blocks over its feet: a step it could not walk up. */
+    private static boolean belowRim(ServerWorld world, BlockPos feet) {
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            BlockPos next = feet.offset(side);
+            if (world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, next.getX(), next.getZ()) >= feet.getY() + 2) return true;
+        }
+        return false;
     }
 
     /** Nothing over its head but the logs (and leaves) of a trunk up to the open sky: one it is cutting from below. */
@@ -3305,8 +3319,12 @@ final class PortalRunCampaign {
             BlockState state = world.getBlockState(cell);
             if (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) continue;
             if (corner) return within(body, site, at[0], cell, () -> placeBlock(body, cell, "Cast: corner at " + cell.toShortString()));
-            // A cast needs open air at the cell and above it; water left by the last cast drains in a moment.
-            for (BlockPos open : List.of(cell, cell.up())) {
+            // A cast needs open air at the cell and above it; water left by the last cast drains in a moment. A top block's
+            // water also needs the cell in front of it open: under rock, every line from below to that water otherwise
+            // runs through the block once it hardens, and the cast is refused from every stand. In the live pair on
+            // 64c298d Sol cast eight of its ten frame blocks at Y=-54 and was refused the top two for its last seven
+            // minutes (F-25c4ai).
+            for (BlockPos open : at[1] == 4 ? List.of(cell, cell.up(), site.front(at[0], 5)) : List.of(cell, cell.up())) {
                 if (world.getBlockState(open).isAir()) continue;
                 if (!world.getFluidState(open).isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
                 if (breakableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));

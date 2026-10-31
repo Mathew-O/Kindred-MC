@@ -4043,6 +4043,82 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * The roofed cast fixture under rock five blocks thick, as where Sol cast its frame into the deepslate at Y=-54 in the
+     * live pair on `64c298d` (F-25c4ai). Over a top block the water goes in the rock, and with the rock left over the row in
+     * front, every line from below to that water runs through the block once it hardens: the cell in front of the water is
+     * dug out first, the top two are cast, the water taken back, and the frame lit. Before, it cast eight and was refused the
+     * top two from every stand. Staged as the roofed fixture is, the rock over the room with it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "castDeep", tickLimit = 12000)
+    public void underThickRockTheFramesTopIsCastWithItsWaterTakenBack(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Deepcaster"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-12, -2, -7), p.add(6, 8, 6));
+                    for (int x = -12; x <= 6; x++) for (int z = -7; z <= 6; z++) {
+                        boolean edge = x >= -6 && (Math.abs(x) == 6 || z == -7 || z == 6);
+                        boolean rock = x >= -6;
+                        world.setBlockState(p.add(x, -2, z), Blocks.STONE.getDefaultState());
+                        world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 8; y++) {
+                            boolean solid = edge && y <= 3 || rock && y >= 4;
+                            world.setBlockState(p.add(x, y, z), solid ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    for (int[] g : new int[][] {{-5, -6}, {5, -6}, {-5, 5}, {5, 5}}) world.setBlockState(p.add(g[0], 4, g[1]), Blocks.GLOWSTONE.getDefaultState());
+                    for (int x = -3; x <= 3; x++) for (int z = 3; z <= 4; z++) world.setBlockState(p.add(x, -1, z), Blocks.LAVA.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() - 3.5, p.getY(), p.getZ() + 2.5, 0, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.BUCKET));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    int portal = 0, obsidian = 0;
+                    for (BlockPos pos : BlockPos.iterate(feet[0].add(-12, -2, -7), feet[0].add(6, 8, 6))) {
+                        var state = world.getBlockState(pos);
+                        if (state.isOf(Blocks.NETHER_PORTAL)) portal++;
+                        if (state.isOf(Blocks.OBSIDIAN)) obsidian++;
+                    }
+                    var player = f.player();
+                    context.assertTrue(portal == 6, "A cast frame stands lit under the rock: " + portal + " portal blocks, " + obsidian
+                            + " obsidian; at " + (player == null ? "no body" : player.getBlockPos().toShortString()) + " from " + feet[0] + "; "
+                            + f.runtime.nativeActivityStatus(Actor.console(), f.id) + "; "
+                            + f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel"));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.WATER_BUCKET) == 1, "The water taken back each time: "
+                            + ItemMoves.count(inventory, Items.WATER_BUCKET) + " water buckets");
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 10, "Unhurt by the lava: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * With its lava in hand at the level of lava lakes, it climbs a few blocks into the rock over them for a frame site,
      * rather than tunnel along their shore for one (F-25c4z). No site may lie within three blocks of lava, and in the live
      * pair on `458d192` Echo, at Y=-55 between lava lakes, tunnelled 209 blocks of deepslate before it found one, and its

@@ -22,7 +22,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | At the bottom of a stone pool ten deep, air 40 of 300, health 19 and hunger 17 with bread, a drowned beside it after it, an iron sword and chestplate: it comes up for air and never drowns | `shortOfBreathWithADrownedAfterItItSwimsUpForAirRatherThanStopToFight` | Before, the change set aside, it fails 3 of 3, slain by the drowned while eating, its eating begun and cancelled for the threat 164 times. With only the fight part of the change it fails 3 of 3 the same way (166 cancels); with only the eat guard it drowns 3 of 3, its walk up for air stopped 130 times to fight back first. After, 3 of 3 alone | native |
 | Fights and the other ways out of water unchanged | the goal's fight with a mob after it, the swim up a flooded shaft, the flooded pit (F-25c4t), the shore passed over (F-25c4aa), the fall broken with water before a fight (F-25c4p), and eating when hungry and while routine planning waits, alone on this code | 7 of 7 | native |
-| In play | live runs on this code | Pending | live |
+| In play | the live pair on `64c298d`, both seeds, strategist off | Not met yet: no player drowned or was short of breath with a mob after it in the log (one drowning on `41f9de9`) | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the pool, its light, the drowned and the player's air, health and hunger are staged; the kit is given as though made.

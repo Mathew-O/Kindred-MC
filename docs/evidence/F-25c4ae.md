@@ -21,7 +21,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | The goal begun where the player stands, then the player moved 200 blocks off, sealed in obsidian in a cell its own size, nothing in hand: in twenty seconds it is never held by a walk home refused as it was made | `homeFarOffIsHeadedForALegAtATimeNotByAWalkRefusedAsItIsMade` | Before, the change set aside, it fails 3 of 3: "Held by a walk home refused as it was made: Goto target is too far for one route". After, 3 of 3 alone | native |
 | The way to logs unchanged | `woodFirstWithNoTreeInSightLetsTheRouteGoOn` alone on this code | 1 of 1 | native |
-| In play | live runs on this code | Pending | live |
+| In play | the live pair on `64c298d`, both seeds, strategist off | Not met yet: no walk home was beyond one route's reach | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the obsidian cell and the glowstone under it are staged, and so is the move away from home.

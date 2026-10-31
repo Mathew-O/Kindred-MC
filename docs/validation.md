@@ -1,5 +1,28 @@
 # AI-player development validation
 
+## The live pair on 64c298d, and two fixes from it and P18 — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `64c298d` (F-25c4ac to ag, E-40a1's far teammate): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - No portal lit. Lava buckets were filled again after two pairs with none, all on the second seed. Kindred opened a cell over lava on its branch mine at Y=-54 and filled its bucket. Sol's walk to a pool was refused, so it dug toward the pool, opened eight cells over it and filled sixteen buckets.
+  - Sol cast 15 obsidian in two frames at Y=-54. Its first frame was dropped with seven cast, and the next sites chosen overlapped it. In the second it cast eight blocks and both top corners. The top two blocks were then refused from every stand for its last seven minutes: the water over each could not be taken back once it hardened (F-25c4ai below).
+  - Kindred, its bucket filled, gave up 17 frame sites in two minutes, each for a block in reach that it could not break from where it stood, and its watchdog moved it away. Sol gave up 32, two of them for its own obsidian.
+  - 10 deaths, 10 and 0 (13 on `41f9de9`); none drowned. Kindred died twice in one cave a minute apart, the second time on its way back for the first death's drops, which it then left (F-25c4v).
+  - On the first seed Echo spent 29 minutes at Y=47, its watchdog's tunnel and the climb's walk to the wall taking turns several times a second.
+  - On the first seed Kindred dug toward lava it saw at 0, -18, 48 and tunnelled 81 blocks west at the lava's level, past it: each step south, the floor beyond was open.
+  - E-40a1 in play: on the first seed Sol waited 40 times for Echo, 150 to 185 blocks off, and let the hand-over go 8 times; no walk was refused as it was made (five minutes of them on `41f9de9`). F-25c4ae, af and ag did not come up: no walk home beyond one route, no drowning, no hungry spell that reached the open.
+- F-25c4ah (under water, out from under it; the climb for water held to the top), on top of `64c298d`:
+  - its fixture fails on `64c298d`, "walks to the wall 2109", 3 of 3;
+  - with the tunnel out from under the water alone it failed too. In the one run whose neighbours had left its ground alone, it came out from under the lake, then at the top of its stair the climb and a walk to look about took turns, the walk leading back down. With the climb held to the top, 3 of 3 alone;
+  - the flooded pit, the night's water waiting for daylight and the night's lava, alone on this code: 3 of 3; the climb out of a pit with no pickaxe, out of a chamber, never digging out what gravel rests on, and the hungry search under a gap in the rock, on this code less the water step's hold, which they do not reach: 4 of 4.
+- F-25c4ai (the cell in front of a top block's water opened first), on top of `f59492d`:
+  - its fixture, the roofed cast's room under rock five thick, fails before, "0 portal blocks, 8 obsidian", the top two refused from every stand, 3 of 3. After, 3 of 3 alone;
+  - the roofed cast, the whole cast, the cast refused for its water and the one-block cast: 4 of 4.
+- One run put both new fixtures and their neighbours side by side. A fixture that fails leaves its ground unrestored, as every fixture does, and two more failed in the plots beside it; those runs are not counted.
+- `build` successful.
+- Evidence: [F-25c4ah](evidence/F-25c4ah.md), [F-25c4ai](evidence/F-25c4ai.md), [F-25c4ac](evidence/F-25c4ac.md).
+
 ## Four more fixes from the live pair on 41f9de9: lava dug toward, home a leg at a time, up for air, the hungry search held — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
