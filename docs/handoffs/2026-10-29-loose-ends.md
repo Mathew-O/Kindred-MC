@@ -441,6 +441,8 @@ The owner: work through what is left, leaving the decisions only the owner can m
 | A live pair on `c432fba`, both seeds, 240,000 ticks each, strategist off | **The first earned lit portals**: Kindred's on the first seed (about tick 236,000), Sol's on the second (about tick 150,000), each cast from lava at Y=-54 and Y=-53 with its own buckets and lit with its own flint and steel. F-25c4ai complete in play; 8 frame sites given up against 49. 8 deaths | |
 | Kindred's 81 blocks of tunnel past the lava it saw across a cave on `64c298d` | Rebuilt from the save: a cave opened south of its tunnel at the lava's level the whole way. At that level it now goes only the two ways that close on the lava, a drop bridged with its own block (F-25c4ak, open: the live runs). Fixture fails before (33 blocks west), 3 of 3 after | the commit after `c432fba` |
 | Kindred and Sol digging away from their lit portals on `c432fba` | On the Nether goal a lit portal is the end: nothing more is planned, and the watchdog stays off (F-25c4al, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `c432fba` |
+| Echo starting nothing for twenty-seven minutes at a lava pool's edge on `c432fba` | Its step off was refused every tick: a straight block on from off the middle of its cell overlapped the wall beside the safe cell, its work stopped meanwhile as a hazard. The step now goes to the middle of the cell found safe (F-25c4am, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `21046b0` |
+| A live run on the dragon goal | Refused on the dev server until an operator turns the dragon fight on (`/aiplayer dragonfight on`); its players ran with no goal and were killed at spawn 67 times over the first two nights, 59 of them by husks. Stopped; the next runs use the End goal | |
 
 ### Validation
 
@@ -459,11 +461,12 @@ The owner: work through what is left, leaving the decisions only the owner can m
 - On top of `64c298d` and `f59492d`: the F-25c4ah and ai fixtures fail before and pass 3 of 3 after; with F-25c4ah's tunnel alone its fixture failed too, at the top of its stair; the water climbs and the casts beside them alone, 7 of 7 and 4 of 4; the climbs for logs and food 4 of 4 on this code less the water step's hold; `build` successful.
 - On top of `238ff1e`: the F-25c4aj fixture, staged from the save, fails before and passes 3 of 3 after; the casts beside it alone 7 of 7; `build` successful.
 - On top of `c432fba`: the F-25c4ak and al fixtures fail before and pass 3 of 3 after; the lava and portal fixtures beside them alone, 7 of 7; `build` successful.
+- On top of `21046b0`: the F-25c4am fixture fails before and passes 3 of 3 after; the steps off hazards beside it alone, 6 of 6; `build` successful.
 
 ### Next dependency
 
 - The lit portal, from the runs on `ace1d80` to `41f9de9`:
-  - the lit portal is reached (`c432fba`, both seeds). Next: a third seed for F-25c4; then pairs on the dragon goal, longer than 240,000 ticks, for the Nether onward (F-25c6, the blaze rods and pearls, the stronghold and the End); F-25c4ak and al, and F-25c4ah, ad, ae, af and ag in play;
+  - the lit portal is reached (`c432fba`, both seeds). Next: a third seed for F-25c4; then pairs on the End goal (the dragon goal waits on an operator turning the dragon fight on), longer than 240,000 ticks, for the Nether onward (F-25c6, the blaze rods and pearls, the stronghold and the End); F-25c4ak and al, and F-25c4ah, ad, ae, af and ag in play;
   - open from the pairs: Echo's watchdog spells, 29 minutes on `64c298d` and 59% of a seed on `c432fba`: back to back, its plan's own steps never getting a turn, each spell's tunnel and the climb's walk to the wall taking it between the ends of a corridor beside water (no fixture yet; the save's water had moved); hurt and out of food 20 to 34% of a seed, once punching up by hand with no pickaxe; waiting for daylight below ground 25 to 29%; Sol's first frame dropped with seven cast on `64c298d` (the cast's give-up now logged); a hand-over let go after six waits and proposed again at once (E-40a1);
   - food at depth: the search once up now holds near where the player last had open sky (F-25c4ag), to be seen in play; a hungry player still goes down with little food where few animals are about;
   - water: at night in a pocket of flowing water, the wait for daylight and the swim out took turns (Sol, four minutes on `41f9de9`), every way out of the water blocked;

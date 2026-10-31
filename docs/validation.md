@@ -1,5 +1,16 @@
 # AI-player development validation
 
+## A step off a hazard to the middle of the cell found safe (F-25c4am) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Found in the live pair on `c432fba`: Echo started nothing for twenty-seven minutes at a lava pool's edge at Y=-54, its block over the lava. Its step off was proposed every tick and refused every tick, "Retreat needs a clear, supported, loaded non-hazardous goal", its goal's work stopped as a hazard meanwhile.
+- Its fixture, the pool, the ledge and a wall a block beyond, fails on `21046b0`, "at 0, 0, 0 over lava, Retreat needs a clear, supported, loaded non-hazardous goal", 3 of 3. After, 3 of 3 alone.
+- The magma retreat, with edits off, idle, the operator's retreat, the stop that cancels it, and the creeper retreat: 6 of 6.
+- `build` successful.
+- The dragon goal is refused on the dev server until an operator turns the dragon fight on (`/aiplayer dragonfight on`), as server policy has it: a live run begun on it ran with no goal: at spawn its players were killed 67 times over the first two nights, 59 of them by husks, and it was stopped. The next pair runs on the End goal.
+- Evidence: [F-25c4am](evidence/F-25c4am.md).
+
 ## The live pair on c432fba: the first earned lit portals; and two fixes from it and P19 — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

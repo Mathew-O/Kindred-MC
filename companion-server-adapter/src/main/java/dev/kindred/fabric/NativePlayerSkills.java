@@ -740,7 +740,12 @@ final class NativePlayerSkills {
                 default -> throw new IllegalArgumentException("Retreat direction must be north, south, east or west");
             };
             start = body.entity().getPos();
-            goal = start.add(heading.multiply(blocks));
+            // The middle of the cell that many blocks off from the one it stands in, the cell the runtime found safe: a
+            // straight block on from where it stands, off the middle of its own cell, can overlap the wall beside that cell,
+            // and the retreat was refused each time it was asked for (F-25c4am: in the live pair on c432fba Echo, at a lava
+            // pool's edge, its block over the lava, was held there twenty-seven minutes, its goal's work stopped as a hazard).
+            BlockPos to = body.entity().getBlockPos().add((int) heading.x * blocks, 0, (int) heading.z * blocks);
+            goal = new Vec3d(to.getX() + 0.5, start.y, to.getZ() + 0.5);
             if (!safeGoal()) throw new IllegalArgumentException("Retreat needs a clear, supported, loaded non-hazardous goal");
         }
 
