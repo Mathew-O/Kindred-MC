@@ -68,6 +68,8 @@ final class NativeBreakAction extends NativeRecordedAction {
     private net.minecraft.util.math.Vec3d anchor;
     private boolean holding;
     private final boolean underfoot;
+    /** Lava directly under the block does not refuse it (F-25c4ac). */
+    private final boolean overLava;
 
     /**
      * Breaking the given block, picking up its drops if asked; when guarded, a block by lava may be mined
@@ -83,14 +85,22 @@ final class NativeBreakAction extends NativeRecordedAction {
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
                       boolean guarded, boolean underfoot) {
+        this(body, lease, worldId, policy, claims, writer, dispatch, target, collect, guarded, underfoot, false);
+    }
+
+    /** With {@code overLava}, a block whose only lava lies directly under it, opened to show the lava (F-25c4ac). */
+    NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
+                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
+                      boolean guarded, boolean underfoot, boolean overLava) {
         this.underfoot = underfoot;
+        this.overLava = overLava;
         this.body = body; this.lease = lease; this.policy = policy; this.claims = claims; this.writer = writer;
         this.dispatch = dispatch; this.target = target.toImmutable(); this.collect = collect; this.guarded = guarded;
         var player = body.entity();
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) throw new IllegalArgumentException("Break target is unloaded");
         state = world.getBlockState(target);
-        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot);
+        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot, overLava);
         if (denial != null) throw new IllegalArgumentException(denial);
         body.faceBlock(target);
         if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
@@ -178,7 +188,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     private boolean intact() { return body.entity().getWorld().isChunkLoaded(target) && body.entity().getWorld().getBlockState(target) == state; }
     private boolean ownsClaim() { return claim != null && claims.holdsAll(claim, System.currentTimeMillis()); }
     private boolean eligible() {
-        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot) == null;
+        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot, overLava) == null;
     }
     private boolean receipt() {
         return body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)

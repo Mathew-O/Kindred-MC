@@ -47,6 +47,17 @@ final class RoamingEdits {
      * gets down a pillar it built (E-39c), and nowhere else.
      */
     static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded, boolean underfoot) {
+        return breakDenial(player, pos, policy, waterGuarded, underfoot, false);
+    }
+
+    /**
+     * As {@link #breakDenial(ServerPlayerEntity, BlockPos, EditPolicy.ServerPolicy, boolean, boolean)}; {@code overLava}
+     * lets the player open a block whose only lava is directly under it, as a lava search does to see the lava and fill
+     * its bucket there: lava never rises, so none is released into the gap (F-25c4ac). Lava on any other side still
+     * refuses the break.
+     */
+    static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded, boolean underfoot,
+                              boolean overLava) {
         String common = common(player, pos, policy);
         if (common != null) return common;
         var world = player.getServerWorld();
@@ -62,6 +73,7 @@ final class RoamingEdits {
                 || state.isOf(Blocks.COBBLESTONE) && waterBeside(player, pos));
         for (Direction direction : Direction.values()) {
             BlockPos near = pos.offset(direction);
+            if (overLava && direction == Direction.DOWN) continue;
             if (!guarded && world.isChunkLoaded(near) && world.getFluidState(near).isIn(FluidTags.LAVA)) return "Breaking it would release lava";
         }
         return null;

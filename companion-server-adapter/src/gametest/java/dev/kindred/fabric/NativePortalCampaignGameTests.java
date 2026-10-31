@@ -4242,6 +4242,71 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Looking for its cast's lava a block above the level of a lava pool under its tunnel's floor, sealed in rock and out
+     * of sight: the tunnel opens the cell over the pool from where it stands, sees the lava and fills its bucket there,
+     * unhurt (F-25c4ac). Before, every cell over lava was refused and the tunnel turned away from the pool unseen; in the
+     * world saves of the live pair on a4df9b4 most of the lava its tunnels came on lay so. Staged: a closed obsidian
+     * chamber its iron pickaxe cannot dig, a corridor of stone the only way on, the pool under the corridor's far half,
+     * and glowstone in the ceiling; the kit, a water bucket and an empty one, is given as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "lavaUnderFloor", tickLimit = 2400)
+    public void lookingForItsLavaItsTunnelOpensTheCellOverAPoolAndFillsItsBucketThere(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Delver"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    at[0] = p;
+                    FixtureGround.keep(context, p.add(-4, -3, -4), p.add(13, 4, 4));
+                    for (int x = -4; x <= 13; x++) for (int z = -4; z <= 4; z++) for (int y = -3; y <= 4; y++) {
+                        boolean room = x >= -1 && x <= 1 && z == 0 && (y == 0 || y == 1);
+                        boolean corridor = x >= 2 && x <= 11 && z == 0 && (y == 0 || y == 1);
+                        boolean pool = x >= 4 && x <= 9 && Math.abs(z) <= 1 && y == -1;
+                        var state = room ? Blocks.AIR.getDefaultState() : corridor ? Blocks.STONE.getDefaultState()
+                                : pool ? Blocks.LAVA.getDefaultState() : Blocks.OBSIDIAN.getDefaultState();
+                        world.setBlockState(p.add(x, y, z), state);
+                    }
+                    for (int x : new int[] {0, 6, 11}) world.setBlockState(p.add(x, 2, 0), Blocks.GLOWSTONE.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.BUCKET));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    String goal = f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel");
+                    context.assertTrue(player != null && ItemMoves.count(player.getInventory(), Items.LAVA_BUCKET) >= 1, "Its bucket filled with the pool's lava: now "
+                            + (player == null ? "no body" : player.getBlockPos().subtract(at[0]).toShortString()) + ", " + goal);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive() && !player.isOnFire() && player.getHealth() >= 18, "Unhurt by the lava: "
+                            + (player == null ? "no body" : player.getHealth()));
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     /** What became of the cast fixture's lava pool, for a failure message. */
     private static String pool(TestContext context, BlockPos p) {
         int sources = 0, flowing = 0, obsidian = 0, stone = 0, air = 0;

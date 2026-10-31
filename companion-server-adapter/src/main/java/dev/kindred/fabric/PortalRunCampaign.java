@@ -71,6 +71,14 @@ final class PortalRunCampaign {
             PortalRunPlanner.Action.MINE_IRON, PortalRunPlanner.Action.MINE_DIAMOND, PortalRunPlanner.Action.MAKE_OBSIDIAN,
             PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT);
     private static final int DIAMOND_TOP = -52, DIAMOND_TARGET = -58;
+    /**
+     * Lava is looked for a block above the deep caves' lava level, which lies at Y=-55: there the lakes are under the
+     * tunnel's floor, where a cell over them can be opened to see one without letting it in, rather than level with
+     * it, where every cell beside one is refused and the tunnel turns away unseen. The legs run long and far apart,
+     * as lakes are wide: dense legs find a small vein, not a lake, and in the world saves of the live pair on a4df9b4
+     * these found lava within 800 blocks mined five times as often as the diamond legs at Y=-55 (F-25c4ac).
+     */
+    private static final int LAVA_TOP = -54, LAVA_TARGET = -57, LAVA_BRANCH_LEG = 48, LAVA_BRANCH_STEP = 16;
 
     private boolean huntersKit;
     private final WorldKnowledge knowledge = new WorldKnowledge();
@@ -535,7 +543,14 @@ final class PortalRunCampaign {
             visitedCaves.add(BlockPos.asLong(at.getX() >> 2, at.getY() >> 2, at.getZ() >> 2));
             lookUntilSweep = knowledge.sweeps() + 2; // Finish the sweep under way, then one full look from here.
         }
-        if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) branchTurn();
+        if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) {
+            branchTurn(task.label().startsWith("Branch mine for lava"));
+        }
+        // A cell over lava opened: the lava under it is in plain view from where it stands (F-25c4ac).
+        if (task != null && completed && "native_break".equals(task.skill()) && "true".equals(task.args().get("over_lava"))) {
+            BlockPos opened = position(task.args());
+            if (opened != null) knowledge.remember(WorldKnowledge.Kind.LAVA, opened.down());
+        }
         if (task != null && completed && task.label().startsWith("Plant a sapling at") && position(task.args()) != null) {
             planted.add(position(task.args()).asLong());
         }
@@ -1646,7 +1661,7 @@ final class PortalRunCampaign {
                     .or(() -> search(body, "water"));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
-                    .or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
+                    .or(this::lookAround).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
             case GATHER_FLINT -> flint(body);
             case BUILD_PORTAL -> buildPortal(body);
             case IGNITE_PORTAL -> ignite(body);
@@ -1768,10 +1783,11 @@ final class PortalRunCampaign {
 
     /**
      * Branch mining: after a leg of {@link #BRANCH_LEG} blocks, step {@link #BRANCH_STEP} to one side and run
-     * the next leg back the other way, alternating sides so the legs zigzag across fresh stone.
+     * the next leg back the other way, alternating sides so the legs zigzag across fresh stone. For lava the legs are
+     * {@link #LAVA_BRANCH_LEG} long and {@link #LAVA_BRANCH_STEP} apart.
      */
-    private void branchTurn() {
-        if (++branchRun < (branchStepping ? BRANCH_STEP : BRANCH_LEG)) return;
+    private void branchTurn(boolean lava) {
+        if (++branchRun < (branchStepping ? (lava ? LAVA_BRANCH_STEP : BRANCH_STEP) : (lava ? LAVA_BRANCH_LEG : BRANCH_LEG))) return;
         branchRun = 0;
         digDirection = branchSide ? digDirection.rotateYCounterclockwise() : digDirection.rotateYClockwise();
         if (branchStepping) branchSide = !branchSide;
@@ -2146,12 +2162,14 @@ final class PortalRunCampaign {
         // Over the void there is nothing below to reach: digging would only spend the island.
         if (!groundBelow(body.entity())) return Optional.empty();
         int y = body.entity().getBlockY();
+        // Looking for lava, a cell with lava under it is opened to see it (F-25c4ac).
+        boolean lava = what.equals("lava");
         // Water or lava under every way down (an aquifer, a lava lake): tunnel on until the ground below is solid.
         if (y > Math.min(top, target + 3)) {
-            return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what));
+            return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what, lava));
         }
         // At the richest depth with no ore or cave in view: branch mine, legs zigzagging through fresh stone.
-        return tunnel(body, "Branch mine for " + what);
+        return tunnel(body, "Branch mine for " + what, lava);
     }
 
     /**
@@ -2554,6 +2572,15 @@ final class PortalRunCampaign {
     private int tunnelFloor = Integer.MIN_VALUE, tunnelTurns = 4;
 
     Optional<Task> tunnel(NativePlayerBody body, String label) {
+        return tunnel(body, label, false);
+    }
+
+    /**
+     * As {@link #tunnel(NativePlayerBody, String)}; with {@code revealLava}, the cell ahead at its feet with lava directly
+     * under it and no other liquid round it is opened, from where it stands, which shows the lava, as a player's next
+     * block would. The lava stays where it is: lava never rises, and the cell is never walked onto (F-25c4ac).
+     */
+    Optional<Task> tunnel(NativePlayerBody body, String label, boolean revealLava) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -2562,6 +2589,13 @@ final class PortalRunCampaign {
             boolean refused = false;
             for (BlockPos cell : List.of(ahead.up(), ahead)) {
                 if (passable(world, cell)) continue;
+                if (revealLava && cell.equals(ahead) && passable(world, ahead.up()) && !blocked(cell) && onlyLavaBelow(world, cell)
+                        && eyeDistance(player, cell) <= REACH && body.miningEligible(cell)
+                        && RoamingEdits.breakDenial(player, cell, policy, false, false, true) == null
+                        && NativeBreakAction.bestTool(body, world.getBlockState(cell)) != -2) {
+                    return Optional.of(new Task("native_break", coords(cell, Map.of("collect", "false", "over_lava", "true")),
+                            label + ": open " + cell.toShortString() + " over lava"));
+                }
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 refused = true;
@@ -2614,6 +2648,15 @@ final class PortalRunCampaign {
     private static boolean passable(ServerWorld world, BlockPos pos) {
         var state = world.getBlockState(pos);
         return state.getCollisionShape(world, pos).isEmpty() && !state.getFluidState().isIn(FluidTags.LAVA);
+    }
+
+    /** Lava directly under {@code pos}, and no other liquid round it or in it: opened, nothing pours in (F-25c4ac). */
+    private static boolean onlyLavaBelow(ServerWorld world, BlockPos pos) {
+        if (!world.getFluidState(pos.down()).isIn(FluidTags.LAVA) || !world.getFluidState(pos).isEmpty()) return false;
+        for (Direction direction : Direction.values()) {
+            if (direction != Direction.DOWN && !world.getFluidState(pos.offset(direction)).isEmpty()) return false;
+        }
+        return true;
     }
 
     /** Lava on any side, or water above or beside, which would pour into the opening. */
@@ -3106,7 +3149,7 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         BlockPos feet = player.getBlockPos();
         if (knownCastLava(player) == null) {
-            return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "lava"));
+            return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
         // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set aside,

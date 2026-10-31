@@ -1569,7 +1569,8 @@ final class PlayerRuntime {
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Boolean.parseBoolean(arguments.getOrDefault("collect", "true")),
                         Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")),
-                        Boolean.parseBoolean(arguments.getOrDefault("underfoot", "false")));
+                        Boolean.parseBoolean(arguments.getOrDefault("underfoot", "false")),
+                        Boolean.parseBoolean(arguments.getOrDefault("over_lava", "false")));
             } else if (skill.equals("native_bucket")) {
                 task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), server::execute,
