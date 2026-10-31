@@ -1,5 +1,21 @@
 # AI-player development validation
 
+## Conventions for evaluation runs and death replays
+
+- **Evaluation summaries (F-26).** A build is scored with `tools/eval/` on at least ten seeds
+  (`tools/eval/seeds-10.txt`); a summary prints medians and ranges, never one number, and says whether the runs were
+  earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
+  ranges do not overlap. Summaries go under `docs/evidence/eval/<name>/summary.md`; logs and worlds are never
+  committed.
+- **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
+  `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
+  gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as
+  `data/kindred_gametest/gametest/replays/<id>.json`, the same `<id>` for both, in lower case (a structure's name
+  allows no capitals). `ReplayGameTests` finds every one on its own and runs each three times in a batch of its own.
+  A replay is committed only if it played its death again in at least two of three runs before its fix, and only
+  with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
+  definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
+
 ## The live pair on 00e98f5; the cattle (M-06a1); the sand seal, the far move, the tree in water, the own seal and the dig away (F-25c4aq to F-25c4au) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. The live pair ran alone; the focused runs after it, one set at a time, with nothing else on the cores.

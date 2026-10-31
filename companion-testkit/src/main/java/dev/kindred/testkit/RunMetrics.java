@@ -41,7 +41,11 @@ import java.util.regex.Pattern;
  * Run with the log's path: {@code ./gradlew :companion-testkit:runMetrics --args=<log>}.
  */
 public final class RunMetrics {
-    private static final Pattern STAMP = Pattern.compile("^\\[(\\d\\d):(\\d\\d):(\\d\\d)\\] \\[[^\\]]*\\] \\(Kindred\\) (.*)$");
+    /**
+     * A line of the log: its time, then the runtime's own text. The development server names the logger ("(Kindred)"); a
+     * dedicated server, as an evaluation run plays on, does not ("]: ") (F-26).
+     */
+    private static final Pattern STAMP = Pattern.compile("^\\[(\\d\\d):(\\d\\d):(\\d\\d)\\] \\[[^\\]]*\\](?: \\(Kindred\\)|:) (.*)$");
     private static final Pattern OUTCOME = Pattern.compile("^(\\S+) (native_\\w+) (COMPLETED|BLOCKED|CANCELLED)(?:: (.*?))?(?: \\[(.*)\\])?$");
     private static final Pattern GOAL = Pattern.compile("^(\\S+) goal at -?\\d+ -?\\d+ -?\\d+: ([^:]+)(?::.*)?$");
     private static final Pattern WORK = Pattern.compile("^(\\S+) (build|ranch|field): (?:([^:]+):)?.*$");
