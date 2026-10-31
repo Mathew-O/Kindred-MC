@@ -3740,6 +3740,123 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Its pickaxe gone, on a move elsewhere from a pocket in rock, the way east to the new place refused at its feet: it
+     * climbs out, punching the rock over the step beside it by hand, and its own plan then has a turn (F-25c4an). In the
+     * live pair on `c432fba` Sol, so placed at Y=60, went between three cells for eight minutes: the tunnel turned back
+     * the way it came and stepped down where the climb had stepped up, and the climb stepped up again; its spells came
+     * back to back, its plan never run. Staged: a shell of obsidian round a pocket of three cells (a cell one up and east
+     * of the player's, open over the player's) and a stair's width of stone east of it, the only way out; a torch; the
+     * move elsewhere begun by the fixture toward a place 24 blocks east at the player's level, as the watchdog begins one.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "relocateNoPingPong", tickLimit = 3000)
+    public void withNoPickaxeAMoveElsewhereFromAPocketClimbsOutRatherThanSteppingBackDown(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        boolean[] out = new boolean[1];
+        int[] ownTurn = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Pocketed"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-4, -3, -4), p.add(8, 7, 4));
+                    for (BlockPos at : BlockPos.iterate(p.add(-4, -3, -4), p.add(8, 7, 4))) {
+                        world.setBlockState(at, (at.getY() <= p.getY() + 4 ? Blocks.OBSIDIAN : Blocks.AIR).getDefaultState());
+                    }
+                    for (BlockPos at : BlockPos.iterate(p.add(1, 1, 0), p.add(6, 4, 0))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                    for (BlockPos at : java.util.List.of(p, p.up(), p.up(2), p.add(1, 1, 0), p.add(1, 2, 0))) world.setBlockState(at, Blocks.AIR.getDefaultState());
+                    world.setBlockState(p.up(2), Blocks.WALL_TORCH.getDefaultState().with(net.minecraft.block.WallTorchBlock.FACING, Direction.EAST));
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertFalse(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().isEmpty(), "Planned"))
+                .createAndAdd(() -> f.runtime.campaignForTest(f.id).relocateForTest(feet[0].add(24, 0, 0)))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    BlockPos at = player.getBlockPos();
+                    out[0] |= at.getY() >= feet[0].getY() + 4;
+                    // Out, its own plan's steps again for five seconds, no move elsewhere begun again at once.
+                    ownTurn[0] = out[0] && !progress.contains("no progress here for a while") ? ownTurn[0] + 1 : 0;
+                    context.assertTrue(ownTurn[0] >= 100, (out[0] ? "Out, but its own plan not run for long" : "Still in the pocket")
+                            + ": at " + at.subtract(feet[0]).toShortString() + ", " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    // Alive, a jump down off the top in its own plan's turn aside (five blocks costs two points).
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 14, "Unhurt: " + player.getHealth());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its pickaxe gone, wanting logs in a pocket under the desert's sandstone with sand over it: before each step up it
+     * digs, from where it stands, the block that would be over its head up there, the sand resting on it falling into the
+     * step's empty cells to be dug in turn, and climbs out (F-25c4ao). In the live pair on `91c1290` Kindred, so placed at
+     * Y=71, stepped up into a cell from which every way up was refused, the block over its head never dug with sand on
+     * it, and the walk over to a wall dropped it back down, again and again. Staged: sandstone round a pocket three high
+     * in its middle with a cell two high a block up on either side, three layers of sand over the sandstone and open air
+     * over that; a torch; bread and a sword, but no pickaxe.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "underDesertSand", tickLimit = 4000)
+    public void withNoPickaxeUnderSandstoneAndSandItDigsTheSandDownAheadOfEachStepAndClimbsOut(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sandbound"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-6, -2, -6), p.add(6, 9, 6));
+                    // Bottom up, so no sand is set over an empty cell.
+                    for (int dy = -2; dy <= 9; dy++) for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
+                        world.setBlockState(p.add(dx, dy, dz), (dy <= 3 ? Blocks.SANDSTONE : dy <= 6 ? Blocks.SAND : Blocks.AIR).getDefaultState());
+                    }
+                    for (BlockPos at : java.util.List.of(p, p.up(), p.up(2), p.add(-1, 1, 0), p.add(-1, 2, 0), p.add(1, 1, 0), p.add(1, 2, 0))) {
+                        world.setBlockState(at, Blocks.AIR.getDefaultState());
+                    }
+                    world.setBlockState(p.up(2), Blocks.WALL_TORCH.getDefaultState().with(net.minecraft.block.WallTorchBlock.FACING, Direction.SOUTH));
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    BlockPos at = player.getBlockPos();
+                    context.assertTrue(at.getY() >= feet[0].getY() + 6, "Not out: at " + at.subtract(feet[0]).toShortString() + ", "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && !player.isInsideWall() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Stranded on a one-block pillar five blocks above the floor, with every way off a fall the navigator would not
      * take: the goal jumps down, taking vanilla fall damage it can afford, rather than wait for ever.
      */

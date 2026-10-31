@@ -1,5 +1,24 @@
 # AI-player development validation
 
+## The live run on 91c1290, a third seed; the watchdog's moves elsewhere (F-25c4an) and the climb from under sand (F-25c4ao) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `91c1290`: seed 31102026, the starters on the End goal, strategist off, nothing else on the cores. Stopped at about tick 175,000 of 480,000, after 33 minutes, with every player still at the wood stage.
+  - A desert spawn. Sol cut the only two trees any player found: an oak 152 blocks south of spawn, which it came on chasing a rabbit, and another at x=99. It got as far as the iron, and each time its next death lost its kit. Kindred and Echo never had wood.
+  - 4 deaths: Sol to a skeleton at night and to a zombie by day. Echo drowned and Kindred was killed by a husk, each while waiting below ground for daylight.
+  - Time: waiting below ground for daylight took 34 to 39% of each player's time, the watchdog's spells 3 to 13%, hurt and out of food up to 9%, and getting out of water up to 10%. Looking for trees took 2 to 3%.
+  - Found: the spells' dig back and forth (F-25c4an); the climb under the desert's sand (F-25c4ao); and that a player sees logs only 32 blocks round, while its walks to look keep within 192 blocks of home (F-25c4ap, next).
+- F-25c4an, on top of `91c1290`:
+  - Its fixture is a pocket walled in obsidian with a stair's width of stone the only way out, and a move elsewhere begun toward a place 24 blocks east. It fails before, "Still in the pocket ... step down", 3 of 3.
+  - In its first form it passed 2 of 3: the plan's climb by hand took turns with the move's, then the plan's cut-through stepped back down. With both of those parts added, it passed 3 of 3 alone, and 3 of 3 again on the final code.
+  - The watchdog's own fixture, the chamber, the gravel over its head, the flooded pit, under a lake, lava across a cave, the ledge and the pit with no pickaxe, alone on the final code: 8 of 8.
+- F-25c4ao, on top of `91c1290`:
+  - Its fixture is a pocket under sandstone with three layers of sand over it, and no pickaxe. It fails before, "Not out ... waiting for a feasible step", 3 of 3.
+  - In its first forms it failed after too: it stepped up before the sand had fallen and was buried, then walked from the foot of its shaft into a pocket under the sand. With the wait and the held climb, it passed 3 of 3 alone.
+- `build` successful.
+- Evidence: [F-25c4](evidence/F-25c4.md), [F-25c4an](evidence/F-25c4an.md), [F-25c4ao](evidence/F-25c4ao.md).
+
 ## A step off a hazard to the middle of the cell found safe (F-25c4am) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
