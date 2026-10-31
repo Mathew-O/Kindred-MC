@@ -382,6 +382,21 @@ handed out or kept (edits on, `keep=none`; the starters always spawn with empty 
 ranges do not overlap. They need Python 3 and nothing else; see `tools/eval/README.md`. The optional model players'
 key is passed to a server only when its scenario asks for them. Summaries go under `docs/evidence/eval/`; logs do not.
 
+### Death replays (F-27)
+
+With `KINDRED_REPLAYS=on` in a server's environment (on by default in an evaluation run, off in play), each time a
+player dies the mod keeps a copy of the ground round it, 33 by 17 by 33 blocks with the mobs in it, and of its state:
+what it held, its effects, its health, food and breath ten seconds before, its goal, stage, task, stance and habits,
+the cause of its death, and its own last twenty decisions from the log. It keeps one a minute at most for each player,
+in `kindred/replays/<world>/<player>-<tick>/` as `replay.snbt` and `replay.json`; `tools/eval/run.py` keeps a seed's
+beside its result. Taking the copy takes less than a server tick; writing it happens off the tick. Nothing in the world
+or the player changes.
+
+A replay that is to be kept as a test goes into the gametest resources (see the conventions in
+[validation](validation.md)), and the suite plays it three times by the real runtime: it passes if the player is
+alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
+of three; one that does not is left out.
+
 ## Offline support reports and evidence
 
 Use the [support CLI](../tools/support-batch-01/README.md) for test summaries, before/after regressions, repeated runs, explicit sanitized evidence bundles and static documentation/manifest/JAR checks. Python and its standard library are sufficient; these commands never start Minecraft, run builds or call providers. The [reconstructed support handoff](../tools/support-batch-05/HANDOFF.md) lists the two ModelGateway fixes and the bounded verification scope.

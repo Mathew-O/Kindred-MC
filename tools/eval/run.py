@@ -16,6 +16,7 @@ import hashlib
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -107,6 +108,13 @@ def mod_jar(libs):
     return jars[-1]
 
 
+def free_port():
+    """A port no one listens on now: two servers at once on the default one, the second could not bind and stopped."""
+    with socket.socket() as probe:
+        probe.bind(("", 0))
+        return probe.getsockname()[1]
+
+
 def prepare(folder, seed, jar, api, vanilla):
     if folder.exists():
         shutil.rmtree(folder)
@@ -116,7 +124,7 @@ def prepare(folder, seed, jar, api, vanilla):
     (folder / "eula.txt").write_text("eula=true\n", encoding="utf-8")
     (folder / "fabric-server-launcher.properties").write_text("serverJar=%s\n" % vanilla, encoding="utf-8")
     (folder / "server.properties").write_text("\n".join([
-        "level-seed=%s" % seed, "level-name=world", "online-mode=false", "view-distance=8", "simulation-distance=8",
+        "level-seed=%s" % seed, "level-name=world", "server-port=%d" % free_port(), "online-mode=false", "view-distance=8", "simulation-distance=8",
         "spawn-protection=0", "max-players=8", "motd=Kindred evaluation", "enable-command-block=false", "sync-chunk-writes=false", ""]),
         encoding="utf-8")
 
