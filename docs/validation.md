@@ -16,6 +16,23 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The drowning replay (F-27) and lessons from its own play (E-46) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two or three evaluation servers on the same cores throughout. Focused
+runs narrow the gametest entrypoints to the class, or to a scratch class (not committed), and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 824 JUnit tests, 6 skipped, 0 failures (811
+  on `6af8fe6`; the 13 more are `LessonsTest`).
+- F-27, the drowning `echo-50149` (seed 101 of a capture run on `6af8fe6`): before its fix 3 of 3 died, as in the run;
+  after it 3 of 3 lived in each of seven runs of `ReplayGameTests` alone, three on the final code. The capture's fixture
+  passed in every run: 25 measured runs in all, 3.4 to 6.3 ms of the server thread's time.
+- E-46: `NativeLessonsGameTests` 4 of 4 in each of seven runs alone, the last on the final code. Before: 0 of 4 in one
+  run, with lessons off and the two habits not given.
+- The neighbours of both (the water fixtures, the strategist's habits, the memory across a save, the cornered fight):
+  11 of 12 before the memory merged its habits with a goal's (the strategist's cave habit failed), 12 of 12 after, and
+  12 of 12 on the final code. The flooded pit failed once with a first form of the drowning fix that also swam for air
+  with breath to spare; with that part taken out, 3 of 3.
+
 ## Death replays (F-27): the capture, the first replay and its fix — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Two evaluation servers (F-26's comparison) ran on the same cores

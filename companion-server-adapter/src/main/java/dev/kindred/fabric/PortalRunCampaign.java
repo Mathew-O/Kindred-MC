@@ -183,14 +183,17 @@ final class PortalRunCampaign {
 
     // ------------------------------------------------------------------ strategist (F-19b)
 
-    /** A death as the strategist and the player's memory see it. */
-    record Death(BlockPos pos, String cause, PortalRunPlanner.Stage stage) { }
+    /** A death as the strategist and the player's memory see it, with what its lessons read of it (E-46), if known. */
+    record Death(BlockPos pos, String cause, PortalRunPlanner.Stage stage, dev.kindred.core.survival.Lessons.Death facts) { }
 
+    /** With the torch habit, a torch where the light at its feet has fallen to this: about eight blocks from the last. */
+    static final int TORCH_AS_YOU_GO_LIGHT = 6;
     /** How long a strategist's stance holds without being renewed: five minutes of game time. */
     static final long ADVICE_TICKS = 6_000;
     private final java.util.ArrayDeque<String> events = new java.util.ArrayDeque<>();
     private final java.util.ArrayDeque<Death> deathsSeen = new java.util.ArrayDeque<>();
-    private int deathCount, stuckSpells, eventCount;
+    private int deathCount, stuckSpells, eventCount, strandings, brokenSeen = -1;
+    private long lastStranding;
     private Boolean reportedNight;
     private float reportedHealth = 20;
     private java.util.UUID reportedFoe;
@@ -249,6 +252,19 @@ final class PortalRunCampaign {
     /** How many places in a row the watchdog has given up on, the latest included (0 once it gets on). */
     int stuckLevel() { return stuckLevel; }
     Optional<Death> lastDeath() { return Optional.ofNullable(deathsSeen.peekLast()); }
+
+    /** The deaths after the first {@code seen} it had, oldest first, as many of them as it still holds (the last eight). */
+    List<Death> deathsAfter(int seen) {
+        int fresh = Math.min(deathCount - seen, deathsSeen.size());
+        if (fresh <= 0) return List.of();
+        var held = new java.util.ArrayList<>(deathsSeen);
+        return List.copyOf(held.subList(held.size() - fresh, held.size()));
+    }
+
+    /** How many times its last pickaxe broke below ground (E-46), and the game time of the latest. */
+    int strandings() { return strandings; }
+
+    long lastStranding() { return lastStranding; }
 
     /** The stance in force: the strategist's while it holds, else pressing on. */
     StrategyAdvice.Stance stance() {
@@ -659,9 +675,23 @@ final class PortalRunCampaign {
     }
 
     void died(BlockPos pos, ServerWorld world, long tick, boolean killedByMob, String cause) {
+        died(pos, world, tick, killedByMob, cause, null, null);
+    }
+
+    /**
+     * As {@link #died(BlockPos, ServerWorld, long, boolean, String)}, with what its lessons read of the death (E-46) and
+     * where the mob that killed it stood. Below ground, a mob standing where the player itself walked struck it in its own
+     * tunnel, from behind: the trail is the way it came.
+     */
+    void died(BlockPos pos, ServerWorld world, long tick, boolean killedByMob, String cause, dev.kindred.core.survival.Lessons.Death facts,
+              BlockPos killerAt) {
+        if (facts != null && killedByMob && killerAt != null && !facts.underSky() && !killerAt.equals(pos) && trail.contains(killerAt)) {
+            facts = new dev.kindred.core.survival.Lessons.Death(facts.time(), facts.y(), facts.night(), facts.underSky(), facts.overworld(),
+                    facts.food(), facts.how(), true);
+        }
         deathCount++;
         if (deathsSeen.size() >= 8) deathsSeen.removeFirst();
-        deathsSeen.addLast(new Death(pos.toImmutable(), cause, stage));
+        deathsSeen.addLast(new Death(pos.toImmutable(), cause, stage, facts));
         event("died at " + pos.toShortString().replace(",", "") + ": " + cause + " (stage " + stageLabel(stage) + ")");
         // Counters start again from an empty inventory: progress is measured afresh.
         best.clear();
@@ -1043,6 +1073,15 @@ final class PortalRunCampaign {
     private Optional<Task> plan(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
+        // A pickaxe broken below ground with none left (E-46's trouble), seen as a player sees a tool break: vanilla
+        // counts each broken item in the player's statistics.
+        int broken = brokenPickaxes(body.entity());
+        if (brokenSeen >= 0 && broken > brokenSeen && underground(body.entity()) && !carriesPickaxe(body.entity())) {
+            strandings++;
+            lastStranding = body.entity().getServerWorld().getTime();
+            event("stranded below ground: its last pickaxe broke");
+        }
+        brokenSeen = broken;
         if (trail.isEmpty() || !trail.peekLast().equals(lastFeet)) {
             if (trail.size() >= TRAIL_LENGTH) trail.removeFirst();
             trail.addLast(lastFeet);
@@ -1211,6 +1250,14 @@ final class PortalRunCampaign {
         if (recovering && !underground(player) && player.getHealth() >= 18) {
             advice = advice.withStance(StrategyAdvice.Stance.PLAY_SAFE);
             event("recovered on the surface; playing safe for the rest of the advice");
+        }
+        // Taught by falls (E-46): the water bucket in the hotbar, where the clutch reaches for it as it falls.
+        if (habits.contains(PlanPreferences.Habit.BUCKET_ON_HOTBAR) && hotbarSlot(body, Items.WATER_BUCKET) < 0) {
+            int bucket = slotOf(body, Items.WATER_BUCKET);
+            if (bucket >= 9 && bucket < 36) {
+                progress = stageLabel(stage) + ": keep the water bucket to hand";
+                return Optional.of(swapToHotbar(body, bucket, "Keep the water bucket to hand"));
+            }
         }
         // Underground in the dark: light it, so nothing spawns beside the player while it works.
         Optional<Task> light = light(body, snapshot);
@@ -1403,6 +1450,14 @@ final class PortalRunCampaign {
             if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
+        // Head under, breath short, and rock straight above, as in a shaft that bends on its way up into a lake: up through
+        // the water to the nearest air, round the bend, before anything is dug. Under water a pickaxe works at a fifth of
+        // its pace, afloat at a twenty-fifth, and a step dug beside water floods. In F-27's capture run on seed 101 Echo,
+        // two blocks below such a bend, dug at its shaft's wall until it drowned (F-27's drowning replay).
+        if (shortOfBreath && above == null) {
+            var round = airThroughTheWater(world, feet);
+            if (round.isPresent()) return Optional.of(go(round.get(), 0.5, true, "Get out of the water: up for air"));
+        }
         // Not dry ground a walk out has failed to get to: in a stream down a hillside the current carried Echo past it each
         // time, and it set out for the same spot 173 times in the live pair on a4df9b4, Sol 375 times on 458d192 (F-25c4aa).
         var dry = navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p));
@@ -1413,6 +1468,32 @@ final class PortalRunCampaign {
         // No dry ground it can swim to, as in a flooded pit, and its head above water: a step dug out of the side and
         // climbed onto, as a player gets out, before anything else is dug from the water (F-25c4t).
         return climb(body, "Climb out of the water");
+    }
+
+    /**
+     * The water cell nearest to {@code feet} by swimming, through water alone, with open air straight above it: where its
+     * head comes out. Searched outward from where it is, a shaft's bend and a lake above it included, at most 24 blocks
+     * aside, 48 up and 4 down; none when the water it is in reaches no air within that.
+     */
+    static Optional<BlockPos> airThroughTheWater(ServerWorld world, BlockPos feet) {
+        var seen = new java.util.HashSet<Long>();
+        var queue = new java.util.ArrayDeque<BlockPos>();
+        queue.add(feet.toImmutable());
+        seen.add(feet.asLong());
+        while (!queue.isEmpty() && seen.size() < 4_000) {
+            BlockPos cell = queue.poll();
+            BlockPos up = cell.up();
+            var overhead = world.getBlockState(up);
+            if (!cell.equals(feet) && overhead.getFluidState().isEmpty() && overhead.getCollisionShape(world, up).isEmpty()) return Optional.of(cell);
+            for (Direction way : List.of(Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN)) {
+                BlockPos next = cell.offset(way);
+                if (Math.abs(next.getX() - feet.getX()) > 24 || Math.abs(next.getZ() - feet.getZ()) > 24
+                        || next.getY() > feet.getY() + 48 || next.getY() < feet.getY() - 4 || !seen.add(next.asLong())) continue;
+                var state = world.getBlockState(next);
+                if (state.getFluidState().isIn(FluidTags.WATER) && state.getCollisionShape(world, next).isEmpty()) queue.add(next);
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -1970,7 +2051,10 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         if (!underground(player) || !player.isOnGround()) return Optional.empty();
         BlockPos feet = player.getBlockPos();
-        if (world.getLightLevel(net.minecraft.world.LightType.BLOCK, feet) > 1) return Optional.empty();
+        // Taught by a death to a mob in its own tunnel (E-46), it lights the way as it goes, a torch about every eight
+        // blocks: one's light falls by a level a block, from fourteen.
+        int dark = habits.contains(PlanPreferences.Habit.TORCH_AS_YOU_GO) ? TORCH_AS_YOU_GO_LIGHT : 1;
+        if (world.getLightLevel(net.minecraft.world.LightType.BLOCK, feet) > dark) return Optional.empty();
         var inventory = player.getInventory();
         int torch = slotOf(body, Items.TORCH);
         if (torch < 0) {
@@ -4794,6 +4878,22 @@ final class PortalRunCampaign {
     /** No hostile mob within earshot (sixteen blocks) of {@code pos}; endermen keep to themselves unless provoked. */
     private static boolean quietAround(ServerWorld world, BlockPos pos) {
         return world.getEntitiesByClass(HostileEntity.class, new Box(pos).expand(16), mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty();
+    }
+
+    /** Pickaxes the player has broken, as vanilla's statistics count them. */
+    private static int brokenPickaxes(ServerPlayerEntity player) {
+        int broken = 0;
+        for (Item pickaxe : List.of(Items.WOODEN_PICKAXE, Items.STONE_PICKAXE, Items.IRON_PICKAXE, Items.GOLDEN_PICKAXE, Items.DIAMOND_PICKAXE,
+                Items.NETHERITE_PICKAXE)) {
+            broken += player.getStatHandler().getStat(net.minecraft.stat.Stats.BROKEN.getOrCreateStat(pickaxe));
+        }
+        return broken;
+    }
+
+    private static boolean carriesPickaxe(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isIn(ItemTags.PICKAXES)) return true;
+        return false;
     }
 
     /** A shield in the off hand or carried. */

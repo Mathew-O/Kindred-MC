@@ -31,6 +31,9 @@ class EvalScenarioTest {
         assertEquals(EvalScenario.Goal.END, s.goal());
         assertEquals(EvalScenario.DEFAULT_TICKS, s.ticks());
         assertTrue(s.edits() && s.sprint() && !s.strategist() && !s.voice());
+        assertTrue(s.lessons(), "Its own lessons are on unless the scenario turns them off (E-46)");
+        assertFalse(EvalScenario.parse("lessons=off").lessons());
+        assertTrue(EvalScenario.parse("lessons=off").earned(), "Lessons off hand nothing out either");
     }
 
     @Test
@@ -58,8 +61,8 @@ class EvalScenarioTest {
 
     @Test
     void itsTextReadsBackAsTheSameScenario() {
-        var s = EvalScenario.parse("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory");
-        assertEquals("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory", s.asText());
+        var s = EvalScenario.parse("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory; lessons=off");
+        assertEquals("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory; lessons=off", s.asText());
         assertEquals(s, EvalScenario.parse(s.asText()));
     }
 }

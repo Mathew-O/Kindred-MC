@@ -160,6 +160,12 @@ final class PlayerRuntime {
     private final Path metadataDirectory;
     /** The optional model strategist for goals (F-19b), when switched on and a key is set. */
     private Optional<StrategistBridge> strategist;
+    /**
+     * Each player's memory of the world (notes, habits, deaths, follow-ups) and its own lessons (E-46): the strategist's
+     * bridge when there is one, else the same memory with no model behind it.
+     */
+    private StrategistBridge memory;
+    private boolean lessons = true;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
     /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
@@ -367,6 +373,7 @@ final class PlayerRuntime {
         this.presenter = new MatchPresenter(server);
         this.metadataDirectory = metadataDirectory;
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
+        this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
@@ -3943,7 +3950,7 @@ final class PlayerRuntime {
         body.setPortalTravelAuthorized(mayTravel && (task.filter(PortalRunCampaign::throughPortal).isPresent()
                 || PortalRunCampaign.throughPortal(entry.activeCampaignTask)));
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
-        strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry)));
+        memory.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry));
         entry.goalProgress = entry.campaign.progress();
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
@@ -5330,8 +5337,18 @@ final class PlayerRuntime {
         entry.currentTaskId = null;
         body.stopInputs();
         boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
-        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks(), killedByMob,
-                player.getDamageTracker().getDeathMessage().getString());
+        // What its lessons read of the death (E-46): when in the world's time, how high, by night, under the sky, its
+        // food, and how it came.
+        var world = player.getServerWorld();
+        var lastHurt = player.getRecentDamageSource();
+        boolean fell = lastHurt != null && lastHurt.isIn(net.minecraft.registry.tag.DamageTypeTags.IS_FALL);
+        var facts = new dev.kindred.core.survival.Lessons.Death(world.getTime(), deathPos.getY(), world.isNight(), world.isSkyVisible(deathPos.up()),
+                world.getRegistryKey() == net.minecraft.world.World.OVERWORLD, player.getHungerManager().getFoodLevel(),
+                fell ? dev.kindred.core.survival.Lessons.How.FALL : killedByMob ? dev.kindred.core.survival.Lessons.How.MOB
+                        : dev.kindred.core.survival.Lessons.How.OTHER, false);
+        BlockPos killerAt = killedByMob ? player.getAttacker().getBlockPos().toImmutable() : null;
+        if (entry.campaign != null) entry.campaign.died(deathPos, world, server.getTicks(), killedByMob,
+                player.getDamageTracker().getDeathMessage().getString(), facts, killerAt);
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
         KindredMod.LOGGER.info("{} died at {}: {} ({})", entry.data.displayName(), deathPos.toShortString(),
                 player.getDamageTracker().getDeathMessage().getString(), circumstances);
@@ -10735,7 +10752,7 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                strategist.map(bridge -> bridge.remembered(id)).orElse(List.of()));
+                memory.remembered(id));
     }
 
     /** An ask from chat: who asked, what of, until when it waits for the player's look at the speaker, and where a refusal goes. */
@@ -10837,8 +10854,24 @@ final class PlayerRuntime {
 
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
     void strategistForFixtures(dev.kindred.model.Strategist given) {
-        strategist.ifPresent(StrategistBridge::close);
+        memory.close();
         strategist = Optional.of(StrategistBridge.of(given, metadataDirectory));
+        memory = strategist.get();
+        memory.lessons(lessons);
+    }
+
+    /** Its memory's notes as the report shows them, and the habits its goal keeps, for fixtures (E-46). */
+    List<String> notesForFixtures(UUID id) { return memory.notes(id); }
+
+    java.util.Set<dev.kindred.core.survival.PlanPreferences.Habit> habitsForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? java.util.Set.of() : entry.campaign.preferences().habits();
+    }
+
+    /** Its own lessons from its deaths on or off (E-46): on by default; {@code KINDRED_LESSONS=off} or a scenario turns them off. */
+    void lessons(boolean on) {
+        lessons = on;
+        memory.lessons(on);
     }
 
     /** What it last told its team of a find, for fixtures (E-40a). */
@@ -11136,7 +11169,7 @@ final class PlayerRuntime {
         running = false;
         matches.stopAll();
         presenter.clear();
-        strategist.ifPresent(StrategistBridge::close);
+        memory.close(); // The strategist's bridge, when there is one.
         memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))

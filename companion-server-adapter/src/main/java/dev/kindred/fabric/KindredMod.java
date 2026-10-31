@@ -37,6 +37,8 @@ public final class KindredMod implements ModInitializer {
     private static EvalBootstrap eval;
     /** Whether deaths are kept as replays (F-27): {@code KINDRED_REPLAYS=on|off}, on by default under an evaluation run. */
     private static boolean replays;
+    /** Whether the players draw their own lessons from their deaths (E-46): {@code KINDRED_LESSONS=off} turns them off. */
+    private static boolean lessons;
 
     static PlayerRuntime runtime() { return runtime; }
 
@@ -74,12 +76,17 @@ public final class KindredMod implements ModInitializer {
         eval = EvalBootstrap.fromEnvironment().orElse(null);
         String replaysAsked = System.getenv("KINDRED_REPLAYS");
         replays = replaysAsked != null ? replaysAsked.equalsIgnoreCase("on") : eval != null;
+        lessons = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_LESSONS")).trim());
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
         }
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             runtime = new PlayerRuntime(server);
             runtime.start();
+            if (!lessons) {
+                runtime.lessons(false);
+                LOGGER.info("The players' own lessons from their deaths are off (KINDRED_LESSONS=off)");
+            }
             if (replays) {
                 var run = server.getRunDirectory();
                 runtime.captureReplays(new DeathReplays(run.resolve("kindred").resolve("replays").resolve(server.getSaveProperties().getLevelName()),

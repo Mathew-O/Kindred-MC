@@ -10,18 +10,20 @@ import java.util.Set;
 /**
  * In plain terms: the game an unattended evaluation run plays, as the operator wrote it in the {@code KINDRED_EVAL}
  * setting: which of the three starters play, toward which goal, whether they may break and place blocks, for how many
- * ticks, sprinted or not, with the optional model players on or off, and whether they keep their things when they die.
+ * ticks, sprinted or not, with the optional model players on or off, whether they keep their things when they die, and
+ * whether they learn their own lessons from their deaths.
  * Anything this cannot say is not an evaluation run; a person runs it by hand.
  *
  * Technical: F-26. {@code key=value} pairs separated by {@code ;}, spaces round them ignored: {@code starters}
  * (comma-separated canonical names), {@code goal} ({@code nether}, {@code end}, {@code dragon}, {@code none}),
  * {@code edits}, {@code sprint}, {@code strategist} and {@code voice} ({@code on}/{@code off}), {@code ticks} (1 to
- * ten million) and {@code keep} ({@code inventory}/{@code none}). An unknown key, an unknown value or a key given twice is
+ * ten million), {@code keep} ({@code inventory}/{@code none}) and {@code lessons} ({@code on}/{@code off}, on unless
+ * said; E-46). An unknown key, an unknown value or a key given twice is
  * refused. A run is earned only when nothing in it is handed out or kept: the starters spawn with empty inventories,
  * edits are on under the roaming policy and nothing is kept at death; every other run is staged.
  */
 public record EvalScenario(List<String> starters, Goal goal, boolean edits, long ticks, boolean sprint,
-                           boolean strategist, boolean voice, Keep keep) {
+                           boolean strategist, boolean voice, Keep keep, boolean lessons) {
     /** What the starters are set to do. */
     public enum Goal { NETHER, END, DRAGON, NONE }
 
@@ -32,7 +34,7 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
     public static final long DEFAULT_TICKS = 144_000;
     public static final long MAX_TICKS = 10_000_000;
     private static final List<String> CANONICAL = List.of("Kindred", "Sol", "Echo");
-    private static final Set<String> KEYS = Set.of("starters", "goal", "edits", "ticks", "sprint", "strategist", "voice", "keep");
+    private static final Set<String> KEYS = Set.of("starters", "goal", "edits", "ticks", "sprint", "strategist", "voice", "keep", "lessons");
 
     public EvalScenario {
         starters = List.copyOf(starters);
@@ -80,7 +82,7 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
             default -> throw new IllegalArgumentException("Unknown keep '" + pairs.get("keep") + "' (inventory or none)");
         };
         return new EvalScenario(starters, goal, onOff(pairs, "edits", true), ticks, onOff(pairs, "sprint", true),
-                onOff(pairs, "strategist", false), onOff(pairs, "voice", false), keep);
+                onOff(pairs, "strategist", false), onOff(pairs, "voice", false), keep, onOff(pairs, "lessons", true));
     }
 
     private static boolean onOff(Map<String, String> pairs, String key, boolean fallback) {
@@ -103,6 +105,6 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
         return "starters=" + String.join(",", starters) + "; goal=" + goal.name().toLowerCase(Locale.ROOT)
                 + "; edits=" + (edits ? "on" : "off") + "; ticks=" + ticks + "; sprint=" + (sprint ? "on" : "off")
                 + "; strategist=" + (strategist ? "on" : "off") + "; voice=" + (voice ? "on" : "off")
-                + "; keep=" + keep.name().toLowerCase(Locale.ROOT);
+                + "; keep=" + keep.name().toLowerCase(Locale.ROOT) + "; lessons=" + (lessons ? "on" : "off");
     }
 }

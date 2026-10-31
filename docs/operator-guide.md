@@ -262,6 +262,30 @@ It thinks ahead too (F-19e). It is sent a general Minecraft guide with its instr
 
 Each death is logged as `<name> died at <x y z>: <message> (tick, day or night, under the sky or not, hunger, armour, what it held, a shield or not; what it was doing and its goal's stage; the strategist's stance, focus and habits in force)`, so a run's deaths can be weighed by what they happened in. The log says `Kindred strategist on` at start, `<name> strategist: <stance>[, focus <focus>] (<in> in, <cached> cached, <out> out tokens, <ms> ms) - <reason>` for each reply, `<name> strategist: habits in this world now [...]` when a habit is learned or retired, and `<name> strategist: queued [...]` when it adds follow-ups. Each player keeps its own memory for each world in `<world>/kindred/model-context/<player UUID>.json`: its notes, its deaths and their causes, the advice it was given, and the consultations and tokens they cost. A lesson already noted is kept once however the model rewords it, and the model is told to write a note only for a new lesson and only from what the report shows. Delete the file to make a player forget a world; it holds only the player's own game events and the model's notes about them. Requests are bounded: a fifteen-second deadline, one at a time, at most six a minute per player and twelve in all, and the daily budgets, reserved before each request and settled to what it used, with input read back from the cache counted for a tenth, as it is billed. A consultation costs about 4,700 to 5,100 input tokens, about 4,500 of them read from the cache, and 200 to 300 output tokens. The SDK is on the development classpath (`runServer`, GameTests) but not yet in the release jar; there the switch logs a warning and play goes on without it.
 
+### Lessons from its own play (E-46)
+
+With or without the strategist, each player learns from its own deaths in a world and keeps what it learns as a note
+with a habit, in the same memory file, as the strategist's are:
+
+| What happened | The habit | Its note |
+| --- | --- | --- |
+| Two deaths with food at six or below within two game days | carry three more food | "Twice dead hungry; carry more food." |
+| Two deaths at night under the open sky within two game days | dig in at dusk | "Night on the surface has cost two lives; dig in at dusk." |
+| Three deaths below y 40 in the Overworld within one game day | dig its own way for ore, not caves | "The caves took three lives today; dig for ore instead." |
+| Its last pickaxe broke below ground, with none spare | pack a spare pickaxe | "Stranded without a pickaxe; pack a spare." |
+| Killed below ground by a mob standing where it had walked, in its own tunnel | torches as it goes: one where the light at its feet is down to 6, about every eight blocks, from its own torches | "Something spawned in my own tunnel; torches as I go." |
+| Two fall deaths within two game days | the water bucket kept in the hotbar, where a fall's clutch reaches it | "Falls have cost two lives; keep the bucket to hand." |
+
+A habit it learned so and has not needed for three game days is dropped again, with a note saying so ("Three days
+without dying hungry; dropping the habit of carrying more food."). A habit it already keeps, from a lesson or the
+strategist, is not taught twice, and one dropped is not taught again from what came before. The habits only reorder
+or resize ordinary work, as the strategist's do, and at most four are kept. The report the strategist reads marks a
+lesson's habit `from its own play`, and the strategist is told not to teach it again, though it may retire it. The log
+says `<name> lesson: learned <HABIT> - <note>` or `<name> lesson: dropped <HABIT> - <note>`. The memory keeps, with
+each death, the game time, its height, whether it was night or under the sky or in the Overworld, its food, how it
+came (a mob, a fall, or else) and whether a mob in its own tunnel struck it; nothing of anyone else. Set
+`KINDRED_LESSONS=off` in the server's environment to turn the lessons off (an evaluation scenario says `lessons=off`).
+
 ### The player's voice in chat (E-20a)
 With the strategist on, a player spoken to by name ("Echo, what are you doing?") answers in its own words: the same model phrases one short, clean line in the player's personality from what the player knows right now. It is told only what that listener may know. Whoever may command the player (its controller, an operator) is told everything, its position included. Another player is told what anyone beside it could see or ask, never where it is or what exactly it carries. An opponent in a match is told only what it could see for itself. The line is said through the same social lane as the fixed replies, with the same limits: eight blocks and in sight, public chat for anyone who may not command the player, a player's three seconds between direct replies, and each speaker's three seconds. Words alone never make the player do anything; only the asks below, from someone who may command it, do. A line that is too long, starts with `/`, carries formatting codes or rough words, or gives a place to someone who may not know it is refused. Then, or when anything else goes wrong (a timeout, an error, the budgets or rates spent, a line already being phrased for that player), the player says its fixed reply, as it does with no model. While one reply is being phrased, the newest message to the player waits for it; someone else whose message that one replaced is given the fixed reply at once.
 
@@ -365,7 +389,7 @@ A build can be played unattended on many seeds and scored, so that a change is j
 started it spawns the starters (Kindred, Sol and Echo, or those named) a few blocks apart at the world's spawn, sets the
 edits switch and their goal, sprints the ticks asked for (`/tick sprint`), writes `logs/eval-result.json` and stops the
 server. The value is `key=value` pairs separated by `;`, for example
-`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none`.
+`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on`.
 Missing keys take those defaults; a key or value it does not know is refused with an error in the log, and no run is
 made. Without `KINDRED_EVAL` nothing of this happens: the setting is read when the mod loads and nowhere else.
 

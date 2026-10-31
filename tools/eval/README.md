@@ -28,6 +28,7 @@ tools/eval/compare.py run/eval/<old>/summary.json run/eval/<new>/summary.json --
 | `strategist` | `on`, `off` | `off` |
 | `voice` | `on`, `off` | `off` |
 | `keep` | `inventory`, `none` (the `keepInventory` rule) | `none` |
+| `lessons` | `on`, `off` (the players' own lessons from their deaths, E-46) | `on` |
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says

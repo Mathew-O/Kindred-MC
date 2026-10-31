@@ -146,11 +146,13 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     /**
-     * Where to make the player from: one cell west of the nearest cell to {@code at} where the runtime makes a native
-     * player (a solid block under it, room, no mob and no water), the first of the cells round it the runtime tries.
+     * Where to make the player from: one cell west of the nearest cell to {@code at}, anywhere in the scene, where the runtime
+     * makes a native player (a solid block under it, room, no mob and no water), the first of the cells round it the
+     * runtime tries. A player that drowned in a flooded cave may have none in the scene at all: then it is made on the test
+     * world's ground beside the scene, and moved.
      */
     private static Vec3d standNear(net.minecraft.server.world.ServerWorld world, Vec3d at) {
-        for (BlockPos cell : BlockPos.iterateOutwards(BlockPos.ofFloored(at), 10, 6, 10)) {
+        for (BlockPos cell : BlockPos.iterateOutwards(BlockPos.ofFloored(at), DeathReplays.WIDTH / 2 + 4, DeathReplays.HEIGHT, DeathReplays.WIDTH / 2 + 4)) {
             var bounds = new net.minecraft.util.math.Box(cell.getX() + .2, cell.getY(), cell.getZ() + .2, cell.getX() + .8, cell.getY() + 1.8, cell.getZ() + .8);
             if (world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty() && world.getFluidState(cell).isEmpty()
                     && world.getBlockState(cell.down()).isSolidBlock(world, cell.down())) {

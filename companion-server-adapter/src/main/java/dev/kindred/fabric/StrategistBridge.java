@@ -60,8 +60,8 @@ final class StrategistBridge implements AutoCloseable {
     private static final class State {
         ModelContextStore.PlayerContext context;
         boolean loading, inFlight, asking, talking;
-        long lastAt, tokensToday;
-        int deaths = -1, stuck = -1, deathsRecorded, events = -1;
+        long lastAt, tokensToday, lessonsAt = Long.MIN_VALUE;
+        int deaths = -1, stuck = -1, deathsRecorded, events = -1, strandingsRecorded;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
         String progress = "";
         PortalRunCampaign campaign, taught;
@@ -77,6 +77,8 @@ final class StrategistBridge implements AutoCloseable {
     private final ArrayDeque<Long> recent = new ArrayDeque<>();
     private long dayStartMs = System.currentTimeMillis(), tokensToday;
     private boolean budgetLogged;
+    /** Whether its own lessons are drawn from its deaths (E-46): on unless the operator or a scenario turns them off. */
+    private boolean lessons = true;
 
     private StrategistBridge(Strategist strategist, ModelContextStore store, Pace pace, long playerDailyTokens, long dailyTokens) {
         this.strategist = strategist;
@@ -133,6 +135,20 @@ final class StrategistBridge implements AutoCloseable {
     }
 
     /**
+     * The player's memory with no strategist (E-46): the same notes, habits, deaths and follow-ups, kept in the same
+     * files, and its own lessons drawn from them; nothing is ever asked of a model.
+     */
+    static StrategistBridge memoryOnly(Path worldKindredFolder) {
+        return new StrategistBridge(null, new ModelContextStore(worldKindredFolder), Pace.STEADY, 0, 0);
+    }
+
+    /** Whether a model stands behind it, or it is only the player's memory. */
+    boolean consults() { return strategist != null; }
+
+    /** Its own lessons on or off (E-46). */
+    void lessons(boolean on) { lessons = on; }
+
+    /**
      * Ask one question for a player (E-44, E-16d), on the game thread: within the same rates and daily budgets as its
      * advice, one question at a time for each player, off the game thread, the answer handed back on it. Nothing, at
      * once, when the budgets or rates leave no room or a question of its is already out: the player then answers by
@@ -142,7 +158,7 @@ final class StrategistBridge implements AutoCloseable {
         State state = states.computeIfAbsent(id, key -> new State());
         var answered = new java.util.concurrent.CompletableFuture<Optional<Strategist.Answer>>();
         long reserved = Strategist.reservation(question);
-        if (state.asking || !admit(System.currentTimeMillis(), state, reserved)) {
+        if (strategist == null || state.asking || !admit(System.currentTimeMillis(), state, reserved)) {
             answered.complete(Optional.empty());
             return answered;
         }
@@ -176,7 +192,7 @@ final class StrategistBridge implements AutoCloseable {
         State state = states.computeIfAbsent(id, key -> new State());
         var answered = new java.util.concurrent.CompletableFuture<Optional<Strategist.Line>>();
         long reserved = Strategist.reservation(conversation);
-        if (state.talking || !admit(System.currentTimeMillis(), state, reserved)) {
+        if (strategist == null || state.talking || !admit(System.currentTimeMillis(), state, reserved)) {
             answered.complete(Optional.empty());
             return answered;
         }
@@ -237,6 +253,12 @@ final class StrategistBridge implements AutoCloseable {
         return kept.size() <= 8 ? kept : kept.subList(kept.size() - 8, kept.size());
     }
 
+    /** Its notes as the report shows them, each with the habit it carries, for fixtures (E-46); nothing until its file is read. */
+    java.util.List<String> notes(UUID id) {
+        State state = states.get(id);
+        return state == null || state.context == null ? java.util.List.of() : state.context.noteTexts();
+    }
+
     /** Called on the game thread after a goal's step was chosen; cheap when nothing changed. */
     void tick(UUID id, String name, PortalRunCampaign campaign, ServerPlayerEntity player, MinecraftServer server) {
         tick(id, name, campaign, player, server, "");
@@ -264,9 +286,13 @@ final class StrategistBridge implements AutoCloseable {
             }
             return;
         }
-        // The habits this player keeps in this world go to each goal it starts, before anything is asked.
+        // The habits this player keeps in this world go to each goal it starts, before anything is asked, with any the goal
+        // was handed before its memory was read (an operator's or a fixture's advice).
         if (state.taught != campaign) {
-            campaign.habits(state.context.habits());
+            var kept = java.util.EnumSet.noneOf(PlanPreferences.Habit.class);
+            kept.addAll(state.context.habits());
+            kept.addAll(campaign.preferences().habits());
+            campaign.habits(kept);
             campaign.queue(state.context.taskQueue());
             state.queued = campaign.queue();
             state.taught = campaign;
@@ -277,15 +303,31 @@ final class StrategistBridge implements AutoCloseable {
             state.context.queue(state.queued);
             store.save(id, state.context);
         }
-        // Deaths go into this world's memory as they happen, whether or not a consultation follows.
+        // Deaths go into this world's memory as they happen, whether or not a consultation follows, with what its
+        // lessons read of them (E-46); and so do its strandings.
+        boolean fresh = false;
         if (campaign.deaths() > state.deathsRecorded) {
+            // Every death since the last look, not only the latest: two in a row (one soon after a respawn) are two.
+            for (var death : campaign.deathsAfter(state.deathsRecorded)) {
+                var f = death.facts();
+                state.context.addDeath(f == null
+                        ? new ModelContextStore.DeathRecord(server.getTicks(), death.pos().getX(), death.pos().getY(), death.pos().getZ(), death.cause(), death.stage().name())
+                        : new ModelContextStore.DeathRecord(server.getTicks(), death.pos().getX(), death.pos().getY(), death.pos().getZ(), death.cause(),
+                                death.stage().name(), f.time(), f.night(), f.underSky(), f.overworld(), f.food(),
+                                f.how().name().toLowerCase(java.util.Locale.ROOT), f.ownTunnel()));
+            }
             state.deathsRecorded = campaign.deaths();
-            campaign.lastDeath().ifPresent(death -> {
-                state.context.addDeath(server.getTicks(), death.pos().getX(), death.pos().getY(), death.pos().getZ(), death.cause(), death.stage().name());
-                store.save(id, state.context);
-            });
+            fresh = true;
+            store.save(id, state.context);
         }
-        if (state.inFlight) return;
+        if (campaign.strandings() > state.strandingsRecorded) {
+            state.strandingsRecorded = campaign.strandings();
+            fresh = true;
+            state.context.addEpisode(campaign.lastStranding(), "stranded");
+            store.save(id, state.context);
+        }
+        if (lessons) learn(id, name, state, campaign, player, server, fresh);
+        if (strategist == null || state.inFlight) return;
         long now = System.currentTimeMillis();
         // A spell with no progress repeats every few seconds while the player is stuck: one question about it now and then.
         boolean changed = state.lastAt == 0 || campaign.deaths() != state.deaths || campaign.stage() != state.stage
@@ -334,6 +376,10 @@ final class StrategistBridge implements AutoCloseable {
                 var before = state.context.habits();
                 state.context.addNote(tick, advice.note(), advice.habit());
                 state.context.retire(advice.retire());
+                // A lesson's habit it retired is not taught again from what came before (E-46).
+                if (state.context.lessons.remove(advice.retire().name()) != null) {
+                    state.context.retiredLessons.put(advice.retire().name(), player.getServerWorld().getTime());
+                }
                 var after = state.context.habits();
                 asked.habits(after);
                 state.queued = asked.queue();
@@ -352,6 +398,65 @@ final class StrategistBridge implements AutoCloseable {
             }
             store.save(id, state.context);
         }));
+    }
+
+    /**
+     * Its own lessons (E-46): after each death or stranding recorded, and once a game minute for a lesson's habit gone
+     * three days unneeded. Each is written as a note with its habit, as the strategist's are, and the habits go to the
+     * running goal through the same path.
+     */
+    private void learn(UUID id, String name, State state, PortalRunCampaign campaign, ServerPlayerEntity player, MinecraftServer server, boolean fresh) {
+        long now = player.getServerWorld().getTime();
+        if (!fresh && now - state.lessonsAt < 1_200) return;
+        state.lessonsAt = now;
+        var context = state.context;
+        var kept = context.habits();
+        // A lesson's habit pushed out by newer ones is from its own play no longer: learned again, it is marked again.
+        context.lessons.keySet().removeIf(habit -> kept.stream().noneMatch(k -> k.name().equals(habit)));
+        var deaths = new ArrayList<dev.kindred.core.survival.Lessons.Death>();
+        for (var d : context.deaths) {
+            if (d.how() == null) continue; // Recorded before lessons: nothing of it to read.
+            var how = switch (d.how()) {
+                case "mob" -> dev.kindred.core.survival.Lessons.How.MOB;
+                case "fall" -> dev.kindred.core.survival.Lessons.How.FALL;
+                default -> dev.kindred.core.survival.Lessons.How.OTHER;
+            };
+            deaths.add(new dev.kindred.core.survival.Lessons.Death(d.time(), d.y(), d.night(), d.sky(), d.overworld(), d.food(), how, d.tunnel()));
+        }
+        var stranded = new ArrayList<dev.kindred.core.survival.Lessons.Stranded>();
+        for (var e : context.episodes) if ("stranded".equals(e.kind())) stranded.add(new dev.kindred.core.survival.Lessons.Stranded(e.time()));
+        var learned = new java.util.EnumMap<PlanPreferences.Habit, Long>(PlanPreferences.Habit.class);
+        var retired = new java.util.EnumMap<PlanPreferences.Habit, Long>(PlanPreferences.Habit.class);
+        for (var habit : PlanPreferences.Habit.values()) {
+            if (context.lessons.containsKey(habit.name())) learned.put(habit, context.lessons.get(habit.name()));
+            if (context.retiredLessons.containsKey(habit.name())) retired.put(habit, context.retiredLessons.get(habit.name()));
+        }
+        var taught = dev.kindred.core.survival.Lessons.review(deaths, stranded, kept, learned, retired, now);
+        if (taught.isEmpty()) return;
+        var before = java.util.EnumSet.noneOf(PlanPreferences.Habit.class);
+        before.addAll(kept);
+        long tick = server.getTicks();
+        for (var lesson : taught) {
+            if (lesson.retire()) {
+                context.retire(lesson.habit());
+                context.addNote(tick, lesson.note());
+                context.lessons.remove(lesson.habit().name());
+                context.retiredLessons.put(lesson.habit().name(), now);
+            } else {
+                context.addNote(tick, lesson.note(), lesson.habit());
+                if (context.habits().contains(lesson.habit())) context.lessons.put(lesson.habit().name(), now);
+                context.retiredLessons.remove(lesson.habit().name());
+            }
+            KindredMod.LOGGER.info("{} lesson: {} {} - {}", name, lesson.retire() ? "dropped" : "learned", lesson.habit(), lesson.note());
+        }
+        // The goal's habits change as the memory's did, and only so: one it was handed otherwise stays.
+        var after = context.habits();
+        var goal = java.util.EnumSet.noneOf(PlanPreferences.Habit.class);
+        goal.addAll(campaign.preferences().habits());
+        goal.removeIf(habit -> before.contains(habit) && !after.contains(habit));
+        for (var habit : after) if (!before.contains(habit)) goal.add(habit);
+        campaign.habits(goal);
+        store.save(id, context);
     }
 
     /** Within the rates and the day's budgets with {@code reserved} tokens set aside; reserves them if so. */
@@ -380,7 +485,7 @@ final class StrategistBridge implements AutoCloseable {
     /** Closes the connection to the adviser and stops the memory's saving. */
     @Override
     public void close() {
-        strategist.close();
+        if (strategist != null) strategist.close();
         store.close();
     }
 }

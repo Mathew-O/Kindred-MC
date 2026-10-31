@@ -432,7 +432,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
                 + "\"reason\" (" + StrategistPrompt.REASON + "), \"note\" (" + StrategistPrompt.NOTE + "), "
                 + "\"avoid\" (a list of {\"x\":..,\"y\":..,\"z\":..}; " + StrategistPrompt.AVOID + "), "
                 + "\"focus\" (NONE, FOOD or WOOD; " + StrategistPrompt.FOCUS + "), "
-                + "\"habit\" (NONE, MORE_FOOD, SPARE_PICKAXE, NO_CAVES or SHELTER_EARLY; " + StrategistPrompt.HABIT + "), "
+                + "\"habit\" (NONE, MORE_FOOD, SPARE_PICKAXE, NO_CAVES, SHELTER_EARLY, TORCH_AS_YOU_GO or BUCKET_ON_HOTBAR; " + StrategistPrompt.HABIT + "), "
                 + "\"retire\" (as habit; " + StrategistPrompt.RETIRE + "), "
                 + "\"queue\" (a list of {\"need\":..,\"count\":..,\"task\":..,\"why\":..}; " + StrategistPrompt.QUEUE + " need: "
                 + StrategistPrompt.QUEUE_NEED + " count: " + StrategistPrompt.QUEUE_COUNT + " task: " + StrategistPrompt.QUEUE_FOR + "), "

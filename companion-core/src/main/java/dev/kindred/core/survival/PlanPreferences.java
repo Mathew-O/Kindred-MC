@@ -29,7 +29,11 @@ public record PlanPreferences(Set<Habit> habits, Focus focus, dev.kindred.core.g
         /** Dig its own way for ore rather than explore caves. */
         NO_CAVES,
         /** Dig in for the night at dusk rather than at nightfall. */
-        SHELTER_EARLY
+        SHELTER_EARLY,
+        /** Light its own tunnels a torch every eight blocks or so, not only where it is dark (E-46). */
+        TORCH_AS_YOU_GO,
+        /** Keep the water bucket in the hotbar, where a fall's clutch can reach it (E-46). */
+        BUCKET_ON_HOTBAR
     }
 
     /** What to do next, for a few minutes, where the route allows it. */
