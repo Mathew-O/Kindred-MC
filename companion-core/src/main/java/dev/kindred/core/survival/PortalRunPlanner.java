@@ -391,7 +391,8 @@ public final class PortalRunPlanner {
         if (packedFuel > 0 && s.woodUnits() < woodPacked && treesNear) {
             return new Step(Action.GATHER_LOGS, "", (woodPacked - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for fuel to smelt with below");
         }
-        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst && !chestFirst) {
+        // Iron its furnace close by is smelting is waited for, not walked away from (F-28).
+        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst && !chestFirst && !ironSmelting(s)) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {
@@ -640,7 +641,8 @@ public final class PortalRunPlanner {
     /**
      * Work below ground that takes no wood, for a night when the route's next step is logs from the surface: the iron
      * the route still needs, mined with the pickaxe in hand. Below ground the night changes nothing; only the climb out
-     * to the trees waits for morning. Empty with no pickaxe that mines iron, or with the route's iron all in hand.
+     * to the trees waits for morning. Empty with no pickaxe that mines iron, or with the route's iron all in hand; a wait
+     * by the furnace while its iron is smelting there.
      */
     public static Optional<Step> withoutWood(PortalRunSnapshot s, WorldFacts facts) {
         Objects.requireNonNull(s);
@@ -649,7 +651,19 @@ public final class PortalRunPlanner {
         int wanted = ironShortfall(s, frameMethod(s, facts), caves(facts));
         int have = s.ironIngots() + s.rawIron();
         if (have >= wanted) return Optional.empty();
+        // Its iron in the furnace first: the night's mining is not a reason to walk off from it either.
+        if (ironSmelting(s)) return Optional.of(Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron"));
         return Optional.of(new Step(Action.MINE_IRON, "", wanted - have, Stage.IRON, "Mine iron ore while the night passes (" + have + "/" + wanted + ")"));
+    }
+
+    /**
+     * Whether its furnace close by is smelting its iron. That iron is waited for, not walked away from: sixteen blocks
+     * off it is no longer counted, and nothing brings the player back for it. Its first ingot made into a shield, it
+     * went on for more ore with the rest still smelting; in the simulator's caving pack 55 runs of 100 left iron in a
+     * furnace so, 214 iron in all (F-28).
+     */
+    static boolean ironSmelting(PortalRunSnapshot s) {
+        return s.furnaceNearby() && s.furnaceSmelting() && !s.furnaceCooking() && s.rawIron() > 0;
     }
 
     /**

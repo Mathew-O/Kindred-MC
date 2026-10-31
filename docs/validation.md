@@ -29,6 +29,33 @@ Minecraft 1.21.1 and Fabric Loader 0.19.5.
 - The comparison on those ten seeds: no clear difference on any measure; [comparison](evidence/eval/compare-nightfix.md).
 - Running: ten seeds of the E-49 build with `--parallel 2`, then the arms of E-46, F-30 and F-29 on the same build.
 
+## The headless simulator (F-28) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to the neighbours, and restore them after each run. The simulator
+tests decisions and plans, not execution.
+
+- Build: `./gradlew build` green on the commit that adds this section, 840 JUnit tests, 6 skipped, 0 failures (the 4 more
+  than E-49's: `SimRunTest` (3) and one in `PortalRunPlannerTest`).
+- The three packs of 100 seeds on the final build: 35.1 s in all (night 8.1 s, caving 8.5 s, portal 18.4 s); 10, 6 and
+  18 deaths; no anomalies. `tools/eval/score.py` scored each pack unchanged, `RunMetrics` included;
+  [the portal pack's summary](evidence/eval/sim-portal/summary.md).
+- The decision bug the caving pack found: iron left smelting in a furnace the player walked away from. On the final
+  simulator, before the fix 14, 55 and 6 runs left 33, 214 and 21 iron so (night, caving, portal); after it, none.
+- `NativeFurnaceWaitGameTests`:
+  - before the fix, 0 of 1: the furnace still held 2 raw iron when the player went past sixteen blocks;
+  - after the iron stage's fix, 3 of 3 alone;
+  - on the final planner (the night's work below ground waits for the furnace too), 3 of 3 alone.
+- `PortalRunPlannerTest.theIronSmeltingInItsFurnaceIsWaitedForNotWalkedAwayFrom` fails before the fix and passes after;
+  the class is 40 of 40.
+- The neighbours on the final planner: `NativePortalCampaignGameTests` and `NativeSmeltGameTests` together 94 of 97,
+  and the goal's class alone 88 of 92; without the fix, the goal's class alone 91 of 92. Every fixture with a furnace
+  passed in every run. Five failed in one run or another, none of them holding raw iron or a furnace, so the changed
+  rule never applies in them; the lava lakes' failed without the fix too. None is among the failures of the full suite
+  runs recorded below; the final suite on this branch is compared against them as well.
+- Deaths an hour against the server's first game hour on the same core (e49-base, 7 seeds of 10 so far): 0.18 against
+  0.48 a player-hour, a factor of 2.7, the gap recorded with its causes in [the evidence](evidence/F-28.md).
+
 ## Trust and griefing (E-49) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs

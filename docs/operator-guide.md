@@ -521,6 +521,36 @@ A replay that is to be kept as a test goes into the gametest resources (see the 
 alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
 of three; one that does not is left out.
 
+### The simulator (F-28)
+
+`companion-sim` plays the players' decisions and plans on a made-up world, with no Minecraft in it. A hundred games
+take seconds. **It tests decisions and plans, not execution.** The planner, the choice between staying alive and getting
+on, the lessons and the atlas are the real ones; what each step does and how long it takes are the simulator's own
+approximations of vanilla. A result from it says nothing about whether a body carries a plan out on a server: the
+GameTests and the evaluation runs above say that.
+
+```
+./gradlew :companion-sim:runPacks                                     # the three packs of 100 seeds, into run/sim/
+./gradlew :companion-sim:run --args="portal 100 run/sim"             # one pack
+tools/eval/score.py run/sim/portal --no-metrics                       # scored as a server's runs are
+```
+
+There are three packs:
+
+- `night`: at dusk on open ground, with stone tools;
+- `caving`: in a cave, with an iron pickaxe and torches;
+- `portal`: empty-handed at dawn, toward the Nether.
+
+Each seed's `eval-result.json` and `latest.log` are written as an evaluation run's are; leave out `--no-metrics` and
+`RunMetrics` reads the logs too. Each pack's `anomalies.txt` lists what the planner did that no player should:
+
+- a step asked for twenty times running and refused each time;
+- a minute of daylight with nothing it could act on;
+- iron left in a furnace it walked away from.
+
+It found that last one in the planner, and a GameTest confirmed it on a real server. See
+[the evidence](evidence/F-28.md), which also records how its deaths an hour compare with a server's.
+
 ## The watch page (E-48)
 
 A read-only web page that shows what each AI player is doing and weighing, for an operator, or for a stream. It is off

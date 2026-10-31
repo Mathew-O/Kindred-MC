@@ -53,6 +53,7 @@
     "productionGoalQualified": false,
     "gameplayRequiresModel": false,
     "optionalModelModule": "companion-model",
+    "simulatorModule": "companion-sim (F-28): decisions and plans over companion-core on a made-up world, no Minecraft and no execution; depends on companion-core only, no runtime dependency, not in the server jar; docs/evidence/F-28.md",
     "modelModuleBundledInServer": true,
     "defaultBossPolicy": "Unqualified encounters blocked; qualified team Dragon progression is a production objective",
     "dependencyPolicy": "Prefer free/open-source components; optional operator-funded model API usage",

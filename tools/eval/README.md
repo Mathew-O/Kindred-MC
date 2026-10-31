@@ -14,6 +14,13 @@ tools/eval/score.py run/eval/<build>
 tools/eval/compare.py run/eval/<old>/summary.json run/eval/<new>/summary.json --out compare.md
 ```
 
+## A simulated run (F-28)
+
+`companion-sim` writes each of its runs as `run.py` keeps a server's: `<pack>/<seed>/eval-result.json` and
+`latest.log`. So `score.py run/sim/<pack>` scores a scenario pack as it scores a build, `RunMetrics` included, and the
+summary says the build is `sim`. A simulated run tests the players' decisions and plans, not their execution; see the
+operator guide.
+
 ## The scenario
 
 `KINDRED_EVAL` is `key=value` pairs separated by `;`. Anything else is not an evaluation run; a person runs it by hand.

@@ -388,6 +388,28 @@ class PortalRunPlannerTest {
         assertTrue(PortalRunPlanner.withoutWood(wooden.snapshot(), WorldFacts.ordinary()).isEmpty(), "no pickaxe for iron ore");
     }
 
+    /**
+     * Its first ingot made into a shield and the rest of its iron still smelting in the furnace beside it: the route waits
+     * there for it rather than go on for more ore, and so does the night's work below ground; once it is out and taken,
+     * on for more. Sixteen blocks off, iron in a furnace is no longer counted, and nothing brought the player back for it
+     * (F-28: the simulator's caving pack left iron so in 55 runs of 100).
+     */
+    @Test
+    void theIronSmeltingInItsFurnaceIsWaitedForNotWalkedAwayFrom() {
+        Sim sim = new Sim();
+        sim.pick = 3; sim.pickaxes = 3; sim.sword = 2; sim.cobble = 24; sim.sticks = 30; sim.planks = 8; sim.shields = 1;
+        sim.tableNearby = true; sim.furnaceNearby = true; sim.furnaceInput = 3;
+        var step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.AWAIT_SMELT, step.action(), "its three smelting waited for: " + step);
+        assertEquals(Action.AWAIT_SMELT, PortalRunPlanner.withoutWood(sim.snapshot(), WorldFacts.ordinary()).orElseThrow().action(),
+                "and the night's work below ground waits for them too");
+        sim.furnaceInput = 0; sim.furnaceOutput = 3;
+        assertEquals(Action.COLLECT_SMELTED, PortalRunPlanner.plan(sim.snapshot()).getFirst().action(), "taken out once smelted");
+        sim.furnaceOutput = 0; sim.iron = 3;
+        step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.MINE_IRON, step.action(), "then on for more: " + step);
+    }
+
     @Test
     void aLimitedIslandWithoutStarterBucketsGetsItsIronBeforeItsStoneRunsOut() {
         // Sixteen stone blocks and no starter chest: the stockpile waits until iron has made the buckets for a generator.

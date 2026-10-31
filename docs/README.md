@@ -61,6 +61,7 @@ Everything in the [tracker](feature-spec.md) has an ID. A child gets a letter on
 | `companion-persistence` | The memory | Saves players, plans, limits and the action ledger to a small SQLite database file. |
 | `companion-model` | The planning helper | The optional link to Claude or OpenAI. |
 | `companion-testkit` | The demo bench | Small runnable demos and test helpers. |
+| `companion-sim` | The practice ground | The brains' decisions and plans played on a made-up world, a hundred games in seconds. It tests decisions and plans, not execution. |
 
 Inside each module the Java code lives under `src/main/java/dev/kindred/…`, and its tests under `src/test/java`. Every file starts with a short comment saying what it does, in plain words, except twenty that the `modest-faraday` branch is changing; they get theirs once it merges.
 

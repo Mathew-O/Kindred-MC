@@ -57,6 +57,7 @@
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",
+      "dev.kindred.fabric.NativeFurnaceWaitGameTests",
       "dev.kindred.fabric.NativeSkinGameTests",
       "dev.kindred.fabric.NativeStrongholdGameTests",
       "dev.kindred.fabric.NativeBoatGameTests",
