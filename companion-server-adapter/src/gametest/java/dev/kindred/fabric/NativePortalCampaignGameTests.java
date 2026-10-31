@@ -4114,6 +4114,64 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Sealed into its shelter for the night in a pocket under a pool, with no pickaxe: in the morning, with no other way up,
+     * it punches its own seal out by hand (F-25c4at). In the live pair on `00e98f5` Kindred, sealed in so beside a lake at
+     * Y=45, found every walk out refused by its own seal and every step up by the water beside the cell over its head, and
+     * stood there for the last fifty minutes of the seed. Staged: stone round a pocket two high with a corridor two high
+     * and four long east from it, a torch at its end, water over the pocket's ceiling; night; cobblestone and bread, no
+     * pickaxe; daylight once both cells of the way in are sealed.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "ownSealOpened", tickLimit = 3600)
+    public void sealedInForTheNightUnderAPoolItOpensItsOwnSealInTheMorning(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        boolean[] day = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sealedin"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(14000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-3, -1, -3), p.add(6, 5, 3));
+                    for (BlockPos at : BlockPos.iterate(p.add(-3, -1, -3), p.add(6, 5, 3))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                    for (int dx = 0; dx <= 4; dx++) for (int dy = 0; dy <= 1; dy++) world.setBlockState(p.add(dx, dy, 0), Blocks.AIR.getDefaultState());
+                    for (BlockPos at : BlockPos.iterate(p.add(-1, 3, -1), p.add(1, 3, 1))) world.setBlockState(at, Blocks.WATER.getDefaultState());
+                    world.setBlockState(p.add(4, 1, 0), Blocks.WALL_TORCH.getDefaultState().with(net.minecraft.block.WallTorchBlock.FACING, Direction.WEST));
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.COBBLESTONE, 16));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    // Sealed in for the night, then morning.
+                    var world = context.getWorld();
+                    boolean sealed = !world.getBlockState(feet[0].east()).isAir() && !world.getBlockState(feet[0].east().up()).isAir();
+                    context.assertTrue(sealed, "Not sealed for the night: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    world.setTimeOfDay(1000);
+                    day[0] = true;
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    boolean opened = world.getBlockState(feet[0].east()).isAir() || world.getBlockState(feet[0].east().up()).isAir();
+                    context.assertTrue(day[0] && opened, "Still sealed in: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && !player.isInsideWall() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Stranded on a one-block pillar five blocks above the floor, with every way off a fall the navigator would not
      * take: the goal jumps down, taking vanilla fall damage it can afford, rather than wait for ever.
      */

@@ -160,10 +160,12 @@ final class PortalRunCampaign {
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
-    // A walk back along its trail that ended where it began (a step up it cannot walk): retracing waits a while.
+    // A walk back along its trail that ended where it began (a step up it cannot walk), or was refused: retracing waits a while.
     private BlockPos retraceFrom;
     private boolean retraceDone;
     private long retraceStalledUntil;
+    /** Where it sealed its night shelter, by the tick it did: the way out in the morning when no other goes (F-25c4at). */
+    private final Map<Long, Long> ownSeals = new HashMap<>();
     private EditPolicy.ServerPolicy policy = EditPolicy.ServerPolicy.deferredD4();
 
     /** Lava source L to convert, the air cell W to pour water into, and the stand cell S beyond it. */
@@ -527,6 +529,20 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceDone = true;
             retraceFrom = lastFeet; // Where it stood when the walk was chosen.
+        }
+        // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
+        // turn: sealed in for the night, every walk back along it was refused, another cell of it each time (F-25c4at).
+        if (task != null && !completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
+            retraceFrom = lastFeet;
+            retraceStalledUntil = tick + 600;
+        }
+        if (task != null && completed && "native_place".equals(task.skill()) && task.label().startsWith("Seal the shelter at")
+                && position(task.args()) != null) {
+            if (ownSeals.size() > 64) ownSeals.clear();
+            ownSeals.put(position(task.args()).asLong(), tick);
+        }
+        if (task != null && completed && task.label().contains(": open its shelter at ") && position(task.args()) != null) {
+            ownSeals.remove(position(task.args()).asLong());
         }
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploredFrom = lastFeet; // Compared with where the player stands at the next plan.
@@ -2443,6 +2459,31 @@ final class PortalRunCampaign {
      * hand is the last resort, for a player sealed in with no way back.
      */
     private Optional<Task> wayUp(NativePlayerBody body, String label) {
+        return wayUpBy(body, label).or(() -> openShelter(body, label));
+    }
+
+    /**
+     * With no other way up, out of its own night shelter by the seal it made, dug, or punched by hand with no pickaxe. In
+     * the live pair on `00e98f5` Kindred, sealed in for the night beside a lake at Y=45, found every walk out refused by its
+     * own seal and every step up by the water beside the cell over its head, and stood there for the last fifty minutes of
+     * the seed (F-25c4at). Never into water or lava, nor a block it has set aside.
+     */
+    private Optional<Task> openShelter(NativePlayerBody body, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos best = null;
+        for (long key : ownSeals.keySet()) {
+            BlockPos cell = BlockPos.fromLong(key);
+            if (passable(world, cell) || blocked(cell) || liquidNear(world, cell) || eyeDistance(player, cell) > REACH) continue;
+            if (best == null || eyeDistance(player, cell) < eyeDistance(player, best)) best = cell;
+        }
+        if (best == null) return Optional.empty();
+        if (breakableNow(body, best)) return Optional.of(clearAt(best, label + ": open its shelter at " + best.toShortString()));
+        if (handClearable(body, best)) return Optional.of(clearAt(best, label + ": open its shelter at " + best.toShortString() + " by hand"));
+        return Optional.empty();
+    }
+
+    private Optional<Task> wayUpBy(NativePlayerBody body, String label) {
         var player = body.entity();
         boolean pickaxe = false;
         var inventory = player.getInventory();
