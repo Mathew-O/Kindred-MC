@@ -35,6 +35,8 @@ public final class KindredMod implements ModInitializer {
     private static PlayerRuntime runtime;
     /** An unattended evaluation run, when {@code KINDRED_EVAL} asks for one (F-26): read here and nowhere else. */
     private static EvalBootstrap eval;
+    /** Whether deaths are kept as replays (F-27): {@code KINDRED_REPLAYS=on|off}, on by default under an evaluation run. */
+    private static boolean replays;
 
     static PlayerRuntime runtime() { return runtime; }
 
@@ -70,12 +72,20 @@ public final class KindredMod implements ModInitializer {
             if (rt != null) rt.onServerTick(server);
         });
         eval = EvalBootstrap.fromEnvironment().orElse(null);
+        String replaysAsked = System.getenv("KINDRED_REPLAYS");
+        replays = replaysAsked != null ? replaysAsked.equalsIgnoreCase("on") : eval != null;
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
         }
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             runtime = new PlayerRuntime(server);
             runtime.start();
+            if (replays) {
+                var run = server.getRunDirectory();
+                runtime.captureReplays(new DeathReplays(run.resolve("kindred").resolve("replays").resolve(server.getSaveProperties().getLevelName()),
+                        run.resolve("logs").resolve("latest.log")));
+                LOGGER.info("Deaths are kept as replays under kindred/replays/");
+            }
         });
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof CompanionEntity companion && runtime != null) runtime.loaded(companion);

@@ -164,6 +164,8 @@ final class PlayerRuntime {
     private final PlayerMemoryStore memories;
     /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
     private RunObserver runObserver = RunObserver.NONE;
+    /** Its players' deaths kept as replays (F-27), when the mod turns it on; none by default. */
+    private DeathReplays replays;
     private final NativePlayerSaves.Reader nativeSaveReader;
     private final java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator;
     private final StartupLedgerReader startupLedgerReader;
@@ -2212,6 +2214,7 @@ final class PlayerRuntime {
         }
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
+                if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
                 refreshTacticalObservation(entry, tick);
                 SignalFrame frame = createSignalFrame(entry, tick);
                 entry.attentionSnapshot = entry.attention.observe(frame);
@@ -5307,6 +5310,13 @@ final class PlayerRuntime {
         BlockPos deathPos = player.getBlockPos().toImmutable();
         // What it died in, for a run's report to weigh deaths by (B7): read before its work is stopped below.
         String circumstances = deathCircumstances(entry, player);
+        // The scene and its state kept for a replay, before its work stops and vanilla drops what it holds (F-27).
+        if (replays != null) {
+            var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
+            replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(entry.goal),
+                    entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
+                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
+        }
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
         if (entry.runner != null && runnerBusy(entry)) {
@@ -11086,6 +11096,7 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
             Entry entry = entries.get(raced.getKey());
@@ -11139,6 +11150,12 @@ final class PlayerRuntime {
         // There are no game ticks after SERVER_STOPPED; bound the final IO flush.
         try { shutdown.get(10, TimeUnit.SECONDS); }
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
+    }
+
+    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    void captureReplays(DeathReplays replays) {
+        requireThread();
+        this.replays = replays;
     }
 
     /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */

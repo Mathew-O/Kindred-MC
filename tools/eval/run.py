@@ -140,6 +140,10 @@ def finish(folder, process, started):
     for name in ("latest.log", "eval-result.json"):
         if (logs / name).is_file():
             shutil.copy2(logs / name, folder / name)
+    # Its deaths' replays (F-27), when it kept them: kept beside the result, as candidates for the suite.
+    replays = folder / "kindred" / "replays"
+    if replays.is_dir():
+        shutil.copytree(replays, folder / "replays", dirs_exist_ok=True)
     for name in ("world", "libraries", ".fabric", "mods", "logs", "versions", "config", "kindred"):
         path = folder / name
         if path.is_dir():

@@ -1,0 +1,11 @@
+# The ten seeds every comparison in docs/evidence/eval/ uses (F-26).
+8675309
+20261030
+31102026
+101
+202
+303
+404
+505
+606
+707
