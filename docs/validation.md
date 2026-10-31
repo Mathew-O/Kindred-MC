@@ -1,5 +1,21 @@
 # AI-player development validation
 
+## Trees on the skyline (F-25c4ap), and the climbs' holds read "long ago" rightly — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- F-25c4ap, on top of `3c184b6`:
+  - Its fixture: no wood, its home where its goal began, then set down 170 blocks east with an oak 60 blocks further east, 230 from home. It fails before, "No wood ... Explore east for logs", 3 of 3. Its walks to look keep within 192 blocks of home.
+  - In its first form the fixture moved the player before its first plan, so home was set at the new spot, and the runs before failed only by the luck of their headings. It now waits for the first plan.
+  - The first form of the change failed after too. The look was never due, its last-looked tick starting at the least long. And a sight line to the crown's top that met another leaf of the same crown did not count.
+  - After: 3 of 3 alone.
+- The holds' "long ago", on top of `3c184b6`:
+  - The climb for the surface (F-25c4ao) and the water step (F-25c4ah, since `238ff1e`) held for "ten seconds since the last climb" from the least long. A tick less that overflows, so each held before any climb was made, wherever ground beside the player rose two blocks.
+  - Its fixture, no wood at the foot of a wall two high on open ground, fails on `3c184b6`, "Its first step a climb on open ground: ... Climb toward the surface for logs", 3 of 3. After, 3 of 3 alone.
+- Beside them, alone on the final code, 12 of 12: under a lake, under sand, the pocket's move elsewhere, wood first with no tree in sight, the chamber with no way to its trees, the logs at the top of a cut trunk, the trip's wood among the trees, water at night, the two hungry searches once up, the sapling where trees do not come back, and the night's iron.
+- `build` successful.
+- Evidence: [F-25c4ap](evidence/F-25c4ap.md), [F-25c4ao](evidence/F-25c4ao.md), [F-25c4ah](evidence/F-25c4ah.md).
+
 ## The live run on 91c1290, a third seed; the watchdog's moves elsewhere (F-25c4an) and the climb from under sand (F-25c4ao) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

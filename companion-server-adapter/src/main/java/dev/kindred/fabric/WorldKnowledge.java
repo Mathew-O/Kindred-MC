@@ -192,6 +192,59 @@ final class WorldKnowledge {
         }
     }
 
+    /**
+     * Trees on the skyline: the nearest crown of leaves or top of a trunk the player can see from where it stands, over
+     * loaded ground out to {@code radius} blocks, past its sweep's {@value #HORIZONTAL_RADIUS}, and a log of that tree,
+     * which is remembered: as a player on open ground sees trees far off and makes for them (F-25c4ap). Bounded: every
+     * third column, and one sight line a top for the eight nearest.
+     */
+    Optional<BlockPos> treeInView(ServerPlayerEntity player, int radius, Predicate<BlockPos> usable) {
+        ServerWorld world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        Vec3d eye = player.getEyePos();
+        var tops = new ArrayList<BlockPos>();
+        for (int dx = -radius; dx <= radius; dx += 3) {
+            for (int dz = -radius; dz <= radius; dz += 3) {
+                int square = dx * dx + dz * dz;
+                if (square > radius * radius || square <= HORIZONTAL_RADIUS * HORIZONTAL_RADIUS) continue;
+                int x = feet.getX() + dx, z = feet.getZ() + dz;
+                if (!world.isChunkLoaded(ChunkSectionPos.getSectionCoord(x), ChunkSectionPos.getSectionCoord(z))) continue;
+                BlockPos top = new BlockPos(x, world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, x, z) - 1, z);
+                BlockState state = world.getBlockState(top);
+                if (state.isIn(BlockTags.LEAVES) || state.isIn(BlockTags.LOGS)) tops.add(top);
+            }
+        }
+        tops.sort(java.util.Comparator.comparingDouble(p -> p.getSquaredDistance(feet)));
+        for (int i = 0; i < Math.min(8, tops.size()); i++) {
+            BlockPos top = tops.get(i);
+            // Seen if the sight line meets the tree itself, a leaf or log of its crown short of the top block.
+            BlockHitResult hit = world.raycast(new RaycastContext(eye, Vec3d.ofCenter(top), RaycastContext.ShapeType.COLLIDER,
+                    RaycastContext.FluidHandling.NONE, player));
+            BlockState met = world.getBlockState(hit.getBlockPos());
+            if (hit.getType() != HitResult.Type.MISS && !(hit.getBlockPos().getManhattanDistance(top) <= 3
+                    && (met.isIn(BlockTags.LEAVES) || met.isIn(BlockTags.LOGS)))) continue;
+            Optional<BlockPos> log = logUnder(world, top);
+            if (log.isPresent() && usable.test(log.get())) {
+                remember(Kind.LOG, log.get());
+                return log;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** A log of the tree whose crown or trunk top is {@code top}: down its own column or one within two of it, eight deep. */
+    private static Optional<BlockPos> logUnder(ServerWorld world, BlockPos top) {
+        for (int dy = 0; dy <= 8; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    BlockPos at = top.add(dx, -dy, dz);
+                    if (world.isChunkLoaded(at) && world.getBlockState(at).isIn(BlockTags.LOGS)) return Optional.of(at);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private void nextSection() {
         cursor++;
         index = 0;

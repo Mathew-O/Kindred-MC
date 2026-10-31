@@ -109,8 +109,11 @@ final class PortalRunCampaign {
     private BlockPos underWaterAt;
     private long underWaterTick;
     private Direction underWaterHeading;
-    /** When the water step last climbed toward the surface: the top of that staircase is still part of the climb. */
-    private long waterClimbTick = Long.MIN_VALUE;
+    /**
+     * When the water step last climbed toward the surface: the top of that staircase is still part of the climb. Long ago
+     * at first as half the least long, as {@link #surfaceClimbTick}: the least long itself overflowed the hold's test.
+     */
+    private long waterClimbTick = Long.MIN_VALUE / 2;
     private Direction exploreHeading;
     private int exploreFailures;
     private BlockPos exploredFrom;
@@ -1722,7 +1725,7 @@ final class PortalRunCampaign {
                             .or(() -> home == null || home.getSquaredDistance(lastFeet) <= 4 * 4 ? Optional.empty()
                                     : Optional.of(go(home.getSquaredDistance(lastFeet) > LAVA_LEG * LAVA_LEG ? legToward(lastFeet, home, LAVA_LEG) : home,
                                             3, true, "Head back up toward home")))
-                            : explore(body, "logs"));
+                            : treesInView(body).or(() -> explore(body, "logs")));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
             // Over a sky island there is no stone below to dig for: only what is in sight, or the generator's.
             case GATHER_STONE -> mineGenerator(body).or(() -> generatorPlan != null ? buildGenerator(body) : Optional.<Task>empty())
@@ -2234,7 +2237,44 @@ final class PortalRunCampaign {
         return !world.isSkyVisible(feet.up()) && feet.getY() < world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 2;
     }
 
-    private long surfaceClimbTick = Long.MIN_VALUE;
+    /** How far off a player on open ground sees trees on the skyline, past its sweep's 32 blocks (F-25c4ap). */
+    static final int TREE_SIGHT = 96;
+    private long treeLookTick = Long.MIN_VALUE / 2, treeSince;
+    private BlockPos treeSeen;
+    /** Trees given up, by four-block column, after a minute's walking did not get to them. */
+    private final Set<Long> treesGivenUp = new HashSet<>();
+
+    /**
+     * Trees seen on the skyline from open ground, beyond its sweep's reach, walked toward a leg at a time, as a player in a
+     * desert makes for the trees it sees far off. Looked for every five seconds of game time; one it has not got to in a
+     * minute (across water, up a cliff) is let be. In the live pair on `91c1290`, on a desert seed, no player had wood
+     * 175,000 ticks in: its sweep sees logs 32 blocks round, and the two trees Sol found it came on chasing rabbits
+     * (F-25c4ap).
+     */
+    private Optional<Task> treesInView(NativePlayerBody body) {
+        var player = body.entity();
+        if (!player.getServerWorld().isSkyVisible(player.getBlockPos().up())) return Optional.empty();
+        if (lastTick - treeLookTick >= 100) {
+            treeLookTick = lastTick;
+            BlockPos seen = knowledge.treeInView(player, TREE_SIGHT, p -> !blocked(p) && !unreachable(p)
+                    && !treesGivenUp.contains(BlockPos.asLong(p.getX() >> 2, 0, p.getZ() >> 2))).orElse(null);
+            if (seen != null && (treeSeen == null || !seen.isWithinDistance(treeSeen, 8))) treeSince = lastTick;
+            treeSeen = seen;
+        }
+        if (treeSeen == null) return Optional.empty();
+        if (lastTick - treeSince > 1200) {
+            treesGivenUp.add(BlockPos.asLong(treeSeen.getX() >> 2, 0, treeSeen.getZ() >> 2));
+            treeSeen = null;
+            return Optional.empty();
+        }
+        BlockPos to = treeSeen.getSquaredDistance(lastFeet) > 40 * 40 ? legToward(lastFeet, treeSeen, 40) : treeSeen;
+        Task walk = go(to, 3, true, "Walk toward the trees seen at " + treeSeen.toShortString());
+        return setAside(walk) ? Optional.empty() : Optional.of(walk);
+    }
+
+    // Long ago as half the least long: a tick less the least long itself overflows, and "within ten seconds of a climb"
+    // held before any climb was made, so a player at the foot of a step on open ground climbed instead of looking about.
+    private long surfaceClimbTick = Long.MIN_VALUE / 2;
 
     /** A climb for the surface held on while it is still below the rim of where it climbs, ten seconds at most (F-25c4ao). */
     private boolean climbHeld(ServerPlayerEntity player) {

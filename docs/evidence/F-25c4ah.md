@@ -32,4 +32,5 @@ Fixtures: the block of stone, the lake, its floor of gravel, the corridor and it
 
 - It does not dig up into the water to fill its bucket from below; it goes out from under it to the shore.
 - The way it tunnels is the way it last faced; a wide lake is crossed under, a narrow one under its width only by chance.
-- The climb is held to the top only for water; logs and food climbs still stop where the sky opens (food's search is held once up, F-25c4ag).
+- The climb is held to the top for water, and since F-25c4ao for logs and food as well.
+- Corrected with F-25c4ao (31 October 2026): the hold's "ten seconds since its last climb" counted from the least long, and a tick less that overflowed, so from `238ff1e` on it held wherever ground beside the player rose two blocks, before any climb was made. Its "long ago" is now half the least long; this fixture passes 1 of 1 again on that code.
