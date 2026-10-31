@@ -256,6 +256,13 @@ public final class Ranch {
                 seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
                 return leave(seen, "A young " + kind.noun() + " born in the pen");
             }
+            // One that left the pen as the other was fed (pushed up onto the gate as it shut, and down outside) is fetched
+            // again, not taken for one not ready: with one in the pen it left, the pair "not ready to breed again" (the
+            // cattle fixture, once in ten).
+            if (adultsIn.size() < 2) {
+                phase = Phase.FETCH;
+                return fetch(seen, in, adultsIn.size(), Animal::adult);
+            }
             var inLove = adultsIn.stream().filter(Animal::inLove).toList();
             var ready = adultsIn.stream().filter(Animal::ready).sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet()))).toList();
             if (inLove.size() >= 2) {

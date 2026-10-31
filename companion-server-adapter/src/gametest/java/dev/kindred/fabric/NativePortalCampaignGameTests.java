@@ -4062,7 +4062,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
 
     /**
      * With no wood, the only tree in sight a stump of two logs standing in a pool two deep, the top one level with the
-     * water's top: it swims out and chops both from the water, treading water (F-25c4as). In the live pair on `00e98f5`, on
+     * water's top: it swims out and chops the top one from the water, treading water (F-25c4as). In the live pair on `00e98f5`, on
      * a desert seed, Echo's only tree stood so in a lake: it began the log each time it bobbed up and gave it up each time
      * it sank ("In deep water; up for air first"), and swam to dry ground and back for twenty minutes. Staged: grass to
      * stand on, a pool nine by nine and two deep east of it with the stump in its middle; daylight; bread.
@@ -4098,9 +4098,11 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     var inventory = f.player().getInventory();
-                    boolean chopped = !world.getBlockState(feet[0].add(7, -2, 0)).isOf(Blocks.OAK_LOG) && !world.getBlockState(feet[0].add(7, -1, 0)).isOf(Blocks.OAK_LOG);
+                    // The log below, its every face under water or against the one above, is not one it can know of
+                    // (WorldKnowledge's exposure rule); the one it can see, its top face to the air, is cut from the water.
+                    boolean chopped = !world.getBlockState(feet[0].add(7, -1, 0)).isOf(Blocks.OAK_LOG);
                     int wood = inventory.count(Items.OAK_LOG) + inventory.count(Items.OAK_PLANKS) + inventory.count(Items.CRAFTING_TABLE) + inventory.count(Items.STICK);
-                    context.assertTrue(chopped && wood > 0, "Not chopped: " + (chopped ? "the stump gone, no wood held" : "the stump stands")
+                    context.assertTrue(chopped && wood > 0, "Not chopped: " + (chopped ? "the log gone, no wood held" : "the log stands")
                             + "; at " + f.player().getBlockPos().subtract(feet[0]).toShortString() + ", " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
                 .createAndAdd(() -> {
@@ -4164,6 +4166,71 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var player = f.player();
                     context.assertTrue(player.isAlive() && !player.isInsideWall() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Walled in below ground, hurt and with nothing to eat, a mob it is no match for still after it beyond the wall a minute
+     * on: it digs away from it on its own level, the wall toward it left standing (F-25c4au). In the live pair on `00e98f5`
+     * Kindred, walled in so beside a mineshaft's cave spiders, waited behind its wall for them to go for the last twenty-two
+     * minutes of the seed; a spawner's stream never goes. Staged: stone round a pocket two high; a zombie, its AI off, in a
+     * cell of its own four blocks west, its target kept on the player by the fixture each tick as a spawner's stream keeps
+     * one after it; health 10, food 4 and none to eat; a stone pickaxe and cobblestone.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "walledInAway", tickLimit = 3600)
+    public void walledInWithAMobStillAfterItItDigsAwayFromItRatherThanWaitForEver(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Walledin"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(6000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-6, -1, -3), p.add(10, 4, 3));
+                    for (BlockPos at : BlockPos.iterate(p.add(-6, -1, -3), p.add(10, 4, 3))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                    for (BlockPos at : java.util.List.of(p, p.up(), p.add(-4, 0, 0), p.add(-4, 1, 0))) world.setBlockState(at, Blocks.AIR.getDefaultState());
+                    var z = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    z.refreshPositionAndAngles(p.getX() - 4 + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    z.setAiDisabled(true);
+                    z.setPersistent();
+                    world.spawnEntity(z);
+                    zombie[0] = z;
+                    var player = f.player();
+                    player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 90, 0);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 16));
+                    player.setHealth(10);
+                    player.getHungerManager().setFoodLevel(4);
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.runAtEveryTick(() -> { if (zombie[0] != null && zombie[0].isAlive()) zombie[0].setTarget(f.player()); });
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    int away = player.getBlockX() - feet[0].getX();
+                    context.assertTrue(away >= 3, "Still walled in: at " + player.getBlockPos().subtract(feet[0]).toShortString() + ", "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var world = context.getWorld();
+                    // The wall toward it still stands.
+                    context.assertTrue(!world.getBlockState(feet[0].west()).isAir() && !world.getBlockState(feet[0].west().up()).isAir(), "The wall toward it opened");
+                    context.assertTrue(player.isAlive(), "Alive");
+                    zombie[0].discard();
+                    zombie[0] = null;
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

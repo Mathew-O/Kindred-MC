@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `3067b0f`; recorded in [validation](../validation.md)
-Status: in progress (written; the fixture's runs before and after, and its neighbours', are queued; live runs pending); F-25c4 stays open
+Status: in progress (the fixture and its neighbours pass on `2bceb1f`; live runs pending); F-25c4 stays open
 
 ## Scope and implementation
 
@@ -21,8 +21,8 @@ Changed modules/files:
 
 | Criterion | Check or scenario | Result | Evidence |
 | --- | --- | --- | --- |
-| Sealed in for the night in a pocket under a pool, no pickaxe: in the morning it punches its seal out by hand, unhurt | `sealedInForTheNightUnderAPoolItOpensItsOwnSealInTheMorning` | Pending: queued after the live pair on `00e98f5` | native |
-| The climbs and the night shelter beside it unchanged | The night pit on an island, the pit below its way back with no pickaxe, the gravel over its head, under the desert's sand, the advised climb out, dead again on its way back, the night shelter and the pocket's move elsewhere, each alone | Pending: queued after the live pair on `00e98f5` | native |
+| Sealed in for the night in a pocket under a pool, no pickaxe: in the morning it punches its seal out by hand, unhurt | `sealedInForTheNightUnderAPoolItOpensItsOwnSealInTheMorning` | Before the change (no `openShelter`, the walk back not stalled), 0 of 3: "Still sealed in: Wood: waiting for a feasible step". After, 3 of 3, each alone in its batch (2026-10-31) | native |
+| The climbs and the night shelter beside it unchanged | The night pit on an island, the pit below its way back with no pickaxe, the gravel over its head, under the desert's sand, the advised climb out, dead again on its way back, the night shelter and the pocket's move elsewhere | 8 of 8, each alone in its batch (2026-10-31) | native |
 | In play | live runs on this code | Pending | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.

@@ -1,16 +1,26 @@
 # AI-player development validation
 
-## The cattle's gateway and fence row (M-06a1); the sand seal (F-25c4aq), the watchdog's far move (F-25c4ar), the tree in water (F-25c4as) and the way out by its own seal (F-25c4at) written — 31 October 2026 (`claude/loose-ends-1029`)
+## The live pair on 00e98f5; the cattle (M-06a1); the sand seal, the far move, the tree in water, the own seal and the dig away (F-25c4aq to F-25c4au) — 31 October 2026 (`claude/loose-ends-1029`)
 
-Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. These ran at the lowest priority beside the live pair on `00e98f5`; the fence fixture has no AI player and nothing timed.
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. The live pair ran alone; the focused runs after it, one set at a time, with nothing else on the cores.
 
-- M-06a1, on top of `00e98f5`:
-  - `RanchTest.oneThatStoodInTheGatewayAsTheGateShutIsFetchedAgainNotBredWithout` fails with the change set aside ("Open the gate to leave") and passes after; `RanchTest` 14 of 14.
-  - The fence fixture fails 3 of 3 before, the runner reading the block alone ("Against the fence from inside, in the pen"), and passes 3 of 3 alone after.
-  - The cattle ten times with both: pending, queued after the live pair.
-- F-25c4aq, F-25c4ar, F-25c4as and F-25c4at: written, with a fixture each. Their runs before and after, and their neighbours', are queued after the live pair, with nothing else on the cores; nothing is claimed for them yet.
-- `build` successful.
-- Evidence: [M-06a](evidence/M-06a.md), [F-25c4aq](evidence/F-25c4aq.md), [F-25c4ar](evidence/F-25c4ar.md), [F-25c4as](evidence/F-25c4as.md), [F-25c4at](evidence/F-25c4at.md).
+- Live, on `00e98f5`: seeds 31102026 and 8675309 in turn, 400,000 ticks each, sprinted, the three starters on the End goal, strategist off. Not met on either seed: no portal was lit.
+  - 31102026, a desert. All three had wood in the first minute, walking to trees seen far off (F-25c4ap; on `91c1290` no player got past wood in 175,000 ticks). Kindred had stone tools and its first iron about four minutes into the sprinted run, Sol its first iron in eight.
+  - 5 deaths, Sol's four of them (three to skeletons, one to a creeper). Waiting below ground for daylight took 25 to 42% of each player's time (34 to 39% on `91c1290`).
+  - Echo never got past wood. Its only tree, an azalea, stood in a lake: its break was cut short in the water 11 times (F-25c4as), and its watchdog's moves toward home, 200 blocks off, were refused 8 times as too far for one route (F-25c4ar).
+  - Kindred, its pickaxe worn out, went back for wood for sticks. It sealed itself into its night shelter at the bottom of a lake's basin and stayed there for the last fifty minutes: 65 stall lines, every walk out refused by its own seal (F-25c4at).
+  - 8675309: 11 deaths, all in caves, Sol's six and Echo's five; Kindred none. Kindred reached the portal stage: casting took 38% of its time and the lava for it 26%, one block was cast, two buckets filled, and nine frame sites in deepslate were given up. It then walled itself in beside a mineshaft's cave-spider spawner, about twenty spiders and a zombie three blocks off, and stayed there for the last twenty-two minutes (F-25c4au).
+  - Sol spent 39% of its time on 8675309 getting out of water, and drowned at the end with its hunger at 1. Echo's stuck-spell lines there numbered 953.
+  - On both seeds: no reconciliation stop.
+  - Not taken further: a climb that went step up, back the way it came, to the wall and up again (Kindred, three minutes on the desert seed, in sand, climbing for water).
+- F-25c4aq, on `2bceb1f`: its fixture fails before, 3 of 3, "Not sealed: Block{minecraft:air} and Block{minecraft:air}", and passes 3 of 3 alone after. The shelters, cover, walls against caves and casts beside it alone, 10 of 10.
+- F-25c4ar, on `2bceb1f`: its fixture fails before, 3 of 3, "Not on its way ... (tried elsewhere 1 time)". With the leg alone it failed 3 of 3 after too: the move's first walk came while a climb was running, and the next look judged it before it had run. With each walk judged once it has ended, 3 of 3 alone. The watchdog's, the water's and the casts' fixtures beside it and the tree in water, alone on the final code, 11 of 11.
+- F-25c4as, on `2bceb1f`: its fixture fails before, 3 of 3, "Not chopped: the log stands". In the first form, the break let go on in the water and treading, it failed after too, 0 of 3: the plan sent it ashore before the log. With the log in reach from the water before the way ashore, 1 of 3. The fixture had asked for the stump's lower log too, every face of it under water or against the log above, which the player cannot know of (`WorldKnowledge`'s exposure rule), and the run that passed had caught the cell over it empty. The criterion is now the log it can see, as Echo's was. On it, 0 of 3 before and 3 of 3 alone after.
+- F-25c4at, on `2bceb1f`: its fixture fails before, 3 of 3, "Still sealed in: Wood: waiting for a feasible step", and passes 3 of 3 alone after. The climbs and the night shelter beside it alone, 8 of 8.
+- F-25c4au, on `2bceb1f`: its fixture, walled in beside a zombie it is no match for that keeps it as its target, fails before, 3 of 3, "Still walled in: at 0, 0, 0, Iron: outmatched - Hole up: wait behind the wall", and passes 3 of 3 alone after. The wall against a cave and the fight in the tunnel beside it alone, 2 of 2.
+- M-06a1: the cattle's last failure on `2bceb1f`, 9 of 10 with the gateway and the fence fixed, was a third cause: one cow pushed up onto the shut gate as the other was fed, the pair then "not ready to breed again yet". `RanchTest`'s case for it fails with the change set aside ("Open the gate to leave") and passes after; `RanchTest` 15 of 15. The cattle with all three, 10 of 10 alone; the ranch's pen in the open beside them, 3 of 3.
+- `build` successful: 801 JUnit results, none failed, six skipped (the opt-in live model tests).
+- Evidence: [F-25c4](evidence/F-25c4.md), [F-25c4aq](evidence/F-25c4aq.md), [F-25c4ar](evidence/F-25c4ar.md), [F-25c4as](evidence/F-25c4as.md), [F-25c4at](evidence/F-25c4at.md), [F-25c4au](evidence/F-25c4au.md), [M-06a](evidence/M-06a.md).
 
 ## The pasture's cattle: a pair jammed at a way in one wide (M-06a1) — 31 October 2026 (`claude/loose-ends-1029`)
 

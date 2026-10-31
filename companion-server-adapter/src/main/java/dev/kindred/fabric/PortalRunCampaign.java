@@ -468,6 +468,7 @@ final class PortalRunCampaign {
 
     void taskFinished(Task task, boolean completed, long tick) {
         if (task != null) stronghold.taskFinished(task, completed, tick);
+        if (task != null && task.equals(relocateWalk)) relocateWalk = null; // Ended, however: the next look judges it.
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
         // has failed for a minute, it is stranded no longer.
@@ -805,6 +806,9 @@ final class PortalRunCampaign {
     private long relocateUntil;
     private double relocateBest;
     private boolean relocateDig;
+    /** The move's walk given out and not yet ended, and when: judged by where it ended, not by a look before it ran (F-25c4ar). */
+    private Task relocateWalk;
+    private long relocateWalkSince;
     /** On a move elsewhere: past its climb, along at the new place's level; and the highest level it climbed to (F-25c4an). */
     private boolean relocateLevel;
     private int relocateFloor = Integer.MIN_VALUE;
@@ -948,6 +952,7 @@ final class PortalRunCampaign {
         relocateDig = false;
         relocateLevel = false;
         relocateFloor = Integer.MIN_VALUE;
+        relocateWalk = null;
     }
 
     /** A move elsewhere toward {@code target}, begun now as the watchdog begins one (fixtures only). */
@@ -967,6 +972,7 @@ final class PortalRunCampaign {
      */
     private void endRelocating() {
         relocate = null;
+        relocateWalk = null;
         stuckClock = 0;
     }
 
@@ -984,13 +990,19 @@ final class PortalRunCampaign {
             endRelocating();
             return Optional.empty();
         }
+        // Its walk given out and not yet ended is given out again, not judged: a look taken before it ran (another step
+        // still had the turn) found it no closer, and the move dug instead, or ended, before it had walked a step (F-25c4ar).
+        if (relocateWalk != null && lastTick - relocateWalkSince < 1200) return Optional.of(relocateWalk);
+        relocateWalk = null;
         if (!relocateDig && !blocked(relocate) && distance < relocateBest - 1) {
             relocateBest = distance;
             // Farther than one route reaches, as home is from far off on every third spell: a leg at a time, as the plan's
             // walk home goes (F-25c4ae). Aimed at the place itself, the walk was refused as made and the spell lost: in the
             // live pair on `00e98f5` Echo's, toward home 200 blocks off, beside the water it could not tunnel by (F-25c4ar).
             BlockPos toward = distance > LAVA_LEG ? legToward(lastFeet, relocate, LAVA_LEG) : relocate;
-            return Optional.of(go(toward, 3, true, "try elsewhere, toward " + relocate.toShortString()));
+            relocateWalk = go(toward, 3, true, "try elsewhere, toward " + relocate.toShortString());
+            relocateWalkSince = lastTick;
+            return Optional.of(relocateWalk);
         }
         relocateDig = true;
         int dx = relocate.getX() - lastFeet.getX(), dz = relocate.getZ() - lastFeet.getZ();
@@ -1083,9 +1095,15 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": stuck in a wall - " + trapped.get().label();
             return trapped;
         }
-        // In deep water nothing else matters until it can breathe and stand.
+        // In deep water nothing else matters until it can breathe and stand: but a log it wants that it can cut from where
+        // it swims, with breath to spare, it cuts there, treading water (F-25c4as).
         Optional<Task> air = surface(body);
         if (air.isPresent()) {
+            Optional<Task> chop = chopFromTheWater(body);
+            if (chop.isPresent()) {
+                progress = stageLabel(stage) + ": " + chop.get().label() + " from the water";
+                return chop;
+            }
             progress = stageLabel(stage) + ": " + air.get().label();
             return air;
         }
@@ -1392,6 +1410,17 @@ final class PortalRunCampaign {
         // No dry ground it can swim to, as in a flooded pit, and its head above water: a step dug out of the side and
         // climbed onto, as a player gets out, before anything else is dug from the water (F-25c4t).
         return climb(body, "Climb out of the water");
+    }
+
+    /**
+     * Wood wanted, breath to spare and a log in reach from where it swims: that log, cut from the water. Sent ashore first
+     * each time, it was back in the water for the log at the next step: in the live pair on `00e98f5` Echo, the only tree
+     * it knew of standing in a lake, swam to dry ground and back for twenty minutes (F-25c4as).
+     */
+    private Optional<Task> chopFromTheWater(NativePlayerBody body) {
+        var player = body.entity();
+        if (stage != PortalRunPlanner.Stage.WOOD || player.getAir() < player.getMaxAir() * 2 / 3) return Optional.empty();
+        return gather(body, WorldKnowledge.Kind.LOG, 5, "logs", false).filter(PortalRunCampaign::gathering);
     }
 
     /** A goal task taking the player up out of deep water, which the runtime's drowning check leaves to finish. */
@@ -4523,11 +4552,20 @@ final class PortalRunCampaign {
             markDanger(danger.getBlockPos(), lastTick + CAVE_DANGER_TICKS);
             if (holedUpSince < 0) holedUpSince = lastTick;
             if (open.size() <= 4) {
+                // Walled in a minute with it still about, as by a spawner's stream: it digs away from it on its own level, the
+                // cells toward it sealed behind it and the way on left open. Waiting for it to go, Kindred stood walled in
+                // beside a mineshaft's cave spiders for the last twenty-two minutes of the live pair on `00e98f5` (F-25c4au).
+                boolean away = lastTick - holedUpSince > HOLE_UP_LIMIT;
+                Vec3d toward = danger.getPos().subtract(Vec3d.ofBottomCenter(feet));
                 open.sort(java.util.Comparator.comparingDouble(cell -> cell.getSquaredDistance(danger.getBlockPos())));
                 for (BlockPos cell : open) {
-                    if (occupied(world, cell)) continue;
+                    if (occupied(world, cell) || away && Vec3d.ofCenter(cell).subtract(Vec3d.ofCenter(feet)).dotProduct(toward) <= 0) continue;
                     Optional<Task> place = placeBlock(body, cell, "Hole up: seal " + cell.toShortString());
                     if (place.isPresent()) return place;
+                }
+                if (away) {
+                    Optional<Task> dig = digAwayFrom(body, danger);
+                    if (dig.isPresent()) return dig;
                 }
                 if (open.isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "2"), "Hole up: wait behind the wall"));
             }
@@ -4565,6 +4603,26 @@ final class PortalRunCampaign {
                 }
             }
             return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Hole up: recover behind the wall"));
+        }
+        return Optional.empty();
+    }
+
+    /** How long it waits walled in with what it is no match for still about, before it digs away from it. */
+    private static final long HOLE_UP_LIMIT = 1200;
+
+    /**
+     * A tunnel on its own level along the way most nearly away from {@code danger}, then the other ways that do not lead
+     * toward it; no cell toward it is opened.
+     */
+    private Optional<Task> digAwayFrom(NativePlayerBody body, net.minecraft.entity.LivingEntity danger) {
+        BlockPos feet = body.entity().getBlockPos();
+        double dx = feet.getX() - danger.getX(), dz = feet.getZ() - danger.getZ();
+        var ways = new java.util.ArrayList<>(Direction.Type.HORIZONTAL.stream().toList());
+        ways.sort(java.util.Comparator.comparingDouble(way -> -(way.getOffsetX() * dx + way.getOffsetZ() * dz)));
+        for (Direction way : ways) {
+            if (way.getOffsetX() * dx + way.getOffsetZ() * dz < 0) continue; // Toward it.
+            Optional<Task> along = tunnelStraight(body, way, feet.getY(), "Hole up: dig away from the " + danger.getType().getName().getString().toLowerCase(java.util.Locale.ROOT));
+            if (along.isPresent()) return along;
         }
         return Optional.empty();
     }

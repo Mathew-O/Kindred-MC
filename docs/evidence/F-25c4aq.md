@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `00e98f5`; recorded in [validation](../validation.md)
-Status: in progress (written; the fixture's runs before and after, and its neighbours', are queued; live runs pending); F-25c4 stays open
+Status: in progress (the fixture and its neighbours pass on `2bceb1f`; live runs pending); F-25c4 stays open
 
 ## Scope and implementation
 
@@ -19,8 +19,8 @@ Changed modules/files:
 
 | Criterion | Check or scenario | Result | Evidence |
 | --- | --- | --- | --- |
-| At night below ground with no wood, holding only sand, beside a corridor into its pocket: it seals the way in, the block at its feet and the one over it, unhurt and never buried | `atNightBelowGroundWithOnlySandItSealsTheWayInWithTheSand` | Pending: queued after the live pair on `00e98f5` | native |
-| The shelters, cover and placing beside it unchanged | The night shelters, the cover from skeletons, the walls against caves, the cast and the bridged lava beside it, each alone | Pending: queued after the live pair on `00e98f5` | native |
+| At night below ground with no wood, holding only sand, beside a corridor into its pocket: it seals the way in, the block at its feet and the one over it, unhurt and never buried | `atNightBelowGroundWithOnlySandItSealsTheWayInWithTheSand` | Before the change (the sand left out of `placeBlock`), 0 of 3: "Not sealed: Block{minecraft:air} and Block{minecraft:air}; Wood: wait for daylight before going up for logs". After, 3 of 3, each alone in its batch (2026-10-31) | native |
+| The shelters, cover and placing beside it unchanged | The night shelter dug in and sealed; the climb out of the night pit on an island; cover from a skeleton, armed and unarmed; the wall against a cave with a skeleton in view; holing up from an enderman; the night's iron below ground and the water left for daylight; the cast in place; lava bridged across a cave | 10 of 10, each alone in its batch (2026-10-31) | native |
 | In play | live runs on this code | Pending | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.

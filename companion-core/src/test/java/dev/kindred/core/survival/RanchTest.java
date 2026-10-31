@@ -227,6 +227,20 @@ class RanchTest {
     }
 
     @Test
+    void oneThatLeftThePenAsTheOtherWasFedIsFetchedAgainNotTakenForNotReady() {
+        // The cattle fixture, once in ten: both in and the gate shut, one stood on the shut gate as the other was fed; with
+        // one in the pen the pair was "not ready to breed again", and it left. Now that one is fetched in again.
+        var ranch = ranch();
+        ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        ranch.next(seen(3, 5, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        ranch.next(seen(3, 5, false, 8, 20, cow(DAISY, 3, 1), cow(BESS, 5, 1)));
+        assertEquals(DAISY, assertInstanceOf(Ranch.Step.Feed.class, ranch.next(seen(3, 3, false, 8, 30, cow(DAISY, 3, 1), cow(BESS, 5, 1)))).animal());
+        var daisyInLove = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 1), true, false, true);
+        var bessOnTheGate = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(3, 65, 6), true, true, false);
+        assertEquals(new Ranch.Step.Gate(true, "Open the gate for the cow"), ranch.next(seen(3, 5, false, 7, 40, daisyInLove, bessOnTheGate)));
+    }
+
+    @Test
     void aPairJammedAtTheDoorwaysMouthIsLetWanderOffWithTheFoodPutAway() {
         // The cattle fixture: two outside at the wall's foot, in the doorway's own column, held each other there for good.
         // Five seconds so, the food is put away for ten; then the pair is led up again.
