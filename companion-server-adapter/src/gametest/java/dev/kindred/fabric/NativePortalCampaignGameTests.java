@@ -4175,6 +4175,73 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Hurt and out of food, up out of the ground by day on open stone, no animal within reach of its sight: it walks
+     * out and looks for one, kills it and takes what it drops, rather than going back to its work. In the live pair on
+     * a4df9b4 the climb for food ended where the ground opened over the player's head, and the goal's next step dug down
+     * again: Sol climbed some ninety blocks for food three times so and never ate (F-25c4ab). The plain and the four cows,
+     * kept from wandering, 45 blocks out to each side, are staged; the kit is given as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "hungryUp", tickLimit = 2400)
+    public void hurtAndOutOfFoodOnceUpItLooksForAnimalsRatherThanGoBackDown(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Hungry"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    at[0] = p;
+                    FixtureGround.keep(context, p.add(-52, -1, -52), p.add(52, 5, 52));
+                    for (int x = -52; x <= 52; x++) for (int z = -52; z <= 52; z++) {
+                        world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 5; y++) world.setBlockState(p.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    world.setTimeOfDay(1000);
+                    // Only its own four: none another fixture left on this ground, nearer than these.
+                    world.getEntitiesByClass(net.minecraft.entity.passive.PassiveEntity.class, new net.minecraft.util.math.Box(p.add(-60, -4, -60).toCenterPos(),
+                            p.add(60, 8, 60).toCenterPos()), animal -> true).forEach(net.minecraft.entity.Entity::discard);
+                    for (var side : java.util.List.of(new BlockPos(45, 0, 0), new BlockPos(-45, 0, 0), new BlockPos(0, 0, 45), new BlockPos(0, 0, -45))) {
+                        var cow = net.minecraft.entity.EntityType.COW.create(world);
+                        cow.refreshPositionAndAngles(p.getX() + side.getX() + 0.5, p.getY(), p.getZ() + side.getZ() + 0.5, 0, 0);
+                        cow.setPersistent();
+                        cow.setAiDisabled(true);
+                        world.spawnEntity(cow);
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
+                    inventory.setStack(3, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(4, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(40, new ItemStack(Items.SHIELD));
+                    player.setHealth(8);
+                    player.getHungerManager().setFoodLevel(10); // No natural healing, and nothing to eat.
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.BEEF) >= 1, "It found a cow and has its beef: now "
+                            + f.player().getBlockPos().subtract(at[0]).toShortString() + ", "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     /** What became of the cast fixture's lava pool, for a failure message. */
     private static String pool(TestContext context, BlockPos p) {
         int sources = 0, flowing = 0, obsidian = 0, stone = 0, air = 0;

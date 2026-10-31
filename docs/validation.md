@@ -1,6 +1,6 @@
 # AI-player development validation
 
-## The live pair on a4df9b4, and three fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+## The live pair on a4df9b4, and four fixes from it — 30 and 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
 
@@ -25,7 +25,12 @@ Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametes
   - after, three runs alone: 3 of 3.
 - `build` successful.
 - The full native suite on this code: 421 of 422 in 46 minutes. The one failure, `hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase` ("No way to reach minecraft:oak_stairs" in its cabin), passed 3 of 3 alone after; its cause in the suite is not found. The ranch's pen and the pasture's doorway pair, the cattle, passed.
-- Evidence: [E-40a1](evidence/E-40a1.md), [F-25c4z](evidence/F-25c4z.md), [F-25c4aa](evidence/F-25c4aa.md); F-25c4v and F-25c4x complete on this pair.
+- F-25c4ab (hurt and out of food, once up out of the ground it looks for animals), on top of `033fd71`:
+  - its fixture, open stone by day, health 8, hunger 10, no food and a cow 45 blocks out to each side, fails on the old campaign: no beef in two minutes, the goal branch-mining for iron under the plain, 3 of 3. With the cows 33 blocks out, the old code passed once: its branch mine had carried it under the plain toward a cow, and its climb for food came up in sight of it. At 45 it passed once more, on a cow a failed run before it had left there; the fixture now takes such animals away first;
+  - after, three runs alone: 3 of 3, twice, the second with the Overworld guard (in the Nether and the End there is no sky, so no night, and a hurt player there must not wander off looking for animals);
+  - alone with it: the climb with gravel overhead, food first as advised, both fishing fixtures, the fight broken off once badly hurt and the creeper faced behind the shield, 6 of 6;
+  - `build` successful. The life-first fixture that hunts before building its base failed alone once with it ("No way to reach minecraft:oak_slab" in its cabin), as it had in the suite before it; its builder logs the same in the runs that pass, and the goal's step changed here does not run in it.
+- Evidence: [E-40a1](evidence/E-40a1.md), [F-25c4z](evidence/F-25c4z.md), [F-25c4aa](evidence/F-25c4aa.md), [F-25c4ab](evidence/F-25c4ab.md); F-25c4v and F-25c4x complete on this pair.
 
 ## The live pair on 458d192, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
 

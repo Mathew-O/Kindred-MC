@@ -1022,12 +1022,19 @@ final class PortalRunCampaign {
         }
         // Hurt below ground with nothing to eat, so nothing to heal with: up to where the animals are, rather than on
         // with the work (live run 58 went back to exploring a cave, out of food and below six health, and was shot).
-        boolean dark = player.getServerWorld().isNight() && player.getServerWorld().getDimension().hasSkyLight();
-        if (player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18 && underground(player) && !dark) {
-            Optional<Task> up = wayUp(body, "Climb toward the surface for food");
-            if (up.isPresent()) {
-                progress = stageLabel(stage) + ": hurt and out of food - " + up.get().label();
-                return up;
+        // Up there it looks for them, rather than straight back down to its work: in the live pair on a4df9b4 the climb
+        // ended where the ground opened over its head, and the goal's next step dug down again. Sol climbed for food from
+        // Y=-2 to 107, 38 to 116 and 43 to 77 and never ate, and four players spent 12 to 16% of their time on such
+        // climbs (F-25c4ab).
+        // The Overworld only: in the Nether and the End there is no sky to climb to, and no animal to look for.
+        boolean overworld = player.getServerWorld().getDimension().hasSkyLight();
+        boolean dark = player.getServerWorld().isNight() && overworld;
+        if (player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18 && overworld && !dark) {
+            Optional<Task> food = underground(player) ? wayUp(body, "Climb toward the surface for food")
+                    : hunt(player).or(() -> fish(body)).or(() -> groundBelow(player) ? explore(body, "animals") : Optional.empty());
+            if (food.isPresent()) {
+                progress = stageLabel(stage) + ": hurt and out of food - " + food.get().label();
+                return food;
             }
         }
         // Advised to surface and recover: up out of the dark first, in daylight, then heal fully before going on.
