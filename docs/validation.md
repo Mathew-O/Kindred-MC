@@ -16,6 +16,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The evaluation runs (F-26) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores, 15 GB), OpenJDK 21, Python 3.13; `tools/eval/run.py` with the server launcher for
+Minecraft 1.21.1 and Fabric Loader 0.19.5.
+
+- One seed (8675309), `goal=nether; ticks=144000`, unattended: complete, earned, in about 30 minutes;
+  [summary](evidence/eval/f26-2h/summary.md).
+- Ten seeds of each of two builds: 093d188's jar, and the same with F-25c4aq and F-25c4at taken out. Each build's seeds
+  ran one after another (`--parallel 1`), the two builds side by side, from 15:10 to 21:21. All 20 results were complete
+  and earned; [the night fix](evidence/eval/nightfix-093d188/summary.md), [before it](evidence/eval/before-nightfix/summary.md).
+- The comparison on those ten seeds: no clear difference on any measure; [comparison](evidence/eval/compare-nightfix.md).
+- Running: ten seeds of the E-49 build with `--parallel 2`, then the arms of E-46, F-30 and F-29 on the same build.
+
 ## Trust and griefing (E-49) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
