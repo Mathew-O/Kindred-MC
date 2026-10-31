@@ -1,5 +1,26 @@
 # AI-player development validation
 
+## The live pair on 41f9de9, and two fixes from it and P17 — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `41f9de9` (E-40a1, F-25c4z to ab): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - No portal lit, and no lava bucket filled: the third pair running. On the second seed Echo saw lava for the first time in two pairs, a pool in a pocket inside the mountain at Y=78 some 46 blocks off. No walk led to it, and its sources were set aside one after another, twenty in four seconds.
+  - 13 deaths, 5 and 8 (18 on `a4df9b4`, 14 and 4). No reconciliation stop.
+  - F-25c4ab in play: 18 of 30 spells hurt and out of food came up to the search for animals, and players hunted and ate from it on both seeds; on `a4df9b4` none did. Still, hurt and out of food took Echo 29% of the first seed. Each of three climbs from Y=19 dug a new staircase, two minutes or more; at the top of one it switched between the search and the climb, and its walk back the way it came took it down to Y=46; and by then the animals near spawn were hunted out. Kindred spent 12% so on the second seed.
+  - On the first seed Kindred, wanting water, spent eighteen minutes in a corridor at Y=47 under a lake. Its climb was refused every way by the water over the ceiling, and its watchdog dug it along under the lake; the lake it wanted lay three blocks over its head.
+  - On the first seed Kindred's hand-over walk to Echo, too far for one route, was refused as it was made and proposed again and again for five minutes at Y=1 (stall line: "need 78.0", "Goto target is too far for one route"). On the second Echo's walk home, more than 160 blocks off, was refused nine times, with two stall lines.
+  - On the first seed Sol, at night in a pocket of flowing water at Y=55, switched several times a second for four minutes between getting out of the water and the night's wait for daylight.
+- F-25c4ac (the lava search a block above the deep lava level, a cell over lava opened, long legs), on top of `41f9de9`:
+  - in the pair's world saves, ray-cast from every place the players stood every ten seconds, no exposed lava was in sight within 32, 64 or even 96 blocks: sight was not what failed;
+  - simulated on the saves from 200 random starts per seed, the search as it was had lava within 800 blocks mined from 12.5% and 9% of starts: most lava its tunnels came on lay beside or under a cell they would dig, and they turned away unseen. A block higher, cells with lava only under them opened, legs 48 long and 16 apart: 64% and 56%;
+  - its fixture, a closed obsidian chamber, a stone corridor the only way on and a lava pool sealed under it, fails on the old campaign: "now 3, 0, 0, Obsidian: waiting for a feasible step", 3 of 3. After, 3 of 3 alone.
+- E-40a1's teammate gone far off (waited for, a minute at a time, six waits letting the hand-over go), on top of `e3aa373`:
+  - its fixture, the share-out's find with Wren then moved 170 blocks off, fails on the old runtime: "Held by a walk refused as it was made: Goto target is too far for one route … need 78.0", 3 of 3. After, 3 of 3 alone.
+- Alone with both, on this code: the walled teammate, the share-out, obsidian from poured water, the lava legs, F-25c4n's night lava and F-25c4z's climb over the lava lakes, 6 of 6.
+- The full native suite on `77ddbb4`, 419 of 425. The six failures ran while log and world-save analyses ran on the same cores, three back to back as a log report ran; alone on the same code the follow-up without a shield queued, the ruined portal's chest, the long fall broken with water, the route that bridges a gap and digs through a wall, and the librarian off the line pass, 5 of 5. The second-night fixture, 42,000 ticks long, was not run alone: its cabin's repair ended short, its roof stairs out of reach, as the life-first fixture's has before
+- Evidence: [F-25c4ac](evidence/F-25c4ac.md), [E-40a1](evidence/E-40a1.md), [F-25c4ab](evidence/F-25c4ab.md).
+
 ## The live pair on a4df9b4, and four fixes from it — 30 and 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

@@ -3,7 +3,7 @@
 Date: 2026-10-30
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `a4df9b4`; recorded in [validation](../validation.md)
-Status: in progress (native passed; live runs pending); F-25c4 stays open
+Status: complete 2026-10-31 (native passed; met in the live pair on `41f9de9`); F-25c4 stays open
 
 ## Scope and implementation
 
@@ -24,7 +24,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | In a pool five deep in a closed stone room, a notch of shore one block across near it and a ledge along the far wall, one walk out to the notch reported failed: it gets out on the far ledge | `dryGroundAWalkOutOfTheWaterFailedToReachIsPassedOverForTheNextNearest` | Fails on the old campaign, 3 of 3: "Out on the far ledge, not the notch it failed to reach: 6, 0, 0", the notch chosen again first. Passes after, 3 of 3 alone. Asserting only where it ended up passed on the old code too: from the notch it moved on later | native |
 | The other ways out of water unchanged | the full native suite on this code, the water fixtures among it | 421 of 422; the one failure, the life-first fixture that hunts before building its base, passed 3 of 3 alone after | native |
-| In play | live runs on this code | Pending | live |
+| In play | the live pair on `41f9de9`, both seeds, strategist off | No spot was set out for more than four times: Sol's walks out of a pocket of flowing water on the first seed failed at one spot after another, each passed over. On `a4df9b4` one spot was set out for 57 times and another 173 | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the room, its pool, the notch, the ledge and the sea lantern are staged, and so is the failed walk out: one walk to the notch is reported to the goal as failed, as its own walks report, since a current that carries a player past its mark is not easily made in a fixture. The kit is given as though made.
