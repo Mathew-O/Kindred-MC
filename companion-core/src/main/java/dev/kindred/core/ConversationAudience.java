@@ -47,7 +47,16 @@ public final class ConversationAudience {
                             boolean stopped, boolean busy, String doing, String goal, String goalProgress,
                             String position, String threat, List<String> near,
                             List<String> held, int foodItems, List<String> notable,
-                            List<String> events, List<String> memory, String lastSaid, List<String> transcript) {
+                            List<String> events, List<String> memory, String lastSaid, List<String> transcript, String wary) {
+        /** As spoken to by someone it holds nothing against (E-49). */
+        public Situation(String player, String speaker, Relation relation, boolean speakerControls, double health, int food, String hurtBy,
+                         String dimension, String time, String weather, boolean stopped, boolean busy, String doing, String goal,
+                         String goalProgress, String position, String threat, List<String> near, List<String> held, int foodItems,
+                         List<String> notable, List<String> events, List<String> memory, String lastSaid, List<String> transcript) {
+            this(player, speaker, relation, speakerControls, health, food, hurtBy, dimension, time, weather, stopped, busy, doing, goal,
+                    goalProgress, position, threat, near, held, foodItems, notable, events, memory, lastSaid, transcript, "");
+        }
+
         public Situation {
             Objects.requireNonNull(player);
             Objects.requireNonNull(speaker);
@@ -62,6 +71,7 @@ public final class ConversationAudience {
             position = Objects.requireNonNullElse(position, "");
             threat = Objects.requireNonNullElse(threat, "");
             lastSaid = Objects.requireNonNullElse(lastSaid, "");
+            wary = Objects.requireNonNullElse(wary, "");
             near = List.copyOf(near);
             held = List.copyOf(held);
             notable = List.copyOf(notable);
@@ -113,6 +123,11 @@ public final class ConversationAudience {
                 ? ", who may give you commands" : ", who may not give you commands") + ")");
         lines.add("Your health: " + Math.round(s.health()) + " of 20; food: " + s.food() + " of 20"
                 + (s.hurtBy().isEmpty() ? "" : "; just hurt by " + s.hurtBy()));
+        // Wariness withholds (E-49): the voice hears why, and is never told to answer it in kind.
+        if (!s.wary().isEmpty()) {
+            lines.add("This person has " + s.wary() + " lately: you are wary of them, you do not do what they ask and you hand them nothing."
+                    + " You never threaten, strike or harm anyone for it.");
+        }
         if (!s.dimension().isEmpty() || !s.time().isEmpty() || !s.weather().isEmpty()) {
             lines.add("Where you are, in general: " + join(List.of(s.dimension(), s.time(), s.weather())));
         }

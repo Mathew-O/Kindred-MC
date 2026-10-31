@@ -16,6 +16,24 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Trust and griefing (E-49) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to the neighbours, and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 836 JUnit tests, 6 skipped, 0 failures (the 6 more
+  are `TrustTest`).
+- `NativeTrustGameTests` 7 of 7 in each of three runs alone, and 7 of 7 in a fourth on the final code (only a log
+  line's wording changed after the three). In the first two runs, 2 and 6 of 7:
+  - the owner stood beyond the eight blocks a reply carries, so no ask came;
+  - goto walks are not entries in the action ledger, so the fixture watches the player's activity instead;
+  - the stranger's fixed reply depends on what was said, so the fixture asks only that it is not the stub's line;
+  - the owner who had struck it was rightly walked away from, so the refused ask is checked as "no nearer to them".
+- Before, with E-49's effects switched off in a scratch copy (not committed): 1 of 7. The stranger's claim passed, as
+  E-20b's fence is unchanged.
+- The neighbours, together in one run before that wording change: 23 of 23 for `NativeAskGameTests`,
+  `NativeVoiceGameTests`, `NativeAggressionGameTests` and `NativeStorageGameTests`.
+
 ## The watch page (E-48) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs

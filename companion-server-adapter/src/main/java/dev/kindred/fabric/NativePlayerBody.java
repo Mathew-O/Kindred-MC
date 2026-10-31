@@ -141,6 +141,12 @@ final class NativePlayerBody implements BodyAdapter {
     /** Another player's hit that got through to the body: who, and what it took after armour, absorption included. */
     interface HitHook { void hit(ServerPlayerEntity by, float taken); }
     private HitHook hitHook = (by, taken) -> { };
+    /** Any harm that got through to the body, whatever its source, and what it took (E-49). */
+    interface HarmHook { void harmed(net.minecraft.entity.damage.DamageSource source, float taken); }
+    private HarmHook harmHook = (source, taken) -> { };
+    /** Something another player threw that the body picked up: who threw it, and what (E-49). */
+    interface GiftHook { void gift(ServerPlayerEntity from, net.minecraft.item.ItemStack stack); }
+    private GiftHook giftHook = (from, stack) -> { };
     private boolean respawning;
 
     /** Optional per-tick cap wired from {@link PlayerRuntime#MAX_BLOCK_CHECKS_PER_TICK}. */
@@ -268,6 +274,12 @@ final class NativePlayerBody implements BodyAdapter {
 
     /** Runs when another player's hit gets through to the body and it lives (E-41g): what the hit took, measured. */
     void onHitByPlayer(HitHook hook) { requireThread(); hitHook = Objects.requireNonNull(hook); }
+
+    /** Runs when any harm gets through to the body, killing or not (E-49): its source and what it took. */
+    void onHarm(HarmHook hook) { requireThread(); harmHook = Objects.requireNonNull(hook); }
+
+    /** Runs when the body picks up something another player threw (E-49): a gift, or what was taken given back. */
+    void onGift(GiftHook hook) { requireThread(); giftHook = Objects.requireNonNull(hook); }
 
     /**
      * Vanilla respawn of this dead, still-registered body: the same identity at its spawn point with whatever
@@ -2636,10 +2648,17 @@ final class NativePlayerBody implements BodyAdapter {
         @Override public boolean damage(net.minecraft.entity.damage.DamageSource source, float amount) {
             float before = getHealth() + getAbsorptionAmount();
             boolean took = super.damage(source, amount);
+            if (took && this == player) harmHook.harmed(source, Math.max(0, before - getHealth() - getAbsorptionAmount()));
             if (took && this == player && !isDead() && source.getAttacker() instanceof ServerPlayerEntity by && by != this) {
                 hitHook.hit(by, Math.max(0, before - getHealth() - getAbsorptionAmount()));
             }
             return took;
+        }
+
+        /** Picked up, after vanilla's own pickup: something another player threw it is theirs to be credited with (E-49). */
+        @Override public void triggerItemPickedUpByEntityCriteria(net.minecraft.entity.ItemEntity item) {
+            super.triggerItemPickedUpByEntityCriteria(item);
+            if (this == player && item.getOwner() instanceof ServerPlayerEntity from && from != this) giftHook.gift(from, item.getStack());
         }
 
         @Override public void onDeath(net.minecraft.entity.damage.DamageSource damageSource) {

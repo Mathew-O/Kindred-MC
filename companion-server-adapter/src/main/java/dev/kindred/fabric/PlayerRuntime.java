@@ -389,7 +389,20 @@ final class PlayerRuntime {
             player.sendMessage(message, false);
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
-        voice = new PlayerVoice(this::voiceFacts, this::voiceAsk, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
+        voice = new PlayerVoice(this::voiceFacts, new PlayerVoice.Asks() {
+            @Override
+            public void ask(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
+                voiceAsk(playerId, speaker, ask, item, refused);
+            }
+
+            @Override
+            public Optional<String> withheld(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask) {
+                Entry entry = entries.get(playerId);
+                if (entry == null || ask == dev.kindred.model.Strategist.Ask.STOP || !entry.trust.wary(speaker.getUuid(), server.getTicks())) return Optional.empty();
+                KindredMod.LOGGER.info("{} asked in chat by {}: {}: refused (wary of them)", entry.data.displayName(), speaker.getName().getString(), ask);
+                return Optional.of(NOT_AFTER_LAST_TIME);
+            }
+        }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
         socials.setVoice(voice);
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
@@ -848,6 +861,8 @@ final class PlayerRuntime {
             body.onTick(() -> beforeNativeTick(entry, body));
             body.onDeath(() -> onNativeDeath(entry, body));
             body.onHitByPlayer((by, taken) -> hitByPlayer(entry, body.entity(), by, taken));
+            body.onHarm((cause, taken) -> harmed(entry, cause, taken));
+            body.onGift((from, stack) -> gifted(entry, from, stack));
             body.connect(state, !fresh);
             entry.data = entry.arbiter.snapshot();
             if (fresh) establishNative(source, entry, body, body.saveNow());
@@ -2653,6 +2668,12 @@ final class PlayerRuntime {
                     }
                 }
             }
+        }
+
+        // 0c. Struck in the last minute by someone it may not strike back (E-49): it keeps its distance, never answering the blow.
+        if (candidates.isEmpty()) {
+            var keepAway = keepAwayCandidate(entry, body);
+            if (keepAway != null) candidates.add(keepAway);
         }
 
         // 1. Hunger and health recovery eating (URGENT)
@@ -6510,6 +6531,14 @@ final class PlayerRuntime {
                     : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
+            // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
+            if (entry.comeFrom != null && "native_goto".equals(entry.skillId)) {
+                if (state == SkillRunner.State.COMPLETED) {
+                    entry.cameTo = entry.comeFrom;
+                    entry.cameAt = server.getTicks();
+                }
+                entry.comeFrom = null;
+            }
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED || state == SkillRunner.State.PAUSED)) {
@@ -7845,7 +7874,7 @@ final class PlayerRuntime {
                 // At a store of its own: who it saw there, so that what is gone from it has a name if anyone's.
                 if (stores.stream().anyMatch(store -> store.pos().equals(pos))) {
                     boolean mate = teammateOf(entry, self, other);
-                    var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks()));
+                    var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks(), other.getUuid()));
                     // Someone not on its side at its chest: it gives up a walk to go and look.
                     if (before == null && !mate) entry.sightingInterrupt = true;
                     entry.routineRefreshPending = true;
@@ -8054,6 +8083,8 @@ final class PlayerRuntime {
         if (!running || !ready || entries.get(entry.data.id()) != entry) return;
         long now = server.getTicks();
         if (taken > 0) entry.hardestHits.merge(by.getUuid(), (double) taken, Math::max);
+        // Wariness (E-49): a blow from someone it may not strike back, noted whatever else it does about it.
+        if (taken > 0 && !matches.mayAttack(hit.getUuid(), by.getUuid())) noteWariness(entry, by.getUuid(), by.getName().getString(), dev.kindred.core.Trust.Event.HURT);
         // Stopped, it decides nothing and says nothing: what the hit took is all it keeps.
         if (entry.snapshot().stopLatched()) return;
         var held = entry.aggressor;
@@ -8164,6 +8195,77 @@ final class PlayerRuntime {
 
     private static UUID aggressionTaskId(Entry entry, UUID who) {
         return UUID.nameUUIDFromBytes(("aggressor:" + entry.data.id() + ":" + who).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** In character, from a player that holds back what it is asked (E-49). */
+    static final String NOT_AFTER_LAST_TIME = "Not after last time.";
+    /** Harm within this long of arriving where someone asked it to come is theirs to answer for (E-49): ten seconds. */
+    static final long LED_HARM_TICKS = 200;
+    /** Nearer than this, someone who struck it in the last minute is walked away from (E-49). */
+    static final double KEEP_AWAY_NEAR = 4;
+
+    /** {@code event} noted against {@code person} (E-49), and said in the log when it leaves the player wary of them. */
+    private void noteWariness(Entry entry, UUID person, String name, dev.kindred.core.Trust.Event event) {
+        long now = server.getTicks();
+        boolean was = entry.trust.wary(person, now);
+        entry.trust.note(person, event, now);
+        int wariness = entry.trust.wariness(person, now);
+        String did = switch (event) {
+            case HURT -> "hurt it";
+            case LED_INTO_HARM -> "led it into harm";
+            case TOOK_FROM_CHEST -> "was at its chest when things went from it";
+            case TOSS_PAST_CAP -> "asked it for more than it hands out in a day";
+        };
+        KindredMod.LOGGER.info("{} notes that {} {}: wariness {}{}", entry.data.displayName(), name, did, wariness,
+                !was && wariness >= dev.kindred.core.Trust.WARY ? "; it holds back from them now" : "");
+    }
+
+    /** Harm that got through (E-49): within ten seconds of arriving where someone asked it to come, theirs to answer for. */
+    private void harmed(Entry entry, net.minecraft.entity.damage.DamageSource source, float taken) {
+        if (entry.cameTo == null || taken <= 0 || !running || entries.get(entry.data.id()) != entry) return;
+        UUID led = entry.cameTo;
+        entry.cameTo = null; // Once for each arrival.
+        if (server.getTicks() - entry.cameAt > LED_HARM_TICKS) return;
+        if (source.getAttacker() != null && led.equals(source.getAttacker().getUuid())) return; // Their own blow is a blow.
+        var by = server.getPlayerManager().getPlayer(led);
+        noteWariness(entry, led, by == null ? led.toString() : by.getName().getString(), dev.kindred.core.Trust.Event.LED_INTO_HARM);
+    }
+
+    /** Something another player threw it, picked up (E-49): a gift or a return, which takes some wariness of them away. */
+    private void gifted(Entry entry, ServerPlayerEntity from, net.minecraft.item.ItemStack stack) {
+        if (!running || entries.get(entry.data.id()) != entry) return;
+        long now = server.getTicks();
+        int before = entry.trust.wariness(from.getUuid(), now);
+        entry.trust.gift(from.getUuid(), now);
+        if (before > 0) {
+            KindredMod.LOGGER.info("{} takes {} {} from {}: wariness {}", entry.data.displayName(), stack.getCount(),
+                    stack.getName().getString().toLowerCase(java.util.Locale.ROOT), from.getName().getString(), entry.trust.wariness(from.getUuid(), now));
+        }
+    }
+
+    /** A walk off from the nearest within reach who struck it in the last minute and may not be struck back (E-49); none otherwise. */
+    private NativeTaskCandidate keepAwayCandidate(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        ServerPlayerEntity nearest = null;
+        for (ServerPlayerEntity other : player.getServerWorld().getPlayers()) {
+            if (other == player || !other.isAlive() || other.isSpectator() || other.squaredDistanceTo(player) > KEEP_AWAY_NEAR * KEEP_AWAY_NEAR) continue;
+            if (!entry.trust.struckLately(other.getUuid(), now) || matches.mayAttack(player.getUuid(), other.getUuid())) continue;
+            if (nearest == null || other.squaredDistanceTo(player) < nearest.squaredDistanceTo(player)) nearest = other;
+        }
+        if (nearest == null) return null;
+        BlockPos to = awayFrom(entry, player, nearest);
+        UUID taskId = UUID.nameUUIDFromBytes(("keep_away:" + entry.data.id() + ":" + nearest.getUuid()).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 96.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                "z", String.valueOf(to.getZ()), "range", "3", "partial", "true"));
+    }
+
+    /** How wary a player is of {@code person}, for fixtures (E-49). */
+    int warinessForFixtures(UUID id, UUID person) {
+        Entry entry = entries.get(id);
+        return entry == null ? -1 : entry.trust.wariness(person, server.getTicks());
     }
 
     /** Its answer to a hard hit, while it holds, for fixtures: "GET_AWAY from Rue", or null. */
@@ -9861,7 +9963,7 @@ final class PlayerRuntime {
     private record OwnStore(BlockPos pos, dev.kindred.core.team.Storage.Whose whose) { }
 
     /** Someone it saw open a store of its own: who, whether on its side, and when. */
-    private record SeenAtStore(String name, boolean teammate, long tick) { }
+    private record SeenAtStore(String name, boolean teammate, long tick, UUID who) { }
 
     /** What it asked its team of what is gone from a store, and until when it waits for a word. */
     private record StorageAsk(dev.kindred.core.team.Storage.Look look, long until) { }
@@ -10053,6 +10155,8 @@ final class PlayerRuntime {
         var look = entry.storage.looked(place, own.whose(), seen, now);
         var since = entry.seenAtStores.remove(own.pos().asLong());
         if (!look.isShort()) return;
+        // Gone while someone not on its side was seen at it (E-49): theirs to answer for, in its wariness of them.
+        if (since != null && !since.teammate()) noteWariness(entry, since.who(), since.name(), dev.kindred.core.Trust.Event.TOOK_FROM_CHEST);
         var holding = Valuables.holding(player, lootWanted(entry));
         double left = 0;
         for (var each : seen.entrySet()) {
@@ -10837,7 +10941,7 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""));
     }
 
     /** An ask from chat: who asked, what of, until when it waits for the player's look at the speaker, and where a refusal goes. */
@@ -10891,8 +10995,17 @@ final class PlayerRuntime {
         };
         ServerCommandSource as = speaker.getCommandSource().withOutput(output);
         UUID id = entry.data.id();
+        // From someone it is wary of, nothing but a stop goes in (E-49): refused in its own words.
+        if (asked.ask() != dev.kindred.model.Strategist.Ask.STOP && entry.trust.wary(speaker.getUuid(), server.getTicks())) {
+            KindredMod.LOGGER.info("{} asked in chat by {}: {}: refused (wary of them)", entry.data.displayName(), speaker.getName().getString(), asked.ask());
+            entry.voiceAsked = asked.ask() + ": refused";
+            asked.refused().accept(NOT_AFTER_LAST_TIME);
+            return;
+        }
         int done = switch (asked.ask()) {
-            case COME -> nativeGoto(as, id, speaker.getBlockPos(), 1.5);
+            // As near as it safely can: never onto a stand beside lava, fire or a drop (E-49).
+            case COME -> nativeTask(as, id, "native_goto", Map.of("x", String.valueOf(speaker.getBlockX()), "y", String.valueOf(speaker.getBlockY()),
+                    "z", String.valueOf(speaker.getBlockZ()), "range", "1.5", "partial", "true", "safe", "true"));
             case WAIT -> nativeSkill(as, id, "native_wait", 4);
             case STOP -> nativeLifecycle(as, "stop", id);
             case TOSS -> nativeToss(as, id, asked.item(), dev.kindred.model.ConversationPrompt.TOSS_COUNT);
@@ -10902,6 +11015,7 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("{} asked in chat by {}: {}{}: {}", entry.data.displayName(), speaker.getName().getString(), asked.ask(),
                 asked.item() == null ? "" : " " + asked.item(), done == 1 ? "done" : "refused (" + refusal + ")");
         entry.voiceAsked = asked.ask() + (done == 1 ? ": done" : ": refused");
+        if (done == 1 && asked.ask() == dev.kindred.model.Strategist.Ask.COME) entry.comeFrom = speaker.getUuid();
         if (done != 1) asked.refused().accept(refusal);
     }
 
@@ -10932,9 +11046,20 @@ final class PlayerRuntime {
         int slot = -1;
         for (int i = 0; i < inventory.main.size() && slot < 0; i++) if (inventory.main.get(i).isOf(kind)) slot = i;
         if (slot < 0) return reject(source, entry.data.displayName() + " has no " + kind.getName().getString().toLowerCase(java.util.Locale.ROOT) + ".");
-        int tossed = Math.min(Math.max(1, count), inventory.main.get(slot).getCount());
-        return nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
+        // Tosses to one person are capped a game day, whoever asks, and none while it is wary of them; an ask past the cap
+        // counts against them (E-49).
+        long now = server.getTicks();
+        if (entry.trust.wary(to.getUuid(), now)) return reject(source, NOT_AFTER_LAST_TIME);
+        int allowance = entry.trust.tossAllowance(to.getUuid(), now);
+        if (allowance <= 0) {
+            noteWariness(entry, to.getUuid(), to.getName().getString(), dev.kindred.core.Trust.Event.TOSS_PAST_CAP);
+            return reject(source, "That's all I hand out in a day.");
+        }
+        int tossed = Math.min(Math.min(Math.max(1, count), allowance), inventory.main.get(slot).getCount());
+        int started = nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
                 "target", to.getUuid().toString()));
+        if (started == 1) entry.trust.tossed(to.getUuid(), tossed, now);
+        return started;
     }
 
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
@@ -12719,6 +12844,11 @@ final class PlayerRuntime {
         private final Map<Long, SeenAtStore> seenAtStores = new HashMap<>();
         private StorageAsk storageAsk;
         private final Set<Long> untrustedStores = new HashSet<>();
+        /** How wary it is of each person, from what the game saw them do to it (E-49); kept for this session. */
+        final dev.kindred.core.Trust trust = new dev.kindred.core.Trust();
+        /** Who asked it to come, while it walks there; then where it arrived, for the ten seconds after. */
+        private UUID comeFrom, cameTo;
+        private long cameAt;
         private BlockPos emptying;
         /** What it took out of a store of its own lately, and when: not put straight back. */
         private final Map<String, Long> recentlyTaken = new HashMap<>();

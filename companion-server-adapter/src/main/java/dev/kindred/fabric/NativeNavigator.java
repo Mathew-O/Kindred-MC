@@ -101,6 +101,15 @@ final class NativeNavigator {
         this.maxDrop = Math.clamp(maxDrop, MAX_SAFE_DROP, MAX_CLUTCH_DROP);
     }
 
+    /** Where an unfinished route may end, when not just anywhere it can stand (E-49); null for anywhere. */
+    private Predicate<BlockPos> endable;
+
+    /** The same navigator, ending an unfinished route only where {@code where} allows. */
+    NativeNavigator endingOnly(Predicate<BlockPos> where) {
+        endable = where;
+        return this;
+    }
+
     /** Whether a closed wooden door counts as a way through: for a walk that opens the doors on its way (M-01b). */
     private boolean doors;
 
@@ -151,7 +160,7 @@ final class NativeNavigator {
             expanded++;
             if (goal.test(current.pos())) return new Path(trace(parent, current.pos()), true, expanded);
             double h = heuristic(current.pos(), target);
-            if (h < closestH) {
+            if (h < closestH && (endable == null || endable.test(current.pos()))) {
                 closestH = h;
                 closest = current.pos();
             }
@@ -375,6 +384,26 @@ final class NativeNavigator {
         if (support.getFluidState().isIn(FluidTags.LAVA)) return false;
         var shape = support.getCollisionShape(world, below);
         return !shape.isEmpty() && shape.getMax(Direction.Axis.Y) >= 0.8 && shape.getMax(Direction.Axis.Y) <= 1.0;
+    }
+
+    /**
+     * A stand to end a walk on that someone else asked for (E-49): one it can stand on with nothing that harms beside it,
+     * where a push or a misstep would hurt. No lava or fire at the feet or the head or just below them on any side, and
+     * no open side with a drop deeper than {@link #MAX_SAFE_DROP} onto anything but water. The route's own way there is
+     * as any route's: only where it ends is held to this.
+     */
+    boolean safeStand(BlockPos feet) {
+        if (!standable(feet)) return false;
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            BlockPos beside = feet.offset(side);
+            if (hazard(beside) || hazard(beside.up()) || hazard(beside.down()) || lavaAt(beside.down())) return false;
+            if (!clear(beside) || standable(beside) || swimmable(beside)) continue;
+            // An open side with nothing to stand on: how far down the ground is.
+            int depth = 1;
+            while (depth <= MAX_SAFE_DROP + 1 && passable(beside.down(depth)) && !swimmable(beside.down(depth))) depth++;
+            if (depth > MAX_SAFE_DROP + 1 || lavaAt(beside.down(depth))) return false;
+        }
+        return true;
     }
 
     /** Feet in water deep enough to swim, never in lava. */

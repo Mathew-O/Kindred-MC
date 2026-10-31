@@ -54,6 +54,9 @@ final class NativeGoToSkill implements SkillBody {
     private final int maxDrop;
     /** Arrived only near the middle of the target block, as a player lines up on a spot to build from (E-08b). */
     private boolean centre;
+    /** Ended only on a stand with nothing that harms beside it, as on a walk someone asked for (E-49). */
+    private boolean safe;
+    private NativeNavigator safety;
     private List<BlockPos> path;
     private boolean pathComplete;
     private int index;
@@ -102,7 +105,16 @@ final class NativeGoToSkill implements SkillBody {
 
     /** Whether a body standing there has arrived. */
     boolean goalReached(BlockPos feet) {
-        return Math.sqrt(feet.getSquaredDistance(target)) <= range + 0.01;
+        if (Math.sqrt(feet.getSquaredDistance(target)) > range + 0.01) return false;
+        if (!safe) return true;
+        if (safety == null) safety = new NativeNavigator(body.entity().getServerWorld());
+        return safety.safeStand(feet);
+    }
+
+    /** Ends only on a safe stand (E-49), and an unfinished route only on one too. */
+    NativeGoToSkill safely() {
+        safe = true;
+        return this;
     }
 
     /** Arrive only near the middle of the target block. */
@@ -145,6 +157,10 @@ final class NativeGoToSkill implements SkillBody {
     private boolean plan() {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
+        if (safe) {
+            safety = new NativeNavigator(player.getServerWorld());
+            navigator.endingOnly(safety::safeStand);
+        }
         if (engage != null) navigator.avoiding(dangers());
         if (shun != null) navigator.shunning(shun);
         BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());

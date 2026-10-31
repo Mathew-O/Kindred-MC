@@ -50,7 +50,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
     /** What the runtime knows of a player as it is spoken to, beyond what its body shows. */
     record Facts(String name, Personality personality, ConversationAudience.Relation relation, boolean controls,
                  boolean stopped, boolean busy, String doing, String goal, String goalProgress, List<String> events,
-                 String lastSaid, List<String> remembered) { }
+                 String lastSaid, List<String> remembered, String wary) { }
 
     /** The runtime's side: the facts of a player spoken to by {@code speaker}, or null when it cannot be voiced now. */
     interface Source {
@@ -64,6 +64,9 @@ final class PlayerVoice implements CompanionSocials.Voice {
      */
     interface Asks {
         void ask(UUID playerId, ServerPlayerEntity speaker, Strategist.Ask ask, String item, Consumer<String> refused);
+
+        /** What the player says in place of a reply carrying {@code ask}, when it holds the ask back from this speaker (E-49). */
+        default Optional<String> withheld(UUID playerId, ServerPlayerEntity speaker, Strategist.Ask ask) { return Optional.empty(); }
     }
 
     private record Said(long at, String line) { }
@@ -108,6 +111,9 @@ final class PlayerVoice implements CompanionSocials.Voice {
     /** The line to say, and the ask it carries, if any, to do once it is said (E-20b). */
     private CompanionSocials.Spoken spoken(String text, Strategist.Line line, CompanionSocials.Participant player, ServerPlayerEntity speaker) {
         if (line.ask() == Strategist.Ask.NONE) return new CompanionSocials.Spoken(text, null);
+        // Asked by someone it is wary of: its own refusal is what it says, and nothing goes in (E-49).
+        var withheld = asks.withheld(player.id(), speaker, line.ask());
+        if (withheld.isPresent()) return new CompanionSocials.Spoken(withheld.get(), null);
         return new CompanionSocials.Spoken(text, refused -> asks.ask(player.id(), speaker, line.ask(), line.item().orElse(null), refused));
     }
 
@@ -179,7 +185,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
         return new ConversationAudience.Situation(facts.name(), speaker.getName().getString(), facts.relation(), facts.controls(),
                 body.getHealth(), food, hurtBy(body), dimension, daytime, weather, facts.stopped(), facts.busy(), facts.doing(),
                 facts.goal(), facts.goalProgress(), position, threat, near, List.copyOf(held), foodItems, notables,
-                facts.events(), facts.remembered(), facts.lastSaid(), transcript);
+                facts.events(), facts.remembered(), facts.lastSaid(), transcript, facts.wary());
     }
 
     private static final java.util.Set<net.minecraft.item.Item> NOTABLE = java.util.Set.of(Items.DIAMOND, Items.EMERALD, Items.IRON_INGOT,
