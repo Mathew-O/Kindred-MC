@@ -38,7 +38,7 @@ Merge order that works: the voice branch to `main` first (it carries `blissful-f
 4. **Innocent refusals.** The clean-word list and the "three numbers in a row" place check can refuse an ordinary
    line; the cost is the fixed reply. Watch the `voice: no line (...)` log lines in play and loosen only what they show.
    **Not done: no play yet.** The only `voice: no line` lines so far are the fixtures' own refusals.
-5. My re-run of the branch: see the end of this page.
+5. My re-run of the branch: see its section below, after G.
    **Answered on the voice branch itself:** the full native suite on `64f4ac1` (E-20b's code) passed 393 of 393, with
    the build's 787 JUnit results, none failed ([validation](../validation.md)).
 
@@ -289,6 +289,17 @@ The remaining work as each row states it on 29 October. Pull from here after A t
 | F-25b, F-25c | Renewable admission, ordinary clients, restart while dead, combat and portal qualification; full body, accounting and recovery, teams, automatic progression |
 | F-11, F-07 | Unattended admission and schedules; restart while dead, the remaining transfers |
 | F-03/04/05/10, F-01/02/15, F-22, F-23 | Native cancellation and reconciliation; no live release gate has ever been completed; operator diagnostics and installation evidence; the release package |
+
+## My re-run of the voice branch
+
+On `147cb0f` in a clean scratch worktree, Linux x64 cloud container, OpenJDK 21, 2026-10-29:
+- `./gradlew build`: 787 JUnit results, none failed, six skipped (the opt-in live model tests).
+- `NativeVoiceGameTests` and `NativeAskGameTests` together, the entrypoints narrowed for the run and restored after:
+  all 13 fixtures passed in one run. That agrees with the branch's own evidence; the full suite was not rerun here.
+- Read in full: `ConversationAudience`, `ConversationPrompt`, `PlayerVoice`, the `Strategist` and `StrategistBridge`
+  changes, the `CompanionSocials` hook and the ask dispatch in `PlayerRuntime`. The tiers are enforced in code, the
+  reply is checked by the provider and again by the bridge, and an ask runs through the speaker's own command source
+  into the method the command calls. Items A1 to A4 above are what the read found.
 
 ## Handoff, 30 October (`claude/loose-ends-1029`)
 
