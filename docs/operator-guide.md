@@ -311,6 +311,53 @@ detour. The strategist's report has one line: how many chunks it knows and where
 `KINDRED_ATLAS=off` in the server's environment to turn the atlas off: nothing is kept or read (an evaluation scenario
 says `atlas=off`).
 
+### Rescue plans (F-29)
+
+With the strategist on, a player that is stuck and whose own move elsewhere has had its turn (its watchdog's second
+spell in a row of three minutes with no progress) asks the strategist for a way out. It asks once for each such spell,
+at most once every five minutes, within the same rates and daily budgets as advice. It sends a report of about 800
+tokens:
+
+- where it is, and its health and food;
+- the light at its feet;
+- the blocks round it, nine by nine and five high, each kind a letter;
+- the last five things refused or failed, with why;
+- what it carries;
+- what the goal wants next;
+- its stance and habits;
+- what its own tries did.
+
+The reply is one to six steps, each in one of these forms and nothing else:
+
+```text
+walk <north|south|east|west> <1-8>       walked to the block that many away, round what is in the way
+dig <north|south|east|west|up|down> <1-4> the blocks in the way: a passage two high sideways, a shaft up or down
+pillar <1-6>                             up that many, a block of its own from the hotbar under its feet each jump
+place <north|south|east|west>            a block of its own from the hotbar beside its feet
+wait <1-4>                               seconds
+eat                                      food from its hotbar
+retreat <north|south|east|west> <1-3>    back off without turning
+```
+
+Core reads the reply and refuses the whole of it for one step that is not in that list or outside its bounds. A plan
+is also refused, with nothing moved, when:
+
+- a step's skill is not installed;
+- the player was stopped, set going again or given a command since it asked (its fence);
+- the stuck spell is over;
+- the player is no longer where it asked from.
+
+A plan that passes is carried out a step at a time before anything else of the goal's. Each step is worked out from
+where the player stands when it comes up, and is given out as an ordinary task: the server's edit policy, the claims
+and the action ledger check and record it as they do every task. The first step that does not go ends the plan. With
+replays on (F-27), the scene is captured as a `stuck` replay before the plan runs.
+
+The log says `<name> rescue: asked, stuck spell <n> at <x, y, z> (<characters> characters reported)`, `<name> rescue:
+plan pillar 3, walk north 2 - <reason> (<in> in, <cached> cached, <out> out tokens, <ms> ms)`, and how it ended:
+`<name> rescue: pillar 3, walk north 2 -> unstuck`, `-> failed: <why>` or `-> refused: <why>`. An evaluation's result
+lists each player's rescues. A rescue costs about 1,300 characters of report, roughly 900 tokens in and at most 300
+out. Set `KINDRED_RESCUE=off` to turn rescues off; the strategist's advice is unchanged.
+
 ### The player's voice in chat (E-20a)
 With the strategist on, a player spoken to by name ("Echo, what are you doing?") answers in its own words: the same model phrases one short, clean line in the player's personality from what the player knows right now. It is told only what that listener may know. Whoever may command the player (its controller, an operator) is told everything, its position included. Another player is told what anyone beside it could see or ask, never where it is or what exactly it carries. An opponent in a match is told only what it could see for itself. The line is said through the same social lane as the fixed replies, with the same limits: eight blocks and in sight, public chat for anyone who may not command the player, a player's three seconds between direct replies, and each speaker's three seconds. Words alone never make the player do anything; only the asks below, from someone who may command it, do. A line that is too long, starts with `/`, carries formatting codes or rough words, or gives a place to someone who may not know it is refused. Then, or when anything else goes wrong (a timeout, an error, the budgets or rates spent, a line already being phrased for that player), the player says its fixed reply, as it does with no model. While one reply is being phrased, the newest message to the player waits for it; someone else whose message that one replaced is given the fixed reply at once.
 
@@ -414,7 +461,7 @@ A build can be played unattended on many seeds and scored, so that a change is j
 started it spawns the starters (Kindred, Sol and Echo, or those named) a few blocks apart at the world's spawn, sets the
 edits switch and their goal, sprints the ticks asked for (`/tick sprint`), writes `logs/eval-result.json` and stops the
 server. The value is `key=value` pairs separated by `;`, for example
-`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on`.
+`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on`.
 Missing keys take those defaults; a key or value it does not know is refused with an error in the log, and no run is
 made. Without `KINDRED_EVAL` nothing of this happens: the setting is read when the mod loads and nowhere else.
 

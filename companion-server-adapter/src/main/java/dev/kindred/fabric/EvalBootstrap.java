@@ -48,6 +48,8 @@ final class EvalBootstrap implements RunObserver {
      */
     private final boolean worldRules;
     private final Map<String, Integer> stuckSeen = new HashMap<>();
+    /** The rescues of each player already in the record, by their lines' count (F-29). */
+    private final Map<String, Integer> rescuesSeen = new HashMap<>();
     private int phase, spawned;
     private long phaseAt = -1, startTick = -1, lastTick;
     private boolean finished;
@@ -88,11 +90,13 @@ final class EvalBootstrap implements RunObserver {
             case 0 -> { // The runtime's records loaded: set the world up as an operator would, then the starters one by one.
                 if (!runtime.isReady()) return;
                 runtime.observeRun(this);
-                KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}", scenario.edits() ? "on" : "off", scenario.lessons() ? "on" : "off",
-                        scenario.atlas() ? "on" : "off");
+                KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}, rescue {}, advice {}", scenario.edits() ? "on" : "off",
+                        scenario.lessons() ? "on" : "off", scenario.atlas() ? "on" : "off", scenario.rescue() ? "on" : "off", scenario.advice() ? "on" : "off");
                 runtime.setWorldEdits(server.getCommandSource(), scenario.edits());
                 runtime.lessons(scenario.lessons());
                 runtime.atlas(scenario.atlas());
+                runtime.rescue(scenario.rescue());
+                runtime.advice(scenario.advice());
                 if (worldRules) {
                     command(server, "gamerule keepInventory " + (scenario.keep() == EvalScenario.Keep.INVENTORY));
                     command(server, "gamerule doDaylightCycle true");
@@ -192,6 +196,11 @@ final class EvalBootstrap implements RunObserver {
                     }
                     stuckSeen.put(name, state.stuckSpells());
                 }
+                // The goal keeps its last fifty rescues; the record keeps each once, in order.
+                int known = rescuesSeen.getOrDefault(name, 0), held = state.rescues().size();
+                if (held < known) known = 0; // A new goal: its rescues start again.
+                for (int i = known; i < held; i++) record.rescued(name, new EvalRecord.Rescue(at, state.rescues().get(i)));
+                rescuesSeen.put(name, held);
                 if (STRONGHOLD_FOUND.contains(state.endStage())) record.reached(name, "stronghold", at);
                 record.tokens(name, state.modelTokens());
             });

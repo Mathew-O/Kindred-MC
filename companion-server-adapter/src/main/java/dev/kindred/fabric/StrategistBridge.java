@@ -59,8 +59,10 @@ final class StrategistBridge implements AutoCloseable {
 
     private static final class State {
         ModelContextStore.PlayerContext context;
-        boolean loading, inFlight, asking, talking;
-        long lastAt, tokensToday, lessonsAt = Long.MIN_VALUE;
+        boolean loading, inFlight, asking, talking, rescueInFlight;
+        long lastAt, tokensToday, lessonsAt = Long.MIN_VALUE, rescueAt;
+        /** The stuck spell last asked about, asked or turned away (F-29): each spell is asked about once. */
+        int rescueSpell;
         int deaths = -1, stuck = -1, deathsRecorded, events = -1, strandingsRecorded;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
         String progress = "";
@@ -79,6 +81,36 @@ final class StrategistBridge implements AutoCloseable {
     private boolean budgetLogged;
     /** Whether its own lessons are drawn from its deaths (E-46): on unless the operator or a scenario turns them off. */
     private boolean lessons = true;
+    /** Whether a stuck player asks for a way out (F-29), and whether it asks for advice: both on unless turned off. */
+    private boolean rescue = true, advice = true;
+    /** How far apart one player's rescues are, at the least: five minutes. */
+    static final long RESCUE_GAP_MS = 300_000;
+
+    /**
+     * What a rescue needs of the runtime (F-29): the player's fence and whether it still holds, where it stands, the
+     * skills installed on this server, and the scene captured as a replay before a plan runs (F-27), when replays are on.
+     */
+    interface RescueHost {
+        dev.kindred.core.ProposalFence fence(UUID id);
+
+        boolean current(UUID id, dev.kindred.core.ProposalFence fence);
+
+        net.minecraft.util.math.BlockPos where(UUID id);
+
+        java.util.Set<String> installed();
+
+        void capture(UUID id);
+    }
+
+    private RescueHost rescueHost;
+
+    void rescueHost(RescueHost host) { rescueHost = host; }
+
+    /** Rescue plans on or off (F-29); {@code KINDRED_RESCUE=off} or a scenario turns them off. */
+    void rescue(boolean on) { rescue = on; }
+
+    /** The strategist's advice on or off; off, a strategist is asked only for rescues (an evaluation's {@code advice=off}). */
+    void advice(boolean on) { advice = on; }
 
     private StrategistBridge(Strategist strategist, ModelContextStore store, Pace pace, long playerDailyTokens, long dailyTokens) {
         this.strategist = strategist;
@@ -327,7 +359,8 @@ final class StrategistBridge implements AutoCloseable {
             store.save(id, state.context);
         }
         if (lessons) learn(id, name, state, campaign, player, server, fresh);
-        if (strategist == null || state.inFlight) return;
+        if (strategist != null && rescue && rescueHost != null) rescue(id, name, state, campaign, player, server);
+        if (strategist == null || state.inFlight || !advice) return;
         long now = System.currentTimeMillis();
         // A spell with no progress repeats every few seconds while the player is stuck: one question about it now and then.
         boolean changed = state.lastAt == 0 || campaign.deaths() != state.deaths || campaign.stage() != state.stage
@@ -457,6 +490,74 @@ final class StrategistBridge implements AutoCloseable {
         for (var habit : after) if (!before.contains(habit)) goal.add(habit);
         campaign.habits(goal);
         store.save(id, context);
+    }
+
+    /**
+     * A way out asked for (F-29): once for each stuck spell whose move elsewhere has had its turn, five minutes apart at
+     * the least, within the same rates and budgets as advice. The reply is parsed and bounded in core, then checked by
+     * {@link dev.kindred.core.ProposalGate} against the skills installed and the player's fence; a plan that passes goes
+     * to the goal, which carries it out a step at a time as ordinary tasks. Before it runs, the scene is captured as a
+     * replay when replays are on (F-27). Nothing waits for the reply.
+     */
+    private void rescue(UUID id, String name, State state, PortalRunCampaign campaign, ServerPlayerEntity player, MinecraftServer server) {
+        int spell = campaign.rescueWanted();
+        if (spell == 0 || spell == state.rescueSpell || state.rescueInFlight || campaign.rescuing()) return;
+        long now = System.currentTimeMillis();
+        if (state.rescueAt != 0 && now - state.rescueAt < RESCUE_GAP_MS) return;
+        state.rescueSpell = spell; // This spell is asked about now or not at all.
+        String report = campaign.rescueReport(player, name);
+        long reserved = Strategist.rescueReservation(report);
+        if (!admit(now, state, reserved)) {
+            KindredMod.LOGGER.info("{} rescue: not asked (the rates or the day's budgets)", name);
+            return;
+        }
+        var fence = rescueHost.fence(id);
+        var from = player.getBlockPos().toImmutable();
+        state.rescueInFlight = true;
+        state.rescueAt = now;
+        KindredMod.LOGGER.info("{} rescue: asked, stuck spell {} at {} ({} characters reported)", name, spell, from.toShortString(), report.length());
+        PortalRunCampaign asked = campaign;
+        strategist.rescue(report).whenComplete((reply, failure) -> server.execute(() -> {
+            state.rescueInFlight = false;
+            if (failure != null || reply == null) { // The reservation stands: it may still have been billed.
+                KindredMod.LOGGER.warn("{} rescue: no plan ({})", name, String.valueOf(failure));
+                return;
+            }
+            long used = reply.inputTokens() - reply.cachedTokens() + (reply.cachedTokens() + 9) / 10 + reply.outputTokens();
+            if (used > 0) {
+                tokensToday = Math.max(0, tokensToday + used - reserved);
+                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
+            }
+            if (state.context != null) {
+                state.context.inputTokens += reply.inputTokens();
+                state.context.outputTokens += reply.outputTokens();
+                store.save(id, state.context);
+            }
+            String cost = " (" + reply.inputTokens() + " in, " + reply.cachedTokens() + " cached, " + reply.outputTokens() + " out tokens, "
+                    + reply.millis() + " ms)";
+            if (reply.failure().isPresent()) {
+                KindredMod.LOGGER.info("{} rescue: no plan ({}){}", name, reply.failure().get(), cost);
+                return;
+            }
+            var parsed = dev.kindred.core.rescue.RescuePlan.parse(reply.steps(), reply.reason());
+            if (parsed.plan().isEmpty()) {
+                asked.rescueRefused(reply.steps(), String.join("; ", parsed.refusals()), name);
+                return;
+            }
+            var plan = parsed.plan().get();
+            var refusals = new java.util.ArrayList<>(new dev.kindred.core.ProposalGate(rescueHost.installed())
+                    .reject(plan.skills(), true, rescueHost.current(id, fence), java.time.Instant.now().isAfter(fence.deadline())));
+            var where = rescueHost.where(id);
+            if (state.campaign != asked || asked.rescueWanted() != spell || asked.rescuing()) refusals.add("the stuck spell is over");
+            else if (where == null || where.getSquaredDistance(from) > 2 * 2) refusals.add("it is no longer where it asked from");
+            if (!refusals.isEmpty()) {
+                asked.rescueRefused(reply.steps(), String.join("; ", refusals), name);
+                return;
+            }
+            KindredMod.LOGGER.info("{} rescue: plan {} - {}{}", name, plan.text(), plan.reason(), cost);
+            rescueHost.capture(id);
+            asked.rescue(plan, spell, name);
+        }));
     }
 
     /** Within the rates and the day's budgets with {@code reserved} tokens set aside; reserves them if so. */

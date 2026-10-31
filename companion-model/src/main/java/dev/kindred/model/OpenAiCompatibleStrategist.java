@@ -202,6 +202,113 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     }
 
     /**
+     * Asks for a way out of where the player is stuck (F-29), in the background on the planning lane within its fifteen
+     * seconds, with one repair in JSON mode when the provider refuses the schema.
+     */
+    @Override
+    public CompletableFuture<Rescue> rescue(String report) {
+        Objects.requireNonNull(report);
+        long started = System.nanoTime();
+        return CompletableFuture.supplyAsync(() -> rescueCall(report, started), executor);
+    }
+
+    private Rescue rescueCall(String report, long started) {
+        try {
+            boolean schema = choice.provider().shape() == StrategistProvider.Shape.JSON_SCHEMA;
+            HttpResponse<String> response = send(rescueRequest(report, schema), started);
+            if (schema && response.statusCode() == 400 && mentionsShape(response.body())) {
+                response = send(rescueRequest(report, false), started); // The one repair, as for advice.
+            }
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            if (response.statusCode() == 429) return Rescue.failed("rate limited", millis);
+            if (response.statusCode() / 100 != 2) return Rescue.failed("service error " + response.statusCode(), millis);
+            return rescueReply(JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+        } catch (java.net.http.HttpTimeoutException late) {
+            return Rescue.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return Rescue.failed("interrupted", (System.nanoTime() - started) / 1_000_000);
+        } catch (Exception other) {
+            return Rescue.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
+        }
+    }
+
+    /** A rescue's request: its instructions with the vocabulary, the report, and the reply's two fields. */
+    String rescueRequest(String report, boolean schema) {
+        var body = new JsonObject();
+        body.addProperty("model", choice.model());
+        var messages = new JsonArray();
+        String words = "Reply with one JSON object and nothing else, with exactly these fields: \"steps\" (" + RescuePrompt.STEPS
+                + ") and \"reason\" (" + RescuePrompt.REASON + ")";
+        messages.add(message("system", schema ? RescuePrompt.SYSTEM : RescuePrompt.SYSTEM + "\n\n" + words));
+        messages.add(message("user", report));
+        body.add("messages", messages);
+        body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", RESCUE_MAX_OUTPUT_TOKENS);
+        var format = new JsonObject();
+        if (schema) {
+            var properties = new JsonObject();
+            var steps = new JsonObject();
+            steps.addProperty("type", "array");
+            steps.addProperty("description", RescuePrompt.STEPS);
+            var item = new JsonObject();
+            item.addProperty("type", "string");
+            steps.add("items", item);
+            properties.add("steps", steps);
+            properties.add("reason", stringField(RescuePrompt.REASON));
+            var all = new JsonArray();
+            for (String name : properties.keySet()) all.add(name);
+            var shape = new JsonObject();
+            shape.addProperty("type", "object");
+            shape.addProperty("additionalProperties", false);
+            shape.add("properties", properties);
+            shape.add("required", all);
+            format.addProperty("type", "json_schema");
+            var spec = new JsonObject();
+            spec.addProperty("name", "rescue");
+            spec.addProperty("strict", true);
+            spec.add("schema", shape);
+            format.add("json_schema", spec);
+        } else {
+            format.addProperty("type", "json_object");
+        }
+        body.add("response_format", format);
+        return body.toString();
+    }
+
+    /** A rescue's completion: its steps as text and its reason, or why there are none. Core parses the steps. */
+    static Rescue rescueReply(JsonObject completion, long millis) {
+        long in = 0, cached = 0, out = 0;
+        if (completion.has("usage") && completion.get("usage").isJsonObject()) {
+            var usage = completion.getAsJsonObject("usage");
+            in = number(usage, "prompt_tokens");
+            out = number(usage, "completion_tokens");
+            if (usage.has("prompt_tokens_details") && usage.get("prompt_tokens_details").isJsonObject()) {
+                cached = number(usage.getAsJsonObject("prompt_tokens_details"), "cached_tokens");
+            }
+        }
+        var choices = completion.has("choices") && completion.get("choices").isJsonArray() ? completion.getAsJsonArray("choices") : new JsonArray();
+        if (choices.isEmpty()) return Rescue.failed("no reply", in, cached, out, millis);
+        var first = choices.get(0).getAsJsonObject();
+        String finish = text(first, "finish_reason");
+        if (finish != null && !finish.equals("stop")) return Rescue.failed("stopped: " + finish, in, cached, out, millis);
+        var message = first.has("message") && first.get("message").isJsonObject() ? first.getAsJsonObject("message") : new JsonObject();
+        String content = text(message, "content");
+        if (content == null || content.isBlank()) return Rescue.failed("no reply text", in, cached, out, millis);
+        JsonObject reply;
+        try {
+            reply = JsonParser.parseString(stripFence(content)).getAsJsonObject();
+        } catch (RuntimeException unreadable) {
+            return Rescue.failed("unreadable reply", in, cached, out, millis);
+        }
+        if (!reply.has("steps") || !reply.get("steps").isJsonArray()) return Rescue.failed("no steps", in, cached, out, millis);
+        var steps = new java.util.ArrayList<String>();
+        for (var step : reply.getAsJsonArray("steps")) {
+            steps.add(step.isJsonPrimitive() && step.getAsJsonPrimitive().isString() ? step.getAsString() : step.toString());
+        }
+        return new Rescue(steps, text(reply, "reason"), in, cached, out, millis, Optional.empty());
+    }
+
+    /**
      * Answers someone who spoke to the player, in the background on the chat lane: within its eight seconds from the
      * moment it was asked (time spent waiting for the lane counts), with one repair in JSON mode when the provider
      * refuses the schema.

@@ -89,10 +89,13 @@ def score(build_dir, use_metrics=True):
             for d in p["deaths"]:
                 causes[cause_of(d["cause"])] = causes.get(cause_of(d["cause"]), 0) + 1
             deaths = len(p["deaths"]) + p.get("deathsNotListed", 0)
+            rescues = p.get("rescues", [])
             players[name] = {"furthest": STAGES[furthest] if furthest >= 0 else "none", "furthestIndex": furthest,
                              "minutesTo": {s: round(p["stages"][s] / 1200, 1) for s in reached},
                              "deaths": deaths, "deathsPerHour": round(deaths / hours, 2), "causes": causes,
-                             "stuckSpells": len(p["stuck"]) + p.get("stuckNotListed", 0), "tokens": p.get("tokens", 0),
+                             "stuckSpells": len(p["stuck"]) + p.get("stuckNotListed", 0), "stuckMinutes": stuck_minutes(len(p["stuck"]) + p.get("stuckNotListed", 0)),
+                             "rescues": len(rescues), "rescuesUnstuck": sum(1 for r in rescues if r["line"].endswith("-> unstuck")),
+                             "tokens": p.get("tokens", 0),
                              "metrics": metrics.get(str(folder / "latest.log"), {}).get(name)}
         per_seed[folder.name] = {"complete": result["complete"], "ticksRun": result["ticksRun"], "hours": round(hours, 2),
                                  "teamFurthest": STAGES[best] if best >= 0 else "none", "teamFurthestIndex": best,
@@ -101,6 +104,9 @@ def score(build_dir, use_metrics=True):
         "teamFurthestIndex": spread([s["teamFurthestIndex"] for s in per_seed.values()]),
         "teamDeathsPerHour": spread([s["teamDeathsPerHour"] for s in per_seed.values()]),
         "stuckSpells": spread([sum(p["stuckSpells"] for p in s["players"].values()) for s in per_seed.values()]),
+        "stuckMinutes": spread([round(sum(p["stuckMinutes"] for p in s["players"].values()), 1) for s in per_seed.values()]),
+        "rescues": spread([sum(p["rescues"] for p in s["players"].values()) for s in per_seed.values()]),
+        "rescuesUnstuck": spread([sum(p["rescuesUnstuck"] for p in s["players"].values()) for s in per_seed.values()]),
         "tokens": spread([sum(p["tokens"] for p in s["players"].values()) for s in per_seed.values()]),
     }
     for stage in STAGES:
@@ -114,6 +120,12 @@ def score(build_dir, use_metrics=True):
                 causes[cause] = causes.get(cause, 0) + n
     return {"build": build_dir.name, "seeds": sorted(per_seed), "missing": missing, "kinds": sorted(kinds), "scenarios": sorted(scenarios),
             "team": team, "deathCauses": dict(sorted(causes.items(), key=lambda kv: -kv[1])), "perSeed": per_seed}
+
+
+def stuck_minutes(spells):
+    """Game minutes the watchdog counted as stuck: three for each spell, the minutes of no progress after which it gives a
+    spot up. Time spent on a move elsewhere that got nowhere, short of another spell, is not counted."""
+    return 3 * spells
 
 
 def fmt(s, unit=""):
@@ -138,6 +150,8 @@ def markdown(summary):
     lines.append("| The team's furthest stage (index in the list below) | %s |" % fmt(t["teamFurthestIndex"]))
     lines.append("| Deaths a game hour, the team | %s |" % fmt(t["teamDeathsPerHour"]))
     lines.append("| Stuck spells, the team | %s |" % fmt(t["stuckSpells"]))
+    lines.append("| Stuck game minutes, the team | %s |" % fmt(t["stuckMinutes"]))
+    lines.append("| Rescue plans, the team (of them, out) | %s (%s) |" % (fmt(t["rescues"]), fmt(t["rescuesUnstuck"])))
     lines.append("| Model tokens, the team | %s |" % fmt(t["tokens"]))
     for stage in STAGES:
         if t["reached_" + stage]:

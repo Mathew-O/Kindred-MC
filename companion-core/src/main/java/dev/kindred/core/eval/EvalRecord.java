@@ -27,11 +27,15 @@ public final class EvalRecord {
     /** A stuck spell: the campaign's own detector gave the spot up and tried elsewhere. */
     public record Stuck(long tick, int x, int y, int z, int attempt) { }
 
+    /** A rescue (F-29): when, and the line the log gives it, {@code rescue: <steps> -> unstuck|failed <why>|refused <why>}. */
+    public record Rescue(long tick, String line) { }
+
     private static final class Player {
         final Map<String, Long> stages = new LinkedHashMap<>();
         final List<Death> deaths = new ArrayList<>();
         final List<Stuck> stuck = new ArrayList<>();
-        int deathsDropped, stuckDropped;
+        final List<Rescue> rescues = new ArrayList<>();
+        int deathsDropped, stuckDropped, rescuesDropped;
         long tokens;
     }
 
@@ -67,6 +71,12 @@ public final class EvalRecord {
         var p = players.get(player);
         if (p == null) return;
         if (p.stuck.size() < KEPT) p.stuck.add(stuck); else p.stuckDropped++;
+    }
+
+    public void rescued(String player, Rescue rescue) {
+        var p = players.get(player);
+        if (p == null) return;
+        if (p.rescues.size() < KEPT) p.rescues.add(rescue); else p.rescuesDropped++;
     }
 
     /** The tokens its model players have used so far: the latest total replaces the last. */
@@ -126,7 +136,13 @@ public final class EvalRecord {
                         .append(", \"y\": ").append(s.y()).append(", \"z\": ").append(s.z()).append(", \"attempt\": ").append(s.attempt()).append('}');
                 first = false;
             }
-            out.append("],\n      \"stuckNotListed\": ").append(p.stuckDropped).append(",\n      \"tokens\": ").append(p.tokens).append("\n    }");
+            out.append("],\n      \"stuckNotListed\": ").append(p.stuckDropped).append(",\n      \"rescues\": [");
+            first = true;
+            for (var r : p.rescues) {
+                out.append(first ? "" : ", ").append("{\"tick\": ").append(r.tick()).append(", \"line\": ").append(Json.string(r.line())).append('}');
+                first = false;
+            }
+            out.append("],\n      \"rescuesNotListed\": ").append(p.rescuesDropped).append(",\n      \"tokens\": ").append(p.tokens).append("\n    }");
         }
         out.append(players.isEmpty() ? "}" : "\n  }").append("\n}\n");
         return out.toString();

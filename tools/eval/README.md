@@ -5,7 +5,7 @@ Three scripts, Python 3 standard library only, run a build of Kindred MC unatten
 | Script | What it does |
 | --- | --- |
 | `run.py` | Builds a git ref (or takes a built jar), and for each seed starts a fresh Fabric server in `run/eval/<build>/<seed>/` with the jar and the pinned Fabric API, its world from the seed and `KINDRED_EVAL` set to the scenario. The mod plays the scenario with no one at the console and stops the server; the script keeps `latest.log` and `eval-result.json` and removes the world. |
-| `score.py` | Turns a build's results into `summary.md` and `summary.json`: per seed and per player the stage reached, the time to each stage, deaths a game hour by cause, stuck spells, `RunMetrics`' measures and tokens; then medians and ranges across the seeds. |
+| `score.py` | Turns a build's results into `summary.md` and `summary.json`: per seed and per player the stage reached, the time to each stage, deaths a game hour by cause, stuck spells and stuck game minutes (three for each spell, the watchdog's minutes of no progress before it gives a spot up), rescue plans and how many got the player out, `RunMetrics`' measures and tokens; then medians and ranges across the seeds. |
 | `compare.py` | Puts two builds' summaries side by side on the seeds both ran, and calls a difference worth noting only when the two ranges do not overlap. |
 
 ```
@@ -30,6 +30,8 @@ tools/eval/compare.py run/eval/<old>/summary.json run/eval/<new>/summary.json --
 | `keep` | `inventory`, `none` (the `keepInventory` rule) | `none` |
 | `lessons` | `on`, `off` (the players' own lessons from their deaths, E-46) | `on` |
 | `atlas` | `on`, `off` (the players' atlas of the world, F-30) | `on` |
+| `rescue` | `on`, `off` (a stuck player asks the strategist for a way out, F-29; only with `strategist=on`) | `on` |
+| `advice` | `on`, `off` (the strategist's advice; with `strategist=on`, `advice=off` asks it for rescue plans alone) | `on` |
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
@@ -48,7 +50,8 @@ tools/eval/compare.py run/eval/<old>/summary.json run/eval/<new>/summary.json --
 iron pickaxe, diamond, obsidian, portal lit, Nether entered, blaze rods, eyes, stronghold, End, dragon), every death
 (the tick, the cause as the game records it, x y z, light level, time of day, dimension, hunger, under the sky or not,
 the goal's stage, the stance and habits in force, the task it was on), every stuck spell (when the campaign's watchdog
-gave a spot up), and the model tokens it used; and the scenario, earned or staged, the seed, the ticks run, and whether
+gave a spot up), every rescue plan (F-29: when, and its line, `rescue: <steps> -> unstuck`, `-> failed: <why>` or
+`-> refused: <why>`), and the model tokens it used; and the scenario, earned or staged, the seed, the ticks run, and whether
 the run ran all its ticks. Stages are seen once a game second from the player's inventory and dimension, and from the
 cast and the portal's lighting as they complete; a frame's obsidian is cast where it stands and never held.
 

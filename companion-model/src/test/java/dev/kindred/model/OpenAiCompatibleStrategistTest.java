@@ -132,6 +132,32 @@ class OpenAiCompatibleStrategistTest {
     }
 
     @Test
+    void aRescuesStepsComeBackAsTextForCoreToParseWithTheVocabularyInTheInstructions() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"steps\":[\"pillar 3\",\"walk north 2\"],\"reason\":\"Up out of the pit and onto the ledge.\"}", "stop"));
+            var rescue = strategist.rescue("Blocks round it: ...").get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.empty(), rescue.failure());
+            assertEquals(List.of("pillar 3", "walk north 2"), rescue.steps(), "As the model wrote them; core parses them");
+            assertEquals("Up out of the pit and onto the ledge.", rescue.reason());
+            assertEquals(1900, rescue.inputTokens());
+            assertEquals(1536, rescue.cachedTokens());
+            var body = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals(Strategist.RESCUE_MAX_OUTPUT_TOKENS, body.get("max_completion_tokens").getAsInt());
+            var schema = body.getAsJsonObject("response_format").getAsJsonObject("json_schema").getAsJsonObject("schema");
+            assertEquals("array", schema.getAsJsonObject("properties").getAsJsonObject("steps").get("type").getAsString());
+            var messages = body.getAsJsonArray("messages");
+            String system = messages.get(0).getAsJsonObject().get("content").getAsString();
+            assertTrue(system.contains(dev.kindred.core.rescue.RescuePlan.VOCABULARY), "The vocabulary, word for word");
+            assertEquals("Blocks round it: ...", messages.get(1).getAsJsonObject().get("content").getAsString());
+            // A reply with no steps array, or that stopped short, is no plan.
+            replies.add(completion("{\"reason\":\"Just jump.\"}", "stop"));
+            assertEquals(java.util.Optional.of("no steps"), strategist.rescue("r").get(10, TimeUnit.SECONDS).failure());
+            replies.add(completion("{\"steps\":[\"pillar 3\"", "length"));
+            assertEquals(java.util.Optional.of("stopped: length"), strategist.rescue("r").get(10, TimeUnit.SECONDS).failure());
+        }
+    }
+
+    @Test
     void aChoiceNotOfferedOrANameTooLongIsNoAnswer() throws Exception {
         try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
             replies.add(completion("{\"choice\":\"BURN_IT\",\"text\":\"\",\"reason\":\"Why not.\"}", "stop"));

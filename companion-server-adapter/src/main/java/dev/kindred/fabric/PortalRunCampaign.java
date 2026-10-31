@@ -544,6 +544,16 @@ final class PortalRunCampaign {
     }
 
     void taskFinished(Task task, boolean completed, long tick) {
+        taskFinished(task, completed, tick, "");
+    }
+
+    /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
+    void taskFinished(Task task, boolean completed, long tick, String why) {
+        if (task != null && !completed) {
+            if (blocked.size() >= 5) blocked.removeFirst();
+            blocked.addLast("at " + tick / 20 + "s: " + task.label() + (why == null || why.isBlank() ? "" : " - " + why));
+        }
+        if (task != null && task.equals(rescueTask)) rescueTaskFinished(completed, why, tick);
         if (task != null) stronghold.taskFinished(task, completed, tick);
         if (task != null && task.equals(relocateWalk)) relocateWalk = null; // Ended, however: the next look judges it.
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
@@ -892,6 +902,8 @@ final class PortalRunCampaign {
 
     /** Game time with no progress, spent on active work or with nothing feasible, before trying somewhere else. */
     static final int STUCK_TICKS = 3_600;
+    /** {@link #STUCK_TICKS}, or less for a fixture that cannot wait minutes for the watchdog. */
+    private long stuckTicks = STUCK_TICKS;
     private long stuckClock;
     private boolean lastActive;
     private int stuckLevel;
@@ -938,6 +950,15 @@ final class PortalRunCampaign {
         } else if (newGround) {
             stuckClock = 0;
         }
+        // A rescue plan given it goes first, a step at a time, each step an ordinary task as any other (F-29).
+        if (rescuePlan != null) {
+            Optional<Task> step = rescueStep(body, tick);
+            if (step.isPresent()) {
+                progress = stageLabel(stage) + ": " + step.get().label();
+                lastActive = false;
+                return step;
+            }
+        }
         boolean active = planned.isEmpty() || !passive(planned.get());
         // On the way to the End the leg keeps its own headway (its headings turn when they stop gaining ground): the
         // portal's watchdog counts only the portal's materials, which never change out there.
@@ -956,7 +977,7 @@ final class PortalRunCampaign {
         // the plan's climb by hand and the move's dug two ways out of one pocket, neither finished (F-25c4an).
         boolean byHand = relocate != null && planned.isPresent() && planned.get().label().endsWith(" by hand");
         if (active || byHand) {
-            if (relocate == null && stuckClock > STUCK_TICKS) startRelocating(groundBelow(body.entity()));
+            if (relocate == null && stuckClock > stuckTicks) startRelocating(groundBelow(body.entity()));
             Optional<Task> away = relocateStep(body);
             // A step that keeps failing ends this move elsewhere, as it would end any plan step; the next stuck spell tries another heading.
             if (away.isPresent() && setAside.getOrDefault(away.get(), Long.MIN_VALUE) > tick) {
@@ -1016,6 +1037,8 @@ final class PortalRunCampaign {
         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
         stuckClock = 0;
+        // Its own move elsewhere has had its turn and it is stuck again: a rescue may be asked for this spell (F-29).
+        if (stuckLevel >= 2) rescueSpell = stuckSpells;
         tunnelled.clear();
         if (!elsewhere) {
             blockedUntil.clear();
@@ -1028,19 +1051,279 @@ final class PortalRunCampaign {
             generatorTried.clear();
             exploreStalls = 0;
             KindredMod.LOGGER.info("Goal made no progress for {} ticks near {} with nowhere else to go; looking again at what was set aside (attempt {})",
-                    STUCK_TICKS, lastFeet.toShortString(), stuckLevel);
+                    stuckTicks, lastFeet.toShortString(), stuckLevel);
             return;
         }
         Direction heading = digDirection;
         for (int i = 0; i < stuckLevel; i++) heading = heading.rotateYClockwise();
         relocateTo(stuckLevel % 3 == 0 && home != null && home.getSquaredDistance(lastFeet) > 16 * 16 ? home : lastFeet.offset(heading, 24));
-        KindredMod.LOGGER.info("Goal made no progress for {} ticks near {}; trying {} (attempt {})", STUCK_TICKS,
+        KindredMod.LOGGER.info("Goal made no progress for {} ticks near {}; trying {} (attempt {})", stuckTicks,
                 lastFeet.toShortString(), relocate.toShortString(), stuckLevel);
+    }
+
+    // ------------------------------------------------------------------ rescue plans (F-29)
+
+    /** Tasks that failed or were refused lately, with why, oldest first: the last five, for a rescue's report. */
+    private final java.util.ArrayDeque<String> blocked = new java.util.ArrayDeque<>();
+    /** The stuck spell a rescue is wanted for: one whose move elsewhere has had its turn; 0 for none. */
+    private int rescueSpell;
+    /** The plan being carried out, the step it is on, how many of that step's actions are done, and its task given out. */
+    private dev.kindred.core.rescue.RescuePlan rescuePlan;
+    private int rescueStep, rescueDone;
+    private Task rescueTask;
+    private long rescueTaskSince;
+    /** The longest a plan's step may take before the plan is given up: a minute of game time. */
+    static final long RESCUE_STEP_TICKS = 1_200;
+    private BlockPos rescueFrom;
+    private int rescueFor;
+    private String rescueName = "";
+    /** The rescues it has carried out, as the log says them: the last fifty. */
+    private final java.util.ArrayDeque<String> rescues = new java.util.ArrayDeque<>();
+
+    static final String RESCUE_LABEL = "Rescue: ";
+
+    /** The stuck spell a rescue is wanted for, or 0. */
+    int rescueWanted() { return rescueSpell; }
+
+    /** Whether a rescue plan is being carried out. */
+    boolean rescuing() { return rescuePlan != null; }
+
+    /** The rescues carried out, oldest first: {@code rescue: <steps> -> unstuck} or {@code -> failed <why>}. */
+    List<String> rescues() { return List.copyOf(rescues); }
+
+    /** For fixtures: the watchdog gives a spot up after {@code ticks} of no progress rather than three minutes. */
+    void stuckTicksForTest(long ticks) { stuckTicks = ticks; }
+
+    /**
+     * What a rescue's adviser is told (F-29), about 800 tokens: where it is and how it is; the light at its feet; the
+     * blocks round it nine by nine and five high, from two below its feet to two above, each kind of block a letter; the
+     * last five things refused or failed, with when; what it carries; what the goal wants next; its stance and habits;
+     * and what its own tries did. Only what it can see from where it stands, as a player sees it.
+     */
+    String rescueReport(ServerPlayerEntity player, String name) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var out = new StringBuilder();
+        out.append(name).append(" is stuck at ").append(feet.getX()).append(' ').append(feet.getY()).append(' ').append(feet.getZ())
+                .append(" in the ").append(world.getRegistryKey().getValue().getPath().replace('_', ' '))
+                .append(player.isOnGround() ? ", standing" : player.isTouchingWater() ? ", in water" : ", not on the ground")
+                .append(", health ").append(Math.round(player.getHealth())).append("/20, food ").append(player.getHungerManager().getFoodLevel())
+                .append("/20, ").append(world.isNight() ? "night" : "day").append(".\n");
+        out.append("Light at its feet: ").append(world.getLightLevel(feet)).append(".\n");
+        out.append("The blocks round it, from two below its feet to two above; in each layer rows run north to south and columns west to east; "
+                + "P is the player, . is air:\n");
+        var key = new LinkedHashMap<String, Character>();
+        String letters = "ABCDEFGHIJKLMNOQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        for (int dy = -2; dy <= 2; dy++) {
+            out.append("y ").append(feet.getY() + dy).append(dy == 0 ? ", its feet" : dy == 1 ? ", its head" : "").append(":\n");
+            for (int dz = -4; dz <= 4; dz++) {
+                for (int dx = -4; dx <= 4; dx++) {
+                    if (dx == 0 && dz == 0 && (dy == 0 || dy == 1)) {
+                        out.append('P');
+                        continue;
+                    }
+                    var state = world.getBlockState(feet.add(dx, dy, dz));
+                    if (state.isAir()) {
+                        out.append('.');
+                        continue;
+                    }
+                    String id = Registries.BLOCK.getId(state.getBlock()).getPath();
+                    Character letter = key.get(id);
+                    if (letter == null) {
+                        letter = key.size() < letters.length() ? letters.charAt(key.size()) : '?';
+                        key.put(id, letter);
+                    }
+                    out.append(letter);
+                }
+                out.append('\n');
+            }
+        }
+        out.append("Key: ");
+        key.forEach((id, letter) -> out.append(letter).append(' ').append(id).append("; "));
+        out.append("\n");
+        out.append("Refused or failed lately, oldest first:").append(blocked.isEmpty() ? " nothing\n" : "\n");
+        for (String b : blocked) out.append("- ").append(b).append('\n');
+        var inventory = player.getInventory();
+        var carried = new LinkedHashMap<String, Integer>();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            var stack = inventory.getStack(slot);
+            if (!stack.isEmpty()) carried.merge(Registries.ITEM.getId(stack.getItem()).getPath() + (slot < 9 ? " (hotbar)" : ""), stack.getCount(), Integer::sum);
+        }
+        out.append("Carries: ");
+        if (carried.isEmpty()) out.append("nothing");
+        carried.forEach((item, count) -> out.append(count).append(' ').append(item).append("; "));
+        out.append("\n");
+        out.append("The goal: ").append(stageLabel(stage)).append("; doing: ").append(progress).append(".\n");
+        out.append("Stance: ").append(stance()).append("; habits: ").append(habits.isEmpty() ? "none" : habits.toString()).append(".\n");
+        out.append("Its own tries: no progress for ").append(stuckLevel).append(stuckLevel == 1 ? " spell" : " spells")
+                .append(" of three minutes in a row; moves elsewhere tried ").append(Math.max(0, stuckLevel - 1))
+                .append(relocate == null ? "" : ", the last toward " + relocate.getX() + " " + relocate.getY() + " " + relocate.getZ())
+                .append(".\n");
+        return out.toString();
+    }
+
+    /**
+     * Carry out {@code plan} (F-29), parsed and checked, for the stuck spell {@code spell}: from the next look, a step at a
+     * time before anything else of the goal's, each worked out from where the player stands when it comes up and given
+     * out as an ordinary task, dispatched and checked as every task is. The first that does not go ends the plan.
+     */
+    void rescue(dev.kindred.core.rescue.RescuePlan plan, int spell, String name) {
+        rescuePlan = plan;
+        rescueName = name;
+        rescueStep = 0;
+        rescueDone = 0;
+        rescueTask = null;
+        rescueFrom = lastFeet;
+        rescueFor = spell;
+        event("a rescue plan: " + plan.text());
+    }
+
+    /** A reply turned down before anything moved (F-29): recorded as the rescues carried out are, with why. */
+    void rescueRefused(List<String> steps, String why, String name) {
+        String line = "rescue: " + String.join(", ", steps) + " -> refused: " + why;
+        if (rescues.size() >= 50) rescues.removeFirst();
+        rescues.addLast(line);
+        event(line, false);
+        KindredMod.LOGGER.info("{} {}; nothing moved", name, line);
+    }
+
+    /** The plan's next task from where the player stands, or none once it is carried out (or cannot be). */
+    private Optional<Task> rescueStep(NativePlayerBody body, long tick) {
+        // A step given out goes on until it ends: worked out afresh mid-jump, a pillar was a new task each look, the one
+        // that ended matched none, and it pillared on until its blocks ran out. One that never ends ends the plan.
+        if (rescueTask != null) {
+            if (tick - rescueTaskSince <= RESCUE_STEP_TICKS) return Optional.of(rescueTask);
+            endRescue("failed: '" + rescuePlan.steps().get(rescueStep).text() + "' did not end", tick);
+            return Optional.empty();
+        }
+        var player = body.entity();
+        BlockPos feet = player.getBlockPos();
+        while (rescueStep < rescuePlan.steps().size()) {
+            var step = rescuePlan.steps().get(rescueStep);
+            String label = RESCUE_LABEL + step.text();
+            Optional<Task> task;
+            switch (step.verb()) {
+                case WALK -> task = rescueDone > 0 ? Optional.empty()
+                        : Optional.of(go(feet.offset(direction(step.way()), step.count()), 0.8, false, label));
+                case DIG -> {
+                    task = Optional.empty();
+                    var world = player.getServerWorld();
+                    for (int k = 1; k <= step.count() && task.isEmpty(); k++) {
+                        List<BlockPos> cells = switch (step.way()) {
+                            case UP -> List.of(feet.up(1 + k));
+                            case DOWN -> List.of(feet.down(k));
+                            default -> List.of(feet.offset(direction(step.way()), k), feet.offset(direction(step.way()), k).up());
+                        };
+                        for (BlockPos cell : cells) {
+                            if (task.isEmpty() && !world.getBlockState(cell).isAir() && world.getFluidState(cell).isEmpty()) {
+                                task = Optional.of(breakAt(cell, label + ": " + cell.toShortString()));
+                            }
+                        }
+                    }
+                }
+                case PILLAR, PLACE -> {
+                    if (rescueDone >= step.count()) {
+                        task = Optional.empty();
+                        break;
+                    }
+                    int slot = heldBlock(player);
+                    if (slot < 0) {
+                        endRescue("failed: no block in its hotbar for '" + step.text() + "'", tick);
+                        return Optional.empty();
+                    }
+                    task = Optional.of(step.verb() == dev.kindred.core.rescue.RescuePlan.Verb.PILLAR
+                            ? new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label)
+                            : new Task("native_place", coords(feet.offset(direction(step.way())), Map.of("slot", String.valueOf(slot))), label));
+                }
+                case WAIT -> task = rescueDone > 0 ? Optional.empty()
+                        : Optional.of(new Task("native_wait", Map.of("seconds", String.valueOf(step.count())), label));
+                case EAT -> {
+                    if (rescueDone > 0) {
+                        task = Optional.empty();
+                        break;
+                    }
+                    int slot = -1;
+                    for (int s = 0; s < 9 && slot < 0; s++) {
+                        if (player.getInventory().getStack(s).contains(net.minecraft.component.DataComponentTypes.FOOD)) slot = s;
+                    }
+                    if (slot < 0) {
+                        endRescue("failed: no food in its hotbar for 'eat'", tick);
+                        return Optional.empty();
+                    }
+                    task = Optional.of(new Task("native_eat", Map.of("slot", String.valueOf(slot)), label));
+                }
+                case RETREAT -> task = rescueDone > 0 ? Optional.empty()
+                        : Optional.of(new Task("native_retreat", Map.of("direction", step.way().name().toLowerCase(java.util.Locale.ROOT),
+                        "blocks", String.valueOf(step.count())), label));
+                default -> task = Optional.empty();
+            }
+            if (task.isPresent()) {
+                rescueTask = task.get();
+                rescueTaskSince = tick;
+                return task;
+            }
+            rescueStep++;
+            rescueDone = 0;
+        }
+        // Every step done: out, if it stands somewhere new; else the plan did not get it out.
+        endRescue(rescueFrom != null && rescueFrom.getSquaredDistance(feet) >= 2 * 2 ? "unstuck" : "failed: it stands where it was", tick);
+        return Optional.empty();
+    }
+
+    private void rescueTaskFinished(boolean completed, String why, long tick) {
+        rescueTask = null;
+        if (!completed) {
+            var step = rescuePlan.steps().get(rescueStep);
+            endRescue("failed: '" + step.text() + "' did not go" + (why == null || why.isBlank() ? "" : " (" + why + ")"), tick);
+            return;
+        }
+        rescueDone++;
+    }
+
+    private void endRescue(String outcome, long tick) {
+        String line = "rescue: " + rescuePlan.text() + " -> " + outcome;
+        if (rescues.size() >= 50) rescues.removeFirst();
+        rescues.addLast(line);
+        event(line);
+        KindredMod.LOGGER.info("{} {}", rescueName, line);
+        rescuePlan = null;
+        rescueTask = null;
+        // Out: the watchdog's run of spells ends with it.
+        if (outcome.equals("unstuck")) {
+            stuckClock = 0;
+            stuckLevel = 0;
+            relocate = null;
+        }
+    }
+
+    /** A hotbar slot holding a block it can place, a full block first; -1 for none. */
+    private static int heldBlock(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        int any = -1;
+        for (int slot = 0; slot < 9; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!(stack.getItem() instanceof net.minecraft.item.BlockItem blockItem)) continue;
+            var state = blockItem.getBlock().getDefaultState();
+            if (state.isFullCube(player.getServerWorld(), BlockPos.ORIGIN) && !state.hasBlockEntity()) return slot;
+            if (any < 0 && !state.hasBlockEntity()) any = slot;
+        }
+        return any;
+    }
+
+    private static Direction direction(dev.kindred.core.rescue.RescuePlan.Way way) {
+        return switch (way) {
+            case NORTH -> Direction.NORTH;
+            case SOUTH -> Direction.SOUTH;
+            case EAST -> Direction.EAST;
+            case WEST -> Direction.WEST;
+            case UP -> Direction.UP;
+            case DOWN -> Direction.DOWN;
+        };
     }
 
     private void relocateTo(BlockPos target) {
         relocate = target.toImmutable();
-        relocateUntil = lastTick + STUCK_TICKS;
+        relocateUntil = lastTick + stuckTicks;
         relocateBest = Double.MAX_VALUE;
         relocateDig = false;
         relocateLevel = false;

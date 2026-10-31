@@ -380,6 +380,7 @@ final class PlayerRuntime {
         this.metadataDirectory = metadataDirectory;
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
+        this.memory.rescueHost(rescueHost);
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
@@ -4074,7 +4075,7 @@ final class PlayerRuntime {
                     entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
             }
-            entry.campaign.taskFinished(task, completed, server.getTicks());
+            entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
         entry.cachedRoutineCandidates = List.of();
@@ -5802,7 +5803,7 @@ final class PlayerRuntime {
                         if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
                             KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(),
                                     entry.blocker, entry.campaignTasks.get(chosen.id()).label());
-                            entry.campaign.taskFinished(entry.campaignTasks.get(chosen.id()), false, server.getTicks());
+                            entry.campaign.taskFinished(entry.campaignTasks.get(chosen.id()), false, server.getTicks(), entry.blocker);
                             entry.routineRefreshPending = true;
                             entry.cachedRoutineCandidates = List.of();
                         }
@@ -10923,6 +10924,9 @@ final class PlayerRuntime {
         strategist = Optional.of(StrategistBridge.of(given, metadataDirectory));
         memory = strategist.get();
         memory.lessons(lessons);
+        memory.rescueHost(rescueHost);
+        memory.rescue(rescueOn);
+        memory.advice(adviceOn);
     }
 
     /** Its memory's notes as the report shows them, and the habits its goal keeps, for fixtures (E-46). */
@@ -10946,6 +10950,103 @@ final class PlayerRuntime {
     void lessons(boolean on) {
         lessons = on;
         memory.lessons(on);
+    }
+
+    private boolean rescueOn = true, adviceOn = true;
+
+    /** Rescue plans on or off (F-29): on by default, with a strategist; {@code KINDRED_RESCUE=off} or a scenario turns them off. */
+    void rescue(boolean on) {
+        rescueOn = on;
+        memory.rescue(on);
+    }
+
+    /** The strategist's advice on or off; off, a strategist is asked for rescue plans alone (a scenario's {@code advice=off}). */
+    void advice(boolean on) {
+        adviceOn = on;
+        memory.advice(on);
+    }
+
+    /** How long a rescue plan's fence holds after it is asked for: the planning lane's deadline and a little more. */
+    private static final java.time.Duration RESCUE_FENCE = java.time.Duration.ofSeconds(20);
+
+    /** The skills a rescue plan's steps may use: those of its vocabulary that this build installs; fewer for a fixture. */
+    private java.util.Set<String> rescueSkills = installedRescueSkills();
+
+    private static java.util.Set<String> installedRescueSkills() {
+        var installed = new java.util.HashSet<String>();
+        for (var verb : dev.kindred.core.rescue.RescuePlan.Verb.values()) {
+            String skill = dev.kindred.core.rescue.RescuePlan.skill(verb);
+            try {
+                NativePlayerSkills.descriptor(skill);
+                installed.add(skill);
+            } catch (IllegalArgumentException notInstalled) {
+                // Not a skill of this build: a plan using it is refused.
+            }
+        }
+        return java.util.Set.copyOf(installed);
+    }
+
+    /**
+     * What a rescue needs of the runtime (F-29). The fence is the player's session and revisions when it asked; it
+     * holds while the session and the intent revision stand (a stop, a resume or a command moves the latter), and the
+     * task revision is not compared: the goal works on while the plan is asked for, and every task it gives out moves it.
+     */
+    private final StrategistBridge.RescueHost rescueHost = new StrategistBridge.RescueHost() {
+        @Override
+        public dev.kindred.core.ProposalFence fence(UUID id) {
+            Entry entry = entries.get(id);
+            var data = entry == null ? null : entry.arbiter != null ? entry.arbiter.snapshot() : entry.data;
+            UUID epoch = entry == null || entry.arbiter == null ? new UUID(0, 0) : entry.arbiter.sessionEpoch();
+            return new dev.kindred.core.ProposalFence(epoch, data == null ? 0 : data.intentRevision(), data == null ? 0 : data.taskRevision(),
+                    java.time.Instant.now().plus(RESCUE_FENCE));
+        }
+
+        @Override
+        public boolean current(UUID id, dev.kindred.core.ProposalFence fence) {
+            Entry entry = entries.get(id);
+            if (entry == null || entry.arbiter == null) return false;
+            var data = entry.arbiter.snapshot();
+            return entry.arbiter.sessionEpoch().equals(fence.sessionEpoch()) && data.intentRevision() == fence.intentRevision()
+                    && !data.stopLatched();
+        }
+
+        @Override
+        public BlockPos where(UUID id) {
+            Entry entry = entries.get(id);
+            return entry == null || entry.nativeBody == null || !entry.nativeBody.connected() ? null : entry.nativeBody.entity().getBlockPos();
+        }
+
+        @Override
+        public java.util.Set<String> installed() { return rescueSkills; }
+
+        @Override
+        public void capture(UUID id) {
+            Entry entry = entries.get(id);
+            if (replays == null || entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return;
+            var campaign = entry.campaign;
+            replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("stuck",
+                    String.valueOf(entry.goal), campaign == null ? "no goal" : campaign.progress(),
+                    entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
+                    campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
+                    "stuck"));
+        }
+    };
+
+    /** For fixtures (F-29): the skills a rescue plan may use, as though the others were not installed. */
+    void rescueSkillsForFixtures(java.util.Set<String> skills) { rescueSkills = java.util.Set.copyOf(skills); }
+
+    /** For fixtures (F-29): a player's watchdog gives a spot up after {@code ticks} of no progress, not three minutes. */
+    void stuckTicksForFixtures(UUID id, long ticks) {
+        Entry entry = entries.get(id);
+        if (entry == null) return;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.stuckTicksForTest(ticks);
+    }
+
+    /** A player's rescues as its goal recorded them, for fixtures (F-29). */
+    List<String> rescuesForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? List.of() : entry.campaign.rescues();
     }
 
     /** What it last told its team of a find, for fixtures (E-40a). */
@@ -11278,7 +11379,7 @@ final class PlayerRuntime {
      * What a run's observer reads of a player once a second (F-26): the stuck spells its goal has had and the latest's
      * level, where it stands, its End leg's stage, and the model tokens it has used today; empty with no such player.
      */
-    record RunState(int stuckSpells, int stuckLevel, net.minecraft.util.math.BlockPos at, String endStage, long modelTokens) { }
+    record RunState(int stuckSpells, int stuckLevel, net.minecraft.util.math.BlockPos at, String endStage, long modelTokens, List<String> rescues) { }
 
     Optional<RunState> runState(String name) {
         requireThread();
@@ -11287,7 +11388,8 @@ final class PlayerRuntime {
             var campaign = entry.campaign;
             long tokens = strategist.map(bridge -> bridge.tokensToday(entry.data.id())).orElse(0L);
             return Optional.of(new RunState(campaign == null ? 0 : campaign.stuckSpells(), campaign == null ? 0 : campaign.stuckLevel(),
-                    entry.nativeBody.entity().getBlockPos().toImmutable(), campaign == null ? "" : String.valueOf(campaign.stronghold().stage()), tokens));
+                    entry.nativeBody.entity().getBlockPos().toImmutable(), campaign == null ? "" : String.valueOf(campaign.stronghold().stage()), tokens,
+                    campaign == null ? List.of() : campaign.rescues()));
         }
         return Optional.empty();
     }

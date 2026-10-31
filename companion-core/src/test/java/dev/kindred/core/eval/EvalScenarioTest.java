@@ -35,6 +35,8 @@ class EvalScenarioTest {
         assertFalse(EvalScenario.parse("lessons=off").lessons());
         assertTrue(EvalScenario.parse("lessons=off").earned(), "Lessons off hand nothing out either");
         assertTrue(s.atlas() && !EvalScenario.parse("atlas=off").atlas(), "The atlas is on unless the scenario turns it off (F-30)");
+        assertTrue(s.rescue() && !EvalScenario.parse("rescue=off").rescue(), "Rescue plans are on unless the scenario turns them off (F-29)");
+        assertTrue(s.advice() && !EvalScenario.parse("strategist=on; advice=off").advice(), "Advice off asks for rescues alone");
     }
 
     @Test
@@ -62,8 +64,10 @@ class EvalScenarioTest {
 
     @Test
     void itsTextReadsBackAsTheSameScenario() {
-        var s = EvalScenario.parse("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory; lessons=off; atlas=off");
-        assertEquals("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory; lessons=off; atlas=off", s.asText());
+        var s = EvalScenario.parse("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory; lessons=off; atlas=off;"
+                + " rescue=off; advice=off");
+        assertEquals("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory; lessons=off; atlas=off;"
+                + " rescue=off; advice=off", s.asText());
         assertEquals(s, EvalScenario.parse(s.asText()));
     }
 }

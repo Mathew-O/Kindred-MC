@@ -91,6 +91,42 @@ public interface Strategist extends AutoCloseable {
         return CompletableFuture.completedFuture(Answer.failed("questions not supported by " + provider(), 0));
     }
 
+    /** A rescue's own bound on the reply (F-29): six short steps and a sentence why. */
+    int RESCUE_MAX_OUTPUT_TOKENS = 300;
+
+    /**
+     * What a request for a way out came to (F-29): the steps as the model wrote them, not yet parsed (core parses and
+     * bounds them, and refuses the whole plan for one bad step), why, the tokens and time it took, and why it failed if
+     * it did. Nothing of it is ever run as code.
+     */
+    record Rescue(List<String> steps, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis,
+                  Optional<String> failure) {
+        public Rescue {
+            steps = steps == null ? List.of() : steps.stream().map(step -> step == null ? "" : step).toList();
+            reason = reason == null ? "" : reason;
+            Objects.requireNonNull(failure);
+        }
+
+        static Rescue failed(String why, long millis) { return new Rescue(List.of(), "", 0, 0, 0, millis, Optional.of(why)); }
+
+        static Rescue failed(String why, long in, long cached, long out, long millis) {
+            return new Rescue(List.of(), "", in, cached, out, millis, Optional.of(why));
+        }
+    }
+
+    /**
+     * Ask for a way out of where the player is stuck (F-29), on the planning lane within its deadline, with {@code report}
+     * the scene and what was tried. A provider that cannot says so, and nothing happens.
+     */
+    default CompletableFuture<Rescue> rescue(String report) {
+        return CompletableFuture.completedFuture(Rescue.failed("rescue plans not supported by " + provider(), 0));
+    }
+
+    /** Tokens to reserve before asking for a rescue: the instructions and the report, conservatively, and the most the reply may use. */
+    static long rescueReservation(String report) {
+        return (RescuePrompt.SYSTEM.length() + report.length()) / 3 + 100 + RESCUE_MAX_OUTPUT_TOKENS;
+    }
+
     /** Tokens to reserve before asking {@code question}: its input, conservatively, and the most the reply may use. */
     static long reservation(Question question) {
         return (question.system().length() + question.text().length()) / 3 + 100 + ASK_MAX_OUTPUT_TOKENS;

@@ -16,6 +16,23 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Rescue plans (F-29) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to a scratch class (not committed), and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 825 JUnit tests, 6 skipped, 0 failures: 832 less the
+  16 that tested `ModelGateway`'s retired accounting, with 8 for `RescuePlanTest` and 1 for the OpenAI-compatible rescue
+  reply.
+- `NativeRescueGameTests` 6 of 6 in each of three runs alone, the last on the final code. In the first two runs, 4 and
+  5 of 6. In the pit, each new look gave the pillar out afresh from the feet it had mid-jump, so the pillar that ended matched none and
+  it pillared on until its glass ran out: a step now stands until it ends. The edits fixture switched the server's edits
+  off, which pauses the whole goal, so no step was given out to be refused: it now gives the player a work area beside
+  the pit, and the pillar is refused for being outside it. With rescues off: 0 of 6.
+- The neighbours, together in one run: 12 of 12 for the watchdog's moves elsewhere, the pocket, the far move, the
+  walled-in dig, the pit, the flooded pit, the strategist's habits and advice, the memory across a save and two lessons
+  fixtures; and 16 of 16 for `NativeVoiceGameTests`, `NativeKitNameGameTests` and `ReplayGameTests`.
+
 ## The atlas (F-30) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs

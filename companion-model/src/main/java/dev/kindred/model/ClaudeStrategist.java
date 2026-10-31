@@ -66,6 +66,11 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription(ConversationPrompt.ITEM) String item,
             @JsonPropertyDescription(ConversationPrompt.REASON) String reason) { }
 
+    /** A rescue's reply as the model is constrained to write it (F-29): the steps as text, which core parses. */
+    public record RescueReply(
+            @JsonPropertyDescription(RescuePrompt.STEPS) List<String> steps,
+            @JsonPropertyDescription(RescuePrompt.REASON) String reason) { }
+
     /** A follow-up for the player's queue (F-19e). */
     public record FollowUp(
             @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) Need need,
@@ -220,6 +225,48 @@ public final class ClaudeStrategist implements Strategist {
             return Answer.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
         } catch (RuntimeException other) {
             return Answer.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
+        }
+    }
+
+    /**
+     * Asks for a way out of where the player is stuck (F-29), in the background on the planning lane, within its
+     * fifteen seconds from the moment it was asked (time spent waiting behind advice counts).
+     */
+    @Override
+    public CompletableFuture<Rescue> rescue(String report) {
+        Objects.requireNonNull(report);
+        long started = System.nanoTime();
+        return CompletableFuture.supplyAsync(() -> rescueCall(report, started), executor);
+    }
+
+    private Rescue rescueCall(String report, long started) {
+        long left = DEADLINE.toMillis() - (System.nanoTime() - started) / 1_000_000;
+        if (left <= 0) return Rescue.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
+        var builder = MessageCreateParams.builder()
+                .model(model)
+                .maxTokens(RESCUE_MAX_OUTPUT_TOKENS)
+                .systemOfTextBlockParams(List.of(TextBlockParam.builder().text(RescuePrompt.SYSTEM).build()))
+                .outputConfig(StructuredOutputConfig.<RescueReply>builder().format(RescueReply.class).effort(Optional.ofNullable(effort)).build())
+                .addUserMessage(report);
+        builder.thinking(ThinkingConfigDisabled.builder().build());
+        try {
+            var message = client.messages().create(builder.build(), RequestOptions.builder().timeout(java.time.Duration.ofMillis(left)).build());
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            var usage = message.usage();
+            long cached = usage.cacheReadInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            String stop = message.stopReason().map(Object::toString).orElse("none");
+            if (!stop.equalsIgnoreCase("end_turn")) return Rescue.failed("stopped: " + stop, in, cached, out, millis);
+            Optional<RescueReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
+            if (reply.isEmpty()) return Rescue.failed("no reply text", in, cached, out, millis);
+            return new Rescue(reply.get().steps(), reply.get().reason(), in, cached, out, millis, Optional.empty());
+        } catch (RateLimitException limited) {
+            return Rescue.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
+        } catch (AnthropicServiceException service) {
+            return Rescue.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
+        } catch (RuntimeException other) {
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            return Rescue.failed(millis >= DEADLINE.toMillis() ? "deadline passed" : other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), millis);
         }
     }
 

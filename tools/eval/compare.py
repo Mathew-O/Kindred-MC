@@ -11,15 +11,16 @@ import statistics
 from pathlib import Path
 
 MEASURES = [("teamFurthestIndex", "The team's furthest stage (index)", "more"), ("teamDeathsPerHour", "Deaths a game hour, the team", "fewer"),
-            ("stuckSpells", "Stuck spells, the team", "fewer"), ("tokens", "Model tokens, the team", "fewer")]
+            ("stuckSpells", "Stuck spells, the team", "fewer"), ("stuckMinutes", "Stuck game minutes, the team", "fewer"),
+            ("rescues", "Rescue plans, the team", "-"), ("tokens", "Model tokens, the team", "fewer")]
 
 
 def on_seeds(summary, seeds, key):
     values = []
     for seed in seeds:
         s = summary["perSeed"][seed]
-        if key == "stuckSpells":
-            values.append(sum(p["stuckSpells"] for p in s["players"].values()))
+        if key in ("stuckSpells", "stuckMinutes", "rescues"):
+            values.append(round(sum(p.get(key, 0) for p in s["players"].values()), 1))
         elif key == "tokens":
             values.append(sum(p["tokens"] for p in s["players"].values()))
         else:

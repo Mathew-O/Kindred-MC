@@ -41,6 +41,8 @@ public final class KindredMod implements ModInitializer {
     private static boolean lessons;
     /** Whether the players keep and use an atlas of the world (F-30): {@code KINDRED_ATLAS=off} turns it off. */
     private static boolean atlas;
+    /** Whether a stuck player asks the strategist for a way out (F-29): {@code KINDRED_RESCUE=off} turns it off. */
+    private static boolean rescue;
 
     static PlayerRuntime runtime() { return runtime; }
 
@@ -80,6 +82,7 @@ public final class KindredMod implements ModInitializer {
         replays = replaysAsked != null ? replaysAsked.equalsIgnoreCase("on") : eval != null;
         lessons = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_LESSONS")).trim());
         atlas = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_ATLAS")).trim());
+        rescue = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_RESCUE")).trim());
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
         }
@@ -93,6 +96,10 @@ public final class KindredMod implements ModInitializer {
             if (!atlas) {
                 runtime.atlas(false);
                 LOGGER.info("The players' atlas of the world is off (KINDRED_ATLAS=off)");
+            }
+            if (!rescue) {
+                runtime.rescue(false);
+                LOGGER.info("Rescue plans are off (KINDRED_RESCUE=off)");
             }
             if (replays) {
                 var run = server.getRunDirectory();

@@ -34,7 +34,7 @@ class EvalRecordTest {
         record.tokens("Kindred", 1200);
         record.tokens("Kindred", 900);
         String json = record.toJson("abc \"quoted\"", 8675309, 200, true);
-        assertTrue(json.contains("\"scenario\": \"starters=Kindred,Sol; goal=nether; edits=on; ticks=200; sprint=on; strategist=off; voice=off; keep=inventory; lessons=on; atlas=on\""), json);
+        assertTrue(json.contains("\"scenario\": \"starters=Kindred,Sol; goal=nether; edits=on; ticks=200; sprint=on; strategist=off; voice=off; keep=inventory; lessons=on; atlas=on; rescue=on; advice=on\""), json);
         assertTrue(json.contains("\"kind\": \"staged\""), "kept inventories are staged");
         assertTrue(json.contains("\"build\": \"abc \\\"quoted\\\"\""), "quotes escaped");
         assertTrue(json.contains("\"seed\": 8675309") && json.contains("\"ticksRun\": 200") && json.contains("\"complete\": true"));

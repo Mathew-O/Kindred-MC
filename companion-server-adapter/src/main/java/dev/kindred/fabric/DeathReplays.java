@@ -108,7 +108,7 @@ final class DeathReplays implements AutoCloseable {
         Path folder = dir.resolve(player + "-" + tick);
         Future<?> written = writer.submit(() -> write(folder, scene, state, registries, player));
         latest = new Capture(folder, spent, cpu, written);
-        KindredMod.LOGGER.info("{} death replay captured in {} ms on the server thread ({} ms of its time)", player,
+        KindredMod.LOGGER.info("{} {} replay captured in {} ms on the server thread ({} ms of its time)", player, context.kind(),
                 String.format(java.util.Locale.ROOT, "%.1f", spent / 1e6), String.format(java.util.Locale.ROOT, "%.1f", cpu / 1e6));
         return java.util.Optional.of(latest);
     }
