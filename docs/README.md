@@ -73,7 +73,7 @@ Inside each module the Java code lives under `src/main/java/dev/kindred/…`, an
 | How the code is put together | [Architecture](player-architecture.md) |
 | What's done and what isn't | [Tracker](feature-spec.md), [implementation status](implementation-status.md) |
 | Proof that things work | [Validation](validation.md) (test runs), [`evidence/`](evidence) (one file per feature), [live qualification](live-qualification.md) |
-| Plans for bigger features | [Building](building-plan.md), [combat](combat-plan.md), [the player's voice](proposals/player-voice.md), [the next levers](proposals/next-levers.md), [`proposals/`](proposals) |
+| Plans for bigger features | [Building](building-plan.md), [combat](combat-plan.md), [the player's voice](proposals/player-voice.md), [the next levers](proposals/next-levers.md), [living together](proposals/living-together.md), [`proposals/`](proposals) |
 | How the players behave and talk | [Personality](personality-preferences.md), [conversation style](conversation-style.md), [social behaviour](social-behavior.md), [relationships](rapport-and-friendship.md), [mannerisms](mannerisms-and-autonomy.md) |
 | Ideas for later | [Outings and hobbies](adventures-and-hobbies.md), [sharing and discoveries](gifting-and-discoveries.md), [naming and pets](naming-and-pets.md), [progression](independent-progression.md), [building design](architectural-design.md) |
 | Minecraft mechanics and performance notes | [Optimization and quality-of-life guide](optimization-and-qol-guide.md) |
