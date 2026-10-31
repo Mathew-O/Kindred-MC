@@ -93,6 +93,8 @@ public final class Ranch {
     static final long DRAW = 60;
     /** Ticks it waits for animals to move off the gate before opening it to go out anyway. */
     static final long CLEAR = 200;
+    /** Ticks a pair stands jammed at a way in one wide before it puts the food away, and how long it then waits. */
+    static final long JAM = 100, LOOSEN = 200;
     /** Times it goes back out for one animal hung on the fence beside the gate, to bring it round in line again. */
     static final int RELINES = 2;
     /** Within this of an animal it feeds it (a player reaches three blocks to an entity's box). */
@@ -114,6 +116,8 @@ public final class Ranch {
      */
     private final Pos approach;
     private long alignSince = -1;
+    /** When two of the kind were first seen jammed at a way in one wide; -1 while they are not. */
+    private long jamSince = -1;
     /** When it began to wait for the animal it leads to catch up; -1 while it is close enough. */
     private long catchSince = -1;
     private Phase phase = Phase.BUILD;
@@ -274,6 +278,12 @@ public final class Ranch {
         return new Step.Done(outcome, bred);
     }
 
+    /** Two or more of the kind outside in the row of {@code mouth}, within a block of it across: jammed at a way in one wide. */
+    private boolean jammedAt(Observation seen, Pos mouth) {
+        return seen.animals().stream().filter(a -> a.kind() == kind && !inside(a.at()) && a.at().z() == mouth.z()
+                && Math.abs(a.at().x() - mouth.x()) <= 1).count() >= 2;
+    }
+
     /** Those it shut in, now outside the pen within its reach. */
     private Set<UUID> escaped(Observation seen) {
         var out = new HashSet<UUID>();
@@ -300,6 +310,19 @@ public final class Ranch {
             waitingSince = -1;
             lined = false;
             relined = 0;
+        }
+        // Two side by side at a way in one wide, the pasture's doorway or the pen's gate, outside at the foot of the wall or the
+        // fence, each against it beside the way in, hold each other there for good, the player going in and out between them
+        // (the cattle fixture's pair, in four runs of twenty, at the doorway and at the gate). With the food put away they
+        // wander off it, to be led up again one behind the other.
+        boolean jammed = jammedAt(seen, outside()) || approach != null && jammedAt(seen, new Pos(approach.x(), approach.y(), approach.z() - 1));
+        if (!jammed && (jamSince < 0 || seen.tick() - jamSince <= JAM)) jamSince = -1;
+        else if (jamSince < 0) jamSince = seen.tick();
+        if (jamSince >= 0 && seen.tick() - jamSince > JAM) {
+            if (seen.tick() - jamSince <= JAM + LOOSEN) return new Step.Wait(false, "Let the " + kind.noun() + "s wander off the way in");
+            jamSince = -1;
+            alignSince = -1;
+            waitingSince = -1;
         }
         double apart = Math.sqrt(animal.at().distanceSquared(seen.feet()));
         if (in) lined = false;
@@ -355,6 +378,9 @@ public final class Ranch {
             // for lined up again and went back to the gate without it.
             if (approach != null && animal.at().z() >= approach.z() - 2 && seen.feet().z() < approach.z() - 2) {
                 lined = false;
+                // Up to the doorway again, the wait for it to come into line begins afresh: kept from the first time,
+                // the player went straight back through with the animal still beside the doorway (the cattle fixture).
+                alignSince = -1;
                 return go(approach, 1, true, 0, "Back out through the doorway for the " + kind.noun());
             }
             return go(animal.at(), 2, true, 0, "Back to the " + kind.noun() + ", which has stopped following");
@@ -369,8 +395,15 @@ public final class Ranch {
                 return go(approach, 1, true, LEG, "Lead the " + kind.noun() + " up to the doorway");
             }
             boolean behind = Math.abs(animal.at().x() - approach.x()) <= 1 && animal.at().z() > approach.z();
+            // One at a time through a doorway one wide: two side by side each overhang the wall beside it, and neither
+            // steps in past the other (the cattle fixture's pair stood so for thousands of ticks).
+            boolean abreast = seen.animals().stream().anyMatch(other -> other.kind() == kind && !other.id().equals(animal.id())
+                    && !inside(other.at()) && other.at().z() == animal.at().z() && Math.abs(other.at().x() - animal.at().x()) <= 1);
             if (alignSince < 0) alignSince = seen.tick();
-            if (!behind && seen.tick() - alignSince <= DRAW) return new Step.Wait(true, "Let the " + kind.noun() + " come up behind, in line with the doorway");
+            if ((!behind || abreast) && seen.tick() - alignSince <= DRAW) {
+                return new Step.Wait(true, abreast ? "Let the " + kind.noun() + "s come up one behind the other"
+                        : "Let the " + kind.noun() + " come up behind, in line with the doorway");
+            }
             // The wait is not begun again here: asked again before the walk through has run, it is the same walk. Begun
             // again, the second asking waited, and the walk was never made (the pasture fixture, 2026-10-24).
             lined = false;

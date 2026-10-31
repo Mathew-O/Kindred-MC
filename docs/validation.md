@@ -1,5 +1,15 @@
 # AI-player development validation
 
+## The pasture's cattle: a pair jammed at a way in one wide (M-06a1) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- The cattle fixture logged once a second (a scratch copy, not committed), ten runs alone: every failure was the pair side by side at the doorway's mouth, outside against the wall, the player going in and out between them.
+- On the committed code: 4 of 10. After: 9 of 10, then 8 of 10. The first set's failure was the pair either side of the pen's gate, before the gate was covered. The second set's two were other causes, open: the doorway's shut walk refused once, and a pair not ready to breed once.
+- The ranch's pen in the open: 3 of 3 before and after.
+- `RanchTest`: 13 of 13. `build` successful.
+- Evidence: [M-06a](evidence/M-06a.md).
+
 ## Trees on the skyline (F-25c4ap), and the climbs' holds read "long ago" rightly — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

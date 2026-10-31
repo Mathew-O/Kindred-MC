@@ -161,7 +161,18 @@ final class RanchRunner {
                 if (slot < 0) yield swapIn(player, true);
                 yield Optional.of(new PortalRunCampaign.Task("native_feed", Map.of("target", feed.animal().toString(), "slot", str(slot)), feed.why()));
             }
-            case Ranch.Step.Wait wait -> Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), wait.why()));
+            case Ranch.Step.Wait wait -> {
+                // A wait with the food put away puts it away first, as a walk does; held through a wait, a pair jammed at the
+                // pasture's doorway went on following it there (the cattle fixture).
+                if (!wait.holdFood() && isFood(player.getInventory().getMainHandStack())) {
+                    int slot = holdSlot(player, false);
+                    if (slot < 0) yield swapIn(player, false);
+                    BlockPos feet = player.getBlockPos();
+                    yield Optional.of(new PortalRunCampaign.Task("native_goto", Map.of("x", str(feet.getX()), "y", str(feet.getY()), "z", str(feet.getZ()),
+                            "range", "1.5", "hold", str(slot)), "Put the " + ranch.kind().noun() + "s' food away"));
+                }
+                yield Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), wait.why()));
+            }
             case Ranch.Step.Done d -> {
                 if (shut != null) {
                     ranched = d.outcome();
