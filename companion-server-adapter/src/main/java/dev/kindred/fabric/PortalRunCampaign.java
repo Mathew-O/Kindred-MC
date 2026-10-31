@@ -105,6 +105,10 @@ final class PortalRunCampaign {
     private Direction digDirection = Direction.NORTH;
     /** Where a spell hurt and out of food last had open sky over its head (F-25c4ag); none outside such a spell. */
     private BlockPos hungryUpAt;
+    /** Where a climb last found water over its ceiling every way up, when, and the way it tunnels out (F-25c4ah). */
+    private BlockPos underWaterAt;
+    private long underWaterTick;
+    private Direction underWaterHeading;
     private Direction exploreHeading;
     private int exploreFailures;
     private BlockPos exploredFrom;
@@ -2288,6 +2292,10 @@ final class PortalRunCampaign {
         if (!pickaxe) return stranded() ? pillarOut(body, label).or(() -> climb(body, label))
                 : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
+        // Under water, out from under it first: the way it came went under the same water (F-25c4ah).
+        if (underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24) {
+            return climb(body, label).or(() -> retrace(body, label));
+        }
         int surface = player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ());
         int depth = Math.max(1, surface - player.getBlockY());
         // A step of the way back costs about a third of a staircase step (three blocks dug per block climbed).
@@ -2415,6 +2423,8 @@ final class PortalRunCampaign {
         // planned from each was another, none dug through before the next (the flooded pit fixture, F-25c4t).
         boolean swimming = PlayerRuntime.inDeepWater(player);
         while (swimming && world.getFluidState(feet.up()).isIn(net.minecraft.registry.tag.FluidTags.WATER)) feet = feet.up();
+        // Water over the ceiling, a lake's or a river's, refusing a step up: then every way up here meets the same water.
+        boolean waterOver = false;
         for (int turn = 0; turn < 4; turn++) {
             BlockPos step = feet.offset(digDirection);
             BlockPos landing = step.up();
@@ -2422,10 +2432,15 @@ final class PortalRunCampaign {
             boolean refused = passable(world, step) || blocked(landing);
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
                 if (refused || passable(world, cell)) continue;
-                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
+                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) {
+                    waterOver |= world.getFluidState(cell.up()).isIn(FluidTags.WATER);
+                    refused = true;
+                    break;
+                }
                 // Not the block over its head with sand or gravel resting on it: dug out, that falls onto the player, one
                 // block after another as each is dug out of its head room (Kindred suffocated twice so in B7's second pairs).
                 if (cell.equals(feet.up(2)) && world.getBlockState(cell.up()).getBlock() instanceof net.minecraft.block.FallingBlock) {
+                    waterOver |= world.getFluidState(cell.up(2)).isIn(FluidTags.WATER);
                     refused = true;
                     break;
                 }
@@ -2435,8 +2450,24 @@ final class PortalRunCampaign {
                 if (handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
                 refused = true;
             }
-            if (!refused) return Optional.of(go(landing, 0.4, false, label + ": step up"));
+            if (!refused) {
+                underWaterHeading = null;
+                return Optional.of(go(landing, 0.4, false, label + ": step up"));
+            }
             digDirection = digDirection.rotateYClockwise();
+        }
+        // Under water: not over to a wall, whose steps the same water refuses, but along under it, one way, until the
+        // ground over its head is dry. In the live pair on 41f9de9 Kindred, under a lake whose floor of gravel lay on its
+        // corridor's ceiling, went round once a second for eighteen minutes between a step up with no way on, the wall
+        // and the way back (F-25c4ah).
+        if (waterOver && !swimming) {
+            underWaterAt = feet.toImmutable();
+            underWaterTick = lastTick;
+            if (underWaterHeading == null) underWaterHeading = digDirection;
+            digDirection = underWaterHeading;
+            Optional<Task> out = tunnel(body, label + ": out from under the water");
+            underWaterHeading = digDirection;
+            if (out.isPresent()) return out;
         }
         // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
         // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square). Swimming,
