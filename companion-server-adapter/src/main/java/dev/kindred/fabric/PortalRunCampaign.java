@@ -827,6 +827,12 @@ final class PortalRunCampaign {
             relocate = null;
             active = false;
         }
+        // Nor once the goal is reached: there is no progress left to make (F-25c4al).
+        if (!endGoal() && stage == PortalRunPlanner.Stage.DONE) {
+            stuckClock = 0;
+            relocate = null;
+            active = false;
+        }
         if (active) {
             if (relocate == null && stuckClock > STUCK_TICKS) startRelocating(groundBelow(body.entity()));
             Optional<Task> away = relocateStep(body);
@@ -1213,6 +1219,12 @@ final class PortalRunCampaign {
                 return Optional.empty();
             }
             steps.clear(); // Nothing from the portal's plan: on to the fallbacks below.
+        }
+        // The goal reached, its portal lit: nothing left to do for it, and nothing to climb or dig for. In the live pair on
+        // c432fba Kindred lit its portal at Y=-54, and the fallbacks below and the watchdog dug it away from it (F-25c4al).
+        if (!legActive && !endGoal() && !steps.isEmpty() && steps.getFirst().action() == PortalRunPlanner.Action.DONE) {
+            progress = stageLabel(stage) + ": " + steps.getFirst().why();
+            return Optional.empty();
         }
         for (PortalRunPlanner.Step step : steps) {
             if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
@@ -2634,6 +2646,8 @@ final class PortalRunCampaign {
     }
 
     private int tunnelFloor = Integer.MIN_VALUE, tunnelTurns = 4;
+    /** Whether a tunnel bridges any drop ahead with a block of its own, as one toward lava at its level does (F-25c4ak). */
+    private boolean bridgeDrops;
 
     Optional<Task> tunnel(NativePlayerBody body, String label) {
         return tunnel(body, label, false);
@@ -2675,8 +2689,9 @@ final class PortalRunCampaign {
                     && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
             }
-            // A pit it dug itself over a drop (a staircase step that broke through a cave's ceiling): fill it and go on.
-            if (!refused && passable(world, ahead.down()) && passable(world, ahead.down(2)) && dug.contains(ahead.down().asLong())
+            // A pit it dug itself over a drop (a staircase step that broke through a cave's ceiling): fill it and go on. Toward
+            // lava at its level, any drop on the way, as a player bridges a cave to the lava it sees across it (F-25c4ak).
+            if (!refused && passable(world, ahead.down()) && (bridgeDrops || passable(world, ahead.down(2)) && dug.contains(ahead.down().asLong()))
                     && world.getFluidState(ahead.down()).isEmpty()) {
                 Optional<Task> fill = placeBlock(body, ahead.down(), label + ": fill " + ahead.down().toShortString());
                 if (fill.isPresent()) return fill;
@@ -3258,18 +3273,39 @@ final class PortalRunCampaign {
 
     /**
      * Toward {@code lava} by digging: a staircase up or down until its feet are a block above the lava, then a tunnel along
-     * that level, which opens a cell with lava under it to show the lava (F-25c4ad). Each way turns as the staircases and
-     * the tunnel do where a cell is refused.
+     * that level, which opens a cell with lava under it to show the lava (F-25c4ad). The staircases turn where a cell is
+     * refused. The tunnel goes only the two ways that close on the lava, and bridges a drop on the way with a block of its
+     * own: turned aside by a cave's drop at every step, Kindred, in the live pair on 64c298d, tunnelled 81 blocks west at
+     * the lava's level, past the lava it saw across the cave (F-25c4ak). With neither way open it digs nothing.
      */
     private Optional<Task> digToward(NativePlayerBody body, BlockPos lava, String label) {
         BlockPos feet = body.entity().getBlockPos();
         int dx = lava.getX() - feet.getX(), dz = lava.getZ() - feet.getZ(), rise = lava.getY() + 1 - feet.getY();
-        if (dx != 0 || dz != 0) {
-            digDirection = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? Direction.EAST : Direction.WEST) : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
-        }
+        if (dx == 0 && dz == 0) return rise > 0 ? climb(body, label) : rise < 0 ? digDown(body, lava.getY() + 1, label) : Optional.empty();
+        Direction across = dx > 0 ? Direction.EAST : Direction.WEST, along = dz > 0 ? Direction.SOUTH : Direction.NORTH;
+        boolean xFirst = Math.abs(dx) >= Math.abs(dz);
+        Direction major = xFirst ? across : along;
+        digDirection = major;
         if (rise > 0) return climb(body, label);
         if (rise < 0) return digDown(body, lava.getY() + 1, label);
-        return tunnel(body, label, true);
+        List<Direction> ways = (xFirst ? dz : dx) == 0 ? List.of(major) : List.of(major, xFirst ? along : across);
+        int floor = tunnelFloor, turns = tunnelTurns;
+        try {
+            tunnelFloor = lava.getY() + 1;
+            tunnelTurns = 1;
+            bridgeDrops = true;
+            for (Direction way : ways) {
+                digDirection = way;
+                Optional<Task> step = tunnel(body, label, true);
+                if (step.isPresent()) return step;
+            }
+            return Optional.empty();
+        } finally {
+            tunnelFloor = floor;
+            tunnelTurns = turns;
+            bridgeDrops = false;
+            digDirection = major;
+        }
     }
 
     /**

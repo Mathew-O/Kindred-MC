@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `f59492d`; recorded in [validation](../validation.md)
-Status: in progress (native passed; live runs pending); F-25c4 stays open
+Status: complete 2026-10-31 (native and live)
 
 ## Scope and implementation
 
@@ -21,7 +21,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | The roofed cast fixture's room under rock five blocks thick, the kit and its two buckets: a frame stands lit there, the water bucket taken back each time, and it is unhurt | `underThickRockTheFramesTopIsCastWithItsWaterTakenBack` | Before, the change set aside, it fails 3 of 3: "0 portal blocks, 8 obsidian", the top two refused from every stand as Sol's were. After, 3 of 3 alone. Run after the under-lake fixture had failed in the next plot, one run met that fixture's water and failed; that run is not counted | native |
 | The other casts unchanged | the roofed cast, the whole cast, the cast refused for its water and the one-block cast, alone on this code | 4 of 4 | native |
-| In play | live runs on this code | Pending | live |
+| In play | the live pair on `c432fba`, both seeds, strategist off | Met: Kindred's frame at Y=-54 on the first seed and Sol's at Y=-53 on the second were cast in rock, the cell in front of each top block's water dug before its cast, and both were lit | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the room, the rock over it, the pool and the glowstone are staged; the kit is given as though made.

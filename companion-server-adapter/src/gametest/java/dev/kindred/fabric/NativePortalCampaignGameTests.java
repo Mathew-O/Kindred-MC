@@ -994,6 +994,69 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * The Nether goal reached, its portal lit under a roof, the player stays by it: nothing is dug, climbed or walked for
+     * once the goal is done, the stall watchdog's spell included (F-25c4al). In the live pair on c432fba Kindred lit the
+     * first portal of the runs at Y=-54, and the goal's fallbacks and then its watchdog dug it away from it. Staged as the
+     * owned-block frame above, under its roof; watched for four minutes after the light, past the watchdog's three.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "portalDoneStays", tickLimit = 6000)
+    public void itsPortalLitTheGoalIsDoneAndItStaysByItNothingDug(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] litAt = new BlockPos[1];
+        int[] watched = {0};
+        String[] wandered = new String[1], notDone = new String[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    roof(context);
+                    f.runtime.createNative(f.source, "Gatekeeper");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    inventory.setStack(0, new ItemStack(Items.DIAMOND_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.OBSIDIAN, 10));
+                    inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 4));
+                    inventory.setStack(3, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(4, new ItemStack(Items.BREAD, 5));
+                    inventory.setStack(5, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(6, new ItemStack(Items.IRON_SWORD));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    BlockPos feet = f.player().getBlockPos();
+                    long portalBlocks = BlockPos.streamOutwards(feet, 6, 6, 6)
+                            .filter(pos -> context.getWorld().getBlockState(pos).isOf(Blocks.NETHER_PORTAL)).count();
+                    context.assertTrue(portalBlocks == 6, "A lit 2x3 portal: " + portalBlocks);
+                    litAt[0] = feet.toImmutable();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    BlockPos off = player.getBlockPos().subtract(litAt[0]);
+                    String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (wandered[0] == null && (Math.abs(off.getX()) > 2 || Math.abs(off.getY()) > 1 || Math.abs(off.getZ()) > 2)) {
+                        wandered[0] = off.toShortString() + " from where it lit it, " + goal;
+                    }
+                    if (notDone[0] == null && watched[0] >= 100 && !goal.startsWith("Done")) notDone[0] = goal;
+                    context.assertTrue(++watched[0] >= 4800, "Watched for four minutes");
+                })
+                .createAndAdd(() -> {
+                    long portalBlocks = BlockPos.streamOutwards(litAt[0], 6, 6, 6)
+                            .filter(pos -> context.getWorld().getBlockState(pos).isOf(Blocks.NETHER_PORTAL)).count();
+                    context.assertTrue(wandered[0] == null && portalBlocks == 6, "Stayed by its lit portal: "
+                            + (wandered[0] == null ? "stayed" : wandered[0]) + "; " + portalBlocks + " portal blocks");
+                    context.assertTrue(notDone[0] == null, "Its goal done the while: " + notDone[0]);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A lava source recessed below its shore, the usual cave case. With the goal set and only a diamond pickaxe and
      * a water bucket for the job, the player pours onto the shore so the water runs over the lava, mines the
      * obsidian it hardens while the water guards the hole, and takes its water back.
@@ -4542,6 +4605,80 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var player = f.player();
                     context.assertTrue(player != null && player.isAlive() && !player.isOnFire() && player.getHealth() >= 18, "Unhurt by the lava: "
+                            + (player == null ? "no body" : player.getHealth()));
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Lava it sees across a cave, at the level of the tunnel it stands in, is bridged toward with its own blocks rather than
+     * tunnelled past (F-25c4ak). At the mouth of its tunnel over a cave four deep that runs sixty blocks west, a pool at the
+     * tunnel's level on the far side in plain view and no walk to it, it lays a bridge across and fills its bucket at the
+     * pool. In the live pair on 64c298d Kindred, so placed over a cave at Y=-17 that ran on past x=-57, was turned aside by
+     * the cave's drop at every step south and tunnelled 81 blocks west, past the lava. Staged: a block of stone, the tunnel,
+     * the cave, the pool behind its lip, glowstone, and its look across from the tunnel's mouth; the kit, a water bucket and
+     * an empty one, is given as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "lavaAcrossACave", tickLimit = 1200)
+    public void lavaAcrossACaveAtItsLevelIsBridgedTowardNotTunnelledPast(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bridger"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    at[0] = p;
+                    FixtureGround.keep(context, p.add(-62, -6, -5), p.add(7, 4, 14));
+                    for (int x = -62; x <= 7; x++) for (int z = -5; z <= 14; z++) for (int y = -6; y <= 4; y++) {
+                        boolean tunnel = x == 0 && z >= -3 && z <= 0 && y >= 0 && y <= 1;
+                        boolean cave = x >= -60 && x <= 5 && z >= 1 && z <= 8 && y >= -4 && y <= 2;
+                        boolean overPool = Math.abs(x) <= 5 && z >= 9 && z <= 12 && y >= 0 && y <= 2;
+                        boolean pool = Math.abs(x) <= 2 && z >= 10 && z <= 11 && y == -1;
+                        var state = tunnel || cave || overPool ? Blocks.AIR.getDefaultState() : pool ? Blocks.LAVA.getDefaultState() : Blocks.STONE.getDefaultState();
+                        world.setBlockState(p.add(x, y, z), state);
+                    }
+                    for (var light : java.util.List.of(new BlockPos(0, 2, -1), new BlockPos(-5, 3, 4), new BlockPos(5, 3, 4), new BlockPos(0, 3, 11),
+                            new BlockPos(-20, 3, 4), new BlockPos(-35, 3, 4), new BlockPos(-50, 3, 4)))
+                        world.setBlockState(p.add(light), Blocks.GLOWSTONE.getDefaultState());
+                    // At the tunnel's mouth, looking across the cave at the pool.
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 10);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.BUCKET));
+                    // The pool seen from the tunnel's mouth: a first sweep, then a look across the cave, each sighting a line of
+                    // sight from its eyes, as for the pit's pool.
+                    var knowledge = f.runtime.campaignForTest(f.id).knowledge();
+                    knowledge.scan(f.player());
+                    knowledge.look(f.player(), p.add(0, -1, 10), 2, 0, WorldKnowledge.Kind.LAVA);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    String goal = f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel");
+                    context.assertTrue(player != null && ItemMoves.count(player.getInventory(), Items.LAVA_BUCKET) >= 1, "Its bucket filled at the pool across the cave: now "
+                            + (player == null ? "no body" : player.getBlockPos().subtract(at[0]).toShortString()) + ", " + goal);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive() && !player.isOnFire() && player.getHealth() >= 14, "Unhurt by the lava: "
                             + (player == null ? "no body" : player.getHealth()));
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);

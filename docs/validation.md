@@ -1,5 +1,25 @@
 # AI-player development validation
 
+## The live pair on c432fba: the first earned lit portals; and two fixes from it and P19 — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `c432fba` (F-25c4ah, ai and aj): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - Two portals lit, each earned from an empty inventory: on the first seed Kindred's, at about tick 236,000; on the second Sol's, at about tick 150,000. Each frame was cast from lava at Y=-54 and Y=-53, ten blocks from ten buckets of lava it filled itself, with the water taken back each time and its own flint and steel. None had been lit in the pairs before.
+  - F-25c4ai in play: the cell in front of each top block's water was dug before the block was cast, on both frames.
+  - F-25c4aj in part: 8 frame sites given up across both seeds, each after the stand and the row in front were tried (49 on `64c298d`); the step to the row in front was taken 7 times.
+  - After the light, both goals read done, and the goal's fallbacks and then its watchdog dug each player away from its portal (F-25c4al below).
+  - 8 deaths, 5 and 3 (10 on `64c298d`). No reconciliation stop.
+  - Still long: Echo spent 59% of the second seed in the watchdog's spells (P19's loop, open); hurt and out of food took Sol 20% of the first seed and Kindred 34% of the second; waiting for daylight below ground took Echo 29% of the first and Kindred 25% of the second.
+- F-25c4ak (lava across a cave at its level bridged toward), on top of `c432fba`:
+  - its fixture, a cave four deep running sixty blocks west between the tunnel and the pool, fails before, "now -33, 0, 0", tunnelling west along the cave's side, 3 of 3. In its first form, a cave eleven wide, the old tunnel went round its end in time and it passed before. After, 3 of 3 alone;
+  - the pit's pool dug toward, the lava under a corridor, the lava legs, the night's lava and the whole cast: 5 of 5.
+- F-25c4al (the goal done, nothing more), on top of `c432fba`:
+  - its fixture, the owned-block frame lit under a roof, then four minutes watched, fails before, "0, 1, -3 from where it lit it, Done: no progress here for a while - dig toward elsewhere", 3 of 3. In its first form it failed before for another reason, its first look coming before the panel's line read done. After, 3 of 3 alone;
+  - the owned-block frame and the walled-in site: 2 of 2.
+- `build` successful.
+- Evidence: [F-25c4](evidence/F-25c4.md), [F-25c4ai](evidence/F-25c4ai.md), [F-25c4ak](evidence/F-25c4ak.md), [F-25c4al](evidence/F-25c4al.md).
+
 ## A frame site dug in the order it can reach it (F-25c4aj) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
