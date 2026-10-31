@@ -1,5 +1,17 @@
 # AI-player development validation
 
+## The cattle's gateway and fence row (M-06a1); the sand seal (F-25c4aq), the watchdog's far move (F-25c4ar) and the tree in water (F-25c4as) written — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. These ran at the lowest priority beside the live pair on `00e98f5`; the fence fixture has no AI player and nothing timed.
+
+- M-06a1, on top of `00e98f5`:
+  - `RanchTest.oneThatStoodInTheGatewayAsTheGateShutIsFetchedAgainNotBredWithout` fails with the change set aside ("Open the gate to leave") and passes after; `RanchTest` 14 of 14.
+  - The fence fixture fails 3 of 3 before, the runner reading the block alone ("Against the fence from inside, in the pen"), and passes 3 of 3 alone after.
+  - The cattle ten times with both: pending, queued after the live pair.
+- F-25c4aq, F-25c4ar and F-25c4as: written, with a fixture each. Their runs before and after, and their neighbours', are queued after the live pair, with nothing else on the cores; nothing is claimed for them yet.
+- `build` successful.
+- Evidence: [M-06a](evidence/M-06a.md), [F-25c4aq](evidence/F-25c4aq.md), [F-25c4ar](evidence/F-25c4ar.md), [F-25c4as](evidence/F-25c4as.md).
+
 ## The pasture's cattle: a pair jammed at a way in one wide (M-06a1) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

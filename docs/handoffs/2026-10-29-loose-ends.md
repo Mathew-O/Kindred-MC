@@ -449,6 +449,8 @@ The owner: work through what is left, leaving the decisions only the owner can m
 | Kindred under the desert's sand, between the step up and the wall | The block over each step's head dug first, what falls let settle, the climb held while below the rim (F-25c4ao, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `91c1290` |
 | No player on the desert seed finding trees | With no wood, on open ground it sees trees on the skyline out to 96 blocks and walks to the nearest, past the bound of its walks to look (F-25c4ap, open: the live runs). Fixture fails before, 3 of 3 after | the commit after `3c184b6` |
 | The climbs' holds held before any climb was made | Their "long ago" was the least long, and a tick less it overflowed: on open ground at the foot of a two-high step it climbed instead of looking about (F-25c4ao's since `3c184b6`, F-25c4ah's since `238ff1e`). Now half the least long. Fixture fails before, 3 of 3 after | the commit after `3c184b6` |
+| The cattle fixture's other two failures, once in ten each (M-06a1) | A cow left in the gateway as the gate shut is fetched in, not bred without; a player pressed against the pen's fence from inside, its middle in the fence's block, is in the pen, so the ranch is no longer done with it shut in. A unit case and a fixture, each failing before; the cattle ten times with both queued | the commit after `00e98f5` |
+| On the desert seed on `00e98f5` (P22, running): Echo's only tree standing in a lake, and its watchdog's moves home refused as too far for one route; from P21, the night's dig-ins left open with only sand | The tree chopped from the water, treading water (F-25c4as); the far move a leg at a time (F-25c4ar); the night's seal made with sand or gravel where it rests (F-25c4aq). Written with a fixture each; their runs queued after the live pair | the commit after `00e98f5` |
 
 ### Validation
 
@@ -470,6 +472,7 @@ The owner: work through what is left, leaving the decisions only the owner can m
 - On top of `21046b0`: the F-25c4am fixture fails before and passes 3 of 3 after; the steps off hazards beside it alone, 6 of 6; `build` successful.
 - On top of `91c1290`: the F-25c4an and F-25c4ao fixtures fail before and pass 3 of 3 after; the watchdog's, climbs' and tunnels' fixtures beside them alone, 8 of 8; `build` successful.
 - On top of `3c184b6`: the F-25c4ap fixture and the long-ago fixture fail before and pass 3 of 3 after; the log, water and food searches and the climbs beside them alone, 12 of 12; `build` successful.
+- On top of `00e98f5`: `RanchTest` 14 of 14, its gateway case failing with the change set aside; the fence fixture fails 3 of 3 before and passes 3 of 3 after; `build` successful. F-25c4aq, ar and as written, their fixtures' runs queued after the live pair.
 
 ### Next dependency
 
@@ -481,5 +484,5 @@ The owner: work through what is left, leaving the decisions only the owner can m
   - the nights: 12 to 28% of a player's time waiting for daylight below ground for its water. A lava search meanwhile would use it, but the frame must then be cast by the lava, not where the water is filled, or each bucket is a trip from the surface; F-25c4n's night fill has the same question;
   - deaths in caves (one drowning, fixed natively by F-25c4af); the watchdog's walks elsewhere; the stall's other causes (F-25c4m).
 - Not yet checked alone: the keep and the second-night fixture, each failing once in the suite on `ace1d80`, the second-night fixture again on `77ddbb4`, its cabin's roof stairs out of reach; the ranch's pen failed again in the suite on `458d192`; the life-first fixture that hunts before building its base, its cabin's top out of reach, once in the suite on `033fd71` and once alone on `41f9de9`'s code. The cabin's top out of reach is the likeliest common cause of the three. In a suite, analysis on the same cores also costs fixtures: on `77ddbb4` three failed back to back as a log report ran, and passed alone.
-- The cattle (M-06a1): the jam is fixed; left, once in ten each, the doorway's shut walk refused ("No way to reach" its lining) and a pair not ready to breed.
+- The cattle (M-06a1): the jam is fixed, and the cow left in the gateway and the player read as out of the pen against its fence (the doorway's shut walk refused, "No way to reach" its lining); left: the cattle ten times with both.
 - `modest-faraday`'s merge, as before.

@@ -194,21 +194,36 @@ final class RanchRunner {
         } else if (build != null && !build.done()) build.finished(task, completed, reason, world);
     }
 
-    private Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {
+    Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {
         var animals = new ArrayList<Ranch.Animal>();
         Box around = new Box(origin).expand(Ranch.RANGE + 8, 6, Ranch.RANGE + 8);
         for (AnimalEntity animal : world.getEntitiesByClass(AnimalEntity.class, around, AnimalEntity::isAlive)) {
             var kind = Ranch.Kind.of(Registries.ENTITY_TYPE.getId(animal.getType()).toString());
             if (kind.isEmpty()) continue;
-            BlockPos at = animal.getBlockPos();
+            BlockPos at = cell(animal.getBlockPos(), animal.getX(), animal.getZ(), world);
             boolean adult = !animal.isBaby();
             animals.add(new Ranch.Animal(animal.getUuid(), kind.get(), new Pos(at.getX(), at.getY(), at.getZ()), adult,
                     adult && animal.getBreedingAge() == 0 && !animal.isInLove(), animal.isInLove()));
         }
-        BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        BlockPos feet = cell(BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ()), player.getX(), player.getZ(), world);
         var gate = world.getBlockState(pos(ranch.gate()));
         boolean open = gate.getBlock() instanceof FenceGateBlock && gate.get(FenceGateBlock.OPEN);
         return new Ranch.Observation(new Pos(feet.getX(), feet.getY(), feet.getZ()), built(world), open, food(player), animals, world.getTime());
+    }
+
+    /**
+     * The cell one stands in, {@code at}. Pressed against the ring, its middle can be in a fence's block, or the shut
+     * gate's, clear of the post: it is in the cell beside that on its own side. Read by that block alone, a player its cows
+     * had pushed against the fence from inside was out of the pen, and the ranch was done with it shut in (the cattle
+     * fixture, once in ten).
+     */
+    private BlockPos cell(BlockPos at, double x, double z, ServerWorld world) {
+        var state = world.getBlockState(at);
+        if (!state.isIn(BlockTags.FENCES) && !(state.getBlock() instanceof FenceGateBlock && !state.get(FenceGateBlock.OPEN))) return at;
+        int cx = at.getX(), cz = at.getZ();
+        if (cz == origin.getZ() || cz == origin.getZ() + ranch.depth() - 1) cz += z < at.getZ() + 0.5 ? -1 : 1;
+        if (cx == origin.getX() || cx == origin.getX() + ranch.width() - 1) cx += x < at.getX() + 0.5 ? -1 : 1;
+        return new BlockPos(cx, at.getY(), cz);
     }
 
     /** Every post of the ring a fence and the gate a gate; a gate swung round by opening still counts. */

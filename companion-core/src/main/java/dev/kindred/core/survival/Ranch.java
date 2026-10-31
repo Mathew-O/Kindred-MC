@@ -239,6 +239,12 @@ public final class Ranch {
             seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
             // Brought back in after breeding: out again, the gate shut behind.
             if (bred) return leave(seen, outcome);
+            // One that stood in the gateway as the gate shut is not in the pen: fetched again, not bred without. Bred without,
+            // the pair "not ready", it left with one cow in the pen (the cattle fixture, once in ten).
+            if (adultsIn.size() < 2) {
+                phase = Phase.FETCH;
+                return fetch(seen, in, adultsIn.size(), Animal::adult);
+            }
             phase = Phase.BREED;
             youngBefore = (int) seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && inside(a.at())).count();
             waitingSince = -1;

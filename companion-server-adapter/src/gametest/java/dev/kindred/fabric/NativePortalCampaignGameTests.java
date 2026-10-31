@@ -3956,6 +3956,164 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * At night below ground with no wood, holding nothing to build with but sand, beside the way into its pocket: it seals
+     * the way with the sand, the block at its feet first and the one over it on that, before it waits for daylight
+     * (F-25c4aq). In the live run on `91c1290`, on a desert seed, Kindred dug in by hand down two steps of sand and
+     * sandstone, its seal refused for want of stone or dirt, and was killed by a husk come down its staircase. Staged:
+     * sandstone round a pocket two high with a corridor two high and three long east from it, a torch at its end; night;
+     * sixteen sand and bread.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "sealWithSand", tickLimit = 600)
+    public void atNightBelowGroundWithOnlySandItSealsTheWayInWithTheSand(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sandsealer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(14000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-3, -1, -3), p.add(5, 4, 3));
+                    for (BlockPos at : BlockPos.iterate(p.add(-3, -1, -3), p.add(5, 4, 3))) world.setBlockState(at, Blocks.SANDSTONE.getDefaultState());
+                    for (int dx = 0; dx <= 3; dx++) for (int dy = 0; dy <= 1; dy++) world.setBlockState(p.add(dx, dy, 0), Blocks.AIR.getDefaultState());
+                    world.setBlockState(p.add(3, 1, 0), Blocks.WALL_TORCH.getDefaultState().with(net.minecraft.block.WallTorchBlock.FACING, Direction.WEST));
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.SAND, 16));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    boolean sealed = !world.getBlockState(feet[0].east()).isAir() && !world.getBlockState(feet[0].east().up()).isAir();
+                    context.assertTrue(sealed, "Not sealed: " + world.getBlockState(feet[0].east()).getBlock() + " and "
+                            + world.getBlockState(feet[0].east().up()).getBlock() + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && !player.isInsideWall() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Moved elsewhere by the watchdog toward a place farther than one route reaches, with water in front of it: it walks
+     * there a leg at a time, round the water (F-25c4ar). In the live pair on `00e98f5`, on a desert seed, Echo's spells
+     * toward home, 200 blocks off, were refused as made ("too far for one route"), and the water beside it refused its
+     * tunnel, so each such spell was lost. Staged: the goal begun where the player stands, so home is there; the player set
+     * down 30 blocks east on open grass with a pool three blocks square in front of it to the east, its chunks kept loaded;
+     * daylight; bread; then a move elsewhere toward a place 200 blocks further east.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "farElsewhere", tickLimit = 1600)
+    public void aMoveElsewhereFartherThanOneRouteGoesALegAtATime(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Farwalker"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                // Its first plan made, so its home is here.
+                .createAndAdd(() -> context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().startsWith("Wood:"), "Planned"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().add(30, 0, 0), end = p.add(110, 0, 0);
+                    at[0] = p;
+                    FixtureGround.simulated(context, p.add(-16, 0, -16), end.add(16, 0, 16));
+                    FixtureGround.keep(context, p.add(-6, -2, -6), end.add(6, 6, 6));
+                    for (BlockPos c : BlockPos.iterate(p.add(-6, -2, -6), end.add(6, 6, 6))) {
+                        int dy = c.getY() - p.getY();
+                        world.setBlockState(c, (dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
+                    }
+                    for (BlockPos c : BlockPos.iterate(p.add(1, -1, -1), p.add(3, -1, 1))) world.setBlockState(c, Blocks.WATER.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                })
+                .createAndAdd(() -> f.runtime.campaignForTest(f.id).relocateForTest(at[0].add(200, 0, 0)))
+                .createAndAdd(() -> {
+                    // Past the pool and on along the strip, still on its move elsewhere.
+                    BlockPos now = f.player().getBlockPos();
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    context.assertTrue(now.getX() - at[0].getX() >= 24 && progress.contains("try elsewhere, toward"),
+                            "Not on its way: at " + now.subtract(at[0]).toShortString() + ", " + progress);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * With no wood, the only tree in sight a stump of two logs standing in a pool two deep, the top one level with the
+     * water's top: it swims out and chops both from the water, treading water (F-25c4as). In the live pair on `00e98f5`, on
+     * a desert seed, Echo's only tree stood so in a lake: it began the log each time it bobbed up and gave it up each time
+     * it sank ("In deep water; up for air first"), and swam to dry ground and back for twenty minutes. Staged: grass to
+     * stand on, a pool nine by nine and two deep east of it with the stump in its middle; daylight; bread.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "treeInWater", tickLimit = 2400)
+    public void withNoWoodItChopsATreeStandingInWaterFromTheWater(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Swimchopper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-4, -4, -6), p.add(13, 6, 6));
+                    for (BlockPos c : BlockPos.iterate(p.add(-4, -4, -6), p.add(13, 6, 6))) {
+                        int dy = c.getY() - p.getY(), dx = c.getX() - p.getX(), dz = c.getZ() - p.getZ();
+                        boolean pool = dx >= 3 && dx <= 11 && Math.abs(dz) <= 4 && (dy == -1 || dy == -2);
+                        world.setBlockState(c, (pool ? Blocks.WATER : dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
+                    }
+                    world.setBlockState(p.add(7, -2, 0), Blocks.OAK_LOG.getDefaultState());
+                    world.setBlockState(p.add(7, -1, 0), Blocks.OAK_LOG.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var inventory = f.player().getInventory();
+                    boolean chopped = !world.getBlockState(feet[0].add(7, -2, 0)).isOf(Blocks.OAK_LOG) && !world.getBlockState(feet[0].add(7, -1, 0)).isOf(Blocks.OAK_LOG);
+                    int wood = inventory.count(Items.OAK_LOG) + inventory.count(Items.OAK_PLANKS) + inventory.count(Items.CRAFTING_TABLE) + inventory.count(Items.STICK);
+                    context.assertTrue(chopped && wood > 0, "Not chopped: " + (chopped ? "the stump gone, no wood held" : "the stump stands")
+                            + "; at " + f.player().getBlockPos().subtract(feet[0]).toShortString() + ", " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Stranded on a one-block pillar five blocks above the floor, with every way off a fall the navigator would not
      * take: the goal jumps down, taking vanilla fall damage it can afford, rather than wait for ever.
      */

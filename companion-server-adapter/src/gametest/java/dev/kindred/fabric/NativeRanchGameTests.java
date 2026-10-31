@@ -115,6 +115,60 @@ public final class NativeRanchGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Pressed against the pen's fence, a player's middle can be in the fence's block, clear of its post: in the pen from
+     * inside, out of it from outside, and the same at the gate shut. Read by that block alone, a player its cows had pushed
+     * against the fence from inside was out of the pen, and the ranch was done with it shut in (the cattle fixture, once in
+     * ten, M-06a1). A chicken, narrow enough to stand so, the same. In the gateway with the gate open, it is in neither.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "ranchFence", tickLimit = 200)
+    public void againstThePensFenceOneIsReckonedOnItsOwnSideOfIt(TestContext context) {
+        BlockPos o = context.getAbsolutePos(new BlockPos(4, 0, 4));
+        BlockPos pen = o.add(4, 2, 2), gate = pen.add(3, 0, 6);
+        RanchRunner runner = new RanchRunner(pen, Ranch.Kind.CHICKEN, "oak");
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> {
+                    // The pen staged on grass, its gate shut, and a chicken against its south fence from inside, its AI off.
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-2, 0, -2), o.add(14, 6, 14));
+                    for (int x = -2; x <= 14; x++) for (int z = -2; z <= 14; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.GRASS_BLOCK.getDefaultState());
+                        for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) {
+                        if (x != 0 && x != 6 && z != 0 && z != 6) continue;
+                        world.setBlockState(pen.add(x, 0, z), (x == 3 && z == 6 ? Blocks.OAK_FENCE_GATE : Blocks.OAK_FENCE).getDefaultState());
+                    }
+                    var hen = EntityType.CHICKEN.create(world);
+                    hen.refreshPositionAndAngles(pen.getX() + 1.5, pen.getY(), pen.getZ() + 6.1, 0, 0);
+                    hen.setAiDisabled(true);
+                    world.spawnEntity(hen);
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = net.fabricmc.fabric.api.entity.FakePlayer.get(world);
+                    // Its middle in the fence's block east of the gate, just inside the post, then just outside it.
+                    player.setPosition(pen.getX() + 4.5, pen.getY(), pen.getZ() + 6.05);
+                    var seen = runner.observe(player, world);
+                    context.assertTrue(player.getBlockPos().getZ() == pen.getZ() + 6, "Its middle in the fence's block: " + player.getPos());
+                    context.assertTrue(runner.ranch.inside(seen.feet()), "Against the fence from inside, in the pen: " + seen.feet());
+                    var hen = seen.animals().stream().filter(a -> a.kind() == Ranch.Kind.CHICKEN).findFirst();
+                    context.assertTrue(hen.isPresent() && runner.ranch.inside(hen.get().at()), "The chicken against it from inside, in the pen: " + hen);
+                    player.setPosition(pen.getX() + 4.5, pen.getY(), pen.getZ() + 6.95);
+                    seen = runner.observe(player, world);
+                    context.assertTrue(!runner.ranch.inside(seen.feet()), "Against it from outside, out of the pen: " + seen.feet());
+                    player.setPosition(gate.getX() + 0.5, pen.getY(), gate.getZ() + 0.05);
+                    seen = runner.observe(player, world);
+                    context.assertTrue(runner.ranch.inside(seen.feet()), "Against the gate shut from inside, in the pen: " + seen.feet());
+                    world.setBlockState(gate, world.getBlockState(gate).with(FenceGateBlock.OPEN, true));
+                    player.setPosition(gate.getX() + 0.5, pen.getY(), gate.getZ() + 0.5);
+                    seen = runner.observe(player, world);
+                    context.assertTrue(!runner.ranch.inside(seen.feet()) && seen.feet().z() == gate.getZ(), "In the gateway, the gate open: " + seen.feet());
+                })
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     /** The test server ticks no mob outside the test's own chunks (it sets no simulation distance); a live one does. */
     private static void forceChunks(net.minecraft.server.world.ServerWorld world, BlockPos o, boolean forced) {
         for (int x = o.getX() - 16; x <= o.getX() + 48; x += 16) for (int z = o.getZ() - 16; z <= o.getZ() + 32; z += 16) {

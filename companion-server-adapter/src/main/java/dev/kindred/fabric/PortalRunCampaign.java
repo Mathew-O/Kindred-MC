@@ -970,7 +970,11 @@ final class PortalRunCampaign {
         }
         if (!relocateDig && !blocked(relocate) && distance < relocateBest - 1) {
             relocateBest = distance;
-            return Optional.of(go(relocate, 3, true, "try elsewhere, toward " + relocate.toShortString()));
+            // Farther than one route reaches, as home is from far off on every third spell: a leg at a time, as the plan's
+            // walk home goes (F-25c4ae). Aimed at the place itself, the walk was refused as made and the spell lost: in the
+            // live pair on `00e98f5` Echo's, toward home 200 blocks off, beside the water it could not tunnel by (F-25c4ar).
+            BlockPos toward = distance > LAVA_LEG ? legToward(lastFeet, relocate, LAVA_LEG) : relocate;
+            return Optional.of(go(toward, 3, true, "try elsewhere, toward " + relocate.toShortString()));
         }
         relocateDig = true;
         int dx = relocate.getX() - lastFeet.getX(), dz = relocate.getZ() - lastFeet.getZ();
@@ -1387,6 +1391,11 @@ final class PortalRunCampaign {
     /** A step of a climb: the cells cleared for a staircase step up, or the step itself. */
     static boolean climbingOut(Task task) {
         return task != null && task.label().toLowerCase(java.util.Locale.ROOT).startsWith("climb");
+    }
+
+    /** A block of what it gathers broken where it stands or swims: a log, an ore ({@link #gather}'s "Mine ... at"). */
+    static boolean gathering(Task task) {
+        return task != null && "native_break".equals(task.skill()) && task.label().startsWith("Mine ");
     }
 
     /**
@@ -4042,7 +4051,10 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
-    /** One owned stone or dirt block into {@code cell}, against any solid face that is not the player's own space. */
+    /**
+     * One owned stone or dirt block into {@code cell}, or with none sand or gravel over solid ground, against any solid face
+     * that is not the player's own space.
+     */
     private Optional<Task> placeBlock(NativePlayerBody body, BlockPos cell, String label) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -4051,6 +4063,12 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         int slot = -1;
         for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        // With none of those, sand or gravel into a cell over solid ground, where it rests: a desert dug by hand gives nothing
+        // else, and its night shelter was left open (in the live run on `91c1290` Kindred, its staircase unsealed, was killed
+        // by a husk come down it; F-25c4aq). Never over an open cell, which it would fall through, onto the player below.
+        if (slot < 0 && !passable(world, cell.down())) {
+            for (int s = 0; s < 36 && slot < 0; s++) if (RESTING.contains(inventory.getStack(s).getItem())) slot = s;
+        }
         if (slot < 0) return Optional.empty();
         if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
         for (Direction side : Direction.values()) {
@@ -4557,6 +4575,8 @@ final class PortalRunCampaign {
 
     private static final Set<Item> SEALING = Set.of(Items.DIRT, Items.COBBLESTONE, Items.COBBLED_DEEPSLATE, Items.STONE,
             Items.ANDESITE, Items.DIORITE, Items.GRANITE, Items.TUFF, Items.COARSE_DIRT, Items.NETHERRACK);
+    /** Blocks that fall: placed only into a cell over solid ground (F-25c4aq). */
+    private static final Set<Item> RESTING = Set.of(Items.SAND, Items.RED_SAND, Items.GRAVEL);
 
     private HostileEntity rememberedFoe(ServerPlayerEntity player) {
         if (foe == null || lastTick > foeUntil || player.getHealth() < 6 || ignoredFoes.getOrDefault(foe, Long.MIN_VALUE) >= lastTick) return null;
@@ -4583,9 +4603,12 @@ final class PortalRunCampaign {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         // Sinking or swimming in a task that will not take it out of the water (a wait, a seal, a fight): up for air first.
         // A climb out digs on while its breath lasts: in a flooded pit with no dry ground in reach it is the way out, and
-        // cut short each time it left Kindred swimming there for the rest of the live run on 03faab9 (F-25c4t).
+        // cut short each time it left Kindred swimming there for the rest of the live run on 03faab9 (F-25c4t). So does a
+        // block it gathers from the water, as the log of a tree standing in a lake: in the live pair on 00e98f5 Echo, the
+        // only tree it knew of so, began the log each time it bobbed up and gave it up each time it sank (F-25c4as).
         if (running != null && !surfacing(running) && PlayerRuntime.inDeepWater(player)
-                && (player.getAir() < player.getMaxAir() * 2 / 3 || !running.skill().equals("native_goto") && !climbingOut(running))) {
+                && (player.getAir() < player.getMaxAir() * 2 / 3
+                        || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running))) {
             return "In deep water; up for air first";
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.

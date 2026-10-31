@@ -171,7 +171,10 @@ final class NativeBreakAction extends NativeRecordedAction {
         boolean drifted = dx * dx + dz * dz > 0.15 * 0.15;
         // Afloat under a block it digs above its eyes, it treads water to keep its head up, as a player digs a step out
         // of a flooded pit: one that does nothing sinks, and with its eyes under the dig goes five times slower (F-25c4t).
-        boolean tread = player.isTouchingWater() && !player.isOnGround() && target.getY() + 0.5 > player.getEyeY();
+        // In deep water whatever it digs, as a log of a tree standing in a lake below its eyes: sunk to the bottom, its
+        // eyes under, it ran short of breath before the log came away (F-25c4as).
+        boolean tread = player.isTouchingWater() && !player.isOnGround() && target.getY() + 0.5 > player.getEyeY()
+                || PlayerRuntime.inDeepWater(player);
         if (!drifted && !holding && !tread) return;
         holding = drifted || tread;
         float yaw = drifted ? (float) Math.toDegrees(Math.atan2(-dx, dz)) : player.getYaw();

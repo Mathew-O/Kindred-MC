@@ -217,6 +217,16 @@ class RanchTest {
     }
 
     @Test
+    void oneThatStoodInTheGatewayAsTheGateShutIsFetchedAgainNotBredWithout() {
+        // The cattle fixture, once in ten: the gate shut with one cow in its gateway, not in the pen, and with one cow in the
+        // pen the pair was "not ready to breed", and it left. Now that one is fetched in again.
+        var ranch = ranch();
+        ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        assertInstanceOf(Ranch.Step.Gate.class, ranch.next(seen(3, 5, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 4, 4))));
+        assertEquals(new Ranch.Step.Gate(true, "Open the gate for the cow"), ranch.next(seen(3, 5, false, 8, 20, cow(DAISY, 3, 3), cow(BESS, 3, 6))));
+    }
+
+    @Test
     void aPairJammedAtTheDoorwaysMouthIsLetWanderOffWithTheFoodPutAway() {
         // The cattle fixture: two outside at the wall's foot, in the doorway's own column, held each other there for good.
         // Five seconds so, the food is put away for ten; then the pair is led up again.
