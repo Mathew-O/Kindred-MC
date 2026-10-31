@@ -1,0 +1,65 @@
+package dev.kindred.core.eval;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class EvalScenarioTest {
+    @Test
+    void theDesignsExampleReadsAsWritten() {
+        var s = EvalScenario.parse("starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none");
+        assertEquals(List.of("Kindred", "Sol", "Echo"), s.starters());
+        assertEquals(EvalScenario.Goal.NETHER, s.goal());
+        assertTrue(s.edits());
+        assertEquals(144_000, s.ticks());
+        assertTrue(s.sprint());
+        assertFalse(s.strategist());
+        assertFalse(s.voice());
+        assertEquals(EvalScenario.Keep.NONE, s.keep());
+        assertTrue(s.earned(), "Nothing handed out or kept: the earned scenario");
+    }
+
+    @Test
+    void missingKeysTakeTheirDefaultsAndSpacesAndCaseDoNotMatter() {
+        var s = EvalScenario.parse(" goal = END ;starters= sol , echo ;");
+        assertEquals(List.of("Sol", "Echo"), s.starters());
+        assertEquals(EvalScenario.Goal.END, s.goal());
+        assertEquals(EvalScenario.DEFAULT_TICKS, s.ticks());
+        assertTrue(s.edits() && s.sprint() && !s.strategist() && !s.voice());
+    }
+
+    @Test
+    void editsOffOrKeptInventoryIsStaged() {
+        assertFalse(EvalScenario.parse("edits=off").earned());
+        assertFalse(EvalScenario.parse("keep=inventory").earned());
+        assertTrue(EvalScenario.parse("goal=dragon; strategist=on; voice=on").earned(), "The model players hand nothing out");
+    }
+
+    @Test
+    void whatItCannotSayIsRefused() {
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse(""));
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("seed=12"), "an unknown key");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("goal=wither"), "an unknown goal");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("edits=yes"), "on or off only");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("ticks=lots"));
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("ticks=0"));
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("ticks=10000001"));
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("starters=Kindred,Steve"), "only the canonical three");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("starters=Sol,sol"), "a starter twice");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("goal=end; goal=nether"), "a key twice");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("starters="), "no starters");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("goal"), "not a pair");
+    }
+
+    @Test
+    void itsTextReadsBackAsTheSameScenario() {
+        var s = EvalScenario.parse("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory");
+        assertEquals("starters=Echo; goal=none; edits=off; ticks=200; sprint=off; strategist=on; voice=on; keep=inventory", s.asText());
+        assertEquals(s, EvalScenario.parse(s.asText()));
+    }
+}

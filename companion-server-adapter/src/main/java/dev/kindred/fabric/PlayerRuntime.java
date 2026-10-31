@@ -162,6 +162,8 @@ final class PlayerRuntime {
     private Optional<StrategistBridge> strategist;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
+    /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
+    private RunObserver runObserver = RunObserver.NONE;
     private final NativePlayerSaves.Reader nativeSaveReader;
     private final java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator;
     private final StartupLedgerReader startupLedgerReader;
@@ -5323,6 +5325,10 @@ final class PlayerRuntime {
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
         KindredMod.LOGGER.info("{} died at {}: {} ({})", entry.data.displayName(), deathPos.toShortString(),
                 player.getDamageTracker().getDeathMessage().getString(), circumstances);
+        var doing = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
+        runObserver.died(entry.data.displayName(), player, player.getDamageTracker().getDeathMessage().getString(),
+                entry.campaign == null ? "no goal" : entry.campaign.progress(), entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
+                entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), doing);
     }
 
     /**
@@ -6388,6 +6394,8 @@ final class PlayerRuntime {
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
                     entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
                             : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
+                    : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
         }
@@ -11131,6 +11139,30 @@ final class PlayerRuntime {
         // There are no game ticks after SERVER_STOPPED; bound the final IO flush.
         try { shutdown.get(10, TimeUnit.SECONDS); }
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
+    }
+
+    /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */
+    void observeRun(RunObserver observer) {
+        requireThread();
+        runObserver = observer == null ? RunObserver.NONE : observer;
+    }
+
+    /**
+     * What a run's observer reads of a player once a second (F-26): the stuck spells its goal has had and the latest's
+     * level, where it stands, its End leg's stage, and the model tokens it has used today; empty with no such player.
+     */
+    record RunState(int stuckSpells, int stuckLevel, net.minecraft.util.math.BlockPos at, String endStage, long modelTokens) { }
+
+    Optional<RunState> runState(String name) {
+        requireThread();
+        for (Entry entry : entries.values()) {
+            if (!entry.data.displayName().equalsIgnoreCase(name) || entry.nativeBody == null || !entry.nativeBody.connected()) continue;
+            var campaign = entry.campaign;
+            long tokens = strategist.map(bridge -> bridge.tokensToday(entry.data.id())).orElse(0L);
+            return Optional.of(new RunState(campaign == null ? 0 : campaign.stuckSpells(), campaign == null ? 0 : campaign.stuckLevel(),
+                    entry.nativeBody.entity().getBlockPos().toImmutable(), campaign == null ? "" : String.valueOf(campaign.stronghold().stage()), tokens));
+        }
+        return Optional.empty();
     }
 
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */

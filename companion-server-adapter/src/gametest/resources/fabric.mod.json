@@ -70,6 +70,7 @@
       "dev.kindred.fabric.NativeManhuntGameTests",
       "dev.kindred.fabric.NativeBuildBattleGameTests",
       "dev.kindred.fabric.NativeRanchGameTests",
+      "dev.kindred.fabric.NativeEvalGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
       "dev.kindred.fabric.NativeHouseGameTests",
       "dev.kindred.fabric.NativeBaseGameTests",

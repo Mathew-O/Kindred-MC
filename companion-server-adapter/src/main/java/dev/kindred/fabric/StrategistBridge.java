@@ -219,6 +219,12 @@ final class StrategistBridge implements AutoCloseable {
         return answered;
     }
 
+    /** The tokens a player's questions and talk have used today, as charged against its budget (F-26's run reads it). */
+    long tokensToday(UUID id) {
+        State state = states.get(id);
+        return state == null ? 0 : state.tokensToday;
+    }
+
     /**
      * What a player remembers of this world, as its context file holds it: its notes (each with the habit it carries)
      * and its deaths, newest last; nothing until the file is read.

@@ -245,6 +245,9 @@ final class PortalRunCampaign {
 
     int deaths() { return deathCount; }
     int stuckSpells() { return stuckSpells; }
+
+    /** How many places in a row the watchdog has given up on, the latest included (0 once it gets on). */
+    int stuckLevel() { return stuckLevel; }
     Optional<Death> lastDeath() { return Optional.ofNullable(deathsSeen.peekLast()); }
 
     /** The stance in force: the strategist's while it holds, else pressing on. */

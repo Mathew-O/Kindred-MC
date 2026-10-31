@@ -33,6 +33,8 @@ public final class KindredMod implements ModInitializer {
                     .dimensions(EntityDimensions.fixed(0.6f, 1.95f)).trackRangeChunks(8)
                     .disableSummon().build());
     private static PlayerRuntime runtime;
+    /** An unattended evaluation run, when {@code KINDRED_EVAL} asks for one (F-26): read here and nowhere else. */
+    private static EvalBootstrap eval;
 
     static PlayerRuntime runtime() { return runtime; }
 
@@ -67,6 +69,10 @@ public final class KindredMod implements ModInitializer {
             PlayerRuntime rt = runtime;
             if (rt != null) rt.onServerTick(server);
         });
+        eval = EvalBootstrap.fromEnvironment().orElse(null);
+        if (eval != null) {
+            net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
+        }
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             runtime = new PlayerRuntime(server);
             runtime.start();
@@ -100,6 +106,7 @@ public final class KindredMod implements ModInitializer {
             }
         });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            if (eval != null) eval.stopping(server);
             if (runtime != null) runtime.stop();
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {

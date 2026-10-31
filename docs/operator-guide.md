@@ -358,6 +358,30 @@ Inference is optional and currently disconnected. Planned Claude/OpenAI keys/bud
 
 Report exact build, seed/difficulty, IDs, commands and native before/after evidence. Stop and snapshot ambiguous actions; do not recreate missing items.
 
+## Scoring a build (F-26)
+
+A build can be played unattended on many seeds and scored, so that a change is judged on ten games, not one. Set
+`KINDRED_EVAL` in a server's environment and the mod plays that scenario with no one at the console: once the server has
+started it spawns the starters (Kindred, Sol and Echo, or those named) a few blocks apart at the world's spawn, sets the
+edits switch and their goal, sprints the ticks asked for (`/tick sprint`), writes `logs/eval-result.json` and stops the
+server. The value is `key=value` pairs separated by `;`, for example
+`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none`.
+Missing keys take those defaults; a key or value it does not know is refused with an error in the log, and no run is
+made. Without `KINDRED_EVAL` nothing of this happens: the setting is read when the mod loads and nowhere else.
+
+The result holds, per player and in ticks from the run's start, the first tick it reached each stage of the way (first
+wooden tool, stone tools, iron ingot, iron pickaxe, diamond, obsidian, portal lit, Nether entered, blaze rods, eyes,
+stronghold, End, dragon), every death with its cause as the game records it and where, when and what it was doing,
+every time its watchdog gave a spot up, and the model tokens it used. A run is *earned* only when nothing in it is
+handed out or kept (edits on, `keep=none`; the starters always spawn with empty inventories); otherwise it is
+*staged*, and the result says which.
+
+`tools/eval/run.py` runs a build on many seeds, two servers at a time on four cores, each in its own folder under
+`run/eval/` with its own world; `tools/eval/score.py` writes a summary with medians and ranges across the seeds, and
+`tools/eval/compare.py` puts two builds side by side on the same seeds, calling a difference worth noting only when the
+ranges do not overlap. They need Python 3 and nothing else; see `tools/eval/README.md`. The optional model players'
+key is passed to a server only when its scenario asks for them. Summaries go under `docs/evidence/eval/`; logs do not.
+
 ## Offline support reports and evidence
 
 Use the [support CLI](../tools/support-batch-01/README.md) for test summaries, before/after regressions, repeated runs, explicit sanitized evidence bundles and static documentation/manifest/JAR checks. Python and its standard library are sufficient; these commands never start Minecraft, run builds or call providers. The [reconstructed support handoff](../tools/support-batch-05/HANDOFF.md) lists the two ModelGateway fixes and the bounded verification scope.
