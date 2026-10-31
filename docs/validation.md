@@ -16,6 +16,26 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Death replays (F-27): the capture, the first replay and its fix — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Two evaluation servers (F-26's comparison) ran on the same cores
+throughout, so times by the clock include their turns. Focused runs narrow the gametest entrypoints to `ReplayGameTests`
+or a scratch class (not committed), and restore them after each run.
+
+- The capture's fixture (`ReplayGameTests.aDeathIsCapturedWithinOneTickAndReadsBackAsAReplay`): passed 12 of 12, 3.4 to
+  6.1 ms of the server thread's own time against a 50 ms tick, 5.1 to 26.5 ms by the clock; 274 to 338 KB written.
+- In play, a jar of `597f0c6` on seeds 8675309 and 20261030 (`goal=nether; ticks=144000`): seven deaths on the first,
+  each captured in 4.5 to 12.9 ms by the clock and written in 575 to 853 KB; none on the second.
+- Replays: `sol-60203` (a cave, three zombies and a skeleton, Sol at 7 health) died in 2 and 1 of 3 before the fix and
+  in 1, 2 and 1 of 3 after it, so it is not committed. `sol-21811` (one heart, night, no weapon) died 3 of 3, but
+  nothing at its start can save it. `sol-12229` died 5 of 12. `sol-9373` and `echo-36596` died 0 of 3 in two sets
+  each, `sol-94364` 0 of 3 in one.
+  `sol-101977` could not be made where it died.
+- The fix `sol-60203`'s log showed (`PortalRunCampaign.stopFor`): fixture
+  `badlyHurtAndCorneredByAZombieItFightsItRatherThanBreakEachFightOff` 0 of 3 before, 3 of 3 after, each alone in its
+  batch; the walled-in fixture beside it 2 of 2.
+- Not met: a replay that dies two of three times before its fix and none after. F-27 stays open.
+
 ## The live pair on 00e98f5; the cattle (M-06a1); the sand seal, the far move, the tree in water, the own seal and the dig away (F-25c4aq to F-25c4au) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. The live pair ran alone; the focused runs after it, one set at a time, with nothing else on the cores.

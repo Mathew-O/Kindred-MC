@@ -4239,6 +4239,61 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Badly hurt at the end of a dead-end tunnel with a zombie in reach and no way off from it: the fight the goal chooses
+     * is fought, not broken off as soon as it starts (F-27's first replay). In F-27's capture run Sol, its way off blocked,
+     * had each fight it was given stopped at once for its health, three times running, while three zombies struck it.
+     * Staged: stone round a tunnel two high, the player at its closed end; a zombie, its AI off, two blocks in front, its
+     * target kept on the player each tick; health 5, food 10 and nothing to eat, so none comes back; a stone sword.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "cornered", tickLimit = 1200)
+    public void badlyHurtAndCorneredByAZombieItFightsItRatherThanBreakEachFightOff(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Cornered"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(6000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    FixtureGround.keep(context, p.add(-2, -1, -2), p.add(6, 3, 2));
+                    for (BlockPos at : BlockPos.iterate(p.add(-2, -1, -2), p.add(6, 3, 2))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                    for (int x = 0; x <= 2; x++) {
+                        world.setBlockState(p.east(x), Blocks.AIR.getDefaultState());
+                        world.setBlockState(p.east(x).up(), Blocks.AIR.getDefaultState());
+                    }
+                    var z = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    z.refreshPositionAndAngles(p.getX() + 2.5, p.getY(), p.getZ() + 0.5, 90, 0);
+                    z.setAiDisabled(true);
+                    z.setPersistent();
+                    world.spawnEntity(z);
+                    zombie[0] = z;
+                    var player = f.player();
+                    player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(10);
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.runAtEveryTick(() -> { if (zombie[0] != null && zombie[0].isAlive()) zombie[0].setTarget(f.player()); });
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(!zombie[0].isAlive(), "The zombie still stands, at health " + zombie[0].getHealth() + ": "
+                        + f.runtime.panelBots(Actor.console()).getFirst().goalProgress()))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    zombie[0] = null;
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Stranded on a one-block pillar five blocks above the floor, with every way off a fall the navigator would not
      * take: the goal jumps down, taking vanilla fall damage it can afford, rather than wait for ever.
      */

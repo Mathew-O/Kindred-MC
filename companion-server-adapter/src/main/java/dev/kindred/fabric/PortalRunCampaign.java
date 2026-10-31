@@ -3985,6 +3985,11 @@ final class PortalRunCampaign {
         return Optional.of(new Task("native_fight", strike.args(), strike.label()));
     }
 
+    /** A mob on foot in reach and no way off from it: what {@link #defend} fights however hurt the player is. */
+    private boolean cornered(ServerPlayerEntity player) {
+        return onFootInReach(player) != null && backOff(player).isEmpty();
+    }
+
     private static int hunters(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(12, 6, 12),
                 mob -> mob.isAlive() && mob.getTarget() == player).size();
@@ -4733,8 +4738,11 @@ final class PortalRunCampaign {
             // The same line below which the goal never starts a fight. Not a creeper faced behind a shield, though:
             // running from its blast is worse than taking it on the shield.
             boolean shielded = running.label().equals("Fight creeper") && player.getOffHandStack().isOf(Items.SHIELD);
-            // A mob a hit has just knocked a few steps back still counts as one in reach.
-            return player.getHealth() < 6 && !shielded && finishable(player, 5.0) == null ? "Badly hurt; break off the fight" : null;
+            // A mob a hit has just knocked a few steps back still counts as one in reach. Nor a fight the plan chose because
+            // there is no way off from the mob in reach (F-27's first replay): in F-27's capture run Sol, its way off blocked,
+            // had the fight it was given broken off at once three times running while three zombies struck it.
+            return player.getHealth() < 6 && !shielded && finishable(player, 5.0) == null && !cornered(player)
+                    ? "Badly hurt; break off the fight" : null;
         }
         var hoglin = hoglinAfter(player);
         if (hoglin != null && !outOfReach(player, hoglin) && !running.label().startsWith("Fight hoglin") && !running.label().startsWith("Fight zoglin")) {

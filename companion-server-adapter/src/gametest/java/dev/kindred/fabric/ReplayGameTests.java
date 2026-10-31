@@ -80,9 +80,12 @@ public final class ReplayGameTests implements FabricGameTest {
         var server = world.getServer();
         JsonObject state = replay;
         var at = state.getAsJsonArray("at");
-        Vec3d start = Vec3d.of(context.getAbsolutePos(BlockPos.ORIGIN)).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
+        // A test's own position is its structure block's, one below the structure, so the structure's corner is (0, 1, 0).
+        Vec3d start = Vec3d.of(context.getAbsolutePos(BlockPos.ORIGIN.up())).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
         Path directory = server.getSavePath(WorldSavePath.ROOT).resolve("kindred-replay-" + UUID.randomUUID());
-        ServerCommandSource source = server.getCommandSource().withWorld(world).withPosition(start);
+        // Made where it can stand, the nearest such cell, then set where it died: one that died falling, swimming or
+        // knocked back died where no player can be made ("Make room on solid ground").
+        ServerCommandSource source = server.getCommandSource().withWorld(world).withPosition(standNear(world, start));
         var runtime = new PlayerRuntime(server, directory, NativePlayerSaves::read, writer -> writer);
         try {
             Files.createDirectories(directory);
@@ -91,8 +94,9 @@ public final class ReplayGameTests implements FabricGameTest {
             throw new RuntimeException("Replay edit policy could not be saved", error);
         }
         runtime.start();
-        String player = state.get("player").getAsString();
-        String name = player.substring(0, Math.min(player.length(), 10)) + "R" + run;
+        // A name of its own for each replay and run: with one name for every replay of a player, the next batch's clashed
+        // with a player a failed run had left in the world.
+        String name = "R" + Integer.toHexString(state.get("player").getAsString().hashCode() * 31 + (int) state.get("tick").getAsLong() & 0xfffffff) + "_" + run;
         UUID[] id = new UUID[2];
         Vec3d[] from = new Vec3d[1];
         int[] completed = {0};
@@ -110,6 +114,7 @@ public final class ReplayGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     ServerPlayerEntity body = server.getPlayerManager().getPlayer(id[1]);
+                    body.refreshPositionAndAngles(start.x, start.y, start.z, state.get("yaw").getAsFloat(), state.get("pitch").getAsFloat());
                     restore(body, state);
                     world.setTimeOfDay(state.get("timeOfDay").getAsLong());
                     runtime.observeRun(new RunObserver() {
@@ -128,7 +133,7 @@ public final class ReplayGameTests implements FabricGameTest {
                             stopped[0] = true;
                             runtime.stop();
                         }
-                        throw new AssertionError("Replay " + run + ": died again, as it did (" + state.get("cause").getAsString() + ")");
+                        throw new net.minecraft.test.GameTestException("Replay " + run + ": died again, as it did (" + state.get("cause").getAsString() + ")");
                     }
                     context.assertTrue(context.getTick() - began[0] >= ticks, "Still running");
                     if (stuck) {
@@ -138,6 +143,21 @@ public final class ReplayGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * Where to make the player from: one cell west of the nearest cell to {@code at} where the runtime makes a native
+     * player (a solid block under it, room, no mob and no water), the first of the cells round it the runtime tries.
+     */
+    private static Vec3d standNear(net.minecraft.server.world.ServerWorld world, Vec3d at) {
+        for (BlockPos cell : BlockPos.iterateOutwards(BlockPos.ofFloored(at), 10, 6, 10)) {
+            var bounds = new net.minecraft.util.math.Box(cell.getX() + .2, cell.getY(), cell.getZ() + .2, cell.getX() + .8, cell.getY() + 1.8, cell.getZ() + .8);
+            if (world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty() && world.getFluidState(cell).isEmpty()
+                    && world.getBlockState(cell.down()).isSolidBlock(world, cell.down())) {
+                return Vec3d.ofBottomCenter(cell.west());
+            }
+        }
+        return at;
     }
 
     /** Its state as the replay holds it: where it stood, its vitals ten seconds before, what it held, its effects. */
@@ -207,12 +227,14 @@ public final class ReplayGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var capture = replays.latestForTest();
                     context.assertTrue(capture.isPresent(), "No capture at its death");
-                    double ms = capture.get().nanosOnThread() / 1e6;
-                    context.assertTrue(ms <= 50, "The capture took " + ms + " ms on the server thread, more than a tick");
+                    // The capture's own work on the server thread, in its CPU time: its wall time also counts the pauses of
+                    // a collector or of other servers on the same cores, which no capture causes.
+                    double ms = capture.get().nanosOnThread() / 1e6, cpu = capture.get().cpuNanosOnThread() / 1e6;
+                    context.assertTrue(cpu <= 50, "The capture took " + cpu + " ms of the server thread's time, more than a tick (" + ms + " ms by the clock)");
                     try {
                         capture.get().written().get(10, TimeUnit.SECONDS);
                     } catch (Exception late) {
-                        throw new AssertionError("The replay's files not written: " + late);
+                        throw new net.minecraft.test.GameTestException("The replay's files not written: " + late);
                     }
                     Path folder = capture.get().folder();
                     try {
@@ -226,10 +248,10 @@ public final class ReplayGameTests implements FabricGameTest {
                         template.readNbt(context.getWorld().getRegistryManager().getWrapperOrThrow(RegistryKeys.BLOCK), nbt);
                         context.assertTrue(template.getSize().equals(new Vec3i(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH)), "Its size: " + template.getSize());
                         context.assertTrue(nbt.getList("entities", 10).size() >= 1, "The zombie in it");
-                        KindredMod.LOGGER.info("Replay capture fixture: {} ms on the server thread, {} KB", String.format(java.util.Locale.ROOT, "%.1f", ms),
-                                Files.size(folder.resolve("replay.snbt")) / 1024);
+                        KindredMod.LOGGER.info("Replay capture fixture: {} ms of the server thread's time, {} ms by the clock, {} KB", String.format(java.util.Locale.ROOT, "%.1f", cpu),
+                                String.format(java.util.Locale.ROOT, "%.1f", ms), Files.size(folder.resolve("replay.snbt")) / 1024);
                     } catch (java.io.IOException | com.mojang.brigadier.exceptions.CommandSyntaxException unreadable) {
-                        throw new AssertionError("The replay does not read back: " + unreadable);
+                        throw new net.minecraft.test.GameTestException("The replay does not read back: " + unreadable);
                     }
                     zombie[0].discard();
                     f.runtime.stop();

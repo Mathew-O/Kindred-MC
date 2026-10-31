@@ -41,7 +41,7 @@ public final class NativeEvalGameTests implements FabricGameTest {
                     try {
                         result = JsonParser.parseString(Files.readString(out)).getAsJsonObject();
                     } catch (Exception unreadable) {
-                        throw new AssertionError("No readable result at " + out + ": " + unreadable);
+                        throw new net.minecraft.test.GameTestException("No readable result at " + out + ": " + unreadable);
                     }
                     context.assertTrue(result.get("scenario").getAsString().equals(
                             "starters=Kindred; goal=nether; edits=on; ticks=200; sprint=off; strategist=off; voice=off; keep=none"), "The scenario: " + result.get("scenario"));
