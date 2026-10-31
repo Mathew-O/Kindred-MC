@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kindred watch</title>
+<style>
+  :root { --bg: #101318; --card: #1a1f27; --line: #2a313c; --text: #e8ecf1; --dim: #9aa5b4; --hp: #e5484d; --food: #d9a441; --good: #46a758; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body.transparent { background: transparent; }
+  header { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 16px 0; }
+  header h1 { font-size: 16px; margin: 0; letter-spacing: .02em; }
+  header span { color: var(--dim); font-size: 12px; }
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; padding: 12px 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .top { display: flex; gap: 10px; align-items: center; }
+  .head { width: 36px; height: 36px; border-radius: 6px; background: #3b4452; display: grid; place-items: center; font-weight: 700; }
+  .name { font-weight: 700; font-size: 15px; }
+  .away { color: var(--dim); font-size: 12px; }
+  .bar { height: 6px; background: #2a313c; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; }
+  .hp > i { background: var(--hp); } .food > i { background: var(--food); }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 10px 0 4px; }
+  ul { margin: 0; padding-left: 16px; } li { margin: 1px 0; }
+  .said { font-style: italic; }
+  .score { color: var(--dim); }
+  #feed { padding: 0 16px 16px; } #feed li { color: var(--dim); }
+</style>
+</head>
+<body>
+<header><h1>Kindred</h1><span id="tick">connecting</span></header>
+<main id="players"></main>
+<section id="feed"><h2>Highlights</h2><ul id="highlights"></ul></section>
+<template id="card">
+  <div class="card">
+    <div class="top"><div class="head"></div><div><div class="name"></div><div class="away"></div></div></div>
+    <div class="bar hp"><i></i></div><div class="bar food"><i></i></div>
+    <h2>Goal</h2><div class="goal"></div>
+    <h2>Doing</h2><div class="doing"></div>
+    <h2>Weighing</h2><ul class="candidates"></ul>
+    <h2>Said</h2><div class="said"></div><ul class="talk"></ul>
+    <h2>Habits and notes</h2><ul class="notes"></ul>
+  </div>
+</template>
+<script>
+  // Read-only: this page only asks for the snapshot, once a second, with the token it was opened with.
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token") || "";
+  if (params.get("transparent") === "1") document.body.classList.add("transparent");
+  const headers = { "Authorization": "Bearer " + token };
+
+  function list(ul, items) {
+    ul.replaceChildren(...items.map(text => { const li = document.createElement("li"); li.textContent = text; return li; }));
+  }
+
+  function render(data) {
+    document.getElementById("tick").textContent = "tick " + data.tick;
+    const main = document.getElementById("players");
+    const template = document.getElementById("card");
+    main.replaceChildren(...data.players.map(p => {
+      const card = template.content.firstElementChild.cloneNode(true);
+      card.querySelector(".head").textContent = p.name.slice(0, 1);
+      card.querySelector(".name").textContent = p.name;
+      card.querySelector(".away").textContent = p.connected ? p.status : "offline";
+      card.querySelector(".hp > i").style.width = Math.max(0, Math.min(100, p.health * 5)) + "%";
+      card.querySelector(".food > i").style.width = Math.max(0, Math.min(100, p.food * 5)) + "%";
+      card.querySelector(".goal").textContent = p.goal + (p.progress ? " - " + p.progress : "");
+      card.querySelector(".doing").textContent = p.doing || "nothing";
+      list(card.querySelector(".candidates"), p.candidates.map(c => c.what + " (" + c.priority.toLowerCase() + ", " + c.score + ")"));
+      card.querySelector(".said").textContent = p.lastWords;
+      list(card.querySelector(".talk"), p.talk.slice(0, -1));
+      list(card.querySelector(".notes"), p.habits.concat(p.notes));
+      return card;
+    }));
+  }
+
+  function feed(data) {
+    list(document.getElementById("highlights"), data.highlights.slice(-12).reverse().map(h => (h.player ? h.player + ": " : "") + h.text));
+  }
+
+  async function poll() {
+    try {
+      const players = await fetch("/api/players", { headers });
+      if (players.status === 401) { document.getElementById("tick").textContent = "the token is wrong or missing"; return; }
+      render(await players.json());
+      feed(await (await fetch("/api/events", { headers })).json());
+    } catch (e) {
+      document.getElementById("tick").textContent = "not connected";
+    }
+  }
+  poll();
+  setInterval(poll, 1000);
+</script>
+</body>
+</html>

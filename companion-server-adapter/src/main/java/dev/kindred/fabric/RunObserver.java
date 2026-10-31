@@ -21,4 +21,7 @@ interface RunObserver {
 
     /** A task ended: its skill, how ({@code COMPLETED}, {@code BLOCKED}, {@code CANCELLED}) and its label, if it had one. */
     default void ended(String player, String skill, String state, String label) { }
+
+    /** The run's result so far, as its file will hold it, for the watch page (E-48); none for a listener with no result. */
+    default String resultSoFar() { return null; }
 }

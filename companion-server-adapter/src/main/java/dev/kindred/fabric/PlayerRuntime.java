@@ -1843,6 +1843,7 @@ final class PlayerRuntime {
         if (server.getTicks() - entry.lastDropReportTick < STALL_TICKS) return;
         entry.lastDropReportTick = server.getTicks();
         KindredMod.LOGGER.info("{} {} dropped before it ran: {}", entry.data.displayName(), skill, gates);
+        if (watch != null) entry.decided(server.getTicks(), skill + " dropped before it ran: " + gates);
     }
 
     /** Game time with a goal and no skill started, after which a player says once what holds it (F-25c4m). */
@@ -2276,6 +2277,15 @@ final class PlayerRuntime {
                 attentionScheduler.complete(token);
             } catch (Exception failure) {
                 attentionScheduler.abandon(token);
+            }
+        }
+        if (watch != null) {
+            try {
+                publishWatch(tick);
+            } catch (RuntimeException failure) {
+                // The page is a window on play, never a part of it: a fault in it is logged once and play goes on.
+                if (!watchFaulted) KindredMod.LOGGER.warn("The watch page's snapshot failed; play goes on", failure);
+                watchFaulted = true;
             }
         }
     }
@@ -4037,6 +4047,7 @@ final class PlayerRuntime {
             entry.loggedGoalProgress = entry.goalProgress;
             var at = body.entity().getBlockPos();
             KindredMod.LOGGER.info("{} goal at {} {} {}: {}", entry.data.displayName(), at.getX(), at.getY(), at.getZ(), entry.goalProgress);
+            if (watch != null) entry.decided(server.getTicks(), "goal at " + at.getX() + " " + at.getY() + " " + at.getZ() + ": " + entry.goalProgress);
         }
         if (task.isEmpty()) return List.of();
         var t = task.get();
@@ -5418,6 +5429,10 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("{} died at {}: {} ({})", entry.data.displayName(), deathPos.toShortString(),
                 player.getDamageTracker().getDeathMessage().getString(), circumstances);
         var doing = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
+        if (watch != null) {
+            highlight(server.getTicks(), entry.data.displayName(), "death", player.getDamageTracker().getDeathMessage().getString());
+            entry.decided(server.getTicks(), "died at " + deathPos.toShortString() + ": " + player.getDamageTracker().getDeathMessage().getString());
+        }
         runObserver.died(entry.data.displayName(), player, player.getDamageTracker().getDeathMessage().getString(),
                 entry.campaign == null ? "no goal" : entry.campaign.progress(), entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
                 entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), doing);
@@ -5713,6 +5728,7 @@ final class PlayerRuntime {
         }
 
         List<dev.kindred.core.TaskPreferences.Candidate> candidates = taskCandidates.stream().map(NativeTaskCandidate::candidate).toList();
+        if (watch != null && !taskCandidates.isEmpty()) entry.weighed = List.copyOf(taskCandidates);
 
         // A reflex to act on admits a decision without its work being admitted; nothing to do, and it waits as before.
         var decision = entry.mind.decide(new dev.kindred.core.PlayerDecisionLoop.Frame(usable, entry.snapshot().stopLatched(),
@@ -6487,6 +6503,9 @@ final class PlayerRuntime {
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
                     entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
                             : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+            if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
+                    + (entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
+                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : ""));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
                     : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
             campaignTaskFinished(entry, state);
@@ -11032,6 +11051,80 @@ final class PlayerRuntime {
         }
     };
 
+    /** The watch page (E-48), when it is on: given a snapshot of the players once a tick, on this thread. */
+    private WatchServer watch;
+    private boolean watchFaulted;
+    private final java.util.ArrayDeque<dev.kindred.core.watch.WatchSnapshot.Highlight> highlights = new java.util.ArrayDeque<>();
+    private String watchEval;
+
+    /** The watch page to give a snapshot to once a tick (E-48); none to stop. */
+    void watch(WatchServer server) {
+        requireThread();
+        watch = server;
+    }
+
+    /**
+     * The players as the watch page shows them (E-48), taken here on the server thread once a tick and handed to its
+     * server, whose threads read nothing else: each one's state, goal and what it is doing, what it weighed at its last
+     * decision, its own last decision lines, what it said lately, its habits and notes, and its model tokens today; and the
+     * moments worth showing (a death, a stage reached, a rescue, a habit taken up, a match's turn).
+     */
+    private void publishWatch(long tick) {
+        var players = new ArrayList<dev.kindred.core.watch.WatchSnapshot.Player>();
+        for (PanelBot bot : panelBots(Actor.console())) {
+            Entry entry = entries.get(bot.id());
+            if (entry == null) continue;
+            var campaign = entry.campaign;
+            noteHighlights(entry, campaign, tick);
+            var weighed = new ArrayList<dev.kindred.core.watch.WatchSnapshot.Candidate>();
+            for (var candidate : entry.weighed) {
+                var task = entry.campaignTasks.get(candidate.candidate().id());
+                weighed.add(new dev.kindred.core.watch.WatchSnapshot.Candidate(task != null ? task.label() : candidate.skill(),
+                        candidate.candidate().priority().name(), candidate.candidate().needScore()));
+            }
+            weighed.sort(java.util.Comparator.comparingDouble(dev.kindred.core.watch.WatchSnapshot.Candidate::score).reversed());
+            String doing = entry.activeCampaignTask != null && !bot.task().isEmpty() ? entry.activeCampaignTask.label() : bot.task();
+            BlockPos at = bot.position();
+            players.add(new dev.kindred.core.watch.WatchSnapshot.Player(bot.id().toString(), bot.name(), bot.connected(), bot.health(), bot.food(),
+                    bot.goal().label(), bot.goalProgress(), doing, bot.status(), bot.dimension(), at == null ? 0 : at.getX(),
+                    at == null ? 0 : at.getY(), at == null ? 0 : at.getZ(), weighed, List.copyOf(entry.decisions), List.copyOf(entry.saidLately),
+                    campaign == null ? List.of() : campaign.preferences().habits().stream().map(Enum::name).sorted().toList(),
+                    memory.notes(bot.id()), strategist.map(bridge -> bridge.tokensToday(bot.id())).orElse(0L)));
+        }
+        if (tick % 20 == 0) watchEval = runObserver.resultSoFar();
+        watch.publish(new dev.kindred.core.watch.WatchSnapshot(tick, Thread.currentThread().getName(), players, List.copyOf(highlights), watchEval));
+    }
+
+    /** What changed since the watch page last looked: the stage of its run, its rescues, the habits it keeps. */
+    private void noteHighlights(Entry entry, PortalRunCampaign campaign, long tick) {
+        if (campaign == null) return;
+        String name = entry.data.displayName();
+        // A new goal's campaign starts from what it is: nothing in it is news.
+        boolean fresh = campaign != entry.watchCampaign;
+        entry.watchCampaign = campaign;
+        String stage = campaign.stage() != dev.kindred.core.survival.PortalRunPlanner.Stage.DONE || !campaign.endGoal()
+                ? "the portal run: " + campaign.stage()
+                : campaign.stronghold().stage() != dev.kindred.core.survival.StrongholdRunPlanner.Stage.DONE
+                ? "the stronghold run: " + campaign.stronghold().stage() : "the End: " + campaign.stronghold().endFight().stage();
+        stage = stage.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        if (!fresh && !stage.equals(entry.watchStage)) highlight(tick, name, "stage", "now at " + stage);
+        entry.watchStage = stage;
+        var rescues = campaign.rescues();
+        if (fresh || rescues.size() < entry.watchRescues) entry.watchRescues = rescues.size();
+        for (int i = entry.watchRescues; i < rescues.size(); i++) highlight(tick, name, "rescue", rescues.get(i));
+        entry.watchRescues = rescues.size();
+        var habits = campaign.preferences().habits();
+        if (!fresh) for (var habit : habits) {
+            if (!entry.watchHabits.contains(habit)) highlight(tick, name, "habit", "takes up " + habit.name().toLowerCase(java.util.Locale.ROOT).replace('_', ' '));
+        }
+        entry.watchHabits = Set.copyOf(habits);
+    }
+
+    private void highlight(long tick, String player, String kind, String text) {
+        if (highlights.size() >= dev.kindred.core.watch.WatchSnapshot.HIGHLIGHTS) highlights.removeFirst();
+        highlights.addLast(new dev.kindred.core.watch.WatchSnapshot.Highlight(tick, player, kind, text));
+    }
+
     /** For fixtures (F-29): the skills a rescue plan may use, as though the others were not installed. */
     void rescueSkillsForFixtures(java.util.Set<String> skills) { rescueSkills = java.util.Set.copyOf(skills); }
 
@@ -11671,6 +11764,7 @@ final class PlayerRuntime {
         };
         String line = match.mode().label() + " " + who(match) + ": " + what;
         KindredMod.LOGGER.info(line);
+        if (watch != null) highlight(server.getTicks(), "", "match", line);
         presenter.changed(match, this::playerName);
         boolean hunt = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT;
         if ((race || hunt) && match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && !races.containsKey(match.id())
@@ -12521,6 +12615,19 @@ final class PlayerRuntime {
 
     private final class Entry implements ChoreSkills.Gate {
         private Companion data;
+        /** What it weighed at its last decision that weighed anything, and what the watch page last saw of it (E-48). */
+        private List<NativeTaskCandidate> weighed = List.of();
+        private PortalRunCampaign watchCampaign;
+        private int watchRescues;
+        private String watchStage = "";
+        private Set<dev.kindred.core.survival.PlanPreferences.Habit> watchHabits = Set.of();
+        /** Its own decision lines as the log has them, the last thirty, kept while the watch page is on (E-48). */
+        private final java.util.ArrayDeque<String> decisions = new java.util.ArrayDeque<>();
+
+        private void decided(long tick, String line) {
+            if (decisions.size() >= dev.kindred.core.watch.WatchSnapshot.LINES) decisions.removeFirst();
+            decisions.addLast("at " + tick / 20 + "s: " + line);
+        }
         /** The campaign whose memory was read, whether the read is in, and the leg's revision last written. */
         private PortalRunCampaign memoryCampaign;
         private boolean memoryLoaded;

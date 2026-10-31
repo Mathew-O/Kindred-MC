@@ -86,6 +86,7 @@ final class EvalBootstrap implements RunObserver {
     void tick(MinecraftServer server, PlayerRuntime runtime) {
         if (finished || runtime == null) return;
         lastTick = server.getTicks();
+        seed = server.getOverworld().getSeed();
         switch (phase) {
             case 0 -> { // The runtime's records loaded: set the world up as an operator would, then the starters one by one.
                 if (!runtime.isReady()) return;
@@ -265,6 +266,15 @@ final class EvalBootstrap implements RunObserver {
     /** For a fixture: a run on its own runtime, round {@code origin}, the file where it says, and what to do at the end in place of stopping. */
     static EvalBootstrap forTest(String scenario, Path out, Runnable finish, net.minecraft.util.math.BlockPos origin) {
         return new EvalBootstrap(EvalScenario.parse(scenario), out, finish, origin, false);
+    }
+
+    /** The world's seed, read on the server thread as the run goes. */
+    private long seed;
+
+    /** The record so far, as the file will hold it, for the watch page (E-48); read on the server thread. */
+    @Override
+    public String resultSoFar() {
+        return record.toJson("running", seed, startTick < 0 ? 0 : lastTick - startTick, finished);
     }
 
     /** For a fixture: the stages and deaths recorded so far, as the file would hold them. */

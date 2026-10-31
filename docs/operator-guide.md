@@ -493,6 +493,46 @@ A replay that is to be kept as a test goes into the gametest resources (see the 
 alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
 of three; one that does not is left out.
 
+## The watch page (E-48)
+
+A read-only web page that shows what each AI player is doing and weighing, for an operator, or for a stream. It is off
+unless the server's environment sets both of the first two:
+
+- `KINDRED_WATCH_PORT=8077`: the port it answers on;
+- `KINDRED_WATCH_TOKEN=<a long random string>`: the token every request must carry;
+- `KINDRED_WATCH_BIND=127.0.0.1`, optional: the address it answers on, this computer alone unless told otherwise.
+
+With a port and no token it stays off, and the log says so. Open `http://127.0.0.1:8077/?token=<token>`: a dark card
+for each player, with:
+
+- its health and food;
+- its goal and how far along it is, and what it is doing;
+- what it weighed at its last decision, with each candidate's priority and score;
+- what it said last, and the lines before that;
+- its habits and notes;
+- a feed of highlights: deaths, the stages of its run, rescues, habits taken up, matches starting and ending.
+
+It reads once a second. The same data is served as JSON, each request with the token, as `Authorization: Bearer <token>`
+or `?token=<token>`:
+
+- `GET /api/players`, and `GET /api/players/<id or name>` for one;
+- `GET /api/events`: the last fifty highlights;
+- `GET /api/stream`: the players as server-sent events, once a second, four streams at most, each for ten minutes;
+- `GET /api/eval`: an evaluation run's result so far (F-26), or `null`.
+
+A request without the token, or with a wrong one, gets 401; anything but a `GET` gets 405. Nothing on the page or its
+API changes anything in the game (D9): every control stays in commands and the K panel. Once a game tick the server's
+own thread makes a copy of what the page shows; the page's own threads serve only that copy and never touch the world.
+
+The page shows what whoever may command the players sees: where they are, their own log lines, and what they said,
+privately too. Anyone with the token sees it. Keep the token to yourself, leave the bind on this computer, and over a
+network put the page behind TLS: it is plain HTTP, and the token travels with each request.
+
+To put it on a stream with OBS, add a **Browser** source with the URL
+`http://127.0.0.1:8077/?token=<token>&transparent=1` (`transparent=1` drops the page's background), a width of 1280 and
+a height of 720 or more, and leave "Shutdown source when not visible" off so it keeps reading. Each OBS scene that
+shows it reads it on its own. The game's work for the page is the same however many read it: the one copy a tick.
+
 ## Offline support reports and evidence
 
 Use the [support CLI](../tools/support-batch-01/README.md) for test summaries, before/after regressions, repeated runs, explicit sanitized evidence bundles and static documentation/manifest/JAR checks. Python and its standard library are sufficient; these commands never start Minecraft, run builds or call providers. The [reconstructed support handoff](../tools/support-batch-05/HANDOFF.md) lists the two ModelGateway fixes and the bounded verification scope.

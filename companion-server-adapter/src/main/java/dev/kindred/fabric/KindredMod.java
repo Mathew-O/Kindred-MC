@@ -43,6 +43,8 @@ public final class KindredMod implements ModInitializer {
     private static boolean atlas;
     /** Whether a stuck player asks the strategist for a way out (F-29): {@code KINDRED_RESCUE=off} turns it off. */
     private static boolean rescue;
+    /** The watch page (E-48), when {@code KINDRED_WATCH_PORT} and {@code KINDRED_WATCH_TOKEN} are set: off otherwise. */
+    private static WatchServer watch;
 
     static PlayerRuntime runtime() { return runtime; }
 
@@ -101,6 +103,14 @@ public final class KindredMod implements ModInitializer {
                 runtime.rescue(false);
                 LOGGER.info("Rescue plans are off (KINDRED_RESCUE=off)");
             }
+            if (System.getenv("KINDRED_WATCH_PORT") != null) {
+                try {
+                    watch = WatchServer.fromEnvironment(server::isOnThread).orElse(null);
+                } catch (LinkageError missing) {
+                    LOGGER.warn("The watch page needs the JDK's jdk.httpserver module, which this Java lacks; it is off");
+                }
+                if (watch != null) runtime.watch(watch);
+            }
             if (replays) {
                 var run = server.getRunDirectory();
                 runtime.captureReplays(new DeathReplays(run.resolve("kindred").resolve("replays").resolve(server.getSaveProperties().getLevelName()),
@@ -141,6 +151,10 @@ public final class KindredMod implements ModInitializer {
             if (runtime != null) runtime.stop();
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            if (watch != null) {
+                watch.close();
+                watch = null;
+            }
             if (runtime != null) runtime.finishShutdown();
             runtime = null;
         });

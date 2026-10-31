@@ -16,6 +16,17 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The watch page (E-48) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 830 JUnit tests, 6 skipped, 0 failures (the 5 more
+  are `WatchSnapshotTest`).
+- `NativeWatchGameTests` 3 of 3 in each of three runs alone on the final code, the requests made with the JDK's HTTP
+  client from a thread of the fixture's own on an ephemeral port. Before the third fixture was added, its first two were
+  2 of 2 in each of three runs alone.
+
 ## Rescue plans (F-29) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs

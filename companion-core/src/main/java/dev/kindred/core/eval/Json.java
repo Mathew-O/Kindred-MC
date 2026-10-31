@@ -1,11 +1,11 @@
 package dev.kindred.core.eval;
 
-/** Technical: the little JSON the evaluation record writes, by hand, as core has no library for it. */
-final class Json {
+/** Technical: the little JSON the evaluation record and the watch snapshot (E-48) write, by hand, as core has no library for it. */
+public final class Json {
     private Json() { }
 
     /** {@code text} as a JSON string, quotes, backslashes and control characters escaped; null as {@code null}. */
-    static String string(String text) {
+    public static String string(String text) {
         if (text == null) return "null";
         var out = new StringBuilder(text.length() + 2).append('"');
         for (int i = 0; i < text.length(); i++) {
