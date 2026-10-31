@@ -3129,10 +3129,16 @@ final class PortalRunCampaign {
     private Optional<Task> buildPortal(NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
-        if (portalSite == null) portalSite = choosePortalSite(player).orElse(null);
+        if (portalSite == null) {
+            clearTriedFrom.clear();
+            portalSite = choosePortalSite(player).orElse(null);
+        }
         if (portalSite == null) return tunnel(body, "Portal: look for open ground");
         PortalSite site = portalSite;
-        if (!player.getBlockPos().equals(site.stand())) return Optional.of(go(site.stand(), 0.3, false, "Portal: stand in front of the frame site"));
+        // On the stand, or where clearing the site sent it to see a cell the stand does not (F-25c4aj).
+        if (!player.getBlockPos().equals(site.stand()) && !clearTriedFrom.contains(player.getBlockPos().asLong())) {
+            return Optional.of(go(site.stand(), 0.3, false, "Portal: stand in front of the frame site"));
+        }
         Optional<Task> clear = clearPortalSite(body, site, "Portal");
         if (clear.isPresent() || portalSite == null) return clear;
         // Place: bottom row and corners on the ground, sides upward, top corners, then the top row against them.
@@ -3155,20 +3161,29 @@ final class PortalRunCampaign {
 
     /**
      * Open the room for a frame: the row in front of it first, so every frame cell can be seen and reached, then the
-     * frame plane and its interior. A cell that cannot be cleared abandons the site ({@code portalSite} becomes null).
+     * frame plane and its interior. In each pass the first cell it can break from where it stands goes first: a cell
+     * walled in on every side it faces shows once the one beside it is dug. Only a pass with nothing it can break gives
+     * the site up ({@code portalSite} becomes null), and from its stand. In the live pair on 64c298d Kindred, on its stand
+     * at Y=-52, gave up 17 sites in two minutes, each for the first cell of its row in front, walled in behind the next
+     * (F-25c4aj).
      */
     private Optional<Task> clearPortalSite(NativePlayerBody body, PortalSite site, String label) {
         var world = body.entity().getServerWorld();
+        BlockPos stuck = null;
         for (int up = 0; up <= 4; up++) {
             for (int across = 0; across <= 3; across++) {
                 BlockPos cell = site.front(across, up);
                 if (cell.equals(site.stand()) || cell.equals(site.stand().up())) continue;
                 if (world.getBlockState(cell).isReplaceable() && world.getFluidState(cell).isEmpty()) continue;
                 if (!world.getFluidState(cell).isEmpty()) continue; // Water left from casting drains away by itself.
-                Optional<Task> clear = clearOrApproach(body, site, cell, label);
-                if (clear.isPresent() || portalSite == null) return clear;
+                if (breakableNow(body, cell)) {
+                    clearTriedFrom.clear();
+                    return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                }
+                if (stuck == null) stuck = cell;
             }
         }
+        if (stuck != null) return clearOrApproach(body, site, stuck, label);
         for (int up = 0; up <= 4; up++) {
             for (int across = 0; across <= 3; across++) {
                 BlockPos cell = site.at(across, up);
@@ -3178,12 +3193,15 @@ final class PortalRunCampaign {
                 boolean wanted = frame ? (corner ? !state.isReplaceable() : state.isOf(Blocks.OBSIDIAN)) : state.isAir();
                 if (wanted) continue;
                 if (!state.isReplaceable() && !state.isOf(Blocks.OBSIDIAN)) {
-                    Optional<Task> clear = clearOrApproach(body, site, cell, label);
-                    if (clear.isPresent() || portalSite == null) return clear;
+                    if (breakableNow(body, cell)) {
+                        clearTriedFrom.clear();
+                        return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                    }
+                    if (stuck == null) stuck = cell;
                 }
             }
         }
-        return Optional.empty();
+        return stuck == null ? Optional.empty() : clearOrApproach(body, site, stuck, label);
     }
 
     // ------------------------------------------------------------------ casting
@@ -3293,6 +3311,7 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         if (ItemMoves.count(inventory, Items.LAVA_BUCKET) == 0) return lavaForCast(body);
         if (portalSite == null) {
+            clearTriedFrom.clear();
             portalSite = choosePortalSite(player).orElse(null);
             if (portalSite == null) {
                 // No site will do within three blocks of lava, and along a lava lake's shore none is found: a few steps up
@@ -3307,9 +3326,8 @@ final class PortalRunCampaign {
             }
         }
         PortalSite site = portalSite;
-        if (!player.getBlockPos().equals(site.stand()) && clearPortalSiteNeeded(world, site)) {
-            return Optional.of(go(site.stand(), 0.3, false, "Cast: stand in front of the frame site"));
-        }
+        // Clearing the site walks it to the stand, or beside a cell the stand does not show, as each cell needs: a walk
+        // back to the stand first, asked for again on every step of a walk elsewhere, undid those (F-25c4aj).
         Optional<Task> clear = clearPortalSite(body, site, "Cast");
         if (clear.isPresent() || portalSite == null) return clear;
         int[][] order = {{0, 0}, {3, 0}, {1, 0}, {2, 0}, {0, 1}, {3, 1}, {0, 2}, {3, 2}, {0, 3}, {3, 3}, {0, 4}, {3, 4}, {1, 4}, {2, 4}};
@@ -3334,11 +3352,14 @@ final class PortalRunCampaign {
                 // reach, and began another beside it (F-25c4y).
                 if (eyeDistance(player, open) > REACH) {
                     Optional<Task> closer = stepCloser(body, site, at[0], open);
-                    if (closer.isEmpty() && !player.getBlockPos().equals(site.stand())) {
-                        closer = Optional.of(go(site.stand(), 0.3, false, "Cast: stand in front of the frame site"));
-                    }
                     if (closer.isPresent()) return closer;
                 }
+                // Out of sight from here as well as out of reach: from the stand first (F-25c4aj).
+                if (!player.getBlockPos().equals(site.stand())) {
+                    return Optional.of(go(site.stand(), 0.3, false, "Cast: stand in front of the frame site"));
+                }
+                KindredMod.LOGGER.info("{} gives up the frame site at {}: cannot open {} ({})", player.getName().getString(),
+                        site.origin().toShortString(), open.toShortString(), world.getBlockState(open));
                 portalSite = null;
                 return Optional.empty();
             }
@@ -3357,29 +3378,42 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /** Spots the site's clearing could break nothing from, or was sent to, since it last broke a cell (F-25c4aj). */
+    private final Set<Long> clearTriedFrom = new java.util.HashSet<>();
+
     /**
-     * Break {@code cell} if it can be broken from here, walk to the site's stand if it is only out of reach, and
-     * otherwise give the site up ({@code portalSite} becomes null).
+     * Break {@code cell} if it can be broken from here. Else go where it may show: the site's stand, then the open cell of
+     * the row in front nearest it, each once since the last cell it broke (a column walled in behind the stand's own row
+     * shows from the row in front, F-25c4aj); and only then give the site up ({@code portalSite} becomes null).
      */
     private Optional<Task> clearOrApproach(NativePlayerBody body, PortalSite site, BlockPos cell, String label) {
         var player = body.entity();
-        if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-        if (!player.getBlockPos().equals(site.stand()) && eyeDistance(player, cell) > REACH) {
+        if (breakableNow(body, cell)) {
+            clearTriedFrom.clear();
+            return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+        }
+        clearTriedFrom.add(player.getBlockPos().asLong());
+        if (clearTriedFrom.add(site.stand().asLong())) {
             return Optional.of(go(site.stand(), 0.3, false, label + ": stand in front of the frame site"));
+        }
+        var navigator = new NativeNavigator(player.getServerWorld());
+        BlockPos spot = null;
+        for (int across = 0; across <= 3; across++) {
+            BlockPos open = site.front(across, 0);
+            if (clearTriedFrom.contains(open.asLong()) || !navigator.standable(open) || blocked(open)) continue;
+            if (Vec3d.ofBottomCenter(open).add(0, 1.62, 0).distanceTo(Vec3d.ofCenter(cell)) > REACH) continue;
+            if (spot == null || open.getSquaredDistance(cell) < spot.getSquaredDistance(cell)) spot = open;
+        }
+        if (spot != null) {
+            clearTriedFrom.add(spot.asLong());
+            return Optional.of(go(spot, 0.3, false, label + ": over to " + cell.toShortString()));
         }
         KindredMod.LOGGER.info("{} gives up the frame site at {}: cannot clear {} ({})", player.getName().getString(),
                 site.origin().toShortString(), cell.toShortString(), player.getServerWorld().getBlockState(cell));
         abandonedSites.add(siteKey(site));
+        clearTriedFrom.clear();
         portalSite = null;
         return Optional.empty();
-    }
-
-    private boolean clearPortalSiteNeeded(ServerWorld world, PortalSite site) {
-        for (int up = 0; up <= 4; up++) for (int across = 0; across <= 3; across++) {
-            BlockPos cell = site.front(across, up);
-            if (!world.getBlockState(cell).isReplaceable()) return true;
-        }
-        return false;
     }
 
     /** Eye to block centre: the mould's top row, two blocks back and five up, is just inside it from the front row. */

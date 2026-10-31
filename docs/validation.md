@@ -1,5 +1,18 @@
 # AI-player development validation
 
+## A frame site dug in the order it can reach it (F-25c4aj) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Found in the live pair on `64c298d`: Kindred, its bucket filled at Y=-54, gave up 17 frame sites in two minutes, each for a block beside it it "cannot clear". The spot was rebuilt as it stood then, from the world save with what the log shows it dug and placed afterwards undone. On the stand of the first site it chose, the first cell of the row in front was walled in on all three sides it faced; the cell straight ahead, which would have shown it, came second in the order.
+- Its fixture, that spot staged from the save, fails on `238ff1e`, "0 there", 111 sites given up across three runs, 3 of 3:
+  - with each pass taking the first cell it can break, it still failed 3 of 3: the row's last column was walled in behind the stand's own staircase;
+  - with the walk to the row in front beside such a cell added, 2 of 3: the cast route's walk back to the stand, asked for on each step of that walk, undid it;
+  - with that walk back left to the clearing, 3 of 3 alone, no site given up.
+- The frame under thick rock, the roofed cast, the whole cast, the climb over the lava lakes, the cast refused for its water, the one-block cast and the owned-block frame, alone on this code: 7 of 7.
+- `build` successful.
+- Evidence: [F-25c4aj](evidence/F-25c4aj.md).
+
 ## The live pair on 64c298d, and two fixes from it and P18 — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

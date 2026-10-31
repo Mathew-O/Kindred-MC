@@ -4119,6 +4119,102 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Its lava in hand on the stand of the first frame site it chose, in the rock over a lava lake at Y=-52, the first cell
+     * of the row in front walled in on every side it faces: it digs the cell beside it first, which shows that one, and
+     * casts its first frame block in that site (F-25c4aj). In the live pair on `64c298d` Kindred, so placed, gave that
+     * site up for the walled-in cell, then 16 more in two minutes, and its watchdog moved it away with its lava unused.
+     * Staged from that pair's world save as it stood then: the save's blocks, with what the log shows it dug and placed
+     * after undone, eleven layers of rock thirteen by seventeen round the stand, inside a shell of deepslate; two blocks of
+     * glowstone for light; the kit, its lava bucket filled, given as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "castWalledIn", tickLimit = 2400)
+    public void onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] feet = new BlockPos[1];
+        // Layers from 4 below the stand to 6 above, rows from 9 north of it to 7 south, 6 west to 6 east: # deepslate,
+        // . air, L lava, g gravel, t tuff.
+        String[] layers = {
+                "#############/#############/#############/#############/#############/#############/############L/##########LLL/########LLLLL/#######LLLLLL/#######LLLLLL/#####LLLLLLL#/LLLLLLLLLLLL#/LLLLLLLLLLL##/LLLLLLLLLL###/LLLLLLLLL####/LLLLL########",
+                "#############/#############/#############/#############/#############/#############/#############/#############/#############/##########L##/########LLL##/########LLL##/t#####LLLL###/t##L#LLLL####/LLLLLLLL#####/tt###########/ttt##########",
+                "#############/#############/#############/#############/#############/#############/#############/#############/#############/#############/#############/######.######/######.######/t############/t############/tt#####gg####/tt###########",
+                "#############/#############/#############/#############/#############/#############/#############/#############/#############/#############/######.######/#####..######/######.##ggg#/########gggg#/t#####gggggg#/t#####ggggg##/tt####gggg###",
+                "#############/#############/#############/#############/#############/#############/#############/#############/#############/######.######/######.######/#####..###ggg/########ggggg/#######gggggg/######gggggg#/######gggggg#/######gggg###",
+                "#############/#############/#############/#############/#############/#############/#############/#############/######.######/######.######/######.#####g/##########ggg/########ggggg/#######gggggg/#######gggggg/######gggggg#/######gggg###",
+                "#############/#############/#############/#############/#############/#############/#############/######.######/######.######/######.######/############g/##########ggg/#########gggg/########ggggg/########gggg#/########ggg##/tttt#########",
+                "#############/#############/#############/#############/#############/#############/######.#####g/######.#####g/######.#####g/#############/#############/#############/#############/#############/#############/ttt##########/ttttt########",
+                "#############/#############/#############/#############/#############/######.#####g/######.#####g/######.#####g/############g/############g/#############/#############/#############/#############/#############/tttt#########/ttttttt######",
+                "#############/#############/#############/#############/######.######/######.#####g/######.#####g/############g/############g/############g/#############/#############/#############/#############/#############/tttt#########/ttttttt######",
+                "#############/#############/#############/######.######/######.######/######.######/############g/############g/############g/#############/#############/#############/#############/#############/#############/ttt##########/ttttt########"
+        };
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Walledin"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    feet[0] = p;
+                    FixtureGround.keep(context, p.add(-7, -5, -10), p.add(7, 7, 8));
+                    for (BlockPos at : BlockPos.iterate(p.add(-7, -5, -10), p.add(7, 7, 8))) world.setBlockState(at, Blocks.DEEPSLATE.getDefaultState());
+                    for (int dy = -4; dy <= 6; dy++) {
+                        String[] rows = layers[dy + 4].split("/");
+                        for (int dz = -9; dz <= 7; dz++) for (int dx = -6; dx <= 6; dx++) {
+                            var state = switch (rows[dz + 9].charAt(dx + 6)) {
+                                case '.' -> Blocks.AIR.getDefaultState();
+                                case 'L' -> Blocks.LAVA.getDefaultState();
+                                case 'g' -> Blocks.GRAVEL.getDefaultState();
+                                case 't' -> Blocks.TUFF.getDefaultState();
+                                default -> Blocks.DEEPSLATE.getDefaultState();
+                            };
+                            world.setBlockState(p.add(dx, dy, dz), state);
+                        }
+                    }
+                    world.setBlockState(p.add(-2, 1, 1), Blocks.GLOWSTONE.getDefaultState());
+                    world.setBlockState(p.add(1, -1, 2), Blocks.GLOWSTONE.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 180, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(5, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(6, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(7, new ItemStack(Items.LAVA_BUCKET));
+                    f.player().equipStack(net.minecraft.entity.EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    // The first site: its frame two blocks north of the stand, one block west to two east, five tall.
+                    var world = context.getWorld();
+                    int inSite = 0, elsewhere = 0;
+                    for (BlockPos at : BlockPos.iterate(feet[0].add(-7, -5, -10), feet[0].add(7, 7, 8))) {
+                        if (!world.getBlockState(at).isOf(Blocks.OBSIDIAN)) continue;
+                        BlockPos d = at.subtract(feet[0]);
+                        if (d.getZ() == -2 && d.getX() >= -1 && d.getX() <= 2 && d.getY() >= 0 && d.getY() <= 4) inSite++;
+                        else elsewhere++;
+                    }
+                    var player = f.player();
+                    context.assertTrue(inSite >= 1, "Its first frame block cast in the site it chose: " + inSite + " there, " + elsewhere
+                            + " elsewhere; at " + (player == null ? "no body" : player.getBlockPos().subtract(feet[0]).toShortString()) + "; "
+                            + f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel"));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 10, "Unhurt: " + player.getHealth());
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * With its lava in hand at the level of lava lakes, it climbs a few blocks into the rock over them for a frame site,
      * rather than tunnel along their shore for one (F-25c4z). No site may lie within three blocks of lava, and in the live
      * pair on `458d192` Echo, at Y=-55 between lava lakes, tunnelled 209 blocks of deepslate before it found one, and its
