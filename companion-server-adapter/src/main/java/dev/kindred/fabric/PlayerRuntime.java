@@ -2621,7 +2621,11 @@ final class PlayerRuntime {
             return food != null && (dev.kindred.core.SurvivalPolicy.worthEating(foodLevel, food.nutrition(), needsHealth)
                     || needsHealth && food.canAlwaysEat());
         };
-        if (canEatVanilla || needsHealth) {
+        // Not under water short of breath: up for air first, as a person does. In the live pair on 41f9de9 Echo, drowning at
+        // Y=8 with a mob on it, began to eat a dozen times in its last two seconds, each cancelled for the threat, and never
+        // swam up (F-25c4af).
+        boolean outOfBreath = inDeepWater(player) && player.getAir() < player.getMaxAir() / 2;
+        if ((canEatVanilla || needsHealth) && !outOfBreath) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {

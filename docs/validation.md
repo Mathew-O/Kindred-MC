@@ -1,5 +1,18 @@
 # AI-player development validation
 
+## Four more fixes from the live pair on 41f9de9: lava dug toward, home a leg at a time, up for air, the hungry search held — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- On top of `0c48f53`, the changes set aside (`PortalRunCampaign`'s and `PlayerRuntime`'s), their four fixtures kept:
+  - F-25c4ad's, a lava pool at the bottom of a pit five deep with no way down it could walk: it fails 3 of 3: "Its bucket filled at the pit's pool: now 13, -2, 41, Obsidian: Cast the portal frame from lava and water - Branch mine for lava: advance", its walks to the pool refused 35 times;
+  - F-25c4ae's, home 200 blocks off and the player sealed in a cell its own size: it fails 3 of 3: "Held by a walk home refused as it was made: Goto target is too far for one route";
+  - F-25c4af's, at the bottom of a pool ten deep with little air, a little hurt and hungry, a drowned after it: it fails 3 of 3, slain by the drowned while eating, its eating begun and cancelled for the threat 164 times. With only the fight part of the change it fails 3 of 3 the same way (166 cancels); with only the eat guard it drowns 3 of 3, its walk up for air stopped 130 times to fight back first;
+  - F-25c4ag's, hurt and out of food in a walled room under a wide roof of rock, the sky showing only through a gap over its head: it fails 3 of 3: "Back to the climb: Iron: hurt and out of food - Climb toward the surface for food: back the way it came".
+- With the changes, alone: F-25c4ad 10 of 10, and F-25c4ae, af and ag 3 of 3 each. In F-25c4ad's fixture's first form one run in three never saw the pool, its sweep having passed the pit's section before the pit was laid; the fixture now gives it its look from the rim, and fails as before on the old code. Beside them: the lava under a corridor, the lava legs, the night's lava and the whole cast, 4 of 4; the start with no tree in sight, 1 of 1; the goal's fight with a mob after it, the swim up a flooded shaft, the flooded pit, the shore passed over, the fall broken with water before a fight and the two eating fixtures, 7 of 7; the search once up, the climb with gravel overhead, food first as advised and fishing at a pond, 4 of 4.
+- The four short fixtures the suite on `77ddbb4` failed pass alone on this code too, 4 of 4. `build` successful: the adapter compiles and remaps, and `:companion-core:test` stands at 618 of 618, the core unchanged.
+- Evidence: [F-25c4ad](evidence/F-25c4ad.md), [F-25c4ae](evidence/F-25c4ae.md), [F-25c4af](evidence/F-25c4af.md), [F-25c4ag](evidence/F-25c4ag.md).
+
 ## The live pair on 41f9de9, and two fixes from it and P17 — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.

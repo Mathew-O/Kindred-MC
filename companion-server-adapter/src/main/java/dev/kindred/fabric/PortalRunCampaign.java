@@ -103,6 +103,8 @@ final class PortalRunCampaign {
     static final int STRANDED = 3;
     private final Map<Task, Long> setAside = new HashMap<>();
     private Direction digDirection = Direction.NORTH;
+    /** Where a spell hurt and out of food last had open sky over its head (F-25c4ag); none outside such a spell. */
+    private BlockPos hungryUpAt;
     private Direction exploreHeading;
     private int exploreFailures;
     private BlockPos exploredFrom;
@@ -489,6 +491,12 @@ final class PortalRunCampaign {
             else if (aimed != null && ++recoverMisses < RECOVER_TRIES) unreachedDrops.add(aimed.asLong());
             else dropSite = null;
         }
+        // A walk to the lava with no route there: that pool is dug toward from now on (F-25c4ad); a fill ends it.
+        if (task != null && !completed && "native_goto".equals(task.skill()) && task.label().equals("Cast: walk to the lava")
+                && position(task.args()) != null) {
+            lavaNoWalk = position(task.args()).toImmutable();
+        }
+        if (task != null && completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava")) lavaNoWalk = null;
         if (task != null && task.label().startsWith(LAVA_LEG_LABEL)) {
             boolean nearer = completed && lavaLegFrom != null && lavaLegFrom.getSquaredDistance(lastFeet) >= 8 * 8;
             lavaLegStalls = nearer ? 0 : lavaLegStalls + 1;
@@ -1045,13 +1053,20 @@ final class PortalRunCampaign {
         boolean overworld = player.getServerWorld().getDimension().hasSkyLight();
         boolean dark = player.getServerWorld().isNight() && overworld;
         if (player.getHealth() < 10 && snapshot.edibleFood() == 0 && player.getHungerManager().getFoodLevel() < 18 && overworld && !dark) {
-            Optional<Task> food = underground(player) ? wayUp(body, "Climb toward the surface for food")
+            // Once up, ground a few blocks below where it last had open sky over its head still counts as up: on a hillside
+            // the sky opens and closes over its head cell by cell, and in the live pair on 41f9de9 Echo, at the top of its
+            // climb, switched between the search and the climb several times a second for a minute (F-25c4ag).
+            BlockPos feet = player.getBlockPos();
+            boolean below = underground(player);
+            if (!below) hungryUpAt = feet.toImmutable();
+            else if (hungryUpAt != null && feet.getY() >= hungryUpAt.getY() - 3 && feet.getSquaredDistance(hungryUpAt) <= 32 * 32) below = false;
+            Optional<Task> food = below ? wayUp(body, "Climb toward the surface for food")
                     : hunt(player).or(() -> fish(body)).or(() -> groundBelow(player) ? explore(body, "animals") : Optional.empty());
             if (food.isPresent()) {
                 progress = stageLabel(stage) + ": hurt and out of food - " + food.get().label();
                 return food;
             }
-        }
+        } else hungryUpAt = null;
         // Advised to surface and recover: up out of the dark first, in daylight, then heal fully before going on.
         boolean recovering = stance() == StrategyAdvice.Stance.SURFACE_AND_RECOVER;
         if (recovering && underground(player) && !dark) {
@@ -1616,9 +1631,13 @@ final class PortalRunCampaign {
             case AWAIT_TEAM_PORTAL -> Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for the team's portal"));
             case GATHER_LOGS -> gather(body, WorldKnowledge.Kind.LOG, 64, "logs")
                     .or(() -> underground(player) || stranded() ? wayUp(body, "Climb toward the surface for logs")
-                            // Not when already there: that walk ends where it starts, over and over.
+                            // Not when already there: that walk ends where it starts, over and over. Home beyond one
+                            // route's reach, a leg at a time: as one walk it was refused as it was made, and asked for
+                            // again and again (in the live pair on 41f9de9 Echo's, nine times, with two stall lines;
+                            // F-25c4ae).
                             .or(() -> home == null || home.getSquaredDistance(lastFeet) <= 4 * 4 ? Optional.empty()
-                                    : Optional.of(go(home, 3, true, "Head back up toward home")))
+                                    : Optional.of(go(home.getSquaredDistance(lastFeet) > LAVA_LEG * LAVA_LEG ? legToward(lastFeet, home, LAVA_LEG) : home,
+                                            3, true, "Head back up toward home")))
                             : explore(body, "logs"));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
             // Over a sky island there is no stone below to dig for: only what is in sight, or the generator's.
@@ -3135,6 +3154,8 @@ final class PortalRunCampaign {
     private static final String LAVA_LEG_LABEL = "Cast: walk toward the lava at ";
     /** Whether the frame is to be cast, as the last plan reckoned it. */
     private boolean castRoute;
+    /** Lava it saw that no walk led to: the pool is dug toward, not walked for source by source (F-25c4ad). */
+    private BlockPos lavaNoWalk;
     /** Lava fills refused per source; the first refusal leads to a closer try, not to setting the source aside. */
     private final Map<Long, Integer> fillRefusals = new HashMap<>();
     /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
@@ -3159,9 +3180,33 @@ final class PortalRunCampaign {
             if (lavaLegFrom == null) lavaLegFrom = feet;
             return Optional.of(go(legToward(feet, castLava, LAVA_LEG), 3, true, LAVA_LEG_LABEL + castLava.toShortString()));
         }
+        // Lava it saw that no walk leads to is dug toward instead, until it stands a block above the pool's top, where a
+        // cell over the lava is opened to fill the bucket (F-25c4ac). Before, each source was set aside as its walk failed
+        // and the next tried: in the live pair on 41f9de9 Echo's only sighting, a pool in a pocket inside a mountain, was
+        // lost so, twenty sources in four seconds (F-25c4ad).
+        if (lavaNoWalk != null && castLava.getSquaredDistance(lavaNoWalk) <= 16 * 16 && eyeDistance(player, castLava) > 4.2) {
+            Optional<Task> dig = digToward(body, castLava, "Cast: dig toward the lava at " + castLava.toShortString());
+            if (dig.isPresent()) return dig;
+        }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
         if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
         return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+    }
+
+    /**
+     * Toward {@code lava} by digging: a staircase up or down until its feet are a block above the lava, then a tunnel along
+     * that level, which opens a cell with lava under it to show the lava (F-25c4ad). Each way turns as the staircases and
+     * the tunnel do where a cell is refused.
+     */
+    private Optional<Task> digToward(NativePlayerBody body, BlockPos lava, String label) {
+        BlockPos feet = body.entity().getBlockPos();
+        int dx = lava.getX() - feet.getX(), dz = lava.getZ() - feet.getZ(), rise = lava.getY() + 1 - feet.getY();
+        if (dx != 0 || dz != 0) {
+            digDirection = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? Direction.EAST : Direction.WEST) : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
+        }
+        if (rise > 0) return climb(body, label);
+        if (rise < 0) return digDown(body, lava.getY() + 1, label);
+        return tunnel(body, label, true);
     }
 
     /**
@@ -4271,6 +4316,9 @@ final class PortalRunCampaign {
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
                 || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;
+        // Short of breath, the way out of the water comes first: the next plan only chose it again, and in the live pair
+        // on 41f9de9 Echo drowned at Y=8 so, its walk up for air stopped each time to fight back first (F-25c4af).
+        if (running.label().startsWith("Get out of the water") && player.getAir() < player.getMaxAir() / 2) return null;
         // Rowing outruns what swims after it: a drowned is left behind, not fought from the seat (staged run 12's row
         // was cancelled every tick for one, and the boat drifted).
         if ("native_row".equals(running.skill()) || "native_boat".equals(running.skill())) return null;
