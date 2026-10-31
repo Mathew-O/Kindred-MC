@@ -7594,7 +7594,25 @@ final class PlayerRuntime {
             // The teammate by its identity, and its body in the world by the body's own id.
             Entry mateEntry = entries.get(piece.to());
             var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
-            if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld()) {
+            // Not across the map for it: a teammate gone out of the team's range is handed its piece once they are near
+            // again, a minute's wait at a time, and six such waits let the hand-over go, as six failed steps do, so the
+            // piece's material is not held for good. In the live pair on 41f9de9 Kindred's walk to Echo, too far for one
+            // route, was refused as it was made, again and again for five minutes ahead of its goal (E-40a1).
+            if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld() && player.squaredDistanceTo(mate) > TEAM_RANGE * TEAM_RANGE) {
+                long farOff = Math.round(player.distanceTo(mate));
+                entry.handOversWaitUntil = now + 1200;
+                if (++entry.handOverFailures >= 6) {
+                    entry.handOverFailures = 0;
+                    entry.handOverLastDistance = Double.MAX_VALUE;
+                    teamCoordinator.revokeTask(task.id(), "Its teammate stayed out of the team's range");
+                    KindredMod.LOGGER.info("{} lets go of handing over {}: {} stayed {} blocks off", entry.data.displayName(), task.title(),
+                            mateEntry.data.displayName(), farOff);
+                } else {
+                    KindredMod.LOGGER.info("{} cannot go on with {} for now, its teammate {} blocks off: it waits a minute", entry.data.displayName(),
+                            task.title(), farOff);
+                }
+                return java.util.Optional.empty();
+            } else if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld()) {
                 String name = mateEntry.data.displayName();
                 step = player.squaredDistanceTo(mate) <= 3 * 3 && player.canSee(mate)
                         ? new PortalRunCampaign.Task("native_toss", Map.of("slot", String.valueOf(slot), "count", "1", "target", mate.getUuid().toString()),
