@@ -158,6 +158,30 @@ class OpenAiCompatibleStrategistTest {
     }
 
     @Test
+    void onAnthropicsServerEveryRequestAsksForNoThinkingAndNoOtherServerIsSentTheField() {
+        // Its newer models think unless told not to, and the thinking counts against the reply's bound: a rescue's 300
+        // tokens came back with nothing written, "stopped: length", on every rescue of F-29's ten seeds (1 November).
+        try (var anthropic = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.COMPATIBLE, "k", "test-model",
+                     "https://api.anthropic.com/v1"), HttpClient.newBuilder().build());
+             var openai = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.OPENAI, "k", "test-model",
+                     "https://api.openai.com/v1"), HttpClient.newBuilder().build());
+             var lookalike = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.COMPATIBLE, null, "test-model",
+                     "https://notanthropic.com/v1"), HttpClient.newBuilder().build())) {
+            for (String body : List.of(anthropic.request("r", true), anthropic.askRequest(RAID, true), anthropic.rescueRequest("r", true),
+                    anthropic.converseRequest(TALK, true), anthropic.rescueRequest("r", false))) {
+                var thinking = JsonParser.parseString(body).getAsJsonObject().getAsJsonObject("thinking");
+                assertNotNull(thinking, body);
+                assertEquals("disabled", thinking.get("type").getAsString());
+            }
+            for (var other : List.of(openai, lookalike)) {
+                for (String body : List.of(other.request("r", true), other.askRequest(RAID, true), other.rescueRequest("r", true), other.converseRequest(TALK, true))) {
+                    assertFalse(JsonParser.parseString(body).getAsJsonObject().has("thinking"), body);
+                }
+            }
+        }
+    }
+
+    @Test
     void aChoiceNotOfferedOrANameTooLongIsNoAnswer() throws Exception {
         try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
             replies.add(completion("{\"choice\":\"BURN_IT\",\"text\":\"\",\"reason\":\"Why not.\"}", "stop"));

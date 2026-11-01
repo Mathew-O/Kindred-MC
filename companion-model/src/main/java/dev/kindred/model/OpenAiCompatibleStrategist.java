@@ -41,6 +41,8 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     /** The chat lane's own thread, so a reply is never queued behind a planning request (AI-05's separate lanes). */
     private final ExecutorService voice;
     private final URI endpoint;
+    /** Anthropic's own server for this API, whose newer models think unless told not to. */
+    private final boolean anthropic;
 
     /** A strategist for the chosen service. */
     public OpenAiCompatibleStrategist(StrategistProvider.Choice choice) {
@@ -51,6 +53,8 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         this.choice = Objects.requireNonNull(choice);
         this.http = Objects.requireNonNull(http);
         this.endpoint = URI.create(choice.baseUrl() + "/chat/completions");
+        String host = endpoint.getHost() == null ? "" : endpoint.getHost().toLowerCase(java.util.Locale.ROOT);
+        this.anthropic = host.equals("anthropic.com") || host.endsWith(".anthropic.com");
         this.executor = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "kindred-strategist");
             thread.setDaemon(true);
@@ -139,6 +143,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         messages.add(message("user", question.text()));
         body.add("messages", messages);
         body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", ASK_MAX_OUTPUT_TOKENS);
+        withoutThinking(body);
         var format = new JsonObject();
         if (schema) {
             var properties = new JsonObject();
@@ -244,6 +249,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         messages.add(message("user", report));
         body.add("messages", messages);
         body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", RESCUE_MAX_OUTPUT_TOKENS);
+        withoutThinking(body);
         var format = new JsonObject();
         if (schema) {
             var properties = new JsonObject();
@@ -350,6 +356,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         messages.add(message("user", conversation.text()));
         body.add("messages", messages);
         body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", CHAT_MAX_OUTPUT_TOKENS);
+        withoutThinking(body);
         var format = new JsonObject();
         if (schema) {
             var properties = new JsonObject();
@@ -428,6 +435,19 @@ public final class OpenAiCompatibleStrategist implements Strategist {
     }
 
     /** The request body: instructions, the report, and the reply's shape. */
+    /**
+     * No thinking, asked for where the server is Anthropic's, as the SDK route asks: its newer models think unless told
+     * not to, and the thinking counts against the reply's bound, so a rescue's 300 tokens came back with nothing written
+     * ("stopped: length", every rescue of F-29's ten seeds on the compatible route, 1 November). Other servers are not
+     * sent the field: some refuse one they do not know.
+     */
+    private void withoutThinking(JsonObject body) {
+        if (!anthropic) return;
+        var off = new JsonObject();
+        off.addProperty("type", "disabled");
+        body.add("thinking", off);
+    }
+
     String request(String report, boolean schema) {
         var body = new JsonObject();
         body.addProperty("model", choice.model());
@@ -437,6 +457,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         body.add("messages", messages);
         // OpenAI's own API names the cap differently from the others.
         body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", MAX_OUTPUT_TOKENS);
+        withoutThinking(body);
         var format = new JsonObject();
         if (schema) {
             format.addProperty("type", "json_schema");

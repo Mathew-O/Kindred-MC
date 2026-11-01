@@ -16,6 +16,17 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The compatible route's thinking (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
+
+- The rescue arm asked Anthropic's server through the compatible route, the release jar having no Anthropic SDK. All 9
+  rescues of its first two seeds came back "no plan (stopped: length)": the model thinks unless told not to, and the
+  thinking used the reply's 300 tokens. The same request by hand: "length" after 300 tokens and an empty reply; with
+  thinking off, "stop" after 117 tokens, with a plan. Every request the compatible route sends to Anthropic's server
+  now asks for no thinking, as the SDK route does ([F-29](evidence/F-29.md)). The arm was stopped and run again.
+- `OpenAiCompatibleStrategistTest.onAnthropicsServerEveryRequestAsksForNoThinkingAndNoOtherServerIsSentTheField` (new):
+  fails without the change (16 of 17 for the class), passes with it (17 of 17).
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+
 ## A tree known by its top log (F-25c4ap), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
 
 - CI's full suite failed `withNoWoodItWalksToATreeItSeesFarOffOverOpenGround` in runs 298, 299 and 313; in each the
