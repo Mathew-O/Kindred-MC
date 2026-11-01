@@ -14,13 +14,18 @@ import java.util.PriorityQueue;
 import java.util.function.Predicate;
 
 /**
- * Routes that may change the world on the way, the way a player gets about: walking where it can, and otherwise
- * digging through what is in the way, bridging a gap with a block of its own, pillaring up, or building a staircase
- * up as it walks, whichever costs least.
- * Walking is cheap; digging costs by how hard the block is; a placed block costs more again (it spends one, and a
- * bridge over lava or a long drop is a risk), so a route builds only where walking round is far longer. It reads only
- * loaded blocks and edits nothing itself: each step is carried out by the ordinary recorded skills, one at a time,
- * and the route is planned again from wherever the player then stands.
+ * In plain terms: plans how an AI player gets from one place to another the way a human would: walking where
+ * it can, and otherwise digging through, bridging a gap, or building up a pillar or a staircase with its own
+ * blocks, whichever is least trouble. It only plans; each step is then done by the player's ordinary actions,
+ * and the plan is made again from wherever it ends up.
+ *
+ * Technical: Routes that may change the world on the way, the way a player gets about: walking where it can,
+ * and otherwise digging through what is in the way, bridging a gap with a block of its own, pillaring up, or
+ * building a staircase up as it walks, whichever costs least. Walking is cheap; digging costs by how hard the
+ * block is; a placed block costs more again (it spends one, and a bridge over lava or a long drop is a risk),
+ * so a route builds only where walking round is far longer. It reads only loaded blocks and edits nothing
+ * itself: each step is carried out by the ordinary recorded skills, one at a time, and the route is planned
+ * again from wherever the player then stands.
  */
 final class NativeRoutePlanner {
     /** What a step needs doing before the body can stand at {@link Step#to()}. */
@@ -64,6 +69,7 @@ final class NativeRoutePlanner {
     /** The allowance's answer for each cell asked about, once per plan. */
     private final it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap diggable = new it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap();
 
+    /** A planner that walks as the navigator does, and digs and places only where the allowance says. */
     NativeRoutePlanner(NativeNavigator navigator, Allowance allowance) {
         this.navigator = navigator;
         this.allowance = allowance;

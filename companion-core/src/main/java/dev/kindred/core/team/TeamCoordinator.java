@@ -11,7 +11,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Coordinates shared multi-player projects, task dependency evaluation,
+ * In plain terms: the team's shared job board: projects broken into tasks, which player has taken which, and
+ * the materials set aside for each. A task waits until the tasks before it are done, only one player can hold
+ * it, and it is taken back from a player who dies, stops or takes too long. It also keeps the places the team
+ * has shared.
+ *
+ * Technical: Coordinates shared multi-player projects, task dependency evaluation,
  * atomic single-assignee ownership, material reservations, and fail-safe
  * revocation upon player death, stop, or lease expiration.
  */
@@ -20,23 +25,28 @@ public class TeamCoordinator {
     private final Map<String, dev.kindred.core.expedition.Waypoint> sharedWaypoints = new ConcurrentHashMap<>();
     private final StockLedger stockLedger;
 
+    /** A job board keeping its materials count in the given ledger. */
     public TeamCoordinator(StockLedger stockLedger) {
         this.stockLedger = Objects.requireNonNull(stockLedger, "stockLedger cannot be null");
     }
 
+    /** A job board with an empty materials count of its own. */
     public TeamCoordinator() {
         this(new StockLedger());
     }
 
+    /** Shares a named place with the whole team, replacing any of the same name. */
     public void shareWaypoint(dev.kindred.core.expedition.Waypoint waypoint) {
         Objects.requireNonNull(waypoint, "waypoint cannot be null");
         sharedWaypoints.put(waypoint.name(), waypoint);
     }
 
+    /** A place the team shares, by name. */
     public Optional<dev.kindred.core.expedition.Waypoint> getSharedWaypoint(String name) {
         return Optional.ofNullable(sharedWaypoints.get(name));
     }
 
+    /** Every place the team shares. */
     public Collection<dev.kindred.core.expedition.Waypoint> listSharedWaypoints() {
         return Collections.unmodifiableCollection(new ArrayList<>(sharedWaypoints.values()));
     }
@@ -55,6 +65,7 @@ public class TeamCoordinator {
 
     private Changes changes = (before, after, reservations) -> { };
 
+    /** Sets who hears of each change to a project, so it can be saved. */
     public synchronized void onChange(Changes listener) {
         this.changes = Objects.requireNonNull(listener, "listener");
     }
@@ -84,14 +95,17 @@ public class TeamCoordinator {
         changes.changed(before, after, List.copyOf(now));
     }
 
+    /** A project by its id, if there is one. */
     public synchronized Optional<SharedProject> getProject(ProjectId id) {
         return Optional.ofNullable(projects.get(id));
     }
 
+    /** Every project the team has. */
     public synchronized Collection<SharedProject> listProjects() {
         return Collections.unmodifiableCollection(new ArrayList<>(projects.values()));
     }
 
+    /** Adds a task to a project the team already has. */
     public synchronized void addTask(ProjectId projectId, SharedTask task) {
         Objects.requireNonNull(projectId, "projectId");
         Objects.requireNonNull(task, "task");
@@ -102,6 +116,7 @@ public class TeamCoordinator {
         put(proj, proj.withTask(task));
     }
 
+    /** A task by its id, in whichever project it is. */
     public synchronized Optional<SharedTask> findTask(TaskId taskId) {
         for (SharedProject proj : projects.values()) {
             Optional<SharedTask> t = proj.getTask(taskId);
@@ -206,6 +221,7 @@ public class TeamCoordinator {
         return Optional.empty();
     }
 
+    /** Marks a task as begun; only the player that took it can begin it. */
     public synchronized Optional<SharedTask> startTask(TaskId taskId, UUID playerId) {
         Objects.requireNonNull(taskId, "taskId");
         Objects.requireNonNull(playerId, "playerId");
@@ -274,6 +290,10 @@ public class TeamCoordinator {
         return false;
     }
 
+    /**
+     * Takes a task back from whoever has it, frees its materials and opens it to anyone again; a finished
+     * task cannot be taken back.
+     */
     public synchronized boolean revokeTask(TaskId taskId, String reason) {
         Objects.requireNonNull(taskId, "taskId");
 
@@ -367,6 +387,7 @@ public class TeamCoordinator {
         }
     }
 
+    /** The task a player has taken and not yet finished, if any. */
     public synchronized Optional<SharedTask> getPlayerCurrentTask(UUID playerId) {
         if (playerId == null) return Optional.empty();
         for (SharedProject proj : projects.values()) {

@@ -4,9 +4,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * When a player moves its base on to the next of its three stages (M-01b, the owner's note of 2026-10-23). A base
- * starts small, to get the world started and give the player somewhere to store what it gathers, and keeps getting
- * bigger and better as the world goes on, never ahead of what the player can furnish and fill. Pure.
+ * In plain terms: when a player moves its base on to the next of three stages: a cabin once it has stone
+ * tools, a house once it has iron tools and has outgrown the cabin, and a manor round an enchanting room once
+ * it can make an enchanting table. The base never grows ahead of what the player can fill.
+ *
+ * Technical: When a player moves its base on to the next of its three stages (M-01b, the owner's note of
+ * 2026-10-23). A base starts small, to get the world started and give the player somewhere to store what it
+ * gathers, and keeps getting bigger and better as the world goes on, never ahead of what the player can
+ * furnish and fill. Pure.
  * <ul>
  *   <li>No base yet: a {@link Houses.Stage#CABIN} once it has stone tools (it can mine the walls' stone) and before
  *   its first night is long, as a player makes a first shelter.</li>
@@ -46,6 +51,7 @@ public final class BaseProgression {
 
     private BaseProgression() { }
 
+    /** The stage of base to build next, or none yet, and why. */
     public static Decision next(Progress p) {
         if (p.built().isEmpty()) {
             return p.stoneTools() ? Decision.build(Houses.Stage.CABIN, "A cabin to start the world from and store what it gathers")

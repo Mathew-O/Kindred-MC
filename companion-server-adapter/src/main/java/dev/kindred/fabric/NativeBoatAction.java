@@ -22,15 +22,20 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A boat taken onto the water and back, as a player crosses water with one. {@code launch} puts one owned boat on the
- * water within reach and gets in: one boat item is spent under the ledger, and the boat is then in the world. {@code
- * board} gets into an empty boat within reach, or the one named (one holding a villager: a player takes the front
- * seat, the villager moving to the back). {@code land} gets out and breaks the boat with ordinary hits, so it drops as
- * an item to be picked up again, or leaves it on the water if another rider is still in it; nothing owned is lost.
- * Rowing is {@link NativeRowSkill}'s, between them.
- * {@code place} puts one owned boat down on top of a block without getting in (E-45e: just beside a villager, which it
- * takes up, so that the villager stays put); {@code break} breaks a boat within reach, whoever is in it set down where
- * it sat, its item dropped to be picked up again.
+ * In plain terms: an AI player using a boat to cross water, as a human does: putting one of its own boats on
+ * the water and getting in, boarding one already there, or getting out and breaking the boat so it drops to
+ * be picked up again. It can also set a boat down by a villager, which then sits in it and stays put, or
+ * break a boat with someone in it. Rowing is done separately.
+ *
+ * Technical: A boat taken onto the water and back, as a player crosses water with one. {@code launch} puts
+ * one owned boat on the water within reach and gets in: one boat item is spent under the ledger, and the boat
+ * is then in the world. {@code board} gets into an empty boat within reach, or the one named (one holding a
+ * villager: a player takes the front seat, the villager moving to the back). {@code land} gets out and breaks
+ * the boat with ordinary hits, so it drops as an item to be picked up again, or leaves it on the water if
+ * another rider is still in it; nothing owned is lost. Rowing is {@link NativeRowSkill}'s, between them.
+ * {@code place} puts one owned boat down on top of a block without getting in (E-45e: just beside a villager,
+ * which it takes up, so that the villager stays put); {@code break} breaks a boat within reach, whoever is in
+ * it set down where it sat, its item dropped to be picked up again.
  */
 final class NativeBoatAction extends NativeRecordedAction {
     enum Mode { LAUNCH, BOARD, LAND, PLACE, BREAK }
@@ -57,11 +62,16 @@ final class NativeBoatAction extends NativeRecordedAction {
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
+    /**
+     * A launch, boarding, landing, placing or breaking of a boat, with the boat in a hotbar slot and the
+     * given block where one is needed.
+     */
     NativeBoatAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                      Mode mode, int slot, BlockPos water) {
         this(body, lease, writer, dispatch, mode, slot, water, null);
     }
 
+    /** As above, with the boat to board or break named. */
     NativeBoatAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                      Mode mode, int slot, BlockPos water, UUID target) {
         this(body, lease, writer, dispatch, mode, slot, water, target, null);
@@ -83,6 +93,7 @@ final class NativeBoatAction extends NativeRecordedAction {
         if (mode == Mode.BREAK && target == null) throw new IllegalArgumentException("A break needs its boat");
     }
 
+    /** Moves the boat work on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded boat step cannot replay after cancellation/restart", true);

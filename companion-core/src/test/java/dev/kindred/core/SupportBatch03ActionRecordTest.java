@@ -6,6 +6,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the record a player keeps of each action: one whose outcome is unknown, for example
+ * after a crash, holds up what depends on it until fresh evidence settles it and is never simply run again,
+ * and a finished record can never change.
+ */
 class SupportBatch03ActionRecordTest {
 
     private ActionRecord intent(){return ActionRecord.prepare(UUID.randomUUID(),new ActionLease(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),1,2,3),"transfer","source");}

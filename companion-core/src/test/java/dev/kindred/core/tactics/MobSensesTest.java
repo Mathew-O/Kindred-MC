@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how far the player thinks each mob can notice it, matching the game: sneaking
+ * shortens that, a mob that cannot see it does not notice, mobs such as endermen never start a fight on
+ * sight, and the player grows more wary the closer it is to a mob.
+ */
 class MobSensesTest {
     @Test
     void rangesAreVanillasOwn() {

@@ -11,6 +11,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
+/**
+ * In plain terms: checks how a player picks the look of its home: the wood comes from a chosen block, else
+ * the wood at hand, else oak; the same world always grows the same style while other worlds get others; and
+ * every variant still has its working rooms, a door, whole beds and a full floor inside its outline.
+ */
 class BuildStyleTest {
     @Test
     void theWoodComesFromTheSeedBlockElseTheWoodAtHandElseOak() {

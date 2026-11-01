@@ -30,11 +30,17 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Trading at a villager's screen (E-45b). A librarian beside Hal, its offers set by the fixture as vanilla's table would
- * have them, held still (its AI off) so that it stays where it is; Hal holds 48 paper, a book, a pickaxe and bread. Hal
- * looks at what it offers by opening its screen, then sells what it can spare for what is worth buying, the trades
- * exactly conserved; an offer the villager is out of is left; one not worth its price is never paid for, and nothing is
- * sold to pay for nothing.
+ * In plain terms: a GameTest: in a real test world, a player beside a librarian villager opens its trading
+ * screen to see the offers, then sells its paper for emeralds and buys a Mending book, with exactly the items
+ * each trade asks and gives, and says what it traded. Two more tests check that it leaves an offer the
+ * villager has run out of (saying it is worth coming back for) and never pays for a book not worth its price,
+ * trading nothing in either case.
+ *
+ * Technical: Trading at a villager's screen (E-45b). A librarian beside Hal, its offers set by the fixture as
+ * vanilla's table would have them, held still (its AI off) so that it stays where it is; Hal holds 48 paper,
+ * a book, a pickaxe and bread. Hal looks at what it offers by opening its screen, then sells what it can
+ * spare for what is worth buying, the trades exactly conserved; an offer the villager is out of is left; one
+ * not worth its price is never paid for, and nothing is sold to pay for nothing.
  */
 public final class NativeTradeGameTests implements FabricGameTest {
     private static final BlockPos HAL = new BlockPos(5, 2, 5), LIBRARIAN = new BlockPos(7, 2, 5);

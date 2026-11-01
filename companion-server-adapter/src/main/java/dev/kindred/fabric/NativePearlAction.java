@@ -22,10 +22,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Throws one owned ender pearl along a chosen yaw and pitch and follows it until it lands (E-39f), as a player does to
- * get up onto a pillar's cage or down from it: vanilla moves the player to where the pearl struck and takes five
- * health for it. Exactly one pearl is spent under the durable ledger; the step reports where the player landed, and how
- * far that is from where the throw was meant to land.
+ * In plain terms: an AI player throwing one of its own ender pearls and watching it land, as a human does to
+ * get up onto a tall pillar or back down. The game moves the player to where the pearl hit and takes some
+ * health for it; exactly one pearl is used, and it reports where the player landed and how close that is to
+ * where it aimed.
+ *
+ * Technical: Throws one owned ender pearl along a chosen yaw and pitch and follows it until it lands (E-39f),
+ * as a player does to get up onto a pillar's cage or down from it: vanilla moves the player to where the
+ * pearl struck and takes five health for it. Exactly one pearl is spent under the durable ledger; the step
+ * reports where the player landed, and how far that is from where the throw was meant to land.
  */
 final class NativePearlAction extends NativeRecordedAction {
     /** Ticks to follow a pearl: a long throw down from a pillar lands within about sixty. */
@@ -48,6 +53,7 @@ final class NativePearlAction extends NativeRecordedAction {
     private boolean halted, unknown, thrown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** A pearl throw from a hotbar slot in the given direction, aimed to land at the given spot. */
     NativePearlAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                       int slot, float yaw, float pitch, Vec3d meant) {
         this.body = body;
@@ -62,6 +68,7 @@ final class NativePearlAction extends NativeRecordedAction {
         if (!Float.isFinite(yaw) || !Float.isFinite(pitch) || Math.abs(pitch) > 90) throw new IllegalArgumentException("A throw needs a finite yaw and a pitch within 90");
     }
 
+    /** Moves the throw on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded throw cannot replay after cancellation/restart", true);

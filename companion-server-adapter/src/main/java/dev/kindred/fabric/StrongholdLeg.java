@@ -32,10 +32,16 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The goal's way on from its lit Nether portal to the End portal (F-25c6), as {@link StrongholdRunPlanner} plans it.
- * The campaign's own rules still come first (getting out of water and walls, fights, holing up, eating), and the
- * Overworld work it already knows (hunting, stone, crafting) is done its way. This keeps what the player has learnt on
- * the trip: where its portals are, the fortress it found, each eye's flight and where they cross.
+ * In plain terms: the middle of an AI player's run, from its lit Nether portal to the End portal: into the
+ * Nether for a fortress, blaze rods and ender pearls, back to make eyes of ender, throwing them to find the
+ * stronghold, travelling there (by boat across water if need be) and digging down to the portal room. It
+ * remembers what it learnt on the way, such as where its portals are and where the eyes pointed.
+ *
+ * Technical: The goal's way on from its lit Nether portal to the End portal (F-25c6), as {@link
+ * StrongholdRunPlanner} plans it. The campaign's own rules still come first (getting out of water and walls,
+ * fights, holing up, eating), and the Overworld work it already knows (hunting, stone, crafting) is done its
+ * way. This keeps what the player has learnt on the trip: where its portals are, the fortress it found, each
+ * eye's flight and where they cross.
  */
 final class StrongholdLeg {
     /** How far to the side of the first flight the second eye is thrown from. */
@@ -124,6 +130,7 @@ final class StrongholdLeg {
      */
     static final int NETHER_FLOOR = 40;
 
+    /** The way to the End portal for the given goal, with the dragon fight to follow. */
     StrongholdLeg(PortalRunCampaign campaign) {
         this.endFight = new EndFightLeg(campaign, this);
         this.campaign = campaign;
@@ -292,6 +299,9 @@ final class StrongholdLeg {
         return Optional.empty();
     }
 
+    /**
+     * Where the trip stands now: what the player carries for it, where it is, and what it has found and seen.
+     */
     StrongholdRunSnapshot snapshot(ServerPlayerEntity player, PortalRunSnapshot p) {
         int rods = 0, powder = 0, pearls = 0, eyes = 0, blocks = 0, armor = 0, boats = 0, planks = 0, logs = 0;
         var inventory = player.getInventory();
@@ -427,6 +437,7 @@ final class StrongholdLeg {
         return Optional.empty();
     }
 
+    /** A stage of the trip in words, such as Blaze rods. */
     static String label(StrongholdRunPlanner.Stage stage) {
         String name = stage.name().toLowerCase(Locale.ROOT).replace('_', ' ');
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);

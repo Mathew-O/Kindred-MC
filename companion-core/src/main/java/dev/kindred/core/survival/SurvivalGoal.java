@@ -1,8 +1,11 @@
 package dev.kindred.core.survival;
 
 /**
- * The standing objective an AI player pursues on its own. A goal never grants authority: autonomous
- * work still needs the server's edit policy, paid activity and qualified skills.
+ * In plain terms: the big goal a player works toward on its own: none, a Nether portal, the End portal, or
+ * beating the Ender Dragon. Having a goal never lets the player do anything the server does not allow.
+ *
+ * Technical: The standing objective an AI player pursues on its own. A goal never grants authority:
+ * autonomous work still needs the server's edit policy, paid activity and qualified skills.
  */
 public enum SurvivalGoal {
     /** No standing objective; the player only reacts to needs and explicit requests. */
@@ -26,6 +29,7 @@ public enum SurvivalGoal {
 
     public String label() { return label; }
 
+    /** The goal a saved or typed name stands for, or no goal when it names none. */
     public static SurvivalGoal parse(String raw) {
         if (raw == null) return NONE;
         for (SurvivalGoal goal : values()) {

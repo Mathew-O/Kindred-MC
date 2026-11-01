@@ -12,11 +12,17 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Local, deterministic plan from a lit Nether portal to the End portal, the way players do it: stock up, go through,
- * find a fortress and take blaze rods from its blazes, take ender pearls from endermen, come back, make eyes of ender,
- * throw one, walk a way across its flight and throw another, follow the crossing to the stronghold, dig down into it
- * and find the portal room. Like {@link PortalRunPlanner} it reads only the player's own items and sightings and
- * names the next steps; the adapter turns each into one bounded, admitted skill and skips what it cannot act on yet.
+ * In plain terms: the plan a player follows from a lit Nether portal to the End portal: stock up, go to the
+ * Nether for blaze rods and ender pearls, make eyes of ender, throw them to find the stronghold, dig down and
+ * find the portal room. It names only the next steps from what the player carries and has seen, and gathers
+ * what the next leg needs before setting out.
+ *
+ * Technical: Local, deterministic plan from a lit Nether portal to the End portal, the way players do it:
+ * stock up, go through, find a fortress and take blaze rods from its blazes, take ender pearls from endermen,
+ * come back, make eyes of ender, throw one, walk a way across its flight and throw another, follow the
+ * crossing to the stronghold, dig down into it and find the portal room. Like {@link PortalRunPlanner} it
+ * reads only the player's own items and sightings and names the next steps; the adapter turns each into one
+ * bounded, admitted skill and skips what it cannot act on yet.
  *
  * <p>Twelve eyes can fill any portal frame; six are enough to find the stronghold and its portal room with a throw or
  * two to spare, so a pearl hunt that has stalled with six in hand moves on and takes more pearls from endermen met on
@@ -125,6 +131,7 @@ public final class StrongholdRunPlanner {
         static Step of(Action action, Stage stage, String why) { return new Step(action, "", 0, stage, why); }
         static Step craft(String item, int count, Stage stage, String why) { return new Step(Action.CRAFT, item, count, stage, why); }
 
+        /** A step for one piece of follow-up work: gather or craft so many of something for a task ahead. */
         static Step followUp(NeedsAssessment.Chunk chunk, Stage stage) {
             String verb = chunk.kind() == NeedsAssessment.Kind.GATHER ? "Gather " : "Craft ";
             return new Step(Action.FOLLOW_UP, chunk.need().name(), chunk.count(), stage,

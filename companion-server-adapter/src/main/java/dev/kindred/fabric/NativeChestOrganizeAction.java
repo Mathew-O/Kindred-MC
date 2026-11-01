@@ -23,7 +23,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Applies bounded {@link ChestOrganizationPolicy} moves inside an owned storage chest (CHEST-01). */
+/**
+ * In plain terms: an AI player tidying a storage chest it may use: sorting and merging the stacks already in
+ * it, a few moves at a time. It only moves real items around inside the chest; nothing is added or lost.
+ *
+ * Technical: Applies bounded {@link ChestOrganizationPolicy} moves inside an owned storage chest (CHEST-01).
+ */
 final class NativeChestOrganizeAction extends NativeRecordedAction {
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -48,6 +53,7 @@ final class NativeChestOrganizeAction extends NativeRecordedAction {
     private long setupRevision;
     private Inventory container;
 
+    /** Tidying the chest at the given spot, with at most the given number of moves (eight at most). */
     NativeChestOrganizeAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                               Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                               ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
@@ -64,6 +70,7 @@ final class NativeChestOrganizeAction extends NativeRecordedAction {
         this.maxMoves = Math.max(1, Math.min(maxMoves, 8));
     }
 
+    /** Moves the tidying on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

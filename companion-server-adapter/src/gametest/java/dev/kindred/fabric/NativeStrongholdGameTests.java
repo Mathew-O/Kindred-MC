@@ -15,9 +15,15 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 /**
- * The goal's way on from a lit Nether portal toward the End portal (F-25c6), one part at a time. Fixtures build the
- * ground and the portal and hand over what a player would have earned by then; everything the player does with
- * them goes through the goal, the paid activity and the ledger as in a run.
+ * In plain terms: a GameTest: in a real test world, steps on the way from a lit Nether portal towards the End
+ * portal are each checked on their own. A player throws an eye of ender and its flight is watched, with
+ * exactly one eye spent (or the eye kept when the world has no stronghold); a player saved far off in ground
+ * that has since unloaded reconnects after a restart where it was, with what it had; and a player stocked for
+ * the trip walks through a lit portal into the Nether and starts looking for a fortress.
+ *
+ * Technical: The goal's way on from a lit Nether portal toward the End portal (F-25c6), one part at a time.
+ * Fixtures build the ground and the portal and hand over what a player would have earned by then; everything
+ * the player does with them goes through the goal, the paid activity and the ledger as in a run.
  */
 public final class NativeStrongholdGameTests implements FabricGameTest {
     /** Stocked for the trip: the food, blocks, spare pickaxe and sword the plan asks for before going through. */

@@ -7,6 +7,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the play-time budget for one day as time is booked and settled: over many slices,
+ * and after a crash, no time is lost or invented, a wrong or second booking cannot spend or refund anything,
+ * a booking never runs past the end of the day or the cap, and a crash is charged only once.
+ */
 class SupportBatch02BudgetTest {
 
     private final Instant now=Instant.parse("2026-10-24T12:00:00Z");

@@ -11,10 +11,15 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Fishing (E-05): a player on its run, hungry with no food and no animal in sight, a pond a few blocks off, walks to the
- * water, casts, waits the bite out and reels in, with the rod it holds or one it makes of string and sticks. What it
- * caught is in its inventory as the fishing loot gives it, the rod worn by its catch, and its line reeled in once it
- * stops.
+ * In plain terms: a GameTest: in a real test world, a hungry player with no food and no animals in sight,
+ * working towards a Nether portal, is checked to walk to a nearby pond and fish, either with the rod it holds
+ * or with one it first makes from string and sticks. The test checks it caught something, the rod shows wear
+ * from the catch, and its line is reeled in once it stops.
+ *
+ * Technical: Fishing (E-05): a player on its run, hungry with no food and no animal in sight, a pond a few
+ * blocks off, walks to the water, casts, waits the bite out and reels in, with the rod it holds or one it
+ * makes of string and sticks. What it caught is in its inventory as the fishing loot gives it, the rod worn
+ * by its catch, and its line reeled in once it stops.
  */
 public final class NativeFishGameTests implements FabricGameTest {
     private static int caught(net.minecraft.entity.player.PlayerInventory inventory) {
@@ -36,6 +41,10 @@ public final class NativeFishGameTests implements FabricGameTest {
         fish(context, true);
     }
 
+    /**
+     * Builds a field with a pond, leaves the player hungry with a rod (or string and sticks to make one) and
+     * checks that it fishes.
+     */
     private static void fish(TestContext context, boolean makesRod) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 6800);
         BlockPos o = context.getAbsolutePos(new BlockPos(12, 0, 12));

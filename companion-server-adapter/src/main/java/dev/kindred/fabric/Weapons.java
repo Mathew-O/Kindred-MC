@@ -2,6 +2,9 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.tactics.DamageModel;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
@@ -11,7 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** The player's own melee weapons as {@link DamageModel} sees them (E-39e): kind, material and Sharpness. */
+/**
+ * In plain terms: how an AI player weighs up its own swords, axes and mace: what kind, what material and how
+ * sharp, so it can pick the right one to fight with.
+ *
+ * Technical: The player's own melee weapons as {@link DamageModel} sees them (E-39e): kind, material and
+ * Sharpness.
+ */
 final class Weapons {
     private Weapons() { }
 
@@ -41,9 +50,34 @@ final class Weapons {
         return 0;
     }
 
+    /**
+     * With no weapon to strike with, the hotbar slot of what hits hardest instead, by vanilla's own attack damage for the
+     * main hand, as a player with no sword fights with its pickaxe; -1 when nothing there beats the hand.
+     */
+    static int hardestInHotbar(ServerPlayerEntity player) {
+        int best = -1;
+        double most = 1.0; // The hand.
+        for (int slot = 0; slot < 9; slot++) {
+            var stack = player.getInventory().getStack(slot);
+            if (stack.isEmpty()) continue;
+            double[] damage = {1.0};
+            stack.applyAttributeModifiers(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+                if (attribute.equals(EntityAttributes.GENERIC_ATTACK_DAMAGE) && modifier.operation() == EntityAttributeModifier.Operation.ADD_VALUE) {
+                    damage[0] += modifier.value();
+                }
+            });
+            if (damage[0] > most + 1e-6) {
+                most = damage[0];
+                best = slot;
+            }
+        }
+        return best;
+    }
+
     /** A weapon the player holds, and the inventory slot it is in. */
     record Held(int slot, DamageModel.Weapon weapon) { }
 
+    /** Every weapon in the player's inventory, with the slot it is in. */
     static List<Held> held(ServerPlayerEntity player) {
         var held = new ArrayList<Held>();
         for (int slot = 0; slot < 36; slot++) {

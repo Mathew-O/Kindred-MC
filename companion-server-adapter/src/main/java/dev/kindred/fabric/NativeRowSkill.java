@@ -14,11 +14,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Rows the boat the player sits in toward a point, with the paddle inputs a player's client sets: forward, and left
- * or right to turn, easing off the turn as the bow comes round. It ends on arriving, on reaching a shore (land under
- * the bow, or the boat aground and going nowhere), or when its time is up, and says which. It never leaves the boat.
- * Set off {@code fromLand}, a boat on the ground is rowed over it to the water first (slowly, as on land), and only a
- * shore met once afloat ends it.
+ * In plain terms: an AI player rowing the boat it sits in toward a spot, pressing forward, left and right as
+ * a human does. It stops when it arrives, reaches a shore or runs out of time, and never gets out of the
+ * boat. It can also start with the boat on dry ground and row it slowly over the land to the water first.
+ *
+ * Technical: Rows the boat the player sits in toward a point, with the paddle inputs a player's client sets:
+ * forward, and left or right to turn, easing off the turn as the bow comes round. It ends on arriving, on
+ * reaching a shore (land under the bow, or the boat aground and going nowhere), or when its time is up, and
+ * says which. It never leaves the boat. Set off {@code fromLand}, a boat on the ground is rowed over it to
+ * the water first (slowly, as on land), and only a shore met once afloat ends it.
  */
 final class NativeRowSkill implements SkillBody {
     /** Degrees off course within which it rows straight on, and beyond which it turns without rowing. */
@@ -35,10 +39,14 @@ final class NativeRowSkill implements SkillBody {
     private boolean afloat;
     private Vec3d last;
 
+    /** A row toward a spot, ending within range of it or when its seconds are up. */
     NativeRowSkill(NativePlayerBody body, Supplier<ActionLease> lease, double x, double z, double range, int seconds) {
         this(body, lease, x, z, range, seconds, false);
     }
 
+    /**
+     * As above; when starting from land, the boat may begin on the ground and be rowed to the water first.
+     */
     NativeRowSkill(NativePlayerBody body, Supplier<ActionLease> lease, double x, double z, double range, int seconds, boolean fromLand) {
         if (!Double.isFinite(x) || !Double.isFinite(z) || !(range >= 0.5 && range <= 64)) throw new IllegalArgumentException("Invalid row target");
         if (seconds < 1 || seconds > 120) throw new IllegalArgumentException("A row lasts 1..120 seconds");
@@ -51,6 +59,7 @@ final class NativeRowSkill implements SkillBody {
         this.fromLand = fromLand;
     }
 
+    /** Moves the rowing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         var boat = body.boat();

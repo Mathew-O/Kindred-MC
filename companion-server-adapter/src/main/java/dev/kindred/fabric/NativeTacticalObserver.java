@@ -32,7 +32,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Pure adapter observer that translates native Minecraft 1.21.1 entity and player state into
+ * In plain terms: what an AI player can see of danger around it in a fight: the hostile creatures it can
+ * actually see nearby, its weapons, whether it has a safe way to back off, and whether it is standing
+ * somewhere harmful. It only looks; it never changes anything, and it does not look at other players' health
+ * or gear.
+ *
+ * Technical: Pure adapter observer that translates native Minecraft 1.21.1 entity and player state into
  * immutable TacticalObservation records.
  *
  * Strict read-only boundaries:
@@ -44,6 +49,7 @@ public final class NativeTacticalObserver {
 
     private NativeTacticalObserver() { }
 
+    /** What the player sees of the fight around it now, its weapons looked over afresh. */
     public static TacticalObservation observe(
             ServerPlayerEntity player,
             java.util.UUID companionId,
@@ -55,6 +61,7 @@ public final class NativeTacticalObserver {
         return observe(player, companionId, bodyGeneration, foodTaskAuthorized, shelterProtectionAuthorized, serverTick, null);
     }
 
+    /** As above, reusing a list of its weapons made earlier when one is given. */
     public static TacticalObservation observe(
             ServerPlayerEntity player,
             java.util.UUID companionId,
@@ -206,6 +213,10 @@ public final class NativeTacticalObserver {
         );
     }
 
+    /**
+     * Every weapon and tool the player carries, with how hard and fast it hits, how worn it is and its
+     * enchantments.
+     */
     static List<WeaponProfile> scanWeaponProfiles(ServerPlayerEntity player) {
         List<WeaponProfile> weapons = new ArrayList<>();
         for (int slot = 0; slot < 36; slot++) {

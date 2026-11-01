@@ -17,11 +17,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * What each AI player has learnt about each world by playing in it, kept across restarts: the places that matter on
- * the way to the End (the portals it went through, the fortress it found, where its eyes' flights cross, the End
- * portal) and each eye flight it watched. One small JSON file per player in the world's {@code kindred/memory} folder.
- * Only what the player saw itself is kept, as it saw it; a restart no longer sends it to throw eyes again, or to find
- * a fortress again that it already found. Reads and writes run on their own thread; a write replaces the file whole.
+ * In plain terms: what each AI player remembers about each world from playing in it, kept across restarts:
+ * the places that matter on the way to the End, the bases and trading hall it built, and any work an
+ * administrator set it to. Only what it saw for itself is kept, and it is saved to small files without
+ * holding up the game.
+ *
+ * Technical: What each AI player has learnt about each world by playing in it, kept across restarts: the
+ * places that matter on the way to the End (the portals it went through, the fortress it found, where its
+ * eyes' flights cross, the End portal) and each eye flight it watched. One small JSON file per player in the
+ * world's {@code kindred/memory} folder. Only what the player saw itself is kept, as it saw it; a restart no
+ * longer sends it to throw eyes again, or to find a fortress again that it already found. Reads and writes
+ * run on their own thread; a write replaces the file whole.
  */
 final class PlayerMemoryStore implements AutoCloseable {
     /** A place in one dimension, by its id ("minecraft:the_nether"). */
@@ -50,10 +56,12 @@ final class PlayerMemoryStore implements AutoCloseable {
      * its origin its floor's north-west corner.
      */
     record Base(String stage, String dimension, int x, int y, int z, boolean complete, String seed, String wood, int variant, int turns) {
+        /** A base recorded before building styles existed: the first plan, in oak. */
         Base(String stage, String dimension, int x, int y, int z, boolean complete) {
             this(stage, dimension, x, y, z, complete, null, null, 0, 0);
         }
 
+        /** The same base, now standing whole. */
         Base finished() {
             return new Base(stage, dimension, x, y, z, true, seed, wood, variant, turns);
         }
@@ -64,6 +72,7 @@ final class PlayerMemoryStore implements AutoCloseable {
      * turned), how many cells it has, its wood, and whether it stands whole. A file from before E-45d has none.
      */
     record Hall(String dimension, int x, int y, int z, int cells, String wood, boolean complete) {
+        /** The same hall, now standing whole. */
         Hall finished() {
             return new Hall(dimension, x, y, z, cells, wood, true);
         }
@@ -96,6 +105,7 @@ final class PlayerMemoryStore implements AutoCloseable {
         return thread;
     });
 
+    /** The memory kept in the given world's mod folder. */
     PlayerMemoryStore(Path worldKindredFolder) {
         this.folder = worldKindredFolder.resolve("memory");
     }
@@ -105,6 +115,36 @@ final class PlayerMemoryStore implements AutoCloseable {
     private Path basesFile(UUID id) { return folder.resolve(id + ".bases.json"); }
 
     private Path workFile(UUID id) { return folder.resolve(id + ".work.json"); }
+
+    private Path atlasFile(UUID id) { return folder.resolve(id + ".atlas.json"); }
+
+    /** This player's atlas of this world (F-30), or none; read off the game thread. */
+    CompletableFuture<dev.kindred.core.atlas.Atlas.Snapshot> loadAtlas(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (Files.isRegularFile(atlasFile(id))) {
+                    return gson.fromJson(Files.readString(atlasFile(id), StandardCharsets.UTF_8), dev.kindred.core.atlas.Atlas.Snapshot.class);
+                }
+            } catch (IOException | RuntimeException unreadable) {
+                KindredMod.LOGGER.warn("The atlas of {} could not be read; starting afresh: {}", name, unreadable.toString());
+            }
+            return null;
+        }, io);
+    }
+
+    /** Write the atlas's snapshot, a copy taken on the game thread: turned into its file off it, after any write before it. */
+    void saveAtlas(UUID id, String name, dev.kindred.core.atlas.Atlas.Snapshot snapshot) {
+        io.execute(() -> {
+            String json;
+            try {
+                json = gson.toJson(snapshot);
+            } catch (RuntimeException failed) {
+                KindredMod.LOGGER.warn("The atlas of {} could not be written: {}", name, failed.toString());
+                return;
+            }
+            writeNow(atlasFile(id), json, name);
+        });
+    }
 
     /** The work this player was at in this world, or null; read off the game thread. */
     CompletableFuture<Work> loadWork(UUID id, String name) {
@@ -178,22 +218,26 @@ final class PlayerMemoryStore implements AutoCloseable {
     }
 
     private void write(UUID id, Path target, String json, String player) {
-        io.execute(() -> {
-            try {
-                Files.createDirectories(folder);
-                Path temp = target.resolveSibling(target.getFileName() + ".tmp");
-                Files.writeString(temp, json, StandardCharsets.UTF_8);
-                try {
-                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException plain) {
-                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } catch (IOException failed) {
-                KindredMod.LOGGER.warn("Memory of {} could not be written: {}", player, failed.toString());
-            }
-        });
+        io.execute(() -> writeNow(target, json, player));
     }
 
+    /** On the store's own thread: the file replaced whole, so a crash leaves the last complete one. */
+    private void writeNow(Path target, String json, String player) {
+        try {
+            Files.createDirectories(folder);
+            Path temp = target.resolveSibling(target.getFileName() + ".tmp");
+            Files.writeString(temp, json, StandardCharsets.UTF_8);
+            try {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException plain) {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException failed) {
+            KindredMod.LOGGER.warn("Memory of {} could not be written: {}", player, failed.toString());
+        }
+    }
+
+    /** Stops the background saving once the writes already asked for are done. */
     @Override
     public void close() {
         io.shutdown();

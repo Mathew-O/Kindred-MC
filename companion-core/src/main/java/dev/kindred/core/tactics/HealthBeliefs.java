@@ -5,8 +5,12 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * What a player can know of other creatures' health (E-41a). Not the number the server keeps, which no player sees, but
- * what it can work out from what it saw:
+ * In plain terms: what a player can work out about other creatures' health from the hits it saw land, not the
+ * hidden numbers the game keeps. It grows less sure as time passes, and assumes other players heal while mobs
+ * do not.
+ *
+ * Technical: What a player can know of other creatures' health (E-41a). Not the number the server keeps,
+ * which no player sees, but what it can work out from what it saw:
  * <ul>
  *   <li>a creature starts at its kind's full health, as a player knows a zombie has twenty;</li>
  *   <li>each hit the player saw land (the hurt flash) takes off what the ruleset says that hit deals. A stronger hit

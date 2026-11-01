@@ -25,11 +25,17 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Loots a structure's container (E-42): a chest, a barrel or a chest minecart nobody has opened since the world made it,
- * opened with a use click as a player opens one, which rolls its loot. What the value model judges worth taking comes
- * out into the inventory, best first, as far as there is room; what is not worth a slot is left in it. Exactly what left
- * the container arrives in the player's inventory, recorded in the durable ledger; nothing else of either moves.
- * Storage anyone has opened is never looted (the server's roaming rule for containers).
+ * In plain terms: an AI player looting a chest, barrel or chest minecart that nobody has opened since the
+ * world made it, as a human opens one: it takes what is worth taking, best first, as far as there is room,
+ * and leaves the rest. It never loots storage anyone has opened, except an opponent's storage during a match
+ * both joined.
+ *
+ * Technical: Loots a structure's container (E-42): a chest, a barrel or a chest minecart nobody has opened
+ * since the world made it, opened with a use click as a player opens one, which rolls its loot. What the
+ * value model judges worth taking comes out into the inventory, best first, as far as there is room; what is
+ * not worth a slot is left in it. Exactly what left the container arrives in the player's inventory, recorded
+ * in the durable ledger; nothing else of either moves. Storage anyone has opened is never looted (the
+ * server's roaming rule for containers).
  */
 final class NativeLootAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -54,6 +60,7 @@ final class NativeLootAction extends NativeRecordedAction {
     private boolean halted, unknown, opened;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Looting an unopened container at the given spot, or the given chest minecart. */
     NativeLootAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos chestPos, UUID cart,
                      Supplier<Map<String, Integer>> wanted) {
@@ -99,6 +106,7 @@ final class NativeLootAction extends NativeRecordedAction {
         return player.getEyePos().squaredDistanceTo(chestPos.getX() + 0.5, chestPos.getY() + 0.5, chestPos.getZ() + 0.5) <= 20.25;
     }
 
+    /** Moves the looting on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded loot cannot replay after cancellation/restart", true);

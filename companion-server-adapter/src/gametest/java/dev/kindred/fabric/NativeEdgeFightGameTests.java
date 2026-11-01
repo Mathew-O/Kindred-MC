@@ -14,9 +14,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * A fight with an edge at the player's back (F-25c6, from staged run 9, where a hoglin's toss threw the player into the
- * lava at a fortress's foot): a hoglin stands in reach in front of it, with a lava trench right behind it. A player
- * steps round the mob, off the edge, before trading hits; so must the native player, and it never goes in.
+ * In plain terms: a GameTest: in a real test world, a player fighting a hoglin with a lava trench at its back
+ * is checked to step away from the edge within a second and never be thrown in. A player whose goal is under
+ * way, with a hoglin coming at it from ten blocks off, is checked to keep out of its reach most of the time,
+ * little hurt and never striking it; and a player the hoglin is already on is checked to fight back with its
+ * sword, kill it and live.
+ *
+ * Technical: A fight with an edge at the player's back (F-25c6, from staged run 9, where a hoglin's toss
+ * threw the player into the lava at a fortress's foot): a hoglin stands in reach in front of it, with a lava
+ * trench right behind it. A player steps round the mob, off the edge, before trading hits; so must the native
+ * player, and it never goes in.
  */
 public final class NativeEdgeFightGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "edgeFight", tickLimit = 900)

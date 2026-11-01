@@ -10,9 +10,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A field made ready and sown (M-06a's farm ward): water poured into the channel down its middle, every cell of its
- * soil tilled into farmland and a seed sown on each. One pass at a time from what the player sees, so it carries on
- * from wherever the field stands; it remembers only when it poured and which cells it could not work. Pure.
+ * In plain terms: making a small square field ready and planting it: water poured into a channel down its
+ * middle, then every patch of soil tilled with a hoe and sown with seed. The player works from the edges so
+ * it never tramples the farmland, and picks up wherever the field was left.
+ *
+ * Technical: A field made ready and sown (M-06a's farm ward): water poured into the channel down its middle,
+ * every cell of its soil tilled into farmland and a seed sown on each. One pass at a time from what the
+ * player sees, so it carries on from wherever the field stands; it remembers only when it poured and which
+ * cells it could not work. Pure.
  *
  * <p>The field is {@code size} cells square from its north-west corner, its soil the top layer of the ground at
  * {@code y}, the player's feet one above. The channel runs north to south down its middle column, a cell lower than
@@ -114,6 +119,7 @@ public final class FieldWork {
         else pourFailed = true;
     }
 
+    /** What to do next on the field, from what the player sees now. */
     public Step next(Observation seen) {
         working = null;
         int sown = (int) seen.soil().values().stream().filter(s -> s == Soil.SOWN).count();

@@ -98,6 +98,19 @@ class RunMetricsTest {
     }
 
     @Test
+    void aDedicatedServersLogIsReadAsTheDevelopmentServersIs() {
+        // An evaluation run plays on a dedicated server, whose log does not name the logger (F-26).
+        var lines = List.of(
+                "[10:00:00] [Server thread/INFO]: Wren native_goto BLOCKED: No walkable route toward 9, 63, 74 [Walk to logs at 9, 63, 74]",
+                "[10:01:00] [Server thread/INFO]: Wren native_goto BLOCKED: No walkable route toward 9, 63, 74 [Walk to logs at 9, 63, 74]",
+                "[10:02:00] [Server thread/INFO]: Wren goal at 7 62 107: Iron: Branch mine for iron - advance",
+                "[10:02:30] [Server thread/INFO]: Wren joined the game");
+        var wren = RunMetrics.of(lines).players().get("Wren");
+        assertEquals(1, wren.worstRepeats(), "The same failure again within ten minutes");
+        assertEquals(2, wren.walksInVain());
+    }
+
+    @Test
     void linesNotTheRuntimesArePassedOver() {
         var metrics = RunMetrics.of(List.of("[10:00:00] [Server thread/INFO] (Minecraft) Wren joined the game", "garbage"));
         assertTrue(metrics.players().isEmpty());

@@ -7,6 +7,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how the server picks which optional AI service to use from its settings: each
+ * service's own key picks it with a small, fast default, a service named outright wins, a general key is
+ * recognised by how it starts, a server on the same machine needs no key, nothing set means no adviser, and
+ * keys never show in the log.
+ */
 class StrategistProviderTest {
     private static StrategistProvider.Choice chosen(Map<String, String> env) {
         var selection = StrategistProvider.choose(env);

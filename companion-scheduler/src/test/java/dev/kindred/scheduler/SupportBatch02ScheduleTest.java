@@ -7,6 +7,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the calendar maths for play time on daylight-saving days: those days are
+ * twenty-three and twenty-five hours long, a time window lost when the clocks go forward gives no time, a
+ * window repeated when they go back covers both, and setting the clock back cannot reopen a day that has
+ * closed.
+ */
 class SupportBatch02ScheduleTest {
 
     private final ZoneId zone=ZoneId.of("America/New_York");

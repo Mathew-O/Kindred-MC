@@ -6,8 +6,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * How much damage a player deals, as vanilla 1.21.1 reckons it (E-39e), so the player can choose the weapon, the
- * timing and the target that deal the most. Pure: the adapter says what is held and what is struck.
+ * In plain terms: how much damage the player's hits and arrows do, by weapon, swing timing, critical hits,
+ * Sharpness and Strength, and how the Ender Dragon takes damage. The player uses it to pick the weapon and
+ * timing that hurt the most.
+ *
+ * Technical: How much damage a player deals, as vanilla 1.21.1 reckons it (E-39e), so the player can choose
+ * the weapon, the timing and the target that deal the most. Pure: the adapter says what is held and what is
+ * struck.
  *
  * <p>A melee hit is the weapon's attack damage (one for the hand, plus the item's and its material's bonus, plus three
  * a level of Strength) scaled by the swing's charge ({@code 0.2 + 0.8 * charge²}), with a mace's fall bonus added after

@@ -105,8 +105,10 @@ final class KindredPanelService {
             JsonArray roster = new JsonArray();
             for (var preset : CanonicalRoster.TRIO) {
                 JsonObject slot = new JsonObject();
-                slot.addProperty("name", preset.name());
-                slot.addProperty("exists", bots.stream().anyMatch(bot -> bot.name().equalsIgnoreCase(preset.name())));
+                // A starter saved under a former name (Vesp, now Echo) is shown under the name it has in this world.
+                var saved = bots.stream().filter(bot -> preset.answersTo(bot.name())).findFirst();
+                slot.addProperty("name", saved.map(PlayerRuntime.PanelBot::name).orElse(preset.name()));
+                slot.addProperty("exists", saved.isPresent());
                 roster.add(slot);
             }
             root.add("roster", roster);

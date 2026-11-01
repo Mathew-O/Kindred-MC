@@ -9,6 +9,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how much damage the player expects each weapon to do, matching the game: why a sword
+ * beats an axe over a whole fight, where the dragon takes full damage, and how arrows and the mace hit.
+ */
 class DamageModelTest {
     private static final Weapon DIAMOND_SWORD = new Weapon(Kind.SWORD, Tier.DIAMOND, 0);
     private static final Weapon DIAMOND_AXE = new Weapon(Kind.AXE, Tier.DIAMOND, 0);

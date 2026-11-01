@@ -32,11 +32,16 @@ import java.util.function.Supplier;
 final class NativePlayerSkills {
     /**
      * The player's own ways of moving and looking: its mannerisms and personality, and for a wait its gaze and who last
-     * spoke to it (E-33a), when it has them.
+     * spoke to it (E-33a), when it has them; for a walk, the atlas's extra cost of a place at night (F-30), or none.
      */
-    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker) {
+    record NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker,
+                                java.util.function.ToDoubleFunction<net.minecraft.util.math.BlockPos> shun) {
         NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis) {
-            this(mannerisms, personality, nowMillis, null, null);
+            this(mannerisms, personality, nowMillis, null, null, null);
+        }
+
+        NativeMovementHabits(MannerismState mannerisms, Personality personality, LongSupplier nowMillis, Gaze gaze, Supplier<UUID> speaker) {
+            this(mannerisms, personality, nowMillis, gaze, speaker, null);
         }
     }
     static SkillDescriptor descriptor(String id) {
@@ -123,9 +128,9 @@ final class NativePlayerSkills {
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
-                    "hold", "leg"), Set.of("move"), Set.of(),
+                    "hold", "leg", "safe"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
-            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot"), Set.of("break", "pickup"),
+            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot", "over_lava"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
             case "native_discard" -> new SkillDescriptor(id, Set.of("slot", "count"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -196,7 +201,9 @@ final class NativePlayerSkills {
                     Boolean.parseBoolean(arguments.getOrDefault("avoid", "false"))
                             ? new java.util.HashSet<>(java.util.Arrays.asList(arguments.getOrDefault("engage", "").split(","))) : null);
             if (arguments.containsKey("hold")) go.holding(Integer.parseInt(arguments.get("hold")));
+            if (habits != null && habits.shun() != null) go.shunning(habits.shun());
             if (arguments.containsKey("leg")) go.leg(Integer.parseInt(arguments.get("leg")));
+            if (Boolean.parseBoolean(arguments.getOrDefault("safe", "false"))) go.safely();
             return Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
         }
         if (id.equals("native_step_in")) {
@@ -740,7 +747,12 @@ final class NativePlayerSkills {
                 default -> throw new IllegalArgumentException("Retreat direction must be north, south, east or west");
             };
             start = body.entity().getPos();
-            goal = start.add(heading.multiply(blocks));
+            // The middle of the cell that many blocks off from the one it stands in, the cell the runtime found safe: a
+            // straight block on from where it stands, off the middle of its own cell, can overlap the wall beside that cell,
+            // and the retreat was refused each time it was asked for (F-25c4am: in the live pair on c432fba Echo, at a lava
+            // pool's edge, its block over the lava, was held there twenty-seven minutes, its goal's work stopped as a hazard).
+            BlockPos to = body.entity().getBlockPos().add((int) heading.x * blocks, 0, (int) heading.z * blocks);
+            goal = new Vec3d(to.getX() + 0.5, start.y, to.getZ() + 0.5);
             if (!safeGoal()) throw new IllegalArgumentException("Retreat needs a clear, supported, loaded non-hazardous goal");
         }
 

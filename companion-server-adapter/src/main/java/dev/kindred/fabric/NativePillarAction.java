@@ -24,11 +24,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * One step of a pillar, as a player builds one: jump straight up and, once the feet clear the cell they stood in,
- * place an owned block there and land on it. The same edit policy, claim and durable ledger as {@link NativePlaceAction}
- * cover the block, and exactly one block item is consumed. Refused before anything happens when the cell overhead is
- * not open (the jump would hit its head), when nothing solid is underfoot, when the player is no longer in the cell
- * the step was planned from, or when the hotbar slot holds no block.
+ * In plain terms: one step of building a pillar, as a human does: jumping straight up and placing one of its
+ * own blocks underneath at the top of the jump, then landing on it. It will not try if there is no headroom,
+ * nothing solid underfoot, or no block in the chosen hotbar slot.
+ *
+ * Technical: One step of a pillar, as a player builds one: jump straight up and, once the feet clear the cell
+ * they stood in, place an owned block there and land on it. The same edit policy, claim and durable ledger as
+ * {@link NativePlaceAction} cover the block, and exactly one block item is consumed. Refused before anything
+ * happens when the cell overhead is not open (the jump would hit its head), when nothing solid is underfoot,
+ * when the player is no longer in the cell the step was planned from, or when the hotbar slot holds no block.
  */
 final class NativePillarAction extends NativeRecordedAction {
     /** Ticks to rise a block on a jump and land again; past this the step has failed. */
@@ -63,6 +67,7 @@ final class NativePillarAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** One pillar step from the cell it was planned from, using the block in a hotbar slot. */
     NativePillarAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                        Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                        Consumer<Runnable> dispatch, BlockPos planned, int slot) {
@@ -79,6 +84,7 @@ final class NativePillarAction extends NativeRecordedAction {
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("A pillar needs an owned hotbar slot 0..8");
     }
 
+    /** Moves the pillar step on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded pillar step cannot replay after cancellation/restart", true);

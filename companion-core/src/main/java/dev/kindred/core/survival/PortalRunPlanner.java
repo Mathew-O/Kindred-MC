@@ -6,9 +6,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Local, deterministic plan for earning a Nether portal from an empty inventory. It reads only the player's
- * own items and observations and names the next material step; the adapter turns a step into one bounded,
- * admitted skill and may skip steps it cannot act on yet (for example hunting with no animal in sight).
+ * In plain terms: the plan a player follows to build a Nether portal from an empty inventory: wood, stone
+ * tools, iron, a water bucket, diamonds, obsidian and flint, then the frame lit with flint and steel. It
+ * picks the cheapest way for the world it is in, such as making obsidian from lava and water when it has no
+ * diamonds, and names only the next steps from what the player carries and has seen.
+ *
+ * Technical: Local, deterministic plan for earning a Nether portal from an empty inventory. It reads only the
+ * player's own items and observations and names the next material step; the adapter turns a step into one
+ * bounded, admitted skill and may skip steps it cannot act on yet (for example hunting with no animal in
+ * sight).
  *
  * <p>Route: logs, wooden pickaxe, cobblestone, stone pickaxe and sword, furnace, fifteen iron (iron pickaxe,
  * bucket, chestplate, flint and steel), a water bucket, three diamonds and a diamond pickaxe, ten obsidian made by pouring
@@ -30,6 +36,8 @@ public final class PortalRunPlanner {
     public static final int COBBLE_TARGET = 24;
     /** Planks in a shield, with one iron ingot. */
     public static final int SHIELD_PLANKS = 6;
+    /** Iron ingots in a chestplate. */
+    static final int CHESTPLATE_IRON = 8;
     /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
     static final int TREE_RANGE = 24;
     /**
@@ -77,6 +85,8 @@ public final class PortalRunPlanner {
         BUILD_PORTAL, IGNITE_PORTAL,
         /** Cast the frame in place: lava poured into each frame cell and hardened with water. */
         CAST_PORTAL,
+        /** Cook the raw meat or fish carried in its own furnace. */
+        COOK,
         /** Fill an empty bucket at a lava source. */
         FILL_LAVA,
         /** Build a cobblestone generator: a short channel where lava flows into water. */
@@ -191,6 +201,15 @@ public final class PortalRunPlanner {
         if (s.furnaceNearby() && s.furnaceOutput() > 0) {
             steps.add(Step.of(Action.COLLECT_SMELTED, Stage.IRON, "Collect smelted items from the furnace"));
         }
+        // Raw meat cooked in its own furnace while it is at hand and idle, as players cook before a trip: cooked, it fills
+        // more than twice as much (a raw porkchop three, a cooked one eight). B7's second pairs never cooked, and climbed
+        // out for food again and again. Not while raw iron waits for the furnace, nor with only the kept wood to burn.
+        if (s.furnaceNearby() && s.furnaceCooking()) {
+            steps.add(Step.of(Action.AWAIT_SMELT, stage(s, facts), "Wait for the food to cook"));
+        } else if (s.rawMeat() > 0 && s.furnaceNearby() && !s.furnaceSmelting() && s.furnaceOutput() == 0 && s.rawIron() == 0
+                && (s.coal() > 0 || s.woodUnits() - woodKept(s, facts) >= 2)) {
+            steps.add(new Step(Action.COOK, "", s.rawMeat(), stage(s, facts), "Cook the raw meat"));
+        }
         if (!foodFirst && s.edibleFood() == 0 && s.foodLevel() <= 14) {
             steps.add(new Step(Action.HUNT, "", 1, stage(s, facts), "Out of food; hunt an animal in sight"));
         } else if (!foodFirst && s.edibleFood() < foodStock) {
@@ -210,6 +229,7 @@ public final class PortalRunPlanner {
         return steps;
     }
 
+    /** How far along the route the player is, in an ordinary world. */
     public static Stage stage(PortalRunSnapshot s) {
         return stage(s, WorldFacts.ordinary());
     }
@@ -231,13 +251,17 @@ public final class PortalRunPlanner {
         return s.shields() > 0 || s.woodUnits() < SHIELD_PLANKS;
     }
 
+    /**
+     * How far along the route the player is: wood, stone, iron, diamonds, obsidian, flint, the portal, or
+     * done.
+     */
     public static Stage stage(PortalRunSnapshot s, WorldFacts facts) {
         if (s.portalLit()) return Stage.DONE;
         if (s.portalFramed() || s.obsidian() >= PORTAL_OBSIDIAN && s.flintAndSteel() > 0) return Stage.PORTAL;
         if (s.pickaxeTier() <= 0) return Stage.WOOD;
         if (s.pickaxeTier() == 1) return Stage.STONE;
         WorldFacts.Method frame = frameMethod(s, facts);
-        if (s.pickaxeTier() == 2 && ironPickaxeWanted(facts, frame) || ironShortfall(s, frame, caves(facts)) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
+        if (s.pickaxeTier() == 2 && ironPickaxeWanted(s, facts, frame) || ironShortfall(s, frame, caves(facts)) > 0 && s.pickaxeTier() < 4) return Stage.IRON;
         if (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() == 3) return Stage.DIAMOND;
         if (s.obsidian() < PORTAL_OBSIDIAN) return Stage.OBSIDIAN;
         return Stage.FLINT;
@@ -282,6 +306,14 @@ public final class PortalRunPlanner {
         }
         // Stone: cobblestone for a stone pickaxe, sword, furnace and portal corners.
         if (s.pickaxeTier() == 1) {
+            // The trip's wood first, while among the trees, as players take a stack of logs before going down: the first
+            // cobblestone takes it below, out of sight of them, and the packing further on found no tree from there. In
+            // the live runs that checked F-25c4b to h, three of five players ran out of sticks and wood below, and were
+            // left with no pickaxe.
+            int trip = tripWood(s, facts, frame);
+            if (s.woodUnits() < trip && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_RANGE) {
+                return logs(facts, (trip - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for the trip below");
+            }
             if (s.cobble() < 3) return stone(s, facts, 3 - s.cobble(), Stage.STONE, "Mine cobblestone for a stone pickaxe");
             return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE);
         }
@@ -317,7 +349,11 @@ public final class PortalRunPlanner {
         // A spare pickaxe, made while it is cheap: one wearing out halfway up a climb never leaves the player with none.
         // Two spares where it learned that one is not enough.
         int pickaxesPacked = prefs.has(PlanPreferences.Habit.SPARE_PICKAXE) ? 3 : 2;
-        if (below && s.pickaxes() < pickaxesPacked && s.cobble() >= 3) {
+        // Only from sticks or wood in hand, or a tree close by: fetched from the surface, a spare sent the player up a
+        // fresh staircase that wore out the pickaxe it had (two players in the runs that checked F-25c4b to h, from Y=8
+        // and Y=18).
+        boolean spareWithin = s.sticks() >= 2 || spareWood >= 2 || treesNear;
+        if (below && s.pickaxes() < pickaxesPacked && s.cobble() >= 3 && spareWithin) {
             return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE, "Craft a spare stone pickaxe for the work below");
         }
 
@@ -330,13 +366,33 @@ public final class PortalRunPlanner {
         boolean shieldFirst = s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS;
         // Then the iron pickaxe as soon as there is iron for it: it lasts twice as long as stone, and staircases and
         // branch mines wear a stone one out every few minutes (live run 50 used six in one life before its iron).
-        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3 && ironPickaxeWanted(facts, frame);
+        // Not where the frame is cast: there it is made with the rest, once all the route's iron is in hand, for the way
+        // down to the lava. One made first wore out before the rest of the iron was found, and the next three went to
+        // another: in the long run on a286cc8 Kindred made four that way, and never a bucket (F-25c4q).
+        boolean pickaxeFirst = !shieldFirst && s.pickaxeTier() < 3 && ironHave >= 3 && ironPickaxeWanted(s, facts, frame)
+                && frame != WorldFacts.Method.CAST_OBSIDIAN;
+        // Then the chestplate, once there is iron for it, before the rest of the iron is looked for: that is where the
+        // caves are. In the live runs from fb02bc3 to 458d192, 44 of 52 deaths came with no armour on, four of them
+        // carrying twelve to sixteen iron that waited for the rest before any of it was made into gear (F-25c4x).
+        boolean chestFirst = !shieldFirst && !pickaxeFirst && caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4
+                && ironHave >= CHESTPLATE_IRON;
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
+        if (chestFirst && s.ironIngots() >= CHESTPLATE_IRON) return craftAtTable(s, facts, "iron_chestplate", 0, 0, Stage.IRON);
         // Wood for another table, should the carried one be lost below, taken while trees are in sight.
         if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for a spare crafting table");
         }
-        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst) {
+        // Fuel for the smelting ahead, taken along while trees are in sight: coal below is found only by chance, and in
+        // B7's second pairs a player with no wood to burn spent a sixth of its time looking for it.
+        // A smelt it has the fuel for now goes first: the shield's first iron, the pickaxe's three.
+        boolean smeltNow = s.rawIron() > 0 && (s.coal() > 0 || spareWood >= (s.rawIron() * 2 + 2) / 3);
+        int packedFuel = below && !smeltNow ? fuelPlanks(s, ironWanted, caves) : 0;
+        int woodPacked = tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) + packedFuel;
+        if (packedFuel > 0 && s.woodUnits() < woodPacked && treesNear) {
+            return new Step(Action.GATHER_LOGS, "", (woodPacked - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for fuel to smelt with below");
+        }
+        // Iron its furnace close by is smelting is waited for, not walked away from (F-28).
+        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst && !chestFirst && !ironSmelting(s)) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {
@@ -361,13 +417,15 @@ public final class PortalRunPlanner {
                 }
                 return new Step(Action.MINE_COAL, "", 1, Stage.IRON, "Find fuel to smelt iron");
             }
+            // Burnt whole, a log smelts what one of the four planks it makes does.
+            if (s.coal() == 0 && s.planks() < fuelWood && s.logs() > 0) return Step.craft("planks", Stage.IRON, "Craft planks to smelt with");
             if (!s.furnaceNearby() && s.furnaces() == 0) {
                 if (s.cobble() < 8) return stone(s, facts, 8 - s.cobble(), Stage.IRON, "Mine cobblestone for a furnace");
                 return craftAtTable(s, facts, "furnace", 0, 0, Stage.IRON);
             }
             return new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron");
         }
-        if (s.pickaxeTier() < 3 && ironPickaxeWanted(facts, frame)) return craftAtTable(s, facts, "iron_pickaxe", 0, 2, Stage.IRON);
+        if (s.pickaxeTier() < 3 && ironPickaxeWanted(s, facts, frame)) return craftAtTable(s, facts, "iron_pickaxe", 0, 2, Stage.IRON);
         if (s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame)) return craftAtTable(s, facts, "bucket", 0, 0, Stage.IRON);
         // Caves below are full of skeletons and zombies: an iron chestplate before going deep.
         if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) return craftAtTable(s, facts, "iron_chestplate", 0, 0, Stage.IRON);
@@ -510,9 +568,9 @@ public final class PortalRunPlanner {
         return sticksKept(s, frame, true);
     }
 
+    /** As above, with whether there are caves to dig in. */
     static int sticksKept(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
-        boolean iron = caves || frame == WorldFacts.Method.MINE_OBSIDIAN;
-        return (iron && s.pickaxeTier() < 3 ? 2 : 0) + (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4 ? 2 : 0);
+        return (ironPickaxeWanted(s, caves, frame) && s.pickaxeTier() < 3 ? 2 : 0) + (frame == WorldFacts.Method.MINE_OBSIDIAN && s.pickaxeTier() < 4 ? 2 : 0);
     }
 
     /**
@@ -521,8 +579,19 @@ public final class PortalRunPlanner {
      * replaces it, and the island's few iron go to the buckets and the flint and steel (sky-island run 3 spent three of
      * six on a pickaxe and was left short).
      */
-    static boolean ironPickaxeWanted(WorldFacts facts, WorldFacts.Method frame) {
-        return caves(facts) || frame == WorldFacts.Method.MINE_OBSIDIAN;
+    static boolean ironPickaxeWanted(PortalRunSnapshot s, WorldFacts facts, WorldFacts.Method frame) {
+        return ironPickaxeWanted(s, caves(facts), frame);
+    }
+
+    /**
+     * As above, with whether there are caves to dig in. When the frame is cast, the pickaxe is made with the rest of
+     * the route's iron, for the way down to the lava: one lost once both buckets are made is not made again, and stone
+     * ones from the stone round it dig what is left. In the live runs on 10a60d5, Kindred's wore out by Y=-55 on its
+     * way to the lava; the iron for another, and the coal to smelt it, took it back up sixty blocks.
+     */
+    static boolean ironPickaxeWanted(PortalRunSnapshot s, boolean caves, WorldFacts.Method frame) {
+        if (frame == WorldFacts.Method.MINE_OBSIDIAN) return true;
+        return caves && s.emptyBuckets() + s.waterBuckets() < bucketsWanted(frame);
     }
 
     /** Buckets the route needs: one for water when mining obsidian, a second for lava when casting it. */
@@ -569,6 +638,59 @@ public final class PortalRunPlanner {
         return Optional.of(new Step(Action.SMELT, "raw_iron", s.rawIron(), Stage.IRON, "Smelt raw iron"));
     }
 
+    /**
+     * Work below ground that takes no wood, for a night when the route's next step is logs from the surface: the iron
+     * the route still needs, mined with the pickaxe in hand. Below ground the night changes nothing; only the climb out
+     * to the trees waits for morning. Empty with no pickaxe that mines iron, or with the route's iron all in hand; a wait
+     * by the furnace while its iron is smelting there.
+     */
+    public static Optional<Step> withoutWood(PortalRunSnapshot s, WorldFacts facts) {
+        Objects.requireNonNull(s);
+        Objects.requireNonNull(facts);
+        if (s.pickaxeTier() < 2) return Optional.empty();
+        int wanted = ironShortfall(s, frameMethod(s, facts), caves(facts));
+        int have = s.ironIngots() + s.rawIron();
+        if (have >= wanted) return Optional.empty();
+        // Its iron in the furnace first: the night's mining is not a reason to walk off from it either.
+        if (ironSmelting(s)) return Optional.of(Step.of(Action.AWAIT_SMELT, Stage.IRON, "Wait for the furnace to smelt iron"));
+        return Optional.of(new Step(Action.MINE_IRON, "", wanted - have, Stage.IRON, "Mine iron ore while the night passes (" + have + "/" + wanted + ")"));
+    }
+
+    /**
+     * Whether its furnace close by is smelting its iron. That iron is waited for, not walked away from: sixteen blocks
+     * off it is no longer counted, and nothing brings the player back for it. Its first ingot made into a shield, it
+     * went on for more ore with the rest still smelting; in the simulator's caving pack 55 runs of 100 left iron in a
+     * furnace so, 214 iron in all (F-28).
+     */
+    static boolean ironSmelting(PortalRunSnapshot s) {
+        return s.furnaceNearby() && s.furnaceSmelting() && !s.furnaceCooking() && s.rawIron() > 0;
+    }
+
+    /**
+     * Planks that would smelt the iron still to be smelted, raw and still to mine, beyond what the coal carried smelts:
+     * a plank smelts one and a half items, a coal eight. Where there are caves, the chestplate's iron is smelted on its
+     * own before the rest (F-25c4x), and the plank part burnt for it is one more.
+     */
+    static int fuelPlanks(PortalRunSnapshot s, int ironWanted, boolean caves) {
+        int smelts = Math.max(0, ironWanted - s.ironIngots()) - s.coal() * 8;
+        if (smelts <= 0) return 0;
+        boolean chestApart = caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4 && s.ironIngots() < CHESTPLATE_IRON
+                && smelts > CHESTPLATE_IRON;
+        return (smelts * 2 + 2) / 3 + (chestApart ? 1 : 0);
+    }
+
+    /**
+     * The wood, in planks, that the trip below takes: sticks for the stone pickaxe, its spare and the sword still to
+     * make and the stick reserve, beyond the sticks carried (two planks make four); a spare table's; a shield's still to
+     * make; and the fuel for the route's iron beyond what its coal smelts. None where there is no ground to go down into.
+     */
+    static int tripWood(PortalRunSnapshot s, WorldFacts facts, WorldFacts.Method frame) {
+        if (!caves(facts)) return 0;
+        int sticks = (s.pickaxeTier() < 2 ? 4 : 0) + (s.swordTier() < 2 ? 1 : 0) + sticksReserved(s, frame, true);
+        int stickPlanks = (Math.max(0, sticks - s.sticks()) + 3) / 4 * 2;
+        return stickPlanks + SPARE_TABLE_PLANKS + (s.shields() == 0 ? SHIELD_PLANKS : 0) + fuelPlanks(s, ironShortfall(s, frame, true), true);
+    }
+
     /** {@link #ironShortfall(PortalRunSnapshot, WorldFacts.Method, boolean)} where there are caves to go down into. */
     static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame) {
         return ironShortfall(s, frame, true);
@@ -580,9 +702,9 @@ public final class PortalRunPlanner {
      */
     static int ironShortfall(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
         int wanted = 0;
-        if (s.pickaxeTier() < 3 && (caves || frame == WorldFacts.Method.MINE_OBSIDIAN)) wanted += 3;
+        if (s.pickaxeTier() < 3 && ironPickaxeWanted(s, caves, frame)) wanted += 3;
         wanted += Math.max(0, bucketsWanted(frame) - s.emptyBuckets() - s.waterBuckets()) * 3;
-        if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += 8;
+        if (caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4) wanted += CHESTPLATE_IRON;
         if (s.flintAndSteel() == 0) wanted += 1;
         if (s.shields() == 0 && s.woodUnits() >= SHIELD_PLANKS) wanted += 1; // Only with the wood for it in hand.
         return wanted;

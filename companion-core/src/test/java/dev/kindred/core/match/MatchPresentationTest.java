@@ -9,6 +9,11 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what players see on screen during a match: the countdown, a bar with the time left
+ * or the race time so far, each checkpoint reached, and a result that reads as victory, defeat or a draw from
+ * each player's own side.
+ */
 class MatchPresentationTest {
     private final UUID ada = UUID.randomUUID(), bram = UUID.randomUUID(), cy = UUID.randomUUID();
     private final Function<UUID, String> names = Map.of(ada, "Ada", bram, "Bram", cy, "Cy")::get;

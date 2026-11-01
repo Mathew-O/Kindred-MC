@@ -111,7 +111,11 @@ final class NativeFightAction extends NativeRecordedAction {
             fighting = true;
             recorder = new dev.kindred.core.tactics.EncounterRecorder(issuedLease.actionId().toString(), player.getUuidAsString(),
                     player.getServerWorld().getTime());
-            if (slot >= 0 && slot < 9) body.selectHotbar(issuedLease, slot);
+            // Given no weapon, none being in its hotbar, it strikes with what there hits hardest, as a player with no sword
+            // fights with its pickaxe. In the long run on a286cc8 Kindred, its last torch just placed, fought a zombie with
+            // the empty hand left selected: nine critical punches did not kill it, and the zombie went on to (F-25c4r).
+            int strikeWith = slot >= 0 ? slot : Weapons.hardestInHotbar(player);
+            if (strikeWith >= 0 && strikeWith < 9) body.selectHotbar(issuedLease, strikeWith);
         }
         if (admission.phase() != ActionAdmission.Phase.ISSUED || !fighting) return waiting();
         if (target == null) { settle("The target was defeated or is gone", true); return waiting(); }
@@ -284,7 +288,7 @@ final class NativeFightAction extends NativeRecordedAction {
     }
 
     /**
-     * Lost nothing but weapon or armor wear (a worn-out weapon may break); anything gained was picked up. A hunt's
+     * Lost nothing but wear (one worn-out weapon, tool, armor piece or shield may break); anything gained was picked up. A hunt's
      * compass is the match's: taken back when the fight ends the hunt, it was never the player's to lose.
      */
     private boolean conserved(InventoryEvidence after) {
@@ -293,9 +297,12 @@ final class NativeFightAction extends NativeRecordedAction {
         for (ItemStack stack : after.stacks()) if (!stack.isEmpty() && !HuntCompass.handed(stack)) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
         for (var entry : lost.entrySet()) {
             if (entry.getValue() <= 0) continue;
-            boolean brokenWeapon = entry.getValue() == 1 && slot >= 0 && slot < before.stacks().length
-                    && before.stacks()[slot].isOf(entry.getKey()) && before.stacks()[slot].isDamageable();
-            if (!brokenWeapon) return false;
+            // One worn-out item broke: whatever it struck with, held from the hotbar (a pickaxe, with no sword), or the
+            // armour or shield it was struck through. Counted as lost, not as an outcome to reconcile: in the live run
+            // on a286cc8, Sol's stone pickaxe broke on its last blow, and its body was taken out for the rest of the run.
+            boolean brokenWorn = entry.getValue() == 1 && java.util.stream.IntStream.range(0, before.stacks().length)
+                    .anyMatch(i -> (i == slot || i < 9 || i >= 36) && before.stacks()[i].isOf(entry.getKey()) && before.stacks()[i].isDamageable());
+            if (!brokenWorn) return false;
         }
         return true;
     }

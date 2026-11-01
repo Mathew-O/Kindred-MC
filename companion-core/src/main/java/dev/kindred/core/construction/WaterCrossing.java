@@ -7,15 +7,20 @@ import java.util.LinkedHashMap;
 import java.util.Optional;
 
 /**
- * A villager brought home across water no line can be laid over (E-45e), as players bring one by boat: held in a boat
- * on the ground beside it, the boat rowed a few blocks over level ground into the water, across in a straight line to
- * the far bank, and left there on the water with the villager in it: a line laid along the bank past it ({@link
- * RailRoute}, from the bank's column beside the boat) brings the cart that takes the boat up from the water as it rolls
- * by, and carries it home (let go of, the villager would wade or swim back to its work across the water). A crossing is
- * found by looking out from the villager along straight lines: over at most {@link #MAX_LAND} columns of level ground,
- * then water all the way to a bank of firm ground no higher than a block over the water (a boat goes aground against
- * it, and its riders step out onto it). Of the banks found, those nearest the hall are tried first for a line home, by
- * the room a villager in a boat needs. Pure.
+ * In plain terms: bringing a villager home across water too wide for a rail line, as players do by boat: the
+ * villager is put in a boat, rowed straight across to the far bank and left there, and a minecart on a rail
+ * line along that bank picks the boat up and carries it home.
+ *
+ * Technical: A villager brought home across water no line can be laid over (E-45e), as players bring one by
+ * boat: held in a boat on the ground beside it, the boat rowed a few blocks over level ground into the water,
+ * across in a straight line to the far bank, and left there on the water with the villager in it: a line laid
+ * along the bank past it ({@link RailRoute}, from the bank's column beside the boat) brings the cart that
+ * takes the boat up from the water as it rolls by, and carries it home (let go of, the villager would wade or
+ * swim back to its work across the water). A crossing is found by looking out from the villager along
+ * straight lines: over at most {@link #MAX_LAND} columns of level ground, then water all the way to a bank of
+ * firm ground no higher than a block over the water (a boat goes aground against it, and its riders step out
+ * onto it). Of the banks found, those nearest the hall are tried first for a line home, by the room a
+ * villager in a boat needs. Pure.
  */
 public final class WaterCrossing {
     private WaterCrossing() { }

@@ -23,10 +23,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Takes up to a count of one item from the player's own assigned storage (E-08c), as a player takes stacks out of a
- * chest it has open: only the storage its administrator assigned, verified unchanged since, under the container
- * edit policy and a claim on the chest. Exactly what left the chest arrives in the player's inventory, recorded in the
- * durable ledger; nothing else of either moves.
+ * In plain terms: an AI player taking items out of the storage chest an administrator assigned it, as a human
+ * takes stacks from an open chest. Exactly what left the chest arrives in its inventory, and nothing else in
+ * either moves.
+ *
+ * Technical: Takes up to a count of one item from the player's own assigned storage (E-08c), as a player
+ * takes stacks out of a chest it has open: only the storage its administrator assigned, verified unchanged
+ * since, under the container edit policy and a claim on the chest. Exactly what left the chest arrives in the
+ * player's inventory, recorded in the durable ledger; nothing else of either moves.
  */
 final class NativeTakeAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -52,6 +56,7 @@ final class NativeTakeAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Taking up to the given number of one item from the assigned storage. */
     NativeTakeAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                      Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                      Consumer<Runnable> dispatch, String item, int count) {
@@ -70,6 +75,7 @@ final class NativeTakeAction extends NativeRecordedAction {
         this.count = count;
     }
 
+    /** Moves the taking on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded take cannot replay after cancellation/restart", true);

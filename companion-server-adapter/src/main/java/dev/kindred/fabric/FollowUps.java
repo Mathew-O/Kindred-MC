@@ -33,12 +33,18 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The follow-up queue in play, for every goal (F-25c7): what the tasks ahead need, assessed from what the player holds
- * on every pass, the chunks it can get at now, and for each task at its gate what it alone still lacks. Both goals
- * use it: the portal goal takes chunks on its way (a chicken in sight while feathers are wanted for the End fight),
- * and the End goal also gathers each task's needs at its gate, the Nether trip's before going through and the End
- * fight's before going down to the stronghold. A gate gives up after half a day without progress, or half a minute
- * with nothing to be had from where the player is. Every chunk is an ordinary recorded skill; nothing is given.
+ * In plain terms: keeps track of what an AI player still needs for the tasks ahead (food, string, feathers, a
+ * bed and so on), counted from what it really carries, and fetches it in small errands: something close by on
+ * the way, or a proper gathering before a big step such as the Nether trip or the dragon fight. Every errand
+ * is an ordinary action; nothing is given to it.
+ *
+ * Technical: The follow-up queue in play, for every goal (F-25c7): what the tasks ahead need, assessed from
+ * what the player holds on every pass, the chunks it can get at now, and for each task at its gate what it
+ * alone still lacks. Both goals use it: the portal goal takes chunks on its way (a chicken in sight while
+ * feathers are wanted for the End fight), and the End goal also gathers each task's needs at its gate, the
+ * Nether trip's before going through and the End fight's before going down to the stronghold. A gate gives up
+ * after half a day without progress, or half a minute with nothing to be had from where the player is. Every
+ * chunk is an ordinary recorded skill; nothing is given.
  */
 final class FollowUps {
     /** Half a day of game time without a gate's work getting smaller: a night for spiders to come out included. */
@@ -58,6 +64,7 @@ final class FollowUps {
     private StrongholdRunPlanner.Provisions provisions = StrongholdRunPlanner.Provisions.NONE;
     private Set<Objective> ahead = Set.of();
 
+    /** The follow-ups for the given goal. */
     FollowUps(PortalRunCampaign campaign) {
         this.campaign = campaign;
     }
@@ -226,6 +233,7 @@ final class FollowUps {
         return stack.isOf(Items.IRON_SWORD) || stack.isOf(Items.DIAMOND_SWORD) || stack.isOf(Items.NETHERITE_SWORD);
     }
 
+    /** A piece of golden armour, as worn to keep piglins calm. */
     static boolean golden(ItemStack stack) {
         return GOLDEN.contains(stack.getItem());
     }

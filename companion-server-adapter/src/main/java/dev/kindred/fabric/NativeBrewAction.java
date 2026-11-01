@@ -21,12 +21,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A step of brewing (E-16b), as a player does it: a glass bottle filled at water ({@code FILL}); a brewing stand of its
- * own loaded with three bottles, one of the ingredient and, when its fuel is spent, one blaze powder ({@code LOAD}); or
- * what it brewed taken out ({@code UNLOAD}). Verified against the durable ledger by what moved: for a fill, one bottle
- * gone and one water bottle come; for a load, exactly what went into the stand gone from the inventory and in the stand;
- * for an unload, exactly what the stand's bottle slots held come into the inventory. Using a stand is a workstation's use
- * under the server's edit policy.
+ * In plain terms: one step of brewing potions, as a human does it: filling a glass bottle with water, loading
+ * its own brewing stand with bottles, an ingredient and fuel, or taking out what it brewed. Afterwards it
+ * checks that exactly what was meant to move did, and nothing else.
+ *
+ * Technical: A step of brewing (E-16b), as a player does it: a glass bottle filled at water ({@code FILL}); a
+ * brewing stand of its own loaded with three bottles, one of the ingredient and, when its fuel is spent, one
+ * blaze powder ({@code LOAD}); or what it brewed taken out ({@code UNLOAD}). Verified against the durable
+ * ledger by what moved: for a fill, one bottle gone and one water bottle come; for a load, exactly what went
+ * into the stand gone from the inventory and in the stand; for an unload, exactly what the stand's bottle
+ * slots held come into the inventory. Using a stand is a workstation's use under the server's edit policy.
  */
 final class NativeBrewAction extends NativeRecordedAction {
     enum Mode { FILL, LOAD, UNLOAD }
@@ -53,6 +57,10 @@ final class NativeBrewAction extends NativeRecordedAction {
     private CompletableFuture<ActionRecord> flush;
     private Map<String, Integer> moved = Map.of();
 
+    /**
+     * One brewing step at the given spot, using the bottles, ingredient and fuel in the given inventory
+     * slots.
+     */
     NativeBrewAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                      Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                      Consumer<Runnable> dispatch, Mode mode, BlockPos at, int[] bottles, int ingredient, int fuel, int slot) {
@@ -112,6 +120,7 @@ final class NativeBrewAction extends NativeRecordedAction {
         return body.entity().getEyePos().squaredDistanceTo(at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5) <= 20.25;
     }
 
+    /** Moves the brewing step on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded brewing step cannot replay after cancellation/restart", true);

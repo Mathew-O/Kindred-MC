@@ -23,7 +23,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native block placement action using the durable action ledger.
+ * In plain terms: an AI player placing one block from its own hotbar, as a human does. It checks it may build
+ * there, uses exactly one block item, and afterwards checks that the block is in place and nothing else it
+ * carries changed.
+ *
+ * Technical: Checkpointed native block placement action using the durable action ledger.
  * Evaluates server edit policy, acquires block claims, consumes exactly one block item
  * from the owned hotbar slot, and verifies placement and item conservation.
  */
@@ -55,6 +59,7 @@ final class NativePlaceAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Placing the block in a hotbar slot at the given spot, against the given side. */
     NativePlaceAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                       Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer,
@@ -82,6 +87,7 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (slot < 0 || slot > 8) throw new IllegalArgumentException("Placement needs an owned hotbar slot 0..8");
     }
 
+    /** Moves the placing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {
@@ -195,7 +201,8 @@ final class NativePlaceAction extends NativeRecordedAction {
             } else {
                 unknown = true;
                 result = Step.blocked("Native placement effect cannot be verified; reconcile", true);
-                admission.uncertain(result.reason());
+                admission.uncertain(result.reason() + " (placed=" + placed + ", at " + placedPos.toShortString() + ": "
+                        + Registries.BLOCK.getId(state.getBlock()).getPath() + "; slots changed: " + changedSlots(before) + ")");
             }
         } catch (RuntimeException failure) {
             unknown = true;
@@ -220,6 +227,13 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (!currentResolved.equals(placedPos)) return false;
 
         if (!world.getBlockState(placedPos).isReplaceable()) return false;
+        // The block clicked against still there: gone (dug out meanwhile, say), vanilla puts the block in its cell instead
+        // of the one planned, and the outcome cannot be verified. A seal of Sol's went so in the live pair on 03faab9, and
+        // Sol was taken out of the world for the rest of the run (F-25c4u).
+        BlockPos clicked = currentTargetReplaceable ? target.offset(side.getOpposite()) : target;
+        if (!world.isChunkLoaded(clicked)) return false;
+        var clickedState = world.getBlockState(clicked);
+        if (clickedState.isReplaceable() && clickedState.getCollisionShape(world, clicked).isEmpty()) return false;
         if (player.getEyePos().squaredDistanceTo(placedPos.getX() + 0.5, placedPos.getY() + 0.5, placedPos.getZ() + 0.5) > 25.0) return false;
 
         if (before != null && !before.matches(body)) return false;
@@ -264,6 +278,20 @@ final class NativePlaceAction extends NativeRecordedAction {
             }
         }
         return true;
+    }
+
+    /** The slots that are not as they were, for the record of an outcome that could not be verified. */
+    private String changedSlots(InventoryEvidence before) {
+        var inventory = body.entity().getInventory();
+        var changed = new StringBuilder();
+        for (int i = 0; i < Math.min(before.stacks().length, inventory.size()); i++) {
+            ItemStack b = before.stacks()[i], a = inventory.getStack(i);
+            if (b.getCount() == a.getCount() && ItemStack.areItemsAndComponentsEqual(b, a)) continue;
+            if (!changed.isEmpty()) changed.append(", ");
+            changed.append(i).append(": ").append(b.getCount()).append(' ').append(Registries.ITEM.getId(b.getItem()).getPath())
+                    .append(" -> ").append(a.getCount()).append(' ').append(Registries.ITEM.getId(a.getItem()).getPath());
+        }
+        return changed.isEmpty() ? "none" : changed.toString();
     }
 
     @Override

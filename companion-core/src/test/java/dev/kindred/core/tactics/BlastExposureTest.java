@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks how much of an explosion reaches the player: in the open it takes the whole blast, a
+ * wall shields what it covers, and a blast counts as safe only when enough health would be left after armour.
+ */
 class BlastExposureTest {
     @Test
     void inTheOpenTheWholeBoxIsReachedAndTheDamageIsVanillas() {

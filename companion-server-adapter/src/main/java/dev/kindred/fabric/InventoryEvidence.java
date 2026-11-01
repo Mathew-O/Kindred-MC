@@ -8,8 +8,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-/** Server-thread comparison snapshots only; workers receive just the fingerprint string. */
+/**
+ * In plain terms: a snapshot of everything an AI player carries, taken before an action and compared after,
+ * so the mod can tell whether any item was lost, gained or only moved.
+ *
+ * Technical: Server-thread comparison snapshots only; workers receive just the fingerprint string.
+ */
 record InventoryEvidence(ItemStack[] stacks, String description) {
+    /** A snapshot of the player's inventory as it is now, with a short fingerprint of it. */
     static InventoryEvidence capture(NativePlayerBody body) {
         var inventory = body.entity().getInventory();
         var stacks = new ItemStack[inventory.size()];
@@ -25,6 +31,7 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
         } catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
+    /** How many items the snapshot holds in all. */
     int itemTotal() {
         int total = 0;
         for (ItemStack stack : stacks) total += stack.getCount();
@@ -74,6 +81,7 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
         return Registries.ITEM.getId(stack.getItem()) + "|" + stack.getComponents();
     }
 
+    /** Whether the inventory is exactly as it was, slot for slot. */
     boolean matches(NativePlayerBody body) {
         var inventory = body.entity().getInventory();
         if (inventory.size() != stacks.length) return false;

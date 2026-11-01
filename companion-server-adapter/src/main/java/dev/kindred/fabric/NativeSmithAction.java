@@ -21,10 +21,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Upgrades a diamond piece to netherite at a smithing table (E-16c), as a player does: an upgrade template, the piece and
- * a netherite ingot put in, the upgraded piece taken out into the piece's slot. Verified against the durable ledger: the
- * piece is its netherite self with everything else of it kept (its enchantments, name and wear), one template and one
- * ingot spent, and nothing else held changed. Using a smithing table is a workstation's use under the server's policy.
+ * In plain terms: an AI player upgrading a diamond weapon, tool or armour piece to netherite at a smithing
+ * table, as a human does. One upgrade template and one netherite ingot are used, the piece keeps its
+ * enchantments, name and wear, and nothing else it carries changes.
+ *
+ * Technical: Upgrades a diamond piece to netherite at a smithing table (E-16c), as a player does: an upgrade
+ * template, the piece and a netherite ingot put in, the upgraded piece taken out into the piece's slot.
+ * Verified against the durable ledger: the piece is its netherite self with everything else of it kept (its
+ * enchantments, name and wear), one template and one ingot spent, and nothing else held changed. Using a
+ * smithing table is a workstation's use under the server's policy.
  */
 final class NativeSmithAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -46,6 +51,10 @@ final class NativeSmithAction extends NativeRecordedAction {
     private CompletableFuture<ActionRecord> flush;
     private String piece = "";
 
+    /**
+     * An upgrade at the given table, with the template, the piece and the ingot from the given inventory
+     * slots.
+     */
     NativeSmithAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                       Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                       Consumer<Runnable> dispatch, BlockPos table, int template, int slot, int material) {
@@ -74,6 +83,7 @@ final class NativeSmithAction extends NativeRecordedAction {
         return decision.allowed() ? null : decision.reason();
     }
 
+    /** Moves the smithing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded smithing cannot replay after cancellation/restart", true);

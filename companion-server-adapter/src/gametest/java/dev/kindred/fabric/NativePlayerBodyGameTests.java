@@ -21,7 +21,18 @@ import net.minecraft.util.math.Vec3d;
 import java.time.Duration;
 import java.util.UUID;
 
-/** Real native mechanics in controlled fixtures; not player-manager/client or survival-playthrough evidence. */
+/**
+ * In plain terms: a GameTest: in a real test world, the player's own body is checked to work like an ordinary
+ * player's. Eating takes the game's normal time, uses up exactly one item and feeds hunger without healing
+ * directly; mining takes normal time, wears the tool once, and is refused through walls, out of reach or once
+ * permission is withdrawn; walking uses real movement, not teleporting, and falls hurt; its inventory, health
+ * and hunger survive saving and loading; it gets no operator powers or creative mode; nothing off the
+ * server's game thread may control it; and a stop cancels what it is doing at once, so nothing it started
+ * finishes later.
+ *
+ * Technical: Real native mechanics in controlled fixtures; not player-manager/client or survival-playthrough
+ * evidence.
+ */
 public final class NativePlayerBodyGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void eatingTakesVanillaTimeConsumesOneRealItemAndFeedsHungerWithoutDirectHealing(TestContext context) {

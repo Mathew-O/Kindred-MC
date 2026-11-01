@@ -8,7 +8,7 @@ Use the pinned Java 21/Fabric stack and server JAR. Ordinary clients remain the 
 Use /aiplayer for command help; /companion redirects to the same tree. Creation, status, follow/stay/stop/resume, setup, movement, gather/deposit fixtures, personality and journal retain their existing restrictions. Commands do not imply planned skills are enabled.
 
 ## Quick start: the K panel and the Nether-portal goal
-Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Vesp) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
+Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Echo) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
 ```text
 /aiplayer roster spawn Kindred       spawn a roster player beside you
 /aiplayer edits on|off               server-wide switch for AI block breaking and placing (default off)
@@ -43,6 +43,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer match join <match>         join a match you were invited to (a human joins only for itself)
 /aiplayer match start|stop <match>   start a match everyone joined, or stop it (a player in it forfeits)
 /aiplayer match list                 matches, their state and results
+/aiplayer watch on|off               let the AI players learn how deep you mine, for yourself alone (off deletes it)
 /aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
 /aiplayer skin list                  the skins on offer
 /aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
@@ -74,7 +75,9 @@ The End goal knows from the start what the End fight will need, and gets it on t
 
 What a player learns about a world on the way to the End (its portals, the fortress, each eye's flight and where they cross) is kept across restarts in the world's `kindred/memory` folder, one file per player. Delete a player's file to make it forget.
 
-The Nether goal is a local plan, not a script. Like a player it pillars up out of a hole it cannot walk out of (jumping and placing one of its own blocks under its feet), and packs sticks from a tree up to 64 blocks off before going below ground: logs, crafting table and wooden pickaxe, cobblestone and stone tools, iron smelted in its own furnace, then the frame's obsidian, then a 4×5 frame lit with its own flint and steel (flint from gravel). For the obsidian it picks the cheaper way from what it holds and has seen, and re-plans as that changes: usually it makes a second bucket and casts the frame in place, as speedrunners do (a lava bucket filled at a pool it has seen, a cobblestone mould behind each frame block, water poured over the block from its other bucket, lava poured in, where it hardens at once, and the water taken back); with diamonds in hand or diamond ore in sight it makes a diamond pickaxe and mines obsidian made by pouring water over lava instead. On a sky island (nothing at the bottom of the world under the player) there is no stone to dig, so it builds a cobblestone generator from a bucket of lava and a bucket of water (a short trench dug into the ground, water falling into a hole at one end, lava at the other, mined from a pocket beside the cell where cobblestone forms; grass within the lava's reach is cleared first and no table or furnace goes near it), replants every tree it cuts (breaking leftover leaves for saplings and waiting by its saplings when it needs wood), makes a spare log into charcoal for its iron (a log and a plank into the furnace), and skips the iron chestplate, as there are no caves to go down into. It counts stone in sight there only within eight blocks; farther off it is likely on another island. Charcoal and crossing between islands are not done yet. It sees only blocks it could see (exposed blocks nearby; ores, fluids and caves also need a line of sight). It looks for ore the way players do: ore in view first, then into caves it has seen toward the depth where that ore is common, lighting the dark with torches it crafts from spare coal; it digs (a staircase down, then branch mining) only when it has no ore or cave in view. Every step is one bounded skill through the same activity, ledger and body checks as the commands above. It takes the crafting table and an emptied furnace along when it leaves to gather, makes and wears an iron chestplate before the deep descent, fights back against a mob that is after it without chasing it into lava or off a drop (against a heavy hitter such as a hoglin, whose toss can go sideways as well as back, it first steps to where no edge lies behind it or to either side) (takes cover behind its own block from a skeleton it cannot reach, and backs off when badly hurt, breaking off a fight that has worn it down; with no sword or axe, as after a respawn, it keeps away from mobs and takes cover from skeletons rather than fight with its fists), never stands where lava beside or above it could flow in, digs itself out at once if gravel falls into its head space (or a block beside it reaches into its eyes), walls itself in when a dig breaks into a cave of mobs it is no match for and waits there to heal (and walls off a cave whose mobs it can see from its passage before they notice it, and an enderman it provoked), explores caves without a shield only where it cannot hear mobs nearby, never digs a staircase step over a deep drop or down into a place where mobs killed it, holds a tunnel mouth against a mob on foot instead of chasing it into the open, stays away for a day from the cave where a mob killed it, smelts its first iron straight into a shield when it kept wood for one (raised while closing in on a skeleton, and toward a creeper about to blow) and makes its iron pickaxe as soon as it has three more, jumps as its swing recovers and strikes on the way down for critical hits (half as much damage again; not against a creeper, nor in water or on a ladder), fights a creeper hit and run or sprints away from it, digs in on the surface at night and seals the way in with its own dirt or stone while it waits for daylight, loads a furnace with fuel matched to the ore (one coal for every eight items, and no more ore than its fuel can smelt), and drops surplus stone when its inventory fills (the items stay in the world). If it makes no progress for about three minutes of game time (no new stage, nothing new gained, no new ground), it gives up on the spot and tries somewhere else; the panel shows "tried elsewhere N times" and the log records each attempt. Progress shows in the panel and in the server log as `<name> goal at x y z: …`.
+The Nether goal is a local plan, not a script. Like a player it pillars up out of a hole it cannot walk out of (jumping and placing one of its own blocks under its feet), and takes the wood for its trip below while it is still among the trees, before its first cobblestone takes it down: sticks for its stone tools and their reserve, a spare table's planks, a shield's and the fuel to smelt its iron beyond the coal it carries, about nine logs from an empty start, as players take a stack of logs before going down. A spare pickaxe it has no sticks or wood for is not fetched from the surface. The route: logs, crafting table and wooden pickaxe, cobblestone and stone tools, iron smelted in its own furnace, then the frame's obsidian, then a 4×5 frame lit with its own flint and steel (flint from gravel), built where it can walk to the spot it stands on to build it. For the obsidian it picks the cheaper way from what it holds and has seen, and re-plans as that changes: usually it makes a second bucket and casts the frame in place, as speedrunners do (a lava bucket filled at a pool it has seen, walked to a leg at a time when it saw it far off, or looked for a block above the deep lava level at Y=-54, in long tunnels far apart, where a cell with lava under it is opened to see the lava and fill the bucket, never stepped into, F-25c4ac; a pool it sees with no walk to it it digs its way toward, a staircase to a block above the pool's top and a tunnel along it, F-25c4ad; a cobblestone mould behind each frame block, water poured over the block from its other bucket, lava poured in, where it hardens at once, and the water taken back; a block to dig out before the next cast that it cannot reach from the lava it goes back to the frame for, rather than give the frame up, F-25c4y; with its lava in hand and no room for the frame beside lava lakes, where no frame may stand within three blocks of lava, it climbs a few blocks into the rock over them and makes room there, F-25c4z); with diamonds in hand or diamond ore in sight it makes a diamond pickaxe and mines obsidian made by pouring water over lava instead. On a sky island (nothing at the bottom of the world under the player) there is no stone to dig, so it builds a cobblestone generator from a bucket of lava and a bucket of water (a short trench dug into the ground, water falling into a hole at one end, lava at the other, mined from a pocket beside the cell where cobblestone forms; grass within the lava's reach is cleared first and no table or furnace goes near it), replants every tree it cuts (breaking leftover leaves for saplings and waiting by its saplings when it needs wood), makes a spare log into charcoal for its iron (a log and a plank into the furnace), and skips the iron chestplate, as there are no caves to go down into. It counts stone in sight there only within eight blocks; farther off it is likely on another island. Charcoal and crossing between islands are not done yet. It sees only blocks it could see (exposed blocks nearby; ores, fluids and caves also need a line of sight). It looks for ore the way players do: ore in view first, then into caves it has seen toward the depth where that ore is common, lighting the dark with torches it crafts from spare coal; it digs (a staircase down, then branch mining) only when it has no ore or cave in view. Every step is one bounded skill through the same activity, ledger and body checks as the commands above. It takes the crafting table and an emptied furnace along when it leaves to gather, makes and wears an iron chestplate as soon as it has the iron for it, where there are caves to go down into, then looks for the rest of its iron (F-25c4x), fights back against a mob that is after it without chasing it into lava or off a drop (against a heavy hitter such as a hoglin, whose toss can go sideways as well as back, it first steps to where no edge lies behind it or to either side) (takes cover behind its own block from a skeleton it cannot reach, but never while a zombie or other mob on foot is in reach, which it fights or backs away from instead, and backs off when badly hurt, breaking off a fight that has worn it down; with no sword or axe, as after a respawn, it keeps away from mobs and takes cover from skeletons rather than fight with its fists, and one it has to fight it strikes with what in its hotbar hits hardest, its pickaxe as a rule, F-25c4r), never stands where lava beside or above it could flow in, swims to the side of water it cannot walk out of (a flooded pit) and digs a step out of it, treading water while it digs (F-25c4t), chops a tree standing in water, or anything else it gathers that it can reach only from deep water, from the water while its breath lasts, treading water (F-25c4as), swims out or up for air with less than half its breath left even with a mob after it, without stopping to eat, and fights once it can breathe (F-25c4af), and passes over dry ground it set out for and could not get to, as when a stream carries it past, for the next nearest (F-25c4aa), digs itself out at once if gravel falls into its head space (or a block beside it reaches into its eyes), never digs out the block over its head that sand or gravel rests on, walls itself in when a dig breaks into a cave of mobs it is no match for and waits there to heal (with one still after it a minute on, as from a spawner, it digs away from it on its own level, sealing behind it each cell toward it, F-25c4au; and walls off a cave whose mobs it can see from its passage before they notice it, and an enderman it provoked), explores caves without a shield only where it cannot hear mobs nearby, never digs a staircase step over a deep drop or down into a place where mobs killed it, holds a tunnel mouth against a mob on foot instead of chasing it into the open, stays away for a day from the cave where a mob killed it, smelts its first iron straight into a shield when it kept wood for one (raised while closing in on a skeleton, and toward a creeper about to blow) and makes its iron pickaxe as soon as it has three more where it mines its frame (where it casts its frame it makes it with the rest of the route's iron, once all of it is in hand, for the way down to the lava, F-25c4q; one that wears out once both buckets are made is not made again: stone ones dig the rest), jumps as its swing recovers and strikes on the way down for critical hits (half as much damage again; not against a creeper, nor in water or on a ladder), fights a creeper hit and run or sprints away from it, digs in on the surface at night and seals the way in with its own dirt or stone (with neither, with sand or gravel where it rests on solid ground, F-25c4aq) while it waits for daylight, and in the morning, with no other way up, opens its own seal again, by hand with no pickaxe (F-25c4at) (below ground the night changes nothing: when its next step is logs from the surface, it mines the iron it still needs meanwhile; when it is water from the surface, it closes its way in and waits there for daylight, first filling a bucket at lava for its cast that it knows of below, within a walk), loads a furnace with fuel matched to the ore (one coal for every eight items, and no more ore than its fuel can smelt; coal first, then planks, made from its logs if need be, and its sticks last), cooks the raw meat it carries in its own furnace before taking the furnace on, and drops surplus stone when its inventory fills (the items stay in the world). Hurt with nothing to eat, it climbs toward the surface by day, and once up out of the ground it hunts an animal in sight, fishes, or walks out to look for animals, rather than going straight back down to its work (F-25c4ab); once up, ground a few blocks below where it last had open sky over its head still counts as up, so its search goes on under an overhang or through a hill's side (F-25c4ag). Climbing toward the surface under a lake, every step up refused by the water over its ceiling, it tunnels on one way until the ground over its head is dry and climbs out at the shore, and a climb for water goes on to the top of its staircase (F-25c4ah). Casting its frame in rock, it opens the cell in front of each top block's water first, so the water can be taken back once the block hardens (F-25c4ai). Opening the room for its frame, it digs first the cells it can reach and see, which shows the ones walled in behind them; with none left it can break, it moves to the frame's stand, then beside the cell in the row in front, before it gives the site up (F-25c4aj). Standing in a hazard (on magma, at a lava pool's edge, in fire) it steps to the middle of the safe cell beside it (F-25c4am). After three minutes with no progress the watchdog moves it elsewhere: it digs only along the ways that close on the new place, never back down a step it climbed, and then its plan has three minutes of its own (F-25c4an); a new place farther than one walk reaches it walks to a leg of 96 blocks at a time (F-25c4ar). Climbing out from under sand or gravel, it first digs the block that will be over its head after each step, from where it stands, and lets what falls settle before it steps (F-25c4ao). With no wood and none known close by, on open ground it looks for trees on the skyline out to 96 blocks and walks to the nearest it sees, even past the bound its walks to look keep to (F-25c4ap). Digging toward lava it sees but cannot walk to, it goes at the lava's level only the two ways that bring it nearer, and lays a block of its own over a drop on the way, as across a cave (F-25c4ak). On the Nether goal, once its portal is lit the goal is done: it stays by its portal, and nothing more is dug or climbed for the goal (F-25c4al). Wanting logs with no way up from where it is, it heads back toward home, a leg of about 96 blocks at a time when home is farther than one route reaches (F-25c4ae). With nothing it can do where it stands, it takes the shortest jump off its ledge it can afford, onto ground or into water two or more blocks down; water level with its own floor is not a jump, as it would only swim straight back out (F-25c4w). If it makes no progress for about three minutes of game time (no new stage, nothing new gained, no new ground), it gives up on the spot and tries somewhere else; the panel shows "tried elsewhere N times" and the log records each attempt. Progress shows in the panel and in the server log as `<name> goal at x y z: …`. Two lines are there for reporting a stall. A player on its goal that has started nothing for a minute of game time logs once `<name> has started nothing for N ticks on its goal: …`, with the gates that hold it. A step it was given that is dropped before it runs logs `<name> <skill> dropped before it ran: …`, at most once a minute.
+
+Players of the same controller in one world within 48 blocks of each other are a team. When one comes to hold more diamonds, iron or gold than before, it shares out what it has not promised by what each of them lacks, says who gets what, makes each piece at a table and walks over to toss a teammate's across; the log records `<name> handed over …`. A teammate it cannot get to, walled in say, it walks for at most six times without getting nearer, then lets the hand-over go, logs `<name> lets go of handing over …`, keeps the piece and goes back to its work. A teammate gone more than 48 blocks off it does not walk after: it waits a minute at a time, logging `<name> cannot go on with … its teammate N blocks off`, and lets the hand-over go after six waits (E-40a1).
 
 **The End goal (F-25c6, in development).** `/aiplayer goal end` earns the portal as above, then goes on the way players do:
 - It stocks up (food, blocks, a spare pickaxe, iron into a sword, a shield, a helmet and boots) and goes through its portal, or any lit portal it has seen.
@@ -112,9 +115,9 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 - **Piglins nearby:** it never breaks gold ore, or any other block piglins guard, with a piglin within sixteen blocks. Vanilla angers every piglin that near, seen or not, and gold does not calm a piglin angered that way. It never strikes a piglin that is not after it.
 - **Not yet:** Overworld gold ore (raw gold to smelt) is not gathered.
 
-**Combat rules (E-41a, in development).** AI players fight by vanilla 1.21.1's rules and within a player's limits. They strike no further than a player can, three blocks from the eyes to the target's hitbox, and only what they can see. A shield an axe has disabled stays down its full five seconds. They cannot see a creature's health any more than a player can: they judge it from the hits they saw land, so a mob hurt by something else is fought as if it were whole. Damage, critical hits, the attack cooldown and damage immunity are vanilla's own, so an AI player hits exactly as hard and as often as a player with the same gear. Players are attacked only inside a match they joined (not yet available). Each fight is recorded, as what the player saw, chose and was confirmed to have done tick by tick, in `kindred/encounters/<player id>/` under the server's folder, one file a fight and only the newest 50 a player kept.
+**Combat rules (E-41a, in development).** AI players fight by vanilla 1.21.1's rules and within a player's limits. They strike no further than a player can, three blocks from the eyes to the target's hitbox, and only what they can see. A shield an axe has disabled stays down its full five seconds. They cannot see a creature's health any more than a player can: they judge it from the hits they saw land, so a mob hurt by something else is fought as if it were whole. Damage, critical hits, the attack cooldown and damage immunity are vanilla's own, so an AI player hits exactly as hard and as often as a player with the same gear. Players are attacked only inside a match they joined (not yet available). A fight wears weapons, armour and shields as a player's fights do. One that breaks is lost to wear, and the player goes on without it, even a pickaxe it struck with for want of a sword. Any other loss from what it owns stops it for an operator to reconcile (F-25c4o). Each fight is recorded, as what the player saw, chose and was confirmed to have done tick by tick, in `kindred/encounters/<player id>/` under the server's folder, one file a fight and only the newest 50 a player kept.
 
-**Breaking a fall (E-07d).** A player falling with a water bucket in its hotbar pours water on the block it is about to land on, once the block is in reach, whenever the fall would take four health or more. It lands unhurt and scoops the water back up. This works everywhere but the Nether, where water boils away. With a bucket ready it will also jump down ledges and drops of up to forty blocks, not twelve. Keep a water bucket in its hotbar where it climbs. Native players take fall damage as any player does, and vanilla spares any player that has just joined for its first three seconds.
+**Breaking a fall (E-07d).** A player falling with a water bucket in its hotbar pours water on the block it is about to land on, once the block is in reach, whenever the fall would take four health or more. It lands unhurt and scoops the water back up. The water comes before anything else, even a fight its goal wants with a mob about it (F-25c4p). This works everywhere but the Nether, where water boils away. With a bucket ready it will also jump down ledges and drops of up to forty blocks, not twelve. Keep a water bucket in its hotbar where it climbs. Native players take fall damage as any player does, and vanilla spares any player that has just joined for its first three seconds.
 
 **Building (E-08a, E-08b; in development).** `/aiplayer build hut <x y z> [quarter turns] [player]` has a native player build a hut with its north-west floor corner at that spot, turned clockwise a quarter at a time. The hut has a plank floor, cobblestone walls on upright oak logs, a doorway in the south wall, a torch inside on the north wall, and a gabled roof of oak stairs facing in over a plank ceiling. `hut-7x5x3` sets the width, depth and wall height (3 to 15, 2 to 6); the default is 5×5×3, which takes 40 oak planks, 34 cobblestone, 12 oak logs, 20 oak stairs, 5 oak slabs and a torch. It says what it is short of when it starts. It works the way a player does:
 - It builds layer by layer, the nearest block first, each against a face it can click from where it can stand and walk to.
@@ -129,7 +132,7 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 **Short of blocks (E-08c; in development).** A player short of blocks for a build treats its needs as a queue, as the owner set them. It does not stop to fetch each block as it comes up:
 - **Easy, at once.** What its own storage holds, when the storage is within 24 blocks, it takes before it places anything. What it can make from what it carries, with no walk, it makes.
 - **Then it builds.** It places everything it can with what it holds.
-- **One trip for the rest.** Stuck for blocks, it fetches the whole shortfall in one trip: its storage first, then all the logs the rest takes in one go (from trees in sight, never from the build itself, walking out to look when none are in sight), then it crafts what it needs at a table. A table it carries is set down, or it makes one. Then it comes back and finishes.
+- **One trip for the rest.** Stuck for blocks, it fetches the whole shortfall in one trip: its storage first, then all the logs the rest takes in one go (from trees in sight, walking out to look when none are in sight; never from the build itself or any other: a log touching planks, stairs, slabs, a door, a fence, glass or the like, as a hut's or a cabin's corner post does, is never a tree to it), then it crafts what it needs at a table. A table it carries is set down, or it makes one. Then it comes back and finishes.
 - **What it can make.** Every wood's planks, stairs, slabs, fences, gates, doors and trapdoors; sticks, crafting tables, chests, ladders; cobblestone and stone-brick stairs and slabs; glass panes, bookshelves and furnaces.
 - **When it cannot finish.** When nothing it can do gets the rest, it finishes what it can and says what the build still wants, for example `hut 5x5: built but for 8 oak log, 5 oak slab, 20 oak stairs`.
 
@@ -149,7 +152,7 @@ Doors and beds now have a placement rule: each is placed by its first half, and 
 - **Where.** On the nearest flat, open, natural ground within 24 blocks of its home, or of where it stood when it first looked. Each later stage goes beside the last. It says why and where as it starts.
 - **Building it.** It builds through the needs queue. For stone it digs a staircase down off its site, and it climbs out after.
 - **Remembered.** Its bases are kept across restarts in `kindred/memory/<player>.bases.json`. A stage it did not finish is taken up again where it stands.
-- **Life first (F-25c9).** A player with work of its own (a build, a ranch, or its base) puts its life first. At night it goes to a bed of its own base, sleeps there, which sets its spawn, and goes back to its work in the morning. When its hunger is down to seven shanks and it does not carry enough to last, it hunts for food until it has a full bar and a reserve, sparing the animals its ranch is penning. With no food about, it goes back to its work and looks again after five minutes.
+- **Life first (F-25c9).** A player with work of its own (a build, a ranch, or its base) puts its life first. At night it goes to a bed of its own base, sleeps there, which sets its spawn, and goes back to its work in the morning. Out exploring when night falls, it heads for that bed rather than back to where it set out from. When its hunger is down to seven shanks and it does not carry enough to last, it takes what it lacks from the food in its own storage first (`/aiplayer storage at`), then hunts for the rest until it has a full bar and a reserve, sparing the animals its ranch is penning. With no food about, it goes back to its work and looks again after five minutes.
 - **Kept whole (E-31a).** When it looks to its base it checks what it built against the plan. A chest broken, a wall blown out or any block gone or out of place is built back as any build is, from what it holds or fetches; a chest is crafted again from planks. A repair that ends short is tried again after five minutes.
 - **Stopping one.** `/aiplayer build stop` on a base's build puts it off for five minutes.
 - **Grown, not stamped (E-29a).** Each stage is grown from a seed block and its world: the same stage comes out a different size, laid out the other way about, with its ridge and windows otherwise, and facing another way in another world or for another player. Give a player a seed block with `/aiplayer seed <block> [player]` (`/aiplayer seed clear` takes it back): a wood seed, a cherry log say, sets the wood it builds in. Without one it builds in the wood it carries most of, else that of the nearest tree it knows. A build cuts only logs of its own wood.
@@ -157,14 +160,14 @@ Doors and beds now have a placement rule: each is placed by its first half, and 
 
 **With AI world edits off** (the default), AI players still keep themselves alive without changing a block: they eat when hungry, step out of fire, lava and deep water and away from a hissing creeper, and defend themselves from a mob that is on them. So does a player set idle. They break, place, equip and work on nothing until an operator records `/aiplayer edits on`, and a stopped player does nothing at all.
 
-**What AI players say.** A native AI player talks as the companion body does: to its owner, and to others only when its public conversation is on (`/aiplayer social public true [bot]`), within a few blocks, at most about once every two minutes unless spoken to. What it says of its own doing (a portal lit, a build finished) goes to its owner and administrators with where it is, and to others who may hear it without the place; never to an opponent in a match it is in. Hurt, it says what the game recorded as hurting it, once: a fall blames nobody.
+**What AI players say.** A native AI player talks as the companion body does: with whoever may command it (whoever made it, and operators) as with an owner, in private, and with others only when its public conversation is on (`/aiplayer social public true [bot]`), within a few blocks, at most about once every two minutes unless spoken to. What it says of its own doing (a portal lit, a build finished) goes to its owner and administrators with where it is, and to others who may hear it without the place; never to an opponent in a match it is in. Hurt, it says what the game recorded as hurting it, once: a fall blames nobody.
 
 **A walled keep (M-06a; in development).** `/aiplayer build keep <x y z> [quarter turns] [player]` builds the first stage of a walled base for a Factions world, of oak and cobblestone. The wall's north-west corner stands four blocks east of that spot, leaving room for the stair down outside its west wall. It is the cabin inside a walled yard, the wall 17 blocks west to east and 16 north to south, 687 blocks in all:
 - **The wall:** stone, four high from a foundation in the ground, three above the yard, lined inside with planks its whole height. Torches on the lining light the yard.
 - **No gate.** The way in is a stair down beside the west wall, three blocks in from its south end; a passage under the wall, three below the yard; and a stair up into the yard. The stair and passage are lined with stone, and nothing in the wall shows where the way in is.
 - **Inside:** the cabin, with its bed, table, furnace and chests.
 
-`/aiplayer build farmward <x y z>`, at the keep's own spot, builds its second stage: a farm ward east of the keep, sharing its east wall, its own three walls lined as the keep's, reached from the keep's yard by a way under the shared wall and from outside by its own way under its east wall, and a field nine square with a stone-lined channel down its middle for water. `/aiplayer field <x y z>`, at the keep's spot, then has the player pour a bucket of water it holds into the channel, till every cell of the field with its own hoe and sow it with its own wheat seeds, working from the field's margins and never standing on its farmland; with too little it does what it can and says why. `/aiplayer build pastureward <x y z>`, at the keep's spot, builds its third stage: a pasture ward south of the farm ward, sharing its south wall, its own three walls lined, an oak pen seven square inside, a doorway for cattle built shut in its south wall in line with the pen's gate, and its own way in under its east wall. `/aiplayer pasture <animal> <x y z>`, at the keep's spot, then has the player open the doorway, lead a pair in by it into the pen, breed them, and shut the doorway behind them with the blocks it took out of it; `/aiplayer ranch stop` stops it. `/aiplayer build hall <x y z>`, at the keep's spot, builds its fourth stage: the hall, the base's two-floor house in its own ward south of the keep, sharing the keep's south wall and the pasture's west wall, lined as the others, with its own way in under its west wall. `/aiplayer build walltower-1 <x y z>` to `walltower-5`, at the same spot, then builds a solid stone tower at each of the compound's outer corners in turn, from the north-west round, three above the wall and crenellated. Bringing in the field's harvest, a way up into the towers, and the moat and bridge are to come, as is a compound a player chooses and builds for itself in a Factions match.
+`/aiplayer build farmward <x y z>`, at the keep's own spot, builds its second stage: a farm ward east of the keep, sharing its east wall, its own three walls lined as the keep's, reached from the keep's yard by a way under the shared wall and from outside by its own way under its east wall, and a field nine square with a stone-lined channel down its middle for water. `/aiplayer field <x y z>`, at the keep's spot, then has the player pour a bucket of water it holds into the channel, till every cell of the field with its own hoe and sow it with its own wheat seeds, working from the field's margins and never standing on its farmland; with too little it does what it can and says why. `/aiplayer build pastureward <x y z>`, at the keep's spot, builds its third stage: a pasture ward south of the farm ward, sharing its south wall, its own three walls lined, an oak pen seven square inside, a doorway for cattle built shut in its south wall in line with the pen's gate, and its own way in under its east wall. `/aiplayer pasture <animal> <x y z>`, at the keep's spot, then has the player open the doorway, lead a pair in by it into the pen, breed them, and shut the doorway behind them with the blocks it took out of it (a pair jammed side by side at the doorway or the pen's gate it lets wander off with the food put away, then leads up one behind the other; a cow left in the gateway as the gate shuts, or one that gets out while the other is fed, it fetches in, M-06a1); `/aiplayer ranch stop` stops it. `/aiplayer build hall <x y z>`, at the keep's spot, builds its fourth stage: the hall, the base's two-floor house in its own ward south of the keep, sharing the keep's south wall and the pasture's west wall, lined as the others, with its own way in under its west wall. `/aiplayer build walltower-1 <x y z>` to `walltower-5`, at the same spot, then builds a solid stone tower at each of the compound's outer corners in turn, from the north-west round, three above the wall and crenellated. Bringing in the field's harvest, a way up into the towers, and the moat and bridge are to come, as is a compound a player chooses and builds for itself in a Factions match.
 
 **Schematics (M-05; in development).** Put vanilla structure files (`.nbt`, as a structure block saves them) and Sponge schematics (`.schem`, versions 2 and 3, as WorldEdit saves them) in `config/kindred/schematics`, then `/aiplayer build <name> <x y z> [quarter turns] [player]` with the file name without its extension. Beside `<name>.nbt` or `<name>.schem`, a `<name>.license` file in properties form keeps who made it and on what terms: `creator=`, `license=`, `source=` (a link or a note). The player says them when it starts, with `no license recorded` when there is none, so only use schematics you may use (D8). Kindred never fetches schematics from anywhere.
 
@@ -223,7 +226,7 @@ See [M-01a](evidence/M-01a.md).
 
 See [M-04a](evidence/M-04a.md).
 
-When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. Unless a mob killed it (the mob is likely still there), it tries once to pick its items back up. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
+When a native player dies, its current work settles first, vanilla drops its real inventory, and the same identity respawns about a second later at its bed or the world spawn. It goes back to pick its items up, the nearest first; a drop it cannot get to, in a hole or on a ledge, it passes over for the next, three at most (F-25c4s). Dead again before it has them back, on the way or by them, it leaves what it dropped that time too, rather than walk back into the place that has killed it twice (F-25c4v). After a mob kill it does so only once no hostile mob has them in sight, as the one that killed it may stand over them; it keeps away from them meanwhile, and the drops lie about five minutes. Nothing is restored. Restart while dead is not yet covered and needs reconciliation.
 
 ### Optional: a model strategist for the goal (F-19b, F-19d)
 The goal plays the same without any model. For development runs a model can be consulted as a strategist: it reads the player's own short report (stage, gear, health, recent deaths and their causes, danger zones, its notes) and picks how careful the player should be for the next five minutes: press on, play safe (no caving, backing off sooner) or surface and recover (climb out to daylight and heal first, then play safe). It may also name up to three places near the player's deaths or danger zones to avoid for a while. It never moves the player, gives items, writes code or decides the goal is done; every moment is still the local plan. It is asked only when something changed (the goal starting, a new stage, a death, a spell with no progress at most every two minutes, and otherwise every five minutes while progress changes), never per tick, off the game thread, and a slow or failed reply changes nothing. Switch it on with environment variables in the server's environment:
@@ -251,16 +254,143 @@ DEEPSEEK_API_KEY      deepseek-chat
 XAI_API_KEY           no default: name the model with KINDRED_STRATEGIST_MODEL
 OPENROUTER_API_KEY    openai/gpt-4o-mini
 ```
-Model line-ups change often: check the provider's current list, and set `KINDRED_STRATEGIST_MODEL` if a default has been retired. With several keys set, the first in this list is used unless `KINDRED_STRATEGIST_PROVIDER` names one. A single `KINDRED_STRATEGIST_API_KEY` also works; its provider is recognised by the key's prefix (`sk-ant-`, `sk-or-`, `gsk_`, `xai-`, `AIza`, then `sk-` for OpenAI), and a Mistral or DeepSeek key needs the provider named. Any other server speaking OpenAI's chat completions, such as a local Ollama or LM Studio, needs only `KINDRED_STRATEGIST_BASE_URL` and `KINDRED_STRATEGIST_MODEL`, and no key. All but Anthropic go through the JDK's HTTP client and the Gson the server already carries, so they also work from the release jar. The reply is asked for with a strict JSON schema (JSON mode for DeepSeek, or once more in JSON mode when a provider refuses the schema) and validated in core exactly as Claude's is.
+Model line-ups change often: check the provider's current list, and set `KINDRED_STRATEGIST_MODEL` if a default has been retired. With several keys set, the first in this list is used unless `KINDRED_STRATEGIST_PROVIDER` names one. A single `KINDRED_STRATEGIST_API_KEY` also works; its provider is recognised by the key's prefix (`sk-ant-`, `sk-or-`, `gsk_`, `xai-`, `AIza`, then `sk-` for OpenAI), and a Mistral or DeepSeek key needs the provider named. Any other server speaking OpenAI's chat completions, such as a local Ollama or LM Studio, needs only `KINDRED_STRATEGIST_BASE_URL` and `KINDRED_STRATEGIST_MODEL`, and no key. All but Anthropic go through the JDK's HTTP client and the Gson the server already carries, so they also work from the release jar. The reply is asked for with a strict JSON schema (JSON mode for DeepSeek, or once more in JSON mode when a provider refuses the schema) and validated in core exactly as Claude's is. Anthropic's own models can be reached from the release jar the same way: `KINDRED_STRATEGIST_PROVIDER=openai-compatible`, `KINDRED_STRATEGIST_BASE_URL=https://api.anthropic.com/v1`, the key in `KINDRED_STRATEGIST_API_KEY` and the model named. Every request to Anthropic's server then asks for no thinking, as the SDK route does: its newer models otherwise think first, and a rescue's short reply came back empty (F-29). Nothing is cached on that route, so each consultation reads its whole report, about 6,700 tokens.
 The pace sets how closely it follows play. Steady asks on the big changes (the goal starting, a death, a new stage) and otherwise every few minutes, within the contract's default budgets. Real time asks as often as the planning lane allows (every ten seconds per player at most), and also whenever something new happens: a fight with a new foe, a hit that costs six health or more, nightfall or daybreak. Its advice lapses after a minute of game time unless renewed. Answers come back in about two seconds: requests go at low effort without thinking first, with the instructions cached. Measured on one report, that was about 1.9 seconds every time, against 2.8 to 4.0 at the model's own default, with the same advice. Before the Minecraft guide was added (below), a question cost about $0.00013 with the instructions cached, so real time at the full rate was about five cents an hour per player; the guide is cached with the instructions, and a question now reads about 4,500 cached tokens and sends 200 to 300.
 
 It also has a say in what comes next (F-19c). A reply may set a focus for the same five minutes: food first (hunt, and by day go out and look for animals when none is in sight, until well stocked) or wood first (logs while a tree stands). A reply's note may also teach a habit the player keeps in that world from then on: carry three more food, pack a second spare pickaxe for the work below, dig its own way rather than explore caves, or dig in for the night at dusk. A habit needs a note saying why, at most four are kept, and the strategist can retire one. A focus or a habit only reorders or resizes the route's ordinary jobs; fights, shelter and healing still come first. The habits live with their notes in the memory file below (shown as `"habit": "MORE_FOOD"` on a note). Delete the note, or the file, to make the player drop a habit; each goal the player starts in that world gets the habits it has learned there.
 
 It thinks ahead too (F-19e). It is sent a general Minecraft guide with its instructions: the way to the dragon, what each larger task needs, recipes, where things come from, how far mobs notice a player, and the dangers. The report shows the player's queue of follow-ups (what the tasks ahead want, what it holds, the work left), and a reply may add up to three: a shield after deaths to skeletons, more food after hungry nights, more arrows. Each is a need from a fixed list (bow, arrows, shield, water bucket, bed, string, feathers, wool, flint, sticks, blocks, food) with a count and the task it is for. A reply may also advise one way of doing a part of the run from the same fixed set as the pace above; the player takes it only where it can be done and costs at most half as much again as its own choice. The player gathers and crafts them itself, as with the End fight's own needs above, and drops them when met or when their task is behind it. Only the End goal works the queue so far. The follow-ups are kept in the memory file below (`"queue"`).
 
-The log says `Kindred strategist on` at start, `<name> strategist: <stance>[, focus <focus>] (<in> in, <cached> cached, <out> out tokens, <ms> ms) - <reason>` for each reply, `<name> strategist: habits in this world now [...]` when a habit is learned or retired, and `<name> strategist: queued [...]` when it adds follow-ups. Each player keeps its own memory for each world in `<world>/kindred/model-context/<player UUID>.json`: its notes, its deaths and their causes, the advice it was given, and the consultations and tokens they cost. A lesson already noted is kept once however the model rewords it, and the model is told to write a note only for a new lesson and only from what the report shows. Delete the file to make a player forget a world; it holds only the player's own game events and the model's notes about them. Requests are bounded: a fifteen-second deadline, one at a time, at most six a minute per player and twelve in all, and the daily budgets, reserved before each request and settled to what it used, with input read back from the cache counted for a tenth, as it is billed. A consultation costs about 4,700 to 5,100 input tokens, about 4,500 of them read from the cache, and 200 to 300 output tokens. The SDK is on the development classpath (`runServer`, GameTests) but not yet in the release jar; there the switch logs a warning and play goes on without it.
+Each death is logged as `<name> died at <x y z>: <message> (tick, day or night, under the sky or not, hunger, armour, what it held, a shield or not; what it was doing and its goal's stage; the strategist's stance, focus and habits in force)`, so a run's deaths can be weighed by what they happened in. The log says `Kindred strategist on` at start, `<name> strategist: <stance>[, focus <focus>] (<in> in, <cached> cached, <out> out tokens, <ms> ms) - <reason>` for each reply, `<name> strategist: habits in this world now [...]` when a habit is learned or retired, and `<name> strategist: queued [...]` when it adds follow-ups. Each player keeps its own memory for each world in `<world>/kindred/model-context/<player UUID>.json`: its notes, its deaths and their causes, the advice it was given, and the consultations and tokens they cost. A lesson already noted is kept once however the model rewords it, and the model is told to write a note only for a new lesson and only from what the report shows. Delete the file to make a player forget a world; it holds only the player's own game events and the model's notes about them. Requests are bounded: a fifteen-second deadline, one at a time, at most six a minute per player and twelve in all, and the daily budgets, reserved before each request and settled to what it used, with input read back from the cache counted for a tenth, as it is billed. A consultation costs about 4,700 to 5,100 input tokens, about 4,500 of them read from the cache, and 200 to 300 output tokens. The SDK is on the development classpath (`runServer`, GameTests) but not yet in the release jar; there the switch logs a warning and play goes on without it. From the release jar an Anthropic key still works through Anthropic's OpenAI-compatible endpoint: `KINDRED_STRATEGIST_PROVIDER=openai-compatible`, `KINDRED_STRATEGIST_BASE_URL=https://api.anthropic.com/v1`, `KINDRED_STRATEGIST_MODEL=<a model id>` and the key as `KINDRED_STRATEGIST_API_KEY`. The instructions are not cached that way, so a consultation reads about 6,700 tokens at the full price (the evaluation runs of F-29 were made so).
 
-Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`).
+### Lessons from its own play (E-46)
+
+With or without the strategist, each player learns from its own deaths in a world and keeps what it learns as a note
+with a habit, in the same memory file, as the strategist's are:
+
+| What happened | The habit | Its note |
+| --- | --- | --- |
+| Two deaths with food at six or below within two game days | carry three more food | "Twice dead hungry; carry more food." |
+| Two deaths at night under the open sky within two game days | dig in at dusk | "Night on the surface has cost two lives; dig in at dusk." |
+| Three deaths below y 40 in the Overworld within one game day | dig its own way for ore, not caves | "The caves took three lives today; dig for ore instead." |
+| Its last pickaxe broke below ground, with none spare | pack a spare pickaxe | "Stranded without a pickaxe; pack a spare." |
+| Killed below ground by a mob standing where it had walked, in its own tunnel | torches as it goes: one where the light at its feet is down to 6, about every eight blocks, from its own torches | "Something spawned in my own tunnel; torches as I go." |
+| Two fall deaths within two game days | the water bucket kept in the hotbar, where a fall's clutch reaches it | "Falls have cost two lives; keep the bucket to hand." |
+
+A habit it learned so and has not needed for three game days is dropped again, with a note saying so ("Three days
+without dying hungry; dropping the habit of carrying more food."). A habit it already keeps, from a lesson or the
+strategist, is not taught twice, and one dropped is not taught again from what came before. The habits only reorder
+or resize ordinary work, as the strategist's do, and at most four are kept. The report the strategist reads marks a
+lesson's habit `from its own play`, and the strategist is told not to teach it again, though it may retire it. The log
+says `<name> lesson: learned <HABIT> - <note>` or `<name> lesson: dropped <HABIT> - <note>`. The memory keeps, with
+each death, the game time, its height, whether it was night or under the sky or in the Overworld, its food, how it
+came (a mob, a fall, or else) and whether a mob in its own tunnel struck it; nothing of anyone else. Set
+`KINDRED_LESSONS=off` in the server's environment to turn the lessons off (an evaluation scenario says `lessons=off`).
+
+### The atlas (F-30)
+
+Each player keeps a map of each world from its own play, in its own file beside its memory
+(`kindred/memory/<uuid>.atlas.json` in the world's folder), read once when it connects, written once a game minute and
+when the server stops, off the game thread. It holds:
+
+- the chunks it stood in, with the biome and when, and the chunks it saw iron, diamonds, coal, lava, water, trees, a
+  fortress's or a stronghold's blocks in, with where it last saw each. Only what its sweep saw goes in: blocks in its line
+  of sight and open to the air, as it already remembers them; nothing is read from the world it could not see;
+- where it was hurt by a hostile mob or killed, by 16-block cell, by night or by day, fading to nothing over three game
+  days;
+- its bed and the holes it sealed itself into for the night.
+
+At most 4,096 chunks are kept (a chunk it never stood in goes first, the one longest unseen), 1,024 danger cells and 64
+shelters. Where each resource is likely in 1.21.1 (diamonds near the bottom of the world, iron and coal in their bands,
+villages by biome) comes with the mod as data.
+
+What changes in play: wanting iron or diamonds with none in reach, a player goes back to where it last saw some, a leg of
+up to 96 blocks at a time ("Back to where it saw diamond ore at ..."), before it explores a cave or digs; stood there with
+none in view, it lets that place go. At night a walk pays extra for each block in a cell where it was hurt or killed at
+night (up to three times an ordinary block's cost), so it takes a way round of about the same length, never a long
+detour. The strategist's report has one line: how many chunks it knows and where it last saw iron and diamonds. Set
+`KINDRED_ATLAS=off` in the server's environment to turn the atlas off: nothing is kept or read (an evaluation scenario
+says `atlas=off`).
+
+### Rescue plans (F-29)
+
+With the strategist on, a player that is stuck and whose own move elsewhere has had its turn (its watchdog's second
+spell in a row of three minutes with no progress) asks the strategist for a way out. It asks once for each such spell,
+at most once every five minutes, within the same rates and daily budgets as advice. It sends a report of about 800
+tokens:
+
+- where it is, and its health and food;
+- the light at its feet;
+- the blocks round it, nine by nine and five high, each kind a letter;
+- the last five things refused or failed, with why;
+- what it carries;
+- what the goal wants next;
+- its stance and habits;
+- what its own tries did.
+
+The reply is one to six steps, each in one of these forms and nothing else:
+
+```text
+walk <north|south|east|west> <1-8>       walked to the block that many away, round what is in the way, at about its height
+dig <north|south|east|west|up|down> <1-4> the blocks in the way: a passage two high sideways; over its head, or under its feet
+pillar <1-6>                             up that many, a block of its own from the hotbar under its feet each jump
+place <north|south|east|west>            a block of its own from the hotbar beside its feet
+wait <1-4>                               seconds
+eat                                      food from its hotbar
+retreat <north|south|east|west> <1-3>    back off without turning
+```
+
+The strategist is told what each step does as it is carried out: a dig does not move the player (it climbs a shaft dug
+up with `pillar`, and drops into a hole dug down); a walk climbs one block at a time at most; it breaks only what a tool
+it carries can harvest, so stone, deepslate and ores need a pickaxe.
+
+Core reads the reply and refuses the whole of it for one step that is not in that list or outside its bounds. A plan
+is also refused, with nothing moved, when:
+
+- a step's skill is not installed;
+- the player was stopped, set going again or given a command since it asked (its fence);
+- the stuck spell is over;
+- the player is no longer where it asked from.
+
+While it waits for the reply, a few seconds, its goal gives out nothing and a walk of its own under way stops where it
+is, so that the plan finds it where it asked from. What is a danger to it still comes first: a hostile mob within 16
+blocks, water, lava or fire, its breath short, or its health or food at half or less. What it does of its own choosing
+meanwhile (eating, say) does not refuse the plan; a stop, a resume or a command does.
+
+A plan that passes is carried out a step at a time before anything else of the goal's. Each step is worked out from
+where the player stands when it comes up, and is given out as an ordinary task: the server's edit policy, the claims
+and the action ledger check and record it as they do every task. The first step that does not go ends the plan. With
+replays on (F-27), the scene is captured as a `stuck` replay before the plan runs.
+
+The log says `<name> rescue: asked, stuck spell <n> at <x, y, z> (<characters> characters reported)`, `<name> rescue:
+plan pillar 3, walk north 2 - <reason> (<in> in, <cached> cached, <out> out tokens, <ms> ms)`, and how it ended:
+`<name> rescue: pillar 3, walk north 2 -> unstuck`, `-> failed: <why>` or `-> refused: <why>`. An evaluation's result
+lists each player's rescues. A rescue sends a report of about 1,300 to 2,200 characters; in the ten-seed evaluation on
+Anthropic's server through the compatible route that was about 1,700 to 2,000 tokens in, with the instructions, and
+about 100 out, at most 300. Set `KINDRED_RESCUE=off` to turn rescues off; the strategist's advice is unchanged.
+
+### The player's voice in chat (E-20a)
+With the strategist on, a player spoken to by name ("Echo, what are you doing?") answers in its own words: the same model phrases one short, clean line in the player's personality from what the player knows right now. It is told only what that listener may know. Whoever may command the player (its controller, an operator) is told everything, its position included. Another player is told what anyone beside it could see or ask, never where it is or what exactly it carries. An opponent in a match is told only what it could see for itself. The line is said through the same social lane as the fixed replies, with the same limits: eight blocks and in sight, public chat for anyone who may not command the player, a player's three seconds between direct replies, and each speaker's three seconds. Words alone never make the player do anything; only the asks below, from someone who may command it, do. A line that is too long, starts with `/`, carries formatting codes or rough words, or gives a place to someone who may not know it is refused. Then, or when anything else goes wrong (a timeout, an error, the budgets or rates spent, a line already being phrased for that player), the player says its fixed reply, as it does with no model. While one reply is being phrased, the newest message to the player waits for it; someone else whose message that one replaced is given the fixed reply at once.
+
+```text
+KINDRED_VOICE=off                              optional; the fixed replies only, though the strategist is on
+```
+
+Cost: each reply is one request on the chat lane, apart from the planning lane, with an eight-second deadline and 120 output tokens at most. It is reserved at about 1,000 tokens and settled to what it used. Replies count against the same rates (six a minute per player, twelve in all) and the same daily budgets as the strategist's advice: `KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS` (steady pace 50,000) and `KINDRED_STRATEGIST_DAILY_TOKENS` (steady pace 100,000). Nonstop chat with one player spends the player's steady budget in about six to eight minutes; after that the fixed replies carry on, and the log's one "budget is spent" line says so. Raise the two budgets for a chattier server, or set `KINDRED_VOICE=off`. The log says `Kindred voice on` at start and, for each reply, `<Echo> Chopping logs for a table. (to Steve, 1,180 in / 22 out, 1.4 s)`, or `Echo voice: no line (<why>); the fixed reply instead (...)`. The last six lines between a player and each speaker go with the next request for five minutes, in memory only, and the count of replies is kept in the player's model-context file as `conversations`.
+
+#### Asks in chat (E-20b)
+Whoever may command a native player (its controller or an operator) can also ask it in chat to come over ("Echo, come here"), wait a moment, stop, or toss them some of an item it carries ("Echo, toss me some bread"). The model's reply carries the ask. The player says its reply, then does what the matching command does, through the same code and with the speaker's own authority, so every check the command makes is made again:
+
+| Ask | As the command |
+| --- | --- |
+| come | `/aiplayer native goto <where you stand>` |
+| wait | `/aiplayer native wait 4` |
+| stop | `/aiplayer native stop` |
+| toss | `/aiplayer native toss <item> 8` (new: up to that many from one stack, to whoever runs it) |
+
+If the command would refuse, the player says why in the command's own words ("Echo has no diamond."). Nobody else is offered asks; a reply that carries one for anyone else is refused, and the fixed reply is said. An opponent in a match never may, operator or not. There is no follow in chat yet. The log says `<name> asked in chat by <who>: <ask>: done` or `refused (<why>)`.
+
+Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 
 ## How the players look about
 
@@ -294,6 +424,64 @@ A player puts what it keeps for later (enchanted books, saddles, name tags, rail
 
 A single hit from another player, AI or human, that takes more than three hearts after armour is lethal aggression to an AI player, however the fight began. It drops what it was doing and weighs the fight from what it can see and knows: what it deals them a second through the armour it sees on them, what they deal it (the weapon in their hand, the hardest hit they have landed on it), the health of each (its own; theirs as it believes it) and what each can heal (its golden apples). An opponent's enchantments it cannot read are allowed for at their likely strongest. If the fight is winnable, it may strike that player at all (a match you both joined, such as a duel or a manhunt across sides), and it is equipped (a weapon better than its fist), it fights back; an even fight it takes only when it has no way away. Otherwise it sprints away. It never strikes back outside a match it joined, whatever its kit, and once away, or the attacker gone, it does not seek them out. It says who hit it, how hard, and why it chose what it did: "Rue hit me hard, 4 hearts. I'm getting away." A lesser hit changes nothing.
 
+## Wary of someone (E-49)
+
+An AI player holds back from whoever the game saw do it harm. Each player keeps its own wariness of each person, from
+0 to 100:
+
+- a blow or an arrow from them, outside a match where the two may strike each other: +40;
+- harm within ten seconds of arriving where they asked it to come: +30;
+- something gone from a chest of its own while they, not on its side, were seen at it: +30;
+- an ask for a toss past the day's cap: +10;
+- something they threw it, picked up (a gift, or what was taken given back): −20;
+- each game day with none of the above: −10.
+
+At 50 or more it is wary of them, so two blows are enough. While wary, it refuses their asks in chat, all but a stop,
+in its own words: "Not after last time." It also tosses them nothing. With the voice on, the voice is told: "This
+person has hurt you lately". It is never told to answer in kind.
+
+Two rules hold for everyone, wary or not:
+
+- **Tosses.** It hands one person at most 16 items a game day, owner or not, by chat or by `/aiplayer native toss`.
+  Past that it says "That's all I hand out in a day."
+- **Coming when asked.** A come-to-them never ends beside lava, fire or a drop of more than three blocks. If the only
+  way to the person ends there, it stops short where it is safe.
+
+For a minute after someone strikes it, it walks off if they come within four blocks. Wariness never makes it strike
+anyone: it withholds, and that is all. A hard hit is answered as before ("Hit hard by another player"). Wariness is
+kept for the session and starts again when the server restarts. The log says
+`<name> notes that <person> hurt it: wariness 80; it holds back from them now`.
+
+## Learning from the server's people (E-47)
+
+Each person decides for themselves whether the AI players may learn from them:
+
+- `/aiplayer watch on` lets them;
+- `/aiplayer watch off` stops it, and deletes what was learned from them at once, in the server's file too;
+- `/aiplayer watch` says how it stands.
+
+No one can decide it for anyone else. The console, a command block, an AI player and a command run as someone else
+(`/execute as`, by an operator too) are refused. Until a person says yes, nothing is learned from them.
+
+**The privacy rule (D10).** What is learned, and from whom:
+
+- only from people who opted in, each for themselves;
+- only the height of the coal, iron and diamond ore they break in the overworld, in bands of four blocks;
+- never where (no x or z), when, or in what order;
+- never their chat, their inventory, or anything else they do;
+- never the AI players' own mining.
+
+It is kept as counts in `<world>/kindred/customs.json`, with the list of who opted in. Each person's counts are kept
+apart from the others' only so that opting out can delete exactly theirs. Deleting the file deletes everything, and no
+one is opted in after that.
+
+**What the players do with it.** Once the people who opted in have broken 16 of an ore between them, the middle of
+their heights is the server's custom for it. An AI player's goal digs for that ore toward its own depth (iron y 16,
+diamonds y −58, coal y 48), moved three tenths of the way toward the custom and never more than eight blocks. Players
+who mine their iron at y 12 move it to y 15. The log says
+`<name> mines iron toward y 15, leaning toward the depth this server's people mine it at`. Nothing else changes: it
+copies no build and follows no one.
+
 ## Trading with villagers
 
 A player that comes by a villager at work (not a nitwit, a child, one asleep or one trading with someone) opens its trading screen to see what it offers, as you would, and remembers it. It knows what each profession usually buys and sells, and weighs each offer by what it is worth to it as it stands, against what an emerald costs it to earn: the cheapest of the villager's trades it can feed with what it can spare (wheat from its field, paper from its sugar cane, sticks from its trees). It buys what is worth more to it than it costs (a Mending book, diamond kit better than its own, ender pearls its run is short of), selling what it can spare for the emeralds, and never what its run needs; it buys only what it can pay for, and says what it traded: "I sold 48 paper for 2 emeralds and bought a Mending book for 2 emeralds and a book." What is worth buying but beyond it, or sold out until the villager restocks, it tells you of once and comes back for. A villager with nothing worth trading it lets be until it has restocked. It never trades during a match. Holding a lectern, by a villager with no job it makes a librarian of its own, as players do: it puts the lectern down, looks at the librarian's offers without trading (a trade would lock them), and if nothing is worth keeping breaks the lectern and puts it down again for new ones, until a librarian is worth keeping or it gives up and takes its lectern back, and says which. A trading hall (`/aiplayer build tradinghall-<cells>`) is a row of cells along a corridor, one villager to a cell: its bed along the cell, the villager's floor before it, and its job block across the cell's front at the villager's feet, under a lintel, which shuts it in; you trade with it across the open block above the job block, from the corridor. The corridor is walled, lit and shut by a door against zombies, and open to the sky. With bases on (`/aiplayer bases on`), a player whose base has a stage standing and that keeps a villager worth a cell (a librarian it rerolled and kept, or a villager it has looked at whose offers are worth keeping to it) builds a trading hall of three cells of its own accord, on the nearest flat open ground to its base and clear of it, in its base's wood, before its next stage: "A villager worth keeping, and a cell to keep it in: a trading hall of 3 cells." It is kept in the player's record of its bases (`kindred/memory/<player>.bases.json`, as `hall`) and taken up again if begun. Once it stands it is kept whole as a base is: its own blocks gone or out of place (a wall blown out, a lintel, a roof plank) are put back, and nothing else; a cell's front shut with its villager's job block is left as it is, and nothing is repaired while it is bringing a villager home. You can also order one with the command above. Its beds come through its needs as any short block does: it shears sheep of the bed's colour with shears it holds (making a pair from two iron it can spare), picks up their wool and makes the beds at a crafting table with three planks each; with no shears it hunts sheep instead, one wool a sheep, never those of the kind its ranch pens or a named one. A villager it keeps, within 48 blocks of its hall and not yet in a cell, it brings home by minecart once it holds what that takes (the rails the line needs, a minecart, the villager's job block and a plain block such as dirt, one more for each block of a bridge over water): it takes the hall's door off, lays a line from behind the villager into a free cell, pushes its cart into the villager and on into the cell, shuts the cell with the villager's job block, takes up its rails (the one on the cell's floor it leaves, as players do) and puts the door back, and says so: "I've brought the librarian home: it's in its cell in my trading hall." Short of rails or a minecart, it makes them from iron it can spare at a crafting table near it; short of the iron, it goes and gets it as its run does, mining iron ore, finding fuel, putting a furnace down and smelting it. Across water the line runs over a bridge of plain blocks it puts down from the bank it is on and takes back after its rails. A villager that steps off the line before the cart comes it follows, laying the line again from where it now stands. A villager that strolls (its AI on) it holds first, if it has a boat and a pickaxe for its hall's stone: it puts the boat down just beside the villager, which the boat takes up, lays the line from where it sits, takes out the wall over the hall's door and the cell's lintel (a villager in a boat in a cart rides a block higher, and would put its eyes into them) and pushes the cart into the boat, which it takes up with the villager in it. In the cell it puts the lintel back and, so that the villager is never loose while the cell's front is open, leaves the cart in the cell: it takes up the front's rail, puts the job block across the front, breaks the boat (its item falls in the cell, out of reach, and stays there) and puts the wall back with the door; the line it lays for a boat needs three blocks open over it. Across water it cannot bridge with what it holds, it rows such a villager over in its boat, as players do: it gets in with it, rows across to a bank no more than a block over the water within 64 blocks, gets out and lays the line along the bank past the boat, and the cart takes the boat up from the water as it rolls by. It builds nothing on the water. It brings only a villager that has traded (one moved before it has would let its job go and its offers with it). Given up part way, it takes back what it put down first. It never breaks a village's own lectern; this needs the server's AI world edits on.
@@ -325,6 +513,8 @@ A resource-work patch is explicit bounded task scope: at most nine loaded chunks
 
 Mine executes a single scoped log break using owned hotbar contents, native survival timing, and tool wear. It requires explicit server edit policy opt-in, active paid activity, an unexpired resource claim, and a matching work patch. A matching native break receipt completes the action; drop collection is not claimed. Stop cancels digging immediately; conflicting world changes block for reconciliation without replay.
 
+A block is placed only against one still there to click: if that block was dug out meanwhile, the placement is refused and the player goes on, where before it was stopped for reconciliation (F-25c4u). A placement that still cannot be verified records which slots changed and what is at the target.
+
 Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
 
 Legacy owner/mode/scope fields preserve access and saves; they are not the new product interface. Native creation has its development cap; team management and legacy migration remain unfinished. Combat/duels reject until qualified native skills use the arbiter. Timezone changes reject until safe accounting transitions exist; spent activity is not reset.
@@ -332,6 +522,116 @@ Legacy owner/mode/scope fields preserve access and saves; they are not the new p
 Inference is optional and currently disconnected. Planned Claude/OpenAI keys/budgets belong in private operator configuration, never memory/logs/source. No Jev.
 
 Report exact build, seed/difficulty, IDs, commands and native before/after evidence. Stop and snapshot ambiguous actions; do not recreate missing items.
+
+## Scoring a build (F-26)
+
+A build can be played unattended on many seeds and scored, so that a change is judged on ten games, not one. Set
+`KINDRED_EVAL` in a server's environment and the mod plays that scenario with no one at the console: once the server has
+started it spawns the starters (Kindred, Sol and Echo, or those named) a few blocks apart at the world's spawn, each on
+the nearest ground there it can be made on, sets the edits switch and their goal, sprints the ticks asked for (`/tick sprint`), writes `logs/eval-result.json` and stops the
+server. The value is `key=value` pairs separated by `;`, for example
+`starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on`.
+Missing keys take those defaults; a key or value it does not know is refused with an error in the log, and no run is
+made. Without `KINDRED_EVAL` nothing of this happens: the setting is read when the mod loads and nowhere else.
+
+The result holds, per player and in ticks from the run's start, the first tick it reached each stage of the way (first
+wooden tool, stone tools, iron ingot, iron pickaxe, diamond, obsidian, portal lit, Nether entered, blaze rods, eyes,
+stronghold, End, dragon), every death with its cause as the game records it and where, when and what it was doing,
+every time its watchdog gave a spot up, and the model tokens it used. A run is *earned* only when nothing in it is
+handed out or kept (edits on, `keep=none`; the starters always spawn with empty inventories); otherwise it is
+*staged*, and the result says which.
+
+`tools/eval/run.py` runs a build on many seeds, two servers at a time on four cores, each in its own folder under
+`run/eval/` with its own world; `tools/eval/score.py` writes a summary with medians and ranges across the seeds, and
+`tools/eval/compare.py` puts two builds side by side on the same seeds, calling a difference worth noting only when the
+ranges do not overlap. A run where a starter never came into the world is named in the summary and left out of its
+medians. They need Python 3 and nothing else; see `tools/eval/README.md`. The optional model players'
+key is passed to a server only when its scenario asks for them. Summaries go under `docs/evidence/eval/`; logs do not.
+
+### Death replays (F-27)
+
+With `KINDRED_REPLAYS=on` in a server's environment (on by default in an evaluation run, off in play), each time a
+player dies the mod keeps a copy of the ground round it, 33 by 17 by 33 blocks with the mobs in it, and of its state:
+what it held, its effects, its health, food and breath ten seconds before, its goal, stage, task, stance and habits,
+the cause of its death, and its own last twenty decisions from the log. It keeps one a minute at most for each player,
+in `kindred/replays/<world>/<player>-<tick>/` as `replay.snbt` and `replay.json`; `tools/eval/run.py` keeps a seed's
+beside its result. Taking the copy takes less than a server tick; writing it happens off the tick. Nothing in the world
+or the player changes.
+
+A replay that is to be kept as a test goes into the gametest resources (see the conventions in
+[validation](validation.md)), and the suite plays it three times by the real runtime: it passes if the player is
+alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
+of three; one that does not is left out.
+
+### The simulator (F-28)
+
+`companion-sim` plays the players' decisions and plans on a made-up world, with no Minecraft in it. A hundred games
+take seconds. **It tests decisions and plans, not execution.** The planner, the choice between staying alive and getting
+on, the lessons and the atlas are the real ones; what each step does and how long it takes are the simulator's own
+approximations of vanilla. A result from it says nothing about whether a body carries a plan out on a server: the
+GameTests and the evaluation runs above say that.
+
+```
+./gradlew :companion-sim:runPacks                                     # the three packs of 100 seeds, into run/sim/
+./gradlew :companion-sim:run --args="portal 100 run/sim"             # one pack
+tools/eval/score.py run/sim/portal --no-metrics                       # scored as a server's runs are
+```
+
+There are three packs:
+
+- `night`: at dusk on open ground, with stone tools;
+- `caving`: in a cave, with an iron pickaxe and torches;
+- `portal`: empty-handed at dawn, toward the Nether.
+
+Each seed's `eval-result.json` and `latest.log` are written as an evaluation run's are; leave out `--no-metrics` and
+`RunMetrics` reads the logs too. Each pack's `anomalies.txt` lists what the planner did that no player should:
+
+- a step asked for twenty times running and refused each time;
+- a minute of daylight with nothing it could act on;
+- iron left in a furnace it walked away from.
+
+It found that last one in the planner, and a GameTest confirmed it on a real server. See
+[the evidence](evidence/F-28.md), which also records how its deaths an hour compare with a server's.
+
+## The watch page (E-48)
+
+A read-only web page that shows what each AI player is doing and weighing, for an operator, or for a stream. It is off
+unless the server's environment sets both of the first two:
+
+- `KINDRED_WATCH_PORT=8077`: the port it answers on;
+- `KINDRED_WATCH_TOKEN=<a long random string>`: the token every request must carry;
+- `KINDRED_WATCH_BIND=127.0.0.1`, optional: the address it answers on, this computer alone unless told otherwise.
+
+With a port and no token it stays off, and the log says so. Open `http://127.0.0.1:8077/?token=<token>`: a dark card
+for each player, with:
+
+- its health and food;
+- its goal and how far along it is, and what it is doing;
+- what it weighed at its last decision, with each candidate's priority and score;
+- what it said last, and the lines before that;
+- its habits and notes;
+- a feed of highlights: deaths, the stages of its run, rescues, habits taken up, matches starting and ending.
+
+It reads once a second. The same data is served as JSON, each request with the token, as `Authorization: Bearer <token>`
+or `?token=<token>`:
+
+- `GET /api/players`, and `GET /api/players/<id or name>` for one;
+- `GET /api/events`: the last fifty highlights;
+- `GET /api/stream`: the players as server-sent events, once a second, four streams at most, each for ten minutes;
+- `GET /api/eval`: an evaluation run's result so far (F-26), or `null`.
+
+A request without the token, or with a wrong one, gets 401; anything but a `GET` gets 405. Nothing on the page or its
+API changes anything in the game (D9): every control stays in commands and the K panel. Once a game tick the server's
+own thread makes a copy of what the page shows; the page's own threads serve only that copy and never touch the world.
+
+The page shows what whoever may command the players sees: where they are, their own log lines, and what they said,
+privately too. Anyone with the token sees it. Keep the token to yourself, leave the bind on this computer, and over a
+network put the page behind TLS: it is plain HTTP, and the token travels with each request.
+
+To put it on a stream with OBS, add a **Browser** source with the URL
+`http://127.0.0.1:8077/?token=<token>&transparent=1` (`transparent=1` drops the page's background), a width of 1280 and
+a height of 720 or more, and leave "Shutdown source when not visible" off so it keeps reading. Each OBS scene that
+shows it reads it on its own. The game's work for the page is the same however many read it: the one copy a tick.
 
 ## Offline support reports and evidence
 

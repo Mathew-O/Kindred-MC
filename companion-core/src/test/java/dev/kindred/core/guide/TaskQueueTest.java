@@ -8,6 +8,12 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the list of extra things an adviser can ask a player to get: only known items and
+ * goals are accepted, amounts and the list's length are capped, a newer ask replaces an older one for the
+ * same thing, asks drop off once met or once their goal is behind it, and the player can report what is still
+ * to do.
+ */
 class TaskQueueTest {
     private static final Set<Objective> AHEAD = Set.of(Objective.NETHER_TRIP, Objective.END_FIGHT, Objective.SURVIVAL);
 

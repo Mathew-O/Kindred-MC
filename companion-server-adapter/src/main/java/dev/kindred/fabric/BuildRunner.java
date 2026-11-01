@@ -33,11 +33,17 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * A build in progress for one player (E-08b): a blueprint placed at an origin and turned, built from the player's own
- * blocks one recorded step at a time. Each pass it looks at the world round the build, asks the construction planner
- * (E-08a) for the next step and turns it into a task for the runtime's own skills: walk to the spot to stand, place a
- * block with the look that gives its state, break what is in the way, pillar a scaffold, take the scaffold down.
- * Progress is read from the world, so nothing but the project itself is remembered: what is built is built.
+ * In plain terms: an AI player building something from a plan, block by block, with its own blocks: walking
+ * to where it can reach, placing each block the right way round, clearing what is in the way, and putting up
+ * and taking down scaffolding. When short of blocks it builds what it can and then fetches, gathers or crafts
+ * the rest. What is built is read from the world, so it can pick up again where it left off.
+ *
+ * Technical: A build in progress for one player (E-08b): a blueprint placed at an origin and turned, built
+ * from the player's own blocks one recorded step at a time. Each pass it looks at the world round the build,
+ * asks the construction planner (E-08a) for the next step and turns it into a task for the runtime's own
+ * skills: walk to the spot to stand, place a block with the look that gives its state, break what is in the
+ * way, pillar a scaffold, take the scaffold down. Progress is read from the world, so nothing but the project
+ * itself is remembered: what is built is built.
  */
 final class BuildRunner {
     /** Blocks it scaffolds with, the cheapest first: none of them is ever taken from what the build needs. */
@@ -98,6 +104,7 @@ final class BuildRunner {
     private String progress = "Starting";
     private boolean done;
 
+    /** A build of the given plan at the given spot, turned the given number of quarter turns. */
     BuildRunner(Blueprint blueprint, BlockPos origin, int turns) {
         this.blueprint = blueprint;
         this.origin = origin.toImmutable();
@@ -126,6 +133,7 @@ final class BuildRunner {
      * keeps for itself, which shears are not made from.
      */
     record Supply(PortalRunCampaign campaign, BlockPos storage, java.util.function.Predicate<net.minecraft.entity.passive.PassiveEntity> spare, int ironKept) {
+        /** Supplies from the run and the given storage, sparing no animals and keeping no iron back. */
         Supply(PortalRunCampaign campaign, BlockPos storage) {
             this(campaign, storage, animal -> false, 0);
         }
@@ -875,6 +883,10 @@ final class BuildRunner {
         return new BuildSite(cells);
     }
 
+    /**
+     * What a block in the world is to the build: air, danger, a filled container not to touch, or something
+     * to replace, pass through or stand on.
+     */
     static BuildSite.Cell cell(ServerWorld world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
         if (state.isAir()) return BuildSite.Cell.AIR;
@@ -890,6 +902,7 @@ final class BuildRunner {
         return new BuildSite.Cell(BuildSite.Kind.SOLID, spec, state.isSideSolidFullSquare(world, pos, Direction.UP));
     }
 
+    /** A block as the plans write it, with its state. */
     static BlockSpec spec(BlockState state) {
         return BlockSpec.parse(BlockArgumentParser.stringifyBlockState(state));
     }

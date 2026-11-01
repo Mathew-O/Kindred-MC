@@ -6,6 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the saved progress of a task: it keeps its own copy that later changes cannot touch,
+ * and it refuses too many or too long entries.
+ */
 class SupportBatch03CheckpointTest {
 
     @Test void checkpointOwnsIndependentBoundedCopies() {

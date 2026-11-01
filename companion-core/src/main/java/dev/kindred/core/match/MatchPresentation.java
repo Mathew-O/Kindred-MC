@@ -7,9 +7,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * What a match shows the players in it (M-00b), worked out apart from how it is sent: a title for each second of the
- * countdown, one for the start and one for each player's result, and a bar with the match and its clock. Everything a
- * vanilla client shows unaided (titles, a boss bar, sounds), so a player needs no mod to follow a match.
+ * In plain terms: what a match shows the players in it on screen: the countdown, the start, each player's win
+ * or loss, and a bar with who is playing and the time left. All of it shows on an ordinary game client with
+ * no mods.
+ *
+ * Technical: What a match shows the players in it (M-00b), worked out apart from how it is sent: a title for
+ * each second of the countdown, one for the start and one for each player's result, and a bar with the match
+ * and its clock. Everything a vanilla client shows unaided (titles, a boss bar, sounds), so a player needs no
+ * mod to follow a match.
  */
 public final class MatchPresentation {
     private MatchPresentation() { }

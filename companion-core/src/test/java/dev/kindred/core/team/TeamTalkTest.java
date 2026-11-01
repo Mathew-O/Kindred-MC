@@ -12,6 +12,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what a player tells its team about a find: who gets which piece made from it,
+ * exactly as the share-out decided, in plain spoken words.
+ */
 class TeamTalkTest {
     private static final UUID WREN = new UUID(0, 1), MASON = new UUID(0, 2);
 

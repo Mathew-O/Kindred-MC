@@ -5,6 +5,11 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the limits on how many players may be active at once, how many each owner may run
+ * and how many chunks they keep loaded: a request over a limit waits rather than joining a hidden queue, a
+ * freed place can be taken again, and a bad or repeated request takes no extra place.
+ */
 class SupportBatch04AdmissionBoardTest {
 
     @Test void capacityAndPerPrincipalLimitsReleaseWithoutImplicitQueue() {

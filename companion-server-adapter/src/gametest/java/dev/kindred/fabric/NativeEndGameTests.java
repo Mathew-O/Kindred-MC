@@ -15,9 +15,18 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 /**
- * The dragon goal past the End portal (E-39). Fixtures build what the player has reached by then (a portal room's frame
- * ring, an island's pillar and crystal) and hand over what it would carry; every step goes through the goal, the paid
- * activity and the ledger as in a run.
+ * In plain terms: a GameTest: in a real test world, steps of the dragon goal past the End portal are each
+ * checked on their own. The player fills the empty frames of an End portal with its eyes, spending exactly
+ * three, and steps through into the End; without the server's leave the dragon goal is refused; it shoots an
+ * End crystal off its pillar with a bow from the ground; a hit while it is breaking a block is settled
+ * without loss; it throws an ender pearl up onto a ledge, and from a stranded pillar top pearls down safely
+ * clear of the crystals; on a tower it builds walls round its feet that hold it against the dragon's wing
+ * push, where a bare tower (the control) does not; and it sets down a bed near the portal to fix its respawn
+ * point.
+ *
+ * Technical: The dragon goal past the End portal (E-39). Fixtures build what the player has reached by then
+ * (a portal room's frame ring, an island's pillar and crystal) and hand over what it would carry; every step
+ * goes through the goal, the paid activity and the ledger as in a run.
  */
 public final class NativeEndGameTests implements FabricGameTest {
     /**

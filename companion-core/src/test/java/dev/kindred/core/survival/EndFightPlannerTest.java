@@ -8,6 +8,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the player's plan for the End, step by step: fill the portal frame and go in, reach
+ * the island, destroy the crystals, hit the dragon only while it sits on its perch and keep clear otherwise,
+ * and go home once it is dead.
+ */
 class EndFightPlannerTest {
     /** At the portal room with eleven eyes, two frames already filled, a bow, 32 arrows, 64 blocks and an iron sword. */
     private static final class Builder {

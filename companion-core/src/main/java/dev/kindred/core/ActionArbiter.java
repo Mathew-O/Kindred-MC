@@ -9,7 +9,11 @@ import java.util.function.LongSupplier;
 import static dev.kindred.core.ControlRejectedException.Reason;
 
 /**
- * Single-thread body authority. Admission, prepaid activity and world permissions are
+ * In plain terms: the one gatekeeper for a player's body: only one action at a time may control it, and each
+ * has a time limit. Stop takes control back at once, nothing new can start until the last action has really
+ * stopped, and holding the body never by itself gives leave to change the world.
+ *
+ * Technical: Single-thread body authority. Admission, prepaid activity and world permissions are
  * prerequisites enforced by the caller; an action lease alone is not world permission.
  * No work queue is retained here, so stop leaves no queued action able to restart.
  */
@@ -28,6 +32,10 @@ public final class ActionArbiter {
     private ActionLease cancelling;
     private long cancellationSince;
 
+    /**
+     * A gatekeeper for a player's body, with a fresh session and the usual wait for a stopped action to
+     * settle.
+     */
     public ActionArbiter(Companion companion, BodyAdapter adapter) {
         this(companion, UUID.randomUUID(), adapter, Clock.systemUTC(), System::nanoTime,
                 Duration.ofMillis(500));
@@ -52,6 +60,7 @@ public final class ActionArbiter {
         }
     }
 
+    /** The player's record as it stands now. */
     public Companion snapshot() {
         requireThread();
         return companion;
@@ -63,6 +72,7 @@ public final class ActionArbiter {
         companion = companion.withDimension(dimension);
     }
 
+    /** The id of this server session, which a late proposal must match to be accepted. */
     public UUID sessionEpoch() {
         return sessionEpoch;
     }
@@ -80,6 +90,10 @@ public final class ActionArbiter {
         return begin(taskId, actionId, timeout, false);
     }
 
+    /**
+     * Stops the player for whoever may command it: what it is doing is cancelled at once, and it stays
+     * stopped until resumed.
+     */
     public void stop(Actor actor) {
         requireThread();
         Authorization.requireControl(actor, companion);
@@ -172,6 +186,7 @@ public final class ActionArbiter {
                 && elapsed(activeSince) < activeTimeoutNanos;
     }
 
+    /** Runs an action only while its lease is still the one in control; otherwise does nothing. */
     public boolean executeIfCurrent(ActionLease lease, Runnable action) {
         requireThread();
         Objects.requireNonNull(action, "action");

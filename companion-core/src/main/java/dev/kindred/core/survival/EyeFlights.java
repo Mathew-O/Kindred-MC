@@ -3,9 +3,14 @@ package dev.kindred.core.survival;
 import java.util.Optional;
 
 /**
- * Where two watched eye-of-ender flights cross, as players triangulate a stronghold: each throw is a point on the
- * ground and the heading the eye flew off along. Only what the player saw goes in; the crossing is an estimate, good
- * to a chunk or two when the throws were well apart and their headings far from parallel.
+ * In plain terms: finding a stronghold the way players do: throw an eye of ender from two places well apart
+ * and see where the two paths cross. It also says where to stand for the second throw, and gives no answer
+ * when the crossing cannot be trusted.
+ *
+ * Technical: Where two watched eye-of-ender flights cross, as players triangulate a stronghold: each throw is
+ * a point on the ground and the heading the eye flew off along. Only what the player saw goes in; the
+ * crossing is an estimate, good to a chunk or two when the throws were well apart and their headings far from
+ * parallel.
  */
 public final class EyeFlights {
     /** Headings closer than this (in degrees) cross too far off to trust: throw again from further to the side. */

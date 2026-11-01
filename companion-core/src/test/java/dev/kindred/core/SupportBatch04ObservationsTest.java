@@ -5,6 +5,12 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks what a player remembers about nearby blocks: it finds the nearest matching block
+ * first, with ties settled the same way every time, forgets areas seen too long ago while an earlier copy
+ * stays as it was, and records one distance sum that goes wrong only at coordinates far outside any real
+ * world.
+ */
 class SupportBatch04ObservationsTest {
 
     private final String log="minecraft:oak_log";

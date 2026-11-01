@@ -7,6 +7,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks when a player speaks up on its own: never while silenced or asleep, at most about
+ * once a minute however sociable it is, no greetings to other players when its chat is private, no repeating
+ * old news or a word to its team, nothing about someone who has left, and when hurt it names only what the
+ * game says hurt it.
+ */
 class SocialBrainTest {
     private final SocialProfile profile = SocialProfile.defaults(UUID.randomUUID());
     private final SocialSnapshot.Contact owner = new SocialSnapshot.Contact(UUID.randomUUID(), "Owner", SocialSnapshot.Kind.OWNER);

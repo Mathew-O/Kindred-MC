@@ -40,6 +40,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the database that keeps each player's saved details: creating a player is safe to
+ * repeat and owners stay separate, a stop and the player's personality and settings survive a restart,
+ * play-time allowance is charged once and no restart, clock or timezone change resets it, writes happen in
+ * order and out-of-date or forged ones are refused, only one server can open the file at a time, older
+ * databases upgrade without losing anything, and the action record never turns an unknown outcome into a
+ * success.
+ */
 class SqliteCompanionStoreTest {
     @TempDir Path directory;
     private final List<SqliteCompanionStore> opened = new ArrayList<>();
@@ -79,6 +87,7 @@ class SqliteCompanionStoreTest {
         assertEquals(Optional.of(b), store.findByOwner(otherOwner).join());
     }
 
+    /** Asking again to create a player that already exists is not refused for the server being full. */
     @Test
     void serverQuotaDoesNotRejectIdempotentRetry() {
         SqliteCompanionStore store = open(1);
@@ -89,6 +98,7 @@ class SqliteCompanionStoreTest {
         assertEquals(1, store.list().join().size());
     }
 
+    /** A save made from an out-of-date copy is refused, and no save may change who owns the player. */
     @Test
     void compareAndSetProtectsConcurrentStateAndIdentity() {
         SqliteCompanionStore store = open(10);

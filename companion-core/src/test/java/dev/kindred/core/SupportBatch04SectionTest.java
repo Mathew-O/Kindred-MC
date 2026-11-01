@@ -5,6 +5,12 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how the world is cut into sections for looking at: blocks fall in the right section
+ * at the edges and at negative coordinates, the sections to look at keep to the work area and a band of
+ * height and come nearest first in a fixed order, and one distance sum goes wrong only at coordinates far
+ * outside any real world.
+ */
 class SupportBatch04SectionTest {
 
     @Test void signedBlockCoordinatesMapToCorrectSectionsAtEdges() {

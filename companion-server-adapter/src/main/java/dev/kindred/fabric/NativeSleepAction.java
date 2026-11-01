@@ -19,7 +19,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native bed sleeping action using the durable action ledger (E-13).
+ * In plain terms: an AI player sleeping in a bed at night or in a thunderstorm, as a human does, which also
+ * makes that bed the place it wakes after dying. It uses only a bed in its work area or one of its own base's
+ * beds, never one someone is already in.
+ *
+ * Technical: Checkpointed native bed sleeping action using the durable action ledger (E-13).
  * Verifies night/thunderstorm condition, checks bed occupancy, initiates sleep,
  * and anchors the native player's respawn point to the home shelter bed: one in its work area, or one of its own
  * base's beds (F-25c9).
@@ -45,6 +49,7 @@ final class NativeSleepAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Sleeping in the bed at the given spot; the test says which beds are its own. */
     NativeSleepAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                      Supplier<WorkSetup> setup, ClaimRegistry claims,
                      ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
@@ -62,6 +67,7 @@ final class NativeSleepAction extends NativeRecordedAction {
         if ((s == null || s.area() == null) && !ownBed.test(this.target)) throw new IllegalArgumentException("No work area is assigned.");
     }
 
+    /** Moves the sleeping on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

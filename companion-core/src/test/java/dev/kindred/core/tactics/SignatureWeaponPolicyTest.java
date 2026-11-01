@@ -15,12 +15,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SignatureWeaponPolicyTest {
 
     @Test
-    void vespPrefersTridentAgainstWetTargetAtMeleeRange() {
+    void echoPrefersTridentAgainstWetTargetAtMeleeRange() {
         var trident = new WeaponProfile(0, "minecraft:trident", 1L, 9.0, 1.1, 200,
                 Map.of("impaling", 5), false, false);
         var sword = new WeaponProfile(1, "minecraft:iron_sword", 2L, 6.0, 1.6, 250, Map.of(), false, true);
         var ctx = new SignatureWeaponPolicy.CombatContext(
-                CanonicalRoster.VESP_NAME,
+                CanonicalRoster.ECHO_NAME,
                 3.0,
                 0.0,
                 false,

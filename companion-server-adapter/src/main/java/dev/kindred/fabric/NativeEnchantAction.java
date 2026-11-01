@@ -23,11 +23,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Enchants a weapon, tool or piece of armour at an enchanting table (E-16a), as a player does: the piece in one inventory
- * slot and the lapis in another put in, the table's offers looked at, the best it can pay for taken
- * ({@link Enchanting#choose}), the piece and the lapis left put back. Verified against the durable ledger: the piece is
- * the same in every way but the enchantments it gained, the lapis spent and the levels spent are both the button's
- * number and one, and nothing else held changed. Using a table is a workstation's use under the server's edit policy.
+ * In plain terms: an AI player enchanting a weapon, tool or armour piece at an enchanting table, as a human
+ * does: it looks at what the table offers and takes the best it can pay for in lapis and levels. Only the
+ * piece's enchantments change, and nothing else it carries.
+ *
+ * Technical: Enchants a weapon, tool or piece of armour at an enchanting table (E-16a), as a player does: the
+ * piece in one inventory slot and the lapis in another put in, the table's offers looked at, the best it can
+ * pay for taken ({@link Enchanting#choose}), the piece and the lapis left put back. Verified against the
+ * durable ledger: the piece is the same in every way but the enchantments it gained, the lapis spent and the
+ * levels spent are both the button's number and one, and nothing else held changed. Using a table is a
+ * workstation's use under the server's edit policy.
  */
 final class NativeEnchantAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -50,6 +55,7 @@ final class NativeEnchantAction extends NativeRecordedAction {
     private Map<String, Integer> gained = Map.of();
     private String item = "";
 
+    /** Enchanting the piece in one inventory slot, with lapis from another, at the given table. */
     NativeEnchantAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                         Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                         Consumer<Runnable> dispatch, BlockPos table, int slot, int lapisSlot) {
@@ -77,6 +83,7 @@ final class NativeEnchantAction extends NativeRecordedAction {
         return decision.allowed() ? null : decision.reason();
     }
 
+    /** Moves the enchanting on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded enchanting cannot replay after cancellation/restart", true);

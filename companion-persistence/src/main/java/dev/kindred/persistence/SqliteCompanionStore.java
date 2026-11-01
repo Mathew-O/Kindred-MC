@@ -60,7 +60,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Ordered, bounded asynchronous metadata writer. Never join its futures on the game thread.
+ * In plain terms: the database file where each player's saved details are kept: who it is and who may command
+ * it, its personality and social settings, work area, goals and memories, the record of its actions and its
+ * saved task progress, the team's shared projects, and the day's play time. Every write goes through one
+ * queue, in order, away from the game's own work; items themselves stay in the game's save, so this record
+ * alone cannot prove that an action happened.
+ *
+ * Technical: Ordered, bounded asynchronous metadata writer. Never join its futures on the game thread.
  * Completion callbacks may run on the writer; dispatch game work to the server thread and
  * compose dependent store futures instead of joining them inside an inline callback.
  * Metadata is not atomic with native world saves; it cannot prove a physical action succeeded.

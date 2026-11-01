@@ -115,6 +115,56 @@ public final class NativeSurvivalGameTests implements FabricGameTest {
     }
 
     /**
+     * At a lava pool's edge, off the middle of its cell, its block over the lava and its feet held by the block beside it,
+     * a wall a step beyond: it steps back onto the solid cell, to that cell's middle (F-25c4am). The runtime finds that cell
+     * safe; the step used to go a straight block on from where it stood, which overlapped the wall, and was refused each
+     * time it was asked for, the player's other work stopped meanwhile as a hazard. In the live pair on c432fba Echo was
+     * held so for twenty-seven minutes at Y=-54. Staged: the pool, the ledge, the wall and the player's place on the edge.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "lavaEdgeStep", tickLimit = 300)
+    public void offTheMiddleOfItsCellAtALavaPoolsEdgeItStepsBackToTheSolidCell(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "EdgeStepper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    at[0] = p;
+                    // A pool three wide and two long north of the ledge, the player's cell over its south row, the ledge south
+                    // of it, and a wall a block beyond the ledge.
+                    for (int x = -2; x <= 2; x++) for (int z = -2; z <= 3; z++) {
+                        world.setBlockState(p.add(x, -2, z), Blocks.STONE.getDefaultState());
+                        boolean pool = Math.abs(x) <= 1 && z >= -1 && z <= 0;
+                        world.setBlockState(p.add(x, -1, z), pool ? Blocks.LAVA.getDefaultState() : Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 2; y++) {
+                            boolean wall = z == 2 || z == -2 || Math.abs(x) == 2;
+                            world.setBlockState(p.add(x, y, z), wall && y <= 1 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    // On the edge: its feet over the pool's south row, held by the ledge under the south of its box.
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.85, 0, 0);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var ground = context.getWorld().getBlockState(player.getBlockPos().down());
+                    context.assertTrue(ground.isOf(Blocks.STONE) && player.isOnGround(), "Stepped back off the pool's edge: at "
+                            + player.getBlockPos().subtract(at[0]).toShortString() + " over " + ground + ", "
+                            + f.runtime.nativeActivityStatus(Actor.console(), f.id).work());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && !player.isOnFire() && !player.isInLava(), "Unhurt by the lava");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * In deep water with the server's edits off, a player swims to a shore it can reach (F-25c9's reflexes). The nearest
      * dry ground is a pocket sealed behind the pool's wall, three blocks off: it makes for it, gets no nearer than the
      * wall, and passes it over for a shore it can reach, eight blocks off up a step. Before, it made for the nearest

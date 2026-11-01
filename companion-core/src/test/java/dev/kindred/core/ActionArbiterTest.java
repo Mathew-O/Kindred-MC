@@ -16,6 +16,12 @@ import org.junit.jupiter.api.Test;
 import static dev.kindred.core.ControlRejectedException.Reason;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the single controller of a player's body: only those allowed can start, stop or
+ * resume it, a stop takes effect at once and lasts even through a restart, nothing new starts until the last
+ * action has fully stopped, old or timed-out actions can never act again, and world actions run only on the
+ * game's own thread.
+ */
 class ActionArbiterTest {
     private final UUID ownerId = UUID.randomUUID();
     private final Actor owner = Actor.player(ownerId);
@@ -70,6 +76,7 @@ class ActionArbiterTest {
         assertEquals(2, body.started.size());
     }
 
+    /** A body that will not stop puts the player in a fault state that resuming cannot clear. */
     @Test
     void hungCancellationFaultsAndCannotBeRecoveredByResume() {
         acquire(owner);
@@ -86,6 +93,7 @@ class ActionArbiterTest {
         assertEquals(1, body.started.size());
     }
 
+    /** A suggested plan is accepted only if it was made for the current state and has not expired. */
     @Test
     void proposalRequiresEpochRevisionsAndUnexpiredDeadline() {
         ProposalFence initial = fence(time.instant().plusSeconds(8));
@@ -117,6 +125,10 @@ class ActionArbiterTest {
                 UUID.randomUUID(), Duration.ofSeconds(10)));
     }
 
+    /**
+     * After a long pause in the game, an action that ran out of time is cancelled before anything new
+     * happens.
+     */
     @Test
     void longTickGapRevokesTimedOutActionBeforeNewMutation() {
         ActionLease lease = arbiter.acquire(owner, UUID.randomUUID(), UUID.randomUUID(), Duration.ofSeconds(1));
@@ -180,6 +192,9 @@ class ActionArbiterTest {
                 Duration.ofMillis(500));
     }
 
+    /**
+     * Cancelling an action because of danger ends it, and the next action waits until the body has stopped.
+     */
     @Test
     void hazardCancellationRevokesLeaseAndSettlesBeforeNewController() {
         ActionLease lease = acquire(owner);

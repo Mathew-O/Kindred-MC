@@ -16,11 +16,17 @@ import java.util.List;
 import java.util.TreeMap;
 
 /**
- * A build (E-08b): the native player builds a five-by-five hut from its own blocks on open ground. It has a plank floor,
- * cobblestone walls on upright logs, a doorway, a wall torch, and a gabled roof of oak stairs facing in, over a plank
- * ceiling and ridged with slabs. Each block is placed with the look and click that give its state, and checked in that
- * state. The roof's upper courses are out of reach from the ground, so it scaffolds up with its own dirt, climbs down
- * its scaffold, and takes the scaffold away at the end.
+ * In plain terms: a GameTest: in a real test world, a player given exactly the blocks for a small hut is
+ * checked to build it with every block placed and facing the right way, using its own dirt as scaffolding to
+ * reach the roof and taking the scaffolding down afterwards, with every block it was given ending up in the
+ * hut. A second test saves a small kiosk as a schematic, with its license file, and checks the player builds
+ * it turned a quarter, every block matching the original as the game itself would turn it.
+ *
+ * Technical: A build (E-08b): the native player builds a five-by-five hut from its own blocks on open ground.
+ * It has a plank floor, cobblestone walls on upright logs, a doorway, a wall torch, and a gabled roof of oak
+ * stairs facing in, over a plank ceiling and ridged with slabs. Each block is placed with the look and click
+ * that give its state, and checked in that state. The roof's upper courses are out of reach from the ground,
+ * so it scaffolds up with its own dirt, climbs down its scaffold, and takes the scaffold away at the end.
  */
 public final class NativeBuildGameTests implements FabricGameTest {
     /**

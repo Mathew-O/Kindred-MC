@@ -12,6 +12,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a team splits a find of diamonds, iron, gold or netherite: the first diamond
+ * pickaxe goes to whoever mines, then each piece goes where it adds the most protection for what it costs,
+ * nobody is given a piece no better than their own, and a find too small for any piece is kept.
+ */
 class ShareOutTest {
     private static final UUID WREN = new UUID(0, 1), MASON = new UUID(0, 2), RUE = new UUID(0, 3);
 

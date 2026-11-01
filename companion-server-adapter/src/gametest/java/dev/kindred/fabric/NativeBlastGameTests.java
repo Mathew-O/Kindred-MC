@@ -9,11 +9,20 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Blast exposure (E-39i): the blast a crystal does to a player, reckoned beforehand from the rays between them and the
- * distance ({@link BlastExposure}, with the world's own collision shapes), is what the game then does to it: ten blocks
- * off in the open, and behind a wall of stone as high as the player, which stops all but the blast's last point.
+ * In plain terms: a GameTest: in a real test world, an End crystal is set off ten blocks from a player, once
+ * in the open and once with an obsidian wall between them, and the damage the player's own reckoning
+ * predicted is checked to match the damage it really takes: a lot in the open, almost none behind the wall.
+ *
+ * Technical: Blast exposure (E-39i): the blast a crystal does to a player, reckoned beforehand from the rays
+ * between them and the distance ({@link BlastExposure}, with the world's own collision shapes), is what the
+ * game then does to it: ten blocks off in the open, and behind a wall of stone as high as the player, which
+ * stops all but the blast's last point.
  */
 public final class NativeBlastGameTests implements FabricGameTest {
+    /**
+     * Builds the floor, places the player and the crystal (and the wall if asked), sets the crystal off and
+     * compares predicted with real damage.
+     */
     private static void blast(TestContext context, boolean wall) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 900);
         double[] predicted = {-1}, taken = {-1};

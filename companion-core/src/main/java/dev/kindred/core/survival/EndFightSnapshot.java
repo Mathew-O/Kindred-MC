@@ -1,9 +1,14 @@
 package dev.kindred.core.survival;
 
 /**
- * What one AI player owns and has seen that matters from the End portal to the dragon's death and home again. Counts
- * are physical items it carries; sightings are things it can see itself (frame blocks, crystals on their pillars, the
- * dragon in flight or perched, the purple cloud of its breath). Nothing here is a world query.
+ * In plain terms: what a player carries and can see that matters from the End portal to the Ender Dragon's
+ * death and the trip home: its eyes of ender, the crystals left, where the dragon is, and its bow, arrows,
+ * blocks, sword and health.
+ *
+ * Technical: What one AI player owns and has seen that matters from the End portal to the dragon's death and
+ * home again. Counts are physical items it carries; sightings are things it can see itself (frame blocks,
+ * crystals on their pillars, the dragon in flight or perched, the purple cloud of its breath). Nothing here
+ * is a world query.
  *
  * @param inEnd            the player is in the End
  * @param dragonKilled     it has seen the dragon die (kept by the leg across the trip home)

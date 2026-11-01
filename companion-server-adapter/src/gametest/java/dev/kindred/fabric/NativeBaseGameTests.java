@@ -11,10 +11,17 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * A player's own base (M-01c). With the operator's leave and AI world edits on, a player with no goal of its own and
- * stone tools in hand chooses its first base, a cabin, sites it on the nearest flat open ground to where it stands, and
- * builds it. It holds the cabin's wood but half its logs and none of its stone: it builds what it can, then in one trip
- * cuts the logs and mines the stone the rest takes, and finishes the cabin. Then, with no iron tools, it waits.
+ * In plain terms: a GameTest: in a real test world, a player with stone tools and no goal of its own, allowed
+ * to build bases, is checked to choose a cabin as its first base, put it on open ground where it stands and
+ * build it exactly. It holds the wood but only half the logs and none of the stone, so it builds what it can,
+ * then cuts logs and mines stone for the rest in one trip. With no iron tools yet, it then waits rather than
+ * starting a house.
+ *
+ * Technical: A player's own base (M-01c). With the operator's leave and AI world edits on, a player with no
+ * goal of its own and stone tools in hand chooses its first base, a cabin, sites it on the nearest flat open
+ * ground to where it stands, and builds it. It holds the cabin's wood but half its logs and none of its
+ * stone: it builds what it can, then in one trip cuts the logs and mines the stone the rest takes, and
+ * finishes the cabin. Then, with no iron tools, it waits.
  */
 public final class NativeBaseGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "base", tickLimit = 40000)

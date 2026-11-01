@@ -22,12 +22,17 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * A native wait in which the player looks at what matters (E-33a): the timer of {@link MovementSkills.Wait}, with the
- * head eased each tick toward where {@link Gaze} says, at a threat in sight, at whoever speaks to it, back at a player
- * close by looking at it, at what it waits on, or about it. What it sees is read every few ticks: monsters within
- * sixteen blocks, players within twelve, each only in plain sight. Looking takes the wait's own lease, so a stop ends
- * it with the wait; a look the gate refuses is passed over and the wait goes on. It never looks into an enderman's
- * eyes, which would anger it, nor at one at all; and asleep in its bed it does not look about.
+ * In plain terms: an AI player waiting a moment while looking about naturally: at a monster coming for it, at
+ * whoever is talking to it, back at a player looking at it, or at its work. It never looks at an enderman,
+ * which would anger it.
+ *
+ * Technical: A native wait in which the player looks at what matters (E-33a): the timer of {@link
+ * MovementSkills.Wait}, with the head eased each tick toward where {@link Gaze} says, at a threat in sight,
+ * at whoever speaks to it, back at a player close by looking at it, at what it waits on, or about it. What it
+ * sees is read every few ticks: monsters within sixteen blocks, players within twelve, each only in plain
+ * sight. Looking takes the wait's own lease, so a stop ends it with the wait; a look the gate refuses is
+ * passed over and the wait goes on. It never looks into an enderman's eyes, which would anger it, nor at one
+ * at all; and asleep in its bed it does not look about.
  */
 final class NativeWaitSkill implements SkillBody {
     static final double MONSTERS = 16, PEOPLE = 12;
@@ -49,6 +54,7 @@ final class NativeWaitSkill implements SkillBody {
     /** Endermen about, read with the rest; their eyes are kept clear of at their place each tick. */
     private List<EndermanEntity> endermen = List.of();
 
+    /** A wait of a few seconds, with whoever last spoke to it and the spot it works at to look toward. */
     NativeWaitSkill(NativePlayerBody body, Supplier<ActionLease> lease, int seconds, Gaze gaze, Supplier<UUID> speaker, Gaze.Point work) {
         this.body = body;
         this.lease = lease;
@@ -58,6 +64,7 @@ final class NativeWaitSkill implements SkillBody {
         this.work = work;
     }
 
+    /** Moves the wait on by one tick, turning the head a little toward what matters. */
     @Override
     public Step tick(Map<String, String> arguments, Optional<Checkpoint> resumeFrom, boolean freshStart) {
         if (seconds < 1 || seconds > 4) return Step.blocked("wait must be 1..4 seconds", true);

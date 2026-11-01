@@ -5,10 +5,15 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Brewing (E-16b), as players brew at a stand of their own: water bottles filled at water, made awkward with nether wart,
- * then the potion a run wants from the awkward base with its ingredient, three bottles at a time, the stand fuelled with
- * blaze powder. The potions a run wants and in what order: fire resistance for the Nether, strength and slow falling
- * for the dragon, healing for any fight. Pure: the adapter says what it holds and what the stand holds.
+ * In plain terms: how a player brews the potions its run wants at a brewing stand of its own: fire resistance
+ * for the Nether, strength and slow falling for the dragon, and healing, three at a time. It says what goes
+ * in next from what the player holds.
+ *
+ * Technical: Brewing (E-16b), as players brew at a stand of their own: water bottles filled at water, made
+ * awkward with nether wart, then the potion a run wants from the awkward base with its ingredient, three
+ * bottles at a time, the stand fuelled with blaze powder. The potions a run wants and in what order: fire
+ * resistance for the Nether, strength and slow falling for the dragon, healing for any fight. Pure: the
+ * adapter says what it holds and what the stand holds.
  */
 public final class Brewing {
     private Brewing() { }

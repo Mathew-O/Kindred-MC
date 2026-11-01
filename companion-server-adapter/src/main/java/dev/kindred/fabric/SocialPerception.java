@@ -18,9 +18,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * What an AI player's body can see and hear of the people about it, for its social lane: the legacy companion body and
- * the native player's alike. {@code aiPlayer} names the AI player a body belongs to, so that another AI player is a
- * companion contact and not a person, whatever its body.
+ * In plain terms: what an AI player can see and hear of the people near it, for its chat and small talk: who
+ * is in plain sight, who can hear it speak, and what hurt it last. Another AI player counts as a fellow AI
+ * player, not as a person.
+ *
+ * Technical: What an AI player's body can see and hear of the people about it, for its social lane: the
+ * legacy companion body and the native player's alike. {@code aiPlayer} names the AI player a body belongs
+ * to, so that another AI player is a companion contact and not a person, whatever its body.
  */
 final class SocialPerception {
     static final double RANGE_SQUARED = 8 * 8;
@@ -32,6 +36,10 @@ final class SocialPerception {
         return entity instanceof CompanionEntity companion ? companion.companionId() : null;
     }
 
+    /**
+     * Whether the body can plainly see the other: alive, not hidden, within eight blocks and in its line of
+     * sight.
+     */
     static boolean visible(LivingEntity body, Entity other) {
         return other != body && other.isAlive() && !other.isSpectator() && !other.isInvisible()
                 && body.getWorld() == other.getWorld() && body.squaredDistanceTo(other) <= RANGE_SQUARED
@@ -50,16 +58,28 @@ final class SocialPerception {
         return true;
     }
 
+    /** The people an older-style body's talk reaches. */
     static List<ServerPlayerEntity> listeners(CompanionEntity body, SocialProfile profile) {
         return listeners(body, body.ownerId(), profile, SocialPerception::companionOf);
     }
 
     /** The people who can hear it: its owner, and others only when it talks in public; never another AI player's body. */
     static List<ServerPlayerEntity> listeners(LivingEntity body, UUID owner, SocialProfile profile, Function<Entity, UUID> aiPlayer) {
-        return ((ServerWorld) body.getWorld()).getPlayers(player -> aiPlayer.apply(player) == null && visible(body, player)
-                && (profile.publicConversation() || player.getUuid().equals(owner)), 16);
+        return listeners(body, ownedBy(owner), profile, aiPlayer);
     }
 
+    /** As above, its owners being whoever {@code owns} admits: for a native player, whoever may command it (F-18a). */
+    static List<ServerPlayerEntity> listeners(LivingEntity body, Predicate<ServerPlayerEntity> owns, SocialProfile profile, Function<Entity, UUID> aiPlayer) {
+        return ((ServerWorld) body.getWorld()).getPlayers(player -> aiPlayer.apply(player) == null && visible(body, player)
+                && (profile.publicConversation() || owns.test(player)), 16);
+    }
+
+    /** The one person whose id is {@code owner}. */
+    static Predicate<ServerPlayerEntity> ownedBy(UUID owner) {
+        return player -> player.getUuid().equals(owner);
+    }
+
+    /** The people and AI players an older-style body notices nearby. */
     static List<SocialSnapshot.Contact> noticeable(CompanionEntity body) {
         return noticeable(body, body.ownerId(), SocialPerception::companionOf);
     }
@@ -69,6 +89,11 @@ final class SocialPerception {
      * public-conversation setting; the social brain still applies privacy before any remark.
      */
     static List<SocialSnapshot.Contact> noticeable(LivingEntity body, UUID owner, Function<Entity, UUID> aiPlayer) {
+        return noticeable(body, ownedBy(owner), aiPlayer);
+    }
+
+    /** As above, its owners being whoever {@code owns} admits (F-18a). */
+    static List<SocialSnapshot.Contact> noticeable(LivingEntity body, Predicate<ServerPlayerEntity> owns, Function<Entity, UUID> aiPlayer) {
         List<LivingEntity> nearby = new ArrayList<>();
         body.getWorld().collectEntitiesByType(TypeFilter.instanceOf(LivingEntity.class),
                 body.getBoundingBox().expand(8), entity -> entity != body, nearby, 32);
@@ -79,7 +104,7 @@ final class SocialPerception {
             if (peer != null) {
                 contacts.add(new SocialSnapshot.Contact(peer, entity.getName().getString(), SocialSnapshot.Kind.COMPANION));
             } else if (entity instanceof ServerPlayerEntity player) {
-                boolean isOwner = player.getUuid().equals(owner);
+                boolean isOwner = owns.test(player);
                 contacts.add(new SocialSnapshot.Contact(player.getUuid(), player.getName().getString(),
                         isOwner ? SocialSnapshot.Kind.OWNER : SocialSnapshot.Kind.PLAYER));
             }
@@ -87,13 +112,21 @@ final class SocialPerception {
         return List.copyOf(contacts);
     }
 
+    /** What an older-style body sees around it now, for its chat and small talk. */
     static SocialSnapshot observe(CompanionEntity body, SocialProfile profile, boolean active,
                                   Predicate<CompanionEntity> socialCompanion) {
         return observe(body, body.ownerId(), profile, active, SocialPerception::companionOf,
                 entity -> entity instanceof CompanionEntity companion && socialCompanion.test(companion));
     }
 
+    /** What a body sees around it now, its owner named by id. */
     static SocialSnapshot observe(LivingEntity body, UUID owner, SocialProfile profile, boolean active,
+                                  Function<Entity, UUID> aiPlayer, Predicate<Entity> socialCompanion) {
+        return observe(body, ownedBy(owner), profile, active, aiPlayer, socialCompanion);
+    }
+
+    /** As above, its owners being whoever {@code owns} admits (F-18a). */
+    static SocialSnapshot observe(LivingEntity body, Predicate<ServerPlayerEntity> owns, SocialProfile profile, boolean active,
                                   Function<Entity, UUID> aiPlayer, Predicate<Entity> socialCompanion) {
         List<LivingEntity> nearby = new ArrayList<>();
         // Cap candidates BEFORE visibility raycasts. This never scans remote/unloaded regions.
@@ -111,7 +144,7 @@ final class SocialPerception {
                     contacts.add(new SocialSnapshot.Contact(peer, entity.getName().getString(), SocialSnapshot.Kind.COMPANION));
                 }
             } else if (entity instanceof ServerPlayerEntity player) {
-                boolean isOwner = player.getUuid().equals(owner);
+                boolean isOwner = owns.test(player);
                 if (isOwner || profile.publicConversation()) contacts.add(new SocialSnapshot.Contact(player.getUuid(),
                         player.getName().getString(), isOwner ? SocialSnapshot.Kind.OWNER : SocialSnapshot.Kind.PLAYER));
             }

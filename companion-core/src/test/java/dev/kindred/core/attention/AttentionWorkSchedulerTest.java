@@ -7,6 +7,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how the three players share the server's thinking time each game tick: they take
+ * turns fairly, a burst of changes becomes one piece of work, each piece of work starts only once and is
+ * refused once out of date, and the limits per tick are kept.
+ */
 class AttentionWorkSchedulerTest {
     private final UUID session = UUID.randomUUID();
     private final UUID player1 = UUID.randomUUID();
@@ -48,6 +53,7 @@ class AttentionWorkSchedulerTest {
         assertEquals(t1.playerId(), t4.playerId(), "Turn must cycle back to first player");
     }
 
+    /** Twenty quick changes for one player become a single piece of work, not twenty. */
     @Test
     void dirtyEventStormCoalescesAndRetainsDueAge() {
         var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
@@ -88,6 +94,7 @@ class AttentionWorkSchedulerTest {
         assertTrue(scheduler.tryStart(token, now));
     }
 
+    /** A piece of work starts only once, and its result is refused if something changed while it ran. */
     @Test
     void singleUseTokensAndInvalidatedRunningTokenRejected() {
         var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
@@ -112,6 +119,7 @@ class AttentionWorkSchedulerTest {
         assertTrue(scheduler.diagnostics().staleTokenRejections() > 0);
     }
 
+    /** Work handed out on an earlier tick, or for a body that has since been replaced, is refused. */
     @Test
     void expiredAndStaleGenerationTokenRejected() {
         var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
@@ -142,6 +150,7 @@ class AttentionWorkSchedulerTest {
         assertFalse(scheduler2.tryStart(token2, System.nanoTime()), "Token with stale body generation must be rejected");
     }
 
+    /** No more than six pieces of work start in one tick. */
     @Test
     void deterministicSliceAndDetailedScanBudgetCaps() {
         // The default caps with a soft time limit a loaded host cannot trip: selection reads the real clock, and in a
@@ -182,6 +191,7 @@ class AttentionWorkSchedulerTest {
         assertTrue(scheduler.selectNext().isEmpty(), "Zero budget must yield no optional work slices");
     }
 
+    /** The same player listed twice, or more than three players, is refused. */
     @Test
     void batchValidationRejectsDuplicateIdsAndCapacityOverflow() {
         var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());

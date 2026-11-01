@@ -27,9 +27,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * One recorded survival break of any block the server's roaming policy allows, with the best owned tool, then
- * collection of that break's own drops by walking over them. The block's loot table decides the drops; the
- * only way anything enters the inventory is vanilla pickup.
+ * In plain terms: an AI player breaking a block the normal survival way with the best tool it has, then
+ * walking over the drops to pick them up. The block itself decides what drops, nothing reaches the inventory
+ * except by being picked up, and it breaks only what the server's rules for roaming players allow.
+ *
+ * Technical: One recorded survival break of any block the server's roaming policy allows, with the best owned
+ * tool, then collection of that break's own drops by walking over them. The block's loot table decides the
+ * drops; the only way anything enters the inventory is vanilla pickup.
  */
 final class NativeBreakAction extends NativeRecordedAction {
     private static final int COLLECT_TICKS = 70;
@@ -64,7 +68,13 @@ final class NativeBreakAction extends NativeRecordedAction {
     private net.minecraft.util.math.Vec3d anchor;
     private boolean holding;
     private final boolean underfoot;
+    /** Lava directly under the block does not refuse it (F-25c4ac). */
+    private final boolean overLava;
 
+    /**
+     * Breaking the given block, picking up its drops if asked; when guarded, a block by lava may be mined
+     * where water will fill the gap.
+     */
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
                       boolean guarded) {
@@ -75,14 +85,22 @@ final class NativeBreakAction extends NativeRecordedAction {
     NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
                       boolean guarded, boolean underfoot) {
+        this(body, lease, worldId, policy, claims, writer, dispatch, target, collect, guarded, underfoot, false);
+    }
+
+    /** With {@code overLava}, a block whose only lava lies directly under it, opened to show the lava (F-25c4ac). */
+    NativeBreakAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
+                      ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos target, boolean collect,
+                      boolean guarded, boolean underfoot, boolean overLava) {
         this.underfoot = underfoot;
+        this.overLava = overLava;
         this.body = body; this.lease = lease; this.policy = policy; this.claims = claims; this.writer = writer;
         this.dispatch = dispatch; this.target = target.toImmutable(); this.collect = collect; this.guarded = guarded;
         var player = body.entity();
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) throw new IllegalArgumentException("Break target is unloaded");
         state = world.getBlockState(target);
-        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot);
+        String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot, overLava);
         if (denial != null) throw new IllegalArgumentException(denial);
         body.faceBlock(target);
         if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
@@ -151,10 +169,16 @@ final class NativeBreakAction extends NativeRecordedAction {
         var player = body.entity();
         double dx = anchor.x - player.getX(), dz = anchor.z - player.getZ();
         boolean drifted = dx * dx + dz * dz > 0.15 * 0.15;
-        if (!drifted && !holding) return;
-        holding = drifted;
+        // Afloat under a block it digs above its eyes, it treads water to keep its head up, as a player digs a step out
+        // of a flooded pit: one that does nothing sinks, and with its eyes under the dig goes five times slower (F-25c4t).
+        // In deep water whatever it digs, as a log of a tree standing in a lake below its eyes: sunk to the bottom, its
+        // eyes under, it ran short of breath before the log came away (F-25c4as).
+        boolean tread = player.isTouchingWater() && !player.isOnGround() && target.getY() + 0.5 > player.getEyeY()
+                || PlayerRuntime.inDeepWater(player);
+        if (!drifted && !holding && !tread) return;
+        holding = drifted || tread;
         float yaw = drifted ? (float) Math.toDegrees(Math.atan2(-dx, dz)) : player.getYaw();
-        body.move(issuedLease, drifted ? 0.5f : 0f, 0, false, false, yaw);
+        body.move(issuedLease, drifted ? 0.5f : 0f, 0, tread, false, yaw);
     }
 
     private static int swapDestination(NativePlayerBody body) {
@@ -167,7 +191,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     private boolean intact() { return body.entity().getWorld().isChunkLoaded(target) && body.entity().getWorld().getBlockState(target) == state; }
     private boolean ownsClaim() { return claim != null && claims.holdsAll(claim, System.currentTimeMillis()); }
     private boolean eligible() {
-        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot) == null;
+        return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot, overLava) == null;
     }
     private boolean receipt() {
         return body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)
@@ -175,6 +199,7 @@ final class NativeBreakAction extends NativeRecordedAction {
     }
     private Step waiting() { return Step.running(Map.of("phase", phase.name(), "durableAction", phase()), false); }
 
+    /** Moves the breaking on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded break never replays a saved attempt", true);

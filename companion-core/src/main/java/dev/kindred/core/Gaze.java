@@ -7,7 +7,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Where a player looks while it waits (E-33a), as a person does:
+ * In plain terms: where a player looks while it waits, as a person does: at a threat, at whoever speaks to
+ * it, back at someone nearby who looks at it, at what it is waiting on, or otherwise slowly about. Each
+ * player looks about in its own way, so players side by side do not turn as one.
+ *
+ * Technical: Where a player looks while it waits (E-33a), as a person does:
  * <ul>
  *   <li>at a threat while it is in sight, turning quickly;</li>
  *   <li>at whoever speaks to it;</li>
@@ -60,11 +64,13 @@ public final class Gaze {
     private int aboutTurns;
     private Kind last;
 
+    /** A player's way of looking, from its own seed and personality. */
     public Gaze(long seed, Personality personality) {
         this.seed = seed;
         this.personality = Objects.requireNonNull(personality);
     }
 
+    /** Where to look this tick, and how fast the head may turn toward it. */
     public Look choose(View view) {
         Objects.requireNonNull(view);
         long tick = view.tick();

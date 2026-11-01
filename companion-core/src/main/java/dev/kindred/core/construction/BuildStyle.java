@@ -3,10 +3,15 @@ package dev.kindred.core.construction;
 import java.util.Locale;
 
 /**
- * A build grown from a seed block (E-29a, the owner's idea of 2026-10-23): the block a player is given, or failing one
- * the wood it has to hand, sets the build's materials, and its world sets the plan's shape, size and the way it faces,
- * so no two worlds get the same static build. Pure and deterministic: the same seed block and world give the same
- * style, so a base is always rebuilt and repaired on its own plan.
+ * In plain terms: the look of a player's base: the wood and stone it is built of and the shape and facing of
+ * its plan, grown from a block the player was given or the wood it has, and from the world itself, so no two
+ * worlds get the same house. The same start always gives the same style, so a base is rebuilt and repaired to
+ * its own plan.
+ *
+ * Technical: A build grown from a seed block (E-29a, the owner's idea of 2026-10-23): the block a player is
+ * given, or failing one the wood it has to hand, sets the build's materials, and its world sets the plan's
+ * shape, size and the way it faces, so no two worlds get the same static build. Pure and deterministic: the
+ * same seed block and world give the same style, so a base is always rebuilt and repaired on its own plan.
  *
  * @param seed    the block it was grown from, as given, or empty
  * @param wood    the wood it is built of: planks, logs, stairs, slabs and its door

@@ -19,7 +19,15 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** The OpenAI-compatible strategist against a local fake server: no network, no keys, no cost. */
+/**
+ * In plain terms: checks the connection to the many optional AI services that share one common format,
+ * against a stand-in server on this computer with no network, keys or cost: a well-formed reply becomes
+ * checked advice with its cost counted, a reply format the service refuses is asked for once more in a
+ * simpler form, failures are reported and not retried, chat replies are checked the same way and give up
+ * after eight seconds, and anything outside the fixed choices is dropped.
+ *
+ * Technical: The OpenAI-compatible strategist against a local fake server: no network, no keys, no cost.
+ */
 class OpenAiCompatibleStrategistTest {
     private HttpServer server;
     private final List<String> bodies = new ArrayList<>();
@@ -124,6 +132,56 @@ class OpenAiCompatibleStrategistTest {
     }
 
     @Test
+    void aRescuesStepsComeBackAsTextForCoreToParseWithTheVocabularyInTheInstructions() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"steps\":[\"pillar 3\",\"walk north 2\"],\"reason\":\"Up out of the pit and onto the ledge.\"}", "stop"));
+            var rescue = strategist.rescue("Blocks round it: ...").get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.empty(), rescue.failure());
+            assertEquals(List.of("pillar 3", "walk north 2"), rescue.steps(), "As the model wrote them; core parses them");
+            assertEquals("Up out of the pit and onto the ledge.", rescue.reason());
+            assertEquals(1900, rescue.inputTokens());
+            assertEquals(1536, rescue.cachedTokens());
+            var body = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals(Strategist.RESCUE_MAX_OUTPUT_TOKENS, body.get("max_completion_tokens").getAsInt());
+            var schema = body.getAsJsonObject("response_format").getAsJsonObject("json_schema").getAsJsonObject("schema");
+            assertEquals("array", schema.getAsJsonObject("properties").getAsJsonObject("steps").get("type").getAsString());
+            var messages = body.getAsJsonArray("messages");
+            String system = messages.get(0).getAsJsonObject().get("content").getAsString();
+            assertTrue(system.contains(dev.kindred.core.rescue.RescuePlan.VOCABULARY), "The vocabulary, word for word");
+            assertEquals("Blocks round it: ...", messages.get(1).getAsJsonObject().get("content").getAsString());
+            // A reply with no steps array, or that stopped short, is no plan.
+            replies.add(completion("{\"reason\":\"Just jump.\"}", "stop"));
+            assertEquals(java.util.Optional.of("no steps"), strategist.rescue("r").get(10, TimeUnit.SECONDS).failure());
+            replies.add(completion("{\"steps\":[\"pillar 3\"", "length"));
+            assertEquals(java.util.Optional.of("stopped: length"), strategist.rescue("r").get(10, TimeUnit.SECONDS).failure());
+        }
+    }
+
+    @Test
+    void onAnthropicsServerEveryRequestAsksForNoThinkingAndNoOtherServerIsSentTheField() {
+        // Its newer models think unless told not to, and the thinking counts against the reply's bound: a rescue's 300
+        // tokens came back with nothing written, "stopped: length", on every rescue of F-29's ten seeds (1 November).
+        try (var anthropic = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.COMPATIBLE, "k", "test-model",
+                     "https://api.anthropic.com/v1"), HttpClient.newBuilder().build());
+             var openai = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.OPENAI, "k", "test-model",
+                     "https://api.openai.com/v1"), HttpClient.newBuilder().build());
+             var lookalike = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.COMPATIBLE, null, "test-model",
+                     "https://notanthropic.com/v1"), HttpClient.newBuilder().build())) {
+            for (String body : List.of(anthropic.request("r", true), anthropic.askRequest(RAID, true), anthropic.rescueRequest("r", true),
+                    anthropic.converseRequest(TALK, true), anthropic.rescueRequest("r", false))) {
+                var thinking = JsonParser.parseString(body).getAsJsonObject().getAsJsonObject("thinking");
+                assertNotNull(thinking, body);
+                assertEquals("disabled", thinking.get("type").getAsString());
+            }
+            for (var other : List.of(openai, lookalike)) {
+                for (String body : List.of(other.request("r", true), other.askRequest(RAID, true), other.rescueRequest("r", true), other.converseRequest(TALK, true))) {
+                    assertFalse(JsonParser.parseString(body).getAsJsonObject().has("thinking"), body);
+                }
+            }
+        }
+    }
+
+    @Test
     void aChoiceNotOfferedOrANameTooLongIsNoAnswer() throws Exception {
         try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
             replies.add(completion("{\"choice\":\"BURN_IT\",\"text\":\"\",\"reason\":\"Why not.\"}", "stop"));
@@ -173,6 +231,107 @@ class OpenAiCompatibleStrategistTest {
             replies.add(completion("not json", "stop"));
             assertEquals("unreadable reply", strategist.advise("r", REPORTED).get(10, TimeUnit.SECONDS).failure().orElse(""));
             assertEquals(5, bodies.size());
+        }
+    }
+
+    private static final Strategist.Conversation TALK = new Strategist.Conversation("You are Echo, a player.",
+            "What you know:\nWhat you are doing: gathering logs\n\n" + ConversationPrompt.SAID + "\n\"Steve: Echo, what are you doing?\"", false);
+
+    @Test
+    void aConversationAsksForTheTwoFieldsInAStrictSchemaWithTheChatLanesCap() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"say\":\" Chopping logs for a table. \",\"reason\":\"I am gathering logs.\"}", "stop"));
+            var line = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("Chopping logs for a table."), line.say(), "trimmed: " + line.failure());
+            assertEquals("I am gathering logs.", line.reason());
+            assertEquals(1900, line.inputTokens());
+            assertEquals(1536, line.cachedTokens());
+            assertEquals(90, line.outputTokens());
+            var body = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals(Strategist.CHAT_MAX_OUTPUT_TOKENS, body.get("max_completion_tokens").getAsInt());
+            var format = body.getAsJsonObject("response_format");
+            assertEquals("json_schema", format.get("type").getAsString());
+            var spec = format.getAsJsonObject("json_schema");
+            assertTrue(spec.get("strict").getAsBoolean());
+            var shape = spec.getAsJsonObject("schema");
+            assertFalse(shape.get("additionalProperties").getAsBoolean());
+            assertEquals("[\"say\",\"ask\",\"item\",\"reason\"]", shape.getAsJsonArray("required").toString());
+            assertEquals("[\"NONE\",\"COME\",\"WAIT\",\"STOP\",\"TOSS\"]",
+                    shape.getAsJsonObject("properties").getAsJsonObject("ask").get("enum").toString(), "the asks, and only they");
+            var messages = body.getAsJsonArray("messages");
+            assertEquals(TALK.system(), messages.get(0).getAsJsonObject().get("content").getAsString(), "the player's own instructions, not the guide");
+            assertEquals(TALK.text(), messages.get(1).getAsJsonObject().get("content").getAsString());
+        }
+    }
+
+    @Test
+    void anAskInTheReplyIsTakenOnlyFromOneWhoMayCommandThePlayer() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            var owner = new Strategist.Conversation("You are Echo.", "What you know: ...", true, true);
+            replies.add(completion("{\"say\":\"Here, have some.\",\"ask\":\"TOSS\",\"item\":\"minecraft:bread\",\"reason\":\"asked for bread\"}", "stop"));
+            var line = strategist.converse(owner).get(10, TimeUnit.SECONDS);
+            assertEquals(Strategist.Ask.TOSS, line.ask(), "" + line.failure());
+            assertEquals(java.util.Optional.of("minecraft:bread"), line.item());
+            replies.add(completion("{\"say\":\"On my way.\",\"ask\":\"COME\",\"item\":\"\",\"reason\":\"asked to come\"}", "stop"));
+            var refused = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("an ask from one who may not command it"), refused.failure(), "TALK's listener may not ask");
+        }
+    }
+
+    @Test
+    void aRefusedConversationReplyIsAFailureAndCostsWhatItUsed() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.OPENAI, "sk-test")) {
+            replies.add(completion("{\"say\":\"I'm at 120, 64, -35.\",\"reason\":\"Asked where.\"}", "stop"));
+            var placed = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertTrue(placed.say().isEmpty());
+            assertEquals(java.util.Optional.of("a place this listener may not know"), placed.failure());
+            assertEquals(1900, placed.inputTokens(), "a used request is still counted");
+            replies.add(completion("{\"say\":\"/kill Steve\",\"reason\":\"\"}", "stop"));
+            assertEquals(java.util.Optional.of("a command"), strategist.converse(TALK).get(10, TimeUnit.SECONDS).failure());
+            replies.add(completion("{\"say\":\"Chopping\",\"reason\":\"\"}", "length"));
+            assertEquals(java.util.Optional.of("stopped: length"), strategist.converse(TALK).get(10, TimeUnit.SECONDS).failure());
+            statuses.add(new int[] {500});
+            replies.add("{}");
+            assertEquals(java.util.Optional.of("service error 500"), strategist.converse(TALK).get(10, TimeUnit.SECONDS).failure());
+            assertEquals(4, bodies.size(), "no retries");
+        }
+    }
+
+    @Test
+    void aConversationSchemaTheProviderRefusesIsRepairedOnceInJsonMode() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.GROQ, "gsk_test")) {
+            statuses.add(new int[] {400});
+            replies.add("{\"error\":{\"message\":\"response_format json_schema is not supported for this model\"}}");
+            replies.add(completion("```json\n{\"say\":\"Chopping logs.\",\"reason\":\"Logs.\"}\n```", "stop"));
+            var line = strategist.converse(TALK).get(10, TimeUnit.SECONDS);
+            assertEquals(java.util.Optional.of("Chopping logs."), line.say(), "JSON mode, fenced reply read: " + line.failure());
+            assertEquals(2, bodies.size(), "one repair, no more");
+            var second = JsonParser.parseString(bodies.get(1)).getAsJsonObject();
+            assertEquals("json_object", second.getAsJsonObject("response_format").get("type").getAsString());
+            assertTrue(second.getAsJsonArray("messages").get(0).getAsJsonObject().get("content").getAsString().contains("\"say\""),
+                    "the fields described in the instructions instead");
+            assertEquals(Strategist.CHAT_MAX_OUTPUT_TOKENS, second.get("max_tokens").getAsInt());
+        }
+    }
+
+    @Test
+    void aConversationGivesUpAtTheChatLanesEightSeconds() throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            exchange.getRequestBody().readAllBytes();
+            java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(12)); // Slower than the deadline.
+            exchange.close();
+        });
+        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
+        server.start();
+        String base = "http://127.0.0.1:" + server.getAddress().getPort() + "/v1";
+        try (var strategist = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.OPENAI, "sk", "m", base),
+                HttpClient.newBuilder().build())) {
+            long started = System.nanoTime();
+            var line = strategist.converse(TALK).get(20, TimeUnit.SECONDS);
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            assertEquals(java.util.Optional.of("deadline passed"), line.failure());
+            assertTrue(millis >= 7_500 && millis < 10_000, "within the chat lane's deadline, not the planning lane's: " + millis);
         }
     }
 

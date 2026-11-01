@@ -9,10 +9,14 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * A find shared out as the team's work (E-40a, E-11): the giver makes each piece {@link ShareOut} grants from what it
- * found, and hands over those for another player. One task for each piece, its own included, so that what it tells its
- * team it will make is all made; each held by the giver, its material reserved from what the giver holds, so the same
- * find is never promised twice and nothing else is made of it meanwhile. Pure: nothing here makes or moves an item.
+ * In plain terms: turns a find shared out among the team into jobs for the player who found it: make each
+ * piece and hand it to whoever gets it. The materials are set aside so the same find is never promised twice.
+ *
+ * Technical: A find shared out as the team's work (E-40a, E-11): the giver makes each piece {@link ShareOut}
+ * grants from what it found, and hands over those for another player. One task for each piece, its own
+ * included, so that what it tells its team it will make is all made; each held by the giver, its material
+ * reserved from what the giver holds, so the same find is never promised twice and nothing else is made of it
+ * meanwhile. Pure: nothing here makes or moves an item.
  */
 public final class HandOvers {
     private HandOvers() { }

@@ -6,6 +6,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how the player reads and writes a block with its settings, such as which way a stair
+ * faces: it reads them as the game writes them, ignores settings that only follow from the neighbouring
+ * blocks, and turns them correctly when a build is rotated.
+ */
 class BlockSpecTest {
     @Test
     void aStateReadsAndWritesAsMinecraftWritesIt() {

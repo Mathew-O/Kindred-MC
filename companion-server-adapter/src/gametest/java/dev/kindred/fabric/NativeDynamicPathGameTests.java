@@ -12,9 +12,15 @@ import net.minecraft.util.math.Vec3d;
 import java.util.Locale;
 
 /**
- * Routes that change under the player's feet (F-10g): a fortress hallway, three wide and four high, walked end to end
- * at a run, with blocks put down in its way once the player is under way. A player sees the block coming and steps
- * round it without stopping; so must the native player, sampled every tick.
+ * In plain terms: a GameTest: in a real test world, a player running down a long hallway is checked to get
+ * round blocks dropped in its way ahead of it (a pillar in the middle, or two of the three lanes blocked)
+ * without ever stopping, slowing much or turning sharply. Two more tests walk it across open ground past a
+ * penned wither skeleton: told to avoid mobs it stays far enough away never to be noticed, and walking
+ * straight past, as a control, it is noticed.
+ *
+ * Technical: Routes that change under the player's feet (F-10g): a fortress hallway, three wide and four
+ * high, walked end to end at a run, with blocks put down in its way once the player is under way. A player
+ * sees the block coming and steps round it without stopping; so must the native player, sampled every tick.
  */
 public final class NativeDynamicPathGameTests implements FabricGameTest {
     /** Ticks a run of the empty hallway takes, for comparison: sprinting 30 blocks is about 110 ticks. */

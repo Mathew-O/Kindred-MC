@@ -43,7 +43,8 @@
     "playerContext": "<world>/kindred/model-context/<player UUID>.json",
     "bundledInReleaseJar": "the OpenAI-compatible providers yes (JDK HTTP client and Minecraft's Gson); the Anthropic SDK no",
     "qualified": false,
-    "evidence": "docs/evidence/F-19b.md, docs/evidence/F-19c.md, docs/evidence/F-19d.md, docs/evidence/F-19e.md",
+    "evidence": "docs/evidence/F-19b.md, docs/evidence/F-19c.md, docs/evidence/F-19d.md, docs/evidence/F-19e.md, docs/evidence/E-20a.md",
+    "voice": "Replies in chat phrased by the same model (E-20a): told only what each listener may know (core's ConversationAudience), said through the social lane's own checks; chat lane 8 s, one JSON-mode repair, 120 output tokens, at most 240 characters, refused if a command, formatting codes, unclean or a place for a non-controller; the same rates and daily budgets as the strategist; any failure the fixed reply; KINDRED_VOICE=off keeps the fixed replies. Asks in chat (E-20b): from one who may command a native player only (never an opponent), COME, WAIT, STOP or TOSS, carried by the reply, said first, then run through the matching /aiplayer native command's own method as the speaker (toss added: /aiplayer native toss <item> <count>); a refusal said in the command's words",
     "requestSettings": "low effort, thinking off, instructions and guide cached (about 2.5 s a question, about 4,500 of its 4,700 to 5,100 input tokens from the cache; KINDRED_STRATEGIST_EFFORT, KINDRED_STRATEGIST_THINKING)"
   },
   "architecture": {
@@ -52,6 +53,7 @@
     "productionGoalQualified": false,
     "gameplayRequiresModel": false,
     "optionalModelModule": "companion-model",
+    "simulatorModule": "companion-sim (F-28): decisions and plans over companion-core on a made-up world, no Minecraft and no execution; depends on companion-core only, no runtime dependency, not in the server jar; docs/evidence/F-28.md",
     "modelModuleBundledInServer": true,
     "defaultBossPolicy": "Unqualified encounters blocked; qualified team Dragon progression is a production objective",
     "dependencyPolicy": "Prefer free/open-source components; optional operator-funded model API usage",
@@ -272,7 +274,7 @@
   "autonomousWorkEnabled": false,
   "liveAcceptanceGatesPassed": [],
   "automatedValidation": {
-    "junitTestsPassed": 709,
+    "junitTestsPassed": 840,
     "nativeGameTestsPassed": 351,
     "nativeGameTestConsecutivePasses": 0,
     "latestRegressionEvidence": "docs/validation.md",

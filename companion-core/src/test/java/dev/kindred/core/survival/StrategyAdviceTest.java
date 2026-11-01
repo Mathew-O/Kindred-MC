@@ -9,6 +9,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * In plain terms: checks that advice from an optional adviser is kept only when it is sound: an unknown
+ * stance is no advice at all, places to avoid must be near what the player reported, text is cut to one short
+ * line, a new habit needs a note saying why, and unknown choices are dropped.
+ */
 class StrategyAdviceTest {
 
     private static final List<Place> REPORTED = List.of(new Place(35, 32, 87), new Place(-5, 65, 97));

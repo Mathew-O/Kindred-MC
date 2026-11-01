@@ -7,12 +7,17 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * The follow-up queue: what a player means to have for the objectives ahead, worked on while it gets on with what it
- * is doing. Two kinds of entry: each objective's own requirements ({@link MinecraftGuide#requirements}), assessed
- * afresh on every pass from what the player holds, and wants the optional strategist added, kept until they are met
- * or their objective is behind the player. The planner breaks them into chunks ({@link NeedsAssessment}) and does
- * each when the chance comes (a chicken in sight while feathers are wanted) or when the objective is next. A want is
- * never a grant: everything still has to be gathered or crafted. Immutable.
+ * In plain terms: the player's list of things to get ready for the tasks ahead, such as a bow and arrows
+ * before the End, worked on as chances come up while it gets on with its main job. It holds each task's own
+ * needs and a few more that an optional AI adviser added; nothing on it is ever handed out.
+ *
+ * Technical: The follow-up queue: what a player means to have for the objectives ahead, worked on while it
+ * gets on with what it is doing. Two kinds of entry: each objective's own requirements ({@link
+ * MinecraftGuide#requirements}), assessed afresh on every pass from what the player holds, and wants the
+ * optional strategist added, kept until they are met or their objective is behind the player. The planner
+ * breaks them into chunks ({@link NeedsAssessment}) and does each when the chance comes (a chicken in sight
+ * while feathers are wanted) or when the objective is next. A want is never a grant: everything still has to
+ * be gathered or crafted. Immutable.
  *
  * @param advised the strategist's wants, oldest first
  */

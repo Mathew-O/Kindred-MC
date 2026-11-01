@@ -23,12 +23,18 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Puts things away in a store of its own (E-43), as a player does at its chest: opened with a use click, every stack
- * of the items it puts away shift-clicked in, and shut. Or, moving what is left of a store it no longer trusts, every
- * stack in it shift-clicked out into its inventory. Or, with nothing to put in or take out, only opened and shut, to see
- * what is in it. What it saw in the chest as it opened it is kept: its look. Exactly
- * what left one side arrives in the other, recorded in the durable ledger; nothing else of either moves. Only its own
- * stores: the storage its administrator assigned it, or a chest of a base it built.
+ * In plain terms: an AI player putting things away in a chest of its own, as a human does: opening it, moving
+ * the chosen items in, and closing it. It can also empty a chest it no longer trusts into its inventory, or
+ * just open it to look. Exactly what left one side arrives in the other, and it only uses its own chests: the
+ * one an administrator assigned it, or one in a base it built.
+ *
+ * Technical: Puts things away in a store of its own (E-43), as a player does at its chest: opened with a use
+ * click, every stack of the items it puts away shift-clicked in, and shut. Or, moving what is left of a store
+ * it no longer trusts, every stack in it shift-clicked out into its inventory. Or, with nothing to put in or
+ * take out, only opened and shut, to see what is in it. What it saw in the chest as it opened it is kept: its
+ * look. Exactly what left one side arrives in the other, recorded in the durable ledger; nothing else of
+ * either moves. Only its own stores: the storage its administrator assigned it, or a chest of a base it
+ * built.
  */
 final class NativeStoreAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -53,6 +59,7 @@ final class NativeStoreAction extends NativeRecordedAction {
     private boolean halted, unknown, opened;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Putting the given items into the chest at the given spot, or taking everything out of it. */
     NativeStoreAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<EditPolicy.ServerPolicy> policy,
                       ClaimRegistry claims, ActionAdmission.Writer writer, Consumer<Runnable> dispatch, BlockPos chestPos,
                       Set<String> items, boolean takeOut, BooleanSupplier own) {
@@ -78,6 +85,7 @@ final class NativeStoreAction extends NativeRecordedAction {
         return RoamingEdits.ownStoreDenial(body.entity(), chestPos, own.getAsBoolean(), policy.get());
     }
 
+    /** Moves the storing on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded store cannot replay after cancellation/restart", true);

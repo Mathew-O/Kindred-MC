@@ -5,8 +5,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Only visible, nearby facts; no live world objects or remote player information. {@code harm} is what hurt it, as the
- * game recorded it, when it was hurt; null when it was not, or nothing is known.
+ * In plain terms: what a player can see around it that is worth a word: rain, night, whether it was hurt and
+ * by what, a threat nearby, and the people close by. Only what is in view, never anything far off.
+ *
+ * Technical: Only visible, nearby facts; no live world objects or remote player information. {@code harm} is
+ * what hurt it, as the game recorded it, when it was hurt; null when it was not, or nothing is known.
  */
 public record SocialSnapshot(boolean active, boolean raining, boolean night, boolean hurt,
                              String visibleThreat, List<Contact> contacts, Harm harm) {
@@ -15,6 +18,7 @@ public record SocialSnapshot(boolean active, boolean raining, boolean night, boo
         if (contacts.size() > 16) throw new IllegalArgumentException("Too many social contacts");
     }
 
+    /** A snapshot with nothing known of what hurt it. */
     public SocialSnapshot(boolean active, boolean raining, boolean night, boolean hurt, String visibleThreat, List<Contact> contacts) {
         this(active, raining, night, hurt, visibleThreat, contacts, null);
     }

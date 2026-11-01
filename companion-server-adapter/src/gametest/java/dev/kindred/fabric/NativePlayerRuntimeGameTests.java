@@ -114,6 +114,94 @@ public final class NativePlayerRuntimeGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /** E-10c: a world saved before Vesp became Echo keeps one player; the starter Echo is that saved Vesp. */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 240)
+    public void starterEchoReconnectsAPlayerSavedAsVespInsteadOfMakingASecond(TestContext context) {
+        Fixture f = new Fixture(context);
+        UUID[] vesp = new UUID[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Fixture ready"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.createNative(f.source, "Vesp") == 1, "A world from before the rename has Vesp"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Vesp established and in the world");
+                    vesp[0] = statuses.getFirst().id();
+                    context.assertTrue(f.runtime.canonicalBotIdForControlSlot(6).equals(Optional.of(vesp[0])), "Echo's control-deck slot selects the saved Vesp");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "disconnect", vesp[0]) == 1, "Vesp disconnected");
+                })
+                .createAndAdd(() -> context.assertFalse(f.runtime.nativeStatuses(Actor.console()).getFirst().connected(), "Vesp is offline"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, "Echo") == 1, "Spawning Echo accepted"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1, "No second player was made for Echo");
+                    context.assertTrue(statuses.getFirst().id().equals(vesp[0]) && statuses.getFirst().connected(), "The saved Vesp came back as Echo");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "disconnect", vesp[0]) == 1, "Vesp disconnected again");
+                })
+                .createAndAdd(() -> context.assertFalse(f.runtime.nativeStatuses(Actor.console()).getFirst().connected(), "Vesp is offline again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, null) == 1, "Spawning the whole starter roster accepted"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 3 && statuses.stream().allMatch(s -> s.connected()), "Three starters in the world, got " + statuses.size());
+                    context.assertTrue(statuses.stream().map(s -> s.name()).sorted().toList().equals(java.util.List.of("Kindred", "Sol", "Vesp")),
+                            "Kindred and Sol made; Echo is the saved Vesp, not a fourth player");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Fixture closes"))
+                .completeIfSuccessful();
+    }
+
+    /** A personality's nine traits, for comparing two whatever their revisions. */
+    private static java.util.List<Integer> traits(dev.kindred.core.Personality personality) {
+        return java.util.Arrays.stream(dev.kindred.core.Personality.Trait.values()).map(personality::value).toList();
+    }
+
+    /**
+     * C13: a starter made from the roster begins with its own preset personality (Sol's, not the defaults), saved: read
+     * back after a restart. A saved player's personality is its own from then on: a trait its operator changed stays
+     * changed across the restart, and spawning the starter again reconnects it without resetting anything.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 300)
+    public void aStarterBeginsWithItsPresetPersonalityKeptAcrossARestartAndNeverReset(TestContext context) {
+        Fixture f = new Fixture(context);
+        UUID[] sol = {null};
+        var preset = dev.kindred.core.CanonicalRoster.SOL.defaultPersonality();
+        var changed = new java.util.ArrayList<>(traits(preset));
+        changed.set(dev.kindred.core.Personality.Trait.CURIOSITY.ordinal(), 10);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, "Sol") == 1, "Sol spawned from the roster"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Sol established");
+                    sol[0] = statuses.getFirst().id();
+                })
+                .createAndAdd(() -> context.assertTrue(traits(f.runtime.personalityForFixtures(sol[0])).equals(traits(preset)),
+                        "Sol begins with Sol's personality, not the defaults: " + f.runtime.personalityForFixtures(sol[0])))
+                // Its operator changes a trait once the first save is in (a profile change waits for the last).
+                .createAndAdd(() -> context.assertTrue(f.runtime.socialSetting(f.source, sol[0], null, false,
+                        dev.kindred.core.Personality.Trait.CURIOSITY, 10) == 1, "Curiosity set to 10"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.socialSetting(f.source, sol[0], "ambient", true, null, 0) == 1,
+                        "And saved: the next change is let in"))
+                .createAndAdd(() -> f.runtime.stop())
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Closed"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(context.getWorld().getServer(), f.directory); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Reopened"))
+                .createAndAdd(() -> context.assertTrue(traits(f.runtime.personalityForFixtures(sol[0])).equals(changed),
+                        "Read back after the restart, the change kept: " + f.runtime.personalityForFixtures(sol[0])))
+                .createAndAdd(() -> context.assertTrue(f.runtime.spawnCanonicalRoster(f.source, "Sol") == 1, "Sol spawned again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).getFirst().connected(), "The saved Sol reconnected"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Still one Sol");
+                    context.assertTrue(traits(f.runtime.personalityForFixtures(sol[0])).equals(changed),
+                            "Never reset to the preset: " + f.runtime.personalityForFixtures(sol[0]));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     private static final class Fixture {
         PlayerRuntime runtime;
         final Path directory;

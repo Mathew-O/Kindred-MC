@@ -1,5 +1,903 @@
 # AI-player development validation
 
+## Conventions for evaluation runs and death replays
+
+- **Evaluation summaries (F-26).** A build is scored with `tools/eval/` on at least ten seeds
+  (`tools/eval/seeds-10.txt`); a summary prints medians and ranges, never one number, and says whether the runs were
+  earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
+  ranges do not overlap. Summaries go under `docs/evidence/eval/<name>/summary.md`; logs and worlds are never
+  committed.
+- **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
+  `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
+  gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as
+  `data/kindred_gametest/gametest/replays/<id>.json`, the same `<id>` for both, in lower case (a structure's name
+  allows no capitals). `ReplayGameTests` finds every one on its own and runs each three times in a batch of its own.
+  A replay is committed only if it played its death again in at least two of three runs before its fix, and only
+  with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
+  definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
+
+## Final validation of the next levers — 1 November 2026 (`claude/loose-ends-1029`)
+
+- Build: `./gradlew build` green on `f1a15b6`, the final code: 846 JUnit tests, 6 skipped, 0 failures.
+- Each new GameTest class alone, three runs each on `2e93546`, every run passing: `NativeEvalGameTests` 2 of 2,
+  `ReplayGameTests` 4 of 4, `NativeLessonsGameTests` 4 of 4, `NativeAtlasGameTests` 3 of 3, `NativeRescueGameTests` 7 of
+  7, `NativeWatchGameTests` 3 of 3, `NativeTrustGameTests` 7 of 7, `NativeFurnaceWaitGameTests` 1 of 1,
+  `NativeCustomsGameTests` 1 of 1. `f1a15b6` changed only the rescue's fence and instructions after that, and
+  `NativeRescueGameTests` ran three times again on it, 8 of 8 each. The gametest entrypoints were narrowed for each run
+  and restored after.
+- The testkit demos on `4d67c9c`: `:companion-testkit:run` and `:companion-testkit:runPersonalityDemo` passed. Their
+  modules (core, scheduler, persistence) have not changed since.
+- The full native suite on `9e5400d` (the code of `f1a15b6`, with only an evaluation summary after it), nothing else on
+  the cores: 476 of 481 in 56.2 minutes. Compared with the open list:
+  - still failing, open before: the keep's roof stairs (`NativeCompoundGameTests`, #82's family, five stairs not
+    placed); the lake librarian (`NativeBringGameTests`, "I ran out of blocks to bridge the water for the librarian");
+    the ruined portal's chest (`NativeLootGameTests`, its first step to a "cave" before its first full look, as in CI
+    316 and at `77ddbb4`);
+  - this branch's own fixtures, each seen failing before (CI 292; a class run on `bb620ba` and on 31 October):
+    - the trip's wood (F-25c4i), "in planks: 3". Its goal's first look, before its first full sweep had seen the
+      trees, chose the first cobblestone, since the planner packs the trip's wood only once a tree is known; the next
+      look chose the trip's wood with the stone already in hand. The stone stage has no look round before its first
+      dig, as the ore stages have. In play the trees are known by then, from the wood it has just cut, unless the goal
+      starts afresh;
+    - the hungry search for animals (F-25c4ab). Beside the cow its strikes came several a second and the cow did not
+      die. It passes alone; the cause was not found. In the twenty evaluation runs of the E-49 build no hunt took more
+      than five strikes in a row;
+  - the trip's wood fixture's player went on branch-mining to the end of the suite, as a failed fixture's player does.
+- CI on the branch: run 318 on `2e93546`, 479 of 480 (the cabin with its furniture, #82's family); run 319 on `f1a15b6`,
+  480 of 481 (the walk back up when its pickaxe breaks, which passed in the local suite and failed in CI 298 too); run
+  320 on `e049b0b`, the same code, 480 of 481 (the night and its own bed, open).
+- The container restarted at 16:51, while no turn of the session was running, and took the final build's ten seeds
+  with it, a few minutes into their first round; they were run again from the start, beside the rescue arm.
+- Found by the evaluation runs, open: the hand-over's make step loops on a walk to a table the player stands beside
+  (E-40a). In one seed of most arms (`e49-base` 404, 603 walks; `e49-nolessons` 707, 1,092; `e49-noatlas` 404, 554;
+  `before-nightfix` 20261030, 916; on the final build, 202 with rescue off 7,325, Sol for the last three quarters of the
+  run, and with rescue on 202 1,100 and 20261030 1,524) a task outside the goal's walked to a table and ended at once,
+  again and again, the goal starved meanwhile and counted stuck by its watchdog. On 20261030, with rescue on, the walks
+  then gave way to the sword's craft chosen and dropped before it ran, 79 times, to the run's end.
+  - All seven followed a share-out's promised iron sword: Sol's at once ("I've got 4 iron ingots: an iron sword for me
+    and an iron sword for Kindred"), the others after the make step had waited its minute ("cannot go on with an iron
+    sword for Kindred for now, no table by it to make iron_sword").
+  - The cause is in the goal's craft helper (`PortalRunCampaign.craft`): with a table in reach but a recipe it cannot
+    plan, it gives out "Walk to the crafting table", which ends at once. The goal never asks it for a recipe it has not
+    the makings of; the hand-over does: it makes the sticks first when it holds fewer than two, and with no planks the
+    stick cannot be planned (in the final arm's case Kindred had just put spruce planks in its furnace as fuel; what it
+    held then is not logged).
+  - Proposed, two lines: in reach and no plan, nothing to give out, so the hand-over waits its minute and lets go after
+    six, as it already does.
+- The final build's ten seeds and its rescue arm: the two side by side, one server each, 16:53 to 22:19, all twenty
+  results complete and earned. Rescue off ([summary](evidence/eval/final-f1a15b6/summary.md)): the team's furthest stage
+  4.0 [2 to 6], deaths a game hour 1.75 [0.0 to 4.5], stuck game minutes 42.0 [12 to 99]. Rescue on
+  ([summary](evidence/eval/final-f1a15b6-rescue/summary.md)): stuck game minutes 39.0 [3 to 63]; 34 ways out asked for,
+  none refused as stale, 31 plans carried out, 4 getting the player out; 68,009 tokens. No measure differs clearly
+  ([comparison](evidence/eval/compare-rescue-final.md)).
+
+## Rescue plans still refused as stale; the steps described as carried out (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
+
+- The rescue arm run again with the hold (`e49-rescue`), first six seeds: 29 ways out asked for, 14 refused before
+  anything moved (12 as stale), 15 plans carried out, 4 of them getting the player out. Each stale reply had found the
+  player starting something of its own meanwhile (an eat, a discard, a task chosen before the ask, its digging when not
+  calm), and every task it starts begins on a direct lease, moving the intent revision the fence compared. Details in
+  [the evidence](evidence/F-29.md).
+- Now the fence compares the intent revision less the tasks the player started of its own choosing; a stop, a resume
+  or a command still refuses a plan. `aWayOutAskedForWhileItEatsIsCarriedOutNotRefusedAsStale` (new): on the code
+  before the change 0 of 1 ("refused: the proposal's revisions are stale", its eat begun while the reply was held);
+  after, `NativeRescueGameTests` alone 8 of 8 in each of three runs ("-> unstuck"; the fixture stopped and set going
+  again still refused as stale).
+- The rescue's instructions now say what each step does as it is carried out (7 of the 11 plans that stopped did so at
+  a walk with no route, 4 of them just after a `dig up`; 3 at a dig with no pickaxe). No test reads the words; the
+  final build's rescue arm measures it.
+- The scratch class that ran the new fixture alone on the old code was not committed; the gametest entrypoints were
+  restored after each run.
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+- CI run 318 on `2e93546`: 479 of 480; the one failure the cabin with its furniture (`NativeHouseGameTests`, the #82
+  family on the open list). The walled-in cell, the lake librarian and the ruined portal's chest passed.
+
+## The walled-in cell's site given up on asks never walked (F-25c4aj), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full runs 301, 313 and 316 failed `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite`, and alone
+  it passed 5 of 8. Two things, both in [the evidence](evidence/F-25c4aj.md):
+  - since F-25c4z (`55e3227`) the site the fixture named is refused for the save's lava three blocks below it. The first
+    site chosen is a block up and one north; alone, the runs that kept it failed the check, and those that gave it up
+    passed, their next site's frame reaching into the one named;
+  - the give-up, in every one seen: asked for its next step while its last break was still finishing, it was sent to
+    the stand, then over to the row in front, then gave the site up, in the same second and with no walk sent.
+- Now a place counts as tried once stood in or walked to, and the fixture checks the first site the player chose, read
+  from its campaign. Alone, with that check: on the code before the fix 0 of 4, each giving the site up; after it 5 of
+  5, nothing given up, the first block cast in the first site each time.
+- `NativePortalCampaignGameTests` alone with the fix: 94 of 94 (92 of 94 on `bb620ba`, the walled-in cell and the
+  hungry search for animals failing).
+- The scratch class that ran the fixture alone was not committed; the gametest entrypoints were restored after each
+  run.
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+
+## Ten seeds: lessons and the atlas against without, the night fix again (E-46, F-30, F-26) — 1 November 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores, 15 GB), OpenJDK 21, Python 3.13; `tools/eval/run.py` with the server launcher for
+Minecraft 1.21.1 and Fabric Loader 0.19.5; `goal=nether; ticks=144000`, three starters, the strategist off, two
+evaluation servers at a time.
+
+- Seed 404 run again with F-26's spawn fix for each of the five builds that had run it (the night fix, the build
+  before it, the E-49 build and its two arms), 07:29 to 09:05, each on its own commit with that fix alone added: all
+  three starters came into the world in all five, complete and earned. Every summary and comparison scored again with
+  it. All 50 results of the five builds: complete, earned, three starters.
+- The night fix against the build before it, on the ten seeds: no clear difference on any measure, as first filed;
+  [comparison](evidence/eval/compare-nightfix.md), [F-26](evidence/F-26.md).
+- Lessons on against off (E-46), both on the E-49 build (`39af678`): no clear difference on any measure. The team's
+  deaths a game hour 1.5 [0.0 to 4.0] on, 0.75 [0.0 to 3.0] off; stuck game minutes 28.5 [9 to 54] and 48.0 [15 to
+  108]. 25 lessons learned with them on. [Comparison](evidence/eval/compare-lessons.md), [E-46](evidence/E-46.md).
+- The atlas on against off (F-30), both on the E-49 build: no clear difference. The first iron ingot at 10.75 [4.7 to
+  31.2] game minutes with it and 11.75 [5.8 to 27.3] without; diamonds on 3 and on 2 of the ten seeds. 112 leads back
+  to iron it had seen with it on, none off. [Comparison](evidence/eval/compare-atlas.md), [F-30](evidence/F-30.md).
+- F-28's server figure on the ten seeds: 0.60 deaths a player-hour in the first game hour (0.59 over nine), against
+  the simulator's 0.18; [F-28](evidence/F-28.md).
+- CI run 316 on `2449b28` (480 GameTests, 43.8 minutes): 477 passed. The three failures, none in this day's code (the
+  hold while a way out is asked for does nothing with the strategist off):
+  - the walled-in cell (F-25c4aj), open;
+  - `NativeBringGameTests.aLibrarianAcrossALakeIsRowedOverAndBroughtHome`: two of the boats were not put down ("the
+    look met … up"), the librarian, its AI on, was not held, walked off the line laid to it, and the bring gave up out
+    of blocks to bridge the water. The lake fixture first passed in a full run in run 49 (28 October), after failing in
+    earlier ones; the bring code is not changed on this branch since;
+  - `NativeLootGameTests.aRuinedPortalsChestIsLootedOfWhatIsWorthTakingItsGoldMinedAndAnOpenedChestLeftAlone`: its
+    goal's first step, before it had seen the chest, was "Explore the cave toward iron", to a stone floor two blocks
+    below the fixture's own and eleven blocks off; from there the chest was "No walkable route" (a two-block step up is
+    not walked), and the player wandered until the suite's end. In the GameTest world every air-over-stone cell below
+    sea level minus ten counts as a cave floor (`WorldKnowledge.caveFloor`), so a lower floor left by the world round
+    the fixture draws that first step off it. The local full suite at `77ddbb4` failed it the same way (its 5 of 5 alone
+    above). Open.
+
+## Rescue plans refused as stale (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
+
+- With the compatible route fixed, the rescue arm's first two seeds asked for 4 ways out: 3 came back refused, "the
+  proposal's revisions are stale; it is no longer where it asked from". The goal's tasks are the console's commands to
+  the arbiter, each moving on the intent revision a plan's fence compares, and the goal worked on while the plan was
+  asked for. Now, while a way out is asked for, the goal gives out nothing unless the player is in danger, and a walk
+  under way stops where it is ([F-29](evidence/F-29.md)). The arm's seeds before the change are not filed.
+- `aWayOutAskedForWhileItsGoalCouldStillWalkAboutIsCarriedOutNotRefusedAsStale` (new; a pit five wide, the reply held
+  200 ticks): before the change 0 of 1, "refused: the proposal's revisions are stale". With the goal held from the ask
+  but the walk under way not stopped, 2 of 2 runs of the class failed it, "refused: it is no longer where it asked
+  from". With the whole change, `NativeRescueGameTests` alone 7 of 7 in each of three runs.
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+
+## The compatible route's thinking (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
+
+- The rescue arm asked Anthropic's server through the compatible route, the release jar having no Anthropic SDK. All 9
+  rescues of its first two seeds came back "no plan (stopped: length)": the model thinks unless told not to, and the
+  thinking used the reply's 300 tokens. The same request by hand: "length" after 300 tokens and an empty reply; with
+  thinking off, "stop" after 117 tokens, with a plan. Every request the compatible route sends to Anthropic's server
+  now asks for no thinking, as the SDK route does ([F-29](evidence/F-29.md)). The arm was stopped and run again.
+- `OpenAiCompatibleStrategistTest.onAnthropicsServerEveryRequestAsksForNoThinkingAndNoOtherServerIsSentTheField` (new):
+  fails without the change (16 of 17 for the class), passes with it (17 of 17).
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+
+## A tree known by its top log (F-25c4ap), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full suite failed `withNoWoodItWalksToATreeItSeesFarOffOverOpenGround` in runs 298, 299 and 313; in each the
+  walk to the log the sighting remembers, the oak's top one four blocks up, found no way (6,000 positions searched) and
+  the player went to explore elsewhere. A log so high over a trunk still standing is now walked to at the trunk's foot
+  ([F-25c4ap](evidence/F-25c4ap.md)).
+- `withNoWoodItWalksRoundABankToTheFootOfATreeWhoseTopItSawFarOff` (new): before the change 0 of 1, after it
+  1 of 1, then 3 of 3, each alone in its batch; `withNoWoodItWalksToATreeItSeesFarOffOverOpenGround` 3 of 3 beside it.
+- `NativePortalCampaignGameTests` alone with the change: 92 of 94, two evaluation servers on the same cores. It failed
+  the walled-in cell (below) and `hurtAndOutOfFoodOnceUpItLooksForAnimalsRatherThanGoBackDown`: 220 strikes in a row
+  at its cow with no kill, then night. That fixture failed once in a class run on 31 October too, before the change;
+  alone after it, 3 of 3. Open.
+- Build: `./gradlew build` green, 845 JUnit tests, 6 skipped, 0 failures.
+- CI run 313's other failures: the keep's roof stairs (#82, open); the nine-by-seven cabin, its walk to a roof block
+  finding no route again and again (#82's kind, as in run 305); and the walled-in cell (F-25c4aj, 5 of 8 alone, open).
+  In run 313 that fixture's player gave its first frame site up in the same second it decided to go and look at the
+  cell: the goal was asked for its next step while a dig was still running, and each ask counted one more place to
+  look from as tried, with no walk sent; at the third the site was given up. The failing runs alone gave nothing up and
+  cast their frame blocks elsewhere ("0 there, 3 elsewhere"). The asks are a fault to fix with its own fixture; not
+  done here.
+- A fixture that fails leaves its player running to the suite's end: in run 313 the walled-in cell's player dug on
+  for 31 minutes after its fixture failed, through the 158 batches after it, the far-off tree's among them. The
+  fixtures stop their runtimes only when they pass.
+
+## A frame site three over lava (F-25c4z), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- `withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite` alone: 0 of 3 on `124c501` (before the next
+  levers), 2 of 3 on `60cb3a7`, 1 of 3 on `1f16f1e`; each failure worked a site two up, three over the lava, then went
+  to branch mine for lava. A frame site's lava check looked two below, the climb's three. With the check at three
+  below as well: 3 of 3 alone ([F-25c4z](evidence/F-25c4z.md)).
+- `NativePortalCampaignGameTests` alone with the change: 92 of 93. The one failure,
+  `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite` (F-25c4aj), passed 5 of 8 alone with the change
+  and 5 of 8 without, failing the same way each time: an intermittent of its own, open.
+- Build: `./gradlew build` green, 845 JUnit tests, 6 skipped, 0 failures.
+
+## The log afloat (F-25c4as), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full suite failed `withNoWoodItChopsATreeStandingInWaterFromTheWater` in runs 292, 299 and 309; in each it cut
+  the log and never held it, the log afloat in the pool. Logs are now fetched at the wood stage, ashore or from the
+  water ([F-25c4as](evidence/F-25c4as.md)).
+- `withNoWoodItSwimsOutForALogAfloatInThePool` (new): before the change 0 of 1, after it 3 of 3, each alone in its batch.
+- `NativePortalCampaignGameTests` alone with the change: 92 of 93. The one failure is
+  `withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite` (F-25c4z), at the obsidian stage, where neither
+  part of the change applies. Alone it then failed 2 of 3 on this code: it worked a frame site two blocks up, where the
+  fixture wants three, and then went to branch mine for lava. It failed once in CI too (run 309). Its cause and fix are
+  in the section above.
+
+## A follow-up lost to the memory (E-46), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full suite failed `NativeFollowUpGameTests.whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold`
+  in runs 301, 305 and 309 (`034e967`, `60cb3a7`, `1987f45`), and passed it in run 299 (`6af8fe6`). The cause was
+  E-46's: the memory, which now looks at every player, replaced a goal's follow-up queue at its first look instead of
+  merging it, as it merges the habits. Details in [E-46](evidence/E-46.md).
+- The class alone: before the fix 4 of 5, that fixture failing ("The queued shield made from its own iron and
+  planks"); after it 5 of 5 in each of three runs. `NativeLessonsGameTests` 4 of 4 beside it.
+- Build: `./gradlew build` green on the fix, 845 JUnit tests, 6 skipped, 0 failures (the fix is in the adapter).
+
+## The evaluation runs (F-26) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores, 15 GB), OpenJDK 21, Python 3.13; `tools/eval/run.py` with the server launcher for
+Minecraft 1.21.1 and Fabric Loader 0.19.5.
+
+- One seed (8675309), `goal=nether; ticks=144000`, unattended: complete, earned, in about 30 minutes;
+  [summary](evidence/eval/f26-2h/summary.md).
+- Ten seeds of each of two builds: 093d188's jar, and the same with F-25c4aq and F-25c4at taken out. Each build's seeds
+  ran one after another (`--parallel 1`), the two builds side by side, from 15:10 to 21:21. All 20 results were complete
+  and earned, but on seed 404 two of the three starters never came into the world, in both builds (below); [the night fix](evidence/eval/nightfix-093d188/summary.md), [before it](evidence/eval/before-nightfix/summary.md).
+- The comparison on those ten seeds: no clear difference on any measure; [comparison](evidence/eval/compare-nightfix.md).
+- Ten seeds of the E-49 build (39af678) with `--parallel 2`, 21:27 to 00:20, all complete and earned, seed 404 again
+  with Echo alone. Then the arms of E-46, F-30 and F-29 on the same build.
+- Three faults of the engine's own, found scoring them (1 November); [the evidence](evidence/F-26.md):
+  - seed 404 ran with Echo alone in every ten-seed run: Kindred's and Sol's spots, a jungle trunk's top in its leaves,
+    were refused by the roster spawn, and `score.py` did not read the result's note of it. The bootstrap now makes a
+    starter on the nearest ground round its spot that the spawn takes, its own spot first. `score.py` names such a
+    run and leaves it out;
+  - a run across midnight kept only the end of its log, so `RunMetrics` read only that: it now reads `console.txt`;
+  - `NativeEvalGameTests` had failed since E-46 added `lessons` to the canonical scenario: 0 of 1 at f6e30f2.
+  - `NativeEvalGameTests` alone: before the spawn fix 1 of 2 (the new tree's-crown fixture failing, "not every starter
+    came into the world: []"); after it 2 of 2 in each of three runs, and 2 of 2 in each of three more once the fixture
+    found its starter by its own runtime's record rather than by name, which another fixture's player may share.
+  - Build: `./gradlew build` green on the commit with these fixes, 845 JUnit tests, 6 skipped, 0 failures (as before:
+    the fixes are in the adapter, the GameTests and the tools).
+
+## Learning from the server's people (E-47) — 1 November 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5; two evaluation servers on
+the same cores throughout. The GameTest class ran alone, the gametest entrypoints narrowed to it and restored after.
+
+- Build: `./gradlew build` green on the commit that adds this section, 845 JUnit tests, 6 skipped, 0 failures (the 5
+  more than F-28's are `ServerCustomsTest`).
+- `ServerCustomsTest`: 5 of 5 (the aggregation, the bounds, the deletion, the file's snapshot).
+- `NativeCustomsGameTests`: 3 of 3 alone, in three runs on the final code. With the campaign not handed the customs,
+  0 of 1: "Its depth for iron within the blend, three tenths of the way from 16 to 14: 16".
+- What the GameTest showed:
+  - a person's own `/aiplayer watch on` counts, and the same command run as another person by the server is refused;
+  - her twenty iron ore at y 12 make the custom 14, and the AI player's iron depth 15 (its own 16);
+  - his twenty at y −40, never opted in, change nothing;
+  - her diamonds and her chat change nothing;
+  - the file read back gives the same customs;
+  - `/aiplayer watch off` deletes her counts, the depth goes back to 16, and the file then holds neither of them.
+
+## The headless simulator (F-28) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to the neighbours, and restore them after each run. The simulator
+tests decisions and plans, not execution.
+
+- Build: `./gradlew build` green on the commit that adds this section, 840 JUnit tests, 6 skipped, 0 failures (the 4 more
+  than E-49's: `SimRunTest` (3) and one in `PortalRunPlannerTest`).
+- The three packs of 100 seeds on the final build: 35.1 s in all (night 8.1 s, caving 8.5 s, portal 18.4 s); 10, 6 and
+  18 deaths; no anomalies. `tools/eval/score.py` scored each pack unchanged, `RunMetrics` included;
+  [the portal pack's summary](evidence/eval/sim-portal/summary.md).
+- The decision bug the caving pack found: iron left smelting in a furnace the player walked away from. On the final
+  simulator, before the fix 14, 55 and 6 runs left 33, 214 and 21 iron so (night, caving, portal); after it, none.
+- `NativeFurnaceWaitGameTests`:
+  - before the fix, 0 of 1: the furnace still held 2 raw iron when the player went past sixteen blocks;
+  - after the iron stage's fix, 3 of 3 alone;
+  - on the final planner (the night's work below ground waits for the furnace too), 3 of 3 alone.
+- `PortalRunPlannerTest.theIronSmeltingInItsFurnaceIsWaitedForNotWalkedAwayFrom` fails before the fix and passes after;
+  the class is 40 of 40.
+- The neighbours on the final planner: `NativePortalCampaignGameTests` and `NativeSmeltGameTests` together 94 of 97,
+  and the goal's class alone 88 of 92; without the fix, the goal's class alone 91 of 92. Every fixture with a furnace
+  passed in every run. Five failed in one run or another, none of them holding raw iron or a furnace, so the changed
+  rule never applies in them; the lava lakes' failed without the fix too. None is among the failures of the full suite
+  runs recorded below; the final suite on this branch is compared against them as well.
+- Deaths an hour against the server's first game hour on the same core (e49-base, its ten seeds, 404 run again with
+  F-26's spawn fix on 1 November): 0.18 against 0.60 a player-hour, a factor of 3.3 (2.5 for the four mobs it has;
+  0.59 and 2.6 over the nine other seeds before that), the gap recorded with its causes in
+  [the evidence](evidence/F-28.md). First filed as 0.48 and 2.7, from seven seeds with seed 404 among them, where two
+  starters never came into the world (F-26's fault, above).
+
+## Trust and griefing (E-49) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to the neighbours, and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 836 JUnit tests, 6 skipped, 0 failures (the 6 more
+  are `TrustTest`).
+- `NativeTrustGameTests` 7 of 7 in each of three runs alone, and 7 of 7 in a fourth on the final code (only a log
+  line's wording changed after the three). In the first two runs, 2 and 6 of 7:
+  - the owner stood beyond the eight blocks a reply carries, so no ask came;
+  - goto walks are not entries in the action ledger, so the fixture watches the player's activity instead;
+  - the stranger's fixed reply depends on what was said, so the fixture asks only that it is not the stub's line;
+  - the owner who had struck it was rightly walked away from, so the refused ask is checked as "no nearer to them".
+- Before, with E-49's effects switched off in a scratch copy (not committed): 1 of 7. The stranger's claim passed, as
+  E-20b's fence is unchanged.
+- The neighbours, together in one run before that wording change: 23 of 23 for `NativeAskGameTests`,
+  `NativeVoiceGameTests`, `NativeAggressionGameTests` and `NativeStorageGameTests`.
+
+## The watch page (E-48) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 830 JUnit tests, 6 skipped, 0 failures (the 5 more
+  are `WatchSnapshotTest`).
+- `NativeWatchGameTests` 3 of 3 in each of three runs alone on the final code, the requests made with the JDK's HTTP
+  client from a thread of the fixture's own on an ephemeral port. Before the third fixture was added, its first two were
+  2 of 2 in each of three runs alone.
+
+## Rescue plans (F-29) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to a scratch class (not committed), and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 825 JUnit tests, 6 skipped, 0 failures: 832 less the
+  16 that tested `ModelGateway`'s retired accounting, with 8 for `RescuePlanTest` and 1 for the OpenAI-compatible rescue
+  reply.
+- `NativeRescueGameTests` 6 of 6 in each of three runs alone, the last on the final code. In the first two runs, 4 and
+  5 of 6. In the pit, each new look gave the pillar out afresh from the feet it had mid-jump, so the pillar that ended matched none and
+  it pillared on until its glass ran out: a step now stands until it ends. The edits fixture switched the server's edits
+  off, which pauses the whole goal, so no step was given out to be refused: it now gives the player a work area beside
+  the pit, and the pillar is refused for being outside it. With rescues off: 0 of 6.
+- The neighbours, together in one run: 12 of 12 for the watchdog's moves elsewhere, the pocket, the far move, the
+  walled-in dig, the pit, the flooded pit, the strategist's habits and advice, the memory across a save and two lessons
+  fixtures; and 16 of 16 for `NativeVoiceGameTests`, `NativeKitNameGameTests` and `ReplayGameTests`.
+
+## The atlas (F-30) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs
+narrow the gametest entrypoints to the class, or to a scratch class (not committed), and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 832 JUnit tests, 6 skipped, 0 failures (the 8 more
+  are `AtlasTest`).
+- `NativeAtlasGameTests` 3 of 3 in each of three runs alone on the final code (a comment changed after). Its night
+  walk went one block into the marked cell at the deepest in each run (the body's line cuts a corner of the way round),
+  and the day control eight, through the middle. A first form of the night fixture counted any block in the cell, so a
+  cut corner failed it (2 of 3). In another, the fixture staged its death twice, because its night check retried after
+  the harm was put in. Before, with the atlas off: 1 of 3 (the day control). The diamonds were searched for ("Explore the
+  cave toward diamonds"), and the night walk went eight blocks into the cell.
+- The neighbours, each alone in its batch: 12 of 12. They were the iron and cave fixtures, the pit, the island's outcrop,
+  two lessons fixtures, the walks round a wither skeleton and a wall, and the End fixture that reads a memory file.
+
+## The drowning replay (F-27) and lessons from its own play (E-46) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21; two or three evaluation servers on the same cores throughout. Focused
+runs narrow the gametest entrypoints to the class, or to a scratch class (not committed), and restore them after each run.
+
+- Build: `./gradlew build` green on the commit that adds this section, 824 JUnit tests, 6 skipped, 0 failures (811
+  on `6af8fe6`; the 13 more are `LessonsTest`).
+- F-27, the drowning `echo-50149` (seed 101 of a capture run on `6af8fe6`): before its fix 3 of 3 died, as in the run;
+  after it 3 of 3 lived in each of seven runs of `ReplayGameTests` alone, three on the final code. The capture's fixture
+  passed in every run: 25 measured runs in all, 3.4 to 6.3 ms of the server thread's time.
+- E-46: `NativeLessonsGameTests` 4 of 4 in each of seven runs alone, the last on the final code. Before: 0 of 4 in one
+  run, with lessons off and the two habits not given.
+- The neighbours of both (the water fixtures, the strategist's habits, the memory across a save, the cornered fight):
+  11 of 12 before the memory merged its habits with a goal's (the strategist's cave habit failed), 12 of 12 after, and
+  12 of 12 on the final code. The flooded pit failed once with a first form of the drowning fix that also swam for air
+  with breath to spare; with that part taken out, 3 of 3.
+
+## Death replays (F-27): the capture, the first replay and its fix — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Two evaluation servers (F-26's comparison) ran on the same cores
+throughout, so times by the clock include their turns. Focused runs narrow the gametest entrypoints to `ReplayGameTests`
+or a scratch class (not committed), and restore them after each run.
+
+- The capture's fixture (`ReplayGameTests.aDeathIsCapturedWithinOneTickAndReadsBackAsAReplay`): passed 12 of 12, 3.4 to
+  6.1 ms of the server thread's own time against a 50 ms tick, 5.1 to 26.5 ms by the clock; 274 to 338 KB written.
+- In play, a jar of `597f0c6` on seeds 8675309 and 20261030 (`goal=nether; ticks=144000`): seven deaths on the first,
+  each captured in 4.5 to 12.9 ms by the clock and written in 575 to 853 KB; none on the second.
+- Replays: `sol-60203` (a cave, three zombies and a skeleton, Sol at 7 health) died in 2 and 1 of 3 before the fix and
+  in 1, 2 and 1 of 3 after it, so it is not committed. `sol-21811` (one heart, night, no weapon) died 3 of 3, but
+  nothing at its start can save it. `sol-12229` died 5 of 12. `sol-9373` and `echo-36596` died 0 of 3 in two sets
+  each, `sol-94364` 0 of 3 in one.
+  `sol-101977` could not be made where it died.
+- The fix `sol-60203`'s log showed (`PortalRunCampaign.stopFor`): fixture
+  `badlyHurtAndCorneredByAZombieItFightsItRatherThanBreakEachFightOff` 0 of 3 before, 3 of 3 after, each alone in its
+  batch; the walled-in fixture beside it 2 of 2.
+- Not met: a replay that dies two of three times before its fix and none after. F-27 stays open.
+
+## The live pair on 00e98f5; the cattle (M-06a1); the sand seal, the far move, the tree in water, the own seal and the dig away (F-25c4aq to F-25c4au) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. The live pair ran alone; the focused runs after it, one set at a time, with nothing else on the cores.
+
+- Live, on `00e98f5`: seeds 31102026 and 8675309 in turn, 400,000 ticks each, sprinted, the three starters on the End goal, strategist off. Not met on either seed: no portal was lit.
+  - 31102026, a desert. All three had wood in the first minute, walking to trees seen far off (F-25c4ap; on `91c1290` no player got past wood in 175,000 ticks). Kindred had stone tools and its first iron about four minutes into the sprinted run, Sol its first iron in eight.
+  - 5 deaths, Sol's four of them (three to skeletons, one to a creeper). Waiting below ground for daylight took 25 to 42% of each player's time (34 to 39% on `91c1290`).
+  - Echo never got past wood. Its only tree, an azalea, stood in a lake: its break was cut short in the water 11 times (F-25c4as), and its watchdog's moves toward home, 200 blocks off, were refused 8 times as too far for one route (F-25c4ar).
+  - Kindred, its pickaxe worn out, went back for wood for sticks. It sealed itself into its night shelter at the bottom of a lake's basin and stayed there for the last fifty minutes: 65 stall lines, every walk out refused by its own seal (F-25c4at).
+  - 8675309: 11 deaths, all in caves, Sol's six and Echo's five; Kindred none. Kindred reached the portal stage: casting took 38% of its time and the lava for it 26%, one block was cast, two buckets filled, and nine frame sites in deepslate were given up. It then walled itself in beside a mineshaft's cave-spider spawner, about twenty spiders and a zombie three blocks off, and stayed there for the last twenty-two minutes (F-25c4au).
+  - Sol spent 39% of its time on 8675309 getting out of water, and drowned at the end with its hunger at 1. Echo's stuck-spell lines there numbered 953.
+  - On both seeds: no reconciliation stop.
+  - Not taken further: a climb that went step up, back the way it came, to the wall and up again (Kindred, three minutes on the desert seed, in sand, climbing for water).
+- F-25c4aq, on `2bceb1f`: its fixture fails before, 3 of 3, "Not sealed: Block{minecraft:air} and Block{minecraft:air}", and passes 3 of 3 alone after. The shelters, cover, walls against caves and casts beside it alone, 10 of 10.
+- F-25c4ar, on `2bceb1f`: its fixture fails before, 3 of 3, "Not on its way ... (tried elsewhere 1 time)". With the leg alone it failed 3 of 3 after too: the move's first walk came while a climb was running, and the next look judged it before it had run. With each walk judged once it has ended, 3 of 3 alone. The watchdog's, the water's and the casts' fixtures beside it and the tree in water, alone on the final code, 11 of 11.
+- F-25c4as, on `2bceb1f`: its fixture fails before, 3 of 3, "Not chopped: the log stands". In the first form, the break let go on in the water and treading, it failed after too, 0 of 3: the plan sent it ashore before the log. With the log in reach from the water before the way ashore, 1 of 3. The fixture had asked for the stump's lower log too, every face of it under water or against the log above, which the player cannot know of (`WorldKnowledge`'s exposure rule), and the run that passed had caught the cell over it empty. The criterion is now the log it can see, as Echo's was. On it, 0 of 3 before and 3 of 3 alone after.
+- F-25c4at, on `2bceb1f`: its fixture fails before, 3 of 3, "Still sealed in: Wood: waiting for a feasible step", and passes 3 of 3 alone after. The climbs and the night shelter beside it alone, 8 of 8.
+- F-25c4au, on `2bceb1f`: its fixture, walled in beside a zombie it is no match for that keeps it as its target, fails before, 3 of 3, "Still walled in: at 0, 0, 0, Iron: outmatched - Hole up: wait behind the wall", and passes 3 of 3 alone after. The wall against a cave and the fight in the tunnel beside it alone, 2 of 2.
+- M-06a1: the cattle's last failure on `2bceb1f`, 9 of 10 with the gateway and the fence fixed, was a third cause: one cow pushed up onto the shut gate as the other was fed, the pair then "not ready to breed again yet". `RanchTest`'s case for it fails with the change set aside ("Open the gate to leave") and passes after; `RanchTest` 15 of 15. The cattle with all three, 10 of 10 alone; the ranch's pen in the open beside them, 3 of 3.
+- `build` successful: 801 JUnit results, none failed, six skipped (the opt-in live model tests).
+- Evidence: [F-25c4](evidence/F-25c4.md), [F-25c4aq](evidence/F-25c4aq.md), [F-25c4ar](evidence/F-25c4ar.md), [F-25c4as](evidence/F-25c4as.md), [F-25c4at](evidence/F-25c4at.md), [F-25c4au](evidence/F-25c4au.md), [M-06a](evidence/M-06a.md).
+
+## The pasture's cattle: a pair jammed at a way in one wide (M-06a1) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- The cattle fixture logged once a second (a scratch copy, not committed), ten runs alone: every failure was the pair side by side at the doorway's mouth, outside against the wall, the player going in and out between them.
+- On the committed code: 4 of 10. After: 9 of 10, then 8 of 10. The first set's failure was the pair either side of the pen's gate, before the gate was covered. The second set's two were other causes, open: the doorway's shut walk refused once, and a pair not ready to breed once.
+- The ranch's pen in the open: 3 of 3 before and after.
+- `RanchTest`: 13 of 13. `build` successful.
+- Evidence: [M-06a](evidence/M-06a.md).
+
+## Trees on the skyline (F-25c4ap), and the climbs' holds read "long ago" rightly — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- F-25c4ap, on top of `3c184b6`:
+  - Its fixture: no wood, its home where its goal began, then set down 170 blocks east with an oak 60 blocks further east, 230 from home. It fails before, "No wood ... Explore east for logs", 3 of 3. Its walks to look keep within 192 blocks of home.
+  - In its first form the fixture moved the player before its first plan, so home was set at the new spot, and the runs before failed only by the luck of their headings. It now waits for the first plan.
+  - The first form of the change failed after too. The look was never due, its last-looked tick starting at the least long. And a sight line to the crown's top that met another leaf of the same crown did not count.
+  - After: 3 of 3 alone.
+- The holds' "long ago", on top of `3c184b6`:
+  - The climb for the surface (F-25c4ao) and the water step (F-25c4ah, since `238ff1e`) held for "ten seconds since the last climb" from the least long. A tick less that overflows, so each held before any climb was made, wherever ground beside the player rose two blocks.
+  - Its fixture, no wood at the foot of a wall two high on open ground, fails on `3c184b6`, "Its first step a climb on open ground: ... Climb toward the surface for logs", 3 of 3. After, 3 of 3 alone.
+- Beside them, alone on the final code, 12 of 12: under a lake, under sand, the pocket's move elsewhere, wood first with no tree in sight, the chamber with no way to its trees, the logs at the top of a cut trunk, the trip's wood among the trees, water at night, the two hungry searches once up, the sapling where trees do not come back, and the night's iron.
+- `build` successful.
+- Evidence: [F-25c4ap](evidence/F-25c4ap.md), [F-25c4ao](evidence/F-25c4ao.md), [F-25c4ah](evidence/F-25c4ah.md).
+
+## The live run on 91c1290, a third seed; the watchdog's moves elsewhere (F-25c4an) and the climb from under sand (F-25c4ao) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `91c1290`: seed 31102026, the starters on the End goal, strategist off, nothing else on the cores. Stopped at about tick 175,000 of 480,000, after 33 minutes, with every player still at the wood stage.
+  - A desert spawn. Sol cut the only two trees any player found: an oak 152 blocks south of spawn, which it came on chasing a rabbit, and another at x=99. It got as far as the iron, and each time its next death lost its kit. Kindred and Echo never had wood.
+  - 4 deaths: Sol to a skeleton at night and to a zombie by day. Echo drowned and Kindred was killed by a husk, each while waiting below ground for daylight.
+  - Time: waiting below ground for daylight took 34 to 39% of each player's time, the watchdog's spells 3 to 13%, hurt and out of food up to 9%, and getting out of water up to 10%. Looking for trees took 2 to 3%.
+  - Found: the spells' dig back and forth (F-25c4an); the climb under the desert's sand (F-25c4ao); and that a player sees logs only 32 blocks round, while its walks to look keep within 192 blocks of home (F-25c4ap, next).
+- F-25c4an, on top of `91c1290`:
+  - Its fixture is a pocket walled in obsidian with a stair's width of stone the only way out, and a move elsewhere begun toward a place 24 blocks east. It fails before, "Still in the pocket ... step down", 3 of 3.
+  - In its first form it passed 2 of 3: the plan's climb by hand took turns with the move's, then the plan's cut-through stepped back down. With both of those parts added, it passed 3 of 3 alone, and 3 of 3 again on the final code.
+  - The watchdog's own fixture, the chamber, the gravel over its head, the flooded pit, under a lake, lava across a cave, the ledge and the pit with no pickaxe, alone on the final code: 8 of 8.
+- F-25c4ao, on top of `91c1290`:
+  - Its fixture is a pocket under sandstone with three layers of sand over it, and no pickaxe. It fails before, "Not out ... waiting for a feasible step", 3 of 3.
+  - In its first forms it failed after too: it stepped up before the sand had fallen and was buried, then walked from the foot of its shaft into a pocket under the sand. With the wait and the held climb, it passed 3 of 3 alone.
+- `build` successful.
+- Evidence: [F-25c4](evidence/F-25c4.md), [F-25c4an](evidence/F-25c4an.md), [F-25c4ao](evidence/F-25c4ao.md).
+
+## A step off a hazard to the middle of the cell found safe (F-25c4am) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Found in the live pair on `c432fba`: Echo started nothing for twenty-seven minutes at a lava pool's edge at Y=-54, its block over the lava. Its step off was proposed every tick and refused every tick, "Retreat needs a clear, supported, loaded non-hazardous goal", its goal's work stopped as a hazard meanwhile.
+- Its fixture, the pool, the ledge and a wall a block beyond, fails on `21046b0`, "at 0, 0, 0 over lava, Retreat needs a clear, supported, loaded non-hazardous goal", 3 of 3. After, 3 of 3 alone.
+- The magma retreat, with edits off, idle, the operator's retreat, the stop that cancels it, and the creeper retreat: 6 of 6.
+- `build` successful.
+- The dragon goal is refused on the dev server until an operator turns the dragon fight on (`/aiplayer dragonfight on`), as server policy has it: a live run begun on it ran with no goal: at spawn its players were killed 67 times over the first two nights, 59 of them by husks, and it was stopped. The next pair runs on the End goal.
+- Evidence: [F-25c4am](evidence/F-25c4am.md).
+
+## The live pair on c432fba: the first earned lit portals; and two fixes from it and P19 — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `c432fba` (F-25c4ah, ai and aj): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - Two portals lit, each earned from an empty inventory: on the first seed Kindred's, at about tick 236,000; on the second Sol's, at about tick 150,000. Each frame was cast from lava at Y=-54 and Y=-53, ten blocks from ten buckets of lava it filled itself, with the water taken back each time and its own flint and steel. None had been lit in the pairs before.
+  - F-25c4ai in play: the cell in front of each top block's water was dug before the block was cast, on both frames.
+  - F-25c4aj in part: 8 frame sites given up across both seeds, each after the stand and the row in front were tried (49 on `64c298d`); the step to the row in front was taken 7 times.
+  - After the light, both goals read done, and the goal's fallbacks and then its watchdog dug each player away from its portal (F-25c4al below).
+  - 8 deaths, 5 and 3 (10 on `64c298d`). No reconciliation stop.
+  - Still long: Echo spent 59% of the second seed in the watchdog's spells (P19's loop, open); hurt and out of food took Sol 20% of the first seed and Kindred 34% of the second; waiting for daylight below ground took Echo 29% of the first and Kindred 25% of the second.
+- F-25c4ak (lava across a cave at its level bridged toward), on top of `c432fba`:
+  - its fixture, a cave four deep running sixty blocks west between the tunnel and the pool, fails before, "now -33, 0, 0", tunnelling west along the cave's side, 3 of 3. In its first form, a cave eleven wide, the old tunnel went round its end in time and it passed before. After, 3 of 3 alone;
+  - the pit's pool dug toward, the lava under a corridor, the lava legs, the night's lava and the whole cast: 5 of 5.
+- F-25c4al (the goal done, nothing more), on top of `c432fba`:
+  - its fixture, the owned-block frame lit under a roof, then four minutes watched, fails before, "0, 1, -3 from where it lit it, Done: no progress here for a while - dig toward elsewhere", 3 of 3. In its first form it failed before for another reason, its first look coming before the panel's line read done. After, 3 of 3 alone;
+  - the owned-block frame and the walled-in site: 2 of 2.
+- `build` successful.
+- Evidence: [F-25c4](evidence/F-25c4.md), [F-25c4ai](evidence/F-25c4ai.md), [F-25c4ak](evidence/F-25c4ak.md), [F-25c4al](evidence/F-25c4al.md).
+
+## A frame site dug in the order it can reach it (F-25c4aj) — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Found in the live pair on `64c298d`: Kindred, its bucket filled at Y=-54, gave up 17 frame sites in two minutes, each for a block beside it it "cannot clear". The spot was rebuilt as it stood then, from the world save with what the log shows it dug and placed afterwards undone. On the stand of the first site it chose, the first cell of the row in front was walled in on all three sides it faced; the cell straight ahead, which would have shown it, came second in the order.
+- Its fixture, that spot staged from the save, fails on `238ff1e`, "0 there", 111 sites given up across three runs, 3 of 3:
+  - with each pass taking the first cell it can break, it still failed 3 of 3: the row's last column was walled in behind the stand's own staircase;
+  - with the walk to the row in front beside such a cell added, 2 of 3: the cast route's walk back to the stand, asked for on each step of that walk, undid it;
+  - with that walk back left to the clearing, 3 of 3 alone, no site given up.
+- The frame under thick rock, the roofed cast, the whole cast, the climb over the lava lakes, the cast refused for its water, the one-block cast and the owned-block frame, alone on this code: 7 of 7.
+- `build` successful.
+- Evidence: [F-25c4aj](evidence/F-25c4aj.md).
+
+## The live pair on 64c298d, and two fixes from it and P18 — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `64c298d` (F-25c4ac to ag, E-40a1's far teammate): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - No portal lit. Lava buckets were filled again after two pairs with none, all on the second seed. Kindred opened a cell over lava on its branch mine at Y=-54 and filled its bucket. Sol's walk to a pool was refused, so it dug toward the pool, opened eight cells over it and filled sixteen buckets.
+  - Sol cast 15 obsidian in two frames at Y=-54. Its first frame was dropped with seven cast, and the next sites chosen overlapped it. In the second it cast eight blocks and both top corners. The top two blocks were then refused from every stand for its last seven minutes: the water over each could not be taken back once it hardened (F-25c4ai below).
+  - Kindred, its bucket filled, gave up 17 frame sites in two minutes, each for a block in reach that it could not break from where it stood, and its watchdog moved it away. Sol gave up 32, two of them for its own obsidian.
+  - 10 deaths, 10 and 0 (13 on `41f9de9`); none drowned. Kindred died twice in one cave a minute apart, the second time on its way back for the first death's drops, which it then left (F-25c4v).
+  - On the first seed Echo spent 29 minutes at Y=47, its watchdog's tunnel and the climb's walk to the wall taking turns several times a second.
+  - On the first seed Kindred dug toward lava it saw at 0, -18, 48 and tunnelled 81 blocks west at the lava's level, past it: each step south, the floor beyond was open.
+  - E-40a1 in play: on the first seed Sol waited 40 times for Echo, 150 to 185 blocks off, and let the hand-over go 8 times; no walk was refused as it was made (five minutes of them on `41f9de9`). F-25c4ae, af and ag did not come up: no walk home beyond one route, no drowning, no hungry spell that reached the open.
+- F-25c4ah (under water, out from under it; the climb for water held to the top), on top of `64c298d`:
+  - its fixture fails on `64c298d`, "walks to the wall 2109", 3 of 3;
+  - with the tunnel out from under the water alone it failed too. In the one run whose neighbours had left its ground alone, it came out from under the lake, then at the top of its stair the climb and a walk to look about took turns, the walk leading back down. With the climb held to the top, 3 of 3 alone;
+  - the flooded pit, the night's water waiting for daylight and the night's lava, alone on this code: 3 of 3; the climb out of a pit with no pickaxe, out of a chamber, never digging out what gravel rests on, and the hungry search under a gap in the rock, on this code less the water step's hold, which they do not reach: 4 of 4.
+- F-25c4ai (the cell in front of a top block's water opened first), on top of `f59492d`:
+  - its fixture, the roofed cast's room under rock five thick, fails before, "0 portal blocks, 8 obsidian", the top two refused from every stand, 3 of 3. After, 3 of 3 alone;
+  - the roofed cast, the whole cast, the cast refused for its water and the one-block cast: 4 of 4.
+- One run put both new fixtures and their neighbours side by side. A fixture that fails leaves its ground unrestored, as every fixture does, and two more failed in the plots beside it; those runs are not counted.
+- `build` successful.
+- Evidence: [F-25c4ah](evidence/F-25c4ah.md), [F-25c4ai](evidence/F-25c4ai.md), [F-25c4ac](evidence/F-25c4ac.md).
+
+## Four more fixes from the live pair on 41f9de9: lava dug toward, home a leg at a time, up for air, the hungry search held — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- On top of `0c48f53`, the changes set aside (`PortalRunCampaign`'s and `PlayerRuntime`'s), their four fixtures kept:
+  - F-25c4ad's, a lava pool at the bottom of a pit five deep with no way down it could walk: it fails 3 of 3: "Its bucket filled at the pit's pool: now 13, -2, 41, Obsidian: Cast the portal frame from lava and water - Branch mine for lava: advance", its walks to the pool refused 35 times;
+  - F-25c4ae's, home 200 blocks off and the player sealed in a cell its own size: it fails 3 of 3: "Held by a walk home refused as it was made: Goto target is too far for one route";
+  - F-25c4af's, at the bottom of a pool ten deep with little air, a little hurt and hungry, a drowned after it: it fails 3 of 3, slain by the drowned while eating, its eating begun and cancelled for the threat 164 times. With only the fight part of the change it fails 3 of 3 the same way (166 cancels); with only the eat guard it drowns 3 of 3, its walk up for air stopped 130 times to fight back first;
+  - F-25c4ag's, hurt and out of food in a walled room under a wide roof of rock, the sky showing only through a gap over its head: it fails 3 of 3: "Back to the climb: Iron: hurt and out of food - Climb toward the surface for food: back the way it came".
+- With the changes, alone: F-25c4ad 10 of 10, and F-25c4ae, af and ag 3 of 3 each. In F-25c4ad's fixture's first form one run in three never saw the pool, its sweep having passed the pit's section before the pit was laid; the fixture now gives it its look from the rim, and fails as before on the old code. Beside them: the lava under a corridor, the lava legs, the night's lava and the whole cast, 4 of 4; the start with no tree in sight, 1 of 1; the goal's fight with a mob after it, the swim up a flooded shaft, the flooded pit, the shore passed over, the fall broken with water before a fight and the two eating fixtures, 7 of 7; the search once up, the climb with gravel overhead, food first as advised and fishing at a pond, 4 of 4.
+- The four short fixtures the suite on `77ddbb4` failed pass alone on this code too, 4 of 4. `build` successful: the adapter compiles and remaps, and `:companion-core:test` stands at 618 of 618, the core unchanged.
+- Evidence: [F-25c4ad](evidence/F-25c4ad.md), [F-25c4ae](evidence/F-25c4ae.md), [F-25c4af](evidence/F-25c4af.md), [F-25c4ag](evidence/F-25c4ag.md).
+
+## The live pair on 41f9de9, and two fixes from it and P17 — 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `41f9de9` (E-40a1, F-25c4z to ab): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - No portal lit, and no lava bucket filled: the third pair running. On the second seed Echo saw lava for the first time in two pairs, a pool in a pocket inside the mountain at Y=78 some 46 blocks off. No walk led to it, and its sources were set aside one after another, twenty in four seconds.
+  - 13 deaths, 5 and 8 (18 on `a4df9b4`, 14 and 4). No reconciliation stop.
+  - F-25c4ab in play: 18 of 30 spells hurt and out of food came up to the search for animals, and players hunted and ate from it on both seeds; on `a4df9b4` none did. Still, hurt and out of food took Echo 29% of the first seed. Each of three climbs from Y=19 dug a new staircase, two minutes or more; at the top of one it switched between the search and the climb, and its walk back the way it came took it down to Y=46; and by then the animals near spawn were hunted out. Kindred spent 12% so on the second seed.
+  - On the first seed Kindred, wanting water, spent eighteen minutes in a corridor at Y=47 under a lake. Its climb was refused every way by the water over the ceiling, and its watchdog dug it along under the lake; the lake it wanted lay three blocks over its head.
+  - On the first seed Kindred's hand-over walk to Echo, too far for one route, was refused as it was made and proposed again and again for five minutes at Y=1 (stall line: "need 78.0", "Goto target is too far for one route"). On the second Echo's walk home, more than 160 blocks off, was refused nine times, with two stall lines.
+  - On the first seed Sol, at night in a pocket of flowing water at Y=55, switched several times a second for four minutes between getting out of the water and the night's wait for daylight.
+- F-25c4ac (the lava search a block above the deep lava level, a cell over lava opened, long legs), on top of `41f9de9`:
+  - in the pair's world saves, ray-cast from every place the players stood every ten seconds, no exposed lava was in sight within 32, 64 or even 96 blocks: sight was not what failed;
+  - simulated on the saves from 200 random starts per seed, the search as it was had lava within 800 blocks mined from 12.5% and 9% of starts: most lava its tunnels came on lay beside or under a cell they would dig, and they turned away unseen. A block higher, cells with lava only under them opened, legs 48 long and 16 apart: 64% and 56%;
+  - its fixture, a closed obsidian chamber, a stone corridor the only way on and a lava pool sealed under it, fails on the old campaign: "now 3, 0, 0, Obsidian: waiting for a feasible step", 3 of 3. After, 3 of 3 alone.
+- E-40a1's teammate gone far off (waited for, a minute at a time, six waits letting the hand-over go), on top of `e3aa373`:
+  - its fixture, the share-out's find with Wren then moved 170 blocks off, fails on the old runtime: "Held by a walk refused as it was made: Goto target is too far for one route … need 78.0", 3 of 3. After, 3 of 3 alone.
+- Alone with both, on this code: the walled teammate, the share-out, obsidian from poured water, the lava legs, F-25c4n's night lava and F-25c4z's climb over the lava lakes, 6 of 6.
+- The full native suite on `77ddbb4`, 419 of 425. The six failures ran while log and world-save analyses ran on the same cores, three back to back as a log report ran; alone on the same code the follow-up without a shield queued, the ruined portal's chest, the long fall broken with water, the route that bridges a gap and digs through a wall, and the librarian off the line pass, 5 of 5. The second-night fixture, 42,000 ticks long, was not run alone: its cabin's repair ended short, its roof stairs out of reach, as the life-first fixture's has before
+- Evidence: [F-25c4ac](evidence/F-25c4ac.md), [E-40a1](evidence/E-40a1.md), [F-25c4ab](evidence/F-25c4ab.md).
+
+## The live pair on a4df9b4, and four fixes from it — 30 and 31 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `a4df9b4` (F-25c4v to y): seeds 8675309 then 20261030, the starters on the Nether goal and spawned three blocks apart, 240,000 ticks each, strategist off, nothing else on the cores.
+  - No portal lit, and no lava bucket filled. On the second seed Kindred dug a staircase from Y=44 to Y=-55 in three and a half minutes and branch-mined there for thirteen without coming on lava, until a skeleton killed it at 23:00. Sol spent 15% of its time on the way toward lava, Echo 9%.
+  - 18 deaths, 14 on the first seed (21 on `458d192`) and 4 on the second. Six of the first seed's came in the caves 25 to 35 blocks under the spawn point, around 21 to 32, 32 to 40, 81 to 93: Kindred three times, Sol three.
+  - F-25c4v met in play: three times a player died again before it had its things back, and none went back for either lot; no death came on a walk back after another (11 on `458d192`).
+  - F-25c4x met in play: every life that held eight iron made its chestplate before it mined on, eight in all. 7 of the 18 deaths came with one on (2 of 24 on `458d192`), and none of the 11 with no armour held the eight iron one takes.
+  - F-25c4w and y not met: no player jumped into water from a ledge and swam back, and none stood on a shore level with water with nothing else to do; no frame was cast.
+  - No reconciliation stop on either seed.
+  - On the first seed Sol, with an iron sword and boots promised to Echo, walked toward Echo 7,389 times, each walk ending at once as done, for about twenty of its forty-four minutes, ahead of its goal; Echo did the same 546 times (E-40a1). Its watchdog gave up the spot again and again: "no progress here", 40% of Sol's time.
+  - On the second seed Echo, in a stream running down a hillside, set out for the same spot on its bank 173 times; Kindred did so 57 times on the first (F-25c4aa).
+  - On the first seed Echo was hurt and out of food from 22:11 at Y=19 to 47, and never got to the surface. It went back and forth between its climb for food and digging down for iron, and from 22:24 its watchdog took it elsewhere eight times in seven minutes. Three stall lines came in that time, "candidates=0 decision=WAIT" (F-25c4m), and at 22:31 a zombie killed it in water at 90, 40, 60, hunger 2.
+- E-40a1 (a hand-over to a teammate it cannot get to let go), on top of `a4df9b4`:
+  - its fixture, the share-out's find of diamonds with Wren walled into stone, fails on the old runtime: "[diamond boots for Wren CLAIMED, a diamond helmet for Wren CLAIMED]", 3 of 3;
+  - after, three runs alone: 3 of 3, with the share-out's own hand-over fixture.
+- F-25c4z (up out of the lava's reach for a frame site), on top of `a4df9b4`:
+  - its fixture, a tunnel with lava under the rock a block off on each side, fails on the old campaign: no site three blocks up within two minutes, 3 of 3. It tunnelled along the lava; in one run it found a site level with the lava ten blocks off, in another it went back to looking for lava;
+  - after, three runs alone: 3 of 3, with the whole-frame cast and F-25c4y's roofed cast.
+- F-25c4aa (dry ground a walk out failed to reach passed over), on top of `a4df9b4`:
+  - its fixture, a pool with a notch of shore near it and a ledge along the far wall, one walk to the notch reported failed, fails on the old campaign: "Out on the far ledge, not the notch it failed to reach: 6, 0, 0", 3 of 3. Asserting where it ended up passed on the old code too: from the notch it moved on later, so the fixture judges where it first stands out of the water;
+  - after, three runs alone: 3 of 3.
+- `build` successful.
+- The full native suite on this code: 421 of 422 in 46 minutes. The one failure, `hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase` ("No way to reach minecraft:oak_stairs" in its cabin), passed 3 of 3 alone after; its cause in the suite is not found. The ranch's pen and the pasture's doorway pair, the cattle, passed.
+- F-25c4ab (hurt and out of food, once up out of the ground it looks for animals), on top of `033fd71`:
+  - its fixture, open stone by day, health 8, hunger 10, no food and a cow 45 blocks out to each side, fails on the old campaign: no beef in two minutes, the goal branch-mining for iron under the plain, 3 of 3. With the cows 33 blocks out, the old code passed once: its branch mine had carried it under the plain toward a cow, and its climb for food came up in sight of it. At 45 it passed once more, on a cow a failed run before it had left there; the fixture now takes such animals away first;
+  - after, three runs alone: 3 of 3, twice, the second with the Overworld guard (in the Nether and the End there is no sky, so no night, and a hurt player there must not wander off looking for animals);
+  - alone with it: the climb with gravel overhead, food first as advised, both fishing fixtures, the fight broken off once badly hurt and the creeper faced behind the shield, 6 of 6;
+  - `build` successful. The life-first fixture that hunts before building its base failed alone once with it ("No way to reach minecraft:oak_slab" in its cabin), as it had in the suite before it; its builder logs the same in the runs that pass, and the goal's step changed here does not run in it.
+- Evidence: [E-40a1](evidence/E-40a1.md), [F-25c4z](evidence/F-25c4z.md), [F-25c4aa](evidence/F-25c4aa.md), [F-25c4ab](evidence/F-25c4ab.md); F-25c4v and F-25c4x complete on this pair.
+
+## The live pair on 458d192, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `458d192` (F-25c4o to u): seeds 8675309 then 20261030, the starters on the Nether goal, 240,000 ticks each, strategist off, nothing else on the cores. On the second seed Echo's spawn was refused room on the spawn point, beside the other two; it was spawned a few blocks off at tick 57,000.
+  - No portal lit. Furthest yet: on the second seed Echo filled its water at Y=16, dug down to lava at Y=-55, and cast ten obsidian there, but in two frames: six in the first, given up when a cell to dig before the next cast was out of reach from the lava (F-25c4y), and four in another beside it. A zombie killed it there, hungry, at 19:57.
+  - First seed, 21 deaths against 10 on `03faab9`, all with no armour on. 11 came while a walk back for the last drops was still under way: Kindred died eight times in one cave around 14, 42, 57 in 7,600 ticks, each time on its way back (F-25c4v). Second seed, 3 deaths, two with a chestplate on.
+  - Echo, at 12 of its 18 iron in a pocket it had dug beside an underground lake at Y=40, waded into the lake and swam straight back out 107 times in twelve minutes (F-25c4w). It had dug out the floor of its own staircase's lowest step, and its watchdog's moves elsewhere all ended at once.
+  - Of 52 deaths in the live runs since `fb02bc3`, 44 came with no armour on (F-25c4x).
+  - No reconciliation stop on either seed. No fall was broken with water; F-25c4t's climb out of water was not needed. 40 fights recorded, none fought mostly with an empty hand (F-25c4r). On the second seed each player made its shield from its first iron, then the iron pickaxe, both buckets and the chestplate together from the rest, and no iron pickaxe was made again (F-25c4q).
+  - Of the 95 walks elsewhere the watchdog started in the run on `03faab9` and this pair, 2 were completed: each is judged on the next planning pass, before it has gone a block, and the moves went on by digging.
+- F-25c4v (dead again before it had its things back, those drops left too), on top of `458d192`:
+  - its fixture fails on the old campaign: "Went back for its things again: Wood: pick up what was dropped at death - Recover dropped items near …", 3 of 3;
+  - found making it: a player that has just come back is spared other harm for three seconds, so the second death is a kill that is not spared;
+  - after, three runs alone: 3 of 3.
+- F-25c4w (water level with its floor not jumped into), on top of `458d192`:
+  - its fixture fails on the old campaign: "Jumped into the pool: … Iron: no way on from here - Jump down from the ledge", 3 of 3. Staged first with a wider shore and no table, the player paced to its walls for logs and never reached the jump, on the old code too;
+  - after, three runs alone: 3 of 3.
+- F-25c4x (the chestplate from the first eight iron), on top of `458d192`:
+  - its planner case fails on the old planner: the 18 iron mined, then the pickaxe and both buckets, no chestplate before them;
+  - found making it: smelted in two lots, the iron wants a plank more than the trip's packed wood held, and the trip-wood case hunted coal. The chestplate's own smelt now counts in the packed fuel;
+  - `PortalRunPlannerTest`: 39 of 39; `build` successful, with `:companion-core:test` 618 of 618.
+- F-25c4y (a frame being cast not given up for a cell out of reach from the lava), on top of `458d192`:
+  - its fixture, the whole-frame cast under a roof at the frame's top row, fails on the old campaign: no portal lit, the frame given up after seven and another begun beside it, 3 of 3;
+  - under a roof two blocks thick, the new code kept one frame and cast eight, and could not cast the top row: the water over it is out of reach. The roof was made one block thick;
+  - after, three runs alone: 3 of 3; the other cast fixtures (the whole frame, one block, the refused pour, beside leaves, and F-25c4n's night lava) alone: 5 of 5.
+- The full native suite on this code, before F-25c4y: 416 of 418 in 44 minutes. The two failures were the cattle: the ranch's pen ("Two wheat fed: 8 left") and the pasture's doorway pair, both known.
+- Evidence: [F-25c4v](evidence/F-25c4v.md), [F-25c4w](evidence/F-25c4w.md), [F-25c4x](evidence/F-25c4x.md), [F-25c4y](evidence/F-25c4y.md); F-25c4q and F-25c4r complete on this pair.
+
+## The live run on 03faab9, and three fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `03faab9` (F-25c4o to r): seed 8675309, the starters on the Nether goal, 240,000 ticks, strategist off, nothing else on the cores. The second seed was not run: what the first showed was fixed first.
+  - No portal lit. Furthest: Echo, digging down for the cast's lava, until a skeleton shot it at Y=-14.
+  - Ten deaths, eight of them Sol's: to a creeper, suffocation in a wall, two spiders, two skeletons, drowning as it fled a drowned, and a zombie villager. Echo's to a skeleton, Kindred's by drowning.
+  - Kindred spent 46 minutes, from 16:33 until it drowned at 17:20, in a flooded pit it had let the water into, its climb out cut short some 250 times a minute (F-25c4t). The run took 56 minutes against the long run's 33 on `a286cc8`.
+  - Sol was out of the world from 16:57:32 to the end: a seal of dirt was recorded as an outcome that could not be verified (F-25c4u).
+  - Sol's three walks back to its drops, after deaths at Y=36 to 39, each stopped eight to fifteen blocks short of the one drop it went for, and the rest were given up (F-25c4s).
+  - No fall was broken with water, and no fight ended in a reconciliation stop. Two of 21 recorded fights were fought mostly with an empty hand.
+- F-25c4s (a drop a walk back ended short of passed over), on top of `03faab9`: its fixture fails on the old campaign ("Its pickaxe picked up: Wood: waiting for a feasible step"); after, three runs alone: 3 of 3.
+- F-25c4t (out of a flooded pit by a step dug out of its side), on top of `03faab9`:
+  - its fixture fails on the old code: the player drowned in the pit;
+  - three things were missing, each found making the fixture: the climb out as the swim's own step, the way over to the pit's side across water, and the climb from the water's top cell (with it bobbing, two of three runs, then one of three, climbed out);
+  - after, ten runs alone: 10 of 10.
+- F-25c4u (a placement whose support is gone refused), on top of `03faab9`:
+  - its fixture fails on the old code with the live run's record: "Native placement effect cannot be verified; reconcile", the player blocked;
+  - after, three runs alone: 3 of 3;
+  - a pickup while a placement waits its turn was tried first and does not stop the player: the placement is refused before it acts.
+- The full native suite on this code (F-25c4o to u): 414 of 416 in 44 minutes. The two failures:
+  - the pasture's cattle, known (loose-ends page);
+  - `goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe`, which never saw its iron ore from the start ("Explore the cave toward iron"). Alone after, 10 of 10: the course runs into the next plot, as its own doc says.
+  - F-25c4u's check on the block clicked against was narrowed after the suite to a replaceable block with nothing to collide with, so that layered snow still takes a block. Its fixture alone on the narrowed check: 3 of 3.
+- Evidence: [F-25c4s](evidence/F-25c4s.md), [F-25c4t](evidence/F-25c4t.md), [F-25c4u](evidence/F-25c4u.md).
+
+## The long run on a286cc8, and four fixes from it — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- Live, on `a286cc8` (F-25c4j to n): seed 8675309, the starters on the Nether goal, 240,000 ticks, strategist off, nothing else on the cores.
+  - No portal lit. Furthest: Echo, on "Cast the portal frame from lava and water", digging down toward lava it had not found.
+  - Four deaths, none gone back for to any end:
+    - Sol, to a spider at night, at Y=37;
+    - Echo, a fall at night to Y=-18, the water it carried to break it never poured (F-25c4p);
+    - Kindred, to a zombie by day, fought with an empty hand (F-25c4r), and to a skeleton at night, both at Y=36 to 37.
+    - Echo's and Kindred's walks back were refused ("Route … is blocked"), the deaths being deep below spawn.
+  - Sol was out of the world for the run's last seventeen minutes:
+    - it had no sword and no way back from a zombie, so it fought it with its stone pickaxe;
+    - the pickaxe broke on the blow that killed the zombie;
+    - the fight's record took the broken pickaxe for an outcome to reconcile ("Native action outcome requires reconciliation"), and the body was taken out. F-25c4o.
+  - Sol's stall line twice (F-25c4m): at Y=47 its tunnel past liquid toward iron had no step left (candidates=0), and the walk elsewhere was refused. It ended forty seconds later in a fight, where it died. No skill was dropped before it ran.
+  - Iron mined, of each player's time: Kindred 62%, Sol 51%, Echo 36%; iron pickaxes made: 4, 1 and 3. Kindred never left the iron, and never made a bucket (F-25c4q).
+  - Echo waited for daylight below ground at night 34 times for its water (F-25c4k), 17% of its time.
+- F-25c4o (a tool worn out in a fight), on top of `a286cc8`:
+  - its fixture fails on `a286cc8`'s fight code: "Native action outcome requires reconciliation", the body taken out;
+  - after, three runs alone: 3 of 3;
+  - `NativePortalCampaignGameTests`, `NativeCombatGameTests` and `NativeEndGameTests` alone on the same code: 77 of 77;
+  - `build`: successful, with `:companion-core:test` 616 of 616 (the adapter has no unit tests of its own).
+- F-25c4p (a fall broken with water before the goal's own fight), on top of `7a510b2`:
+  - found in the same run: Echo, one iron short of its flint and steel and digging down for the cast's lava, jumped twenty-four blocks to break the fall with water. Its goal's fights with a zombie and a creeper outranked the water, each cut short for the fall and chosen again, and the fall killed it;
+  - its fixture fails on `7a510b2`: "Unhurt by a twenty-two block fall: 1.0";
+  - after, three runs alone: 3 of 3, each landing at 20 of 20;
+  - `NativeFallGameTests`, `NativePortalCampaignGameTests`, `NativeCompoundGameTests`, `NativeFollowUpGameTests` and `NativeTeamPortalGameTests` alone on the same code: 79 of 79.
+- F-25c4q (the iron pickaxe made with the rest of the iron on the cast route), on top of `011a579`:
+  - found in the same run: Kindred made four iron pickaxes and never a bucket. Each wore out before the rest of the route's iron was found, and the next three iron went to another;
+  - its planner case fails on the old planner, the same loop: "CRAFT iron_pickaxe, MINE_IRON ×3, SMELT, AWAIT_SMELT, COLLECT_SMELTED, CRAFT iron_pickaxe, …", never a bucket;
+  - `:companion-core:test`: 617 of 617;
+  - `NativePortalCampaignGameTests` and `NativeTeamPortalGameTests` alone: 64 of 64. Two of them, staged with three raw iron, relied on the pickaxe first to smelt them at once; staged as before, both fail on the new planner ("It placed its own furnace"), and they now have both buckets and a chestplate made.
+- F-25c4r (with no sword or axe, a fight strikes with the pickaxe), on top of `011a579`:
+  - found in the same run: Kindred fought a zombie with an empty hand, an iron pickaxe in its hotbar. Nine critical punches did not kill it, and the zombie killed Kindred;
+  - its fixture fails on the old fight code: "Struck with its iron pickaxe, not the empty hand: minecraft:air";
+  - after, three runs alone: 3 of 3;
+  - the fixture classes with fights alone on this code (with F-25c4q): 89 of 89.
+- Evidence: [F-25c4m](evidence/F-25c4m.md), [F-25c4o](evidence/F-25c4o.md), [F-25c4p](evidence/F-25c4p.md), [F-25c4q](evidence/F-25c4q.md), [F-25c4r](evidence/F-25c4r.md).
+
+## What the live runs on 10a60d5 found, met — 30 October 2026 (`claude/loose-ends-1029`)
+
+Five slices of F-25c4: four from the live runs on `10a60d5`, in `ace1d80` on top of `100bf95`, and one from the runs on `ace1d80`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run.
+
+- `:companion-core:test`: 616 of 616. `PortalRunPlannerTest`: 37 of 37; the new case fails on the old planner ("the flint and steel's iron only ==> expected: <1> but was: <4>").
+- The three new fixtures, three runs each alone: 9 of 9. On the old campaign and planner, one run each, all three fail, each for what it is about:
+  - the far lava: "Explore the cave toward lava", no bucket filled;
+  - the night's water: "It stayed below, the water left for the morning";
+  - the drops: no recovery, "waiting for a feasible step".
+- Found making the fixtures:
+  - The test's ground lies at Y=-60 among caves. Two dozen hostile mobs stood within twelve blocks of the drops behind the rock, so a mob counts only if it can see a drop.
+  - A first knowledge sweep starts from nothing known, so a sighting staged before it is wiped.
+  - A player that has just joined takes no damage for a moment. The fixture's kill is retried on its own, not with the zombie's spawn, which had put 58 zombies by the drops.
+- The full native suite, nothing else on the cores: 404 of 409 in 51 minutes. `NativePortalCampaignGameTests` 61 of 61, the three new fixtures among them. The five failures, none in what these slices change (the cast's lava, the night's water, drops after a mob kill, the planner's iron pickaxe; the new lines change nothing in play):
+  - the pasture's cattle (loose-ends page);
+  - the keep's roof stairs (#82), which had passed in the two suites before on this branch;
+  - the ranch's pen ("Two wheat fed: 8 left"): 2 of 3 alone after;
+  - the librarian off the line, known;
+  - the second-night fixture: "Its body", out of time. Its sleep passes the night only when every player in the world sleeps, and the players of four fixtures that failed before it were still about.
+- The pasture's cattle, with the line-up wait begun afresh each time it backs out for a cow, and a pair abreast waited for one behind the other (`Ranch`; two `RanchTest` cases that fail before and pass after): 8 of 10 alone. Neither failure was the pair abreast. One cow stood outside and never came through, the player going out and back for it, as before; once the doorway's blocks were not put back. Not committed; open.
+- Live, on `ace1d80` (F-25c4j to m), seeds 8675309 and 20261030, the starters on the Nether goal, 144,000 ticks each, strategist off, nothing else on the cores:
+
+  | | 8675309, `10a60d5` | 8675309, `ace1d80` | 20261030, `10a60d5` | 20261030, `ace1d80` |
+  | --- | --- | --- | --- | --- |
+  | Deaths | 4 | 2 | 2 | 1 |
+  | A player standing still with its goal running | Kindred, 7 minutes | none | none | none |
+  | Switches between the climb for water and the night's dig-in, the most of any player | 147 (Kindred; Sol 107) | 4 | 1 | 1 |
+  | Mob kills gone back for | 0 of 4 | 1 of 2 | 0 of 1 (and a slime's, which does not count as a mob) | 1 of 1 |
+  | Iron mined, the most of any player | 40% | 55% | 49% | 35% |
+  | Lava for the cast | none | Echo's bucket filled at Y=-55 | none | none (Kindred 55% of its time at Y=-55) |
+  | Furthest | casting the frame | clearing the frame's site, lava in hand | casting the frame | casting the frame |
+
+  - No portal lit. On the first seed the run ended as Echo cleared its frame's site at Y=-55 with its lava.
+  - F-25c4k and l met their in-play rows: complete. F-25c4j's far lava was not met, as no player knew of lava beyond one walk. F-25c4m's stall did not recur.
+  - Neither kit gone back for came back: one walk back was blocked, and one gave way to the night's dig-in at dusk.
+  - What took the time now: waiting out a night with both buckets empty (Sol, 17%), which F-25c4n takes up; and lava looked for at Y=-55, where a tunnel finds it only by breaking into a cave over a lava lake.
+- F-25c4n (the cast's lava at night), on top of `ace1d80`:
+  - its fixture fails on `ace1d80`'s campaign: "Fill a bucket with water - Wait for daylight", no lava fetched;
+  - after, three runs alone: 3 of 3;
+  - the F-25c4j, k and l fixtures alone on the same code: 3 of 3.
+- Evidence: [F-25c4j](evidence/F-25c4j.md), [F-25c4k](evidence/F-25c4k.md), [F-25c4l](evidence/F-25c4l.md), [F-25c4m](evidence/F-25c4m.md), [F-25c4n](evidence/F-25c4n.md).
+
+## The portal run in play, and the trip's wood — 30 October 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed), each fixture in a batch of its own, and restore them after each run. Nothing else ran on the cores during the live runs.
+
+- Live, on `fb02bc3` (F-25c4a to h), against B7's runs with the strategist off on `4d0884a`. Seeds 8675309 and 20261030, the starters on the Nether goal, 144,000 ticks each, every death logged with what it happened in. Echo again found no room at spawn on the second seed.
+
+  | | 8675309, B7 | 8675309, now | 20261030, B7 | 20261030, now |
+  | --- | --- | --- | --- | --- |
+  | Deaths | 9 | 8 | 2 | 0 |
+  | Furthest | iron | casting the frame (Echo) | obsidian | casting the frame (Kindred) |
+  | Deaths taking cover with a mob on foot in reach | 5 | 0 | 0 | 0 |
+  | Climbing out for food, Kindred | 18% | 0% | 0% | 0% |
+  | Coal hunts, Kindred and Echo | 15% and 0% | 18% and 18% | 0% | 0% |
+  | Tables put down, per player | 60, 55, 23 | 31, 11, 26 | 12, 137 | 9, 8 |
+
+  - No portal lit in either.
+  - F-25c4b, c, e, g and h met their in-play criteria: no death taking cover with a mob on foot in reach; the route's iron mined through the night; meat cooked; no suffocation; the table no longer put down and picked up in a loop (at most five times in a minute, where B7's loop did 26).
+  - F-25c4d was not met: the fuel was packed once.
+  - Three of the five players were stranded below with no pickaxe and no sticks: Sol on the first seed, Kindred and Sol on the second. They spent 35 to 43% of their time gathering logs for sticks and 24 to 29% waiting for daylight to go up for them. That is F-25c4i.
+  - Falls into caves while gathering stone (Echo, here and in B7) were tried in a scratch fixture: a stone floor three thick over a cavern twelve deep, the goal needing cobblestone. It never fell through in three runs, so the fall is not reproduced.
+- F-25c4i (the trip's wood):
+  - `PortalRunPlannerTest`: 36 of 36. The new case fails with the packing switched off, and with the spare pickaxe's guard switched off.
+  - `:companion-core:test`: 615 of 615.
+  - The new fixture on the code before: fails, 3 planks' worth at its first stone.
+  - After, three runs alone, before `underTrunk`: 1 of 3 (19 and 11). With it: 3 of 3.
+  - The full native suite, nothing else on the cores: 401 of 406 in 45 minutes. `NativePortalCampaignGameTests` 57 of 58, the new fixture among those passing; `NativeCraftGameTests` 13 of 13; `NativeSmeltGameTests` 5 of 5; the cattle and the hungry fixture passed. Its five failures, each alone after:
+    - the two seed-build cabins: 3 of 3 each. In the suite, each cabin stopped after eight failed steps, the last a scaffold block whose route was blocked;
+    - the pit climb: 3 of 3. It is open, and its fix is on `modest-faraday`;
+    - the strolling librarian: 6 of 7;
+    - the librarian off the line: 1 of 3, and 1 of 3 on the code before as well ("Bringing the librarian home", out of time). Open.
+  - Evidence: [F-25c4i](evidence/F-25c4i.md); the in-play rows: [F-25c4b](evidence/F-25c4b.md) to [F-25c4h](evidence/F-25c4h.md).
+- Live, on `10a60d5` (F-25c4i), the same two seeds and settings, nothing else on the cores:
+
+  | | 8675309, `fb02bc3` | 8675309, `10a60d5` | 20261030, `fb02bc3` | 20261030, `10a60d5` |
+  | --- | --- | --- | --- | --- |
+  | Deaths | 8 | 4 | 0 | 2 |
+  | Gathering logs for sticks, the worst player | 35% | 0% | 43% | 0% |
+  | Waiting for daylight, the worst player | 24% | 5% | 29% | 7% |
+  | Coal hunts, the worst player | 18% | 0% | 0% | 11% |
+  | Furthest | casting the frame | casting the frame | casting the frame | casting the frame |
+
+  - Every player packed the trip's wood; none was stranded with no pickaxe. Iron loads burnt coal and planks, never sticks.
+  - No portal lit. What took the time now:
+    - Kindred's furnace output on the first seed, at Y=9: a "Take smelted iron" was asked for and never carried out, with no action and no log line until the watchdog moved it on, and then asked for again; seven times, 28% of its time. Not yet explained;
+    - lava for the cast looked for down to Y=−55 on the second seed (25% of Kindred's time);
+    - climbs for water (up to 18%), at night undone by the night's dig-in;
+    - the one late coal hunt (11%), for iron wanted after the trip's, at Y=−55.
+  - F-25c4d, f and i met their in-play rows: all of F-25c4a to i are complete.
+- The pasture's cattle (loose-ends page), with each cow's position, path and goals logged every second, five runs alone: 4 of 5. In the failure the pair stood side by side in the doorway's mouth, one block wide, each overhanging the wall beside it, for thousands of ticks. A doorway two wide, eight runs: 6 of 8. The pair came in together and jammed the same way at the pen's gate, one wide (the other failure: no calf). The doorway was put back; still open.
+
+## The earned portal run, cleaned — 30 October 2026 (`claude/loose-ends-1029`)
+
+Eight slices of F-25c4 from what B7's second pairs showed (loose-ends page, item 7), on top of `2ddefc4`. Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints to a scratch class (not committed) that calls only the fixtures named, and restore them after each run. Nothing else ran on the cores.
+
+- `./gradlew build`: 792 JUnit results, none failed, six skipped (the opt-in live model tests).
+- `:companion-testkit:run` and `:companion-testkit:runPersonalityDemo`: both pass.
+- `:companion-core:test`: 614 of 614.
+  - New `PortalRunPlannerTest` cases: wood packed to smelt with, and planks made from logs before a coal-less smelt; the route's iron as the night's work below; raw meat cooked and waited for.
+  - The iron stage's shared setup, and three cases that pack a spare pickaxe, a table's wood or a shield's, now carry coal for their iron, so fuel stays out of what they test.
+  - The fuel case fails with the packing switched off ("Mine iron ore (0/15)" where logs for fuel are wanted), and with the planks rule switched off (the logs smelted with whole).
+- The new fixtures on the code before their fixes (main sources set aside, fixtures kept), one run alone with the fixtures beside them: 5 of 10.
+  - Failed:
+    - the night's mining: "Mined the iron in the night";
+    - the zombie in reach: "No cover taken while the zombie was in reach";
+    - planks, not sticks: "No stick went in as fuel";
+    - cooking: "cooked 0, raw 6";
+    - the gravel overhead: it suffocated after "Climbed a step".
+  - Passed: the four beside them (finishing a wounded zombie, breaking off a fight, cover from a skeleton it cannot reach, the cold furnace), and the lava-pool cast as it was staged then.
+  - Restaged by the pool's west end, the cast fixture in a run of its own on the code before: fails, "0 portal blocks, 0 obsidian".
+- After the fixes, the same scratch class alone three times: 10 of 10 in each.
+  - A first version of F-25c4e also counted the iron's smelt, and failed planks and cooking in each of three runs: a counted load took a piece of fuel per item, so three iron burnt three planks and left no coal to cook with. It is fixed in `NativePlayerBody.planSmelt` (a counted load gets the fuel those items burn), and the iron's smelt is uncounted again.
+- The full native suite on this code, nothing else on the cores: 402 of 405 in 41 minutes.
+  - `NativePortalCampaignGameTests` 57 of 57; `NativeCraftGameTests` 13 of 13; `NativeSmeltGameTests` 5 of 5; `NativeNetheriteGameTests` 1 of 1.
+  - The closing run's four failures on `fbdb8ed` all pass: the lava-pool cast (F-25c4a), the keep's roof stairs, the pit climb and F-25c9a's second night.
+  - Its three failures are in classes this work does not change, and each failed before it. Each alone three times on this code:
+    - the axe on a raised shield: 3 of 3. It also failed once in an earlier suite on older code (`ab-1`);
+    - the hungry life-first fixture: 3 of 3. In the suite its ridge slab was out of reach ("No way to reach minecraft:oak_slab"), the cabin stopped after eight failed steps, and the fixture ended with five roof stairs unplaced: the #82 family, open, as in F-25c9b's third run;
+    - the pasture's cattle: 2 of 3. The failure reproduced alone for the first time: the player went "To the gate", "Back out through the doorway for the cow" and "Through the doorway, the cow behind" in a loop, about every second, until the fixture ran out. The cause is in the ranch's leading, not in this work; it stays open (loose-ends page).
+- Evidence: [F-25c4a](evidence/F-25c4a.md), [F-25c4b](evidence/F-25c4b.md), [F-25c4c](evidence/F-25c4c.md), [F-25c4d](evidence/F-25c4d.md), [F-25c4e](evidence/F-25c4e.md), [F-25c4f](evidence/F-25c4f.md), [F-25c4g](evidence/F-25c4g.md), [F-25c4h](evidence/F-25c4h.md). F-25c4a is complete; the rest wait for their in-play row from the next live runs.
+
+## Loose ends — 29 October 2026 (`claude/loose-ends-1029`)
+
+On `claude/player-voice-e20` with `claude/blissful-fermi-y4tt90`'s handoff merged in (`ebe16aa`). Linux x64 cloud container (4 cores), OpenJDK 21. Focused runs narrow the gametest entrypoints and restore them after each run.
+
+- F-18a (talking to your own player in private), `249f476`. Two new `NativeVoiceGameTests` fixtures:
+  - on the code before the change: "Its controller is answered in private: []";
+  - the remark fixture with the `canTalk` change alone: "A remark to its controller: []";
+  - after the change, with the voice, ask, social, gaze and mannerism classes: 29 of 29 in each of three runs.
+  - Evidence: [F-18a](evidence/F-18a.md).
+- E-20c (a replaced speaker answered), `6ea5681`. The coalescing fixture with its new check:
+  - on the code before: fails, the bystander heard nothing;
+  - after, with the voice, ask and social classes: 21 of 21 in each of three runs.
+  - Evidence: [E-20c](evidence/E-20c.md).
+- E-10d (starters' personalities), `21a8a3d`. `SocialProfileTest` 1 of 1. The new `NativePlayerRuntimeGameTests` fixture:
+  - on the code before: fails, Sol at every trait 50;
+  - after, with the rest of its class and `NativeSkinGameTests`: 5 of 5 in each of three runs.
+  - Evidence: [E-10d](evidence/E-10d.md).
+- Fixtures off the deprecated mock player, and `NativePlayerBody`'s unchecked cast removed, `a841f6b`: no deprecation or unchecked warnings with `-Xlint:unchecked`. `NativeCraftGameTests`, `CompanionGameTests`, `NativeCombatGameTests`, `NativeGazeGameTests`, `NativeVoiceGameTests` and `NativeAskGameTests` together: 45 of 45 in each of three runs.
+- E-08d (a log built into something is never a tree), `2b1f325`. The new `NativeBuildNeedsGameTests` fixture (a hut standing nearer than the trees):
+  - on the code before: fails, all 12 of the standing hut's logs cut and none of the trees';
+  - after, with the rest of its class: 2 of 2 in each of three runs.
+  - Evidence: [E-08d](evidence/E-08d.md).
+- F-25c9a (at night a bed of its own is its way home), `bc1690a`. The new `NativeLifeFirstGameTests` fixture (its first night falling as its cabin goes up):
+  - on the code before: fails, "Its body"; a diagnostic copy, not committed, failed the same way 3 of 3 and logged why;
+  - after, the class alone ten times on both fixes: the night fixture 10 of 10, the new one 10 of 10, the hungry fixture 9 of 10 (its one failure is E-08e's cause).
+  - Evidence: [F-25c9a](evidence/F-25c9a.md).
+- Closing validation on `fbdb8ed`, nothing else running:
+  - `./gradlew build`: 789 JUnit results, none failed, six skipped (the opt-in live model tests).
+  - `:companion-testkit:run` and `:companion-testkit:runPersonalityDemo`: both pass.
+  - Full native suite: 396 of 400 in 58 minutes. Compared with the open list (CI run 223's six and E21's five):
+    - still failing, all open before this session: the lava-pool portal cast; the keep's roof stairs (#82, 8 stairs short); the pit climb (its fix is on `modest-faraday`, 292852f);
+    - now passing: the night-and-bed fixture, the build that fetches its shortfall, the furnished cabin, the off-line librarian, the pasture's cattle, the portal restart;
+    - new, and this session's: F-25c9a's second-night fixture, "Its body". It slept in its own bed both nights, but in the suite the second night was not skipped: vanilla skips a night only when every player sleeps, and two other fixtures' players were up (Founder, whose fixture had failed fifty minutes before, and Pitfallen). The fixture ran out before morning. Fixed after the suite by giving both night fixtures time for a whole night (tickLimit 42,000); with `NativePortalCampaignGameTests` beside them, 56 of 56, though the nights there were skipped, so the busy night itself was not reproduced.
+  - The keep and E-08e: the keep alone twice on the current planner, 2 of 2; twice with the planner before E-08e, 0 of 2 (34 roof stairs short each). A small sample, but it does not suggest E-08e caused the suite's keep failure.
+- Per-death logging, for B7's next pairs: each death's log line now says what it happened in. For example, from `NativeDeathConservationGameTests` in those three runs: `Ashes died at …: Ashes was killed (tick 15928, day, under the sky, hunger 20, armour 0, holding diamond_pickaxe, a shield; doing "nothing"; no goal)`. With a goal it adds the goal's stage and the strategist's stance, focus and habits in force.
+- B9, a queued follow-up crafted from the follow-up: `NativeFollowUpGameTests` with a new control, nothing queued, alongside the queued-shield fixture; with the life-first and death-conservation classes, three runs alone (g2after1 to g2after3): queued, a shield made from its iron and planks, 3 of 3; not queued, no shield and its iron kept, 3 of 3.
+- F-25c9b (food from its own storage), `5ebb9f7`. The new fixture: on the code before, five cows killed and no bread taken; after, 3 of 3, no cow killed and four loaves taken. The original hungry fixture in the same runs: 2 of 3. In the third, its cabin's ridge slab was out of reach, and the walk round to the ground beside it went to one spot 984 times with the player not moving, until the fixture's end. The walk round is the #82 family. It came up in 5 of the 13 runs before E-08e and always moved on. Why it never moved on here is not established, nor whether E-08e has a part. Evidence: [F-25c9b](evidence/F-25c9b.md).
+- B7, one paired live run (strategist off, then on) on `f7f206a`: seed 8675309, the three starters on the Nether goal, 144,000 ticks, fixture runs on the same cores. Off: 2 deaths, three iron pickaxes. On: 10 deaths (8 Echo's), two iron pickaxes; 54 replies, 381,612 tokens in (327,805 from the cache), 8,634 out. No portal lit in either; one pair shows nothing either way (loose-ends page, items 7 and 9).
+- B7, two paired live runs on `4d0884a`, nothing else on the cores: seeds 8675309 and 20261030 (Echo found no room at spawn on the second, in both runs), the starters on the Nether goal, 144,000 ticks each, every death logged with what it happened in. Deaths off/on: 9/5 and 2/1. The most iron toward the need, 14 of 15 in all four. No portal lit; the furthest, the second seed's off run, at obsidian. Strategist: 52 replies, 366,807 tokens in (315,435 cached), 8,365 out; and 25 replies, 172,919 in (148,440 cached), 3,523 out. No log has the key (loose-ends page, item 7).
+- CI (`.github/workflows/build.yml`) on `main`, run 223 on `91f408a`: build and testkit pass; the native suite 373 of 379 in 41 minutes (six open failures, listed on the loose-ends page). From `fa0466b` a newer push cancels the run it supersedes.
+
+## Asks in chat (E-20b) — 29 October 2026 (`claude/player-voice-e20`)
+
+On E-20a. Code `64f4ac1`. Linux x64 cloud container (4 cores), OpenJDK 21.
+
+- `./gradlew build` on `64f4ac1`: 787 JUnit results, none failed, six skipped (the opt-in live model tests). It ran alongside the full suite below.
+  - New: three `StrategistLineTest` cases (9 in all), one `ConversationAudienceTest` case (6), one `ConversationPromptTest` case (6), one `OpenAiCompatibleStrategistTest` case (15).
+- `NativeAskGameTests` (6), entrypoints narrowed and restored after each run.
+  - The fixtures: COME, WAIT and TOSS from the owner; STOP during a gather; a bystander's ask refused; a refused toss answered in the command's words.
+  - `ask1` on the code before the settling wait: 5 of 6. WAIT was refused because the last activity was still settling; fixed.
+  - Then `ask2`, `ask3` and `ask4` on `64f4ac1`'s code: 6 of 6 each, the last two with `NativeVoiceGameTests`, 7 of 7 each.
+- Negative control: the ask check in `Line.checked` removed. The bystander fixture fails: the model's words, then the command's own "Native player unavailable or administrative access denied.", and nothing done (the command's authority still holds). The other five pass.
+- The full native suite on `64f4ac1`: 393 of 393.
+- Opt-in live run (`ClaudeStrategistLiveTest.aRealAskFromTheOwnerToComeIsCome`): 1 of 1.
+  - "come over here please" came back "Sure thing, Steve, I'm on my way over." with COME (1,403 in / 50 out, 4.4 s).
+  - "nice weather today" came back with no ask (1,404 in, 1,134 cached / 56 out, 1.2 s).
+- Evidence: [E-20b](evidence/E-20b.md).
+
+## The player's voice (E-20a) — 29 October 2026 (`claude/player-voice-e20`)
+
+On `main` at `91f408a` with `claude/blissful-fermi-y4tt90` merged in (`385a6c2`). Code `3d7c7f4`; `ee93a17` then shortened the reply's `reason` field. Linux x64 cloud container (4 cores), OpenJDK 21.
+
+- `./gradlew build`: 780 JUnit results, none failed, five skipped (the opt-in live model tests).
+  - New: `ConversationAudienceTest` (5), `ConversationPromptTest` (5), `StrategistLineTest` (6).
+  - Four new cases in `OpenAiCompatibleStrategistTest` (14 in all).
+- `NativeVoiceGameTests`, its entrypoints narrowed and restored after each run: all seven fixtures in each of three runs.
+  - The fixtures: the owner on a gather; a bystander in private and in public; an opponent's coordinates refused; a failure; coalescing; a stopped player; the voice off.
+  - Two of those runs also held `SocialGameTests`, `NativeGazeGameTests` and `MannerismGameTests`: 21 of 21 each.
+  - Earlier runs, while the fixtures were being written, failed on three things, each fixed in the fixture:
+    - a native player's own record is its identity, so the lane admits its controller only with public chat on;
+    - its ambient greeting was heard among the replies;
+    - the test server runs up to ten times real time while the lane keeps real time (gaps now waited out by parking).
+- Negative control: the tier check removed (every listener a controller). The bystander and opponent fixtures fail on the position in their prompts; the other five pass.
+- The full native suite on `3d7c7f4`: 385 of 387, every voice fixture passing.
+  - Failed: `NativeLifeFirstGameTests.atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning` ("Its body") and `NativePortalCampaignGameTests.goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe` (still in the pit at the end). Neither was on the open list.
+  - Their two classes alone, twice on each build: on the base `385a6c2` 54 of 54, then 53 of 54 (the bed fixture again, "Its body"); on `3d7c7f4` 54 of 54 twice.
+  - So both are intermittent, outside the voice lane, and the bed fixture's failure predates it. Open.
+- Opt-in live runs with a key from the environment, three of three (`ClaudeStrategistLiveTest.aRealReplyToWhatAreYouDoingNamesTheLogsItIsChopping`):
+  - Each reply named the logs it was chopping, its goal and its three logs cut, and gave no place to a listener who may not know it.
+  - 1,058 to 1,059 input tokens (833 from the cache once) and 63 to 101 output, in 3.6 to 6.8 s.
+- Evidence: [E-20a](evidence/E-20a.md).
+
 ## Support reconstruction — 24 October 2026
 
 On base `fa8c3ac` (`claude/modest-faraday-r3spro`), reconstructed the lost support-batch scope on `codex/rebuild-support-integration`. The only production changes fix ModelGateway cleanup after caller cancellation and overflow-safe token accounting. Both dedicated regression tests fail on the unchanged base gateway and pass after the fixes.
@@ -518,6 +1416,15 @@ Linux x64 cloud container, OpenJDK 21, pinned Minecraft 1.21.1 / Fabric Loader 0
 - A pre-existing livelock was found and fixed: the tactical layer proposed an urgent strike whenever a hostile was observed, even out of reach. Dispatch rejected it and it won again every tick, starving all other work. It is now proposed only when the strike can land.
 - Development live runs (not a release gate): a dedicated server on seed 8675309 with `/tick sprint`. One AI player from an empty inventory earned wood, stone and iron tools, smelted iron in its own furnace, a bucket, three diamonds and a diamond pickaxe. It respawned after deaths and recovered its drops. Later runs added a worn iron chestplate, digging in at night, recorded fights won against cave mobs, and dropping surplus stone. A lit portal has not yet been reached live: deaths to cave mobs, creepers and lava still cost each run its tools. Since run 23: fight chases check their footing, creepers are fought hit and run or outrun, and the night shelter is sealed. See F-25c4 for the open steps.
 - JAR SHA-256 at commit `34b4c83`: `6f3c2679a6cfedb5138ec9e332056e9d0beebb2bc546255b970c9e77b05a2fa5` (`kindred-mc-0.1.0-SNAPSHOT.jar`). Build, 336 JUnit and 188/188 GameTests were rerun on that commit.
+
+## Vesp renamed Echo (E-10c) — 28 October 2026 (`claude/blissful-fermi-y4tt90`)
+
+On `main` at `91f408a` with the change. Linux x64 cloud container (4 cores), OpenJDK 21.0.12.
+- `./gradlew build`: 759 JUnit results, none failed, four skipped (the opt-in live model tests). This includes the new `CanonicalRosterTest` and the updated roster-skin and weapon tests.
+- `NativePlayerRuntimeGameTests`, its gametest entrypoints narrowed for the runs (not committed): 3 of 3 runs, all three fixtures each time, including the new `starterEchoReconnectsAPlayerSavedAsVespInsteadOfMakingASecond`.
+- The same fixture with the former-name match switched off fails as expected ("Echo's control-deck slot selects the saved Vesp").
+- The full native suite was not rerun.
+- Evidence: [E-10c](evidence/E-10c.md).
 
 ## Accounting periods, activity hours and death conservation — 28 October 2026 (`claude/blissful-fermi-y4tt90`)
 

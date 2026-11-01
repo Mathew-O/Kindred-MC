@@ -6,10 +6,15 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * One fight's record (E-41a): tick by tick, what the player observed, what it chose and what was confirmed to happen, so
- * that each decision can be read back afterwards from what the player had to go on (the owner's design, ARCH-06). The
- * player's own state is as it was; others are as the player could know them, their health a belief. Events are only
- * what the game confirmed (a hit seen to land, a hit taken), never what was merely attempted.
+ * In plain terms: a play-by-play record of one fight: what the player saw, what it chose to do and what
+ * really happened, tick by tick, so its choices can be checked afterwards against what it knew at the time. A
+ * long fight keeps only its most recent stretch.
+ *
+ * Technical: One fight's record (E-41a): tick by tick, what the player observed, what it chose and what was
+ * confirmed to happen, so that each decision can be read back afterwards from what the player had to go on
+ * (the owner's design, ARCH-06). The player's own state is as it was; others are as the player could know
+ * them, their health a belief. Events are only what the game confirmed (a hit seen to land, a hit taken),
+ * never what was merely attempted.
  * <p>
  * Bounded: at most {@link #MAX_FRAMES} frames, the oldest dropped first and counted, and at most {@link #MAX_EVENTS}
  * events a frame. It is written out as JSON lines (a header, then a frame a line) by the adapter, off the server thread.
@@ -38,12 +43,14 @@ public final class EncounterRecorder {
     private int dropped;
     private String outcome = "";
 
+    /** A new, empty record of one player's fight, starting at a given moment. */
     public EncounterRecorder(String encounterId, String playerId, long startTick) {
         this.encounterId = encounterId;
         this.playerId = playerId;
         this.startTick = startTick;
     }
 
+    /** Adds one tick to the record, dropping the oldest once it is full. */
     public void record(Frame frame) {
         if (frames.size() == MAX_FRAMES) {
             frames.removeFirst();
@@ -71,6 +78,7 @@ public final class EncounterRecorder {
         return lines;
     }
 
+    /** One tick written out as a line of text. */
     static String json(Frame frame) {
         var out = new StringBuilder(256);
         Self self = frame.self();
@@ -100,6 +108,7 @@ public final class EncounterRecorder {
         return String.format(Locale.ROOT, "%.3f", value);
     }
 
+    /** Text written safely inside quotes for the record. */
     static String quote(String text) {
         if (text == null) return "null";
         var out = new StringBuilder(text.length() + 2).append('"');

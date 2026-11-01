@@ -13,6 +13,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player keeps count of what is in its chests and what it does when something is
+ * missing: with its team it asks before counting anything lost and blames nobody, in a match it tells only
+ * its own team and moves what is left, and alone it tells those it plays for.
+ */
 class StorageTest {
     private static final Place HOME = new Place("minecraft:overworld", 12, 64, -30);
     private static final Place SHED = new Place("minecraft:overworld", 20, 64, -30);
@@ -104,6 +109,7 @@ class StorageTest {
                 TeamTalk.stored(false, HOME, Map.of("minecraft:bucket", 1, "minecraft:bread", 3)));
     }
 
+    /** Recognises a teammate saying "that was me" in everyday words, and not "not me". */
     @Test
     void aTeammateOwnsUpInPlainWordsAndItsWordIsTaken() {
         for (String said : List.of("me", "Me!", "I did.", "that was me", "I took them", "i took the name tag, sorry", "I've got it"))

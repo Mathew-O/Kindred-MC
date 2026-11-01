@@ -1,0 +1,36 @@
+# Where each resource is likely, by the rules of Minecraft 1.21.1 (Java Edition): the atlas's priors (F-30).
+# Read from the Minecraft Wiki on 2026-10-31 (minecraft.wiki: Diamond Ore, Iron Ore, Coal Ore, Ore (feature),
+# Terrain features, Cave, Village, Nether Fortress).
+#
+#   <resource> <dimension> y <from> <to> <weight> [<peak>]   a band of heights it is found in, weighted against the
+#                                                     others: evenly, or as a triangle full at its peak
+#   <resource> <dimension> biome <id>                  a biome it is found in (any: every biome of the dimension)
+#   <resource> <dimension> eyes                        found by eyes of ender, not by looking
+#
+# Diamond ore: blobs from y 16 down to -63, and more near the bottom; most common between -50 and -64.
+diamond overworld y -64 16 1
+diamond overworld y -64 -50 3
+# Iron ore: a triangle from -24 to 56, most common at 16; a triangle from 80 to 384, most common at 232, where the
+# ground is that high (the peaks); small blobs evenly from -64 to 72.
+iron overworld y -24 56 3 16
+iron overworld y 80 384 2 232
+iron overworld y -64 72 1
+# Coal ore: a triangle from 0 to 192, most common at 96; evenly from 136 to 320. The upper bands here (coal's, and
+# iron's from 80 to 384) weigh less than the lower: most of their heights are open air but in the peaks.
+coal overworld y 0 192 3 96
+coal overworld y 136 320 1
+# Lava: below y -54 air is lava (the lava level); aquifers at or below -10 may be lava; lava lakes only above 0.
+lava overworld y -64 -54 4
+lava overworld y -64 -10 1
+lava overworld y 0 320 1
+# Villages (Java Edition): plains, meadow, savanna, taiga, snowy plains and desert.
+village overworld biome minecraft:plains
+village overworld biome minecraft:meadow
+village overworld biome minecraft:savanna
+village overworld biome minecraft:taiga
+village overworld biome minecraft:snowy_plains
+village overworld biome minecraft:desert
+# Nether fortresses: in every Nether biome.
+fortress the_nether biome any
+# The stronghold: found from the eyes' flights, not by looking.
+stronghold overworld eyes

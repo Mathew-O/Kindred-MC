@@ -9,14 +9,19 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 
 /**
- * A rail line from a villager to its cell in a trading hall (E-45e), as a player lays one to bring a villager home by
- * minecart: over the ground the player knows, one rail a column on firm ground with room over it, the line stepping up
- * or down a block at most from one column to the next and never on a turn (a rail cannot curve on a slope); two rails
- * behind the villager for the cart and the push that sends it rolling; and at its end straight in at the hall's door,
- * along its corridor and through the cell's front onto the cell's floor, where the cart stops against the bed. Over
- * water it is laid on a bridge, a plain block put down at the water's top in each column it crosses, as players lay a
- * line across a river. The hall's part is fixed by its plan; the ground's is found by a search for the cheapest line,
- * a rail a column and a bridge's block one more, with fewest turns among the cheapest. Pure.
+ * In plain terms: the rail line a player lays to bring a villager home by minecart to its cell in a trading
+ * hall: over ground it knows, on a bridge of blocks across any water, choosing the cheapest line with the
+ * fewest turns. It also counts the rails, iron and sticks the line takes.
+ *
+ * Technical: A rail line from a villager to its cell in a trading hall (E-45e), as a player lays one to bring
+ * a villager home by minecart: over the ground the player knows, one rail a column on firm ground with room
+ * over it, the line stepping up or down a block at most from one column to the next and never on a turn (a
+ * rail cannot curve on a slope); two rails behind the villager for the cart and the push that sends it
+ * rolling; and at its end straight in at the hall's door, along its corridor and through the cell's front
+ * onto the cell's floor, where the cart stops against the bed. Over water it is laid on a bridge, a plain
+ * block put down at the water's top in each column it crosses, as players lay a line across a river. The
+ * hall's part is fixed by its plan; the ground's is found by a search for the cheapest line, a rail a column
+ * and a bridge's block one more, with fewest turns among the cheapest. Pure.
  */
 public final class RailRoute {
     private RailRoute() { }

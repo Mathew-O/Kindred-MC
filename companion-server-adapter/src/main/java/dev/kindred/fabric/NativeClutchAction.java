@@ -24,11 +24,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Breaks a long fall with an owned water bucket (E-07d), as players do: when the block it will land on comes within
- * reach, water is poured on it, the fall ends in the water (vanilla feels the water before the ground, so the fall
- * does no harm), and the water is scooped back into the bucket. The server's edit policy covers the water's block; one
- * bucket of water is spent and taken back, and a pour that could not be scooped up leaves an empty bucket and the water
- * where it was poured, both verified.
+ * In plain terms: an AI player saving itself from a long fall with its own water bucket, as skilled players
+ * do: just before it lands it pours water where it will hit, lands safely in it, and scoops the water back
+ * up.
+ *
+ * Technical: Breaks a long fall with an owned water bucket (E-07d), as players do: when the block it will
+ * land on comes within reach, water is poured on it, the fall ends in the water (vanilla feels the water
+ * before the ground, so the fall does no harm), and the water is scooped back into the bucket. The server's
+ * edit policy covers the water's block; one bucket of water is spent and taken back, and a pour that could
+ * not be scooped up leaves an empty bucket and the water where it was poured, both verified.
  */
 final class NativeClutchAction extends NativeRecordedAction {
     /** Ticks to wait after landing for the water to be scooped; the fall itself is not timed. */
@@ -51,6 +55,7 @@ final class NativeClutchAction extends NativeRecordedAction {
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
+    /** A fall saved with the water bucket in a hotbar slot. */
     NativeClutchAction(NativePlayerBody body, Supplier<ActionLease> lease, Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                        ActionAdmission.Writer writer, Consumer<Runnable> dispatch, int slot) {
         this.body = body;
@@ -88,6 +93,7 @@ final class NativeClutchAction extends NativeRecordedAction {
         return best == null ? Optional.empty() : Optional.of(Map.entry(best, player.getY() - bestTop));
     }
 
+    /** Moves the fall saving on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded clutch cannot replay after cancellation/restart", true);

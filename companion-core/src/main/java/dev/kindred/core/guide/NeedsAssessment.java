@@ -9,11 +9,16 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Breaks what a player wants for its larger objectives into the chunks of work it takes from what it holds now: a bow
- * it lacks becomes three string to gather and three sticks to craft, then the bow; thirty-two arrows become eight
- * flint and eight feathers to gather, eight sticks, then eight crafts. What it already holds counts once against all
- * the uses it has (the same sticks serve the bow and the arrows), so the chunks change as soon as it picks something
- * up, loses something, or is given a different want. Pure and deterministic.
+ * In plain terms: breaks what a player wants for later into the actual work: a bow it lacks becomes string to
+ * gather and sticks to craft, then the bow. What it already holds is counted only once, so the work changes
+ * as soon as it picks something up or loses something.
+ *
+ * Technical: Breaks what a player wants for its larger objectives into the chunks of work it takes from what
+ * it holds now: a bow it lacks becomes three string to gather and three sticks to craft, then the bow;
+ * thirty-two arrows become eight flint and eight feathers to gather, eight sticks, then eight crafts. What it
+ * already holds counts once against all the uses it has (the same sticks serve the bow and the arrows), so
+ * the chunks change as soon as it picks something up, loses something, or is given a different want. Pure and
+ * deterministic.
  */
 public final class NeedsAssessment {
     public enum Kind { GATHER, CRAFT }

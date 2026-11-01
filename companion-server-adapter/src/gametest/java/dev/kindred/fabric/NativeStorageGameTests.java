@@ -17,13 +17,19 @@ import net.minecraft.util.math.BlockPos;
 import java.util.UUID;
 
 /**
- * Extended inventory (E-43): a player puts what it keeps for later in a store of its own and counts it with what it
- * holds. Alone, when it opens its chest again and something it put there is gone, with nobody seen at it, it reckons
- * the thing gone and says so to those it plays for, blaming nobody. Sharing a chest with a teammate, it tells the team
- * what it put in, and the teammate's count changes with it; when something is gone, it asks its team, and with no word
- * in time reckons it gone, blaming nobody. A teammate's take is told and counted by both, and kept, not put straight
- * back. In a match, a player that sees an opponent open its chest goes to look, names them to its own side, and with
- * enough left moves the rest.
+ * In plain terms: a GameTest: in a real test world, a player is checked to keep spare things in its own chest
+ * and count them as its own. Alone, when something it stored goes missing it says so without blaming anyone;
+ * sharing a chest with a teammate, it tells the team what it put in, asks the team before deciding anything
+ * is gone, and a teammate's take is told and counted by both; and in a match, when it sees an opponent at its
+ * chest it goes to look, tells its own side who it was and moves what is left.
+ *
+ * Technical: Extended inventory (E-43): a player puts what it keeps for later in a store of its own and
+ * counts it with what it holds. Alone, when it opens its chest again and something it put there is gone, with
+ * nobody seen at it, it reckons the thing gone and says so to those it plays for, blaming nobody. Sharing a
+ * chest with a teammate, it tells the team what it put in, and the teammate's count changes with it; when
+ * something is gone, it asks its team, and with no word in time reckons it gone, blaming nobody. A teammate's
+ * take is told and counted by both, and kept, not put straight back. In a match, a player that sees an
+ * opponent open its chest goes to look, names them to its own side, and with enough left moves the rest.
  */
 public final class NativeStorageGameTests implements FabricGameTest {
     private static final BlockPos HAL = new BlockPos(3, 2, 3), CHEST = new BlockPos(5, 2, 3);

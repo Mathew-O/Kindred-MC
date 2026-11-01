@@ -17,10 +17,16 @@ import net.minecraft.util.math.BlockPos;
 import java.util.UUID;
 
 /**
- * Hit hard by a player (E-41g, E-41h): a single hit from another player of more than three hearts, after armour, is
- * lethal aggression. In a duel, outclassed (iron against diamond), Hal gets away; with the better kit, it fights back;
- * outside any match it never strikes back, whatever its kit, and gets away; a lesser hit is no such thing. The hit is
- * dealt as Rue's own attack would be, Rue held still, so that what Hal does is all Hal's.
+ * In plain terms: a GameTest: in a real test world, a player is hit hard by another player and the test
+ * checks how it reacts: in a duel it cannot win (iron against diamond) it gets away, in a duel where its kit
+ * is better it fights back, and outside any match it never hits back and gets away, each time saying why. A
+ * light hit is checked not to be treated as an attack at all.
+ *
+ * Technical: Hit hard by a player (E-41g, E-41h): a single hit from another player of more than three hearts,
+ * after armour, is lethal aggression. In a duel, outclassed (iron against diamond), Hal gets away; with the
+ * better kit, it fights back; outside any match it never strikes back, whatever its kit, and gets away; a
+ * lesser hit is no such thing. The hit is dealt as Rue's own attack would be, Rue held still, so that what
+ * Hal does is all Hal's.
  */
 public final class NativeAggressionGameTests implements FabricGameTest {
     /** Twelve blocks apart, so that the duel's own fight has not begun before Rue's hit lands. */

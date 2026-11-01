@@ -8,6 +8,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the rules of matches: players may attack each other only while a match they joined
+ * is running, only those invited can join and each is in one match at a time, and each kind of match (duel,
+ * speedrun, manhunt, build battle) ends and picks its winner by its own rules.
+ */
 class MatchRegistryTest {
     private final UUID ada = UUID.randomUUID(), bram = UUID.randomUUID(), cy = UUID.randomUUID();
 

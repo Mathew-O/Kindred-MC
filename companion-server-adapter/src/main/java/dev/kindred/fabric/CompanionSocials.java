@@ -27,8 +27,13 @@ import java.util.function.Function;
 import java.util.function.LongSupplier;
 
 /**
- * Server-thread social lane. No task mutation, navigation, memory invention or model requests. Its speakers are AI
- * players in either body, the legacy companion's or the native player's.
+ * In plain terms: the AI players' small talk on the server: glancing at people who come near, passing
+ * remarks, answering when spoken to (in their own words when the optional voice is on, otherwise with a fixed
+ * reply), chatting with each other about how their work is going, and mentioning work done or stuck. It only
+ * handles words and glances; what a player does is decided elsewhere.
+ *
+ * Technical: Server-thread social lane. No task mutation, navigation, memory invention or model requests. Its
+ * speakers are AI players in either body, the legacy companion's or the native player's.
  */
 final class CompanionSocials {
     record Participant(UUID id, UUID owner, String name, LivingEntity body, SocialProfile profile, boolean active) { }
@@ -62,6 +67,34 @@ final class CompanionSocials {
         };
     }
 
+    /**
+     * The player's voice (E-20a): a reply phrased by the model from what the player knows that this listener may know.
+     * Words only; whatever it returns goes through {@link #schedule} and the same checks as a fixed reply.
+     */
+    interface Voice {
+        /**
+         * Ask for a line answering {@code message}, handing it to {@code answered} on the server thread, or empty for the
+         * fixed reply; false at once, {@code answered} never called, when it cannot ask now (off, budgets, rates).
+         */
+        boolean answer(ServerPlayerEntity speaker, Participant player, String message, java.util.function.Consumer<Optional<Spoken>> answered);
+
+        /** A direct reply was said to {@code speaker}, the model's or the fixed one: the exchange as it went. */
+        default void replied(ServerPlayerEntity speaker, Participant player, String said, String spoken) { }
+    }
+
+    /**
+     * A voiced line, and what follows once it is said (E-20b: an ask, handed a way to say one more line to the same
+     * listener, as a refusal in the command's own words). The lane only says the words; what follows is the voice's.
+     */
+    record Spoken(String text, java.util.function.Consumer<java.util.function.Consumer<String>> then) {
+        Spoken {
+            java.util.Objects.requireNonNull(text);
+        }
+    }
+
+    /** A message that came while a line was being phrased: only the newest waits. */
+    private record Waiting(ServerPlayerEntity speaker, String message) { }
+
     private final Function<UUID, Participant> lookup;
     private final LongSupplier clock;
     private final BiConsumer<ServerPlayerEntity, Text> output;
@@ -79,23 +112,59 @@ final class CompanionSocials {
     private final List<Pending> pending = new ArrayList<>();
     private long nextAmbient = Long.MIN_VALUE;
     private PeerConferenceHandler conferenceHandler;
+    private Voice voice;
+    /** Whether a person may command an AI player: such a one is as good as its owner in conversation (F-18a). */
+    private java.util.function.BiPredicate<ServerPlayerEntity, Participant> controls = (player, companion) -> false;
+    /** Players with a line being phrased, by the turn of their talk it answers; a turn ended by discard is not said. */
+    private final Map<UUID, Long> voicing = new HashMap<>();
+    private final Map<UUID, Waiting> waiting = new HashMap<>();
+    private long turns;
 
+    /**
+     * Who may command each AI player, as the runtime's access rules say: they are talked with as its owner is, in
+     * private (F-18a). A native player's own record is its identity, so without this nobody was its owner here.
+     */
+    void setControllers(java.util.function.BiPredicate<ServerPlayerEntity, Participant> controls) {
+        this.controls = controls;
+    }
+
+    /** The player's voice, or null for the fixed replies alone. */
+    void setVoice(Voice voice) {
+        this.voice = voice;
+    }
+
+    /** Who handles two AI players comparing notes on their progress when they meet. */
     void setConferenceHandler(PeerConferenceHandler handler) {
         this.conferenceHandler = handler;
     }
 
-    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct) { }
+    /**
+     * A line to say when due; a voiced one ({@code voiced}) is checked at delivery against the player as it is then, and
+     * what follows it ({@code then}) happens only once it is said.
+     */
+    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct, boolean voiced,
+                           java.util.function.Consumer<java.util.function.Consumer<String>> then) {
+        Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct) {
+            this(speaker, recipient, text, due, direct, false, null);
+        }
+    }
 
+    /**
+     * The small talk, finding each AI player by id, keeping time by the given clock and saying lines through
+     * the given output.
+     */
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output) {
         this(lookup, clock, output, Habits.NONE);
     }
 
+    /** As above, with the players' habits. */
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output, Habits habits) {
         this(lookup, clock, output, habits, SocialPerception::companionOf);
     }
 
+    /** As above, with a way to tell which body belongs to which AI player. */
     CompanionSocials(Function<UUID, Participant> lookup, LongSupplier clock,
                      BiConsumer<ServerPlayerEntity, Text> output, Habits habits, Function<Entity, UUID> aiPlayer) {
         this.lookup = lookup;
@@ -105,6 +174,10 @@ final class CompanionSocials {
         this.aiPlayer = aiPlayer;
     }
 
+    /**
+     * Forgets what the player had noticed and drops remarks it had not made yet; replies already due are
+     * kept.
+     */
     void reset(UUID id) {
         SocialBrain brain = brains.get(id);
         if (brain != null) brain.clearObservations();
@@ -119,17 +192,31 @@ final class CompanionSocials {
     void discard(UUID id) {
         reset(id);
         pending.removeIf(p -> p.speaker().id().equals(id));
+        voicing.remove(id);
+        waiting.remove(id);
     }
 
     /** Say the lines whose reading time has elapsed, and drop any whose listener has walked off. */
     void deliverDue(UUID companionId, long now) {
+        var said = new ArrayList<Runnable>();
         pending.removeIf(pendingLine -> {
             if (!pendingLine.speaker().id().equals(companionId) || pendingLine.due() > now) return false;
-            if (canTalk(pendingLine.recipient(), pendingLine.speaker())) output.accept(pendingLine.recipient(), pendingLine.text());
+            // A voiced line was asked for a while back: it is said only if the player, as it is now, may still say it.
+            Participant speaker = pendingLine.voiced() ? lookup.apply(companionId) : pendingLine.speaker();
+            if (canTalk(pendingLine.recipient(), speaker)) {
+                output.accept(pendingLine.recipient(), pendingLine.text());
+                if (pendingLine.then() != null) said.add(() -> pendingLine.then().accept(follow ->
+                        scheduleInTurn(speaker, pendingLine.recipient(), follow, clock.getAsLong() + SpeechTiming.delayMillis(follow), null)));
+            }
             return true;
         });
+        said.forEach(Runnable::run); // What follows a line, once the lines are said.
     }
 
+    /**
+     * Once a tick for an active player: notes when it is hurt, and now and then looks about, meets fellow AI
+     * players and makes a remark.
+     */
     void tick(Participant speaker) {
         if (!speaker.active()) return;
         long now = clock.getAsLong();
@@ -142,7 +229,7 @@ final class CompanionSocials {
         if ((speaker.body().age + Math.floorMod(speaker.id().hashCode(), 20)) % 20 != 0) return;
         notice(speaker, now);
         maybePeerConference(speaker, now);
-        List<ServerPlayerEntity> audience = SocialPerception.listeners(speaker.body(), speaker.owner(), speaker.profile(), aiPlayer);
+        List<ServerPlayerEntity> audience = SocialPerception.listeners(speaker.body(), owns(speaker), speaker.profile(), aiPlayer);
         if (audience.isEmpty()) {
             // Nobody to talk to: drop pending remarks, but keep knowing who is already standing here.
             SocialBrain brain = brains.get(speaker.id());
@@ -151,7 +238,7 @@ final class CompanionSocials {
             recentHarm.remove(speaker.id());
             return;
         }
-        var observed = withRecentDamage(speaker.id(), now, SocialPerception.observe(speaker.body(), speaker.owner(), speaker.profile(), true,
+        var observed = withRecentDamage(speaker.id(), now, SocialPerception.observe(speaker.body(), owns(speaker), speaker.profile(), true,
                 aiPlayer, body -> {
                     UUID id = aiPlayer.apply(body);
                     Participant other = id == null ? null : lookup.apply(id);
@@ -163,7 +250,7 @@ final class CompanionSocials {
     private void maybePeerConference(Participant speaker, long now) {
         if (conferenceHandler == null) return;
         if (speaker.body().age % 100 != Math.floorMod(speaker.id().hashCode(), 100)) return;
-        List<SocialSnapshot.Contact> contacts = SocialPerception.noticeable(speaker.body(), speaker.owner(), aiPlayer);
+        List<SocialSnapshot.Contact> contacts = SocialPerception.noticeable(speaker.body(), owns(speaker), aiPlayer);
         for (var contact : contacts) {
             if (contact.kind() != SocialSnapshot.Kind.COMPANION) continue;
             Participant peer = lookup.apply(contact.id());
@@ -193,7 +280,7 @@ final class CompanionSocials {
     private void notice(Participant speaker, long now) {
         AttentionPolicy.Phase phase = habits.phase(speaker.id());
         if (phase == null) return;
-        List<SocialSnapshot.Contact> people = SocialPerception.noticeable(speaker.body(), speaker.owner(), aiPlayer);
+        List<SocialSnapshot.Contact> people = SocialPerception.noticeable(speaker.body(), owns(speaker), aiPlayer);
         Set<UUID> ids = new HashSet<>();
         for (var contact : people) ids.add(contact.id());
         var glance = attention.computeIfAbsent(speaker.id(), ignored -> new AttentionPolicy()).observe(ids, phase, true,
@@ -247,11 +334,23 @@ final class CompanionSocials {
         // An exchange is terminal: system chat never enters the player-chat handler.
     }
 
+    /**
+     * Whether the player can talk with this person: in sight, and either one who may command it or the player
+     * talks in public.
+     */
     boolean canTalk(ServerPlayerEntity player, Participant companion) {
         return companion != null && SocialPerception.visible(companion.body(), player)
-                && (companion.owner().equals(player.getUuid()) || companion.profile().publicConversation());
+                && (owns(companion).test(player) || companion.profile().publicConversation());
     }
 
+    /** Its owners in the lane: its saved owner, and whoever may command it (F-18a). */
+    private java.util.function.Predicate<ServerPlayerEntity> owns(Participant companion) {
+        return player -> companion.owner().equals(player.getUuid()) || controls.test(player, companion);
+    }
+
+    /**
+     * Answers a person who spoke to the player, if it can talk with them now; false when it does not answer.
+     */
     boolean reply(ServerPlayerEntity player, Participant companion, String message) {
         if (!canTalk(player, companion)) return false;
         long now = clock.getAsLong();
@@ -260,13 +359,73 @@ final class CompanionSocials {
         remember(directSpeakers, player.getUuid(), now + 3_000);
         // A remark about a habit gets a character answer; it is still finite dialogue with no task or settings effect.
         Optional<String> habitReply = habits.feedback(player, companion, message, now);
-        String spoken = habitReply.orElseGet(() -> {
-            var observed = withRecentDamage(companion.id(), now,
-                    SocialPerception.observe(companion.body(), companion.owner(), companion.profile(), companion.active(), aiPlayer, ignored -> false));
-            return SocialDialogue.reply(message, observed, companion.profile());
-        });
+        if (habitReply.isEmpty() && voice != null) {
+            if (voicing.containsKey(companion.id())) { // One line phrased at a time: this one waits, the newest in place of any waiting.
+                Waiting displaced = waiting.put(companion.id(), new Waiting(player, message));
+                // Someone else's waiting message is not dropped unanswered: they are given the fixed reply now (E-20c).
+                if (displaced != null && !displaced.speaker().getUuid().equals(player.getUuid())) {
+                    String spoken = fixedReply(companion, displaced.message(), now);
+                    scheduleInTurn(companion, displaced.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
+                    voice.replied(displaced.speaker(), companion, displaced.message(), spoken);
+                }
+                return true;
+            }
+            if (voiced(player, companion, message, now)) return true;
+        }
+        String spoken = habitReply.orElseGet(() -> fixedReply(companion, message, now));
         schedule(companion, player, spoken, now + SpeechTiming.delayMillis(spoken), true);
+        if (voice != null) voice.replied(player, companion, message, spoken);
         return true;
+    }
+
+    private String fixedReply(Participant companion, String message, long now) {
+        var observed = withRecentDamage(companion.id(), now,
+                SocialPerception.observe(companion.body(), owns(companion), companion.profile(), companion.active(), aiPlayer, ignored -> false));
+        return SocialDialogue.reply(message, observed, companion.profile());
+    }
+
+    /**
+     * Ask the voice to phrase the reply. Its line, or the fixed reply when it has none, is scheduled when it comes, the
+     * time it took counted as typing; then the message that waited meanwhile, if any, is answered in turn.
+     */
+    private boolean voiced(ServerPlayerEntity player, Participant companion, String message, long asked) {
+        long turn = ++turns;
+        voicing.put(companion.id(), turn);
+        boolean asking = voice.answer(player, companion, message, line -> {
+            if (!Long.valueOf(turn).equals(voicing.get(companion.id()))) return; // Discarded meanwhile: nothing is said.
+            voicing.remove(companion.id());
+            Participant now = lookup.apply(companion.id());
+            long at = clock.getAsLong();
+            if (now != null && canTalk(player, now)) {
+                String spoken = line.map(Spoken::text).orElseGet(() -> fixedReply(now, message, at));
+                var then = line.map(Spoken::then).orElse(null);
+                // A line that acts is said as it acts, at once; any other once it would have been typed.
+                scheduleInTurn(now, player, spoken, then != null ? at : at + Math.max(0, SpeechTiming.delayMillis(spoken) - (at - asked)), then);
+                voice.replied(player, now, message, spoken);
+            }
+            Waiting next = waiting.remove(companion.id());
+            if (next != null && now != null && canTalk(next.speaker(), now)) answerWaiting(next, now, at);
+        });
+        if (!asking && Long.valueOf(turn).equals(voicing.get(companion.id()))) voicing.remove(companion.id());
+        return asking;
+    }
+
+    /** The message that waited: phrased in turn if the voice can ask now, else the fixed reply. */
+    private void answerWaiting(Waiting next, Participant companion, long now) {
+        if (voice != null && voiced(next.speaker(), companion, next.message(), now)) return;
+        String spoken = fixedReply(companion, next.message(), now);
+        scheduleInTurn(companion, next.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
+        if (voice != null) voice.replied(next.speaker(), companion, next.message(), spoken);
+    }
+
+    /** A reply after a voiced exchange: said after any reply to the same listener not yet said, never in its place. */
+    private void scheduleInTurn(Participant speaker, ServerPlayerEntity recipient, String spoken, long due,
+                                java.util.function.Consumer<java.util.function.Consumer<String>> then) {
+        for (Pending p : pending) {
+            if (p.direct() && p.speaker().id().equals(speaker.id()) && p.recipient().getUuid().equals(recipient.getUuid())) due = Math.max(due, p.due() + 1);
+        }
+        pending.add(new Pending(speaker, recipient, line(speaker, spoken), due, true, true, then));
+        while (pending.size() > 64) pending.removeFirst();
     }
 
     private void schedule(Participant speaker, ServerPlayerEntity recipient, String spoken, long due, boolean direct) {
@@ -275,6 +434,10 @@ final class CompanionSocials {
         while (pending.size() > 64) pending.removeFirst();
     }
 
+    /**
+     * Whether two AI players may chat with each other: both active, both talk in public, and each can see the
+     * other.
+     */
     static boolean eligiblePartner(Participant a, Participant b) {
         return b != null && !a.id().equals(b.id()) && a.active() && b.active()
                 && a.profile().publicConversation() && b.profile().publicConversation()
@@ -289,6 +452,7 @@ final class CompanionSocials {
                 snapshot.contacts(), snapshot.harm() != null ? snapshot.harm() : recent ? recentHarm.get(id) : null);
     }
 
+    /** Lets the player mention a piece of work it finished. */
     void workCompleted(UUID companionId, String skill, String detail) {
         SocialBrain b = brain(companionId);
         Participant p = lookup.apply(companionId);
@@ -297,6 +461,7 @@ final class CompanionSocials {
         }
     }
 
+    /** Lets the player mention a piece of work it could not do, and why. */
     void workBlocked(UUID companionId, String skill, String reason) {
         SocialBrain b = brain(companionId);
         Participant p = lookup.apply(companionId);

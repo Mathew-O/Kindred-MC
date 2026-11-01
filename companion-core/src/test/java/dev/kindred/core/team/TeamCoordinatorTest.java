@@ -9,6 +9,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the team's shared job board: tasks are done in order, only one player can hold a
+ * task at a time, items set aside for a task cannot be promised twice, a player that dies, is stopped or runs
+ * out of time gives its task back, and a finished task counts only what was actually seen.
+ */
 class TeamCoordinatorTest {
     private TeamCoordinator coordinator;
     private StockLedger stockLedger;
@@ -61,6 +66,9 @@ class TeamCoordinatorTest {
         assertEquals(4, stockLedger.totalStock("minecraft:oak_log"));
     }
 
+    /**
+     * Only the player that claimed a task may do it: a second claim, or a finish by someone else, is refused.
+     */
     @Test
     void singleAssigneeOwnershipAndContentionRejection() {
         TaskId task1 = TaskId.random();
@@ -174,6 +182,7 @@ class TeamCoordinatorTest {
         assertEquals(SharedTask.TaskState.REVOKED, updatedTask.state());
     }
 
+    /** A task held past its time limit goes back on the board for the others. */
     @Test
     void taskLeaseExpiryReopensTaskForPeers() {
         TaskId task1 = TaskId.random();

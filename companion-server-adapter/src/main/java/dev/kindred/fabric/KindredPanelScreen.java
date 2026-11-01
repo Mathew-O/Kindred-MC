@@ -221,7 +221,7 @@ final class KindredPanelScreen extends Screen {
             int textWidth = detailWidth;
             if (bot == null) {
                 context.drawTextWrapped(textRenderer, Text.literal(bool(state, "operator")
-                        ? "No AI players yet. Spawn Kindred, Sol or Vesp from the roster; they appear beside you."
+                        ? "No AI players yet. Spawn Kindred, Sol or Echo from the roster; they appear beside you."
                         : "No AI players you may control. Ask an operator to spawn one."), x0, top + 20, textWidth, MUTED);
             } else {
                 int y = top + 8;

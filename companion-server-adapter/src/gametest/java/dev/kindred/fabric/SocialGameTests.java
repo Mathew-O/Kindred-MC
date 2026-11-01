@@ -23,7 +23,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** Native perception and output routing; these do not replace multiplayer visual/play testing. */
+/**
+ * In plain terms: a GameTest: in a real test world, mostly with the older mob-style body, these checks cover
+ * what the player notices and who hears it speak. Personality commands accept values only from 0 to 100; a
+ * hostile mob is not noticed through a wall or beyond eight blocks; strangers may chat with it only when its
+ * owner allows, and replies reach only the speaker; two AI players greet each other once and stop rather than
+ * chatting in a loop; idle chatter is heard only nearby, can be muted, and is limited across players; and a
+ * player hurt by a fall tells its owner and blames nobody, while a hit is put down to whoever really dealt
+ * it.
+ *
+ * Technical: Native perception and output routing; these do not replace multiplayer visual/play testing.
+ */
 public final class SocialGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void personalityCommandsAcceptPreferencesAndAliasesWithBounds(TestContext context) {
@@ -93,6 +103,10 @@ public final class SocialGameTests implements FabricGameTest {
         context.complete();
     }
 
+    /**
+     * Two AI players who meet trade one greeting and one reply, then fall quiet instead of chatting in a
+     * loop.
+     */
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void companionExchangeTerminatesAndConsumesBothBudgets(TestContext context) {
         var audience = player(context, "Audience", new Vec3d(1.5, 2, 1));

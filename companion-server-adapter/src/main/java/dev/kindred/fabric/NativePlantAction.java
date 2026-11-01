@@ -24,7 +24,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Checkpointed native crop sowing action using the durable action ledger (E-13).
+ * In plain terms: an AI player sowing one seed from its own hotbar on farmland, as a human does. It checks it
+ * may plant there, uses exactly one seed, and afterwards checks that the crop is planted and nothing else it
+ * carries changed.
+ *
+ * Technical: Checkpointed native crop sowing action using the durable action ledger (E-13).
  * Evaluates server edit policy, acquires block claims, consumes exactly 1 seed item
  * from the owned hotbar slot, and verifies crop placement and item conservation.
  */
@@ -55,6 +59,7 @@ final class NativePlantAction extends NativeRecordedAction {
     private boolean halted, unknown;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Sowing the seed in a hotbar slot at the given spot, inside its assigned area. */
     NativePlantAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer,
@@ -62,6 +67,10 @@ final class NativePlantAction extends NativeRecordedAction {
         this(body, lease, worldId, setup, policy, claims, writer, dispatch, target, slot, false);
     }
 
+    /**
+     * As above; when roaming, in a field of its own outside any assigned area, under the server's rules for
+     * roaming players.
+     */
     NativePlantAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId,
                      Supplier<WorkSetup> setup, Supplier<EditPolicy.ServerPolicy> policy,
                      ClaimRegistry claims, ActionAdmission.Writer writer,
@@ -82,6 +91,7 @@ final class NativePlantAction extends NativeRecordedAction {
         if (!roam && (s == null || s.area() == null)) throw new IllegalArgumentException("No work area is assigned.");
     }
 
+    /** Moves the planting on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) {

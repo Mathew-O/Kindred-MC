@@ -23,10 +23,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A ranch in progress for one player (M-01a): the pen's fences and gate crafted from the player's own wood, the pen
- * built through the build runner, then the {@link Ranch} plan's steps turned into the runtime's own skills: walk with the
- * food in hand for the animals to follow, open and shut the gate, feed the pair. What stands and what it sees is read
- * from the world each pass.
+ * In plain terms: an AI player starting a small ranch: crafting fence and gate from its own wood, building
+ * the pen, then leading a pair of animals in with food in hand, shutting the gate and feeding them so they
+ * breed. It looks at the pen and the animals in the world each time to see what is still to do.
+ *
+ * Technical: A ranch in progress for one player (M-01a): the pen's fences and gate crafted from the player's
+ * own wood, the pen built through the build runner, then the {@link Ranch} plan's steps turned into the
+ * runtime's own skills: walk with the food in hand for the animals to follow, open and shut the gate, feed
+ * the pair. What stands and what it sees is read from the world each pass.
  */
 final class RanchRunner {
     final Ranch ranch;
@@ -49,6 +53,7 @@ final class RanchRunner {
     private int openFailures;
     private String ranched;
 
+    /** A ranch for the given kind of animal, its pen made of the given wood at the given spot. */
     RanchRunner(BlockPos origin, Ranch.Kind kind, String wood) {
         this(origin, kind, wood, null, null);
     }
@@ -90,6 +95,7 @@ final class RanchRunner {
         return wood.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
     }
 
+    /** The next thing to do for the ranch, or nothing once it is done. */
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body, PortalRunCampaign campaign) {
         if (done) return Optional.empty();
         // Its animals in: the doorway shut behind them, from the blocks it dug out of it.
@@ -155,7 +161,18 @@ final class RanchRunner {
                 if (slot < 0) yield swapIn(player, true);
                 yield Optional.of(new PortalRunCampaign.Task("native_feed", Map.of("target", feed.animal().toString(), "slot", str(slot)), feed.why()));
             }
-            case Ranch.Step.Wait wait -> Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), wait.why()));
+            case Ranch.Step.Wait wait -> {
+                // A wait with the food put away puts it away first, as a walk does; held through a wait, a pair jammed at the
+                // pasture's doorway went on following it there (the cattle fixture).
+                if (!wait.holdFood() && isFood(player.getInventory().getMainHandStack())) {
+                    int slot = holdSlot(player, false);
+                    if (slot < 0) yield swapIn(player, false);
+                    BlockPos feet = player.getBlockPos();
+                    yield Optional.of(new PortalRunCampaign.Task("native_goto", Map.of("x", str(feet.getX()), "y", str(feet.getY()), "z", str(feet.getZ()),
+                            "range", "1.5", "hold", str(slot)), "Put the " + ranch.kind().noun() + "s' food away"));
+                }
+                yield Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), wait.why()));
+            }
             case Ranch.Step.Done d -> {
                 if (shut != null) {
                     ranched = d.outcome();
@@ -177,21 +194,36 @@ final class RanchRunner {
         } else if (build != null && !build.done()) build.finished(task, completed, reason, world);
     }
 
-    private Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {
+    Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {
         var animals = new ArrayList<Ranch.Animal>();
         Box around = new Box(origin).expand(Ranch.RANGE + 8, 6, Ranch.RANGE + 8);
         for (AnimalEntity animal : world.getEntitiesByClass(AnimalEntity.class, around, AnimalEntity::isAlive)) {
             var kind = Ranch.Kind.of(Registries.ENTITY_TYPE.getId(animal.getType()).toString());
             if (kind.isEmpty()) continue;
-            BlockPos at = animal.getBlockPos();
+            BlockPos at = cell(animal.getBlockPos(), animal.getX(), animal.getZ(), world);
             boolean adult = !animal.isBaby();
             animals.add(new Ranch.Animal(animal.getUuid(), kind.get(), new Pos(at.getX(), at.getY(), at.getZ()), adult,
                     adult && animal.getBreedingAge() == 0 && !animal.isInLove(), animal.isInLove()));
         }
-        BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        BlockPos feet = cell(BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ()), player.getX(), player.getZ(), world);
         var gate = world.getBlockState(pos(ranch.gate()));
         boolean open = gate.getBlock() instanceof FenceGateBlock && gate.get(FenceGateBlock.OPEN);
         return new Ranch.Observation(new Pos(feet.getX(), feet.getY(), feet.getZ()), built(world), open, food(player), animals, world.getTime());
+    }
+
+    /**
+     * The cell one stands in, {@code at}. Pressed against the ring, its middle can be in a fence's block, or the shut
+     * gate's, clear of the post: it is in the cell beside that on its own side. Read by that block alone, a player its cows
+     * had pushed against the fence from inside was out of the pen, and the ranch was done with it shut in (the cattle
+     * fixture, once in ten).
+     */
+    private BlockPos cell(BlockPos at, double x, double z, ServerWorld world) {
+        var state = world.getBlockState(at);
+        if (!state.isIn(BlockTags.FENCES) && !(state.getBlock() instanceof FenceGateBlock && !state.get(FenceGateBlock.OPEN))) return at;
+        int cx = at.getX(), cz = at.getZ();
+        if (cz == origin.getZ() || cz == origin.getZ() + ranch.depth() - 1) cz += z < at.getZ() + 0.5 ? -1 : 1;
+        if (cx == origin.getX() || cx == origin.getX() + ranch.width() - 1) cx += x < at.getX() + 0.5 ? -1 : 1;
+        return new BlockPos(cx, at.getY(), cz);
     }
 
     /** Every post of the ring a fence and the gate a gate; a gate swung round by opening still counts. */

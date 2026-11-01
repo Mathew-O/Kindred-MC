@@ -14,6 +14,7 @@ An AI player has identity, needs, observations, personal goals and team commitme
 | Existing SQLite writer | Metadata, assignments, memories and accounting |
 | Native body saves | Physical inventory/equipment and body state |
 | companion-model | Optional event-driven inference; never body control |
+| companion-sim | Headless simulator of decisions and plans over core only; no execution, no Minecraft |
 | SocialBrain | Grounded expression and audience/pacing policy |
 
 Core contains no Minecraft objects/provider SDKs. IO callbacks enter through current server-thread authority checks. The mind is a decision layer, not a second body controller.

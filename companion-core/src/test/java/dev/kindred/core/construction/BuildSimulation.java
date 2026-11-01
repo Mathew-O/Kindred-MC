@@ -13,11 +13,15 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * A build played through the planner step by step, as the adapter's runner plays it: the player is put where each step
- * says to stand (which must be a spot it can walk to), each block goes in as vanilla would place it from the planned
- * look and click, scaffolds and props go up and come down, and wanted elsewhere while on its own scaffold it digs the
- * block underfoot first. Checks that every placement is in reach, every block ends in its state, the clear space is
- * clear and the scaffold is all down.
+ * In plain terms: a stand-in for the game that plays a build through step by step as a player would, and
+ * checks the player could reach every block, every block ends up right, and its scaffolding is all taken
+ * down.
+ *
+ * Technical: A build played through the planner step by step, as the adapter's runner plays it: the player is
+ * put where each step says to stand (which must be a spot it can walk to), each block goes in as vanilla
+ * would place it from the planned look and click, scaffolds and props go up and come down, and wanted
+ * elsewhere while on its own scaffold it digs the block underfoot first. Checks that every placement is in
+ * reach, every block ends in its state, the clear space is clear and the scaffold is all down.
  */
 final class BuildSimulation {
     record Run(int steps, int scaffolds, int props) { }

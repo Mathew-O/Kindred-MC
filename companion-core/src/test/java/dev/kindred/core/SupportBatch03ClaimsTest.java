@@ -6,6 +6,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks claims on blocks and chests: a claim that ran out cannot free or renew one someone
+ * else now holds, a claim on several things is all or nothing, and a restart clears only claims made before
+ * it.
+ */
 class SupportBatch03ClaimsTest {
 
     @Test void expiredTokenCannotReleaseNewOwnerOrRenew() {

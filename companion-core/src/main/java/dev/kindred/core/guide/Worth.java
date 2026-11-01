@@ -13,11 +13,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * What an item is worth to a player as it stands (E-42), reckoned as players do: what it would cost the player to get
- * it otherwise, in minutes of play, and what it would do with it. The owner's direction (2026-10-25): a player never
- * walks past valuables. It takes up what is better than its own kit, carries what its run is short of, and takes and
- * stores what it has no use for yet but will have (gold before the Nether, an enchanted book, a saddle); what is worth
- * less than the slot it would take is left where it lies.
+ * In plain terms: what an item is worth to a player right now, counted in the minutes of play it would take
+ * to get it otherwise and in what the player would do with it. A player picks up what beats its own gear or
+ * what its run is short of, stores what it will need later, and leaves what is not worth the space.
+ *
+ * Technical: What an item is worth to a player as it stands (E-42), reckoned as players do: what it would
+ * cost the player to get it otherwise, in minutes of play, and what it would do with it. The owner's
+ * direction (2026-10-25): a player never walks past valuables. It takes up what is better than its own kit,
+ * carries what its run is short of, and takes and stores what it has no use for yet but will have (gold
+ * before the Nether, an enchanted book, a saddle); what is worth less than the slot it would take is left
+ * where it lies.
  *
  * <ul>
  *   <li>Worth falls off past what a player could ever use: the thirtieth diamond is worth a tenth of the first.</li>
@@ -114,6 +119,7 @@ public final class Worth {
             return want == null ? 0 : Math.max(0, want - has(unit));
         }
 
+        /** What it would hold with this stack gone. */
         Holding without(Stack stack) {
             var next = new HashMap<>(held);
             next.computeIfPresent(stack.item(), (item, count) -> count - stack.count() > 0 ? count - stack.count() : null);
@@ -254,6 +260,7 @@ public final class Worth {
     /** A piece of kit by its id, "minecraft:iron_chestplate", or null for anything else. */
     record Kit(Slot slot, Material material) { }
 
+    /** A piece of gear by its item id, or nothing for anything that is not gear. */
     static Kit kit(String item) {
         String path = id(item).substring("minecraft:".length());
         int split = path.lastIndexOf('_');

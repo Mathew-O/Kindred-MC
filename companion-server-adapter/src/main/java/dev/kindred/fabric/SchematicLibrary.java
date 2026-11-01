@@ -20,11 +20,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * The schematics a server's players may build (M-05): vanilla structure files ({@code .nbt}) and Sponge schematics
- * ({@code .schem}) put in {@code config/kindred/schematics} by the operator. Beside each, a {@code <name>.license}
- * file may say who made it, where it came from and under what terms ({@code creator=}, {@code source=},
- * {@code license=}); that is kept with the blueprint and said when a build starts (D8). Nothing is fetched from
- * anywhere. Files are read off the game thread.
+ * In plain terms: the building plans a server's players may build, kept as files the server's administrator
+ * puts in one folder. Each may come with a note of who made it, where it came from and under what terms,
+ * which is kept and said when a build starts. Nothing is downloaded from anywhere.
+ *
+ * Technical: The schematics a server's players may build (M-05): vanilla structure files ({@code .nbt}) and
+ * Sponge schematics ({@code .schem}) put in {@code config/kindred/schematics} by the operator. Beside each, a
+ * {@code <name>.license} file may say who made it, where it came from and under what terms ({@code creator=},
+ * {@code source=}, {@code license=}); that is kept with the blueprint and said when a build starts (D8).
+ * Nothing is fetched from anywhere. Files are read off the game thread.
  */
 final class SchematicLibrary {
     /** Largest file read: a schematic of the largest blueprint is far smaller. */
@@ -33,6 +37,7 @@ final class SchematicLibrary {
 
     private final Path directory;
 
+    /** The plans kept in the given folder. */
     SchematicLibrary(Path directory) {
         this.directory = directory;
     }

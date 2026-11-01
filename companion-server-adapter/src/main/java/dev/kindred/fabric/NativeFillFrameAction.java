@@ -20,9 +20,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Puts one owned eye of ender into a frame block of the End portal, as a player clicks it (E-39a): the frame then shows
- * the eye, exactly one eye is spent under the durable ledger, and the step reports whether the ring is full and the
- * portal open. A frame that already holds an eye is never clicked; nothing else of the player's is touched.
+ * In plain terms: an AI player putting one of its own eyes of ender into a frame of the End portal, as a
+ * human clicks it in. Exactly one eye is used, a frame that already has one is left alone, and it reports
+ * whether the portal has opened.
+ *
+ * Technical: Puts one owned eye of ender into a frame block of the End portal, as a player clicks it (E-39a):
+ * the frame then shows the eye, exactly one eye is spent under the durable ledger, and the step reports
+ * whether the ring is full and the portal open. A frame that already holds an eye is never clicked; nothing
+ * else of the player's is touched.
  */
 final class NativeFillFrameAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -39,6 +44,7 @@ final class NativeFillFrameAction extends NativeRecordedAction {
     private int waited;
     private CompletableFuture<ActionRecord> flush;
 
+    /** Filling the given frame block with the eye in a hotbar slot. */
     NativeFillFrameAction(NativePlayerBody body, Supplier<ActionLease> lease, ActionAdmission.Writer writer, Consumer<Runnable> dispatch,
                           int slot, BlockPos frame) {
         this.body = body;
@@ -55,6 +61,7 @@ final class NativeFillFrameAction extends NativeRecordedAction {
         return state.isOf(Blocks.END_PORTAL_FRAME) && state.get(EndPortalFrameBlock.EYE);
     }
 
+    /** Moves the frame filling on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded frame fill cannot replay after cancellation/restart", true);

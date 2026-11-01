@@ -6,12 +6,16 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Enchanting (E-16a), as players do it at a table of their own: the pieces a run wants enchanted and in what order (its
- * sword for Sharpness, its bow for Power, its armour for Protection, its boots for Feather Falling, its pickaxe for
- * Efficiency), the best of each first; when it is worth going to the table (thirty levels, the most a table asks, and
- * three lapis, so that the top offer is open to it); and of the three offers a table shows for a piece, the one to take:
- * the best it can pay for, by what the hinted enchantment is worth on that piece. Pure: the adapter says what it holds
- * and what the table offers.
+ * In plain terms: how a player enchants its gear at a table of its own: which piece is next, weapons first
+ * and the best material first; when it has the levels and lapis to go; and which of the table's three offers
+ * is worth most for that piece.
+ *
+ * Technical: Enchanting (E-16a), as players do it at a table of their own: the pieces a run wants enchanted
+ * and in what order (its sword for Sharpness, its bow for Power, its armour for Protection, its boots for
+ * Feather Falling, its pickaxe for Efficiency), the best of each first; when it is worth going to the table
+ * (thirty levels, the most a table asks, and three lapis, so that the top offer is open to it); and of the
+ * three offers a table shows for a piece, the one to take: the best it can pay for, by what the hinted
+ * enchantment is worth on that piece. Pure: the adapter says what it holds and what the table offers.
  */
 public final class Enchanting {
     private Enchanting() { }

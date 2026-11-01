@@ -1,11 +1,16 @@
 package dev.kindred.core.tactics;
 
 /**
- * Blast exposure (E-39i), as vanilla 1.21.1 reckons an explosion's harm to an entity: rays from a grid of points over
- * the entity's box to the blast, the share of them no block's collision shape stops; and from that share and the
- * entity's distance, the damage the blast does before armour (what a crystal's blast of power 6 or a bed's of 5 would
- * do to a player where it stands). Used to keep clear of a crystal it is about to set off, and to put a block between
- * itself and a bed set off against the dragon. Pure: the adapter says which rays a block stops.
+ * In plain terms: how much an explosion, such as an end crystal or a bed blowing up, would hurt the player
+ * where it stands, counting the blocks that shield it. The player uses it to stand clear or take cover before
+ * setting one off.
+ *
+ * Technical: Blast exposure (E-39i), as vanilla 1.21.1 reckons an explosion's harm to an entity: rays from a
+ * grid of points over the entity's box to the blast, the share of them no block's collision shape stops; and
+ * from that share and the entity's distance, the damage the blast does before armour (what a crystal's blast
+ * of power 6 or a bed's of 5 would do to a player where it stands). Used to keep clear of a crystal it is
+ * about to set off, and to put a block between itself and a bed set off against the dragon. Pure: the adapter
+ * says which rays a block stops.
  */
 public final class BlastExposure {
     private BlastExposure() { }

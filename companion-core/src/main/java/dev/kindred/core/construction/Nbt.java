@@ -12,9 +12,13 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 /**
- * Minecraft's NBT, read (M-05): the binary format structure files and schematics are saved in, gzipped or not.
- * Compounds come back as maps, lists as lists, numbers boxed, arrays as arrays. Bounded against a hostile file: at most
- * {@link #MAX_BYTES} unpacked, {@link #MAX_DEPTH} deep, and no list or array longer than what is left to read. Pure.
+ * In plain terms: reads the game's own file format for saved structures and building plans, packed or not,
+ * and refuses a file too large or too deeply nested to be safe.
+ *
+ * Technical: Minecraft's NBT, read (M-05): the binary format structure files and schematics are saved in,
+ * gzipped or not. Compounds come back as maps, lists as lists, numbers boxed, arrays as arrays. Bounded
+ * against a hostile file: at most {@link #MAX_BYTES} unpacked, {@link #MAX_DEPTH} deep, and no list or array
+ * longer than what is left to read. Pure.
  */
 public final class Nbt {
     public static final int MAX_BYTES = 16 << 20;
@@ -144,6 +148,7 @@ public final class Nbt {
         return parent.get(key) instanceof Number n ? n.intValue() : fallback;
     }
 
+    /** A piece of text from the file, or empty when it has none. */
     static String string(Map<String, Object> parent, String key) {
         return parent.get(key) instanceof String s ? s : "";
     }

@@ -19,10 +19,14 @@ import java.util.PriorityQueue;
 import java.util.function.Predicate;
 
 /**
- * Bounded A* over standing positions for a player-sized body. It only reads loaded blocks the body could see
- * by walking there; it never edits the world. Moves: walk (including diagonals without corner cutting), step
- * up one block with a jump, drop up to three blocks (further into water), and swim. Lava, fire and other
- * damaging blocks are never entered, and positions beside lava cost extra.
+ * In plain terms: finds a walking route for an AI player through the world as it really is: walking, stepping
+ * up, dropping a few blocks or swimming, but never into lava, fire or other harmful blocks. It only looks at
+ * parts of the world that are loaded, and never changes anything.
+ *
+ * Technical: Bounded A* over standing positions for a player-sized body. It only reads loaded blocks the body
+ * could see by walking there; it never edits the world. Moves: walk (including diagonals without corner
+ * cutting), step up one block with a jump, drop up to three blocks (further into water), and swim. Lava, fire
+ * and other damaging blocks are never entered, and positions beside lava cost extra.
  */
 final class NativeNavigator {
     static final int DEFAULT_MAX_NODES = 6_000;
@@ -50,6 +54,7 @@ final class NativeNavigator {
     private final it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap terrain = new it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap();
     private final int maxDrop;
 
+    /** A navigator for the given world that drops the body no further than is safe. */
     NativeNavigator(ServerWorld world) {
         this(world, MAX_SAFE_DROP);
     }
@@ -70,6 +75,16 @@ final class NativeNavigator {
         return false;
     }
 
+    /** An extra cost for each block of the route at a place, as its atlas weighs a night's danger there (F-30); none by default. */
+    private java.util.function.ToDoubleFunction<BlockPos> shun;
+
+    /** Routes priced dearer through places it has been hurt or killed (F-30): {@code cost} is the extra for each block there. */
+    NativeNavigator shunning(java.util.function.ToDoubleFunction<BlockPos> cost) {
+        this.shun = cost;
+        terrain.clear();
+        return this;
+    }
+
     /** Routes priced to keep out of these mobs' notice: dearer the nearer they pass (F-10g). */
     NativeNavigator avoiding(List<Danger> dangers) {
         this.dangers = List.copyOf(dangers);
@@ -86,9 +101,19 @@ final class NativeNavigator {
         this.maxDrop = Math.clamp(maxDrop, MAX_SAFE_DROP, MAX_CLUTCH_DROP);
     }
 
+    /** Where an unfinished route may end, when not just anywhere it can stand (E-49); null for anywhere. */
+    private Predicate<BlockPos> endable;
+
+    /** The same navigator, ending an unfinished route only where {@code where} allows. */
+    NativeNavigator endingOnly(Predicate<BlockPos> where) {
+        endable = where;
+        return this;
+    }
+
     /** Whether a closed wooden door counts as a way through: for a walk that opens the doors on its way (M-01b). */
     private boolean doors;
 
+    /** The same navigator, now counting closed wooden doors as a way through. */
     NativeNavigator throughDoors() {
         doors = true;
         passables.clear();
@@ -135,7 +160,7 @@ final class NativeNavigator {
             expanded++;
             if (goal.test(current.pos())) return new Path(trace(parent, current.pos()), true, expanded);
             double h = heuristic(current.pos(), target);
-            if (h < closestH) {
+            if (h < closestH && (endable == null || endable.test(current.pos()))) {
                 closestH = h;
                 closest = current.pos();
             }
@@ -169,6 +194,7 @@ final class NativeNavigator {
 
     private static final int[][] HORIZONTAL = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
+    /** Every move a body standing at the given spot can make next, with what each costs. */
     List<Move> moves(BlockPos from) {
         var moves = new ArrayList<Move>(12);
         boolean inWater = swimmable(from);
@@ -248,8 +274,14 @@ final class NativeNavigator {
      * routes, so dry ground behind a ceiling or across a wall, however close, is passed over.
      */
     java.util.Optional<BlockPos> nearestReachableDryStand(BlockPos from, int maxNodes, int maxHorizontalRadius) {
+        return nearestReachableDryStand(from, maxNodes, maxHorizontalRadius, feet -> true);
+    }
+
+    /** As above, passing over dry ground {@code allowed} refuses: one a walk out of the water could not get to, say. */
+    java.util.Optional<BlockPos> nearestReachableDryStand(BlockPos from, int maxNodes, int maxHorizontalRadius,
+                                                          java.util.function.Predicate<BlockPos> allowed) {
         Path path = find(from, from, feet -> standable(feet) && state(feet).getFluidState().isEmpty()
-                && state(feet.down()).getFluidState().isEmpty(), maxNodes, maxHorizontalRadius);
+                && state(feet.down()).getFluidState().isEmpty() && allowed.test(feet), maxNodes, maxHorizontalRadius);
         return path.complete() && !path.nodes().isEmpty() ? java.util.Optional.of(path.nodes().getLast()) : java.util.Optional.empty();
     }
 
@@ -354,6 +386,26 @@ final class NativeNavigator {
         return !shape.isEmpty() && shape.getMax(Direction.Axis.Y) >= 0.8 && shape.getMax(Direction.Axis.Y) <= 1.0;
     }
 
+    /**
+     * A stand to end a walk on that someone else asked for (E-49): one it can stand on with nothing that harms beside it,
+     * where a push or a misstep would hurt. No lava or fire at the feet or the head or just below them on any side, and
+     * no open side with a drop deeper than {@link #MAX_SAFE_DROP} onto anything but water. The route's own way there is
+     * as any route's: only where it ends is held to this.
+     */
+    boolean safeStand(BlockPos feet) {
+        if (!standable(feet)) return false;
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            BlockPos beside = feet.offset(side);
+            if (hazard(beside) || hazard(beside.up()) || hazard(beside.down()) || lavaAt(beside.down())) return false;
+            if (!clear(beside) || standable(beside) || swimmable(beside)) continue;
+            // An open side with nothing to stand on: how far down the ground is.
+            int depth = 1;
+            while (depth <= MAX_SAFE_DROP + 1 && passable(beside.down(depth)) && !swimmable(beside.down(depth))) depth++;
+            if (depth > MAX_SAFE_DROP + 1 || lavaAt(beside.down(depth))) return false;
+        }
+        return true;
+    }
+
     /** Feet in water deep enough to swim, never in lava. */
     boolean swimmable(BlockPos feet) {
         return loaded(feet) && state(feet).getFluidState().isIn(FluidTags.WATER) && !hazard(state(feet));
@@ -363,6 +415,7 @@ final class NativeNavigator {
         return loaded(pos) && state(pos).getFluidState().isIn(FluidTags.LAVA);
     }
 
+    /** Whether the block there would hurt or trap the body. */
     boolean hazard(BlockPos pos) {
         return loaded(pos) && hazard(state(pos));
     }
@@ -389,7 +442,7 @@ final class NativeNavigator {
             double distance = Math.sqrt(danger.at().squaredDistanceTo(feet.getX() + 0.5, feet.getY() + 0.5, feet.getZ() + 0.5));
             unease += dev.kindred.core.tactics.MobSenses.unease(danger.profile(), distance, danger.seen());
         }
-        return DANGER_WEIGHT * unease + groundCost(feet);
+        return DANGER_WEIGHT * unease + groundCost(feet) + (shun == null ? 0 : shun.applyAsDouble(feet));
     }
 
     private double groundCost(BlockPos feet) {
@@ -422,6 +475,7 @@ final class NativeNavigator {
         return state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL) || state.isOf(Blocks.END_GATEWAY);
     }
 
+    /** Whether the spot is in a loaded part of the world, inside its border. */
     boolean loaded(BlockPos pos) {
         if (!world.isInBuildLimit(pos)) return false;
         int cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
@@ -431,6 +485,7 @@ final class NativeNavigator {
         return known == 1 && world.getWorldBorder().contains(pos);
     }
 
+    /** The block at the spot, read once and remembered for this search. */
     BlockState state(BlockPos pos) {
         long key = pos.asLong();
         BlockState state = states.get(key);

@@ -20,10 +20,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Names a weapon or tool at an anvil (E-16d), as a player does: the piece in one inventory slot put in, the name typed,
- * the named piece taken out and put back where it was, for the levels the anvil asks. Verified against the durable
- * ledger: the piece is the same in every way but its name, nothing else held changed, and exactly the anvil's cost in
- * levels was spent. Using an anvil is a workstation's use under the server's edit policy.
+ * In plain terms: an AI player naming one of its weapons or tools at an anvil, as a human does, paying the
+ * experience levels the anvil asks. Only the name changes; the piece goes back where it was and nothing else
+ * it carries changes.
+ *
+ * Technical: Names a weapon or tool at an anvil (E-16d), as a player does: the piece in one inventory slot
+ * put in, the name typed, the named piece taken out and put back where it was, for the levels the anvil asks.
+ * Verified against the durable ledger: the piece is the same in every way but its name, nothing else held
+ * changed, and exactly the anvil's cost in levels was spent. Using an anvil is a workstation's use under the
+ * server's edit policy.
  */
 final class NativeRenameAction extends NativeRecordedAction {
     private final NativePlayerBody body;
@@ -46,6 +51,7 @@ final class NativeRenameAction extends NativeRecordedAction {
     private CompletableFuture<ActionRecord> flush;
     private int spent = -1;
 
+    /** Giving the piece in an inventory slot the given name at the given anvil. */
     NativeRenameAction(NativePlayerBody body, Supplier<ActionLease> lease, UUID worldId, Supplier<WorkSetup> setup,
                        Supplier<EditPolicy.ServerPolicy> policy, ClaimRegistry claims, ActionAdmission.Writer writer,
                        Consumer<Runnable> dispatch, BlockPos anvil, int slot, String name) {
@@ -73,6 +79,7 @@ final class NativeRenameAction extends NativeRecordedAction {
         return decision.allowed() ? null : decision.reason();
     }
 
+    /** Moves the naming on by one tick. */
     @Override
     public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
         if (halted || checkpoint.isPresent()) return Step.blocked("A recorded rename cannot replay after cancellation/restart", true);

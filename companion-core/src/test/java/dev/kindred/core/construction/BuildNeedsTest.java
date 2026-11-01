@@ -7,6 +7,11 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player works out the materials a build still needs: it takes from storage
+ * first, then gathers and crafts ingredients before what they go into, builds what it can before making one
+ * trip for everything short, gets what is easy to get at once, and says so when something cannot be had.
+ */
 class BuildNeedsTest {
     private static final String LOG = "minecraft:oak_log", PLANKS = "minecraft:oak_planks", STAIRS = "minecraft:oak_stairs",
             FENCE = "minecraft:oak_fence", STICK = "minecraft:stick", COBBLE = "minecraft:cobblestone", TORCH = "minecraft:torch";

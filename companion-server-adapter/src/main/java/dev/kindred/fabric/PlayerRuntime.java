@@ -160,8 +160,24 @@ final class PlayerRuntime {
     private final Path metadataDirectory;
     /** The optional model strategist for goals (F-19b), when switched on and a key is set. */
     private Optional<StrategistBridge> strategist;
+    /**
+     * Each player's memory of the world (notes, habits, deaths, follow-ups) and its own lessons (E-46): the strategist's
+     * bridge when there is one, else the same memory with no model behind it.
+     */
+    private StrategistBridge memory;
+    private boolean lessons = true;
+    /** Whether the players keep an atlas of the world and use it (F-30): on unless {@code KINDRED_ATLAS=off} or a scenario says so. */
+    private boolean atlasOn = true;
+    /** Where things are likely in this version of the game: the atlas's priors, read once. */
+    private static final dev.kindred.core.atlas.Priors PRIORS = dev.kindred.core.atlas.Priors.standard();
+    /** The most a block of a walk costs extra for a night's danger where it is (F-30), and how much a unit of danger adds. */
+    static final double SHUN_CAP = 2.0, SHUN_PER_DANGER = 0.5;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
+    /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
+    private RunObserver runObserver = RunObserver.NONE;
+    /** Its players' deaths kept as replays (F-27), when the mod turns it on; none by default. */
+    private DeathReplays replays;
     private final NativePlayerSaves.Reader nativeSaveReader;
     private final java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator;
     private final StartupLedgerReader startupLedgerReader;
@@ -177,6 +193,11 @@ final class PlayerRuntime {
     private CompletableFuture<LoadedRegistry> startup;
     private CompletableFuture<Void> shutdown = CompletableFuture.completedFuture(null);
     private final CompanionSocials socials;
+    /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
+    private final PlayerVoice voice;
+    private boolean voiceOn = PlayerVoice.switchedOn(System.getenv());
+    /** What the social lane says to whom, for fixtures; null otherwise. */
+    private java.util.function.BiConsumer<ServerPlayerEntity, Text> heardForFixtures;
     private EditPolicy.ServerPolicy edits = EditPolicy.ServerPolicy.deferredD4();
     /**
      * Whether the server allows an AI player to fight the Ender Dragon (E-39a): off until an operator turns it on, as
@@ -358,12 +379,38 @@ final class PlayerRuntime {
         this.presenter = new MatchPresenter(server);
         this.metadataDirectory = metadataDirectory;
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
+        this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
+        this.memory.rescueHost(rescueHost);
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
-        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now,
-                (player, message) -> player.sendMessage(message, false), new HabitHooks(), this::aiPlayerOf);
+        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now, (player, message) -> {
+            player.sendMessage(message, false);
+            if (heardForFixtures != null) heardForFixtures.accept(player, message);
+        }, new HabitHooks(), this::aiPlayerOf);
+        voice = new PlayerVoice(this::voiceFacts, new PlayerVoice.Asks() {
+            @Override
+            public void ask(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
+                voiceAsk(playerId, speaker, ask, item, refused);
+            }
+
+            @Override
+            public Optional<String> withheld(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask) {
+                Entry entry = entries.get(playerId);
+                if (entry == null || ask == dev.kindred.model.Strategist.Ask.STOP || !entry.trust.wary(speaker.getUuid(), server.getTicks())) return Optional.empty();
+                KindredMod.LOGGER.info("{} asked in chat by {}: {}: refused (wary of them)", entry.data.displayName(), speaker.getName().getString(), ask);
+                return Optional.of(NOT_AFTER_LAST_TIME);
+            }
+        }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
+        socials.setVoice(voice);
+        // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
+        socials.setControllers((player, participant) -> {
+            Entry entry = entries.get(participant.id());
+            return entry != null && entry.nativeState != null && entry.nativeState.access().mayControl(new Actor(player.getUuid(), player.hasPermissionLevel(2)));
+        });
+        if (strategist.isPresent()) KindredMod.LOGGER.info("Kindred voice {}", voiceOn ? "on: replies in chat are phrased by the strategist's model"
+                : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
         socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {
             @Override
             public void onConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
@@ -568,6 +615,11 @@ final class PlayerRuntime {
     boolean shutdownComplete() { requireThread(); return !running && shutdown.isDone() && !shutdown.isCompletedExceptionally(); }
 
     int createNative(ServerCommandSource source, String name) {
+        return createNative(source, name, null);
+    }
+
+    /** As above; a starter's preset personality, if given, becomes the new player's own before it first acts (C13). */
+    private int createNative(ServerCommandSource source, String name, Personality preset) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         Actor actor = nativeActor(source);
@@ -591,6 +643,7 @@ final class PlayerRuntime {
             entry.nativeState = record;
             entry.ledgerState = LedgerCheckState.KNOWN_LEDGER_CLEAR;
             entries.put(entry.data.id(), entry);
+            if (preset != null) startWithPersonality(entry, preset);
             feedback(source, "Allocated " + name + " (" + entry.data.id() + "). Preparing its native body.");
             if (nativeActor(source) == null || !nativeActor(source).operator()) {
                 entry.reconciliationBlocked = true;
@@ -808,6 +861,8 @@ final class PlayerRuntime {
             body.onTick(() -> beforeNativeTick(entry, body));
             body.onDeath(() -> onNativeDeath(entry, body));
             body.onHitByPlayer((by, taken) -> hitByPlayer(entry, body.entity(), by, taken));
+            body.onHarm((cause, taken) -> harmed(entry, cause, taken));
+            body.onGift((from, stack) -> gifted(entry, from, stack));
             body.connect(state, !fresh);
             entry.data = entry.arbiter.snapshot();
             if (fresh) establishNative(source, entry, body, body.saveNow());
@@ -1312,7 +1367,7 @@ final class PlayerRuntime {
         if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
             return reject(source, "Native player unavailable or administrative access denied.");
         }
-        int res = dispatchNativeTask(nativeActor(source), entry, skill, arguments);
+        int res = dispatchNativeTask(nativeActor(source), entry, skill, arguments, false);
         if (res == 1) {
             // A direct request holds autonomous selection briefly so the requester sees its own outcome.
             entry.manualHoldUntilTick = server.getTicks() + MANUAL_COMMAND_HOLD_TICKS;
@@ -1323,7 +1378,8 @@ final class PlayerRuntime {
         return res;
     }
 
-    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments) {
+    /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
+    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
         requireThread();
         UUID id = entry.data.id();
         if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
@@ -1547,7 +1603,8 @@ final class PlayerRuntime {
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Boolean.parseBoolean(arguments.getOrDefault("collect", "true")),
                         Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")),
-                        Boolean.parseBoolean(arguments.getOrDefault("underfoot", "false")));
+                        Boolean.parseBoolean(arguments.getOrDefault("underfoot", "false")),
+                        Boolean.parseBoolean(arguments.getOrDefault("over_lava", "false")));
             } else if (skill.equals("native_bucket")) {
                 task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), server::execute,
@@ -1592,6 +1649,10 @@ final class PlayerRuntime {
                     || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
                 entry.nativeWorkPending = false;
                 admission.release(id);
+                if (running) dispatchDropped(entry, skill, "generation=" + (entry.generation == generation)
+                        + " fault=" + entry.metadataFault + " reconciling=" + entry.reconciliationBlocked + " ledger=" + entry.ledgerState
+                        + " stop=" + entry.snapshot().stopLatched() + " cancelling=" + entry.arbiter.cancellationPending()
+                        + " hazard=" + entry.hazardInterrupted);
                 return;
             }
             if (failure != null) { nativeActivityFailure(entry, "Activity budget could not be loaded"); return; }
@@ -1639,6 +1700,11 @@ final class PlayerRuntime {
                         entry.activity.stop(); admission.release(id);
                         if (running && generation == entry.generation) entry.blocker = entry.activity.blocker().isBlank()
                                 ? "Native request cancelled before paid dispatch." : entry.activity.blocker();
+                        if (running) dispatchDropped(entry, skill, "paid=" + paid + "/" + entry.activity.paid() + " generation="
+                                + (entry.generation == generation) + " stop=" + entry.snapshot().stopLatched() + " cancelling="
+                                + entry.arbiter.cancellationPending() + " hazard=" + entry.hazardInterrupted + " connected="
+                                + (entry.nativeBody != null && entry.nativeBody.connected()) + " ledger=" + entry.ledgerState
+                                + " blocker=" + entry.activity.blocker());
                         return;
                     }
                     try {
@@ -1648,12 +1714,14 @@ final class PlayerRuntime {
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
                                 task, actor == null ? Actor.console() : actor, taskId, java.util.Optional.empty());
+                        if (own) entry.ownStarts++;
                         entry.lastRunnerState = SkillRunner.State.RUNNING;
                         entry.blocker = "Running " + skill + " under one acknowledged activity slice.";
                         persist(entry);
                     } catch (RuntimeException denied) {
                         entry.activity.stop(); admission.release(id);
                         entry.blocker = "Native skill denied: " + denied.getMessage();
+                        dispatchDropped(entry, skill, entry.blocker);
                     }
                 });
             } catch (RuntimeException invalid) { nativeActivityFailure(entry, "Activity state requires reconciliation"); }
@@ -1784,6 +1852,20 @@ final class PlayerRuntime {
         return ScheduleClock.windowInterval(window, period, now).map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(now);
     }
 
+    /**
+     * A task accepted for dispatch and dropped before its skill started: said at most once a minute, with the gates that
+     * dropped it. Its decision loop saw it accepted, and a goal that offers it again each tick would stand still unsaid (F-25c4m).
+     */
+    private void dispatchDropped(Entry entry, String skill, String gates) {
+        if (server.getTicks() - entry.lastDropReportTick < STALL_TICKS) return;
+        entry.lastDropReportTick = server.getTicks();
+        KindredMod.LOGGER.info("{} {} dropped before it ran: {}", entry.data.displayName(), skill, gates);
+        if (watch != null) entry.decided(server.getTicks(), skill + " dropped before it ran: " + gates);
+    }
+
+    /** Game time with a goal and no skill started, after which a player says once what holds it (F-25c4m). */
+    private static final int STALL_TICKS = 1200;
+
     private void nativeActivityFailure(Entry entry, String reason) {
         entry.metadataFault = true;
         entry.nativeWorkPending = false;
@@ -1822,7 +1904,23 @@ final class PlayerRuntime {
             entry.gazePersonality = personality;
         }
         return new NativePlayerSkills.NativeMovementHabits(entry.mannerisms, personality, PlayerRuntime::now, entry.gaze,
-                () -> server.getTicks() - entry.addressedAt <= NativeWaitSkill.SPOKEN ? entry.addressedBy : null);
+                () -> server.getTicks() - entry.addressedAt <= NativeWaitSkill.SPOKEN ? entry.addressedBy : null, nightShun(entry));
+    }
+
+    /**
+     * At night, the extra cost of each block of a walk through a place its atlas marks as dangerous then (F-30): half
+     * the danger, at most {@link #SHUN_CAP}, so a way round of about the same length is taken and a long one is not.
+     * None by day, with the atlas off, or with no danger near.
+     */
+    private java.util.function.ToDoubleFunction<BlockPos> nightShun(Entry entry) {
+        var atlas = entry.atlas;
+        if (!atlasOn || atlas == null || entry.nativeBody == null || !entry.nativeBody.connected()) return null;
+        var world = entry.nativeBody.entity().getServerWorld();
+        if (!world.isNight()) return null;
+        long now = world.getTime();
+        var here = PortalRunCampaign.place(world, entry.nativeBody.entity().getBlockPos());
+        if (atlas.dangerNear(here, 96, true, now, 0.05).isEmpty()) return null;
+        return pos -> Math.min(SHUN_CAP, SHUN_PER_DANGER * atlas.dangerAt(PortalRunCampaign.place(world, pos), true, now));
     }
 
     private boolean nativeMutationAllowed(Entry entry, ActionLease lease, NativePlayerBody.Intent intent, BlockPos target) {
@@ -2164,6 +2262,8 @@ final class PlayerRuntime {
         }
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
+                if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
+                if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 refreshTacticalObservation(entry, tick);
                 SignalFrame frame = createSignalFrame(entry, tick);
                 entry.attentionSnapshot = entry.attention.observe(frame);
@@ -2194,6 +2294,15 @@ final class PlayerRuntime {
                 attentionScheduler.complete(token);
             } catch (Exception failure) {
                 attentionScheduler.abandon(token);
+            }
+        }
+        if (watch != null) {
+            try {
+                publishWatch(tick);
+            } catch (RuntimeException failure) {
+                // The page is a window on play, never a part of it: a fault in it is logged once and play goes on.
+                if (!watchFaulted) KindredMod.LOGGER.warn("The watch page's snapshot failed; play goes on", failure);
+                watchFaulted = true;
             }
         }
     }
@@ -2563,6 +2672,12 @@ final class PlayerRuntime {
             }
         }
 
+        // 0c. Struck in the last minute by someone it may not strike back (E-49): it keeps its distance, never answering the blow.
+        if (candidates.isEmpty()) {
+            var keepAway = keepAwayCandidate(entry, body);
+            if (keepAway != null) candidates.add(keepAway);
+        }
+
         // 1. Hunger and health recovery eating (URGENT)
         float currentHealth = player.getHealth();
         float maxHealth = player.getMaxHealth();
@@ -2575,7 +2690,11 @@ final class PlayerRuntime {
             return food != null && (dev.kindred.core.SurvivalPolicy.worthEating(foodLevel, food.nutrition(), needsHealth)
                     || needsHealth && food.canAlwaysEat());
         };
-        if (canEatVanilla || needsHealth) {
+        // Not under water short of breath: up for air first, as a person does. In the live pair on 41f9de9 Echo, drowning at
+        // Y=8 with a mob on it, began to eat a dozen times in its last two seconds, each cancelled for the threat, and never
+        // swam up (F-25c4af).
+        boolean outOfBreath = inDeepWater(player) && player.getAir() < player.getMaxAir() / 2;
+        if ((canEatVanilla || needsHealth) && !outOfBreath) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {
@@ -2817,7 +2936,13 @@ final class PlayerRuntime {
             }
             if (entry.expeditionState.status() == ExpeditionStatus.RETURNING) {
                 ReturnReason reason = entry.expeditionState.returnReason();
-                if (reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM || reason == ReturnReason.LOW_HEALTH) {
+                // A bed of its own to sleep in tonight is its way home (F-25c9a): the walk back to its anchor outranks
+                // the walk to its bed, and once it had slept in its cabin its anchor was that bed, behind the cabin's
+                // walls, never within the two blocks the walk ends at. It stood outside its cabin all night.
+                if ((reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM) && lifeFirst(entry)
+                        && (player.isSleeping() || nearestOwnBed(entry, world, player.getBlockPos()) != null)) {
+                    entry.expeditionState.arriveAtBase();
+                } else if (reason == ReturnReason.NIGHT || reason == ReturnReason.THUNDERSTORM || reason == ReturnReason.LOW_HEALTH) {
                     ExpeditionPlan plan = ExpeditionPlanner.plan(entry.expeditionState, expObs);
                     if ("native_traverse".equals(plan.action()) && plan.blocks() > 0) {
                         UUID taskId = UUID.nameUUIDFromBytes(("urgent_expedition_return:" + entry.data.id() + ":" + plan.direction() + ":" + reason).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -3119,8 +3244,7 @@ final class PlayerRuntime {
         // What keeps it alive comes before its ranch, its build or its base (F-25c9): its own bed at night, food enough
         // to last when hunger is low. A running goal weighs food and the night itself; the routine work of a work
         // area keeps its own order for now.
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
-                && (entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled())) {
+        if (lifeFirst(entry)) {
             var life = lifeCandidates(entry, body);
             if (!life.isEmpty()) {
                 candidates.addAll(life);
@@ -3837,6 +3961,43 @@ final class PlayerRuntime {
 
     /** The standing goal's next concrete step, as one ordinary candidate; survival needs still outrank it. */
     /**
+     * The player's atlas (F-30), on the server thread: read from its file once; then, once a second, the chunk it
+     * stands in with its biome, and its bed as a shelter; each hurt by a hostile mob as it is taken; and saved once a game
+     * minute, the copy turned into its file off the thread.
+     */
+    private void keepAtlas(Entry entry, net.minecraft.server.network.ServerPlayerEntity player, long tick) {
+        if (entry.atlas == null) {
+            if (entry.atlasLoading) return;
+            entry.atlasLoading = true;
+            UUID id = entry.data.id();
+            memories.loadAtlas(id, entry.data.displayName()).whenComplete((snapshot, failure) -> server.execute(() -> {
+                entry.atlasLoading = false;
+                if (!running || entries.get(id) != entry || entry.atlas != null) return;
+                entry.atlas = dev.kindred.core.atlas.Atlas.restore(failure == null ? snapshot : null, PRIORS);
+                entry.atlasSavedAt = server.getTicks();
+            }));
+            return;
+        }
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (player.hurtTime == player.maxHurtTime && player.maxHurtTime > 0 && player.getRecentDamageSource() != null
+                && player.getRecentDamageSource().getAttacker() instanceof net.minecraft.entity.mob.HostileEntity) {
+            entry.atlas.harmed(PortalRunCampaign.place(world, feet), world.isNight(), world.getTime(), 1);
+        }
+        if (tick % 20 != 0) return;
+        String biome = world.getBiome(feet).getKey().map(key -> key.getValue().toString()).orElse(null);
+        entry.atlas.visit(PortalRunCampaign.place(world, feet), biome, world.getTime());
+        var bed = player.getSpawnPointPosition();
+        if (bed != null && player.getSpawnPointDimension() == world.getRegistryKey() && tick % 1200 == 0) {
+            entry.atlas.shelter(PortalRunCampaign.place(world, bed), "bed");
+        }
+        if (tick - entry.atlasSavedAt >= 1200) {
+            entry.atlasSavedAt = tick;
+            memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
+        }
+    }
+
+    /**
      * The player's memory of this world: read once for each campaign and recalled into it, then written whenever it
      * learns something worth keeping. Reads and writes are off the game thread.
      */
@@ -3868,6 +4029,8 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> campaignCandidates(Entry entry, NativePlayerBody body) {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
+        entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        entry.campaign.customs(customs);
         entry.campaign.pursue(entry.goal);
         entry.campaign.dragonAllowed(dragonFight);
         entry.campaign.huntersKit(gearingHunter(body));
@@ -3883,7 +4046,7 @@ final class PlayerRuntime {
         body.setPortalTravelAuthorized(mayTravel && (task.filter(PortalRunCampaign::throughPortal).isPresent()
                 || PortalRunCampaign.throughPortal(entry.activeCampaignTask)));
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
-        strategist.ifPresent(bridge -> bridge.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry)));
+        memory.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry));
         entry.goalProgress = entry.campaign.progress();
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
@@ -3908,7 +4071,10 @@ final class PlayerRuntime {
             entry.loggedGoalProgress = entry.goalProgress;
             var at = body.entity().getBlockPos();
             KindredMod.LOGGER.info("{} goal at {} {} {}: {}", entry.data.displayName(), at.getX(), at.getY(), at.getZ(), entry.goalProgress);
+            if (watch != null) entry.decided(server.getTicks(), "goal at " + at.getX() + " " + at.getY() + " " + at.getZ() + ": " + entry.goalProgress);
         }
+        // A way out asked for just now, at the bridge's look above: what the goal chose before it asked is not given out (F-29).
+        if (entry.campaign.holdingForRescue(body.entity())) return List.of();
         if (task.isEmpty()) return List.of();
         var t = task.get();
         UUID id = UUID.nameUUIDFromBytes(("campaign:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
@@ -3946,7 +4112,7 @@ final class PlayerRuntime {
                     entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
             }
-            entry.campaign.taskFinished(task, completed, server.getTicks());
+            entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
         entry.cachedRoutineCandidates = List.of();
@@ -4516,6 +4682,12 @@ final class PlayerRuntime {
 
     private static final int FOOD_LOOKS = 3, FOOD_RETRY = 6000, SLEEP_RETRY = 600, BED_REACH = 96;
 
+    /** Life comes first for it (F-25c9): no running goal, and work of its own (a ranch, a field, a build or its base). */
+    private boolean lifeFirst(Entry entry) {
+        return entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
+                && (entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled());
+    }
+
     /**
      * What keeps the player alive, ahead of its ranch, build or base (F-25c9), as {@link dev.kindred.core.survival.LifeFirst}
      * weighs it: at night, to a bed of its own and to sleep there, which sets its spawn; when hunger is low, food until
@@ -4551,36 +4723,77 @@ final class PlayerRuntime {
                     "z", String.valueOf(bed.getZ())), "Sleep in its own bed");
         } else {
             entry.gettingFood = true;
-            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
-            entry.campaign.policy(edits);
-            // Never the kind of animal its ranch is penning: those are its pair to breed.
-            var ranch = entry.ranch;
-            var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
-                    net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
-            // No animal in sight: fish at water close by with a rod it holds, before it walks out to look (E-05).
-            if (found.isEmpty()) found = entry.campaign.fish(body);
-            if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
-            if (found.isEmpty()) {
-                entry.gettingFood = false;
-                entry.foodLooks = 0;
-                entry.foodSoughtUntil = now + FOOD_RETRY;
-                noteLife(entry, "No food to be had about here for now: back to its work, and it looks again later");
-                return List.of();
+            // What it put by in its own storage first (F-25c9b): bread in its chest is eaten before a cow is hunted.
+            var stored = storedFood(entry, player, hunger + carried);
+            if (stored.isPresent()) {
+                task = stored.get();
+            } else {
+                if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.policy(edits);
+                // Never the kind of animal its ranch is penning: those are its pair to breed.
+                var ranch = entry.ranch;
+                var found = entry.campaign.huntFood(body, animal -> ranch != null && dev.kindred.core.survival.Ranch.Kind.of(
+                        net.minecraft.registry.Registries.ENTITY_TYPE.getId(animal.getType()).toString()).filter(k -> k == ranch.ranch.kind()).isPresent());
+                // No animal in sight: fish at water close by with a rod it holds, before it walks out to look (E-05).
+                if (found.isEmpty()) found = entry.campaign.fish(body);
+                if (found.isEmpty() && entry.foodLooks < FOOD_LOOKS) found = entry.campaign.lookFor(body, "food");
+                if (found.isEmpty()) {
+                    entry.gettingFood = false;
+                    entry.foodLooks = 0;
+                    entry.foodSoughtUntil = now + FOOD_RETRY;
+                    noteLife(entry, "No food to be had about here for now: back to its work, and it looks again later");
+                    return List.of();
+                }
+                task = found.get();
             }
-            task = found.get();
         }
         UUID id = UUID.nameUUIDFromBytes(("life:" + entry.data.id() + ":" + task.skill() + ":" + new java.util.TreeMap<>(task.args()))
                 .getBytes(StandardCharsets.UTF_8));
         entry.lifeTaskId = id;
         entry.lifeTask = task;
         // Its hunt is the goal's own, so the goal's record of how its steps went keeps it from the same dead end again.
-        if (decision.need().get() == dev.kindred.core.survival.LifeFirst.Need.FOOD) {
+        if (decision.need().get() == dev.kindred.core.survival.LifeFirst.Need.FOOD && !task.label().endsWith(FROM_STORAGE)) {
             entry.campaignTasks.clear();
             entry.campaignTasks.put(id, task);
         }
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, decision.weight(),
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, task.skill(), task.args()));
+    }
+
+    private static final String FROM_STORAGE = "from its storage";
+
+    /**
+     * Food in its own storage, taken before it hunts (F-25c9b): to its storage when it is out of reach, then the most
+     * filling safe food there, as much as brings it to enough to last ({@code has} is what it has in its body and pack).
+     * Empty when it has no storage near, or none of the food there is safe to eat.
+     */
+    private java.util.Optional<PortalRunCampaign.Task> storedFood(Entry entry, ServerPlayerEntity player, int has) {
+        if (entry.setup == null || entry.setup.storage() == null) return java.util.Optional.empty();
+        var at = entry.setup.storage().position();
+        BlockPos storage = new BlockPos(at.x(), at.y(), at.z());
+        var world = player.getServerWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(entry.setup.dimension()) || !world.isChunkLoaded(storage)
+                || player.getBlockPos().getSquaredDistance(storage) > BED_REACH * BED_REACH
+                || !(world.getBlockEntity(storage) instanceof net.minecraft.inventory.Inventory chest)) return java.util.Optional.empty();
+        ItemStack best = null;
+        for (int slot = 0; slot < chest.size(); slot++) {
+            var stack = chest.getStack(slot);
+            if (isEligibleFood(stack, true, false) && (best == null
+                    || stack.get(DataComponentTypes.FOOD).nutrition() > best.get(DataComponentTypes.FOOD).nutrition())) best = stack;
+        }
+        if (best == null) return java.util.Optional.empty();
+        String name = best.getName().getString().toLowerCase(java.util.Locale.ROOT);
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(storage)) > 4.2 * 4.2) {
+            return java.util.Optional.of(PortalRunCampaign.go(storage, 2.5, false, "To its storage for " + name));
+        }
+        int each = best.get(DataComponentTypes.FOOD).nutrition(), held = 0;
+        for (int slot = 0; slot < chest.size(); slot++) if (chest.getStack(slot).isOf(best.getItem())) held += chest.getStack(slot).getCount();
+        int short_ = dev.kindred.core.survival.LifeFirst.FULL + dev.kindred.core.survival.LifeFirst.RESERVE - has;
+        int count = Math.min(held, Math.max(1, (short_ + each - 1) / each));
+        return java.util.Optional.of(new PortalRunCampaign.Task("native_take", Map.of("item",
+                net.minecraft.registry.Registries.ITEM.getId(best.getItem()).toString(), "count", String.valueOf(count)),
+                "Take " + count + " " + name + " " + FROM_STORAGE));
     }
 
     /** The food points of the safe food it carries, as it would eat it. */
@@ -5201,6 +5414,15 @@ final class PlayerRuntime {
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
+        // What it died in, for a run's report to weigh deaths by (B7): read before its work is stopped below.
+        String circumstances = deathCircumstances(entry, player);
+        // The scene and its state kept for a replay, before its work stops and vanilla drops what it holds (F-27).
+        if (replays != null) {
+            var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
+            replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(entry.goal),
+                    entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
+                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
+        }
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
         if (entry.runner != null && runnerBusy(entry)) {
@@ -5214,11 +5436,53 @@ final class PlayerRuntime {
         entry.currentTaskId = null;
         body.stopInputs();
         boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
-        if (entry.campaign != null) entry.campaign.died(deathPos, player.getServerWorld(), server.getTicks(), killedByMob,
-                player.getDamageTracker().getDeathMessage().getString());
+        // What its lessons read of the death (E-46): when in the world's time, how high, by night, under the sky, its
+        // food, and how it came.
+        var world = player.getServerWorld();
+        var lastHurt = player.getRecentDamageSource();
+        boolean fell = lastHurt != null && lastHurt.isIn(net.minecraft.registry.tag.DamageTypeTags.IS_FALL);
+        var facts = new dev.kindred.core.survival.Lessons.Death(world.getTime(), deathPos.getY(), world.isNight(), world.isSkyVisible(deathPos.up()),
+                world.getRegistryKey() == net.minecraft.world.World.OVERWORLD, player.getHungerManager().getFoodLevel(),
+                fell ? dev.kindred.core.survival.Lessons.How.FALL : killedByMob ? dev.kindred.core.survival.Lessons.How.MOB
+                        : dev.kindred.core.survival.Lessons.How.OTHER, false);
+        BlockPos killerAt = killedByMob ? player.getAttacker().getBlockPos().toImmutable() : null;
+        if (atlasOn && entry.atlas != null) {
+            entry.atlas.harmed(PortalRunCampaign.place(world, deathPos), world.isNight(), world.getTime(), dev.kindred.core.atlas.Atlas.DEATH);
+        }
+        if (entry.campaign != null) entry.campaign.died(deathPos, world, server.getTicks(), killedByMob,
+                player.getDamageTracker().getDeathMessage().getString(), facts, killerAt);
         entry.blocker = "Died at " + deathPos.toShortString() + "; respawning.";
-        KindredMod.LOGGER.info("{} died at {}: {}", entry.data.displayName(), deathPos.toShortString(),
-                player.getDamageTracker().getDeathMessage().getString());
+        KindredMod.LOGGER.info("{} died at {}: {} ({})", entry.data.displayName(), deathPos.toShortString(),
+                player.getDamageTracker().getDeathMessage().getString(), circumstances);
+        var doing = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
+        if (watch != null) {
+            highlight(server.getTicks(), entry.data.displayName(), "death", player.getDamageTracker().getDeathMessage().getString());
+            entry.decided(server.getTicks(), "died at " + deathPos.toShortString() + ": " + player.getDamageTracker().getDeathMessage().getString());
+        }
+        runObserver.died(entry.data.displayName(), player, player.getDamageTracker().getDeathMessage().getString(),
+                entry.campaign == null ? "no goal" : entry.campaign.progress(), entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
+                entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), doing);
+    }
+
+    /**
+     * What a death happened in: the tick and the time of day, under the sky or not, its hunger, armour, hands and
+     * shield, what it was doing, its goal's stage, and the strategist's advice and the habits in force.
+     */
+    private String deathCircumstances(Entry entry, ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        var hand = player.getMainHandStack();
+        boolean shield = player.getOffHandStack().isOf(Items.SHIELD) || hand.isOf(Items.SHIELD);
+        var task = entry.activeCampaignTask != null ? entry.activeCampaignTask : entry.activeBuildTask;
+        String doing = task != null ? task.label() : entry.skillId != null ? entry.skillId : "nothing";
+        var campaign = entry.campaign;
+        String advice = campaign == null ? "no goal" : "stance " + campaign.stance() + ", focus " + campaign.focus()
+                + ", habits " + campaign.preferences().habits();
+        return "tick " + server.getTicks() + ", " + (world.isNight() ? "night" : "day")
+                + ", " + (world.isSkyVisible(player.getBlockPos().up()) ? "under the sky" : "under cover")
+                + ", hunger " + player.getHungerManager().getFoodLevel() + ", armour " + player.getArmor()
+                + ", holding " + (hand.isEmpty() ? "nothing" : Registries.ITEM.getId(hand.getItem()).getPath())
+                + (shield ? ", a shield" : ", no shield") + "; doing \"" + doing + "\""
+                + (campaign == null ? "" : " in \"" + campaign.progress() + "\"") + "; " + advice;
     }
 
     /** After the exit portal's credits, the request home a client would make, and the runtime's state for the new entity. */
@@ -5281,6 +5545,9 @@ final class PlayerRuntime {
             return;
         }
 
+        // An ask said yes to in chat goes in between its tasks, as a command would, once its look at the speaker is over (E-20b).
+        if (entry.voiceAsk != null) voiceAskDue(entry);
+
         if (body.entity() != null) {
             applyDimensionTransit(entry, body);
             reconcileExpeditionArrival(entry);
@@ -5326,6 +5593,7 @@ final class PlayerRuntime {
             // A goal looks around as it goes, and so does a build, for the trees and stone its needs may send it to (E-08c).
             if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.atlas(atlasOn ? entry.atlas : null); // What it sees goes into its atlas from the first look (F-30).
                 entry.campaign.observe(body.entity());
             }
         }
@@ -5468,7 +5736,14 @@ final class PlayerRuntime {
 
         // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
-        if (routineCandidates.isEmpty()) {
+        // A fall to break with water comes before anything else (E-07d), a goal's own urgent steps among them: those are
+        // ranked with how much its player likes the work, and a keen miner's fight back outranked the water. In the long
+        // run on a286cc8 Echo, falling twenty-four blocks to break the fall, fought a zombie and then a creeper on the
+        // way down, each fight cut short for the fall and chosen again, and the fall killed it (F-25c4p).
+        var clutch = essentialCandidates.stream().filter(candidate -> "native_clutch".equals(candidate.skill())).findFirst();
+        if (clutch.isPresent()) {
+            taskCandidates = List.of(clutch.get());
+        } else if (routineCandidates.isEmpty()) {
             taskCandidates = essentialCandidates;
         } else if (essentialCandidates.isEmpty()) {
             taskCandidates = routineCandidates;
@@ -5479,12 +5754,25 @@ final class PlayerRuntime {
         }
 
         List<dev.kindred.core.TaskPreferences.Candidate> candidates = taskCandidates.stream().map(NativeTaskCandidate::candidate).toList();
+        if (watch != null && !taskCandidates.isEmpty()) entry.weighed = List.copyOf(taskCandidates);
 
         // A reflex to act on admits a decision without its work being admitted; nothing to do, and it waits as before.
         var decision = entry.mind.decide(new dev.kindred.core.PlayerDecisionLoop.Frame(usable, entry.snapshot().stopLatched(),
                 busy, false, false, autonomyAdmitted || mayDecide && !essentialCandidates.isEmpty(), entry.currentTaskId, candidates),
                 entry.profile.personality());
         entry.mindStatus = decision.reason();
+        // On a goal with no skill started for a minute of game time, it says once which of its gates holds it: a player
+        // stood seven minutes in play with its goal still offering steps and nothing in its log to say why (F-25c4m).
+        int tick = server.getTicks();
+        if (busy || entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE || entry.lastBusyTick < 0) {
+            entry.lastBusyTick = tick;
+            entry.stallReported = false;
+        } else if (!entry.stallReported && tick - entry.lastBusyTick > STALL_TICKS) {
+            entry.stallReported = true;
+            KindredMod.LOGGER.info("{} has started nothing for {} ticks on its goal: mayDecide={} admitted={} candidates={} decision={} {}"
+                    + " current={} [{}]", entry.data.displayName(), tick - entry.lastBusyTick, mayDecide, autonomyAdmitted, candidates.size(),
+                    decision.action(), decision.reason(), entry.currentTaskId != null, nativeStatusLine(entry.data.id()));
+        }
         if (!candidates.isEmpty() || decision.action() != dev.kindred.core.PlayerDecisionLoop.Action.WAIT) {
             KindredMod.LOGGER.debug("Autonomy tick for {}: state={}, usable={}, stopLatched={}, busy={}, autonomyAdmitted={}, candidates={}, decision={}",
                     entry.data.displayName(), (entry.attentionSnapshot != null ? entry.attentionSnapshot.state() : "null"),
@@ -5507,6 +5795,7 @@ final class PlayerRuntime {
                     entry.routineRefreshPending = true;
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
                     entry.currentTaskId = null;
+                    dispatchDropped(entry, candidateToDispatch.skill(), "no longer executable " + candidateToDispatch.arguments());
                 } else {
                     TaskId tId = TaskId.of(candidateToDispatch.candidate().id());
                     var optShared = teamCoordinator.findTask(tId);
@@ -5516,6 +5805,7 @@ final class PlayerRuntime {
                             var claimed = teamCoordinator.claimTask(tId, entry.data.id(), server.getTicks(), 1200L);
                             if (claimed.isEmpty()) {
                                 entry.currentTaskId = null;
+                                dispatchDropped(entry, candidateToDispatch.skill(), "the team's task could not be claimed: " + task.title());
                                 return;
                             }
                             // What it holds of the task's output now, so that its completion credits what it made.
@@ -5523,7 +5813,7 @@ final class PlayerRuntime {
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
-                    int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments());
+                    int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.attentionTaskId)) entry.attendedAt = entry.addressedAt;
@@ -5555,7 +5845,7 @@ final class PlayerRuntime {
                         if (entry.campaign != null && entry.campaignTasks.containsKey(chosen.id())) {
                             KindredMod.LOGGER.info("{} {} refused: {} [{}]", entry.data.displayName(), candidateToDispatch.skill(),
                                     entry.blocker, entry.campaignTasks.get(chosen.id()).label());
-                            entry.campaign.taskFinished(entry.campaignTasks.get(chosen.id()), false, server.getTicks());
+                            entry.campaign.taskFinished(entry.campaignTasks.get(chosen.id()), false, server.getTicks(), entry.blocker);
                             entry.routineRefreshPending = true;
                             entry.cachedRoutineCandidates = List.of();
                         }
@@ -5598,6 +5888,11 @@ final class PlayerRuntime {
             }
         }
         return null;
+    }
+
+    /** Whether a native player could be made at {@code source}'s position now, as the roster spawn takes it (F-26's starters). */
+    boolean nativeSpawnable(ServerCommandSource source) {
+        return nativeSpawn(source) != null;
     }
 
     int create(ServerCommandSource source, String name) {
@@ -6239,8 +6534,21 @@ final class PlayerRuntime {
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
                     entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
                             : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+            if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
+                    + (entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
+                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : ""));
+            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
+                    : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
+            // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
+            if (entry.comeFrom != null && "native_goto".equals(entry.skillId)) {
+                if (state == SkillRunner.State.COMPLETED) {
+                    entry.cameTo = entry.comeFrom;
+                    entry.cameAt = server.getTicks();
+                }
+                entry.comeFrom = null;
+            }
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED || state == SkillRunner.State.PAUSED)) {
@@ -7271,6 +7579,12 @@ final class PlayerRuntime {
         entry.runPart = steered ? part : null;
     }
 
+    /** A player's personality as its profile holds it now, for fixtures (C13). */
+    Personality personalityForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.profile.personality();
+    }
+
     /** What a player last said aloud, for fixtures. */
     String lastSaid(UUID id) {
         Entry entry = entries.get(id);
@@ -7443,7 +7757,25 @@ final class PlayerRuntime {
             // The teammate by its identity, and its body in the world by the body's own id.
             Entry mateEntry = entries.get(piece.to());
             var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
-            if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld()) {
+            // Not across the map for it: a teammate gone out of the team's range is handed its piece once they are near
+            // again, a minute's wait at a time, and six such waits let the hand-over go, as six failed steps do, so the
+            // piece's material is not held for good. In the live pair on 41f9de9 Kindred's walk to Echo, too far for one
+            // route, was refused as it was made, again and again for five minutes ahead of its goal (E-40a1).
+            if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld() && player.squaredDistanceTo(mate) > TEAM_RANGE * TEAM_RANGE) {
+                long farOff = Math.round(player.distanceTo(mate));
+                entry.handOversWaitUntil = now + 1200;
+                if (++entry.handOverFailures >= 6) {
+                    entry.handOverFailures = 0;
+                    entry.handOverLastDistance = Double.MAX_VALUE;
+                    teamCoordinator.revokeTask(task.id(), "Its teammate stayed out of the team's range");
+                    KindredMod.LOGGER.info("{} lets go of handing over {}: {} stayed {} blocks off", entry.data.displayName(), task.title(),
+                            mateEntry.data.displayName(), farOff);
+                } else {
+                    KindredMod.LOGGER.info("{} cannot go on with {} for now, its teammate {} blocks off: it waits a minute", entry.data.displayName(),
+                            task.title(), farOff);
+                }
+                return java.util.Optional.empty();
+            } else if (slot >= 0 && mate != null && mate.isAlive() && mate.getWorld() == player.getWorld()) {
                 String name = mateEntry.data.displayName();
                 step = player.squaredDistanceTo(mate) <= 3 * 3 && player.canSee(mate)
                         ? new PortalRunCampaign.Task("native_toss", Map.of("slot", String.valueOf(slot), "count", "1", "target", mate.getUuid().toString()),
@@ -7482,15 +7814,31 @@ final class PlayerRuntime {
         if (taskId == null) return;
         var task = teamCoordinator.findTask(taskId).orElse(null);
         if (task == null || HandOvers.Piece.of(task) == null) return;
-        if (state == SkillRunner.State.COMPLETED) {
+        // A walk to its teammate that ends with it still out of tossing reach, and no nearer than the last ended, is a failed
+        // step too. A route that can get no closer ends at once as done, and was chosen again and again ahead of the goal:
+        // in the live pair on a4df9b4 Sol walked so 7,389 times, for twenty of its forty-four minutes (E-40a1).
+        boolean fruitless = false;
+        if (state == SkillRunner.State.COMPLETED && "native_goto".equals(skill)) {
+            Entry mateEntry = entries.get(HandOvers.Piece.of(task).to());
+            var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
+            var self = entry.nativeBody != null ? entry.nativeBody.entity() : null;
+            double away = mate != null && self != null && mate.getWorld() == self.getWorld() ? self.distanceTo(mate) : Double.MAX_VALUE;
+            boolean inReach = away <= 3 && self.canSee(mate);
+            fruitless = !inReach && away >= entry.handOverLastDistance - 1;
+            entry.handOverLastDistance = inReach ? Double.MAX_VALUE : away;
+        }
+        if (state == SkillRunner.State.COMPLETED && !fruitless) {
             entry.handOverFailures = 0;
             if ("native_toss".equals(skill)) {
+                entry.handOverLastDistance = Double.MAX_VALUE;
                 teamCoordinator.completeTask(taskId, entry.data.id(), "Handed over " + task.title());
                 KindredMod.LOGGER.info("{} handed over {}", entry.data.displayName(), task.title());
             }
-        } else if (state == SkillRunner.State.BLOCKED && ++entry.handOverFailures >= 6) {
+        } else if ((state == SkillRunner.State.BLOCKED || fruitless) && ++entry.handOverFailures >= 6) {
             entry.handOverFailures = 0;
+            entry.handOverLastDistance = Double.MAX_VALUE;
             teamCoordinator.revokeTask(taskId, "Six steps of the hand-over failed");
+            KindredMod.LOGGER.info("{} lets go of handing over {}: six of its steps failed", entry.data.displayName(), task.title());
             entry.handOversWaitUntil = server.getTicks() + 1200;
         }
     }
@@ -7536,7 +7884,7 @@ final class PlayerRuntime {
                 // At a store of its own: who it saw there, so that what is gone from it has a name if anyone's.
                 if (stores.stream().anyMatch(store -> store.pos().equals(pos))) {
                     boolean mate = teammateOf(entry, self, other);
-                    var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks()));
+                    var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks(), other.getUuid()));
                     // Someone not on its side at its chest: it gives up a walk to go and look.
                     if (before == null && !mate) entry.sightingInterrupt = true;
                     entry.routineRefreshPending = true;
@@ -7745,6 +8093,8 @@ final class PlayerRuntime {
         if (!running || !ready || entries.get(entry.data.id()) != entry) return;
         long now = server.getTicks();
         if (taken > 0) entry.hardestHits.merge(by.getUuid(), (double) taken, Math::max);
+        // Wariness (E-49): a blow from someone it may not strike back, noted whatever else it does about it.
+        if (taken > 0 && !matches.mayAttack(hit.getUuid(), by.getUuid())) noteWariness(entry, by.getUuid(), by.getName().getString(), dev.kindred.core.Trust.Event.HURT);
         // Stopped, it decides nothing and says nothing: what the hit took is all it keeps.
         if (entry.snapshot().stopLatched()) return;
         var held = entry.aggressor;
@@ -7855,6 +8205,77 @@ final class PlayerRuntime {
 
     private static UUID aggressionTaskId(Entry entry, UUID who) {
         return UUID.nameUUIDFromBytes(("aggressor:" + entry.data.id() + ":" + who).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** In character, from a player that holds back what it is asked (E-49). */
+    static final String NOT_AFTER_LAST_TIME = "Not after last time.";
+    /** Harm within this long of arriving where someone asked it to come is theirs to answer for (E-49): ten seconds. */
+    static final long LED_HARM_TICKS = 200;
+    /** Nearer than this, someone who struck it in the last minute is walked away from (E-49). */
+    static final double KEEP_AWAY_NEAR = 4;
+
+    /** {@code event} noted against {@code person} (E-49), and said in the log when it leaves the player wary of them. */
+    private void noteWariness(Entry entry, UUID person, String name, dev.kindred.core.Trust.Event event) {
+        long now = server.getTicks();
+        boolean was = entry.trust.wary(person, now);
+        entry.trust.note(person, event, now);
+        int wariness = entry.trust.wariness(person, now);
+        String did = switch (event) {
+            case HURT -> "hurt it";
+            case LED_INTO_HARM -> "led it into harm";
+            case TOOK_FROM_CHEST -> "was at its chest when things went from it";
+            case TOSS_PAST_CAP -> "asked it for more than it hands out in a day";
+        };
+        KindredMod.LOGGER.info("{} notes that {} {}: wariness {}{}", entry.data.displayName(), name, did, wariness,
+                !was && wariness >= dev.kindred.core.Trust.WARY ? "; it holds back from them now" : "");
+    }
+
+    /** Harm that got through (E-49): within ten seconds of arriving where someone asked it to come, theirs to answer for. */
+    private void harmed(Entry entry, net.minecraft.entity.damage.DamageSource source, float taken) {
+        if (entry.cameTo == null || taken <= 0 || !running || entries.get(entry.data.id()) != entry) return;
+        UUID led = entry.cameTo;
+        entry.cameTo = null; // Once for each arrival.
+        if (server.getTicks() - entry.cameAt > LED_HARM_TICKS) return;
+        if (source.getAttacker() != null && led.equals(source.getAttacker().getUuid())) return; // Their own blow is a blow.
+        var by = server.getPlayerManager().getPlayer(led);
+        noteWariness(entry, led, by == null ? led.toString() : by.getName().getString(), dev.kindred.core.Trust.Event.LED_INTO_HARM);
+    }
+
+    /** Something another player threw it, picked up (E-49): a gift or a return, which takes some wariness of them away. */
+    private void gifted(Entry entry, ServerPlayerEntity from, net.minecraft.item.ItemStack stack) {
+        if (!running || entries.get(entry.data.id()) != entry) return;
+        long now = server.getTicks();
+        int before = entry.trust.wariness(from.getUuid(), now);
+        entry.trust.gift(from.getUuid(), now);
+        if (before > 0) {
+            KindredMod.LOGGER.info("{} takes {} {} from {}: wariness {}", entry.data.displayName(), stack.getCount(),
+                    stack.getName().getString().toLowerCase(java.util.Locale.ROOT), from.getName().getString(), entry.trust.wariness(from.getUuid(), now));
+        }
+    }
+
+    /** A walk off from the nearest within reach who struck it in the last minute and may not be struck back (E-49); none otherwise. */
+    private NativeTaskCandidate keepAwayCandidate(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        ServerPlayerEntity nearest = null;
+        for (ServerPlayerEntity other : player.getServerWorld().getPlayers()) {
+            if (other == player || !other.isAlive() || other.isSpectator() || other.squaredDistanceTo(player) > KEEP_AWAY_NEAR * KEEP_AWAY_NEAR) continue;
+            if (!entry.trust.struckLately(other.getUuid(), now) || matches.mayAttack(player.getUuid(), other.getUuid())) continue;
+            if (nearest == null || other.squaredDistanceTo(player) < nearest.squaredDistanceTo(player)) nearest = other;
+        }
+        if (nearest == null) return null;
+        BlockPos to = awayFrom(entry, player, nearest);
+        UUID taskId = UUID.nameUUIDFromBytes(("keep_away:" + entry.data.id() + ":" + nearest.getUuid()).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 96.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                "z", String.valueOf(to.getZ()), "range", "3", "partial", "true"));
+    }
+
+    /** How wary a player is of {@code person}, for fixtures (E-49). */
+    int warinessForFixtures(UUID id, UUID person) {
+        Entry entry = entries.get(id);
+        return entry == null ? -1 : entry.trust.wariness(person, server.getTicks());
     }
 
     /** Its answer to a hard hit, while it holds, for fixtures: "GET_AWAY from Rue", or null. */
@@ -9552,7 +9973,7 @@ final class PlayerRuntime {
     private record OwnStore(BlockPos pos, dev.kindred.core.team.Storage.Whose whose) { }
 
     /** Someone it saw open a store of its own: who, whether on its side, and when. */
-    private record SeenAtStore(String name, boolean teammate, long tick) { }
+    private record SeenAtStore(String name, boolean teammate, long tick, UUID who) { }
 
     /** What it asked its team of what is gone from a store, and until when it waits for a word. */
     private record StorageAsk(dev.kindred.core.team.Storage.Look look, long until) { }
@@ -9744,6 +10165,8 @@ final class PlayerRuntime {
         var look = entry.storage.looked(place, own.whose(), seen, now);
         var since = entry.seenAtStores.remove(own.pos().asLong());
         if (!look.isShort()) return;
+        // Gone while someone not on its side was seen at it (E-49): theirs to answer for, in its wariness of them.
+        if (since != null && !since.teammate()) noteWariness(entry, since.who(), since.name(), dev.kindred.core.Trust.Event.TOOK_FROM_CHEST);
         var holding = Valuables.holding(player, lootWanted(entry));
         double left = 0;
         for (var each : seen.entrySet()) {
@@ -10495,10 +10918,388 @@ final class PlayerRuntime {
         return name == null ? null : name.getString();
     }
 
+    /** The voice switched on or off, for fixtures (E-20a): as {@code KINDRED_VOICE} would at startup. */
+    void voiceForFixtures(boolean on) {
+        voiceOn = on;
+    }
+
+    /** What the social lane says to whom, for fixtures (E-20a). */
+    void heardForFixtures(java.util.function.BiConsumer<ServerPlayerEntity, Text> heard) {
+        heardForFixtures = heard;
+    }
+
+    /**
+     * What a player knows of itself as {@code speaker} speaks to it (E-20a), beyond what its body shows: who the speaker
+     * is to it, what it is at, its goal, its run's last events, what it last said and what it remembers of this world.
+     * Null when it cannot be voiced now.
+     */
+    private PlayerVoice.Facts voiceFacts(UUID id, ServerPlayerEntity speaker) {
+        Entry entry = entries.get(id);
+        if (entry == null || !running || !ready) return null;
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        UUID bodyId = self != null ? self.getUuid() : entry.body != null ? entry.body.getUuid() : null;
+        UUID who = speaker.getUuid();
+        // A native player's own record is its identity: whoever controls it (who created it) is its owner here.
+        boolean owner = entry.nativeState != null ? entry.nativeState.access().controllers().contains(who) : who.equals(entry.data.ownerId());
+        boolean controls = owner || entry.nativeState != null && entry.nativeState.access().mayControl(new Actor(who, speaker.hasPermissionLevel(2)));
+        boolean teammate = bodyId != null && matches.running(bodyId).filter(match -> match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT
+                && match.participant(who) && match.runners().contains(bodyId) == match.runners().contains(who)).isPresent();
+        var relation = bodyId != null && matches.opponents(bodyId, who) ? dev.kindred.core.ConversationAudience.Relation.OPPONENT
+                : owner ? dev.kindred.core.ConversationAudience.Relation.OWNER : controls ? dev.kindred.core.ConversationAudience.Relation.ADMIN
+                : teammate ? dev.kindred.core.ConversationAudience.Relation.TEAMMATE : dev.kindred.core.ConversationAudience.Relation.PLAYER;
+        boolean busy = entry.runner != null && runnerBusy(entry);
+        return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
+                busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
+                entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""));
+    }
+
+    /** An ask from chat: who asked, what of, until when it waits for the player's look at the speaker, and where a refusal goes. */
+    private record VoiceAsk(UUID speaker, dev.kindred.model.Strategist.Ask ask, String item, long untilTick, java.util.function.Consumer<String> refused) { }
+
+    /**
+     * An ask the player said yes to in chat (E-20b), once its line was said: kept until its next tick, when it goes in
+     * through the matching command's own method, with the speaker's own authority; the newest replaces any waiting.
+     */
+    private void voiceAsk(UUID id, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
+        Entry entry = entries.get(id);
+        if (entry == null || ask == dev.kindred.model.Strategist.Ask.NONE) return;
+        var asked = new VoiceAsk(speaker.getUuid(), ask, item, server.getTicks() + VOICE_ASK_WAIT_TICKS, refused);
+        if (entry.nativeState == null) voiceAskNow(entry, asked); // No native body: the command's own refusal, at once.
+        else entry.voiceAsk = asked;
+    }
+
+    /** How long an ask waits for the player's own look at whoever spoke to it (two seconds) to end: three seconds. */
+    static final int VOICE_ASK_WAIT_TICKS = 60;
+
+    /** The ask now, unless the player is still in its look at the speaker or settling its last task (a stop never waits). */
+    private void voiceAskDue(Entry entry) {
+        var asked = entry.voiceAsk;
+        // Its look at the speaker, from its admission until its activity settles: a task the command would refuse to start over.
+        boolean attending = entry.attentionTaskId != null && entry.attentionTaskId.equals(entry.currentTaskId)
+                && (entry.nativeWorkPending || entry.runner != null && runnerBusy(entry)
+                    || entry.activity != null && entry.activity.phase() != PaidActivitySession.Phase.IDLE);
+        // Running nothing but still settling what it last did: a moment more, as a command typed then would be refused.
+        boolean settling = !(entry.runner != null && runnerBusy(entry)) && (entry.nativeWorkPending || entry.nativeActionPending
+                || !entry.activityFlush.isDone() || !entry.nativeActionFlush.isDone()
+                || entry.activity != null && entry.activity.phase() != PaidActivitySession.Phase.IDLE);
+        if (asked.ask() != dev.kindred.model.Strategist.Ask.STOP && (attending || settling) && server.getTicks() < asked.untilTick()) return;
+        entry.voiceAsk = null;
+        voiceAskNow(entry, asked);
+    }
+
+    /**
+     * The ask through the method its command calls (`/aiplayer native goto`, `wait`, `stop`, `toss`), as the speaker
+     * would run it, so its authority, the player's readiness, the edit and area rules and the arbiter are all checked
+     * again here; a refusal is said in the command's own words.
+     */
+    private void voiceAskNow(Entry entry, VoiceAsk asked) {
+        ServerPlayerEntity speaker = server.getPlayerManager().getPlayer(asked.speaker());
+        if (speaker == null) return;
+        var heard = new ArrayList<String>();
+        var output = new net.minecraft.server.command.CommandOutput() {
+            @Override public void sendMessage(Text message) { heard.add(message.getString()); }
+            @Override public boolean shouldReceiveFeedback() { return true; }
+            @Override public boolean shouldTrackOutput() { return true; }
+            @Override public boolean shouldBroadcastConsoleToOps() { return false; }
+        };
+        ServerCommandSource as = speaker.getCommandSource().withOutput(output);
+        UUID id = entry.data.id();
+        // From someone it is wary of, nothing but a stop goes in (E-49): refused in its own words.
+        if (asked.ask() != dev.kindred.model.Strategist.Ask.STOP && entry.trust.wary(speaker.getUuid(), server.getTicks())) {
+            KindredMod.LOGGER.info("{} asked in chat by {}: {}: refused (wary of them)", entry.data.displayName(), speaker.getName().getString(), asked.ask());
+            entry.voiceAsked = asked.ask() + ": refused";
+            asked.refused().accept(NOT_AFTER_LAST_TIME);
+            return;
+        }
+        int done = switch (asked.ask()) {
+            // As near as it safely can: never onto a stand beside lava, fire or a drop (E-49).
+            case COME -> nativeTask(as, id, "native_goto", Map.of("x", String.valueOf(speaker.getBlockX()), "y", String.valueOf(speaker.getBlockY()),
+                    "z", String.valueOf(speaker.getBlockZ()), "range", "1.5", "partial", "true", "safe", "true"));
+            case WAIT -> nativeSkill(as, id, "native_wait", 4);
+            case STOP -> nativeLifecycle(as, "stop", id);
+            case TOSS -> nativeToss(as, id, asked.item(), dev.kindred.model.ConversationPrompt.TOSS_COUNT);
+            case NONE -> 1;
+        };
+        String refusal = heard.isEmpty() ? "That can't be done now." : heard.getLast();
+        KindredMod.LOGGER.info("{} asked in chat by {}: {}{}: {}", entry.data.displayName(), speaker.getName().getString(), asked.ask(),
+                asked.item() == null ? "" : " " + asked.item(), done == 1 ? "done" : "refused (" + refusal + ")");
+        entry.voiceAsked = asked.ask() + (done == 1 ? ": done" : ": refused");
+        if (done == 1 && asked.ask() == dev.kindred.model.Strategist.Ask.COME) entry.comeFrom = speaker.getUuid();
+        if (done != 1) asked.refused().accept(refusal);
+    }
+
+    /** How the last ask in chat went ("COME: done", "TOSS: refused"), for fixtures (E-20b); null before any. */
+    String voiceAskedForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.voiceAsked;
+    }
+
+    /**
+     * Tosses up to {@code count} of {@code item}, from one stack of its own, to the player running the command (E-20b,
+     * QOL-05's toss). The item is named by its registry id ("bread" is minecraft:bread); one unknown, or one it does not
+     * carry, is refused, never guessed at.
+     */
+    int nativeToss(ServerCommandSource source, UUID id, String item, int count) {
+        requireThread();
+        if (!(source.getEntity() instanceof ServerPlayerEntity to)) return reject(source, "Only a player can be tossed to.");
+        UUID target = id == null ? defaultBotId() : id;
+        Entry entry = target == null ? null : entries.get(target);
+        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)
+                || entry.nativeBody == null || !entry.nativeBody.connected()) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        var named = item == null ? null : net.minecraft.util.Identifier.tryParse(item.strip().toLowerCase(java.util.Locale.ROOT).replace(' ', '_'));
+        if (named == null || !net.minecraft.registry.Registries.ITEM.containsId(named)) return reject(source, "There is no item called " + item + ".");
+        var kind = net.minecraft.registry.Registries.ITEM.get(named);
+        var inventory = entry.nativeBody.entity().getInventory();
+        int slot = -1;
+        for (int i = 0; i < inventory.main.size() && slot < 0; i++) if (inventory.main.get(i).isOf(kind)) slot = i;
+        if (slot < 0) return reject(source, entry.data.displayName() + " has no " + kind.getName().getString().toLowerCase(java.util.Locale.ROOT) + ".");
+        // Tosses to one person are capped a game day, whoever asks, and none while it is wary of them; an ask past the cap
+        // counts against them (E-49).
+        long now = server.getTicks();
+        if (entry.trust.wary(to.getUuid(), now)) return reject(source, NOT_AFTER_LAST_TIME);
+        int allowance = entry.trust.tossAllowance(to.getUuid(), now);
+        if (allowance <= 0) {
+            noteWariness(entry, to.getUuid(), to.getName().getString(), dev.kindred.core.Trust.Event.TOSS_PAST_CAP);
+            return reject(source, "That's all I hand out in a day.");
+        }
+        int tossed = Math.min(Math.min(Math.max(1, count), allowance), inventory.main.get(slot).getCount());
+        int started = nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
+                "target", to.getUuid().toString()));
+        if (started == 1) entry.trust.tossed(to.getUuid(), tossed, now);
+        return started;
+    }
+
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
     void strategistForFixtures(dev.kindred.model.Strategist given) {
-        strategist.ifPresent(StrategistBridge::close);
+        memory.close();
         strategist = Optional.of(StrategistBridge.of(given, metadataDirectory));
+        memory = strategist.get();
+        memory.lessons(lessons);
+        memory.rescueHost(rescueHost);
+        memory.rescue(rescueOn);
+        memory.advice(adviceOn);
+    }
+
+    /** Its memory's notes as the report shows them, and the habits its goal keeps, for fixtures (E-46). */
+    List<String> notesForFixtures(UUID id) { return memory.notes(id); }
+
+    java.util.Set<dev.kindred.core.survival.PlanPreferences.Habit> habitsForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? java.util.Set.of() : entry.campaign.preferences().habits();
+    }
+
+    /** The atlas on or off (F-30): on by default; {@code KINDRED_ATLAS=off} or a scenario turns it off, and then nothing reads it. */
+    void atlas(boolean on) { atlasOn = on; }
+
+    /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
+    dev.kindred.core.atlas.Atlas atlasForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.atlas;
+    }
+
+    /** The server's customs (E-47), learned from those who opted in, for the goal's ore plans to lean on; none by default. */
+    private dev.kindred.core.customs.ServerCustoms customs;
+
+    void customs(dev.kindred.core.customs.ServerCustoms given) {
+        requireThread();
+        customs = given;
+    }
+
+    /** The height its goal's steps dig toward for {@code ore}, for fixtures (E-47); {@code Integer.MIN_VALUE} before its goal plans. */
+    int oreDepthForFixtures(UUID id, dev.kindred.core.customs.ServerCustoms.Ore ore) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? Integer.MIN_VALUE : entry.campaign.depth(ore);
+    }
+
+    /** Its own lessons from its deaths on or off (E-46): on by default; {@code KINDRED_LESSONS=off} or a scenario turns them off. */
+    void lessons(boolean on) {
+        lessons = on;
+        memory.lessons(on);
+    }
+
+    private boolean rescueOn = true, adviceOn = true;
+
+    /** Rescue plans on or off (F-29): on by default, with a strategist; {@code KINDRED_RESCUE=off} or a scenario turns them off. */
+    void rescue(boolean on) {
+        rescueOn = on;
+        memory.rescue(on);
+    }
+
+    /** The strategist's advice on or off; off, a strategist is asked for rescue plans alone (a scenario's {@code advice=off}). */
+    void advice(boolean on) {
+        adviceOn = on;
+        memory.advice(on);
+    }
+
+    /** How long a rescue plan's fence holds after it is asked for: the planning lane's deadline and a little more. */
+    private static final java.time.Duration RESCUE_FENCE = java.time.Duration.ofSeconds(20);
+
+    /** The skills a rescue plan's steps may use: those of its vocabulary that this build installs; fewer for a fixture. */
+    private java.util.Set<String> rescueSkills = installedRescueSkills();
+
+    private static java.util.Set<String> installedRescueSkills() {
+        var installed = new java.util.HashSet<String>();
+        for (var verb : dev.kindred.core.rescue.RescuePlan.Verb.values()) {
+            String skill = dev.kindred.core.rescue.RescuePlan.skill(verb);
+            try {
+                NativePlayerSkills.descriptor(skill);
+                installed.add(skill);
+            } catch (IllegalArgumentException notInstalled) {
+                // Not a skill of this build: a plan using it is refused.
+            }
+        }
+        return java.util.Set.copyOf(installed);
+    }
+
+    /**
+     * The intent revision less the tasks the player started of its own choosing (F-29): what a stop, a resume, a mode or a
+     * command moves. Every task it starts begins on a direct lease, as a command's does, and moves the intent revision too.
+     */
+    private static long commanded(Entry entry, dev.kindred.core.Companion data) {
+        return Math.max(0, data.intentRevision() - entry.ownStarts);
+    }
+
+    /**
+     * What a rescue needs of the runtime (F-29). The fence is the player's session and revisions when it asked; it
+     * holds while the session stands and nothing but the player's own choosing has moved the intent revision since
+     * ({@link #commanded}): a stop, a resume or a command makes it stale, the player's eating or digging on meanwhile does
+     * not. Counted on the whole intent revision, 12 of the first 29 plans asked for in the ten-seed arm on the compatible
+     * route came back refused as stale so, an eat, a discard or a step of its digging begun while the reply was coming. The
+     * task revision is not compared: every task it gives out moves it.
+     */
+    private final StrategistBridge.RescueHost rescueHost = new StrategistBridge.RescueHost() {
+        @Override
+        public dev.kindred.core.ProposalFence fence(UUID id) {
+            Entry entry = entries.get(id);
+            var data = entry == null ? null : entry.arbiter != null ? entry.arbiter.snapshot() : entry.data;
+            UUID epoch = entry == null || entry.arbiter == null ? new UUID(0, 0) : entry.arbiter.sessionEpoch();
+            return new dev.kindred.core.ProposalFence(epoch, data == null ? 0 : commanded(entry, data), data == null ? 0 : data.taskRevision(),
+                    java.time.Instant.now().plus(RESCUE_FENCE));
+        }
+
+        @Override
+        public boolean current(UUID id, dev.kindred.core.ProposalFence fence) {
+            Entry entry = entries.get(id);
+            if (entry == null || entry.arbiter == null) return false;
+            var data = entry.arbiter.snapshot();
+            return entry.arbiter.sessionEpoch().equals(fence.sessionEpoch()) && commanded(entry, data) == fence.intentRevision()
+                    && !data.stopLatched();
+        }
+
+        @Override
+        public BlockPos where(UUID id) {
+            Entry entry = entries.get(id);
+            return entry == null || entry.nativeBody == null || !entry.nativeBody.connected() ? null : entry.nativeBody.entity().getBlockPos();
+        }
+
+        @Override
+        public java.util.Set<String> installed() { return rescueSkills; }
+
+        @Override
+        public void capture(UUID id) {
+            Entry entry = entries.get(id);
+            if (replays == null || entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return;
+            var campaign = entry.campaign;
+            replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("stuck",
+                    String.valueOf(entry.goal), campaign == null ? "no goal" : campaign.progress(),
+                    entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
+                    campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
+                    "stuck"));
+        }
+    };
+
+    /** The watch page (E-48), when it is on: given a snapshot of the players once a tick, on this thread. */
+    private WatchServer watch;
+    private boolean watchFaulted;
+    private final java.util.ArrayDeque<dev.kindred.core.watch.WatchSnapshot.Highlight> highlights = new java.util.ArrayDeque<>();
+    private String watchEval;
+
+    /** The watch page to give a snapshot to once a tick (E-48); none to stop. */
+    void watch(WatchServer server) {
+        requireThread();
+        watch = server;
+    }
+
+    /**
+     * The players as the watch page shows them (E-48), taken here on the server thread once a tick and handed to its
+     * server, whose threads read nothing else: each one's state, goal and what it is doing, what it weighed at its last
+     * decision, its own last decision lines, what it said lately, its habits and notes, and its model tokens today; and the
+     * moments worth showing (a death, a stage reached, a rescue, a habit taken up, a match's turn).
+     */
+    private void publishWatch(long tick) {
+        var players = new ArrayList<dev.kindred.core.watch.WatchSnapshot.Player>();
+        for (PanelBot bot : panelBots(Actor.console())) {
+            Entry entry = entries.get(bot.id());
+            if (entry == null) continue;
+            var campaign = entry.campaign;
+            noteHighlights(entry, campaign, tick);
+            var weighed = new ArrayList<dev.kindred.core.watch.WatchSnapshot.Candidate>();
+            for (var candidate : entry.weighed) {
+                var task = entry.campaignTasks.get(candidate.candidate().id());
+                weighed.add(new dev.kindred.core.watch.WatchSnapshot.Candidate(task != null ? task.label() : candidate.skill(),
+                        candidate.candidate().priority().name(), candidate.candidate().needScore()));
+            }
+            weighed.sort(java.util.Comparator.comparingDouble(dev.kindred.core.watch.WatchSnapshot.Candidate::score).reversed());
+            String doing = entry.activeCampaignTask != null && !bot.task().isEmpty() ? entry.activeCampaignTask.label() : bot.task();
+            BlockPos at = bot.position();
+            players.add(new dev.kindred.core.watch.WatchSnapshot.Player(bot.id().toString(), bot.name(), bot.connected(), bot.health(), bot.food(),
+                    bot.goal().label(), bot.goalProgress(), doing, bot.status(), bot.dimension(), at == null ? 0 : at.getX(),
+                    at == null ? 0 : at.getY(), at == null ? 0 : at.getZ(), weighed, List.copyOf(entry.decisions), List.copyOf(entry.saidLately),
+                    campaign == null ? List.of() : campaign.preferences().habits().stream().map(Enum::name).sorted().toList(),
+                    memory.notes(bot.id()), strategist.map(bridge -> bridge.tokensToday(bot.id())).orElse(0L)));
+        }
+        if (tick % 20 == 0) watchEval = runObserver.resultSoFar();
+        watch.publish(new dev.kindred.core.watch.WatchSnapshot(tick, Thread.currentThread().getName(), players, List.copyOf(highlights), watchEval));
+    }
+
+    /** What changed since the watch page last looked: the stage of its run, its rescues, the habits it keeps. */
+    private void noteHighlights(Entry entry, PortalRunCampaign campaign, long tick) {
+        if (campaign == null) return;
+        String name = entry.data.displayName();
+        // A new goal's campaign starts from what it is: nothing in it is news.
+        boolean fresh = campaign != entry.watchCampaign;
+        entry.watchCampaign = campaign;
+        String stage = campaign.stage() != dev.kindred.core.survival.PortalRunPlanner.Stage.DONE || !campaign.endGoal()
+                ? "the portal run: " + campaign.stage()
+                : campaign.stronghold().stage() != dev.kindred.core.survival.StrongholdRunPlanner.Stage.DONE
+                ? "the stronghold run: " + campaign.stronghold().stage() : "the End: " + campaign.stronghold().endFight().stage();
+        stage = stage.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        if (!fresh && !stage.equals(entry.watchStage)) highlight(tick, name, "stage", "now at " + stage);
+        entry.watchStage = stage;
+        var rescues = campaign.rescues();
+        if (fresh || rescues.size() < entry.watchRescues) entry.watchRescues = rescues.size();
+        for (int i = entry.watchRescues; i < rescues.size(); i++) highlight(tick, name, "rescue", rescues.get(i));
+        entry.watchRescues = rescues.size();
+        var habits = campaign.preferences().habits();
+        if (!fresh) for (var habit : habits) {
+            if (!entry.watchHabits.contains(habit)) highlight(tick, name, "habit", "takes up " + habit.name().toLowerCase(java.util.Locale.ROOT).replace('_', ' '));
+        }
+        entry.watchHabits = Set.copyOf(habits);
+    }
+
+    private void highlight(long tick, String player, String kind, String text) {
+        if (highlights.size() >= dev.kindred.core.watch.WatchSnapshot.HIGHLIGHTS) highlights.removeFirst();
+        highlights.addLast(new dev.kindred.core.watch.WatchSnapshot.Highlight(tick, player, kind, text));
+    }
+
+    /** For fixtures (F-29): the skills a rescue plan may use, as though the others were not installed. */
+    void rescueSkillsForFixtures(java.util.Set<String> skills) { rescueSkills = java.util.Set.copyOf(skills); }
+
+    /** For fixtures (F-29): a player's watchdog gives a spot up after {@code ticks} of no progress, not three minutes. */
+    void stuckTicksForFixtures(UUID id, long ticks) {
+        Entry entry = entries.get(id);
+        if (entry == null) return;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.stuckTicksForTest(ticks);
+    }
+
+    /** A player's rescues as its goal recorded them, for fixtures (F-29). */
+    List<String> rescuesForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? List.of() : entry.campaign.rescues();
     }
 
     /** What it last told its team of a find, for fixtures (E-40a). */
@@ -10756,6 +11557,7 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
             Entry entry = entries.get(raced.getKey());
@@ -10795,7 +11597,10 @@ final class PlayerRuntime {
         running = false;
         matches.stopAll();
         presenter.clear();
-        strategist.ifPresent(StrategistBridge::close);
+        memory.close(); // The strategist's bridge, when there is one.
+        for (Entry entry : entries.values()) {
+            if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
+        }
         memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
@@ -10809,6 +11614,46 @@ final class PlayerRuntime {
         // There are no game ticks after SERVER_STOPPED; bound the final IO flush.
         try { shutdown.get(10, TimeUnit.SECONDS); }
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
+    }
+
+    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    void captureReplays(DeathReplays replays) {
+        requireThread();
+        this.replays = replays;
+    }
+
+    /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */
+    void observeRun(RunObserver observer) {
+        requireThread();
+        runObserver = observer == null ? RunObserver.NONE : observer;
+    }
+
+    /**
+     * What a run's observer reads of a player once a second (F-26): the stuck spells its goal has had and the latest's
+     * level, where it stands, its End leg's stage, and the model tokens it has used today; empty with no such player.
+     */
+    record RunState(int stuckSpells, int stuckLevel, net.minecraft.util.math.BlockPos at, String endStage, long modelTokens, List<String> rescues) { }
+
+    Optional<RunState> runState(String name) {
+        requireThread();
+        for (Entry entry : entries.values()) {
+            if (!entry.data.displayName().equalsIgnoreCase(name) || entry.nativeBody == null || !entry.nativeBody.connected()) continue;
+            var campaign = entry.campaign;
+            long tokens = strategist.map(bridge -> bridge.tokensToday(entry.data.id())).orElse(0L);
+            return Optional.of(new RunState(campaign == null ? 0 : campaign.stuckSpells(), campaign == null ? 0 : campaign.stuckLevel(),
+                    entry.nativeBody.entity().getBlockPos().toImmutable(), campaign == null ? "" : String.valueOf(campaign.stronghold().stage()), tokens,
+                    campaign == null ? List.of() : campaign.rescues()));
+        }
+        return Optional.empty();
+    }
+
+    /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
+    PortalRunCampaign campaignForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null) return null;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        return entry.campaign;
     }
 
     LedgerCheckState ledgerStateForTest(UUID id) {
@@ -11079,6 +11924,7 @@ final class PlayerRuntime {
         };
         String line = match.mode().label() + " " + who(match) + ": " + what;
         KindredMod.LOGGER.info(line);
+        if (watch != null) highlight(server.getTicks(), "", "match", line);
         presenter.changed(match, this::playerName);
         boolean hunt = match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT;
         if ((race || hunt) && match.state() == dev.kindred.core.match.MatchRegistry.State.RUNNING && !races.containsKey(match.id())
@@ -11929,9 +12775,26 @@ final class PlayerRuntime {
 
     private final class Entry implements ChoreSkills.Gate {
         private Companion data;
+        /** What it weighed at its last decision that weighed anything, and what the watch page last saw of it (E-48). */
+        private List<NativeTaskCandidate> weighed = List.of();
+        private PortalRunCampaign watchCampaign;
+        private int watchRescues;
+        private String watchStage = "";
+        private Set<dev.kindred.core.survival.PlanPreferences.Habit> watchHabits = Set.of();
+        /** Its own decision lines as the log has them, the last thirty, kept while the watch page is on (E-48). */
+        private final java.util.ArrayDeque<String> decisions = new java.util.ArrayDeque<>();
+
+        private void decided(long tick, String line) {
+            if (decisions.size() >= dev.kindred.core.watch.WatchSnapshot.LINES) decisions.removeFirst();
+            decisions.addLast("at " + tick / 20 + "s: " + line);
+        }
         /** The campaign whose memory was read, whether the read is in, and the leg's revision last written. */
         private PortalRunCampaign memoryCampaign;
         private boolean memoryLoaded;
+        /** Its atlas of this world (F-30), kept across goals; read from its file once, saved once a game minute and at the end. */
+        dev.kindred.core.atlas.Atlas atlas;
+        private boolean atlasLoading;
+        private long atlasSavedAt;
         private int memorySaved = -1;
         private final dev.kindred.core.PlayerDecisionLoop mind;
         private String mindStatus = "Awaiting local decision";
@@ -11961,9 +12824,14 @@ final class PlayerRuntime {
         private String handOverStepSkill;
         private long handOversWaitUntil;
         private int handOverFailures;
+        /** How far its teammate was when its last walk to it ended, short of tossing reach (E-40a1). */
+        private double handOverLastDistance = Double.MAX_VALUE;
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
+        /** An ask made of it in chat and said yes to, waiting for the end of its look at the speaker (E-20b); how the last went, for fixtures. */
+        private VoiceAsk voiceAsk;
+        private String voiceAsked;
         /** Chests it saw a player use, by place (E-44); what it decided of each opponent's, and until when; a question out. */
         private final Map<Long, ChestUse> chestsUsed = new HashMap<>();
         private final Map<Long, RaidDecision> raids = new HashMap<>();
@@ -12011,6 +12879,11 @@ final class PlayerRuntime {
         private final Map<Long, SeenAtStore> seenAtStores = new HashMap<>();
         private StorageAsk storageAsk;
         private final Set<Long> untrustedStores = new HashSet<>();
+        /** How wary it is of each person, from what the game saw them do to it (E-49); kept for this session. */
+        final dev.kindred.core.Trust trust = new dev.kindred.core.Trust();
+        /** Who asked it to come, while it walks there; then where it arrived, for the ten seconds after. */
+        private UUID comeFrom, cameTo;
+        private long cameAt;
         private BlockPos emptying;
         /** What it took out of a store of its own lately, and when: not put straight back. */
         private final Map<String, Long> recentlyTaken = new HashMap<>();
@@ -12085,6 +12958,11 @@ final class PlayerRuntime {
         private boolean metadataFault;
         private boolean reconciliationBlocked;
         private boolean hazardInterrupted;
+        /** The last tick it had a skill running or no goal, whether its stall since was reported, and when a dispatch it was
+         * given was last dropped unrun and said so (F-25c4m). */
+        private long lastBusyTick = -1;
+        private boolean stallReported;
+        private long lastDropReportTick = Long.MIN_VALUE / 2;
         /** No accounting period opens before this instant, and why (F-11e); null when one may. */
         private java.time.Instant noPeriodUntil;
         private String noPeriodReason;
@@ -12193,6 +13071,8 @@ final class PlayerRuntime {
         PortalRunCampaign campaign;
         final Map<UUID, PortalRunCampaign.Task> campaignTasks = new HashMap<>();
         PortalRunCampaign.Task activeCampaignTask;
+        /** The tasks it has started of its own choosing since loaded: each begins on a direct lease, as a command does (F-29). */
+        long ownStarts;
         /** A build the player is on (E-08b), ahead of its standing goal until it is done. */
         BuildRunner build;
         final Map<UUID, PortalRunCampaign.Task> buildTasks = new HashMap<>();
@@ -12609,15 +13489,15 @@ final class PlayerRuntime {
     }
 
     Optional<UUID> canonicalBotIdForControlSlot(int slot) {
-        String name = switch (slot) {
-            case 2 -> CanonicalRoster.KINDRED_NAME;
-            case 4 -> CanonicalRoster.SOL_NAME;
-            case 6 -> CanonicalRoster.VESP_NAME;
+        CanonicalRoster.RosterPreset preset = switch (slot) {
+            case 2 -> CanonicalRoster.KINDRED;
+            case 4 -> CanonicalRoster.SOL;
+            case 6 -> CanonicalRoster.ECHO;
             default -> null;
         };
-        if (name == null) return Optional.empty();
+        if (preset == null) return Optional.empty();
         for (Entry entry : entries.values()) {
-            if (name.equalsIgnoreCase(entry.data.displayName()) && entry.nativeBody != null && entry.nativeBody.connected()) {
+            if (preset.answersTo(entry.data.displayName()) && entry.nativeBody != null && entry.nativeBody.connected()) {
                 return Optional.of(entry.data.id());
             }
         }
@@ -12980,47 +13860,65 @@ final class PlayerRuntime {
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         if (specificName != null && !specificName.isBlank()) {
             var preset = dev.kindred.core.CanonicalRoster.TRIO.stream()
-                    .filter(p -> p.name().equalsIgnoreCase(specificName.trim()))
+                    .filter(p -> p.answersTo(specificName))
                     .findFirst()
                     .orElse(null);
             if (preset == null) {
-                return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Vesp.");
+                return reject(source, "Unknown canonical player '" + specificName + "'. Use Kindred, Sol, or Echo.");
             }
             // One player of each name, as with the whole roster: a second "Kindred" would be another player with the
             // same name (a staged run asked for one while the first was alive in the Overworld).
-            // A saved one not in the world is reconnected (main's 4cb2b33).
-            var existing = rosterEntry(preset.name());
+            // A saved one not in the world is reconnected (main's 4cb2b33), under any name it had (E-10c).
+            var existing = rosterEntry(preset);
             if (existing != null) {
                 if (existing.nativeBody != null && existing.nativeBody.connected()) {
-                    feedback(source, preset.name() + " is already active in the world.");
+                    feedback(source, existing.data.displayName() + " is already active in the world.");
                     return 1;
                 }
-                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                feedback(source, "Reconnecting saved " + existing.data.displayName() + "...");
                 connectNative(source, existing, false);
                 return 1;
             }
-            return createNative(source, preset.name());
+            return createNative(source, preset.name(), preset.defaultPersonality());
         }
         int spawned = 0;
         for (var preset : dev.kindred.core.CanonicalRoster.TRIO) {
-            var existing = rosterEntry(preset.name());
+            var existing = rosterEntry(preset);
             if (existing == null) {
-                createNative(source, preset.name());
+                createNative(source, preset.name(), preset.defaultPersonality());
                 spawned++;
             } else if (existing.nativeBody == null || !existing.nativeBody.connected()) {
-                feedback(source, "Reconnecting saved " + preset.name() + "...");
+                feedback(source, "Reconnecting saved " + existing.data.displayName() + "...");
                 connectNative(source, existing, false);
                 spawned++;
             }
         }
         if (spawned == 0) {
-            feedback(source, "All canonical players (Kindred, Sol, Vesp) are already active in the world.");
+            feedback(source, "All canonical players (Kindred, Sol, Echo) are already active in the world.");
         }
         return 1;
     }
 
-    private Entry rosterEntry(String name) {
-        return entries.values().stream().filter(e -> e.data.displayName().equalsIgnoreCase(name)
+    /**
+     * A starter just made takes up its preset personality, saved as any profile change is (C13). Only ever for a player
+     * being created: a saved player's personality is its own and is never reset.
+     */
+    private void startWithPersonality(Entry entry, Personality preset) {
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = previous.withPersonality(preset);
+        entry.profile = changed;
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running || failure == null) return;
+            entry.metadataFault = true;
+            halt(entry, Actor.console(), "Profile save failed; player stopped for storage inspection.");
+            KindredMod.LOGGER.error("Starter personality write failed for {}", entry.data.id(), failure);
+        }));
+    }
+
+    /** The saved player a starter is, under its name now or one it had before (E-10c: a world's Vesp is Echo). */
+    private Entry rosterEntry(CanonicalRoster.RosterPreset preset) {
+        return entries.values().stream().filter(e -> preset.answersTo(e.data.displayName())
                 && e.snapshot().lifecycle() != LifecycleState.REMOVED).findFirst().orElse(null);
     }
 

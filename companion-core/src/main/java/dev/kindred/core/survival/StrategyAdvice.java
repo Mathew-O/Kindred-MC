@@ -11,16 +11,21 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Advice for an AI player's standing goal from an optional model strategist (F-19b, F-19c): a stance the local route
- * keeps for a while, places to keep away from, a focus on what to do next, and a note for the player's own memory,
- * which may carry a habit the player keeps in that world from then on (or retire one it kept), and follow-ups for the
- * player's queue: needs from a fixed set for the objectives ahead, gathered or crafted when the chance comes (F-19e),
- * and a way of the playbook to take for a part of the run, taken only where it can be done and is not much dearer than
- * the best (F-25c8). Advice is never an
- * order: the planner and the body's rules still decide every step, and the advice only shifts how careful they are
- * and which of the route's ordinary jobs comes first ({@link PlanPreferences}). Places must lie near something the
- * player itself reported (a death, a danger zone), so a model cannot point the player at hidden resources or
- * anywhere it has not been, and a habit needs a note saying why. Pure and immutable.
+ * In plain terms: advice a player may get from an optional AI adviser about its long-term goal: how careful
+ * to be for a while, places to keep away from, what to do first, a note to remember and a few things to pick
+ * up along the way. It is only advice: the player's own rules still decide every step, and any place named
+ * must be near somewhere the player itself reported, so the adviser cannot point it at hidden things.
+ *
+ * Technical: Advice for an AI player's standing goal from an optional model strategist (F-19b, F-19c): a
+ * stance the local route keeps for a while, places to keep away from, a focus on what to do next, and a note
+ * for the player's own memory, which may carry a habit the player keeps in that world from then on (or retire
+ * one it kept), and follow-ups for the player's queue: needs from a fixed set for the objectives ahead,
+ * gathered or crafted when the chance comes (F-19e), and a way of the playbook to take for a part of the run,
+ * taken only where it can be done and is not much dearer than the best (F-25c8). Advice is never an order:
+ * the planner and the body's rules still decide every step, and the advice only shifts how careful they are
+ * and which of the route's ordinary jobs comes first ({@link PlanPreferences}). Places must lie near
+ * something the player itself reported (a death, a danger zone), so a model cannot point the player at hidden
+ * resources or anywhere it has not been, and a habit needs a note saying why. Pure and immutable.
  *
  * @param stance how careful the route is for a while
  * @param avoid  places to keep away from, at most {@link #MAX_AVOID}
@@ -46,6 +51,7 @@ public record StrategyAdvice(Stance stance, List<Place> avoid, String note, Stri
     }
 
     public record Place(int x, int y, int z) {
+        /** How far this place is from another, in blocks. */
         double distanceTo(Place other) {
             double dx = x - other.x, dy = y - other.y, dz = z - other.z;
             return Math.sqrt(dx * dx + dy * dy + dz * dz);

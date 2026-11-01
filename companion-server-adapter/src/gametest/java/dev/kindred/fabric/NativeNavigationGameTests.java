@@ -11,7 +11,16 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
-/** Pathfinding travel and recorded roaming breaks with real native physics, timing and pickup. */
+/**
+ * In plain terms: a GameTest: in a real test world, a player told where to go or what to break is checked to
+ * move and mine like an ordinary player. It walks round a wall and steps up onto its goal without
+ * teleporting; breaks stone with its own pickaxe and picks up the drop, but refuses a break that would let
+ * lava out; on a long walk it sprints, jumps and turns smoothly; it bridges a gap with its own blocks and
+ * digs through a wall when there is no way round; it finishes a long obsidian break at real speed; and it
+ * does not walk off a ledge after a drop that fell down a shaft.
+ *
+ * Technical: Pathfinding travel and recorded roaming breaks with real native physics, timing and pickup.
+ */
 public final class NativeNavigationGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 400)

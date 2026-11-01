@@ -1,0 +1,66 @@
+# F-25c4aj — A frame site's cells are dug in the order it can reach them, not given up for one walled in
+
+Date: 2026-10-31
+Agent / branch: Claude / claude/loose-ends-1029
+Build: on top of `238ff1e`; recorded in [validation](../validation.md)
+Status: complete (2026-11-01): native passed, the give-up on unwalked asks fixed on 1 November, and in play on that code no site given up before its clearing had walked; F-25c4 stays open
+
+## Scope and implementation
+
+User-visible behavior: a player opening the room for its frame digs, in each pass (the row in front, then the frame and its inside), the first cell it can break from where it stands. A cell walled in on every side it faces waits until the cell beside it is dug and shows it. With nothing it can break from where it stands it walks to the site's stand, then to the open cell of the row in front nearest the cell, and only a pass with nothing it can break from either gives the site up. Before, the first cell of the pass in its order decided: out of reach meant a walk to the stand, but in reach and out of sight gave the site up at once.
+
+Found in the live pair on `64c298d` (seed 20261030, strategist off): Kindred filled its bucket at Y=-54 and climbed two steps out of the lava's reach. It then gave up 17 frame sites in two minutes, each "cannot clear" a block of deepslate beside it, and its watchdog moved it away with its lava unused. The site was rebuilt as it stood then: the world save, with what the log shows Kindred dug and placed afterwards undone. On the stand of the first site it chose, the row in front's first cell, diagonal to its feet, was walled in on all three sides it faced; the cell straight ahead, which would have shown it, came second in the order. Sol gave up 32 sites on the same seed, two of them for its own obsidian.
+
+Changed modules/files:
+- `PortalRunCampaign.clearPortalSite`: in each pass, the first cell breakable from where it stands is dug; the first that is not is kept, and given to `clearOrApproach` only if none is breakable.
+- `PortalRunCampaign.clearOrApproach`: with nothing it can break from here, it goes to the stand, then to the open cell of the row in front nearest the cell, each once since it last broke one (`clearTriedFrom`), and only then gives the site up. Since 1 November a place counts as tried once it has been stood in or its walk has ended (`clearWalk`, read in `taskFinished`), not when the walk is asked for.
+- `PortalRunCampaign` (the cast route): no walk back to the stand before clearing. Asked for again on every step of a walk to the row in front, it undid that walk; the clearing walks to the stand itself when it needs to. `buildPortal` (owned obsidian) keeps its walk to the stand, except from a spot its clearing sent it to.
+- `PortalRunCampaign` (the cast): a cell to open before a cast that it cannot break from here sends it to the stand before the site is given up, and that give-up is logged (`<name> gives up the frame site at … : cannot open …`).
+- `NativePortalCampaignGameTests`: one fixture; since 1 November it checks the first site the player chose, read from its campaign, not one named in advance (below).
+
+## Acceptance evidence
+
+| Criterion | Check or scenario | Result | Evidence |
+| --- | --- | --- | --- |
+| On the stand of the first site it chooses, in Kindred's rock over the lava lake rebuilt from the save, its lava in hand: its first frame block is cast in that site, and it is unhurt | `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite` | Before, the change set aside, it fails 3 of 3: "0 there", 111 sites given up across the three runs, the first each time for the walled-in cell. Two of the runs later cast a block or more elsewhere; one cast none. With the cells taken in reach order alone it still failed 3 of 3: the row's last column was walled in behind the stand's own staircase. With the walk to the row in front added it failed 2 of 3: the cast route's walk back to the stand, asked for on each step of that walk, undid it. After, 3 of 3 alone, no site given up | native |
+| The other casts unchanged | the frame under thick rock, the roofed cast, the whole cast, the climb over the lava lakes, the cast refused for its water, the one-block cast and the owned-block frame, alone on this code | 7 of 7 | native |
+| Its first site not given up while its last break is still finishing (CI's full runs 301, 313 and 316) | the same fixture, its check reading the first site it chose (1 November) | Before, 0 of 4 alone, each giving that site up in the second its last break finished. After, 5 of 5 alone, nothing given up; `NativePortalCampaignGameTests` alone 94 of 94 with it | native |
+| In play | the live pair on `c432fba`, both seeds, strategist off; then the final build's ten seeds (`f1a15b6`, rescue off) and its rescue arm, against the E-49 build's ten seeds | Met in part on `c432fba`: 8 frame sites given up across both seeds, each after the stand and the row in front were tried (49 on `64c298d`), and the step to the row in front taken 7 times; both frames lit. Met on the final build: 7 frame sites given up in the ten seeds, every one after a walk of its clearing had ended (to the stand or over to the row in front), none without; on the E-49 build, before the fix, 20 of 30 with none. With rescue on, none given up. Counted from the consoles (`giveups.py` in the session's scratch space, not committed) | live |
+
+Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
+Fixtures: the region round the stand is staged from the live pair's world save as it stood when Kindred chose the site: the save's blocks, with what the log shows it dug and placed afterwards undone, deepslate where a block was dug, ores as deepslate, inside a shell of deepslate. Two blocks of glowstone are staged for light; the kit, its lava bucket filled, is given as though made.
+Analysis: `rebuild.py` in the session's scratch space (not committed) read the save's blocks and undid the logged edits.
+
+## Intermittent since (1 November)
+
+- Alone, eight runs each on the code with F-25c4z's change and without it: 5 of 8 both ways. In CI's full suite it
+  failed in runs 301 and 313.
+- In run 313's log the player gave its first frame site up in the same second it chose to go and look at the walled-in
+  cell. The goal was asked for its next step while a dig was still running; each ask counted one more place to look
+  from as tried (`clearOrApproach`), though no walk was sent; at the third it gave the site up. That fault needs its own
+  fixture before it is fixed.
+- The failing runs alone gave nothing up: they cast their frame blocks outside the site the fixture names ("0 there, 3
+  elsewhere"). Why was found on 1 November, below.
+
+## The site it names, and the give-up fixed (1 November)
+
+- Since F-25c4z (`55e3227`) a site is refused for lava three blocks below it, not two. The save's lava lies three below
+  the site the fixture named, so that site is never chosen now: the first is a block up and one north, its frame plane
+  three north of the stand, and its own row in front is walled in at its east end. In all eight runs alone with that
+  change it chose that site first: the three that kept it cast there and failed the check, which named the old site;
+  the five that gave it up cast in the next, whose frame reached into the old site's, and passed. The pass came from
+  the fault.
+- The fixture now reads the first site the player chooses from its campaign and checks that its first frame block is
+  cast there; the scene, the kit and the rest of the check are as they were.
+- The fault, in every give-up seen: the last cell it could break was still being broken when the goal was asked for its
+  next step; the walled-in cell was next, so it was sent to the stand, then over to the row in front, and then gave the
+  site up, all in the same second and with no walk sent (`Cast: stand in front of the frame site`, `Cast: over to …`,
+  `gives up the frame site at …: cannot clear … deepslate`). Now a place counts as tried once it has been stood in or
+  its walk has ended, so each is walked before the next is chosen.
+- With the fixture's new check, alone, on the code before the fix: 0 of 4, each giving its first site up ("0 there, 3
+  elsewhere"). After: 5 of 5, nothing given up, the first block cast in the first site each time.
+
+## Remaining limitations and handoff
+
+- A cell no stand of the site can see or reach still gives the site up, as before.
+- Sol's first frame on that seed was dropped with seven cast, the cause not found in its log; the cast's own give-up is now logged to find it.

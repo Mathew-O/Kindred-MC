@@ -9,10 +9,14 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * A team's finds shared out by what each player lacks (E-40a), as players on one run do: "you take the chestplate,
- * I've got one; you need the pickaxe for the obsidian". Pure: the adapter says who is on the team, what each wears and
- * holds of the kit that matters, and what the work each is on; this says who gets which piece made from a find, such
- * as diamonds or iron.
+ * In plain terms: who on the team gets what made from a find such as diamonds or iron: the piece that does
+ * the team the most good goes first, to whoever needs it most, with the team's first diamond pickaxe ahead of
+ * everything. Nobody gets a piece no better than what they have, and what is too little to use is kept.
+ *
+ * Technical: A team's finds shared out by what each player lacks (E-40a), as players on one run do: "you take
+ * the chestplate, I've got one; you need the pickaxe for the obsidian". Pure: the adapter says who is on the
+ * team, what each wears and holds of the kit that matters, and what the work each is on; this says who gets
+ * which piece made from a find, such as diamonds or iron.
  *
  * <ul>
  *   <li>Essential first: the team's first diamond pickaxe (obsidian for the portal needs one) goes to whoever is
@@ -72,6 +76,7 @@ public final class ShareOut {
             return points;
         }
 
+        /** The same player with one piece of kit changed. */
         Member with(Slot slot, Material material) {
             var next = new EnumMap<Slot, Material>(kit);
             next.put(slot, material);

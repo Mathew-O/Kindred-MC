@@ -5,6 +5,10 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that what a player is shown about blocks and people nearby is its own copy: later
+ * changes to the originals do not reach it, it cannot be changed, and it lists at most sixteen people.
+ */
 class SupportBatch04SnapshotTest {
 
     @Test void observationsOwnNestedMapsAndLists() {

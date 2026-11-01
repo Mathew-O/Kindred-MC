@@ -25,8 +25,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Native contracts for work authority and the first movement skills. They check identity/validation boundaries
- * in a real world; they do not show a body traversing terrain (that remains F-10 live evidence).
+ * In plain terms: a GameTest: in a real test world, these checks cover the ground rules for work rather than
+ * a body walking anywhere. The setup and movement commands are accepted or refused correctly; an assigned
+ * chest is recognised by what it is, not only where it stands; a move is refused with no work area, outside
+ * it, with no home, or onto a blocked spot; and a wait counts only the ticks it really ran and carries on
+ * from where it was paused.
+ *
+ * Technical: Native contracts for work authority and the first movement skills. They check
+ * identity/validation boundaries in a real world; they do not show a body traversing terrain (that remains
+ * F-10 live evidence).
  */
 public final class WorkGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE)

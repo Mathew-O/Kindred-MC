@@ -9,11 +9,15 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Schematics read into blueprints (M-05): vanilla structure files ({@code .nbt}, as a structure block saves them) and
- * Sponge schematics ({@code .schem}, versions 2 and 3, as WorldEdit saves them). Positions are kept relative to the
- * file's own corner; air is space to keep clear; structure void is neither a block nor space. What a block entity held
- * (a chest's items, a sign's words) is never read: a build places blocks, and nothing comes from nowhere. Who made it
- * and the terms it is used under go with it (D8). Pure.
+ * In plain terms: reads building plans saved by the game's structure blocks or by common building tools, so a
+ * player can build from them. Only the blocks are taken, never what chests or signs held; blocks no survival
+ * player can get are left out; and who made the plan and its terms of use are kept with it.
+ *
+ * Technical: Schematics read into blueprints (M-05): vanilla structure files ({@code .nbt}, as a structure
+ * block saves them) and Sponge schematics ({@code .schem}, versions 2 and 3, as WorldEdit saves them).
+ * Positions are kept relative to the file's own corner; air is space to keep clear; structure void is neither
+ * a block nor space. What a block entity held (a chest's items, a sign's words) is never read: a build places
+ * blocks, and nothing comes from nowhere. Who made it and the terms it is used under go with it (D8). Pure.
  */
 public final class Schematics {
     /** What was read, and what was left out and why. */

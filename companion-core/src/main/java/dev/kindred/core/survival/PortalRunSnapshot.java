@@ -40,6 +40,8 @@ package dev.kindred.core.survival;
  * @param foodLevel       hunger points 0..20
  * @param portalFramed    a complete obsidian frame is observed nearby
  * @param portalLit       a lit portal this player built is observed nearby
+ * @param rawMeat         raw meat and fish carried that a furnace cooks
+ * @param furnaceCooking  the reachable furnace has raw meat or fish to cook
  */
 public record PortalRunSnapshot(
         int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
@@ -47,7 +49,20 @@ public record PortalRunSnapshot(
         int craftingTables, int furnaces, int saplings, int edibleFood,
         int pickaxeTier, int pickaxes, int swordTier, int chestArmorTier, int shields,
         boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
-        int foodLevel, boolean portalFramed, boolean portalLit) {
+        int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking) {
+
+    /** As the canonical constructor, with no raw meat carried or cooking. */
+    public PortalRunSnapshot(
+            int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
+            int flint, int gravel, int obsidian, int emptyBuckets, int lavaBuckets, int waterBuckets, int flintAndSteel,
+            int craftingTables, int furnaces, int saplings, int edibleFood,
+            int pickaxeTier, int pickaxes, int swordTier, int chestArmorTier, int shields,
+            boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
+            int foodLevel, boolean portalFramed, boolean portalLit) {
+        this(logs, planks, sticks, cobble, coal, rawIron, ironIngots, diamonds, flint, gravel, obsidian, emptyBuckets, lavaBuckets,
+                waterBuckets, flintAndSteel, craftingTables, furnaces, saplings, edibleFood, pickaxeTier, pickaxes, swordTier,
+                chestArmorTier, shields, tableNearby, furnaceNearby, furnaceSmelting, furnaceOutput, foodLevel, portalFramed, portalLit, 0, false);
+    }
 
     /** Plank-equivalents available from planks and uncrafted logs. */
     public int woodUnits() { return planks + logs * 4; }

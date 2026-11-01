@@ -1,9 +1,13 @@
 package dev.kindred.core.survival;
 
 /**
- * What one AI player owns and has seen that matters on the way from a lit Nether portal to the End portal. Counts
- * are physical items in its own inventory; the sightings are things it has seen itself (blocks in its line of sight,
- * mobs in view, the flight of an eye of ender it threw). Nothing here is a world query.
+ * In plain terms: what a player carries and has seen that matters on the way from a lit Nether portal to the
+ * End portal: food, tools and armour, blaze rods, pearls and eyes of ender, and sightings such as a fortress,
+ * blazes or the stronghold itself.
+ *
+ * Technical: What one AI player owns and has seen that matters on the way from a lit Nether portal to the End
+ * portal. Counts are physical items in its own inventory; the sightings are things it has seen itself (blocks
+ * in its line of sight, mobs in view, the flight of an eye of ender it threw). Nothing here is a world query.
  *
  * @param dimension         where the player is
  * @param portalKnown       the way between the dimensions it came by: in the Overworld its own lit portal, in the

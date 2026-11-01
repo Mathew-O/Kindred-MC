@@ -1,0 +1,20 @@
+// The headless simulator (F-28): the players' decisions and plans played on a made-up world, no Minecraft in it.
+//   ./gradlew :companion-sim:run --args="<pack> <seeds> <out folder>"   one scenario pack, scored by tools/eval/score.py
+//   ./gradlew :companion-sim:runPacks                                    the three packs of 100 seeds, timed
+// It tests decisions and plans, not execution: nothing of the server adapter is run.
+plugins { id 'application' }
+
+dependencies {
+    implementation project(':companion-core')
+}
+
+application { mainClass = 'dev.kindred.sim.SimMain' }
+// Paths given to `run` are from the project's root, as `runPacks` writes to run/sim there.
+tasks.named('run') { workingDir = rootProject.projectDir }
+
+tasks.register('runPacks', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.kindred.sim.SimMain'
+    args = ['all', '100', "${rootProject.projectDir}/run/sim"]
+}

@@ -7,6 +7,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the fight log a player keeps: each fight is written as a heading line and one line
+ * per moment, the log never grows past a fixed size, and odd text cannot break the file.
+ */
 class EncounterRecorderTest {
     private static EncounterRecorder.Frame frame(long tick, String decision, List<String> events) {
         return new EncounterRecorder.Frame(tick, new EncounterRecorder.Self(1.5, 64, -2.25, 18, 0.95f, true, false, "minecraft:iron_sword"),
@@ -30,6 +34,7 @@ class EncounterRecorderTest {
                 + "\"events\":[\"hit-dealt target=z1 dealt=5.904\"]}", lines.get(2));
     }
 
+    /** A long fight keeps only its latest moments, and the log counts how many were dropped. */
     @Test
     void itIsBoundedTheOldestFramesDroppedAndCounted() {
         var recorder = new EncounterRecorder("enc-2", "player-1", 0);

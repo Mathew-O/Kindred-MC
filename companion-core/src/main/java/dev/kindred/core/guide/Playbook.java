@@ -7,12 +7,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The ways of doing each part of the run and which to take now (F-25c8), as players mix and match them: an ordinary way
- * for each part, and the faster ways speedrunners use. In normal play a faster way is taken only when the chance is at
- * hand (a lava pool beside the frame, pearls in the pack); in speedrun mode the quickest possible way is taken. A way
- * that has failed twice is set aside for the next, so a run never sticks on one. The optional strategist may recommend
- * a way from this fixed set; it is taken when it can be done and costs at most half as much again as the best. Pure:
- * the adapter says what can be done from what the player holds and has seen, and what each way would cost.
+ * In plain terms: the different ways of doing each part of the run, such as getting into the Nether, getting
+ * ender pearls or beating the dragon, and which one to use now. The ordinary way is used unless a quicker
+ * speedrunner's way is right at hand or the player is speedrunning, and a way that has failed twice is set
+ * aside.
+ *
+ * Technical: The ways of doing each part of the run and which to take now (F-25c8), as players mix and match
+ * them: an ordinary way for each part, and the faster ways speedrunners use. In normal play a faster way is
+ * taken only when the chance is at hand (a lava pool beside the frame, pearls in the pack); in speedrun mode
+ * the quickest possible way is taken. A way that has failed twice is set aside for the next, so a run never
+ * sticks on one. The optional strategist may recommend a way from this fixed set; it is taken when it can be
+ * done and costs at most half as much again as the best. Pure: the adapter says what can be done from what
+ * the player holds and has seen, and what each way would cost.
  */
 public final class Playbook {
     /** Failures after which a way is set aside for the part's next. */

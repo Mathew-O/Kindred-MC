@@ -12,6 +12,11 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that a building file a user supplies, saved by a structure block or a common
+ * building editor, is read with each block's facing, creator and licence kept, that chest contents, creatures
+ * and blocks no player could place are left out with a note, and that a broken file is refused with a reason.
+ */
 class SchematicsTest {
     /** A structure file as a structure block saves one: a palette, blocks by position and state, air saved as air. */
     @Test

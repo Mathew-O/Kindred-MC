@@ -21,9 +21,14 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * A field made ready and sown for one player (M-06a's farm ward): the {@link FieldWork} plan's steps turned into the
- * runtime's own skills, its water poured from a bucket it holds, its soil tilled with its own hoe and sown with its own
- * seeds, each from where it stands in reach. What the field holds is read from the world each pass.
+ * In plain terms: an AI player making a small wheat field of its own: pouring water from its own bucket,
+ * tilling with its own hoe and sowing its own seeds, each from where it can reach. It looks at the field in
+ * the world each time to see what is still to do.
+ *
+ * Technical: A field made ready and sown for one player (M-06a's farm ward): the {@link FieldWork} plan's
+ * steps turned into the runtime's own skills, its water poured from a bucket it holds, its soil tilled with
+ * its own hoe and sown with its own seeds, each from where it stands in reach. What the field holds is read
+ * from the world each pass.
  */
 final class FieldRunner {
     /** What it sows: wheat seeds, as grass gives them. */
@@ -50,6 +55,7 @@ final class FieldRunner {
     /** How it ended, in words, once done. */
     String outcome() { return outcome; }
 
+    /** The next thing to do for the field, or nothing once it is done. */
     Optional<PortalRunCampaign.Task> next(NativePlayerBody body) {
         if (done) return Optional.empty();
         var player = body.entity();

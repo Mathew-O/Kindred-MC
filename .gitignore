@@ -32,6 +32,10 @@ server/
 *.sqlite-wal
 *.sqlite.lock
 
+# Python's caches (tools/eval)
+__pycache__/
+*.pyc
+
 # Scratch files and temporary test logs
 .gradle-isolated*/
 kindred-mc/

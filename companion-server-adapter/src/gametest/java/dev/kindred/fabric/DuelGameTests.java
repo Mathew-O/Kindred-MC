@@ -17,7 +17,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Native GameTests for duel and hit-back behaviors.
+ * In plain terms: a GameTest: in a real test world, the older mob-style body is checked to hit back
+ * bare-handed when struck, keeping its sword in hand and saying something, and to draw a sword when
+ * challenged to a duel and put it away when the duel is forced to stop. The duel command is also checked to
+ * accept an optional player id.
+ *
+ * Technical: Native GameTests for duel and hit-back behaviors.
  */
 public final class DuelGameTests implements FabricGameTest {
 

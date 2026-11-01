@@ -17,9 +17,14 @@ import net.minecraft.world.GameMode;
 import java.util.UUID;
 
 /**
- * A build battle between two AI builders (M-04a). Each arrives with nothing, builds the theme on its own plot in
- * creative, and votes on the other's build when the time is up; the best wins, and both leave as they came, with nothing
- * and in their own game mode.
+ * In plain terms: a GameTest: in a real test world, two AI players with empty inventories are entered by an
+ * administrator into a build battle with a pyramid theme. The test checks each builds in creative mode on its
+ * own plot only, the match ends with a vote won by the better build, both really built a sand pyramid,
+ * fireworks go off for the winner, and both leave with nothing in hand and back in survival mode.
+ *
+ * Technical: A build battle between two AI builders (M-04a). Each arrives with nothing, builds the theme on
+ * its own plot in creative, and votes on the other's build when the time is up; the best wins, and both leave
+ * as they came, with nothing and in their own game mode.
  */
 public final class NativeBuildBattleGameTests implements FabricGameTest {
     private static final int BUILD_TICKS = 1200;

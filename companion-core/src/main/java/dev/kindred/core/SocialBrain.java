@@ -9,7 +9,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-/** Small deterministic social lane. It can propose words, never tasks or world actions. */
+/**
+ * In plain terms: the player's small talk: it notices things worth a word, such as someone arriving, a threat
+ * nearby, being hurt, rain or nightfall, or a job finished or stuck, and offers at most one short line at a
+ * time, spaced out as its settings allow. It only ever offers words, never jobs or actions.
+ *
+ * Technical: Small deterministic social lane. It can propose words, never tasks or world actions.
+ */
 public final class SocialBrain {
     public enum Topic { THREAT, HURT, COMPANION, GREETING, RAIN, NIGHT, NOTICE, WORK_COMPLETED, WORK_BLOCKED, TEAM }
     public record Speech(Topic topic, UUID subject, String text, String key) { }
@@ -24,6 +30,7 @@ public final class SocialBrain {
     private long lastProfileRevision = -1;
     private int variation;
 
+    /** Looks at what the player sees now and gives the line most worth saying, if it may speak yet. */
     public Optional<Speech> observe(SocialSnapshot snapshot, SocialProfile profile, long now) {
         if (lastProfileRevision != profile.revision()) {
             pending.clear();
@@ -70,10 +77,14 @@ public final class SocialBrain {
         return pending.values().stream().max(Comparator.comparingInt(Pending::priority)).map(Pending::speech);
     }
 
+    /**
+     * Whether the player may make small talk now: it is turned on and the pause since its last line is over.
+     */
     public boolean canSpeak(SocialProfile profile, long now) {
         return profile.ambientEnabled() && profile.personality().sociability() > 0 && now >= nextAmbient;
     }
 
+    /** Notes that a line was said: the pause before the next begins, and whatever was waiting is dropped. */
     public void didSpeak(Speech speech, SocialProfile profile, long now) {
         nextAmbient = now + profile.ambientIntervalMillis();
         remember(speech.key(), now);
@@ -81,6 +92,7 @@ public final class SocialBrain {
         variation++;
     }
 
+    /** Notes that the player answered another AI player's greeting, as if it had said hello itself. */
     public void didReplyToCompanion(UUID greeter, SocialProfile profile, long now) {
         didSpeak(new Speech(Topic.COMPANION, greeter, "", "hello:" + greeter), profile, now);
     }
@@ -101,6 +113,7 @@ public final class SocialBrain {
         queue(new Speech(Topic.NOTICE, contact.id(), line, "notice:" + contact.id()), now, 10);
     }
 
+    /** Offers a line about a job the player finished. */
     public void workCompleted(String skill, String detail, SocialProfile profile, long now) {
         if (!profile.ambientEnabled() || profile.personality().sociability() == 0) return;
         String line = profile.personality().humor() >= 65
@@ -109,6 +122,7 @@ public final class SocialBrain {
         queue(new Speech(Topic.WORK_COMPLETED, null, line, "work_completed:" + skill), now, 70);
     }
 
+    /** Offers a line about a job the player got stuck on, and why. */
     public void workBlocked(String skill, String reason, SocialProfile profile, long now) {
         if (!profile.ambientEnabled() || profile.personality().sociability() == 0) return;
         String line = "Hit a snag on " + skill + ": " + reason;
@@ -127,12 +141,14 @@ public final class SocialBrain {
         queue(new Speech(Topic.TEAM, null, line, "team:" + key), now, 80);
     }
 
+    /** Whether the player may answer someone directly now: at most once every three seconds. */
     public boolean admitDirectReply(long now) {
         if (now < nextReply) return false;
         nextReply = now + 3_000;
         return true;
     }
 
+    /** Forgets what it was waiting to say and what it last saw. */
     public void clearObservations() {
         pending.clear();
         previousContacts = Set.of();

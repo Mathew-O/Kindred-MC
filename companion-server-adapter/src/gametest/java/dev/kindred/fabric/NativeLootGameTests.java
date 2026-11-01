@@ -21,10 +21,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Valuables never walked past (E-42): a structure's container nobody has opened is looted of what is worth taking to
- * the player, as the value model judges it, and what is not worth a slot is left in it; a ruined portal's gold blocks
- * are mined and kept for later; storage someone has opened is never touched. The loot is the world's own, rolled from
- * a fixed seed when the player opens the container.
+ * In plain terms: a GameTest: in a real test world, a player working towards a Nether portal is checked to
+ * loot an unopened ruined-portal chest, and in a second test a chest minecart in a mineshaft tunnel, of
+ * everything worth taking, leaving only what is not worth a slot. It is also checked to mine and keep the
+ * ruined portal's gold blocks, and to leave alone a chest someone else has already opened, diamonds and all.
+ *
+ * Technical: Valuables never walked past (E-42): a structure's container nobody has opened is looted of what
+ * is worth taking to the player, as the value model judges it, and what is not worth a slot is left in it; a
+ * ruined portal's gold blocks are mined and kept for later; storage someone has opened is never touched. The
+ * loot is the world's own, rolled from a fixed seed when the player opens the container.
  */
 public final class NativeLootGameTests implements FabricGameTest {
     /** What a container still holds worth taking, each item judged by all of it there, as the value model has it for the player now. */

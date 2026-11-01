@@ -91,9 +91,164 @@ public interface Strategist extends AutoCloseable {
         return CompletableFuture.completedFuture(Answer.failed("questions not supported by " + provider(), 0));
     }
 
+    /** A rescue's own bound on the reply (F-29): six short steps and a sentence why. */
+    int RESCUE_MAX_OUTPUT_TOKENS = 300;
+
+    /**
+     * What a request for a way out came to (F-29): the steps as the model wrote them, not yet parsed (core parses and
+     * bounds them, and refuses the whole plan for one bad step), why, the tokens and time it took, and why it failed if
+     * it did. Nothing of it is ever run as code.
+     */
+    record Rescue(List<String> steps, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis,
+                  Optional<String> failure) {
+        public Rescue {
+            steps = steps == null ? List.of() : steps.stream().map(step -> step == null ? "" : step).toList();
+            reason = reason == null ? "" : reason;
+            Objects.requireNonNull(failure);
+        }
+
+        static Rescue failed(String why, long millis) { return new Rescue(List.of(), "", 0, 0, 0, millis, Optional.of(why)); }
+
+        static Rescue failed(String why, long in, long cached, long out, long millis) {
+            return new Rescue(List.of(), "", in, cached, out, millis, Optional.of(why));
+        }
+    }
+
+    /**
+     * Ask for a way out of where the player is stuck (F-29), on the planning lane within its deadline, with {@code report}
+     * the scene and what was tried. A provider that cannot says so, and nothing happens.
+     */
+    default CompletableFuture<Rescue> rescue(String report) {
+        return CompletableFuture.completedFuture(Rescue.failed("rescue plans not supported by " + provider(), 0));
+    }
+
+    /** Tokens to reserve before asking for a rescue: the instructions and the report, conservatively, and the most the reply may use. */
+    static long rescueReservation(String report) {
+        return (RescuePrompt.SYSTEM.length() + report.length()) / 3 + 100 + RESCUE_MAX_OUTPUT_TOKENS;
+    }
+
     /** Tokens to reserve before asking {@code question}: its input, conservatively, and the most the reply may use. */
     static long reservation(Question question) {
         return (question.system().length() + question.text().length()) / 3 + 100 + ASK_MAX_OUTPUT_TOKENS;
+    }
+
+    /** The chat lane's bounds (AI-05, E-20a): an eight-second deadline, a sentence or two, one chat line. */
+    Duration CHAT_DEADLINE = Duration.ofSeconds(8);
+    int CHAT_MAX_OUTPUT_TOKENS = 120;
+    int MAX_SAID = 240;
+
+    /**
+     * What a reply may ask of the player (E-20b), from one who may already command it: come to the speaker, wait where
+     * it stands, stop, or toss the speaker some of an item it carries. Each becomes what the matching command does,
+     * checked as the command checks it; none, for every other listener.
+     */
+    enum Ask { NONE, COME, WAIT, STOP, TOSS }
+
+    /**
+     * Someone spoke to the player (E-20a): who it is and how it talks, in {@code system}; what it knows that this
+     * listener may know, and the message quoted as data, in {@code text}; whether this listener may be told where
+     * things are, which decides whether a reply may give a place; and whether it may ask the player to do something
+     * (E-20b), which decides whether a reply may carry an ask.
+     */
+    record Conversation(String system, String text, boolean mayGivePlaces, boolean mayAsk) {
+        public Conversation {
+            Objects.requireNonNull(system);
+            Objects.requireNonNull(text);
+        }
+
+        /** A conversation in which no ask may be made. */
+        public Conversation(String system, String text, boolean mayGivePlaces) {
+            this(system, text, mayGivePlaces, false);
+        }
+    }
+
+    /**
+     * What a conversation came to: the line to say, if the reply was usable; what it asks of the player and the item
+     * a toss is of (E-20b); why it was said; the tokens and time it took; and why it failed, if it did. A refused reply
+     * is a failure: nothing of it is said or done, and the player's fixed reply is used instead.
+     */
+    record Line(Optional<String> say, Ask ask, Optional<String> item, String reason, long inputTokens, long cachedTokens, long outputTokens,
+                long millis, Optional<String> failure) {
+        public Line {
+            Objects.requireNonNull(ask);
+            Objects.requireNonNull(item);
+        }
+
+        /** A line that asks nothing. */
+        public Line(Optional<String> say, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis, Optional<String> failure) {
+            this(say, Ask.NONE, Optional.empty(), reason, inputTokens, cachedTokens, outputTokens, millis, failure);
+        }
+
+        static Line failed(String why, long millis) { return new Line(Optional.empty(), "", 0, 0, 0, millis, Optional.of(why)); }
+
+        static Line failed(String why, long in, long cached, long out, long millis) {
+            return new Line(Optional.empty(), "", in, cached, out, millis, Optional.of(why));
+        }
+
+        /** An item as a reply may name it: a registry id's characters, at most 64 of them. */
+        private static final java.util.regex.Pattern ITEM = java.util.regex.Pattern.compile("[a-z0-9_.:/ -]{1,64}");
+
+        /** Words no player says in chat while every listener gets clean speech (E-18's presets come later). */
+        private static final java.util.regex.Pattern UNCLEAN = java.util.regex.Pattern.compile(
+                "\\b(fuck\\w*|shit\\w*|bitch\\w*|cunts?|bastards?|assholes?|dicks?|piss\\w*|damn\\w*|crap\\w*|sluts?|whores?|fags?|retard\\w*)\\b",
+                java.util.regex.Pattern.CASE_INSENSITIVE);
+
+        /**
+         * The reply checked before anything of it is said: one line of at most {@link #MAX_SAID} characters, not a
+         * command, without formatting codes or control characters, clean, and giving no place to a listener who may
+         * not know where things are.
+         */
+        public static Line checked(Conversation conversation, String say, String reason, long in, long cached, long out, long millis) {
+            return checked(conversation, say, null, null, reason, in, cached, out, millis);
+        }
+
+        /**
+         * As {@link #checked(Conversation, String, String, long, long, long, long)}, with what the reply asks (E-20b):
+         * one of the asks or none; an ask only from one who may command the player; a toss with the item it is of.
+         * Anything else refuses the whole reply, words and all.
+         */
+        public static Line checked(Conversation conversation, String say, String ask, String item, String reason,
+                                   long in, long cached, long out, long millis) {
+            String asked = ask == null || ask.isBlank() ? "NONE" : ask.strip().toUpperCase(java.util.Locale.ROOT);
+            Ask wanted = java.util.Arrays.stream(Ask.values()).filter(a -> a.name().equals(asked)).findFirst().orElse(null);
+            String of = item == null ? "" : item.strip().toLowerCase(java.util.Locale.ROOT);
+            String refusedAsk = wanted == null ? "not one of the asks: " + asked
+                    : wanted != Ask.NONE && !conversation.mayAsk() ? "an ask from one who may not command it"
+                    : wanted == Ask.TOSS && !ITEM.matcher(of).matches() ? "a toss of no item it could name"
+                    : null;
+            if (refusedAsk != null) return new Line(Optional.empty(), Ask.NONE, Optional.empty(), "", in, cached, out, millis, Optional.of(refusedAsk));
+            Line words = checkedWords(conversation, say, reason, in, cached, out, millis);
+            if (words.failure().isPresent() || wanted == Ask.NONE) return words;
+            return new Line(words.say(), wanted, wanted == Ask.TOSS ? Optional.of(of) : Optional.empty(), words.reason(), in, cached, out, millis,
+                    Optional.empty());
+        }
+
+        private static Line checkedWords(Conversation conversation, String say, String reason, long in, long cached, long out, long millis) {
+            String why = reason == null ? "" : reason.strip();
+            if (why.length() > 300) why = why.substring(0, 300);
+            String said = say == null ? "" : say.strip();
+            String refused = said.isEmpty() ? "nothing to say"
+                    : said.length() > MAX_SAID ? "too long"
+                    : said.indexOf('\n') >= 0 || said.indexOf('\r') >= 0 ? "more than one line"
+                    : said.startsWith("/") ? "a command"
+                    : said.indexOf('§') >= 0 ? "formatting codes"
+                    : said.chars().anyMatch(Character::isISOControl) ? "control characters"
+                    : UNCLEAN.matcher(said).find() ? "not clean"
+                    : !conversation.mayGivePlaces() && dev.kindred.core.ConversationAudience.givesPlace(said) ? "a place this listener may not know"
+                    : null;
+            if (refused != null) return new Line(Optional.empty(), why, in, cached, out, millis, Optional.of(refused));
+            return new Line(Optional.of(said), why, in, cached, out, millis, Optional.empty());
+        }
+    }
+
+    /** Answer someone who spoke to the player; a provider that cannot says so, and the fixed reply is used. */
+    default CompletableFuture<Line> converse(Conversation conversation) {
+        return CompletableFuture.completedFuture(Line.failed("conversation not supported by " + provider(), 0));
+    }
+
+    /** Tokens to reserve before a conversation: its input, conservatively, and the most the reply may use. */
+    static long reservation(Conversation conversation) {
+        return (conversation.system().length() + conversation.text().length()) / 3 + 100 + CHAT_MAX_OUTPUT_TOKENS;
     }
 
     /** Who serves it, for the log: "Anthropic", "OpenAI", ... */

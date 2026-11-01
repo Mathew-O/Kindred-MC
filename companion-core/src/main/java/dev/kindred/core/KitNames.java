@@ -12,13 +12,18 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Named kit (E-16d), as the owner set it out (2026-10-25): once a player has reached the enchanting stage, it names its
- * best weapons and tools as players do, at an anvil, a level each. Here: which pieces are worth a name (diamond or
- * netherite, or enchanted; the best of each kind, and none already named); what a name costs; the player's own name for
- * a piece, a cool one drawn from what the piece is (its material and its enchantments) in the manner of its temper
- * ({@link NameForge.Flavor}); the model's question and the rules its answer must pass, {@link NameForge}'s (2 to 32
- * characters of letters, spaces, apostrophes and hyphens, a capital first, none it has used); and what it says of it.
- * Pure: the adapter says what it holds.
+ * In plain terms: once a player can enchant, it names its best weapons and tools at an anvil, as players do:
+ * only diamond, netherite or enchanted pieces, the best of each kind, and none already named. The name suits
+ * the piece and the player's temper, and one an optional AI adviser suggests must pass the same rules.
+ *
+ * Technical: Named kit (E-16d), as the owner set it out (2026-10-25): once a player has reached the
+ * enchanting stage, it names its best weapons and tools as players do, at an anvil, a level each. Here: which
+ * pieces are worth a name (diamond or netherite, or enchanted; the best of each kind, and none already
+ * named); what a name costs; the player's own name for a piece, a cool one drawn from what the piece is (its
+ * material and its enchantments) in the manner of its temper ({@link NameForge.Flavor}); the model's question
+ * and the rules its answer must pass, {@link NameForge}'s (2 to 32 characters of letters, spaces, apostrophes
+ * and hyphens, a capital first, none it has used); and what it says of it. Pure: the adapter says what it
+ * holds.
  */
 public final class KitNames {
     private KitNames() { }
@@ -74,6 +79,7 @@ public final class KitNames {
             if (priorWork < 0) throw new IllegalArgumentException("Prior work is never negative");
         }
 
+        /** The kind of weapon or tool it is. */
         public Kind kind() {
             return Kind.of(item).orElseThrow();
         }

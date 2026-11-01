@@ -9,6 +9,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks that the saved record of actions and of play time survives the server stopping: an
+ * action whose outcome was unknown is still waiting to be settled when the database reopens, and time that
+ * was booked but never settled is charged exactly once.
+ */
 class SupportBatch02LedgerTest {
     @TempDir Path dir;
     @Test void uncertainLedgerReopenRetainsIntentFencesAndRequiresReconciliation() {

@@ -15,11 +15,18 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 /**
- * A piece of gold for the Nether (E-07e). Gold armour keeps piglins neutral: one piece is enough. On the End goal in
- * the Nether with no gold at all, wearing iron, the player finds Nether gold ore in the wall of the room it stands in.
- * It mines it with its own pickaxe (two to six nuggets a block), makes the nuggets into ingots at its own crafting
- * table, crafts a golden helmet (five ingots, as good as iron's) and swaps it for the iron helmet it wore. Nothing
- * is given: every gold nugget comes from the ore.
+ * In plain terms: a GameTest: in a real test world, a player in iron with no gold, placed in a room in the
+ * Nether on its way to the End, is checked to mine the Nether gold ore in the wall, make the nuggets into a
+ * golden helmet and wear it, keeping its iron helmet; out of the Nether it puts the iron helmet back on.
+ * Further tests check that a piglin leaves a player wearing gold alone and the player never moves to strike
+ * it, that a piglin goes for a player in iron and is fought (the control), and that no gold ore is mined
+ * while a piglin is near enough to be angered by it.
+ *
+ * Technical: A piece of gold for the Nether (E-07e). Gold armour keeps piglins neutral: one piece is enough.
+ * On the End goal in the Nether with no gold at all, wearing iron, the player finds Nether gold ore in the
+ * wall of the room it stands in. It mines it with its own pickaxe (two to six nuggets a block), makes the
+ * nuggets into ingots at its own crafting table, crafts a golden helmet (five ingots, as good as iron's) and
+ * swaps it for the iron helmet it wore. Nothing is given: every gold nugget comes from the ore.
  */
 public final class NativeGoldGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "goldForPiglins", tickLimit = 4000)
@@ -115,6 +122,10 @@ public final class NativeGoldGameTests implements FabricGameTest {
         piglinMeets(context, false);
     }
 
+    /**
+     * Puts the player in a Nether room in a golden or iron helmet with a piglin three blocks off, and watches
+     * how each treats the other.
+     */
     private static void piglinMeets(TestContext context, boolean gold) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2200);
         net.minecraft.entity.mob.PiglinEntity[] piglin = new net.minecraft.entity.mob.PiglinEntity[1];

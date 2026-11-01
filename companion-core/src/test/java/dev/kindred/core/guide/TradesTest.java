@@ -13,6 +13,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks how a player trades with villagers: an emerald is valued at what the cheapest thing
+ * it can sell costs to gather, a purchase is made only when it is worth more to the player than it costs, it
+ * sells only what it can spare and never what its run needs, it knows what each kind of villager trades, and
+ * it keeps a librarian with a book worth having, otherwise resetting its offers a limited number of times.
+ */
 class TradesTest {
     private static final Worth.Holding NOTHING = Worth.Holding.of(Map.of(), Map.of());
 

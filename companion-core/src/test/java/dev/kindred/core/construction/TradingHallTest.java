@@ -8,6 +8,11 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the trading hall a player builds for villagers: each villager's cell has a bed, room
+ * to stand and a front that closes once its work block is in, and the corridor is walled, lit and shut by a
+ * door, open to the sky while the cells are roofed.
+ */
 class TradingHallTest {
     private static Map<Pos, BlockSpec> blocks(Blueprint hall) {
         var out = new HashMap<Pos, BlockSpec>();

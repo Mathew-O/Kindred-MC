@@ -16,10 +16,15 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * A build battle's round (M-04a): the theme, each builder's plot, and the votes. Every builder builds on its own plot in
- * the build's time, then each votes on every other build, one to five, the same for humans and AIs. The best mean wins.
- * An AI builder turns the theme into a design from Kindred's own generators, sized and coloured by chance, and votes as
- * the {@link #judge judge} scores what it sees on a plot. Pure.
+ * In plain terms: one round of a build battle: the theme, each builder's own plot, and the scores of one to
+ * five that every builder gives every other build, humans and AI players alike. An AI builder makes its
+ * design from the mod's own building plans, and scores others' builds by their size, variety and height.
+ *
+ * Technical: A build battle's round (M-04a): the theme, each builder's plot, and the votes. Every builder
+ * builds on its own plot in the build's time, then each votes on every other build, one to five, the same for
+ * humans and AIs. The best mean wins. An AI builder turns the theme into a design from Kindred's own
+ * generators, sized and coloured by chance, and votes as the {@link #judge judge} scores what it sees on a
+ * plot. Pure.
  */
 public final class BuildBattle {
     /** A side of a plot, and the gap between plots. */
@@ -38,6 +43,7 @@ public final class BuildBattle {
 
     /** One builder's square of ground: its north-west corner on the floor, {@link #PLOT} a side. */
     public record Plot(UUID builder, Pos origin) {
+        /** Whether a spot is on this plot, above its floor. */
         public boolean contains(Pos at) {
             return at.x() >= origin.x() && at.x() < origin.x() + PLOT && at.z() >= origin.z() && at.z() < origin.z() + PLOT && at.y() > origin.y();
         }
@@ -54,6 +60,7 @@ public final class BuildBattle {
     private final List<Plot> plots;
     private final Map<UUID, Map<UUID, Integer>> votes = new LinkedHashMap<>();
 
+    /** A round on a theme with its builders' plots, no votes cast yet. */
     public BuildBattle(Theme theme, List<Plot> plots) {
         this.theme = theme;
         this.plots = List.copyOf(plots);

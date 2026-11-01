@@ -7,6 +7,11 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * In plain terms: checks the ready-made building plans (a hut, a tower, a pyramid, a lighthouse, an animal
+ * pen and each stage of a home) are laid out right, and that a player can build each one whole and take its
+ * scaffolding down after.
+ */
 class GeneratorsTest {
     private static final Set<String> HELD = Set.of("minecraft:cobblestone", "minecraft:oak_planks", "minecraft:oak_stairs",
             "minecraft:oak_slab", "minecraft:oak_log", "minecraft:torch", "minecraft:dirt");

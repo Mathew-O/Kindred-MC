@@ -84,7 +84,12 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 /**
- * Native survival-mechanics backend; full player qualification remains F-25b.
+ * In plain terms: the AI player's actual body in the world: a real server player, moved, turned and acted
+ * through the same game mechanics a human's player is (walking, jumping, mining, placing, using items,
+ * fighting, eating, sleeping). It only carries out what it is told one step at a time; deciding what to do,
+ * saving and permissions all live elsewhere.
+ *
+ * Technical: Native survival-mechanics backend; full player qualification remains F-25b.
  * The caller owns registration, saves, admission, claims and the existing arbiter. No autonomous
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
@@ -136,6 +141,12 @@ final class NativePlayerBody implements BodyAdapter {
     /** Another player's hit that got through to the body: who, and what it took after armour, absorption included. */
     interface HitHook { void hit(ServerPlayerEntity by, float taken); }
     private HitHook hitHook = (by, taken) -> { };
+    /** Any harm that got through to the body, whatever its source, and what it took (E-49). */
+    interface HarmHook { void harmed(net.minecraft.entity.damage.DamageSource source, float taken); }
+    private HarmHook harmHook = (source, taken) -> { };
+    /** Something another player threw that the body picked up: who threw it, and what (E-49). */
+    interface GiftHook { void gift(ServerPlayerEntity from, net.minecraft.item.ItemStack stack); }
+    private GiftHook giftHook = (from, stack) -> { };
     private boolean respawning;
 
     /** Optional per-tick cap wired from {@link PlayerRuntime#MAX_BLOCK_CHECKS_PER_TICK}. */
@@ -263,6 +274,12 @@ final class NativePlayerBody implements BodyAdapter {
 
     /** Runs when another player's hit gets through to the body and it lives (E-41g): what the hit took, measured. */
     void onHitByPlayer(HitHook hook) { requireThread(); hitHook = Objects.requireNonNull(hook); }
+
+    /** Runs when any harm gets through to the body, killing or not (E-49): its source and what it took. */
+    void onHarm(HarmHook hook) { requireThread(); harmHook = Objects.requireNonNull(hook); }
+
+    /** Runs when the body picks up something another player threw (E-49): a gift, or what was taken given back. */
+    void onGift(GiftHook hook) { requireThread(); giftHook = Objects.requireNonNull(hook); }
 
     /**
      * Vanilla respawn of this dead, still-registered body: the same identity at its spawn point with whatever
@@ -730,7 +747,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (id != null) {
             var direct = recipeManager.get(id);
             if (direct.isPresent() && direct.get().value() instanceof CraftingRecipe cr && (cr.fits(2, 2) || cr.fits(3, 3))) {
-                matchedEntry = Optional.of((RecipeEntry<CraftingRecipe>) (Object) direct.get());
+                matchedEntry = Optional.of(new RecipeEntry<>(direct.get().id(), cr)); // The same entry, typed: no unchecked cast.
             }
         }
         if (matchedEntry.isEmpty()) {
@@ -1131,9 +1148,11 @@ final class NativePlayerBody implements BodyAdapter {
         if (item == Items.COAL || item == Items.CHARCOAL) return 100;
         if (item == Items.COAL_BLOCK) return 90;
         if (item == Items.BLAZE_ROD) return 80;
-        if (item == Items.STICK || item == Items.BAMBOO) return 60;
+        if (item == Items.BAMBOO) return 60;
         if (stack.isIn(ItemTags.PLANKS)) return 50;
         if (stack.isIn(ItemTags.LOGS_THAT_BURN)) return 20;
+        // Sticks last: they make the pickaxes for the work below, and two planks smelt more than the four sticks they make.
+        if (item == Items.STICK) return 10;
         return 30;
     }
 
@@ -1144,6 +1163,11 @@ final class NativePlayerBody implements BodyAdapter {
         if (item == Items.STICK || item == Items.BAMBOO) return 100;
         if (item == Items.LAVA_BUCKET) return 20000;
         return 300;
+    }
+
+    /** Items the whole of {@code fuel} smelts, at 200 ticks an item. */
+    static int itemsSmelted(ItemStack fuel) {
+        return fuel.getCount() * approximateFuelBurnTicks(fuel.getItem()) / 200;
     }
 
     Optional<SmeltPlan> planSmelt(BlockPos targetPos, String action, Integer fuelSlotArg, Integer inputSlotArg, Integer countArg) {
@@ -1200,8 +1224,7 @@ final class NativePlayerBody implements BodyAdapter {
                     if (!stack.isEmpty() && AbstractFurnaceBlockEntity.canUseAsFuel(stack)
                             && (currentFuel.isEmpty() || ItemStack.areItemsAndComponentsEqual(currentFuel, stack))) {
                         chosenFuelSlot = fuelSlotArg;
-                        int maxAvail = countArg != null && countArg > 0 ? Math.min(countArg, stack.getCount()) : stack.getCount();
-                        fuelToInsert = Math.min(maxAvail, fuelSpace);
+                        fuelToInsert = Math.min(stack.getCount(), fuelSpace);
                     }
                 } else {
                     int bestFuelScore = Integer.MIN_VALUE;
@@ -1218,9 +1241,7 @@ final class NativePlayerBody implements BodyAdapter {
                         }
                     }
                     if (chosenFuelSlot >= 0) {
-                        var stack = player.getInventory().getStack(chosenFuelSlot);
-                        int maxAvail = countArg != null && countArg > 0 ? Math.min(countArg, stack.getCount()) : stack.getCount();
-                        fuelToInsert = Math.min(maxAvail, fuelSpace);
+                        fuelToInsert = Math.min(player.getInventory().getStack(chosenFuelSlot).getCount(), fuelSpace);
                     }
                 }
             }
@@ -1255,7 +1276,7 @@ final class NativePlayerBody implements BodyAdapter {
 
         // Ore matched to fuel: with too little fuel for the whole stack, load only what the fuel at hand (in the
         // furnace and in the inventory) can smelt, so the rest stays with the player rather than in a cold furnace.
-        if (chosenInputSlot >= 0 && inputToInsert > 0 && countArg == null) {
+        if (chosenInputSlot >= 0 && inputToInsert > 0) {
             int fuelTicks = currentFuel.isEmpty() ? 0 : currentFuel.getCount() * approximateFuelBurnTicks(currentFuel.getItem());
             if (chosenFuelSlot >= 0) {
                 var playerFuel = player.getInventory().getStack(chosenFuelSlot);
@@ -1277,11 +1298,11 @@ final class NativePlayerBody implements BodyAdapter {
             int neededFuelUnits = neededTicks == 0
                     ? (currentFuel.isEmpty() ? 1 : 0)
                     : (int) Math.ceil((double) neededTicks / Math.max(1, burnTicksPerUnit));
-            int maxAvail = countArg != null && countArg > 0
-                    ? Math.min(countArg, playerFuel.getCount())
-                    : playerFuel.getCount();
+            // A count is how many to smelt: the fuel is what those burn, as for any load. It was as many pieces as the
+            // count, so six raw porkchops took six coal, where one smelts eight.
+            int maxAvail = playerFuel.getCount();
             int fuelSpace = currentFuel.isEmpty() ? playerFuel.getMaxCount() : (currentFuel.getMaxCount() - currentFuel.getCount());
-            int desiredUnits = countArg != null ? maxAvail : Math.max(1, neededFuelUnits);
+            int desiredUnits = Math.max(1, neededFuelUnits);
             fuelToInsert = Math.min(desiredUnits, Math.min(maxAvail, Math.max(0, fuelSpace)));
         }
 
@@ -2627,10 +2648,17 @@ final class NativePlayerBody implements BodyAdapter {
         @Override public boolean damage(net.minecraft.entity.damage.DamageSource source, float amount) {
             float before = getHealth() + getAbsorptionAmount();
             boolean took = super.damage(source, amount);
+            if (took && this == player) harmHook.harmed(source, Math.max(0, before - getHealth() - getAbsorptionAmount()));
             if (took && this == player && !isDead() && source.getAttacker() instanceof ServerPlayerEntity by && by != this) {
                 hitHook.hit(by, Math.max(0, before - getHealth() - getAbsorptionAmount()));
             }
             return took;
+        }
+
+        /** Picked up, after vanilla's own pickup: something another player threw it is theirs to be credited with (E-49). */
+        @Override public void triggerItemPickedUpByEntityCriteria(net.minecraft.entity.ItemEntity item) {
+            super.triggerItemPickedUpByEntityCriteria(item);
+            if (this == player && item.getOwner() instanceof ServerPlayerEntity from && from != this) giftHook.gift(from, item.getStack());
         }
 
         @Override public void onDeath(net.minecraft.entity.damage.DamageSource damageSource) {

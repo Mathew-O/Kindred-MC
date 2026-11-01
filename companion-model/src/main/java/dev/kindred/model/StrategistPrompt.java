@@ -82,7 +82,9 @@ public final class StrategistPrompt {
             + "WOOD gathers logs until there is wood to spare; NONE leaves the order to the route.";
     public static final String HABIT = "A lasting habit the note teaches, kept in this world from now on, or NONE: MORE_FOOD carries more food; "
             + "SPARE_PICKAXE packs a second spare pickaxe for the work below; NO_CAVES digs its own way rather than explore caves; "
-            + "SHELTER_EARLY digs in at dusk. Only with a note saying why.";
+            + "SHELTER_EARLY digs in at dusk; TORCH_AS_YOU_GO lights its own tunnels a torch every eight blocks or so; BUCKET_ON_HOTBAR keeps "
+            + "the water bucket in the hotbar for a fall. Only with a note saying why. A habit the notes mark as from its own play it learned "
+            + "from its own deaths: do not teach it again, though you may retire it with a reason.";
     public static final String RETIRE = "A habit kept in this world (listed in the report) that is no longer worth keeping, or NONE.";
     public static final String QUEUE = "Up to three follow-ups for the player's queue: needs a task ahead will want that the queue lacks, "
             + "or an empty list. The player gathers and crafts them itself, when the chance comes and before the task.";

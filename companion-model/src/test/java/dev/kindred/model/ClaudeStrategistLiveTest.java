@@ -10,8 +10,13 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * One real consultation, run only when {@code KINDRED_LIVE_MODEL_TEST} and {@code ANTHROPIC_API_KEY} are set: the
- * ordinary build never calls the network or spends money.
+ * In plain terms: checks, only when someone asks for it and a key is set, that a real optional AI adviser
+ * gives sensible advice: a hurt, hungry player that keeps dying is not told to press on, repeated hunger
+ * brings a focus on food, deaths to skeletons queue something useful it does not already hold, and in chat it
+ * answers from what the player is doing and comes when its owner asks.
+ *
+ * Technical: One real consultation, run only when {@code KINDRED_LIVE_MODEL_TEST} and {@code
+ * ANTHROPIC_API_KEY} are set: the ordinary build never calls the network or spends money.
  */
 class ClaudeStrategistLiveTest {
 
@@ -98,6 +103,46 @@ class ClaudeStrategistLiveTest {
             var queue = outcome.advice().get().queue();
             assertTrue(!queue.isEmpty(), "two deaths to skeletons and no shield before the Nether: something to queue");
             assertTrue(queue.stream().noneMatch(w -> w.need() == dev.kindred.core.guide.Need.BOW), "never what it already holds: " + queue);
+        }
+    }
+
+    @Test
+    void aRealReplyToWhatAreYouDoingNamesTheLogsItIsChopping() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");
+        var strategist = ClaudeStrategist.fromEnvironment(null);
+        Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+        try (var s = strategist.get()) {
+            var situation = new dev.kindred.core.ConversationAudience.Situation("Echo", "Steve", dev.kindred.core.ConversationAudience.Relation.PLAYER,
+                    false, 20, 18, "", "the Overworld", "day", "clear", false, true, "chopping logs for a crafting table", "a Nether portal",
+                    "Wood: Gather logs for a crafting table", "120, 64, -35", "", List.of("Steve"), List.of("a stone axe"), 3, List.of(),
+                    List.of("Cut 3 oak logs at 118, 66, -33"), List.of(), "", List.of());
+            var conversation = ConversationPrompt.conversation("Echo", dev.kindred.core.Personality.defaults(), situation, "Echo, what are you doing?");
+            var line = s.converse(conversation).get(30, TimeUnit.SECONDS);
+            System.out.println("voice line: " + line);
+            assertTrue(line.say().isPresent(), "a line: " + line.failure());
+            String said = line.say().get().toLowerCase(java.util.Locale.ROOT);
+            assertTrue(said.contains("log") || said.contains("wood") || said.contains("tree") || said.contains("chop"), "grounded in what it is doing: " + said);
+            assertTrue(line.millis() < Strategist.CHAT_DEADLINE.toMillis(), "within the chat lane's deadline");
+        }
+    }
+
+    @Test
+    void aRealAskFromTheOwnerToComeIsCome() throws Exception {
+        Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");
+        var strategist = ClaudeStrategist.fromEnvironment(null);
+        Assumptions.assumeTrue(strategist.isPresent(), "no ANTHROPIC_API_KEY");
+        try (var s = strategist.get()) {
+            var situation = new dev.kindred.core.ConversationAudience.Situation("Echo", "Steve", dev.kindred.core.ConversationAudience.Relation.OWNER,
+                    true, 20, 18, "", "the Overworld", "day", "clear", false, false, "", "", "", "120, 64, -35", "", List.of("Steve"),
+                    List.of("a stone axe"), 3, List.of("4 oak logs"), List.of(), List.of(), "", List.of());
+            var come = s.converse(ConversationPrompt.conversation("Echo", dev.kindred.core.Personality.defaults(), situation, "come over here please"))
+                    .get(30, TimeUnit.SECONDS);
+            System.out.println("voice ask: " + come);
+            assertTrue(come.say().isPresent() && come.ask() == Strategist.Ask.COME, "an owner's plain ask to come: " + come);
+            var chat = s.converse(ConversationPrompt.conversation("Echo", dev.kindred.core.Personality.defaults(), situation, "nice weather today"))
+                    .get(30, TimeUnit.SECONDS);
+            System.out.println("voice small talk: " + chat);
+            assertTrue(chat.say().isPresent() && chat.ask() == Strategist.Ask.NONE, "small talk asks nothing: " + chat);
         }
     }
 

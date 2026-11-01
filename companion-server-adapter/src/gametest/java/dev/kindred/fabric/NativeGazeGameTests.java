@@ -15,9 +15,15 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * A native player looks at what matters while it waits (E-33a): at a monster once it is in plain sight, quickly but
- * never in one snap; at what it waits on; back at a player close by who looks at it, for a moment, and then back to
- * its waiting; and never into an enderman's eyes. Each fixture samples the head every tick.
+ * In plain terms: a GameTest: in a real test world, a waiting player's head is watched tick by tick to check
+ * it looks where a person would: at a monster only once it can see it, turning quickly but never in one snap;
+ * at the furnace it is waiting on, and back at a nearby player looking at it for a moment only; at someone
+ * who speaks its name, but only if it can see them; and never straight into an enderman's eyes.
+ *
+ * Technical: A native player looks at what matters while it waits (E-33a): at a monster once it is in plain
+ * sight, quickly but never in one snap; at what it waits on; back at a player close by who looks at it, for a
+ * moment, and then back to its waiting; and never into an enderman's eyes. Each fixture samples the head
+ * every tick.
  */
 public final class NativeGazeGameTests implements FabricGameTest {
 
@@ -146,7 +152,7 @@ public final class NativeGazeGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     // Another player, three blocks east, looking at its face.
-                    other[0] = context.createMockCreativeServerPlayerInWorld();
+                    other[0] = MockPlayers.creative(context);
                     Vec3d stand = context.getAbsolute(new Vec3d(6.5, 2, 3.5));
                     other[0].refreshPositionAndAngles(stand.x, stand.y, stand.z, 90, 0);
                     other[0].setHeadYaw(90);
@@ -208,7 +214,7 @@ public final class NativeGazeGameTests implements FabricGameTest {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                     context.assertTrue(f.runtime.socialSetting(f.source, f.id, "public", true, null, 0) == 1, "Open to talk with anyone");
                     for (int y = 2; y <= 4; y++) for (int z = 1; z <= 5; z++) context.setBlockState(6, y, z, Blocks.STONE);
-                    other[0] = context.createMockCreativeServerPlayerInWorld();
+                    other[0] = MockPlayers.creative(context);
                     Vec3d stand = context.getAbsolute(new Vec3d(7.5, 2, 3.5));
                     other[0].refreshPositionAndAngles(stand.x, stand.y, stand.z, 90, 0);
                     faceSouth(f.player());
