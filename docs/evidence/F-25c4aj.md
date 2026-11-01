@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `238ff1e`; recorded in [validation](../validation.md)
-Status: in progress (native passed; live runs pending); F-25c4 stays open
+Status: in progress (native passed, the give-up on unwalked asks fixed on 1 November; live runs on that code pending); F-25c4 stays open
 
 ## Scope and implementation
 
@@ -13,10 +13,10 @@ Found in the live pair on `64c298d` (seed 20261030, strategist off): Kindred fil
 
 Changed modules/files:
 - `PortalRunCampaign.clearPortalSite`: in each pass, the first cell breakable from where it stands is dug; the first that is not is kept, and given to `clearOrApproach` only if none is breakable.
-- `PortalRunCampaign.clearOrApproach`: with nothing it can break from here, it goes to the stand, then to the open cell of the row in front nearest the cell, each once since it last broke one (`clearTriedFrom`), and only then gives the site up.
+- `PortalRunCampaign.clearOrApproach`: with nothing it can break from here, it goes to the stand, then to the open cell of the row in front nearest the cell, each once since it last broke one (`clearTriedFrom`), and only then gives the site up. Since 1 November a place counts as tried once it has been stood in or its walk has ended (`clearWalk`, read in `taskFinished`), not when the walk is asked for.
 - `PortalRunCampaign` (the cast route): no walk back to the stand before clearing. Asked for again on every step of a walk to the row in front, it undid that walk; the clearing walks to the stand itself when it needs to. `buildPortal` (owned obsidian) keeps its walk to the stand, except from a spot its clearing sent it to.
 - `PortalRunCampaign` (the cast): a cell to open before a cast that it cannot break from here sends it to the stand before the site is given up, and that give-up is logged (`<name> gives up the frame site at … : cannot open …`).
-- `NativePortalCampaignGameTests`: one fixture.
+- `NativePortalCampaignGameTests`: one fixture; since 1 November it checks the first site the player chose, read from its campaign, not one named in advance (below).
 
 ## Acceptance evidence
 
@@ -24,6 +24,7 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | On the stand of the first site it chooses, in Kindred's rock over the lava lake rebuilt from the save, its lava in hand: its first frame block is cast in that site, and it is unhurt | `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite` | Before, the change set aside, it fails 3 of 3: "0 there", 111 sites given up across the three runs, the first each time for the walled-in cell. Two of the runs later cast a block or more elsewhere; one cast none. With the cells taken in reach order alone it still failed 3 of 3: the row's last column was walled in behind the stand's own staircase. With the walk to the row in front added it failed 2 of 3: the cast route's walk back to the stand, asked for on each step of that walk, undid it. After, 3 of 3 alone, no site given up | native |
 | The other casts unchanged | the frame under thick rock, the roofed cast, the whole cast, the climb over the lava lakes, the cast refused for its water, the one-block cast and the owned-block frame, alone on this code | 7 of 7 | native |
+| Its first site not given up while its last break is still finishing (CI's full runs 301, 313 and 316) | the same fixture, its check reading the first site it chose (1 November) | Before, 0 of 4 alone, each giving that site up in the second its last break finished. After, 5 of 5 alone, nothing given up; `NativePortalCampaignGameTests` alone 94 of 94 with it | native |
 | In play | the live pair on `c432fba`, both seeds, strategist off | Met in part: 8 frame sites given up across both seeds, each after the stand and the row in front were tried (49 on `64c298d`), and the step to the row in front taken 7 times; both frames lit | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
@@ -39,7 +40,25 @@ Analysis: `rebuild.py` in the session's scratch space (not committed) read the s
   from as tried (`clearOrApproach`), though no walk was sent; at the third it gave the site up. That fault needs its own
   fixture before it is fixed.
 - The failing runs alone gave nothing up: they cast their frame blocks outside the site the fixture names ("0 there, 3
-  elsewhere"). Why is not established.
+  elsewhere"). Why was found on 1 November, below.
+
+## The site it names, and the give-up fixed (1 November)
+
+- Since F-25c4z (`55e3227`) a site is refused for lava three blocks below it, not two. The save's lava lies three below
+  the site the fixture named, so that site is never chosen now: the first is a block up and one north, its frame plane
+  three north of the stand, and its own row in front is walled in at its east end. In all eight runs alone with that
+  change it chose that site first: the three that kept it cast there and failed the check, which named the old site;
+  the five that gave it up cast in the next, whose frame reached into the old site's, and passed. The pass came from
+  the fault.
+- The fixture now reads the first site the player chooses from its campaign and checks that its first frame block is
+  cast there; the scene, the kit and the rest of the check are as they were.
+- The fault, in every give-up seen: the last cell it could break was still being broken when the goal was asked for its
+  next step; the walled-in cell was next, so it was sent to the stand, then over to the row in front, and then gave the
+  site up, all in the same second and with no walk sent (`Cast: stand in front of the frame site`, `Cast: over to …`,
+  `gives up the frame site at …: cannot clear … deepslate`). Now a place counts as tried once it has been stood in or
+  its walk has ended, so each is walked before the next is chosen.
+- With the fixture's new check, alone, on the code before the fix: 0 of 4, each giving its first site up ("0 there, 3
+  elsewhere"). After: 5 of 5, nothing given up, the first block cast in the first site each time.
 
 ## Remaining limitations and handoff
 

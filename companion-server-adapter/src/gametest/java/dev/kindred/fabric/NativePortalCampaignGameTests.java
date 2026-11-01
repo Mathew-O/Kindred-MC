@@ -4855,6 +4855,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     public void onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] feet = new BlockPos[1];
+        PortalRunCampaign.PortalSite[] firstSite = new PortalRunCampaign.PortalSite[1];
         // Layers from 4 below the stand to 6 above, rows from 9 north of it to 7 south, 6 west to 6 east: # deepslate,
         // . air, L lava, g gravel, t tuff.
         String[] layers = {
@@ -4911,18 +4912,29 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     f.player().equipStack(net.minecraft.entity.EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
+                // The first site it chooses, as it chooses it. It was the one with its frame two blocks north of the stand, as in
+                // the save; since F-25c4z counts lava three blocks below a site, the save's lava there rules that one out, and
+                // the first is a block up and one north, its own row in front walled in at its east end. Asked for that one
+                // fixed site, the check passed only when it gave its first up and cast in the next, whose frame reached into it.
                 .createAndAdd(() -> {
-                    // The first site: its frame two blocks north of the stand, one block west to two east, five tall.
+                    var site = f.runtime.campaignForTest(f.id).portalSite();
+                    context.assertTrue(site.isPresent(), "A frame site chosen");
+                    firstSite[0] = site.get();
+                })
+                .createAndAdd(() -> {
                     var world = context.getWorld();
+                    var site = firstSite[0];
                     int inSite = 0, elsewhere = 0;
+                    var frame = new java.util.HashSet<BlockPos>();
+                    for (int across = 0; across <= 3; across++) for (int up = 0; up <= 4; up++) frame.add(site.at(across, up));
                     for (BlockPos at : BlockPos.iterate(feet[0].add(-7, -5, -10), feet[0].add(7, 7, 8))) {
                         if (!world.getBlockState(at).isOf(Blocks.OBSIDIAN)) continue;
-                        BlockPos d = at.subtract(feet[0]);
-                        if (d.getZ() == -2 && d.getX() >= -1 && d.getX() <= 2 && d.getY() >= 0 && d.getY() <= 4) inSite++;
+                        if (frame.contains(at)) inSite++;
                         else elsewhere++;
                     }
                     var player = f.player();
-                    context.assertTrue(inSite >= 1, "Its first frame block cast in the site it chose: " + inSite + " there, " + elsewhere
+                    context.assertTrue(inSite >= 1, "Its first frame block cast in the first site it chose, at "
+                            + site.origin().subtract(feet[0]).toShortString() + ": " + inSite + " there, " + elsewhere
                             + " elsewhere; at " + (player == null ? "no body" : player.getBlockPos().subtract(feet[0]).toShortString()) + "; "
                             + f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel"));
                 })

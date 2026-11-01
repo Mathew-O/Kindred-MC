@@ -589,6 +589,11 @@ final class PortalRunCampaign {
             if (blocked.size() >= 5) blocked.removeFirst();
             blocked.addLast("at " + tick / 20 + "s: " + task.label() + (why == null || why.isBlank() ? "" : " - " + why));
         }
+        // The site's clearing walked there, or tried to: that place is tried, whether the walk got there or not (F-25c4aj).
+        if (task != null && clearWalk != null && "native_goto".equals(task.skill()) && clearWalk.equals(position(task.args()))) {
+            clearTriedFrom.add(clearWalk.asLong());
+            clearWalk = null;
+        }
         if (task != null && task.equals(rescueTask)) rescueTaskFinished(completed, why, tick);
         if (task != null) stronghold.taskFinished(task, completed, tick);
         if (task != null && task.equals(relocateWalk)) relocateWalk = null; // Ended, however: the next look judges it.
@@ -4194,11 +4199,16 @@ final class PortalRunCampaign {
 
     /** Spots the site's clearing could break nothing from, or was sent to, since it last broke a cell (F-25c4aj). */
     private final Set<Long> clearTriedFrom = new java.util.HashSet<>();
+    /** Where the site's clearing last asked to be walked to: counted as tried once that walk has ended, not when asked for. */
+    private BlockPos clearWalk;
 
     /**
      * Break {@code cell} if it can be broken from here. Else go where it may show: the site's stand, then the open cell of
      * the row in front nearest it, each once since the last cell it broke (a column walled in behind the stand's own row
-     * shows from the row in front, F-25c4aj); and only then give the site up ({@code portalSite} becomes null).
+     * shows from the row in front, F-25c4aj); and only then give the site up ({@code portalSite} becomes null). A place
+     * counts as tried once it has been stood in or its walk has ended: the goal is asked for its next step on every look,
+     * and asked while its last break was still finishing it used up the stand and the row in front unwalked, and gave the
+     * site up (CI's full runs 301, 313 and 316; 3 of 8 alone).
      */
     private Optional<Task> clearOrApproach(NativePlayerBody body, PortalSite site, BlockPos cell, String label) {
         var player = body.entity();
@@ -4207,7 +4217,8 @@ final class PortalRunCampaign {
             return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
         }
         clearTriedFrom.add(player.getBlockPos().asLong());
-        if (clearTriedFrom.add(site.stand().asLong())) {
+        if (!clearTriedFrom.contains(site.stand().asLong())) {
+            clearWalk = site.stand();
             return Optional.of(go(site.stand(), 0.3, false, label + ": stand in front of the frame site"));
         }
         var navigator = new NativeNavigator(player.getServerWorld());
@@ -4219,7 +4230,7 @@ final class PortalRunCampaign {
             if (spot == null || open.getSquaredDistance(cell) < spot.getSquaredDistance(cell)) spot = open;
         }
         if (spot != null) {
-            clearTriedFrom.add(spot.asLong());
+            clearWalk = spot;
             return Optional.of(go(spot, 0.3, false, label + ": over to " + cell.toShortString()));
         }
         KindredMod.LOGGER.info("{} gives up the frame site at {}: cannot clear {} ({})", player.getName().getString(),

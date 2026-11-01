@@ -16,6 +16,24 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The walled-in cell's site given up on asks never walked (F-25c4aj), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full runs 301, 313 and 316 failed `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite`, and alone
+  it passed 5 of 8. Two things, both in [the evidence](evidence/F-25c4aj.md):
+  - since F-25c4z (`55e3227`) the site the fixture named is refused for the save's lava three blocks below it. The first
+    site chosen is a block up and one north; alone, the runs that kept it failed the check, and those that gave it up
+    passed, their next site's frame reaching into the one named;
+  - the give-up, in every one seen: asked for its next step while its last break was still finishing, it was sent to
+    the stand, then over to the row in front, then gave the site up, in the same second and with no walk sent.
+- Now a place counts as tried once stood in or walked to, and the fixture checks the first site the player chose, read
+  from its campaign. Alone, with that check: on the code before the fix 0 of 4, each giving the site up; after it 5 of
+  5, nothing given up, the first block cast in the first site each time.
+- `NativePortalCampaignGameTests` alone with the fix: 94 of 94 (92 of 94 on `bb620ba`, the walled-in cell and the
+  hungry search for animals failing).
+- The scratch class that ran the fixture alone was not committed; the gametest entrypoints were restored after each
+  run.
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+
 ## Ten seeds: lessons and the atlas against without, the night fix again (E-46, F-30, F-26) — 1 November 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores, 15 GB), OpenJDK 21, Python 3.13; `tools/eval/run.py` with the server launcher for
