@@ -16,6 +16,17 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A frame site three over lava (F-25c4z), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- `withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite` alone: 0 of 3 on `124c501` (before the next
+  levers), 2 of 3 on `60cb3a7`, 1 of 3 on `1f16f1e`; each failure worked a site two up, three over the lava, then went
+  to branch mine for lava. A frame site's lava check looked two below, the climb's three. With the check at three
+  below as well: 3 of 3 alone ([F-25c4z](evidence/F-25c4z.md)).
+- `NativePortalCampaignGameTests` alone with the change: 92 of 93. The one failure,
+  `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite` (F-25c4aj), passed 5 of 8 alone with the change
+  and 5 of 8 without, failing the same way each time: an intermittent of its own, open.
+- Build: `./gradlew build` green, 845 JUnit tests, 6 skipped, 0 failures.
+
 ## The log afloat (F-25c4as), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
 
 - CI's full suite failed `withNoWoodItChopsATreeStandingInWaterFromTheWater` in runs 292, 299 and 309; in each it cut
@@ -25,8 +36,8 @@
 - `NativePortalCampaignGameTests` alone with the change: 92 of 93. The one failure is
   `withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite` (F-25c4z), at the obsidian stage, where neither
   part of the change applies. Alone it then failed 2 of 3 on this code: it worked a frame site two blocks up, where the
-  fixture wants three, and then went to branch mine for lava. It failed once in CI too (run 309). Open; its cause is
-  being looked for.
+  fixture wants three, and then went to branch mine for lava. It failed once in CI too (run 309). Its cause and fix are
+  in the section above.
 
 ## A follow-up lost to the memory (E-46), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
 

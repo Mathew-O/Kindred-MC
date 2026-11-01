@@ -4281,13 +4281,15 @@ final class PortalRunCampaign {
 
     /**
      * Lava within three blocks of the frame, the row in front of it or the stand: water poured while casting would run
-     * into it and harden the pool, and the player works with its back to it. Players build away from lava too.
+     * into it and harden the pool, and the player works with its back to it. Players build away from lava too. Three
+     * below as well, as {@code lavaAtOrBelow} counts it: looking two below, a site two blocks up over a lava lake's level
+     * was taken while the climb still counted itself in the lava's reach (F-25c4z's fixture, 0 of 3 on `124c501`).
      */
     private static boolean lavaNear(ServerWorld world, PortalSite site) {
         BlockPos a = site.at(0, 0), b = site.at(3, 0), c = site.stand();
         int minX = Math.min(Math.min(a.getX(), b.getX()), c.getX()) - 3, maxX = Math.max(Math.max(a.getX(), b.getX()), c.getX()) + 3;
         int minZ = Math.min(Math.min(a.getZ(), b.getZ()), c.getZ()) - 3, maxZ = Math.max(Math.max(a.getZ(), b.getZ()), c.getZ()) + 3;
-        for (BlockPos pos : BlockPos.iterate(minX, a.getY() - 2, minZ, maxX, a.getY() + 5, maxZ)) {
+        for (BlockPos pos : BlockPos.iterate(minX, a.getY() - 3, minZ, maxX, a.getY() + 5, maxZ)) {
             if (world.getFluidState(pos).isIn(FluidTags.LAVA)) return true;
         }
         return false;
