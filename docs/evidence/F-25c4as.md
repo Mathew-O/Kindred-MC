@@ -27,6 +27,8 @@ Changed modules/files:
 | --- | --- | --- | --- |
 | No wood, the only tree in sight a stump of two logs in a pool two deep, the top one level with the water's top: it swims out and chops that one from the water and holds its wood, unhurt | `withNoWoodItChopsATreeStandingInWaterFromTheWater` | Before (the gathering break stopped in deep water as any other, no treading for it, the plan ashore first), 0 of 3: "Not chopped: the log stands; ... Explore east for logs". After, 3 of 3, each alone in its batch (2026-10-31) | native |
 | The water's and the climbs' fixtures beside it unchanged | The flooded pit, the swim up for air, under a lake, the shore passed over, the flooded shaft, water level with its floor, and the casts that take their water back | 11 of 11 with the far move's, each alone in its batch, on the final code (2026-10-31) | native |
+| The log it cut, come down afloat, is fetched before it goes ashore (CI, 1 November) | `withNoWoodItSwimsOutForALogAfloatInThePool`: no wood, no tree, an oak log afloat at the pool's middle | Before, 0 of 1: "The log afloat picked up: 0 held, ...; Wood: waiting for a feasible step". After, 3 of 3, each alone in its batch: ashore it walks back for the log, in the water it swims to it | native |
+| The goal's fixtures beside it, with the change | `NativePortalCampaignGameTests` alone | 92 of 93; the one failure, the lava lakes' frame site (F-25c4z), is at the obsidian stage, where neither part of the change applies (below) | native |
 | In play | live runs on this code | Pending | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
@@ -34,6 +36,23 @@ Fixtures: the grass, the pool and the stump are staged; daylight; bread.
 Analysis: the save round Echo's tree read with `rebuild.py` in the session's scratch space (not committed).
 
 **The criterion changed.** The fixture first asked for both logs of the stump. With the first form of the change it failed 3 of 3 after: the plan sent it ashore before the log. With the plan's part too, it passed 1 of 3. In the other two it cut the top log and went on to look elsewhere: the log below, every face of it under water or against the log above, is not a log it can know of. `WorldKnowledge` remembers a block only by a face to the air ("a face under water is not a face a walking player can work from"). In the one run that passed, the look caught the cell over it empty, the top log cut and the water not yet back. Live, Echo's log was the one at the water's top, with its top face to the air. The criterion is now that log, cut from the water, and its wood held. The rule of what it can know is unchanged.
+
+## The log afloat (1 November, from CI)
+
+CI's full suite failed `withNoWoodItChopsATreeStandingInWaterFromTheWater` in three of its last six runs (292, 299
+and 309), and it passed alone. In each of the three it cut the stump's log from the water within seconds, and never
+held its wood: cut from the water, the log comes down afloat, and unless it floats into the player's reach the player
+goes ashore without it. Logs were not among the drops the goal goes back for, so it then looked for trees that were
+not there, hungry for 45 minutes in two runs and dead in a wall in the third.
+
+- At the wood stage a log lying near is now a drop worth going back for, as obsidian or a crafting table is.
+- In deep water with breath to spare, a log afloat that it can see within a short swim is swum to before the way
+  ashore.
+- The new fixture stages the log afloat, as the cut leaves it.
+
+A stress run of the tree-in-water fixture six at once in one batch (a scratch class, not committed) is not evidence
+either way: its copies stand thirteen blocks apart and each fills ground eighteen blocks wide, so each fills over its
+neighbours' pools, logs and players.
 
 ## Remaining limitations and handoff
 

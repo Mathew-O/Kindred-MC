@@ -16,6 +16,18 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The log afloat (F-25c4as), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full suite failed `withNoWoodItChopsATreeStandingInWaterFromTheWater` in runs 292, 299 and 309; in each it cut
+  the log and never held it, the log afloat in the pool. Logs are now fetched at the wood stage, ashore or from the
+  water ([F-25c4as](evidence/F-25c4as.md)).
+- `withNoWoodItSwimsOutForALogAfloatInThePool` (new): before the change 0 of 1, after it 3 of 3, each alone in its batch.
+- `NativePortalCampaignGameTests` alone with the change: 92 of 93. The one failure is
+  `withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite` (F-25c4z), at the obsidian stage, where neither
+  part of the change applies. Alone it then failed 2 of 3 on this code: it worked a frame site two blocks up, where the
+  fixture wants three, and then went to branch mine for lava. It failed once in CI too (run 309). Open; its cause is
+  being looked for.
+
 ## A follow-up lost to the memory (E-46), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
 
 - CI's full suite failed `NativeFollowUpGameTests.whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold`

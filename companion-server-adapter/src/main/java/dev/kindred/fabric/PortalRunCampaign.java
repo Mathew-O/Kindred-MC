@@ -1526,6 +1526,11 @@ final class PortalRunCampaign {
                 progress = stageLabel(stage) + ": " + chop.get().label() + " from the water";
                 return chop;
             }
+            Optional<Task> afloat = woodAfloat(body);
+            if (afloat.isPresent()) {
+                progress = stageLabel(stage) + ": " + afloat.get().label();
+                return afloat;
+            }
             progress = stageLabel(stage) + ": " + air.get().label();
             return air;
         }
@@ -5380,7 +5385,22 @@ final class PortalRunCampaign {
      * and was left with no wood at all).
      */
     private boolean keep(ItemStack stack, boolean saplings) {
-        return KEEP.contains(stack.getItem()) || wanted.contains(stack.getItem()) || saplings && stack.isIn(ItemTags.SAPLINGS);
+        return KEEP.contains(stack.getItem()) || wanted.contains(stack.getItem()) || saplings && stack.isIn(ItemTags.SAPLINGS)
+                || stage == PortalRunPlanner.Stage.WOOD && stack.isIn(ItemTags.LOGS);
+    }
+
+    /**
+     * At the wood stage, breath to spare, a log afloat that it can see within a short swim: swum to and picked up before
+     * it goes ashore. Cut from the water, a stump's log comes down afloat, and in CI's full suite the tree-in-water
+     * fixture went ashore without it, its only tree gone to the pool (F-25c4as).
+     */
+    private Optional<Task> woodAfloat(NativePlayerBody body) {
+        var player = body.entity();
+        if (stage != PortalRunPlanner.Stage.WOOD || player.getAir() < player.getMaxAir() * 2 / 3) return Optional.empty();
+        return player.getServerWorld().getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(6, 3, 6),
+                        drop -> drop.getStack().isIn(ItemTags.LOGS) && player.canSee(drop) && !blocked(drop.getBlockPos()))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo))
+                .map(drop -> go(drop.getBlockPos(), 0.6, true, "Pick up the log afloat"));
     }
 
     private Optional<Task> pickUpLoose(ServerPlayerEntity player) {

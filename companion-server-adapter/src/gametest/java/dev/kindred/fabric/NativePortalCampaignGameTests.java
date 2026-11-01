@@ -4116,6 +4116,53 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * With no wood, a log afloat in the pool beside it, where a log cut from the water came down (F-25c4as): it swims out
+     * for it. In CI's full suite the tree-in-water fixture above cut its stump's log, then went ashore without it, its
+     * one tree gone to the pool (runs 292, 299 and 309), and looked for trees that were not there. Staged: grass to stand
+     * on, the same pool, no tree, and one oak log the fixture puts afloat at the pool's middle; daylight; bread.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "logAfloat", tickLimit = 1200)
+    public void withNoWoodItSwimsOutForALogAfloatInThePool(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.ItemEntity[] log = new net.minecraft.entity.ItemEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Driftlogger"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    FixtureGround.keep(context, p.add(-4, -4, -6), p.add(13, 6, 6));
+                    for (BlockPos c : BlockPos.iterate(p.add(-4, -4, -6), p.add(13, 6, 6))) {
+                        int dy = c.getY() - p.getY(), dx = c.getX() - p.getX(), dz = c.getZ() - p.getZ();
+                        boolean pool = dx >= 3 && dx <= 11 && Math.abs(dz) <= 4 && (dy == -1 || dy == -2);
+                        world.setBlockState(c, (pool ? Blocks.WATER : dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
+                    }
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    log[0] = new net.minecraft.entity.ItemEntity(world, p.getX() + 7.5, p.getY() - 0.5, p.getZ() + 0.5, new ItemStack(Items.OAK_LOG));
+                    log[0].setVelocity(0, 0, 0);
+                    world.spawnEntity(log[0]);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().getInventory().count(Items.OAK_LOG) == 1 && log[0].isRemoved(),
+                        "The log afloat picked up: " + f.player().getInventory().count(Items.OAK_LOG) + " held, the drop "
+                                + (log[0].isRemoved() ? "gone" : "at " + log[0].getBlockPos().toShortString()) + "; "
+                                + f.runtime.panelBots(Actor.console()).getFirst().goalProgress()))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Sealed into its shelter for the night in a pocket under a pool, with no pickaxe: in the morning, with no other way up,
      * it punches its own seal out by hand (F-25c4at). In the live pair on `00e98f5` Kindred, sealed in so beside a lake at
      * Y=45, found every walk out refused by its own seal and every step up by the water beside the cell over its head, and
