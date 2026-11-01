@@ -331,14 +331,18 @@ tokens:
 The reply is one to six steps, each in one of these forms and nothing else:
 
 ```text
-walk <north|south|east|west> <1-8>       walked to the block that many away, round what is in the way
-dig <north|south|east|west|up|down> <1-4> the blocks in the way: a passage two high sideways, a shaft up or down
+walk <north|south|east|west> <1-8>       walked to the block that many away, round what is in the way, at about its height
+dig <north|south|east|west|up|down> <1-4> the blocks in the way: a passage two high sideways; over its head, or under its feet
 pillar <1-6>                             up that many, a block of its own from the hotbar under its feet each jump
 place <north|south|east|west>            a block of its own from the hotbar beside its feet
 wait <1-4>                               seconds
 eat                                      food from its hotbar
 retreat <north|south|east|west> <1-3>    back off without turning
 ```
+
+The strategist is told what each step does as it is carried out: a dig does not move the player (it climbs a shaft dug
+up with `pillar`, and drops into a hole dug down); a walk climbs one block at a time at most; it breaks only what a tool
+it carries can harvest, so stone, deepslate and ores need a pickaxe.
 
 Core reads the reply and refuses the whole of it for one step that is not in that list or outside its bounds. A plan
 is also refused, with nothing moved, when:
@@ -349,9 +353,9 @@ is also refused, with nothing moved, when:
 - the player is no longer where it asked from.
 
 While it waits for the reply, a few seconds, its goal gives out nothing and a walk of its own under way stops where it
-is, so that the plan finds it as it was: every task the goal gives out counts as a command against the fence. What is
-a danger to it still comes first: a hostile mob within 16 blocks, water, lava or fire, its breath short, or its health
-or food at half or less. A plan that comes back after anything was given out meanwhile is refused.
+is, so that the plan finds it where it asked from. What is a danger to it still comes first: a hostile mob within 16
+blocks, water, lava or fire, its breath short, or its health or food at half or less. What it does of its own choosing
+meanwhile (eating, say) does not refuse the plan; a stop, a resume or a command does.
 
 A plan that passes is carried out a step at a time before anything else of the goal's. Each step is worked out from
 where the player stands when it comes up, and is given out as an ordinary task: the server's edit policy, the claims
@@ -361,8 +365,9 @@ replays on (F-27), the scene is captured as a `stuck` replay before the plan run
 The log says `<name> rescue: asked, stuck spell <n> at <x, y, z> (<characters> characters reported)`, `<name> rescue:
 plan pillar 3, walk north 2 - <reason> (<in> in, <cached> cached, <out> out tokens, <ms> ms)`, and how it ended:
 `<name> rescue: pillar 3, walk north 2 -> unstuck`, `-> failed: <why>` or `-> refused: <why>`. An evaluation's result
-lists each player's rescues. A rescue costs about 1,300 characters of report, roughly 900 tokens in and at most 300
-out. Set `KINDRED_RESCUE=off` to turn rescues off; the strategist's advice is unchanged.
+lists each player's rescues. A rescue sends a report of about 1,300 to 2,200 characters; in the ten-seed evaluation on
+Anthropic's server through the compatible route that was about 1,700 to 1,900 tokens in, with the instructions, and
+about 80 out, at most 300. Set `KINDRED_RESCUE=off` to turn rescues off; the strategist's advice is unchanged.
 
 ### The player's voice in chat (E-20a)
 With the strategist on, a player spoken to by name ("Echo, what are you doing?") answers in its own words: the same model phrases one short, clean line in the player's personality from what the player knows right now. It is told only what that listener may know. Whoever may command the player (its controller, an operator) is told everything, its position included. Another player is told what anyone beside it could see or ask, never where it is or what exactly it carries. An opponent in a match is told only what it could see for itself. The line is said through the same social lane as the fixed replies, with the same limits: eight blocks and in sight, public chat for anyone who may not command the player, a player's three seconds between direct replies, and each speaker's three seconds. Words alone never make the player do anything; only the asks below, from someone who may command it, do. A line that is too long, starts with `/`, carries formatting codes or rough words, or gives a place to someone who may not know it is refused. Then, or when anything else goes wrong (a timeout, an error, the budgets or rates spent, a line already being phrased for that player), the player says its fixed reply, as it does with no model. While one reply is being phrased, the newest message to the player waits for it; someone else whose message that one replaced is given the fixed reply at once.

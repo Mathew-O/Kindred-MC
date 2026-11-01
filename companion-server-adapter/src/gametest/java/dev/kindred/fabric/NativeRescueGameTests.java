@@ -318,11 +318,10 @@ public final class NativeRescueGameTests implements FabricGameTest {
 
     /**
      * In a pit five wide, where its goal still finds somewhere to walk to, a way out asked for is carried out when it comes
-     * rather than refused as stale: while it is asked for, the goal gives out nothing (F-29). Every task the goal gives out
-     * is a command to the arbiter, which moves on the intent revision the plan's fence compares, and a walk takes it from
-     * where it asked; in the first ten-seed arm on the compatible route 3 of 4 plans came back refused so. The stub's reply
-     * is held 200 ticks after it is asked. Staged: a pit of obsidian five across and three deep, the sky above; glass and
-     * bread; daylight.
+     * rather than refused as stale: while it is asked for, the goal gives out nothing (F-29). A walk would take it from where
+     * it asked, and each task the goal gave out then moved the intent revision the plan's fence compared; in the first
+     * ten-seed arm on the compatible route 3 of 4 plans came back refused so. The stub's reply is held 200 ticks after it is
+     * asked. Staged: a pit of obsidian five across and three deep, the sky above; glass and bread; daylight.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rescueWhileItWalks", tickLimit = 4000)
     public void aWayOutAskedForWhileItsGoalCouldStillWalkAboutIsCarriedOutNotRefusedAsStale(TestContext context) {
@@ -372,6 +371,44 @@ public final class NativeRescueGameTests implements FabricGameTest {
                     KindredMod.LOGGER.info("Rescue while it could walk about: {}; its steps while asked {}", rescued(f), steps);
                     context.assertTrue(rescued(f).equals("rescue: pillar 3 -> unstuck"), "Carried out: " + rescued(f));
                     context.assertTrue(f.player().getBlockPos().getY() >= base[0].getY() + 3, "Up out of the pit: " + f.player().getBlockPos().toShortString());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Hungry while a way out is asked for, it eats its bread as it would anyway, and the plan is carried out when it comes
+     * rather than refused as stale (F-29): a task it starts of its own choosing is no change of what it was told to do,
+     * though it begins on a direct lease as a command's does. Counted on the whole intent revision, 12 of the first 29
+     * plans asked for in the ten-seed arm on the compatible route came back refused so, an eat, a discard or a step of its
+     * digging begun while the reply was coming. The stub's reply is held until it has eaten. Staged: the pit; its food set
+     * to 12 once it has asked, so it is calm (the goal holds) and its bread worth eating.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rescueWhileItEats", tickLimit = 4000)
+    public void aWayOutAskedForWhileItEatsIsCarriedOutNotRefusedAsStale(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var stub = new Stub(OUT, true);
+        BlockPos[] base = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Hungry"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> pit(context, f, stub, base))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(base[0]), "In the pit"))
+                .createAndAdd(() -> begin(context, f))
+                .createAndAdd(() -> context.assertTrue(stub.reports.size() == 1, "Asked for a way out"))
+                .createAndAdd(() -> f.player().getHungerManager().setFoodLevel(12))
+                .createAndAdd(() -> context.assertTrue(f.player().getHungerManager().getFoodLevel() > 12,
+                        "It ate while the way out was asked for: food " + f.player().getHungerManager().getFoodLevel()))
+                .createAndAdd(stub::release)
+                .createAndAdd(() -> context.assertTrue(!rescued(f).isEmpty(), "The plan dealt with"))
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Rescue while it ate: {}", rescued(f));
+                    context.assertTrue(rescued(f).equals("rescue: pillar 3, walk north 2 -> unstuck"), "Carried out: " + rescued(f));
+                    BlockPos at = f.player().getBlockPos();
+                    context.assertTrue(at.getY() >= base[0].getY() + 3 && at.getZ() <= base[0].getZ() - 1, "On the ledge: " + at.toShortString());
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

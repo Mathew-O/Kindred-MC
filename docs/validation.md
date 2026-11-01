@@ -16,6 +16,27 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Rescue plans still refused as stale; the steps described as carried out (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
+
+- The rescue arm run again with the hold (`e49-rescue`), first six seeds: 29 ways out asked for, 14 refused before
+  anything moved (12 as stale), 15 plans carried out, 4 of them getting the player out. Each stale reply had found the
+  player starting something of its own meanwhile (an eat, a discard, a task chosen before the ask, its digging when not
+  calm), and every task it starts begins on a direct lease, moving the intent revision the fence compared. Details in
+  [the evidence](evidence/F-29.md).
+- Now the fence compares the intent revision less the tasks the player started of its own choosing; a stop, a resume
+  or a command still refuses a plan. `aWayOutAskedForWhileItEatsIsCarriedOutNotRefusedAsStale` (new): on the code
+  before the change 0 of 1 ("refused: the proposal's revisions are stale", its eat begun while the reply was held);
+  after, `NativeRescueGameTests` alone 8 of 8 in each of three runs ("-> unstuck"; the fixture stopped and set going
+  again still refused as stale).
+- The rescue's instructions now say what each step does as it is carried out (7 of the 11 plans that stopped did so at
+  a walk with no route, 4 of them just after a `dig up`; 3 at a dig with no pickaxe). No test reads the words; the
+  final build's rescue arm measures it.
+- The scratch class that ran the new fixture alone on the old code was not committed; the gametest entrypoints were
+  restored after each run.
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+- CI run 318 on `2e93546`: 479 of 480; the one failure the cabin with its furniture (`NativeHouseGameTests`, the #82
+  family on the open list). The walled-in cell, the lake librarian and the ruined portal's chest passed.
+
 ## The walled-in cell's site given up on asks never walked (F-25c4aj), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
 
 - CI's full runs 301, 313 and 316 failed `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite`, and alone

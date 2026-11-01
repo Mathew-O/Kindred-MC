@@ -19,11 +19,16 @@ final class RescuePrompt {
             forms and nothing else:
             """ + RescuePlan.VOCABULARY + """
 
-            north is -z, south +z, east +x, west -x. "pillar n" rises n blocks, a block of its own placed under its feet \
-            at the top of each jump; "place" puts one of its blocks beside its feet; "dig" breaks a passage two high \
-            sideways, or a shaft up or down; "retreat" backs off without turning. Every step is checked as it comes up and refused if the world or the server's rules forbid it, and the \
-            plan stops at its first refusal. Give the fewest steps that surely get it out; give no step you are not \
-            sure of. The reason is one sentence.""";
+            north is -z, south +z, east +x, west -x. Each step starts where the one before left it. "walk" goes on foot \
+            to the block that far that way, at about the same height, by any way round it finds; it climbs one block \
+            at a time at most. "dig" that way breaks a passage two high, that far from its feet, and does not move it; \
+            "dig up" breaks the blocks over its head and does not lift it ("pillar" climbs the shaft); "dig down" \
+            breaks the blocks under its feet, and it drops into the hole. It breaks only what a tool it carries can \
+            harvest: stone, deepslate and ores need a pickaxe. "pillar n" rises n blocks, a block of its own placed \
+            under its feet at the top of each jump: it needs blocks in its hotbar and air over its head. "place" puts \
+            one of its blocks beside its feet; "retreat" backs off without turning. Every step is checked as it comes \
+            up and refused if the world or the server's rules forbid it, and the plan stops at its first refusal. \
+            Give the fewest steps that surely get it out; give no step you are not sure of. The reason is one sentence.""";
 
     static final String STEPS = "One to six steps, each written exactly as one of the forms listed, such as \"pillar 3\" or \"walk north 2\".";
     static final String REASON = "One sentence: why these steps get the player out.";

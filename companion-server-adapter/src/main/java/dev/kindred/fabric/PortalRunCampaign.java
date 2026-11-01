@@ -1000,10 +1000,9 @@ final class PortalRunCampaign {
                 return step;
             }
         }
-        // While a way out is asked for it gives out nothing, unless something about it is a danger (F-29). Every task the goal
-        // gives out is a command to the arbiter, which moves on the intent revision a plan's fence compares, and a walk takes
-        // it from where it asked: in the first ten-seed arm on the compatible route 3 of 4 plans came back refused so. The
-        // reply takes seconds, and its own tries had stopped getting it anywhere.
+        // While a way out is asked for it gives out nothing, unless something about it is a danger (F-29): a walk would take it
+        // from where it asked, and the plan is for there. In the first ten-seed arm on the compatible route 3 of 4 plans came
+        // back refused, moved on or stale. The reply takes seconds, and its own tries had stopped getting it anywhere.
         if (holdingForRescue(body.entity())) {
             progress = stageLabel(stage) + ": asking for a way out";
             lastActive = false;

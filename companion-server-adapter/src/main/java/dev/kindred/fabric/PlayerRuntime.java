@@ -1367,7 +1367,7 @@ final class PlayerRuntime {
         if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)) {
             return reject(source, "Native player unavailable or administrative access denied.");
         }
-        int res = dispatchNativeTask(nativeActor(source), entry, skill, arguments);
+        int res = dispatchNativeTask(nativeActor(source), entry, skill, arguments, false);
         if (res == 1) {
             // A direct request holds autonomous selection briefly so the requester sees its own outcome.
             entry.manualHoldUntilTick = server.getTicks() + MANUAL_COMMAND_HOLD_TICKS;
@@ -1378,7 +1378,8 @@ final class PlayerRuntime {
         return res;
     }
 
-    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments) {
+    /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
+    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
         requireThread();
         UUID id = entry.data.id();
         if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
@@ -1713,6 +1714,7 @@ final class PlayerRuntime {
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
                                 task, actor == null ? Actor.console() : actor, taskId, java.util.Optional.empty());
+                        if (own) entry.ownStarts++;
                         entry.lastRunnerState = SkillRunner.State.RUNNING;
                         entry.blocker = "Running " + skill + " under one acknowledged activity slice.";
                         persist(entry);
@@ -5811,7 +5813,7 @@ final class PlayerRuntime {
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
-                    int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments());
+                    int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.attentionTaskId)) entry.attendedAt = entry.addressedAt;
@@ -11153,9 +11155,20 @@ final class PlayerRuntime {
     }
 
     /**
+     * The intent revision less the tasks the player started of its own choosing (F-29): what a stop, a resume, a mode or a
+     * command moves. Every task it starts begins on a direct lease, as a command's does, and moves the intent revision too.
+     */
+    private static long commanded(Entry entry, dev.kindred.core.Companion data) {
+        return Math.max(0, data.intentRevision() - entry.ownStarts);
+    }
+
+    /**
      * What a rescue needs of the runtime (F-29). The fence is the player's session and revisions when it asked; it
-     * holds while the session and the intent revision stand (a stop, a resume or a command moves the latter), and the
-     * task revision is not compared: the goal works on while the plan is asked for, and every task it gives out moves it.
+     * holds while the session stands and nothing but the player's own choosing has moved the intent revision since
+     * ({@link #commanded}): a stop, a resume or a command makes it stale, the player's eating or digging on meanwhile does
+     * not. Counted on the whole intent revision, 12 of the first 29 plans asked for in the ten-seed arm on the compatible
+     * route came back refused as stale so, an eat, a discard or a step of its digging begun while the reply was coming. The
+     * task revision is not compared: every task it gives out moves it.
      */
     private final StrategistBridge.RescueHost rescueHost = new StrategistBridge.RescueHost() {
         @Override
@@ -11163,7 +11176,7 @@ final class PlayerRuntime {
             Entry entry = entries.get(id);
             var data = entry == null ? null : entry.arbiter != null ? entry.arbiter.snapshot() : entry.data;
             UUID epoch = entry == null || entry.arbiter == null ? new UUID(0, 0) : entry.arbiter.sessionEpoch();
-            return new dev.kindred.core.ProposalFence(epoch, data == null ? 0 : data.intentRevision(), data == null ? 0 : data.taskRevision(),
+            return new dev.kindred.core.ProposalFence(epoch, data == null ? 0 : commanded(entry, data), data == null ? 0 : data.taskRevision(),
                     java.time.Instant.now().plus(RESCUE_FENCE));
         }
 
@@ -11172,7 +11185,7 @@ final class PlayerRuntime {
             Entry entry = entries.get(id);
             if (entry == null || entry.arbiter == null) return false;
             var data = entry.arbiter.snapshot();
-            return entry.arbiter.sessionEpoch().equals(fence.sessionEpoch()) && data.intentRevision() == fence.intentRevision()
+            return entry.arbiter.sessionEpoch().equals(fence.sessionEpoch()) && commanded(entry, data) == fence.intentRevision()
                     && !data.stopLatched();
         }
 
@@ -13058,6 +13071,8 @@ final class PlayerRuntime {
         PortalRunCampaign campaign;
         final Map<UUID, PortalRunCampaign.Task> campaignTasks = new HashMap<>();
         PortalRunCampaign.Task activeCampaignTask;
+        /** The tasks it has started of its own choosing since loaded: each begins on a direct lease, as a command does (F-29). */
+        long ownStarts;
         /** A build the player is on (E-08b), ahead of its standing goal until it is done. */
         BuildRunner build;
         final Map<UUID, PortalRunCampaign.Task> buildTasks = new HashMap<>();
