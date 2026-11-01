@@ -47,6 +47,35 @@ def spread(values):
     return {"median": round(statistics.median(values), 2), "min": round(min(values), 2), "max": round(max(values), 2), "n": len(values)}
 
 
+def by_end(values):
+    """Times to a stage over every seed, a seed that never reached it (None) counted as later than any that did: so the
+    median and the range are over all the seeds, and either end, or the median, can be "not reached"."""
+    if not values:
+        return None
+    ordered = sorted(values, key=lambda v: (v is None, v or 0))
+    n, half = len(ordered), len(ordered) // 2
+    if n % 2:
+        median = ordered[half]
+    else:
+        low, high = ordered[half - 1], ordered[half]
+        median = None if low is None or high is None else round((low + high) / 2, 2)
+    return {"median": median, "min": ordered[0], "max": ordered[-1], "n": n, "reached": sum(1 for v in values if v is not None)}
+
+
+def later(x, y):
+    """Whether time x is later than time y, "not reached" (None) being later than any time."""
+    if x is None:
+        return y is not None
+    return y is not None and x > y
+
+
+def fmt_by_end(s):
+    if s is None:
+        return "-"
+    shown = lambda v: "not reached" if v is None else v
+    return "%s [%s to %s] (reached on %d of %d)" % (shown(s["median"]), shown(s["min"]), shown(s["max"]), s["reached"], s["n"])
+
+
 def metrics_for(logs):
     """RunMetrics' line per player for each log, by log path; nothing if it cannot be run."""
     if not logs:
@@ -135,7 +164,7 @@ def score(build_dir, use_metrics=True):
     }
     for stage in STAGES:
         firsts = [min((p["minutesTo"][stage] for p in s["players"].values() if stage in p["minutesTo"]), default=None) for s in per_seed.values()]
-        team["minutesTo_" + stage] = spread(firsts)
+        team["minutesTo_" + stage] = by_end(firsts)
         team["reached_" + stage] = sum(1 for f in firsts if f is not None)
     causes = {}
     for s in per_seed.values():
@@ -184,7 +213,8 @@ def markdown(summary):
     lines.append("| Model tokens, the team | %s |" % fmt(t["tokens"]))
     for stage in STAGES:
         if t["reached_" + stage]:
-            lines.append("| First to %s, game minutes (seeds reaching it) | %s |" % (stage, fmt(t["minutesTo_" + stage])))
+            lines.append("| First to %s, game minutes (a seed not reaching it counted as later than all) | %s |"
+                         % (stage, fmt_by_end(t["minutesTo_" + stage])))
     lines += ["", "Stages: " + ", ".join("%d %s" % (i, s) for i, s in enumerate(STAGES)) + ".", "",
               "Deaths by cause, all seeds: " + (", ".join("%s %d" % kv for kv in summary["deathCauses"].items()) or "none") + ".", "",
               "| Seed | Ticks run | Team furthest | Deaths/h | Per player: furthest, deaths, stuck spells, RunMetrics (done/blocked, worst repeat, recovered %, walks in vain) |",

@@ -2,13 +2,16 @@
 """Two builds' evaluation summaries side by side, on the seeds both ran (F-26).
 
 A difference is marked worth noting only when the two ranges across seeds do not overlap; anything else is reported as
-it is and called no clear difference. Python 3 standard library only. Usage:
+it is and called no clear difference. A time to a stage is over every seed, one that never reached the stage counted
+as later than any that did. Python 3 standard library only. Usage:
   tools/eval/compare.py run/eval/<build A>/summary.json run/eval/<build B>/summary.json [--out compare.md]
 """
 import argparse
 import json
 import statistics
 from pathlib import Path
+
+from score import by_end, fmt_by_end, later
 
 MEASURES = [("teamFurthestIndex", "The team's furthest stage (index)", "more"), ("teamDeathsPerHour", "Deaths a game hour, the team", "fewer"),
             ("stuckSpells", "Stuck spells, the team", "fewer"), ("stuckMinutes", "Stuck game minutes, the team", "fewer"),
@@ -48,6 +51,15 @@ def verdict(a, b):
     return "no clear difference: the ranges overlap"
 
 
+def verdict_by_end(a, b):
+    """As verdict, for times to a stage over every seed, "not reached" being later than any time."""
+    if a is None or b is None:
+        return "not comparable"
+    if later(b["min"], a["max"]) or later(a["min"], b["max"]):
+        return "worth noting: the ranges do not overlap"
+    return "no clear difference: the ranges overlap"
+
+
 def fmt(s):
     return "-" if s is None else "%s [%s to %s] (n=%d)" % (s["median"], s["min"], s["max"], s["n"])
 
@@ -71,14 +83,13 @@ def main():
     for key, label, _better in MEASURES:
         sa, sb = spread(on_seeds(a, seeds, key)), spread(on_seeds(b, seeds, key))
         lines.append("| %s | %s | %s | %s |" % (label, fmt(sa), fmt(sb), verdict(sa, sb) if len(seeds) >= 10 else "too few seeds"))
-    for stage in ("stone_tools", "iron_ingot", "iron_pickaxe", "obsidian", "portal_lit", "nether_entered"):
+    for stage in ("stone_tools", "iron_ingot", "iron_pickaxe", "diamond", "obsidian", "portal_lit", "nether_entered"):
         fa, fb = first_to(a, seeds, stage), first_to(b, seeds, stage)
         if not any(v is not None for v in fa + fb):
             continue
-        sa, sb = spread(fa), spread(fb)
-        reached = "reached on %d and %d seeds" % (sum(v is not None for v in fa), sum(v is not None for v in fb))
-        lines.append("| First to %s, game minutes (%s) | %s | %s | %s |" % (stage, reached, fmt(sa), fmt(sb),
-                                                                         verdict(sa, sb) if len(seeds) >= 10 else "too few seeds"))
+        sa, sb = by_end(fa), by_end(fb)
+        lines.append("| First to %s, game minutes, every seed (one not reaching it later than all) | %s | %s | %s |"
+                     % (stage, fmt_by_end(sa), fmt_by_end(sb), verdict_by_end(sa, sb) if len(seeds) >= 10 else "too few seeds"))
     lines.append("")
     text = "\n".join(lines)
     if args.out:
