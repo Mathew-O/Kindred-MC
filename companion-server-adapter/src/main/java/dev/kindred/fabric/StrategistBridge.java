@@ -319,13 +319,19 @@ final class StrategistBridge implements AutoCloseable {
             return;
         }
         // The habits this player keeps in this world go to each goal it starts, before anything is asked, with any the goal
-        // was handed before its memory was read (an operator's or a fixture's advice).
+        // was handed before its memory was read (an operator's or a fixture's advice); and so do its follow-ups, those it
+        // was handed after those it remembers, a need in both as it was handed.
         if (state.taught != campaign) {
             var kept = java.util.EnumSet.noneOf(PlanPreferences.Habit.class);
             kept.addAll(state.context.habits());
             kept.addAll(campaign.preferences().habits());
             campaign.habits(kept);
-            campaign.queue(state.context.taskQueue());
+            var queued = new java.util.ArrayList<>(state.context.taskQueue().advised());
+            for (var want : campaign.queue().advised()) {
+                queued.removeIf(old -> old.need() == want.need());
+                queued.add(want);
+            }
+            campaign.queue(new dev.kindred.core.guide.TaskQueue(queued));
             state.queued = campaign.queue();
             state.taught = campaign;
         }

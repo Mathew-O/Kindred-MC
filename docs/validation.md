@@ -16,6 +16,16 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A follow-up lost to the memory (E-46), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full suite failed `NativeFollowUpGameTests.whatTheEndFightStillLacksIsGatheredBeforeGoingDownToTheStronghold`
+  in runs 301, 305 and 309 (`034e967`, `60cb3a7`, `1987f45`), and passed it in run 299 (`6af8fe6`). The cause was
+  E-46's: the memory, which now looks at every player, replaced a goal's follow-up queue at its first look instead of
+  merging it, as it merges the habits. Details in [E-46](evidence/E-46.md).
+- The class alone: before the fix 4 of 5, that fixture failing ("The queued shield made from its own iron and
+  planks"); after it 5 of 5 in each of three runs. `NativeLessonsGameTests` 4 of 4 beside it.
+- Build: `./gradlew build` green on the fix, 845 JUnit tests, 6 skipped, 0 failures (the fix is in the adapter).
+
 ## The evaluation runs (F-26) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores, 15 GB), OpenJDK 21, Python 3.13; `tools/eval/run.py` with the server launcher for
