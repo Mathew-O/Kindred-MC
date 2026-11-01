@@ -16,6 +16,61 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Final validation of the next levers — 1 November 2026 (`claude/loose-ends-1029`)
+
+- Build: `./gradlew build` green on `f1a15b6`, the final code: 846 JUnit tests, 6 skipped, 0 failures.
+- Each new GameTest class alone, three runs each on `2e93546`, every run passing: `NativeEvalGameTests` 2 of 2,
+  `ReplayGameTests` 4 of 4, `NativeLessonsGameTests` 4 of 4, `NativeAtlasGameTests` 3 of 3, `NativeRescueGameTests` 7 of
+  7, `NativeWatchGameTests` 3 of 3, `NativeTrustGameTests` 7 of 7, `NativeFurnaceWaitGameTests` 1 of 1,
+  `NativeCustomsGameTests` 1 of 1. `f1a15b6` changed only the rescue's fence and instructions after that, and
+  `NativeRescueGameTests` ran three times again on it, 8 of 8 each. The gametest entrypoints were narrowed for each run
+  and restored after.
+- The testkit demos on `4d67c9c`: `:companion-testkit:run` and `:companion-testkit:runPersonalityDemo` passed. Their
+  modules (core, scheduler, persistence) have not changed since.
+- The full native suite on `9e5400d` (the code of `f1a15b6`, with only an evaluation summary after it), nothing else on
+  the cores: 476 of 481 in 56.2 minutes. Compared with the open list:
+  - still failing, open before: the keep's roof stairs (`NativeCompoundGameTests`, #82's family, five stairs not
+    placed); the lake librarian (`NativeBringGameTests`, "I ran out of blocks to bridge the water for the librarian");
+    the ruined portal's chest (`NativeLootGameTests`, its first step to a "cave" before its first full look, as in CI
+    316 and at `77ddbb4`);
+  - this branch's own fixtures, each seen failing before (CI 292; a class run on `bb620ba` and on 31 October):
+    - the trip's wood (F-25c4i), "in planks: 3". Its goal's first look, before its first full sweep had seen the
+      trees, chose the first cobblestone, since the planner packs the trip's wood only once a tree is known; the next
+      look chose the trip's wood with the stone already in hand. The stone stage has no look round before its first
+      dig, as the ore stages have. In play the trees are known by then, from the wood it has just cut, unless the goal
+      starts afresh;
+    - the hungry search for animals (F-25c4ab). Beside the cow its strikes came several a second and the cow did not
+      die. It passes alone; the cause was not found. In the twenty evaluation runs of the E-49 build no hunt took more
+      than five strikes in a row;
+  - the trip's wood fixture's player went on branch-mining to the end of the suite, as a failed fixture's player does.
+- CI on the branch: run 318 on `2e93546`, 479 of 480 (the cabin with its furniture, #82's family); run 319 on `f1a15b6`,
+  480 of 481 (the walk back up when its pickaxe breaks, which passed in the local suite and failed in CI 298 too); run
+  320 on `e049b0b`, the same code, 480 of 481 (the night and its own bed, open).
+- The container restarted at 16:51, while no turn of the session was running, and took the final build's ten seeds
+  with it, a few minutes into their first round; they were run again from the start, beside the rescue arm.
+- Found by the evaluation runs, open: the hand-over's make step loops on a walk to a table the player stands beside
+  (E-40a). In one seed of most arms (`e49-base` 404, 603 walks; `e49-nolessons` 707, 1,092; `e49-noatlas` 404, 554;
+  `before-nightfix` 20261030, 916; on the final build, 202 with rescue off 7,325, Sol for the last three quarters of the
+  run, and with rescue on 202 1,100 and 20261030 1,524) a task outside the goal's walked to a table and ended at once,
+  again and again, the goal starved meanwhile and counted stuck by its watchdog. On 20261030, with rescue on, the walks
+  then gave way to the sword's craft chosen and dropped before it ran, 79 times, to the run's end.
+  - All seven followed a share-out's promised iron sword: Sol's at once ("I've got 4 iron ingots: an iron sword for me
+    and an iron sword for Kindred"), the others after the make step had waited its minute ("cannot go on with an iron
+    sword for Kindred for now, no table by it to make iron_sword").
+  - The cause is in the goal's craft helper (`PortalRunCampaign.craft`): with a table in reach but a recipe it cannot
+    plan, it gives out "Walk to the crafting table", which ends at once. The goal never asks it for a recipe it has not
+    the makings of; the hand-over does: it makes the sticks first when it holds fewer than two, and with no planks the
+    stick cannot be planned (in the final arm's case Kindred had just put spruce planks in its furnace as fuel; what it
+    held then is not logged).
+  - Proposed, two lines: in reach and no plan, nothing to give out, so the hand-over waits its minute and lets go after
+    six, as it already does.
+- The final build's ten seeds and its rescue arm: the two side by side, one server each, 16:53 to 22:19, all twenty
+  results complete and earned. Rescue off ([summary](evidence/eval/final-f1a15b6/summary.md)): the team's furthest stage
+  4.0 [2 to 6], deaths a game hour 1.75 [0.0 to 4.5], stuck game minutes 42.0 [12 to 99]. Rescue on
+  ([summary](evidence/eval/final-f1a15b6-rescue/summary.md)): stuck game minutes 39.0 [3 to 63]; 34 ways out asked for,
+  none refused as stale, 31 plans carried out, 4 getting the player out; 68,009 tokens. No measure differs clearly
+  ([comparison](evidence/eval/compare-rescue-final.md)).
+
 ## Rescue plans still refused as stale; the steps described as carried out (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
 
 - The rescue arm run again with the hold (`e49-rescue`), first six seeds: 29 ways out asked for, 14 refused before

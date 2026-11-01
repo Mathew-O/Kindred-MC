@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Agent / branch: Claude / claude/loose-ends-1029
 Build: on top of `238ff1e`; recorded in [validation](../validation.md)
-Status: in progress (native passed, the give-up on unwalked asks fixed on 1 November; live runs on that code pending); F-25c4 stays open
+Status: complete (2026-11-01): native passed, the give-up on unwalked asks fixed on 1 November, and in play on that code no site given up before its clearing had walked; F-25c4 stays open
 
 ## Scope and implementation
 
@@ -25,7 +25,7 @@ Changed modules/files:
 | On the stand of the first site it chooses, in Kindred's rock over the lava lake rebuilt from the save, its lava in hand: its first frame block is cast in that site, and it is unhurt | `onItsStandItDigsTheCellBesideAWalledInOneFirstAndCastsInThatSite` | Before, the change set aside, it fails 3 of 3: "0 there", 111 sites given up across the three runs, the first each time for the walled-in cell. Two of the runs later cast a block or more elsewhere; one cast none. With the cells taken in reach order alone it still failed 3 of 3: the row's last column was walled in behind the stand's own staircase. With the walk to the row in front added it failed 2 of 3: the cast route's walk back to the stand, asked for on each step of that walk, undid it. After, 3 of 3 alone, no site given up | native |
 | The other casts unchanged | the frame under thick rock, the roofed cast, the whole cast, the climb over the lava lakes, the cast refused for its water, the one-block cast and the owned-block frame, alone on this code | 7 of 7 | native |
 | Its first site not given up while its last break is still finishing (CI's full runs 301, 313 and 316) | the same fixture, its check reading the first site it chose (1 November) | Before, 0 of 4 alone, each giving that site up in the second its last break finished. After, 5 of 5 alone, nothing given up; `NativePortalCampaignGameTests` alone 94 of 94 with it | native |
-| In play | the live pair on `c432fba`, both seeds, strategist off | Met in part: 8 frame sites given up across both seeds, each after the stand and the row in front were tried (49 on `64c298d`), and the step to the row in front taken 7 times; both frames lit | live |
+| In play | the live pair on `c432fba`, both seeds, strategist off; then the final build's ten seeds (`f1a15b6`, rescue off) and its rescue arm, against the E-49 build's ten seeds | Met in part on `c432fba`: 8 frame sites given up across both seeds, each after the stand and the row in front were tried (49 on `64c298d`), and the step to the row in front taken 7 times; both frames lit. Met on the final build: 7 frame sites given up in the ten seeds, every one after a walk of its clearing had ended (to the stand or over to the row in front), none without; on the E-49 build, before the fix, 20 of 30 with none. With rescue on, none given up. Counted from the consoles (`giveups.py` in the session's scratch space, not committed) | live |
 
 Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5, Fabric API 0.116.17.
 Fixtures: the region round the stand is staged from the live pair's world save as it stood when Kindred chose the site: the save's blocks, with what the log shows it dug and placed afterwards undone, deepslate where a block was dug, ores as deepslate, inside a shell of deepslate. Two blocks of glowstone are staged for light; the kit, its lava bucket filled, is given as though made.

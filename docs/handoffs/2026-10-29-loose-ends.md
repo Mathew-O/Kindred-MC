@@ -503,3 +503,167 @@ The owner: work through what is left, leaving the decisions only the owner can m
 - The cattle (M-06a1, E21): done, 10 of 10 alone; the full native suite's run of it is still to be seen.
 - From P22, the live runs of F-25c4aq to au; the climb that went step up, back the way it came, to the wall and up again (Kindred, three minutes on the desert seed), not taken further; deaths in caves, 11 on 8675309.
 - `modest-faraday`'s merge, as before.
+
+## Handoff, 1 November 2026: the next levers (`claude/loose-ends-1029`)
+
+The owner: F-26, F-27, E-46, F-30, F-29, E-48, E-49, F-28 and E-47, in that order, each finished before the next, each
+"what exists" claim checked against the code; D9 and D10 answered yes. The design is
+[next-levers](../proposals/next-levers.md); each feature's evidence says where the code differed from it.
+
+### Each feature
+
+| Feature | State | Commits |
+| --- | --- | --- |
+| F-26 The evaluation engine | Complete (1 November): `KINDRED_EVAL`, `eval-result.json` and `tools/eval`; the two-game-hour run, the night fix against the build before it (no clear difference), the E-49 build's arms, and the final build's ten seeds, every run complete and earned | `093d188`, `c8b3500`, `af57c2e`, `60cb3a7`, `5dc37b9`, `1987f45`, `3c5ad99`, `4d67c9c`, the summaries in this handoff's commit |
+| F-27 Death replay | Complete (31 October): the capture within a tick, the generator, the drowning replay 3 of 3 dead before its fix and 3 of 3 alive after | `597f0c6`, `6af8fe6`, `56d53fe` |
+| E-46 Lessons from its own play | Complete (1 November): six local rules over its own deaths and breakages, each a note with its habit; ten seeds with lessons on against off, no clear difference (the team's deaths a game hour 1.5 [0.0 to 4.0] on, 0.75 [0.0 to 3.0] off; 25 lessons learned) | `56d53fe`, `5cd5152`, `4d67c9c` |
+| F-30 The atlas | Complete against its acceptance (1 November): ore it saw gone back to, the night cost of walks, the report line; ten seeds with it against without, no clear difference (the first iron ingot 10.75 [4.7 to 31.2] game minutes against 11.75 [5.8 to 27.3]; diamonds on 3 and 2 seeds; 112 leads back to iron). The design's other users are not built | `034e967`, `4d67c9c` |
+| F-29 Rescue plans | Complete against its acceptance (1 November). The first arm found plans refused as stale (the fence now leaves out the player's own task starts) and steps misread (the instructions now say what each does). On the final build's ten seeds, rescue on against off: stuck game minutes 39.0 [3 to 63] against 42.0 [12 to 99], no clear difference; 34 asked, none stale, 4 of the 31 plans carried out got the player out | `2318c15`, `213542a`, `2449b28`, `f1a15b6`, `9e5400d`, `e049b0b` |
+| E-48 The watch page | Complete (31 October): read-only, token-gated, served from a per-tick snapshot | `3dd6ba3` |
+| E-49 Trust and griefing | Complete (31 October): wariness withholds asks and tosses, never strikes | `39af678` |
+| F-28 The headless simulator | Complete (31 October): three packs of 100 seeds in 35.1 s; the furnace bug it found fixed; its deaths an hour against the server's corrected on 1 November to the ten seeds, 0.60 a player-hour (a factor of 3.3) | `934d5da`, `5dc37b9`, `4d67c9c` |
+| E-47 Learning from the server's people | Complete (1 November): `/aiplayer watch on|off`, each person's own say; the mining depth only | `f6e30f2` |
+
+### Found by CI and by the evaluation runs, fixed on 1 November
+
+Each with a fixture that fails before the fix and passes after, in its evidence:
+- `5cd5152` E-46: the memory, which now looks at every player, replaced a goal's follow-ups instead of merging them (the
+  end fight's shield never made; CI runs 301, 305, 309).
+- `1f16f1e` F-25c4as: the log cut from the water floated off and was never fetched (CI 292, 299, 309).
+- `55e3227` F-25c4z: a frame site's lava check looked two blocks below, the climb's three (CI 309).
+- `bb620ba` F-25c4ap: a tree known only by its top log was walked to at that log, four up, which no stand reaches
+  (CI 298, 299, 313).
+- `213542a` F-29: the compatible route did not ask Anthropic's server for no thinking; every rescue reply came back
+  empty (the rescue arm's first try).
+- `2449b28` F-29: plans came back refused as stale: the goal's own tasks move on the revision the fence compares, and
+  the goal worked on while asking (the rescue arm's second try).
+- `2e93546` F-25c4aj: the walled-in cell's site was given up on asks never walked: asked while its last break finished,
+  the clearing marked the stand and the row in front as tried without a walk (CI 301, 313, 316). And its fixture named
+  a site that F-25c4z's lava rule has refused since `55e3227`, so its passes had come from that very give-up; it now
+  checks the first site the player chose. Before 0 of 4 alone, after 5 of 5; the portal class alone 94 of 94.
+- `f1a15b6` F-29: with the hold, 12 of the rescue arm's first 29 asks still came back stale: every task the player
+  starts of its own choosing begins on a direct lease and moved the fence's revision (an eat, a discard, its digging
+  when not calm). The fence now leaves those out; a stop, a resume or a command still refuses a plan. Before 0 of 1,
+  after the class 8 of 8 three times. And 11 of its 15 plans stopped at a step, 7 at a walk (4 just after a `dig up`
+  taken for a climb) and 3 at a dig with no pickaxe: the instructions now say what each step does.
+
+Still failing in CI's full runs, each analysed and open (CI 318 on `2e93546`: 479 of 480, the cabin alone): the keep's
+roof stairs and the nine-by-seven cabin (#82's family); the lake librarian (bring, its villager's AI on; failed in full
+runs before run 49 too); the ruined portal's chest (its goal's first step, before it had seen the chest, to a "cave"
+floor two below the fixture's own: in the GameTest world every floor below sea level counts as a cave; also at
+`77ddbb4`); and once each several others (validation). A fixture that fails leaves its player running to the suite's
+end (31 minutes and 158 batches in run 313): a listener that stops a failed fixture's runtime would keep one failure
+from loading the rest.
+
+### Validation
+
+- `bash ./gradlew build` green on `f1a15b6`, the final code: 846 JUnit tests, 0 failures, 6 skipped.
+- Each new GameTest class alone, three runs each on `2e93546` (the gametest entrypoints narrowed for each run and
+  restored after), every run passing: `NativeEvalGameTests` 2 of 2, `ReplayGameTests` 4 of 4, `NativeLessonsGameTests`
+  4 of 4, `NativeAtlasGameTests` 3 of 3, `NativeRescueGameTests` 7 of 7, `NativeWatchGameTests` 3 of 3,
+  `NativeTrustGameTests` 7 of 7, `NativeFurnaceWaitGameTests` 1 of 1, `NativeCustomsGameTests` 1 of 1; each with its
+  before-the-fix run in its evidence. `f1a15b6` changed only the rescue's fence and instructions after that, and
+  `NativeRescueGameTests` ran three times again on it, 8 of 8 each. `NativePortalCampaignGameTests` alone 94 of 94 with
+  the walled-in fix.
+- The full native suite on `9e5400d` (the code of `f1a15b6`; only an evaluation summary after it), nothing else on the
+  cores: 476 of 481 in 56.2 minutes. Compared with the open list:
+  - still failing, open before: the keep's roof stairs (#82's family, five stairs not placed), the lake librarian (bring,
+    "I ran out of blocks to bridge the water"), the ruined portal's chest (its first step to a "cave" before its first
+    full look; cause found, patch proposed);
+  - this branch's own fixtures, each failing before in CI or a class run: the trip's wood (F-25c4i: its first look,
+    before its first full sweep had seen the trees, took the first stone; the next look chose the trip's wood with the
+    stone already in hand; CI 292 too) and the hungry search for animals (F-25c4ab: beside the cow, its strikes came
+    several a second and the cow did not die; a class run on `bb620ba` and 31 October too; passes alone; cause not
+    found, and in the twenty evaluation runs of the E-49 build no hunt took more than five strikes in a row);
+  - the trip's wood fixture's player went on mining to the suite's end, as failed fixtures' players do.
+- CI on the same code: run 319 on `f1a15b6` and run 320 on `e049b0b`, each 480 of 481: the walk back up when its
+  pickaxe breaks (passed in the local suite; failed in CI 298 too), and the night and its own bed (open before).
+- The testkit demos on `4d67c9c`: `:companion-testkit:run` (the contract demo) and `runPersonalityDemo` passed; their
+  modules (core, scheduler, persistence) have not changed since.
+- Ten seeds of the final build: `final-f1a15b6`, beside the rescue arm (one server each), 16:53 to 22:19, all complete
+  and earned, after the first try was lost when the container restarted while no turn was running: the team's furthest
+  stage 4.0 [2 to 6], deaths a game hour 1.75 [0.0 to 4.5], stuck game minutes 42.0 [12 to 99], the first iron pickaxe
+  at 39.35 game minutes [22.5 to not reached], a portal lit on 1 seed. [Summary](../evidence/eval/final-f1a15b6/summary.md).
+
+### The evaluation
+
+Every comparison on the same ten seeds, medians and ranges, a difference worth noting only when the ranges do not
+overlap. None did:
+
+| Comparison | Build | The measure | Without | With |
+| --- | --- | --- | --- | --- |
+| The night fix (F-26) | `093d188` | furthest stage | 5.0 [3 to 6] | 3.5 [2 to 6] |
+| Lessons (E-46) | E-49 | deaths a game hour | 0.75 [0.0 to 3.0] | 1.5 [0.0 to 4.0] |
+| The atlas (F-30) | E-49 | first iron ingot, game minutes | 11.75 [5.8 to 27.3] | 10.75 [4.7 to 31.2] |
+| Rescue (F-29), the first arm | E-49 | stuck game minutes | 28.5 [9 to 54] | 37.5 [15 to 84] |
+| Rescue (F-29) | final, `f1a15b6` | stuck game minutes | 42.0 [12 to 99] | 39.0 [3 to 63] |
+
+The runs' own findings matter more than these numbers: the hand-over's loop and the plans' geometry (next dependency),
+and F-25c4aj's give-up gone in play (7 sites given up on the final build, each after its clearing walked; on the E-49
+build 20 of 30 with none). The rescues cost about a cent a ten-seed arm (85,001 and 68,009 tokens).
+
+### What the owner must decide
+
+As before: F24/F25, A1, C14, C15, B6, B12, D19, D20, E22, the CI artifact, `modest-faraday`'s merge (eleven commits of
+28 and 29 October, melee, pets, chores and the smelter, not on this branch) and the dragon-fight policy. New:
+- **COME's "three blocks short" (E-49).** The design asked a wary player's come-to-them to stop three blocks short.
+  E-20b's own fixture has the walk end within 2.6 blocks of its owner, so this would change the ask's meaning for
+  everyone. Built: never beside lava, fire or a drop, and as near as it safely can be.
+- **E-47's other customs.** Only the mining depth is built. Shelter time, the palette, the hours people play, the heat
+  map and where to settle would each need more watched (beds, placements, positions once a minute).
+- **The strategist from the release jar.** The release jar does not bundle the Anthropic SDK, so `KINDRED_STRATEGIST`
+  with Anthropic's provider finds no client in it. The compatible route works from the release jar
+  (`KINDRED_STRATEGIST_PROVIDER=openai-compatible` with Anthropic's `/v1` base URL), at about 6,700 input tokens a
+  consultation, none of them cached; since `213542a` it asks for no thinking there, without which every rescue reply
+  came back empty. Bundle the SDK, or document the compatible route as the way.
+
+### What changed from the design, and why
+
+- F-26: the bootstrap waits for the runtime's records before it spawns; the voice has no switch of its own; tokens are
+  one count for the strategist and the voice together. The night-fix comparison's "before" is the same commit with
+  F-25c4aq and F-25c4at taken out, since the commit before them had no bootstrap. Four faults of the engine's own,
+  found by its runs and fixed: a starter refused its spot on a tree's crown (seed 404, in every ten-seed run until
+  then), the midnight log rollover, a fixture stale since E-46, and times to a stage taken over the seeds that reached
+  it only. The arms for E-46 and F-30, and F-29's first, ran on the E-49 build (`39af678`), not on the final build, to fit
+  the time; each is compared within that build, and seed 404 was run again with the spawn fix. F-29's measure ran on
+  the final build, its two arms side by side.
+- F-27: the structure copy reads block states off the thread rather than vanilla's `saveFromWorld` (58 to 71 ms on the
+  thread); captures run 575 KB to 1 MB, not under 200 KB; a replay's player is made on the nearest cell the runtime
+  takes.
+- E-46: deaths were kept only while a strategist ran; the memory now runs without one. A broken pickaxe is an episode
+  read from vanilla's statistics, not a death's field. The torch habit raises `light`'s line rather than counting
+  blocks.
+- F-30: the priors corrected against 1.21.1's generation (diamonds most from −50 down, the two coal bands, lava's
+  levels). Not built: the frontier exploration, the fortress and the other users the design listed.
+- F-29: walk is `native_goto`; `wait` is 1 to 4 seconds, as the installed skill waits at most 4; the staircase is not
+  in the vocabulary. `ModelGateway`'s duplicate accounting is retired in favour of `StrategistBridge.admit`. The design
+  said nothing waits for the reply; the game thread still never does, but the player now holds still while a way out
+  is asked for, unless in danger, so the plan finds it where it asked from. The fence leaves out the tasks the player
+  starts of its own choosing, which begin on direct leases as commands do; the design's "revalidated at dispatch"
+  stands for a person's stop, resume or command. The instructions say what each step does as it is carried out. The
+  compatible route asks Anthropic's server for no thinking, as the SDK route does.
+- E-48: the decision lines are kept by the runtime while the page is on, never read from the log file.
+- E-49: a stop is never withheld; COME's distance left as above; the toss cap covers the command's and the chat ask's
+  toss, not team hand-overs; wariness is not kept across restarts.
+- F-28: `ExpeditionPlanner` is not driven; one player a run; spiders added; no sleeping or pillaring.
+- E-47: each person's counts kept apart by UUID so an opt-out can delete them; the mining depth only; the prior blended
+  is the campaign's own depth, not the atlas's; a custom stands on 16 ores; who really ran the command is checked.
+
+### Next dependency
+
+- The living-together track (E-18a and E-19a, E-50, E-52, E-53, E-51), as the owner set it out: from `main` once this
+  branch is merged, with `claude/blissful-fermi-y4tt90` (`c6a042b`) merged into it.
+- For the play-through, in order of what the runs and the suite showed:
+  - the hand-over's make step looping on a walk to the table it stands beside (E-40a): in one seed of most arms
+    (554 to 7,325 walks), the goal starved for minutes each time, counted stuck by the watchdog. The goal's craft
+    helper walks to a table already in reach when it cannot plan the recipe, and the hand-over asks it for sticks with
+    no planks; a two-line fix is proposed in `docs/validation.md`. Proposed: the fix and a fixture failing before it,
+    as the first change on the living-together branch, since that track owns the hand-overs' team talk;
+  - a look round before the goal's first dig and its first cave stride (the trip's wood and the ruined portal's chest,
+    both chosen before its first full sweep; patches proposed in the PR's CI comment);
+  - F-29's plans: most that run stop at a step whose geometry the model got wrong (a dig of one block, then a walk of
+    two; a `dig up`, then a walk); a check of each walk's route before the plan is accepted would turn those into
+    refusals with nothing moved, and the report could show the cells each step needs;
+  - a listener that stops a failed fixture's player, so one failure does not load every batch after it;
+  - the hungry hunt that never lands in the suite's world (cause not found);
+  - F-30's frontier exploration, the fortress and stronghold searches, and the sightings shared in a team.
