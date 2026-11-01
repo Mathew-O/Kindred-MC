@@ -105,7 +105,10 @@ public final class NativeEvalGameTests implements FabricGameTest {
                         throw new net.minecraft.test.GameTestException("No readable result at " + out + ": " + unreadable);
                     }
                     context.assertTrue(!result.get("build").getAsString().contains("not every starter came"), "Every starter came: " + result.get("build"));
-                    var kindred = context.getWorld().getServer().getPlayerManager().getPlayer("Kindred");
+                    // Its own starter, by the fixture's runtime: not by name, which another fixture's player may share in a full run.
+                    var kindred = f.runtime.nativeStatuses(dev.kindred.core.Actor.console()).stream()
+                            .filter(s -> s.name().equals("Kindred") && s.connected()).findFirst()
+                            .map(s -> context.getWorld().getServer().getPlayerManager().getPlayer(s.nativeId())).orElse(null);
                     context.assertTrue(kindred != null && kindred.getBlockY() <= origin.getY() + 1, "Made on the ground beside the tree: "
                             + (kindred == null ? "not in the world" : kindred.getBlockPos().toShortString()));
                     run[0] = null;

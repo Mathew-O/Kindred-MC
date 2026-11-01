@@ -37,7 +37,8 @@ Minecraft 1.21.1 and Fabric Loader 0.19.5.
   - a run across midnight kept only the end of its log, so `RunMetrics` read only that: it now reads `console.txt`;
   - `NativeEvalGameTests` had failed since E-46 added `lessons` to the canonical scenario: 0 of 1 at f6e30f2.
   - `NativeEvalGameTests` alone: before the spawn fix 1 of 2 (the new tree's-crown fixture failing, "not every starter
-    came into the world: []"); after it 2 of 2 in each of three runs.
+    came into the world: []"); after it 2 of 2 in each of three runs, and 2 of 2 in each of three more once the fixture
+    found its starter by its own runtime's record rather than by name, which another fixture's player may share.
   - Build: `./gradlew build` green on the commit with these fixes, 845 JUnit tests, 6 skipped, 0 failures (as before:
     the fixes are in the adapter, the GameTests and the tools).
 
