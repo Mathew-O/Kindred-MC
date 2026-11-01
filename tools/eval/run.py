@@ -3,7 +3,8 @@
 
 Each seed gets a fresh Fabric server in run/eval/<build>/<seed>/ with the build's jar and the pinned Fabric API, its
 world made from the seed, and KINDRED_EVAL set to the scenario. The mod plays the scenario on its own and stops the
-server; this script waits, keeps logs/latest.log and logs/eval-result.json, and removes the world.
+server; this script waits, keeps the server's whole console (console.txt), logs/latest.log, logs/eval-result.json and
+the jar's name (run.json), and removes the world.
 
 Python 3 standard library only. Usage:
   tools/eval/run.py --ref HEAD --seeds 1,2,3 --scenario "goal=nether; ticks=144000" --parallel 2
@@ -152,6 +153,8 @@ def finish(folder, process, started):
     replays = folder / "kindred" / "replays"
     if replays.is_dir():
         shutil.copytree(replays, folder / "replays", dirs_exist_ok=True)
+    # The jar it ran, kept with the seed: a seed run again on another jar is said so in its build's summary.
+    jars = sorted(p.name for p in (folder / "mods").glob("*.jar") if not p.name.startswith("fabric-api")) if (folder / "mods").is_dir() else []
     for name in ("world", "libraries", ".fabric", "mods", "logs", "versions", "config", "kindred"):
         path = folder / name
         if path.is_dir():
@@ -159,7 +162,7 @@ def finish(folder, process, started):
     result = folder / "eval-result.json"
     ticks = json.loads(result.read_text(encoding="utf-8")).get("ticksRun") if result.is_file() else None
     (folder / "run.json").write_text(json.dumps({"exit": process.returncode, "seconds": round(time.time() - started),
-                                                  "result": result.is_file(), "ticksRun": ticks}) + "\n", encoding="utf-8")
+                                                  "result": result.is_file(), "ticksRun": ticks, "jar": jars[0] if jars else None}) + "\n", encoding="utf-8")
     return result.is_file(), ticks
 
 

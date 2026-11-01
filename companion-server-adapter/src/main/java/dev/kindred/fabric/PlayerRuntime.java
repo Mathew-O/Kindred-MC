@@ -5886,6 +5886,11 @@ final class PlayerRuntime {
         return null;
     }
 
+    /** Whether a native player could be made at {@code source}'s position now, as the roster spawn takes it (F-26's starters). */
+    boolean nativeSpawnable(ServerCommandSource source) {
+        return nativeSpawn(source) != null;
+    }
+
     int create(ServerCommandSource source, String name) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading its saved records.");

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Score a build's evaluation runs (F-26): summary.md and summary.json beside them.
 
-Reads run/eval/<build>/<seed>/eval-result.json (and latest.log, for RunMetrics) for every seed folder, and reports per
-seed and per player the stage reached, the time to each stage, deaths an hour by cause, stuck spells, RunMetrics'
-measures and tokens; then, across the seeds, medians and ranges, never a single number. Whether the runs were earned or
-staged is said at the top. Python 3 standard library only. Usage:
+Reads run/eval/<build>/<seed>/eval-result.json (and the server's console.txt, else latest.log, for RunMetrics) for
+every seed folder, and reports per seed and per player the stage reached, the time to each stage, deaths an hour by
+cause, stuck spells, RunMetrics' measures and tokens; then, across the seeds, medians and ranges, never a single number.
+Whether the runs were earned or staged is said at the top. A run some of whose starters never came into the world is
+named and left out. Python 3 standard library only. Usage:
   tools/eval/score.py run/eval/<build> [--no-metrics]
 """
 import argparse
@@ -70,13 +71,36 @@ def metrics_for(logs):
     return found
 
 
+SHORT = "not every starter came into the world"
+
+
+def log_of(folder):
+    """A run's whole log: the server's console, which run.py keeps from its start (latest.log begins again at midnight,
+    and a run across midnight kept only its end); latest.log where there is no console."""
+    for name in ("console.txt", "latest.log"):
+        if (folder / name).is_file():
+            return folder / name
+    return None
+
+
 def score(build_dir, use_metrics=True):
     seeds = sorted(p for p in build_dir.iterdir() if p.is_dir() and (p / "eval-result.json").is_file())
     missing = sorted(p.name for p in build_dir.iterdir() if p.is_dir() and p.name not in ("src", "cache") and not (p / "eval-result.json").is_file())
-    metrics = metrics_for([p / "latest.log" for p in seeds if (p / "latest.log").is_file()]) if use_metrics else {}
-    per_seed, kinds, scenarios = {}, set(), set()
+    metrics = metrics_for([log_of(p) for p in seeds if log_of(p)]) if use_metrics else {}
+    per_seed, kinds, scenarios, short, other_jars = {}, set(), set(), {}, {}
+    build_info = build_dir / "build.json"
+    build_jar = json.loads(build_info.read_text(encoding="utf-8")).get("jar") if build_info.is_file() else None
     for folder in seeds:
+        run_info = folder / "run.json"
+        jar = json.loads(run_info.read_text(encoding="utf-8")).get("jar") if run_info.is_file() else None
+        if jar and build_jar and jar != build_jar:
+            other_jars[folder.name] = jar
         result = json.loads((folder / "eval-result.json").read_text(encoding="utf-8"))
+        # A run some of whose starters never came into the world is not the scenario asked for: named, not scored.
+        if SHORT in result.get("build", ""):
+            note = result["build"][result["build"].index(SHORT) + len(SHORT):].split(";")[0].rstrip(")")
+            short[folder.name] = note.lstrip(": ")
+            continue
         kinds.add(result["kind"])
         scenarios.add(result["scenario"])
         hours = max(result["ticksRun"], 1) / TICKS_PER_HOUR
@@ -96,7 +120,7 @@ def score(build_dir, use_metrics=True):
                              "stuckSpells": len(p["stuck"]) + p.get("stuckNotListed", 0), "stuckMinutes": stuck_minutes(len(p["stuck"]) + p.get("stuckNotListed", 0)),
                              "rescues": len(rescues), "rescuesUnstuck": sum(1 for r in rescues if r["line"].endswith("-> unstuck")),
                              "tokens": p.get("tokens", 0),
-                             "metrics": metrics.get(str(folder / "latest.log"), {}).get(name)}
+                             "metrics": metrics.get(str(log_of(folder)), {}).get(name)}
         per_seed[folder.name] = {"complete": result["complete"], "ticksRun": result["ticksRun"], "hours": round(hours, 2),
                                  "teamFurthest": STAGES[best] if best >= 0 else "none", "teamFurthestIndex": best,
                                  "teamDeathsPerHour": round(sum(p["deaths"] for p in players.values()) / hours, 2), "players": players}
@@ -118,7 +142,8 @@ def score(build_dir, use_metrics=True):
         for p in s["players"].values():
             for cause, n in p["causes"].items():
                 causes[cause] = causes.get(cause, 0) + n
-    return {"build": build_dir.name, "seeds": sorted(per_seed), "missing": missing, "kinds": sorted(kinds), "scenarios": sorted(scenarios),
+    return {"build": build_dir.name, "jar": build_jar, "otherJars": other_jars, "seeds": sorted(per_seed), "missing": missing, "short": short,
+            "kinds": sorted(kinds), "scenarios": sorted(scenarios),
             "team": team, "deathCauses": dict(sorted(causes.items(), key=lambda kv: -kv[1])), "perSeed": per_seed}
 
 
@@ -143,6 +168,10 @@ def markdown(summary):
         lines.append("These runs are staged (something was kept or edits were off): they are not earned progress.")
     if summary["missing"]:
         lines.append("No result from: %s." % ", ".join(summary["missing"]))
+    for seed, came in summary.get("short", {}).items():
+        lines.append("Not scored: seed %s, where not every starter came into the world (only %s did)." % (seed, came))
+    for seed, jar in summary.get("otherJars", {}).items():
+        lines.append("Seed %s ran on %s, the others on %s." % (seed, jar, summary["jar"]))
     if len(summary["seeds"]) < 10:
         lines.append("Fewer than ten seeds: too few to compare with another build.")
     lines += ["", "Medians, with the range across seeds in brackets.", "", "| Measure | Median [range] (seeds) |", "| --- | --- |"]

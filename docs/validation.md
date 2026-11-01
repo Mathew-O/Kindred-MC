@@ -25,9 +25,21 @@ Minecraft 1.21.1 and Fabric Loader 0.19.5.
   [summary](evidence/eval/f26-2h/summary.md).
 - Ten seeds of each of two builds: 093d188's jar, and the same with F-25c4aq and F-25c4at taken out. Each build's seeds
   ran one after another (`--parallel 1`), the two builds side by side, from 15:10 to 21:21. All 20 results were complete
-  and earned; [the night fix](evidence/eval/nightfix-093d188/summary.md), [before it](evidence/eval/before-nightfix/summary.md).
+  and earned, but on seed 404 two of the three starters never came into the world, in both builds (below); [the night fix](evidence/eval/nightfix-093d188/summary.md), [before it](evidence/eval/before-nightfix/summary.md).
 - The comparison on those ten seeds: no clear difference on any measure; [comparison](evidence/eval/compare-nightfix.md).
-- Running: ten seeds of the E-49 build with `--parallel 2`, then the arms of E-46, F-30 and F-29 on the same build.
+- Ten seeds of the E-49 build (39af678) with `--parallel 2`, 21:27 to 00:20, all complete and earned, seed 404 again
+  with Echo alone. Then the arms of E-46, F-30 and F-29 on the same build.
+- Three faults of the engine's own, found scoring them (1 November); [the evidence](evidence/F-26.md):
+  - seed 404 ran with Echo alone in every ten-seed run: Kindred's and Sol's spots, a jungle trunk's top in its leaves,
+    were refused by the roster spawn, and `score.py` did not read the result's note of it. The bootstrap now makes a
+    starter on the nearest ground round its spot that the spawn takes, its own spot first. `score.py` names such a
+    run and leaves it out;
+  - a run across midnight kept only the end of its log, so `RunMetrics` read only that: it now reads `console.txt`;
+  - `NativeEvalGameTests` had failed since E-46 added `lessons` to the canonical scenario: 0 of 1 at f6e30f2.
+  - `NativeEvalGameTests` alone: before the spawn fix 1 of 2 (the new tree's-crown fixture failing, "not every starter
+    came into the world: []"); after it 2 of 2 in each of three runs.
+  - Build: `./gradlew build` green on the commit with these fixes, 845 JUnit tests, 6 skipped, 0 failures (as before:
+    the fixes are in the adapter, the GameTests and the tools).
 
 ## Learning from the server's people (E-47) — 1 November 2026 (`claude/loose-ends-1029`)
 
@@ -71,8 +83,10 @@ tests decisions and plans, not execution.
   passed in every run. Five failed in one run or another, none of them holding raw iron or a furnace, so the changed
   rule never applies in them; the lava lakes' failed without the fix too. None is among the failures of the full suite
   runs recorded below; the final suite on this branch is compared against them as well.
-- Deaths an hour against the server's first game hour on the same core (e49-base, 7 seeds of 10 so far): 0.18 against
-  0.48 a player-hour, a factor of 2.7, the gap recorded with its causes in [the evidence](evidence/F-28.md).
+- Deaths an hour against the server's first game hour on the same core (e49-base, its nine full seeds): 0.18 against
+  0.59 a player-hour, a factor of 3.3 (2.6 for the four mobs it has), the gap recorded with its causes in
+  [the evidence](evidence/F-28.md). First filed as 0.48 and 2.7, from seven seeds with seed 404 among them, where two
+  starters never came into the world (F-26's fault, above).
 
 ## Trust and griefing (E-49) — 31 October 2026 (`claude/loose-ends-1029`)
 

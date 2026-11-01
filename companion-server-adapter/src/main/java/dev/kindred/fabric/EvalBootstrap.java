@@ -35,6 +35,8 @@ import java.util.Set;
  */
 final class EvalBootstrap implements RunObserver {
     private static final int SPAWN_GAP = 40, ESTABLISH_WAIT = 1200, LOOK = 20;
+    /** How far round its own spot a starter's ground is looked for, in blocks. */
+    private static final int SPAWN_SEARCH = 16;
 
     private final EvalScenario scenario;
     private final EvalRecord record;
@@ -107,9 +109,8 @@ final class EvalBootstrap implements RunObserver {
             case 1 -> { // Each a few blocks from the last, on the ground at the world's spawn.
                 if (lastTick - phaseAt < SPAWN_GAP) return;
                 if (spawned < scenario.starters().size()) {
-                    var world = server.getOverworld();
-                    var base = origin != null ? origin : world.getSpawnPos();
-                    var ground = world.getTopPosition(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, base.add(3 * spawned, 0, 3 * spawned));
+                    var base = origin != null ? origin : server.getOverworld().getSpawnPos();
+                    var ground = spawnSpot(server, runtime, base.add(3 * spawned, 0, 3 * spawned));
                     String name = scenario.starters().get(spawned);
                     KindredMod.LOGGER.info("Evaluation run: spawn {} at {}", name, ground.toShortString());
                     runtime.spawnCanonicalRoster(server.getCommandSource().withPosition(net.minecraft.util.math.Vec3d.ofBottomCenter(ground)), name);
@@ -158,6 +159,24 @@ final class EvalBootstrap implements RunObserver {
     /** The server is stopping before the ticks have run: what there is, marked incomplete. */
     void stopping(MinecraftServer server) {
         if (!finished && phase >= 3) end(server, false);
+    }
+
+    /**
+     * The ground nearest {@code near} where a starter can be made, as the roster spawn takes it, looked for outward to
+     * {@link #SPAWN_SEARCH} blocks: the spot itself first, so that a starter whose spot was taken is made where it always
+     * was. In a jungle the ground at the spot was a trunk's top in its leaves, which the spawn refuses, and the run went
+     * on without two of its three starters (seed 404 in each ten-seed run). The spot itself when nothing round it is taken.
+     */
+    private static net.minecraft.util.math.BlockPos spawnSpot(MinecraftServer server, PlayerRuntime runtime, net.minecraft.util.math.BlockPos near) {
+        var world = server.getOverworld();
+        for (int r = 0; r <= SPAWN_SEARCH; r++) {
+            for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+                if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                var ground = world.getTopPosition(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, near.add(dx, 0, dz));
+                if (runtime.nativeSpawnable(server.getCommandSource().withPosition(net.minecraft.util.math.Vec3d.ofBottomCenter(ground)))) return ground;
+            }
+        }
+        return world.getTopPosition(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, near);
     }
 
     private void next(int to) {
