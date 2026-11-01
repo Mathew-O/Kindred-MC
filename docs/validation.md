@@ -16,6 +16,30 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A tree known by its top log (F-25c4ap), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
+
+- CI's full suite failed `withNoWoodItWalksToATreeItSeesFarOffOverOpenGround` in runs 298, 299 and 313; in each the
+  walk to the log the sighting remembers, the oak's top one four blocks up, found no way (6,000 positions searched) and
+  the player went to explore elsewhere. A log so high over a trunk still standing is now walked to at the trunk's foot
+  ([F-25c4ap](evidence/F-25c4ap.md)).
+- `withNoWoodItWalksRoundABankToTheFootOfATreeWhoseTopItSawFarOff` (new): before the change 0 of 1, after it
+  1 of 1, then 3 of 3, each alone in its batch; `withNoWoodItWalksToATreeItSeesFarOffOverOpenGround` 3 of 3 beside it.
+- `NativePortalCampaignGameTests` alone with the change: 92 of 94, two evaluation servers on the same cores. It failed
+  the walled-in cell (below) and `hurtAndOutOfFoodOnceUpItLooksForAnimalsRatherThanGoBackDown`: 220 strikes in a row
+  at its cow with no kill, then night. That fixture failed once in a class run on 31 October too, before the change;
+  alone after it, 3 of 3. Open.
+- Build: `./gradlew build` green, 845 JUnit tests, 6 skipped, 0 failures.
+- CI run 313's other failures: the keep's roof stairs (#82, open); the nine-by-seven cabin, its walk to a roof block
+  finding no route again and again (#82's kind, as in run 305); and the walled-in cell (F-25c4aj, 5 of 8 alone, open).
+  In run 313 that fixture's player gave its first frame site up in the same second it decided to go and look at the
+  cell: the goal was asked for its next step while a dig was still running, and each ask counted one more place to
+  look from as tried, with no walk sent; at the third the site was given up. The failing runs alone gave nothing up and
+  cast their frame blocks elsewhere ("0 there, 3 elsewhere"). The asks are a fault to fix with its own fixture; not
+  done here.
+- A fixture that fails leaves its player running to the suite's end: in run 313 the walled-in cell's player dug on
+  for 31 minutes after its fixture failed, through the 158 batches after it, the far-off tree's among them. The
+  fixtures stop their runtimes only when they pass.
+
 ## A frame site three over lava (F-25c4z), found by CI — 1 November 2026 (`claude/loose-ends-1029`)
 
 - `withItsLavaInHandBetweenLavaLakesItClimbsAboveThemForAFrameSite` alone: 0 of 3 on `124c501` (before the next

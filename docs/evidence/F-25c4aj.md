@@ -30,6 +30,17 @@ Environment: Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, 
 Fixtures: the region round the stand is staged from the live pair's world save as it stood when Kindred chose the site: the save's blocks, with what the log shows it dug and placed afterwards undone, deepslate where a block was dug, ores as deepslate, inside a shell of deepslate. Two blocks of glowstone are staged for light; the kit, its lava bucket filled, is given as though made.
 Analysis: `rebuild.py` in the session's scratch space (not committed) read the save's blocks and undid the logged edits.
 
+## Intermittent since (1 November)
+
+- Alone, eight runs each on the code with F-25c4z's change and without it: 5 of 8 both ways. In CI's full suite it
+  failed in runs 301 and 313.
+- In run 313's log the player gave its first frame site up in the same second it chose to go and look at the walled-in
+  cell. The goal was asked for its next step while a dig was still running; each ask counted one more place to look
+  from as tried (`clearOrApproach`), though no walk was sent; at the third it gave the site up. That fault needs its own
+  fixture before it is fixed.
+- The failing runs alone gave nothing up: they cast their frame blocks outside the site the fixture names ("0 there, 3
+  elsewhere"). Why is not established.
+
 ## Remaining limitations and handoff
 
 - A cell no stand of the site can see or reach still gives the site up, as before.

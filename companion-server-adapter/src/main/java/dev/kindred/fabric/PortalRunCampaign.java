@@ -2664,6 +2664,11 @@ final class PortalRunCampaign {
                 if (pos.getY() - foot.getY() > 3 && world.getBlockState(foot).getCollisionShape(world, foot).isEmpty()) {
                     return Optional.of(go(foot, tries == 0 ? 1.5 : 0.0, false, "Walk under the " + what + " at " + pos.toShortString()));
                 }
+                // Over a trunk still standing, as the top log a tree seen far off is known by (F-25c4ap): no stand on the
+                // ground is within a walk's reach of it, so walk to the trunk's foot, where the rest of the tree shows.
+                if (pos.getY() - foot.getY() > 3) {
+                    return Optional.of(go(foot, 1.5, false, "Walk to the foot of the trunk under the " + what + " at " + pos.toShortString()));
+                }
                 double range = tries == 0 ? 3.5 : pos.getY() > feet.getY() ? 1.5 : 1.0;
                 return Optional.of(go(pos, range, false, "Walk to " + what + " at " + pos.toShortString()));
             }

@@ -3917,6 +3917,66 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * As the tree seen far off, with its trunk hidden from the west by a bank of earth: all it knows of the tree is the log
+     * the sighting remembers, its top one, four blocks up inside the crown. No stand on the ground is within a walk's reach
+     * of a log so high, so the walk to it found no way and the tree was given up (in CI's full runs 298, 299 and 313 the
+     * oak of the fixture before this one was, when the walk toward it ended before its sweep had seen the lower trunk).
+     * It walks round the bank to the trunk's foot instead, sees the trunk there and cuts it. Staged: as that fixture, and
+     * a bank of dirt three high and seven wide three blocks west of the oak; daylight; bread.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "treeBehindABank", tickLimit = 2400)
+    public void withNoWoodItWalksRoundABankToTheFootOfATreeWhoseTopItSawFarOff(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bankwalker"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().startsWith("Wood:"), "Planned"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos().add(170, 0, 0), tree = p.add(60, 0, 0);
+                    at[0] = p;
+                    FixtureGround.simulated(context, p.add(-48, 0, -48), tree.add(48, 0, 48));
+                    FixtureGround.keep(context, p.add(-8, -2, -8), tree.add(8, 10, 8));
+                    for (BlockPos c : BlockPos.iterate(p.add(-8, -2, -8), tree.add(8, 10, 8))) {
+                        int dy = c.getY() - p.getY();
+                        world.setBlockState(c, (dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
+                    }
+                    for (int dy = 0; dy < 5; dy++) world.setBlockState(tree.up(dy), Blocks.OAK_LOG.getDefaultState());
+                    for (BlockPos c : BlockPos.iterate(tree.add(-2, 3, -2), tree.add(2, 6, 2))) {
+                        int across = Math.abs(c.getX() - tree.getX()) + Math.abs(c.getZ() - tree.getZ());
+                        if (world.getBlockState(c).isAir() && (c.getY() < tree.getY() + 5 || across <= 1)) {
+                            world.setBlockState(c, Blocks.OAK_LEAVES.getDefaultState().with(net.minecraft.block.LeavesBlock.PERSISTENT, true));
+                        }
+                    }
+                    for (BlockPos c : BlockPos.iterate(tree.add(-3, 0, -3), tree.add(-3, 2, 3))) world.setBlockState(c, Blocks.DIRT.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> {
+                    var inventory = f.player().getInventory();
+                    int wood = inventory.count(Items.OAK_LOG) + inventory.count(Items.OAK_PLANKS) + inventory.count(Items.CRAFTING_TABLE);
+                    context.assertTrue(wood > 0, "No wood: at " + f.player().getBlockPos().subtract(at[0]).toShortString() + ", "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * With no wood, on open ground at the foot of a wall two blocks high, before it has climbed anything: its first step is
      * to look for trees, not a climb toward the surface it stands on. The hold that keeps a climb for the surface going for
      * ten seconds after its last step (F-25c4ao), and the one for water (F-25c4ah), read "long ago" as the least long, and a
