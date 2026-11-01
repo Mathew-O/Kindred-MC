@@ -995,6 +995,15 @@ final class PortalRunCampaign {
                 return step;
             }
         }
+        // While a way out is asked for it gives out nothing, unless something about it is a danger (F-29). Every task the goal
+        // gives out is a command to the arbiter, which moves on the intent revision a plan's fence compares, and a walk takes
+        // it from where it asked: in the first ten-seed arm on the compatible route 3 of 4 plans came back refused so. The
+        // reply takes seconds, and its own tries had stopped getting it anywhere.
+        if (holdingForRescue(body.entity())) {
+            progress = stageLabel(stage) + ": asking for a way out";
+            lastActive = false;
+            return Optional.empty();
+        }
         boolean active = planned.isEmpty() || !passive(planned.get());
         // On the way to the End the leg keeps its own headway (its headings turn when they stop gaining ground): the
         // portal's watchdog counts only the portal's materials, which never change out there.
@@ -1115,6 +1124,8 @@ final class PortalRunCampaign {
     private String rescueName = "";
     /** The rescues it has carried out, as the log says them: the last fifty. */
     private final java.util.ArrayDeque<String> rescues = new java.util.ArrayDeque<>();
+    /** A way out asked for and not yet answered: the bridge sets it as it asks and clears it when the reply has come. */
+    private boolean rescueAsked;
 
     static final String RESCUE_LABEL = "Rescue: ";
 
@@ -1123,6 +1134,15 @@ final class PortalRunCampaign {
 
     /** Whether a rescue plan is being carried out. */
     boolean rescuing() { return rescuePlan != null; }
+
+    /** Told by the bridge as it asks for a way out, and again when the reply has come or failed (F-29). */
+    void rescueAsked(boolean asked) { rescueAsked = asked; }
+
+    /**
+     * A way out asked for and nothing about it a danger: the goal gives out nothing, and a walk of its own under way stops
+     * where it is, so the plan finds the player where it asked from (F-29).
+     */
+    boolean holdingForRescue(ServerPlayerEntity player) { return rescueAsked && calm(player); }
 
     /** The rescues carried out, oldest first: {@code rescue: <steps> -> unstuck} or {@code -> failed <why>}. */
     List<String> rescues() { return List.copyOf(rescues); }
@@ -1330,6 +1350,16 @@ final class PortalRunCampaign {
             stuckLevel = 0;
             relocate = null;
         }
+    }
+
+    /**
+     * Nothing about it to fear just now: out of water and lava, not burning, its breath full, its health and food above
+     * half, and no hostile mob within 16 blocks.
+     */
+    private static boolean calm(ServerPlayerEntity player) {
+        if (player.isTouchingWater() || player.isInLava() || player.isOnFire() || player.getAir() < player.getMaxAir()
+                || player.getHealth() < player.getMaxHealth() / 2 || player.getHungerManager().getFoodLevel() < 10) return false;
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 8, 16), HostileEntity::isAlive).isEmpty();
     }
 
     /** A hotbar slot holding a block it can place, a full block first; -1 for none. */
@@ -5230,6 +5260,8 @@ final class PortalRunCampaign {
             return after != null && !outOfReach(player, after) && (player.hurtTime > 0 || player.squaredDistanceTo(after) <= HOGLIN_CLOSE * HOGLIN_CLOSE)
                     ? "The hoglin is on it; fight back" : null;
         }
+        // A way out asked for: its walk under way stops where it is, as the goal gives out nothing more meanwhile (F-29).
+        if (running != null && "native_goto".equals(running.skill()) && holdingForRescue(player)) return "A way out asked for; holding still";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
                 || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;

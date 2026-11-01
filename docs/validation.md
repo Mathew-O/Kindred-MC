@@ -16,6 +16,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Rescue plans refused as stale (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
+
+- With the compatible route fixed, the rescue arm's first two seeds asked for 4 ways out: 3 came back refused, "the
+  proposal's revisions are stale; it is no longer where it asked from". The goal's tasks are the console's commands to
+  the arbiter, each moving on the intent revision a plan's fence compares, and the goal worked on while the plan was
+  asked for. Now, while a way out is asked for, the goal gives out nothing unless the player is in danger, and a walk
+  under way stops where it is ([F-29](evidence/F-29.md)). The arm's seeds before the change are not filed.
+- `aWayOutAskedForWhileItsGoalCouldStillWalkAboutIsCarriedOutNotRefusedAsStale` (new; a pit five wide, the reply held
+  200 ticks): before the change 0 of 1, "refused: the proposal's revisions are stale". With the goal held from the ask
+  but the walk under way not stopped, 2 of 2 runs of the class failed it, "refused: it is no longer where it asked
+  from". With the whole change, `NativeRescueGameTests` alone 7 of 7 in each of three runs.
+- Build: `./gradlew build` green, 846 JUnit tests, 6 skipped, 0 failures.
+
 ## The compatible route's thinking (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
 
 - The rescue arm asked Anthropic's server through the compatible route, the release jar having no Anthropic SDK. All 9

@@ -521,10 +521,12 @@ final class StrategistBridge implements AutoCloseable {
         var from = player.getBlockPos().toImmutable();
         state.rescueInFlight = true;
         state.rescueAt = now;
+        campaign.rescueAsked(true); // It holds still meanwhile, so the plan finds it as it was asked about.
         KindredMod.LOGGER.info("{} rescue: asked, stuck spell {} at {} ({} characters reported)", name, spell, from.toShortString(), report.length());
         PortalRunCampaign asked = campaign;
         strategist.rescue(report).whenComplete((reply, failure) -> server.execute(() -> {
             state.rescueInFlight = false;
+            asked.rescueAsked(false);
             if (failure != null || reply == null) { // The reservation stands: it may still have been billed.
                 KindredMod.LOGGER.warn("{} rescue: no plan ({})", name, String.valueOf(failure));
                 return;

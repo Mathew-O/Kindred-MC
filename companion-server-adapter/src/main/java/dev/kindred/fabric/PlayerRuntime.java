@@ -4071,6 +4071,8 @@ final class PlayerRuntime {
             KindredMod.LOGGER.info("{} goal at {} {} {}: {}", entry.data.displayName(), at.getX(), at.getY(), at.getZ(), entry.goalProgress);
             if (watch != null) entry.decided(server.getTicks(), "goal at " + at.getX() + " " + at.getY() + " " + at.getZ() + ": " + entry.goalProgress);
         }
+        // A way out asked for just now, at the bridge's look above: what the goal chose before it asked is not given out (F-29).
+        if (entry.campaign.holdingForRescue(body.entity())) return List.of();
         if (task.isEmpty()) return List.of();
         var t = task.get();
         UUID id = UUID.nameUUIDFromBytes(("campaign:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))

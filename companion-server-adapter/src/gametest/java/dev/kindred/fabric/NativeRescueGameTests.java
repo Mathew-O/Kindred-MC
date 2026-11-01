@@ -315,4 +315,66 @@ public final class NativeRescueGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * In a pit five wide, where its goal still finds somewhere to walk to, a way out asked for is carried out when it comes
+     * rather than refused as stale: while it is asked for, the goal gives out nothing (F-29). Every task the goal gives out
+     * is a command to the arbiter, which moves on the intent revision the plan's fence compares, and a walk takes it from
+     * where it asked; in the first ten-seed arm on the compatible route 3 of 4 plans came back refused so. The stub's reply
+     * is held 200 ticks after it is asked. Staged: a pit of obsidian five across and three deep, the sky above; glass and
+     * bread; daylight.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rescueWhileItWalks", tickLimit = 4000)
+    public void aWayOutAskedForWhileItsGoalCouldStillWalkAboutIsCarriedOutNotRefusedAsStale(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var stub = new Stub(List.of("pillar 3"), true);
+        BlockPos[] base = new BlockPos[1];
+        int[] held = new int[1];
+        List<String> steps = new ArrayList<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Pacer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos b = base[0] = f.player().getBlockPos().up(20).toImmutable();
+                    for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) {
+                        for (int y = -1; y <= 2; y++) {
+                            boolean shaft = Math.abs(x) <= 2 && Math.abs(z) <= 2 && y >= 0;
+                            world.setBlockState(b.add(x, y, z), (shaft ? Blocks.AIR : Blocks.OBSIDIAN).getDefaultState());
+                        }
+                        for (int y = 3; y <= 6; y++) world.setBlockState(b.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(b.getX() + 0.5, b.getY(), b.getZ() + 0.5, 180, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.GLASS, 8));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 5));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    f.runtime.strategistForFixtures(stub);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().getY() == base[0].getY(), "In the pit"))
+                .createAndAdd(() -> begin(context, f))
+                .createAndAdd(() -> context.assertTrue(stub.reports.size() == 1, "Asked: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress()))
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (steps.isEmpty() || !steps.getLast().equals(progress)) steps.add(progress);
+                    context.assertTrue(++held[0] >= 200, "The reply held");
+                })
+                .createAndAdd(stub::release)
+                .createAndAdd(() -> context.assertTrue(!rescued(f).isEmpty(), "The plan dealt with"))
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Rescue while it could walk about: {}; its steps while asked {}", rescued(f), steps);
+                    context.assertTrue(rescued(f).equals("rescue: pillar 3 -> unstuck"), "Carried out: " + rescued(f));
+                    context.assertTrue(f.player().getBlockPos().getY() >= base[0].getY() + 3, "Up out of the pit: " + f.player().getBlockPos().toShortString());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

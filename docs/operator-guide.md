@@ -348,6 +348,11 @@ is also refused, with nothing moved, when:
 - the stuck spell is over;
 - the player is no longer where it asked from.
 
+While it waits for the reply, a few seconds, its goal gives out nothing and a walk of its own under way stops where it
+is, so that the plan finds it as it was: every task the goal gives out counts as a command against the fence. What is
+a danger to it still comes first: a hostile mob within 16 blocks, water, lava or fire, its breath short, or its health
+or food at half or less. A plan that comes back after anything was given out meanwhile is refused.
+
 A plan that passes is carried out a step at a time before anything else of the goal's. Each step is worked out from
 where the player stands when it comes up, and is given out as an ordinary task: the server's edit policy, the claims
 and the action ledger check and record it as they do every task. The first step that does not go ends the plan. With
