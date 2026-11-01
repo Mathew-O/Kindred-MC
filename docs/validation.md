@@ -16,6 +16,41 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Ten seeds: lessons and the atlas against without, the night fix again (E-46, F-30, F-26) — 1 November 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores, 15 GB), OpenJDK 21, Python 3.13; `tools/eval/run.py` with the server launcher for
+Minecraft 1.21.1 and Fabric Loader 0.19.5; `goal=nether; ticks=144000`, three starters, the strategist off, two
+evaluation servers at a time.
+
+- Seed 404 run again with F-26's spawn fix for each of the five builds that had run it (the night fix, the build
+  before it, the E-49 build and its two arms), 07:29 to 09:05, each on its own commit with that fix alone added: all
+  three starters came into the world in all five, complete and earned. Every summary and comparison scored again with
+  it. All 50 results of the five builds: complete, earned, three starters.
+- The night fix against the build before it, on the ten seeds: no clear difference on any measure, as first filed;
+  [comparison](evidence/eval/compare-nightfix.md), [F-26](evidence/F-26.md).
+- Lessons on against off (E-46), both on the E-49 build (`39af678`): no clear difference on any measure. The team's
+  deaths a game hour 1.5 [0.0 to 4.0] on, 0.75 [0.0 to 3.0] off; stuck game minutes 28.5 [9 to 54] and 48.0 [15 to
+  108]. 25 lessons learned with them on. [Comparison](evidence/eval/compare-lessons.md), [E-46](evidence/E-46.md).
+- The atlas on against off (F-30), both on the E-49 build: no clear difference. The first iron ingot at 10.75 [4.7 to
+  31.2] game minutes with it and 11.75 [5.8 to 27.3] without; diamonds on 3 and on 2 of the ten seeds. 112 leads back
+  to iron it had seen with it on, none off. [Comparison](evidence/eval/compare-atlas.md), [F-30](evidence/F-30.md).
+- F-28's server figure on the ten seeds: 0.60 deaths a player-hour in the first game hour (0.59 over nine), against
+  the simulator's 0.18; [F-28](evidence/F-28.md).
+- CI run 316 on `2449b28` (480 GameTests, 43.8 minutes): 477 passed. The three failures, none in this day's code (the
+  hold while a way out is asked for does nothing with the strategist off):
+  - the walled-in cell (F-25c4aj), open;
+  - `NativeBringGameTests.aLibrarianAcrossALakeIsRowedOverAndBroughtHome`: two of the boats were not put down ("the
+    look met … up"), the librarian, its AI on, was not held, walked off the line laid to it, and the bring gave up out
+    of blocks to bridge the water. The lake fixture first passed in a full run in run 49 (28 October), after failing in
+    earlier ones; the bring code is not changed on this branch since;
+  - `NativeLootGameTests.aRuinedPortalsChestIsLootedOfWhatIsWorthTakingItsGoldMinedAndAnOpenedChestLeftAlone`: its
+    goal's first step, before it had seen the chest, was "Explore the cave toward iron", to a stone floor two blocks
+    below the fixture's own and eleven blocks off; from there the chest was "No walkable route" (a two-block step up is
+    not walked), and the player wandered until the suite's end. In the GameTest world every air-over-stone cell below
+    sea level minus ten counts as a cave floor (`WorldKnowledge.caveFloor`), so a lower floor left by the world round
+    the fixture draws that first step off it. The local full suite at `77ddbb4` failed it the same way (its 5 of 5 alone
+    above). Open.
+
 ## Rescue plans refused as stale (F-29) — 1 November 2026 (`claude/loose-ends-1029`)
 
 - With the compatible route fixed, the rescue arm's first two seeds asked for 4 ways out: 3 came back refused, "the
@@ -165,8 +200,9 @@ tests decisions and plans, not execution.
   passed in every run. Five failed in one run or another, none of them holding raw iron or a furnace, so the changed
   rule never applies in them; the lava lakes' failed without the fix too. None is among the failures of the full suite
   runs recorded below; the final suite on this branch is compared against them as well.
-- Deaths an hour against the server's first game hour on the same core (e49-base, its nine full seeds): 0.18 against
-  0.59 a player-hour, a factor of 3.3 (2.6 for the four mobs it has), the gap recorded with its causes in
+- Deaths an hour against the server's first game hour on the same core (e49-base, its ten seeds, 404 run again with
+  F-26's spawn fix on 1 November): 0.18 against 0.60 a player-hour, a factor of 3.3 (2.5 for the four mobs it has;
+  0.59 and 2.6 over the nine other seeds before that), the gap recorded with its causes in
   [the evidence](evidence/F-28.md). First filed as 0.48 and 2.7, from seven seeds with seed 404 among them, where two
   starters never came into the world (F-26's fault, above).
 
