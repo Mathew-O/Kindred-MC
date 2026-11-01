@@ -29,6 +29,24 @@ Minecraft 1.21.1 and Fabric Loader 0.19.5.
 - The comparison on those ten seeds: no clear difference on any measure; [comparison](evidence/eval/compare-nightfix.md).
 - Running: ten seeds of the E-49 build with `--parallel 2`, then the arms of E-46, F-30 and F-29 on the same build.
 
+## Learning from the server's people (E-47) — 1 November 2026 (`claude/loose-ends-1029`)
+
+Linux x64 cloud container (4 cores), OpenJDK 21, Minecraft 1.21.1, Fabric Loader 0.19.5; two evaluation servers on
+the same cores throughout. The GameTest class ran alone, the gametest entrypoints narrowed to it and restored after.
+
+- Build: `./gradlew build` green on the commit that adds this section, 845 JUnit tests, 6 skipped, 0 failures (the 5
+  more than F-28's are `ServerCustomsTest`).
+- `ServerCustomsTest`: 5 of 5 (the aggregation, the bounds, the deletion, the file's snapshot).
+- `NativeCustomsGameTests`: 3 of 3 alone, in three runs on the final code. With the campaign not handed the customs,
+  0 of 1: "Its depth for iron within the blend, three tenths of the way from 16 to 14: 16".
+- What the GameTest showed:
+  - a person's own `/aiplayer watch on` counts, and the same command run as another person by the server is refused;
+  - her twenty iron ore at y 12 make the custom 14, and the AI player's iron depth 15 (its own 16);
+  - his twenty at y −40, never opted in, change nothing;
+  - her diamonds and her chat change nothing;
+  - the file read back gives the same customs;
+  - `/aiplayer watch off` deletes her counts, the depth goes back to 16, and the file then holds neither of them.
+
 ## The headless simulator (F-28) — 31 October 2026 (`claude/loose-ends-1029`)
 
 Linux x64 cloud container (4 cores), OpenJDK 21; two evaluation servers on the same cores throughout. Focused runs

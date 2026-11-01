@@ -84,6 +84,11 @@ final class PortalRunCampaign {
     private final WorldKnowledge knowledge = new WorldKnowledge();
     /** Its map of this world from its own play (F-30), kept across goals by the runtime; none with the atlas off. */
     private dev.kindred.core.atlas.Atlas atlas;
+    /** The server's customs (E-47): the depths the people who opted in mine their ores at, which its own lean on; none by default. */
+    private dev.kindred.core.customs.ServerCustoms customs;
+    /** The depths it last said in the log it mines toward, so that a change is said once (E-47). */
+    private final java.util.EnumMap<dev.kindred.core.customs.ServerCustoms.Ore, Integer> depthsSaid =
+            new java.util.EnumMap<>(dev.kindred.core.customs.ServerCustoms.Ore.class);
     /** The world it last planned in: the dimension and the time its sightings are kept with. */
     private ServerWorld atlasWorld;
     /** A walk back to a sighting that failed: no lead again until then. */
@@ -417,6 +422,37 @@ final class PortalRunCampaign {
         return out.toString();
     }
     WorldKnowledge knowledge() { return knowledge; }
+
+    /** The server's customs to lean on (E-47), or none. */
+    void customs(dev.kindred.core.customs.ServerCustoms given) { customs = given; }
+
+    /**
+     * The height its steps for {@code ore} dig toward: its own, moved toward the height this server's people mine it
+     * at, at most three tenths of the way and eight blocks (E-47); its own while no one who opted in has mined enough.
+     */
+    int depth(dev.kindred.core.customs.ServerCustoms.Ore ore) {
+        return customs == null ? ownDepth(ore) : customs.blend(ore, ownDepth(ore));
+    }
+
+    private static int ownDepth(dev.kindred.core.customs.ServerCustoms.Ore ore) {
+        return switch (ore) {
+            case COAL -> COAL_TARGET;
+            case IRON -> IRON_TARGET;
+            case DIAMOND -> DIAMOND_TARGET;
+        };
+    }
+
+    /** {@link #depth}, said in the log when it moves. */
+    private int depth(ServerPlayerEntity player, dev.kindred.core.customs.ServerCustoms.Ore ore) {
+        int depth = depth(ore), own = ownDepth(ore);
+        Integer said = depthsSaid.put(ore, depth);
+        if (said == null ? depth != own : said != depth) {
+            KindredMod.LOGGER.info(depth == own ? "{} mines {} toward y {}, its own depth"
+                            : "{} mines {} toward y {}, leaning toward the depth this server's people mine it at",
+                    player.getName().getString(), ore.name().toLowerCase(java.util.Locale.ROOT), depth);
+        }
+        return depth;
+    }
 
     /**
      * The player's atlas (F-30), or none. What it sees of iron, diamonds, coal, lava, water, trees and a fortress's or a
@@ -2221,19 +2257,24 @@ final class PortalRunCampaign {
             case GATHER_SAPLINGS -> gatherSaplings(body);
             // Ore in view first, then caves it has seen, which show far more ore than a tunnel; digging comes last.
             case MINE_COAL -> gather(body, WorldKnowledge.Kind.COAL_ORE, oreRadius(player, 32), "coal ore").or(() -> gather(body, WorldKnowledge.Kind.LOG, 48, "logs for fuel"))
-                    .or(() -> cave(body, "coal", COAL_TARGET)).or(this::lookAround)
+                    .or(() -> cave(body, "coal", depth(player, dev.kindred.core.customs.ServerCustoms.Ore.COAL))).or(this::lookAround)
                     // Coal is scarce deep down: climb toward where it is common before tunnelling for it.
-                    .or(() -> player.getBlockY() < COAL_TARGET - 12 ? climb(body, "Climb toward coal") : Optional.<Task>empty())
+                    .or(() -> player.getBlockY() < depth(player, dev.kindred.core.customs.ServerCustoms.Ore.COAL) - 12
+                            ? climb(body, "Climb toward coal") : Optional.<Task>empty())
                     .or(() -> groundBelow(player) ? tunnel(body, "Tunnel for coal") : Optional.<Task>empty());
             // Ore it saw before, out of reach now, is gone back to before it is searched for again (F-30).
             case MINE_IRON -> gather(body, WorldKnowledge.Kind.IRON_ORE, oreRadius(player, 40), "iron ore")
                     .or(() -> lead(body, dev.kindred.core.atlas.Atlas.Resource.IRON, "iron ore"))
-                    .or(() -> cave(body, "iron", IRON_TARGET)).or(this::lookAround).or(() -> descendOrTunnel(body, IRON_TOP, IRON_TARGET, "iron"));
+                    .or(() -> cave(body, "iron", depth(player, dev.kindred.core.customs.ServerCustoms.Ore.IRON))).or(this::lookAround)
+                    .or(() -> descendOrTunnel(body, IRON_TOP, depth(player, dev.kindred.core.customs.ServerCustoms.Ore.IRON), "iron"));
             case MINE_DIAMOND -> gather(body, WorldKnowledge.Kind.DIAMOND_ORE, oreRadius(player, 40), "diamond ore")
                     .or(() -> gather(body, WorldKnowledge.Kind.IRON_ORE, 6, "iron ore on the way"))
                     .or(() -> lead(body, dev.kindred.core.atlas.Atlas.Resource.DIAMOND, "diamond ore"))
-                    .or(() -> cave(body, "diamonds", DIAMOND_TARGET))
-                    .or(this::lookAround).or(() -> descendOrTunnel(body, DIAMOND_TOP, DIAMOND_TARGET, "diamonds"));
+                    .or(() -> cave(body, "diamonds", depth(player, dev.kindred.core.customs.ServerCustoms.Ore.DIAMOND)))
+                    .or(this::lookAround).or(() -> {
+                        int depth = depth(player, dev.kindred.core.customs.ServerCustoms.Ore.DIAMOND);
+                        return descendOrTunnel(body, Math.max(DIAMOND_TOP, depth), depth, "diamonds");
+                    });
             case CRAFT -> craft(body, step.item());
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");

@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * In plain terms: the mod's starting point. As the game loads it, this registers what the mod adds (the older
  * mob-style body, the control panel, skins and commands) and ties the AI players' runtime to the server: it
  * starts and stops with the server, hears chat, and is told when blocks are broken, players die and players
- * leave.
+ * leave. It keeps the server's customs, learned only from people who opted in for themselves.
  */
 public final class KindredMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("Kindred");
@@ -45,8 +45,12 @@ public final class KindredMod implements ModInitializer {
     private static boolean rescue;
     /** The watch page (E-48), when {@code KINDRED_WATCH_PORT} and {@code KINDRED_WATCH_TOKEN} are set: off otherwise. */
     private static WatchServer watch;
+    /** The server's customs (E-47), learned only from those who opted in for themselves: kept while the server runs. */
+    private static ServerCustomsKeeper customs;
 
     static PlayerRuntime runtime() { return runtime; }
+
+    static ServerCustomsKeeper customs() { return customs; }
 
     /** Sets everything up once, as the mod is loaded. */
     @Override
@@ -67,6 +71,10 @@ public final class KindredMod implements ModInitializer {
                 NativePlayerBody.allowBreak(world, player, position, state));
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register((world, player, position, state, blockEntity) ->
                 NativePlayerBody.observedBreak(world, player, position, state));
+        // An ore broken by a person who opted in teaches the players the depth this server mines it at (E-47).
+        net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register((world, player, position, state, blockEntity) -> {
+            if (customs != null && player instanceof net.minecraft.server.network.ServerPlayerEntity person) customs.broke(world, person, position, state);
+        });
         ServerMessageEvents.CHAT_MESSAGE.register((message, sender, parameters) -> {
             PlayerRuntime receivingRuntime = runtime;
             var senderId = sender.getUuid();
@@ -88,9 +96,14 @@ public final class KindredMod implements ModInitializer {
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
         }
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (customs != null) customs.tick(server.getTicks());
+        });
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             runtime = new PlayerRuntime(server);
             runtime.start();
+            customs = ServerCustomsKeeper.open(server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).resolve("kindred"));
+            runtime.customs(customs.customs());
             if (!lessons) {
                 runtime.lessons(false);
                 LOGGER.info("The players' own lessons from their deaths are off (KINDRED_LESSONS=off)");
@@ -157,6 +170,10 @@ public final class KindredMod implements ModInitializer {
             }
             if (runtime != null) runtime.finishShutdown();
             runtime = null;
+            if (customs != null) {
+                customs.close();
+                customs = null;
+            }
         });
     }
 }

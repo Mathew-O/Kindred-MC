@@ -4028,6 +4028,7 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        entry.campaign.customs(customs);
         entry.campaign.pursue(entry.goal);
         entry.campaign.dragonAllowed(dragonFight);
         entry.campaign.huntersKit(gearingHunter(body));
@@ -11088,6 +11089,20 @@ final class PlayerRuntime {
     dev.kindred.core.atlas.Atlas atlasForFixtures(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? null : entry.atlas;
+    }
+
+    /** The server's customs (E-47), learned from those who opted in, for the goal's ore plans to lean on; none by default. */
+    private dev.kindred.core.customs.ServerCustoms customs;
+
+    void customs(dev.kindred.core.customs.ServerCustoms given) {
+        requireThread();
+        customs = given;
+    }
+
+    /** The height its goal's steps dig toward for {@code ore}, for fixtures (E-47); {@code Integer.MIN_VALUE} before its goal plans. */
+    int oreDepthForFixtures(UUID id, dev.kindred.core.customs.ServerCustoms.Ore ore) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? Integer.MIN_VALUE : entry.campaign.depth(ore);
     }
 
     /** Its own lessons from its deaths on or off (E-46): on by default; {@code KINDRED_LESSONS=off} or a scenario turns them off. */

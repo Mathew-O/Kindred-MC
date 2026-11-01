@@ -43,6 +43,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer match join <match>         join a match you were invited to (a human joins only for itself)
 /aiplayer match start|stop <match>   start a match everyone joined, or stop it (a player in it forfeits)
 /aiplayer match list                 matches, their state and results
+/aiplayer watch on|off               let the AI players learn how deep you mine, for yourself alone (off deletes it)
 /aiplayer skin <name|default> [bot]  dress an AI player in a skin from config/kindred/skins (or its own again)
 /aiplayer skin list                  the skins on offer
 /aiplayer native goto <x y z> [bot]  walk a pathfound route (no teleport)
@@ -440,6 +441,36 @@ For a minute after someone strikes it, it walks off if they come within four blo
 anyone: it withholds, and that is all. A hard hit is answered as before ("Hit hard by another player"). Wariness is
 kept for the session and starts again when the server restarts. The log says
 `<name> notes that <person> hurt it: wariness 80; it holds back from them now`.
+
+## Learning from the server's people (E-47)
+
+Each person decides for themselves whether the AI players may learn from them:
+
+- `/aiplayer watch on` lets them;
+- `/aiplayer watch off` stops it, and deletes what was learned from them at once, in the server's file too;
+- `/aiplayer watch` says how it stands.
+
+No one can decide it for anyone else. The console, a command block, an AI player and a command run as someone else
+(`/execute as`, by an operator too) are refused. Until a person says yes, nothing is learned from them.
+
+**The privacy rule (D10).** What is learned, and from whom:
+
+- only from people who opted in, each for themselves;
+- only the height of the coal, iron and diamond ore they break in the overworld, in bands of four blocks;
+- never where (no x or z), when, or in what order;
+- never their chat, their inventory, or anything else they do;
+- never the AI players' own mining.
+
+It is kept as counts in `<world>/kindred/customs.json`, with the list of who opted in. Each person's counts are kept
+apart from the others' only so that opting out can delete exactly theirs. Deleting the file deletes everything, and no
+one is opted in after that.
+
+**What the players do with it.** Once the people who opted in have broken 16 of an ore between them, the middle of
+their heights is the server's custom for it. An AI player's goal digs for that ore toward its own depth (iron y 16,
+diamonds y −58, coal y 48), moved three tenths of the way toward the custom and never more than eight blocks. Players
+who mine their iron at y 12 move it to y 15. The log says
+`<name> mines iron toward y 15, leaning toward the depth this server's people mine it at`. Nothing else changes: it
+copies no build and follows no one.
 
 ## Trading with villagers
 

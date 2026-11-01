@@ -36,7 +36,8 @@ public final class PlayerCommands {
                     + "setup; home set; area set <x1> <z1> <x2> <z2>|default; storage set; patch set <from> <to> <block> [UUID]; "
                     + "goto <x> <y> <z>; gohome; wait <1..60>; pause; continue [UUID]; look [block] [UUID]; "
                     + "scope home|approved; goal list|add; memory list|add|forget; limit status|cap|offline|timezone|window; "
-                    + "suspend [UUID]; recover [UUID]; remove [UUID]; journal [UUID]. Autonomous survival awaits qualification."), false);
+                    + "suspend [UUID]; recover [UUID]; remove [UUID]; journal [UUID]; "
+                    + "watch on|off (whether the AI players may learn how deep you mine, for yourself alone). Autonomous survival awaits qualification."), false);
             return 1;
         });
         root.then(CommandManager.literal("goal").then(CommandManager.argument("goal", StringArgumentType.word())
@@ -298,6 +299,11 @@ public final class PlayerCommands {
                             + (match.result().isEmpty() ? "" : ": " + match.result())), false);
                     return all.size();
                 })));
+        // Whether the AI players may learn from a person how deep they mine (E-47, D10): /aiplayer watch on|off, said by
+        // that person for themselves and no one else; off deletes what was learned from them.
+        root.then(CommandManager.literal("watch").executes(context -> watch(context.getSource(), null))
+                .then(CommandManager.literal("on").executes(context -> watch(context.getSource(), true)))
+                .then(CommandManager.literal("off").executes(context -> watch(context.getSource(), false))));
         root.then(CommandManager.literal("mode").then(CommandManager.argument("profile", StringArgumentType.word())
                 .executes(context -> {
                     PlayerRuntime runtime = KindredMod.runtime();
@@ -1164,5 +1170,38 @@ public final class PlayerCommands {
     private static int unavailable(ServerCommandSource source) {
         source.sendError(Text.literal("Kindred is not ready yet."));
         return 0;
+    }
+
+    /**
+     * A person's own say over what the AI players learn from them (E-47, D10): on, off, or, with neither, how it stands.
+     * Taken only from the person themselves: not from the console, a command block, an AI player, or anyone running it
+     * as someone else ({@code /execute as}), operators included.
+     */
+    private static int watch(ServerCommandSource source, Boolean on) {
+        ServerCustomsKeeper customs = KindredMod.customs();
+        if (customs == null) return unavailable(source);
+        var person = source.getPlayer();
+        if (person == null || person instanceof PreparedNativePlayer
+                || ((dev.kindred.fabric.mixin.ServerCommandSourceAccessor) source).kindred$output() != person) {
+            source.sendError(Text.literal("Only a person can say whether the AI players may learn from them, and only for themselves."));
+            return 0;
+        }
+        if (on == null) {
+            boolean consents = customs.consents(person);
+            source.sendFeedback(() -> Text.literal(consents
+                    ? "The AI players may learn from you how deep you mine coal, iron and diamonds. /aiplayer watch off stops it and deletes what was learned."
+                    : "The AI players learn nothing from you. /aiplayer watch on lets them learn how deep you mine coal, iron and diamonds."), false);
+            return consents ? 1 : 0;
+        }
+        if (on) {
+            customs.optIn(person);
+            source.sendFeedback(() -> Text.literal("The AI players may now learn from you how deep you mine coal, iron and diamonds,"
+                    + " counted with everyone else's who said yes, never where or when. Nothing from your chat or your inventory."
+                    + " /aiplayer watch off deletes what was learned from you."), false);
+        } else {
+            customs.optOut(person);
+            source.sendFeedback(() -> Text.literal("The AI players learn nothing more from you, and what they learned from you is deleted."), false);
+        }
+        return 1;
     }
 }

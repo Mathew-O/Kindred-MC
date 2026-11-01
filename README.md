@@ -120,6 +120,7 @@ Press **K** in game (with the mod on your client) to open the player menu, or us
 | `/aiplayer match duel <first> <second>` | Set up a duel (also `speedrun`, `manhunt`, `build`) |
 | `/aiplayer limit cap <hours> [player]` | How many hours a day a player may be active |
 | `/aiplayer limit window 18.00 23.00 [player]` | Only let a player be active between those hours |
+| `/aiplayer watch on` / `off` | Let the AI players learn how deep you mine, or stop it and delete what they learned (each person for themselves) |
 
 The full list, with every option, is in the [operator guide](docs/operator-guide.md).
 
