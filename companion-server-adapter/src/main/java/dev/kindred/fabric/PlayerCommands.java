@@ -392,6 +392,30 @@ public final class PlayerCommands {
                             }))));
         }
         root.then(social);
+        // E-18a: how a player sounds, set by its controller ("auto" goes back to its humour); E-19a: how a person is
+        // spoken to, set by that person alone.
+        var expression = CommandManager.literal("expression")
+                .executes(context -> expression(context, null, false))
+                .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> expression(context, null, false)));
+        for (String preset : new String[]{"plain", "dry", "playful", "auto"}) {
+            var chosen = dev.kindred.core.social.Expression.parse(preset).orElse(null);
+            expression.then(CommandManager.literal(preset).executes(context -> expression(context, chosen, true))
+                    .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                            .executes(context -> expression(context, chosen, true))));
+        }
+        root.then(expression);
+        var prefs = CommandManager.literal("prefs").executes(context -> prefs(context, null, null));
+        var unasked = CommandManager.literal("unasked");
+        for (String amount : new String[]{"fewer", "usual", "more"}) unasked.then(CommandManager.literal(amount).executes(context -> prefs(context, "unasked", amount)));
+        prefs.then(unasked);
+        for (String setting : new String[]{"teasing", "jokes"}) {
+            prefs.then(CommandManager.literal(setting)
+                    .then(CommandManager.literal("on").executes(context -> prefs(context, setting, "on")))
+                    .then(CommandManager.literal("off").executes(context -> prefs(context, setting, "off"))));
+        }
+        prefs.then(CommandManager.literal("forget").executes(context -> prefs(context, "forget", null)));
+        root.then(prefs);
         var personality = CommandManager.literal("personality").executes(context -> {
             PlayerRuntime runtime = KindredMod.runtime();
             if (runtime == null) return unavailable(context.getSource());
@@ -1165,6 +1189,25 @@ public final class PlayerCommands {
             return 0;
         }
         return runtime.startField(context.getSource(), id, start ? BlockPosArgumentType.getBlockPos(context, "at") : null);
+    }
+
+    /** {@code /aiplayer expression [preset] [player]} (E-18a). */
+    private static int expression(CommandContext<ServerCommandSource> context, dev.kindred.core.social.Expression preset, boolean change) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = null;
+        if (context.getNodes().stream().anyMatch(node -> node.getNode().getName().equals("target"))) {
+            id = resolveBotTarget(context, "target", runtime);
+            if (id == null) return 0;
+        }
+        return runtime.expression(context.getSource(), id, preset, change);
+    }
+
+    /** {@code /aiplayer prefs ...} (E-19a). */
+    private static int prefs(CommandContext<ServerCommandSource> context, String setting, String value) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        return runtime.listenerPreference(context.getSource(), setting, value);
     }
 
     private static int unavailable(ServerCommandSource source) {

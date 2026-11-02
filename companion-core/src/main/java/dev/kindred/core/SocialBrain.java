@@ -18,7 +18,25 @@ import java.util.UUID;
  */
 public final class SocialBrain {
     public enum Topic { THREAT, HURT, COMPANION, GREETING, RAIN, NIGHT, NOTICE, WORK_COMPLETED, WORK_BLOCKED, TEAM }
-    public record Speech(Topic topic, UUID subject, String text, String key) { }
+
+    /** What kind of line it is (E-18a): plain, a joke, or teasing (between AI players only). */
+    public enum Tone { PLAIN, JOKE, TEASE }
+
+    /**
+     * A line to say, with its plain wording beside it: a joke or a tease is said plainly instead to anyone who asked for
+     * no jokes or no teasing, and to everyone when one of those who will hear it did (E-19a).
+     */
+    public record Speech(Topic topic, UUID subject, String text, String key, String plain, Tone tone) {
+        public Speech(Topic topic, UUID subject, String text, String key) { this(topic, subject, text, key, text, Tone.PLAIN); }
+
+        /** The words for these listeners: the strictest of everyone who will hear it. */
+        public String textFor(dev.kindred.core.social.ListenerPreferences heard) {
+            if (heard == null || tone == Tone.PLAIN) return text;
+            if (tone == Tone.JOKE && heard.noJokes()) return plain;
+            if (tone == Tone.TEASE && (heard.noTeasing() || heard.noJokes())) return plain;
+            return text;
+        }
+    }
     private record Pending(Speech speech, long expires, int priority) { }
 
     private final Map<String, Pending> pending = new LinkedHashMap<>();
@@ -48,10 +66,7 @@ public final class SocialBrain {
             contacts.add(contact.id());
             if (!previousContacts.contains(contact.id())) {
                 boolean companion = contact.kind() == SocialSnapshot.Kind.COMPANION;
-                queue(new Speech(companion ? Topic.COMPANION : Topic.GREETING, contact.id(),
-                        pick("Hi, " + contact.name() + ".", "Hello, " + contact.name() + "!", "Hey, " + contact.name() + ".")
-                                + (companion ? " Good to see another companion around." : ""),
-                        "hello:" + contact.id()), now, companion ? 60 : 50);
+                queue(greeting(contact, companion, profile), now, companion ? 60 : 50);
             }
         }
         previousContacts = Set.copyOf(contacts);
@@ -63,13 +78,13 @@ public final class SocialBrain {
             queue(new Speech(Topic.HURT, null, hurt(snapshot.harm()), "hurt"), now, 90);
         }
         if (snapshot.raining() && (previous == null || !previous.raining())) {
-            queue(new Speech(Topic.RAIN, null, profile.personality().humor() >= 65
-                    ? "Rain again. I seem to have forgotten my umbrella."
-                    : pick("It's raining here.", "A bit wet out here."), "rain"), now, 20);
+            queue(styled(Topic.RAIN, "rain", profile, pick("It's raining here.", "A bit wet out here."),
+                    "Rain. Lovely.", "Rain again. I seem to have forgotten my umbrella."), now, 20);
         }
         if (snapshot.night() && (previous == null || !previous.night())) {
-            queue(new Speech(Topic.NIGHT, null, pick("It's dark out here. Let's watch our footing.",
-                    "Night out here. Keep an eye on the path."), "night"), now, 20);
+            queue(styled(Topic.NIGHT, "night", profile, pick("It's dark out here. Let's watch our footing.",
+                    "Night out here. Keep an eye on the path."), "Night. Again.",
+                    "Dark already. Something out there is thinking about my boots."), now, 20);
         }
         previous = snapshot;
         pending.values().removeIf(p -> p.expires() <= now || !stillRelevant(p.speech(), snapshot, contacts));
@@ -107,19 +122,17 @@ public final class SocialBrain {
         Objects.requireNonNull(activity);
         if (!profile.ambientEnabled() || profile.personality().sociability() == 0) return;
         if (contact.kind() != SocialSnapshot.Kind.OWNER && !profile.publicConversation()) return;
-        String line = profile.personality().humor() >= 65
-                ? "Oh, hey " + contact.name() + ". Don't mind me, just " + activity + "."
-                : pick("Oh, hey " + contact.name() + ". Just " + activity + ".", "Hi " + contact.name() + ". Just " + activity + ".");
-        queue(new Speech(Topic.NOTICE, contact.id(), line, "notice:" + contact.id()), now, 10);
+        String plain = pick("Oh, hey " + contact.name() + ". Just " + activity + ".", "Hi " + contact.name() + ". Just " + activity + ".");
+        Speech line = styled(Topic.NOTICE, "notice:" + contact.id(), profile, plain, contact.name() + ". Just " + activity + ".",
+                "Oh, hey " + contact.name() + ". Don't mind me, just " + activity + ".");
+        queue(new Speech(Topic.NOTICE, contact.id(), line.text(), line.key(), line.plain(), line.tone()), now, 10);
     }
 
     /** Offers a line about a job the player finished. */
     public void workCompleted(String skill, String detail, SocialProfile profile, long now) {
         if (!profile.ambientEnabled() || profile.personality().sociability() == 0) return;
-        String line = profile.personality().humor() >= 65
-                ? "All done with " + skill + "! " + detail
-                : "Finished " + skill + ". " + detail;
-        queue(new Speech(Topic.WORK_COMPLETED, null, line, "work_completed:" + skill), now, 70);
+        queue(styled(Topic.WORK_COMPLETED, "work_completed:" + skill, profile, "Finished " + skill + ". " + detail,
+                skill + ": done. " + detail, "All done with " + skill + "! " + detail), now, 70);
     }
 
     /** Offers a line about a job the player got stuck on, and why. */
@@ -192,6 +205,38 @@ public final class SocialBrain {
             case PLAYER -> pick("Hey, " + harm.name() + ", watch it!", "Ow! That was you, " + harm.name() + ".");
             case MOB -> pick("Ouch, a " + harm.name() + " got me.", "That " + harm.name() + " hit me. Careful.");
             case WORLD -> pick("Ouch. " + harm.name() + ".", "That hurt: " + harm.name() + ".");
+        };
+    }
+
+    /**
+     * A line in the speaker's manner (E-18a): plain, dry, or a playful one marked as a joke, which goes out plainly to
+     * anyone who asked for no jokes. The profile is the one under the server's cap.
+     */
+    private static Speech styled(Topic topic, String key, SocialProfile profile, String plain, String dry, String playful) {
+        return switch (profile.effectiveExpression()) {
+            case PLAIN -> new Speech(topic, null, plain, key);
+            case DRY -> new Speech(topic, null, dry, key, plain, Tone.PLAIN);
+            case PLAYFUL -> new Speech(topic, null, playful, key, plain, Tone.JOKE);
+        };
+    }
+
+    /**
+     * A hello as someone comes into view. To another AI player a playful one teases a little, and only then: a person is
+     * never teased; with anyone in earshot who asked for no teasing the plain hello is said.
+     */
+    private Speech greeting(SocialSnapshot.Contact contact, boolean companion, SocialProfile profile) {
+        String plain = pick("Hi, " + contact.name() + ".", "Hello, " + contact.name() + "!", "Hey, " + contact.name() + ".")
+                + (companion ? " Good to see another companion around." : "");
+        Topic topic = companion ? Topic.COMPANION : Topic.GREETING;
+        String key = "hello:" + contact.id();
+        return switch (profile.effectiveExpression()) {
+            case PLAIN -> new Speech(topic, contact.id(), plain, key);
+            case DRY -> new Speech(topic, contact.id(), contact.name() + ". Hello.", key, plain, Tone.PLAIN);
+            case PLAYFUL -> companion
+                    ? new Speech(topic, contact.id(), "Hey, " + contact.name() + ". Still here? I thought you'd have the Nether sorted by now.",
+                            key, plain, Tone.TEASE)
+                    : new Speech(topic, contact.id(), "Hey, " + contact.name() + "! Always room for another square head around here.",
+                            key, plain, Tone.JOKE);
         };
     }
 

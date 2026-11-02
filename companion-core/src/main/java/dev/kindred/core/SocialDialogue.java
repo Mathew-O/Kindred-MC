@@ -27,7 +27,8 @@ public final class SocialDialogue {
     public static String reply(String raw, SocialSnapshot snapshot, SocialProfile profile) {
         if (raw.isBlank() || raw.length() > 256) return "Keep it to a short message, please.";
         String message = raw.strip().toLowerCase(Locale.ROOT).replaceAll("[!?.,]+$", "");
-        if (message.matches("(hi|hello|hey)( there)?")) return profile.personality().humor() >= 65
+        // The joke only when it sounds playful (E-18a: its preset, or its humour with none, under the server's cap).
+        if (message.matches("(hi|hello|hey)( there)?")) return profile.playful()
                 ? "Hey! Always room for another square head around here." : "Hello! Nice to have some company.";
         if (message.equals("thanks") || message.equals("thank you")) return "You're welcome.";
         if (message.equals("bye") || message.equals("goodbye")) return "See you around.";

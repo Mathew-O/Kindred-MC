@@ -11,6 +11,8 @@ import dev.kindred.core.OperatingMode;
 import dev.kindred.core.Personality;
 import dev.kindred.core.SocialProfile;
 import dev.kindred.core.WorkSetup;
+import dev.kindred.core.social.Expression;
+import dev.kindred.core.social.ListenerPreferences;
 import dev.kindred.scheduler.AccountingPeriod;
 import dev.kindred.scheduler.BudgetState;
 import dev.kindred.scheduler.PeriodTransition;
@@ -279,6 +281,7 @@ class SqliteCompanionStoreTest {
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
             statement.execute("ALTER TABLE activity_limits DROP COLUMN window_start");
             statement.execute("ALTER TABLE activity_limits DROP COLUMN window_end");
+            dropSchemaTen(statement);
             statement.execute("PRAGMA user_version = 8");
         }
         SqliteCompanionStore upgraded = open(10);
@@ -286,7 +289,7 @@ class SqliteCompanionStoreTest {
         assertEquals(new ActivityLimit(id, 3_600_000, false, "UTC", 3), migrated, "a schema 8 limit upgrades to all day, nothing else changed");
         upgraded.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
-            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(9, row.getInt(1)); }
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(10, row.getInt(1)); }
             statement.execute("UPDATE activity_limits SET window_start = '09:00'");
         }
         assertCause(IllegalStateException.class, open(10).limit(id));
@@ -391,6 +394,36 @@ class SqliteCompanionStoreTest {
         assertCause(ConcurrentModificationException.class, store.saveProfile(defaults.withPublic(false), 0));
         store.closeAsync().join();
         assertEquals(List.of(muted), open(10).profiles().join());
+    }
+
+    @Test
+    void anExpressionPresetAndAPersonsOwnPreferencesSurviveARestartAndCanBeForgotten() {
+        SqliteCompanionStore store = open(10);
+        UUID id = store.create(request(UUID.randomUUID())).join().companion().id();
+        SocialProfile defaults = store.profiles().join().getFirst();
+        assertNull(defaults.expression(), "a player made before presets keeps sounding by its humour");
+        SocialProfile dry = store.saveProfile(defaults.withExpression(Expression.DRY), 0).join();
+        UUID steve = UUID.randomUUID(), alex = UUID.randomUUID();
+        ListenerPreferences quiet = ListenerPreferences.defaults(steve).withNoJokes(true).withUnasked(ListenerPreferences.Unasked.FEWER);
+        ListenerPreferences chatty = ListenerPreferences.defaults(alex).withUnasked(ListenerPreferences.Unasked.MORE);
+        store.saveListenerPreferences(quiet).join();
+        store.saveListenerPreferences(chatty).join();
+        ListenerPreferences quieter = store.saveListenerPreferences(quiet.withNoTeasing(true)).join();
+        store.closeAsync().join();
+
+        SqliteCompanionStore reopened = open(10);
+        assertEquals(List.of(dry), reopened.profiles().join());
+        assertEquals(Set.of(quieter, chatty), Set.copyOf(reopened.listenerPreferences().join()));
+        // Back to the defaults is nothing to keep; and a person can delete theirs.
+        reopened.saveListenerPreferences(chatty.withUnasked(ListenerPreferences.Unasked.USUAL)).join();
+        assertTrue(reopened.forgetListenerPreferences(steve).join());
+        assertFalse(reopened.forgetListenerPreferences(steve).join());
+        assertEquals(List.of(), reopened.listenerPreferences().join());
+        SocialProfile byHumour = reopened.saveProfile(dry.withExpression(null), dry.revision()).join();
+        reopened.closeAsync().join();
+        assertEquals(List.of(byHumour), open(10).profiles().join());
+        assertNull(byHumour.expression());
+        assertEquals(id, byHumour.companionId());
     }
 
     @Test
@@ -640,7 +673,18 @@ class SqliteCompanionStoreTest {
         assertThrows(NullPointerException.class, () -> store.modes(null));
     }
 
+    /** Back to before V10 (E-18a, E-19a): no expression preset, no listener preferences. */
+    static void dropSchemaTen(java.sql.Statement statement) throws java.sql.SQLException {
+        boolean hasExpression;
+        try (var row = statement.executeQuery("SELECT COUNT(*) FROM pragma_table_info('social_profiles') WHERE name = 'expression'")) {
+            hasExpression = row.getInt(1) > 0;
+        }
+        if (hasExpression) statement.execute("ALTER TABLE social_profiles DROP COLUMN expression");
+        statement.execute("DROP TABLE IF EXISTS listener_preferences");
+    }
+
     private static void dropSchemaFive(java.sql.Statement statement) throws java.sql.SQLException {
+        dropSchemaTen(statement);
         statement.execute("DROP TABLE IF EXISTS stock_reservations");
         statement.execute("DROP TABLE IF EXISTS shared_tasks");
         statement.execute("DROP TABLE IF EXISTS shared_projects");

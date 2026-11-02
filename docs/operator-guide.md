@@ -390,6 +390,35 @@ Whoever may command a native player (its controller or an operator) can also ask
 
 If the command would refuse, the player says why in the command's own words ("Echo has no diamond."). Nobody else is offered asks; a reply that carries one for anyone else is refused, and the fixed reply is said. An opponent in a match never may, operator or not. There is no follow in chat yet. The log says `<name> asked in chat by <who>: <ask>: done` or `refused (<why>)`.
 
+#### How it sounds, and how each person asked to be spoken to (E-18a, E-19a)
+Every player's words are clean, whoever is listening: no swearing, flirting or dark jokes. Within that, each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
+
+| Preset | How it sounds |
+| --- | --- |
+| `plain` | Says things plainly, without jokes. |
+| `dry` | Short and understated ("Rain. Lovely."), without jokes. |
+| `playful` | A light joke or a callback when it fits, and a little teasing of other AI players. A person is never teased. |
+
+```text
+/aiplayer expression [<player>]                       how it sounds, and why
+/aiplayer expression plain|dry|playful|auto [<player>] set it; auto goes back to sounding by its humour
+KINDRED_EXPRESSION_CAP=plain|dry|playful              optional; the most any player may be (default playful)
+```
+
+A player with no preset keeps the rule from before presets: playful from humour 65 up, plain below. Playful now has more lines than before (a hello, nightfall, and the tease of another AI player, beside the rain, a passing word and work done). The cap bounds every preset to at most its own rank (under `dry`, a playful player sounds dry); a value it does not know is taken as `plain`, and the log says so. The preset is saved with the player's profile, so it survives a restart.
+
+Each person sets, for themselves only, how AI players speak to them; nobody else can set or see it, and it gives nobody control of a player:
+
+```text
+/aiplayer prefs                           what you asked for
+/aiplayer prefs unasked fewer|usual|more  the pause before you are spoken to unasked again: 60, 30 or 15 seconds
+/aiplayer prefs teasing on|off            off: no teasing between AI players while you can hear it
+/aiplayer prefs jokes on|off              off: no jokes to you or near you; the plain line instead
+/aiplayer prefs forget                    delete what you set
+```
+
+The pause is per person, across all players; each player's own pause between remarks (about two minutes) and the server's ten seconds between any two still apply, so `more` shortens only the per-person part. A line said to several people at once is put as the strictest of them asked: one person with jokes off, and everyone there hears the plain line. A reply to one person follows that person's own preferences, and the voice (E-20a) is told in one line how to speak to them. Preferences are kept per person in the metadata database (`listener_preferences`) and survive a restart; going back to all the defaults deletes the row, as `forget` does. Until the saved preferences have been read at start, players say nothing unasked and make no jokes; if they cannot be read, that holds until the next restart, and the log says so.
+
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 
 ## How the players look about

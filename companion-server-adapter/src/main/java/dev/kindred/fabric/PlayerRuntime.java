@@ -193,6 +193,8 @@ final class PlayerRuntime {
     private CompletableFuture<LoadedRegistry> startup;
     private CompletableFuture<Void> shutdown = CompletableFuture.completedFuture(null);
     private final CompanionSocials socials;
+    /** The server's cap on how players sound, and each person's own preferences (E-18a, E-19a). */
+    private final TalkSettings talk;
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
     private final PlayerVoice voice;
     private boolean voiceOn = PlayerVoice.switchedOn(System.getenv());
@@ -389,6 +391,8 @@ final class PlayerRuntime {
             player.sendMessage(message, false);
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
+        socials.setExpressionCap(TalkSettings.cap(System.getenv()));
+        talk = new TalkSettings(socials, server);
         voice = new PlayerVoice(this::voiceFacts, new PlayerVoice.Asks() {
             @Override
             public void ask(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
@@ -404,6 +408,7 @@ final class PlayerRuntime {
             }
         }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
         socials.setVoice(voice);
+        voice.setManner(socials::manner);
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
@@ -566,6 +571,7 @@ final class PlayerRuntime {
                     bases = loaded.bases();
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
+                    talk.load(store); // E-19a: people's own preferences; nothing unasked and no jokes until they are read.
                     store.listProjects().whenComplete((loadedProjects, err) -> {
                         if (err == null && loadedProjects != null) {
                             server.execute(() -> {
@@ -6188,6 +6194,48 @@ final class PlayerRuntime {
         }));
         feedback(source, "Saving the companion's profile.");
         return 1;
+    }
+
+    /**
+     * E-18a: how a player sounds, shown, or set by whoever may control it ({@code change}); a null preset goes back to its
+     * humour. Saved as any profile change is.
+     */
+    int expression(ServerCommandSource source, UUID requestedId, dev.kindred.core.social.Expression preset, boolean change) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No AI player found.");
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change how it sounds.");
+        if (!change) {
+            feedback(source, TalkSettings.sounds(entry.data.displayName(), entry.profile, socials.expressionCap()));
+            return 1;
+        }
+        if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This player's profile is unavailable.");
+        if (!entry.profileWrite.isDone()) return reject(source, "The previous profile change is still being saved.");
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = previous.withExpression(preset);
+        entry.profile = changed;
+        socials.reset(entry.data.id()); // Nothing composed in the old manner is said.
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Profile save failed; player stopped for storage inspection.");
+                KindredMod.LOGGER.error("Expression preset write failed for {}", entry.data.id(), failure);
+                source.sendError(Text.literal("The preset could not be saved. The player has stopped."));
+            } else feedback(source, "Saved. " + TalkSettings.sounds(entry.data.displayName(), changed, socials.expressionCap()));
+        }));
+        return 1;
+    }
+
+    /** E-19a: a person's own preferences for how AI players speak to them, shown, set or deleted by them alone. */
+    int listenerPreference(ServerCommandSource source, String setting, String value) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        if (setting == null) return talk.show(source);
+        return "forget".equals(setting) ? talk.forget(source) : talk.set(source, setting, value);
     }
 
     int personality(ServerCommandSource source, UUID requestedId) {

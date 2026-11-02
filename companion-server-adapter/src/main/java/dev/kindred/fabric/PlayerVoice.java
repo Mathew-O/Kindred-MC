@@ -77,6 +77,8 @@ final class PlayerVoice implements CompanionSocials.Voice {
     private final MinecraftServer server;
     private final LongSupplier clock;
     private final Map<String, ArrayDeque<Said>> transcripts = new LinkedHashMap<>();
+    /** The one line on how to speak to this listener (E-18a, E-19a), or null for none. */
+    private java.util.function.BiFunction<CompanionSocials.Participant, ServerPlayerEntity, String> manner = (player, listener) -> null;
 
     PlayerVoice(Source source, Asks asks, Supplier<Optional<StrategistBridge>> bridge, MinecraftServer server, LongSupplier clock) {
         this.source = source;
@@ -84,6 +86,11 @@ final class PlayerVoice implements CompanionSocials.Voice {
         this.bridge = bridge;
         this.server = server;
         this.clock = clock;
+    }
+
+    /** Where the line on how to speak to each listener comes from: the social lane's preset, cap and preferences. */
+    void setManner(java.util.function.BiFunction<CompanionSocials.Participant, ServerPlayerEntity, String> manner) {
+        this.manner = java.util.Objects.requireNonNull(manner);
     }
 
     /** Whether the voice is on: unless {@code KINDRED_VOICE=off}, whenever the strategist is. */
@@ -99,7 +106,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
         Facts facts = source.facts(player.id(), speaker);
         if (facts == null) return false;
         var situation = situation(facts, player.body(), speaker, transcript(player.id(), speaker.getUuid()));
-        var conversation = ConversationPrompt.conversation(facts.name(), facts.personality(), situation, message);
+        var conversation = ConversationPrompt.conversation(facts.name(), facts.personality(), situation, message, manner.apply(player, speaker));
         var asked = lane.get().converse(player.id(), facts.name(), speaker.getName().getString(), conversation, server);
         if (asked.isDone() && asked.join().isEmpty()) return false; // Declined at once (budgets, rates, a line already out).
         // Never left waiting: past the deadline and a second's grace it is taken as no line, and the fixed reply is said.

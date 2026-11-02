@@ -98,9 +98,18 @@ public final class ConversationPrompt {
 
     /** The text part: what this listener may know and may ask, then the message quoted as data. */
     public static String text(ConversationAudience.Situation situation, String message) {
+        return text(situation, message, null);
+    }
+
+    /**
+     * The text part with one line on how to speak to this listener (E-18a, E-19a): the player's preset under the server's
+     * cap and what the listener asked for ({@link dev.kindred.core.social.Expression#voiceLine}); none when null.
+     */
+    public static String text(ConversationAudience.Situation situation, String message, String manner) {
         var text = new StringBuilder("What you know:\n");
         for (String line : ConversationAudience.lines(situation)) text.append(line).append('\n');
         text.append(asks(situation)).append('\n');
+        if (manner != null && !manner.isBlank()) text.append(manner.strip()).append('\n');
         text.append('\n').append(SAID).append('\n').append(quoted(situation.speaker() + ": " + message));
         return text.toString();
     }
@@ -121,7 +130,13 @@ public final class ConversationPrompt {
 
     /** The whole conversation for a provider. */
     public static Strategist.Conversation conversation(String name, Personality personality, ConversationAudience.Situation situation, String message) {
-        return new Strategist.Conversation(system(name, personality), text(situation, message), ConversationAudience.mayKnowPosition(situation),
+        return conversation(name, personality, situation, message, null);
+    }
+
+    /** The whole conversation, with the line on how to speak to this listener (E-18a, E-19a). */
+    public static Strategist.Conversation conversation(String name, Personality personality, ConversationAudience.Situation situation,
+                                                       String message, String manner) {
+        return new Strategist.Conversation(system(name, personality), text(situation, message, manner), ConversationAudience.mayKnowPosition(situation),
                 ConversationAudience.mayAsk(situation));
     }
 

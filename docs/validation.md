@@ -16,6 +16,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Expression presets and a person's own preferences (E-18a, E-19a) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 854 JUnit tests, 6 skipped, 0 failures (848
+  passed; 8 new: `ExpressionTest` 6, the store's preset and preferences round trip, the prompt's manner line). The
+  older-schema emulations in `SqliteCompanionStoreTest` and `NativePlayerStoreTest` now go back past V10 too; before that
+  change five of them failed on V10's re-added column and table, as an emulation that leaves a later schema's parts in
+  place must.
+- `NativeExpressionGameTests` alone, three runs (the gametest entrypoints narrowed for each and restored after): 3 of 3,
+  3 of 3, 3 of 3 (28 and 27 seconds for the last two).
+- `SocialGameTests`, `NativeVoiceGameTests`, `NativeAskGameTests` and `NativeMatchGameTests` together: 24 of 24 (6, 9, 6
+  and 3). `MannerismGameTests`, which also builds the social lane: 4 of 4.
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
 ## Final validation of the next levers — 1 November 2026 (`claude/loose-ends-1029`)
 
 - Build: `./gradlew build` green on `f1a15b6`, the final code: 846 JUnit tests, 6 skipped, 0 failures.

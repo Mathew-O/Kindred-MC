@@ -8,12 +8,15 @@ import dev.kindred.core.SpeechTiming;
 import dev.kindred.core.SocialDialogue;
 import dev.kindred.core.SocialProfile;
 import dev.kindred.core.SocialSnapshot;
+import dev.kindred.core.social.Expression;
+import dev.kindred.core.social.ListenerPreferences;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,7 +36,8 @@ import java.util.function.LongSupplier;
  * handles words and glances; what a player does is decided elsewhere.
  *
  * Technical: Server-thread social lane. No task mutation, navigation, memory invention or model requests. Its
- * speakers are AI players in either body, the legacy companion's or the native player's.
+ * speakers are AI players in either body, the legacy companion's or the native player's. Every line sounds as the
+ * speaker's preset under the server's cap (E-18a) and as the strictest of what its hearers asked for (E-19a).
  */
 final class CompanionSocials {
     record Participant(UUID id, UUID owner, String name, LivingEntity body, SocialProfile profile, boolean active) { }
@@ -119,6 +123,12 @@ final class CompanionSocials {
     private final Map<UUID, Long> voicing = new HashMap<>();
     private final Map<UUID, Waiting> waiting = new HashMap<>();
     private long turns;
+    /** The most expressive any player may sound on this server (E-18a). */
+    private Expression cap = Expression.PLAYFUL;
+    /** What each person asked of how AI players speak to them (E-19a), by person; anyone absent asked for nothing. */
+    private final Map<UUID, ListenerPreferences> preferences = new HashMap<>();
+    /** False while the saved preferences are still being read: nothing unasked is said, and no jokes or teasing. */
+    private boolean preferencesKnown = true;
 
     /**
      * Who may command each AI player, as the runtime's access rules say: they are talked with as its owner is, in
@@ -131,6 +141,58 @@ final class CompanionSocials {
     /** The player's voice, or null for the fixed replies alone. */
     void setVoice(Voice voice) {
         this.voice = voice;
+    }
+
+    /** The most expressive any player may sound on this server (E-18a); null is no cap below playful. */
+    void setExpressionCap(Expression cap) {
+        this.cap = cap == null ? Expression.PLAYFUL : cap;
+    }
+
+    Expression expressionCap() { return cap; }
+
+    /** The saved preferences are being read: until {@link #loadPreferences}, everyone is taken to want the least. */
+    void awaitPreferences() {
+        preferencesKnown = false;
+    }
+
+    /** Each person's saved preferences, read at startup; none at all when they could not be read. */
+    void loadPreferences(Collection<ListenerPreferences> saved) {
+        preferences.clear();
+        for (ListenerPreferences p : saved) if (p.person() != null && !p.isDefault()) preferences.put(p.person(), p);
+        preferencesKnown = true;
+    }
+
+    /**
+     * What this person asked of how they are spoken to: their own, the defaults if they asked for nothing, and, while the
+     * saved ones are still being read, no jokes and no teasing.
+     */
+    ListenerPreferences preferences(UUID person) {
+        ListenerPreferences own = preferences.get(person);
+        if (own != null) return own;
+        return preferencesKnown ? ListenerPreferences.defaults(person) : new ListenerPreferences(person, ListenerPreferences.Unasked.USUAL, true, true, 0);
+    }
+
+    /** Whether the saved preferences have been read. */
+    boolean preferencesKnown() { return preferencesKnown; }
+
+    /** The AI player a body belongs to, or null for a person. */
+    UUID aiPlayerOf(Entity body) { return aiPlayer.apply(body); }
+
+    /** A person changed or deleted their preferences; they hold from the next line. */
+    void preferencesChanged(ListenerPreferences changed) {
+        if (changed.isDefault()) preferences.remove(changed.person());
+        else preferences.put(changed.person(), changed);
+    }
+
+    /** How the player sounds here: its preset, or its humour with none, bounded by the server's cap (E-18a). */
+    private SocialProfile sounding(Participant player) { return player.profile().capped(cap); }
+
+    /**
+     * The one line the voice is told about how to speak to this listener: the player's preset under the cap, and what the
+     * listener asked for (E-18a, E-19a).
+     */
+    String manner(Participant player, ServerPlayerEntity listener) {
+        return Expression.voiceLine(sounding(player).effectiveExpression(), preferences(listener.getUuid()));
     }
 
     /** Who handles two AI players comparing notes on their progress when they meet. */
@@ -290,7 +352,7 @@ final class CompanionSocials {
         if (admitted.durationMillis() > 0) habits.glance(speaker.id(), admitted.subject(), admitted.durationMillis(), now);
         if (!admitted.remark()) return;
         people.stream().filter(contact -> contact.id().equals(admitted.subject())).findFirst()
-                .ifPresent(contact -> brain(speaker.id()).noticed(contact, activity(phase), speaker.profile(), now));
+                .ifPresent(contact -> brain(speaker.id()).noticed(contact, activity(phase), sounding(speaker), now));
     }
 
     private static String activity(AttentionPolicy.Phase phase) {
@@ -308,8 +370,9 @@ final class CompanionSocials {
         if (!speaker.active()) return;
         SocialBrain brain = brain(speaker.id());
         audience = audience.stream().filter(player -> canTalk(player, speaker)).toList();
-        var proposal = brain.observe(observed, speaker.profile(), now);
-        if (proposal.isEmpty() || now < nextAmbient) return;
+        SocialProfile sounding = sounding(speaker);
+        var proposal = brain.observe(observed, sounding, now);
+        if (proposal.isEmpty() || now < nextAmbient || !preferencesKnown) return;
         SocialBrain.Speech speech = proposal.orElseThrow();
         Participant partner = speech.topic() == SocialBrain.Topic.COMPANION ? lookup.apply(speech.subject()) : null;
         if (speech.topic() == SocialBrain.Topic.COMPANION) {
@@ -319,20 +382,25 @@ final class CompanionSocials {
         List<ServerPlayerEntity> recipients = audience.stream()
                 .filter(player -> now >= listeners.getOrDefault(player.getUuid(), Long.MIN_VALUE)).toList();
         if (recipients.isEmpty()) return;
+        // Everyone who will hear the line: the strictest of what they asked for decides how it is put (E-19a).
+        String text = speech.textFor(ListenerPreferences.strictest(recipients.stream().map(player -> preferences(player.getUuid())).toList()));
         for (ServerPlayerEntity player : recipients) {
-            long due = now + SpeechTiming.delayMillis(speech.text());
-            schedule(speaker, player, speech.text(), due, false);
+            long due = now + SpeechTiming.delayMillis(text);
+            schedule(speaker, player, text, due, false);
             if (partner != null) {
                 String answer = "Hi, " + speaker.name() + ". Good to see you too.";
                 schedule(partner, player, answer, due + SpeechTiming.delayMillis(answer), false);
             }
-            remember(listeners, player.getUuid(), now + 30_000);
+            remember(listeners, player.getUuid(), now + preferences(player.getUuid()).spacing(UNASKED_SPACING_MILLIS));
         }
-        brain.didSpeak(speech, speaker.profile(), now);
+        brain.didSpeak(speech, sounding, now);
         if (partner != null) brain(partner.id()).didReplyToCompanion(speaker.id(), partner.profile(), now);
         nextAmbient = now + 10_000;
         // An exchange is terminal: system chat never enters the player-chat handler.
     }
+
+    /** The usual pause before a person is spoken to unasked again; their own preference doubles or halves it (E-19a). */
+    static final long UNASKED_SPACING_MILLIS = 30_000;
 
     /**
      * Whether the player can talk with this person: in sight, and either one who may command it or the player
@@ -364,7 +432,7 @@ final class CompanionSocials {
                 Waiting displaced = waiting.put(companion.id(), new Waiting(player, message));
                 // Someone else's waiting message is not dropped unanswered: they are given the fixed reply now (E-20c).
                 if (displaced != null && !displaced.speaker().getUuid().equals(player.getUuid())) {
-                    String spoken = fixedReply(companion, displaced.message(), now);
+                    String spoken = fixedReply(companion, displaced.speaker(), displaced.message(), now);
                     scheduleInTurn(companion, displaced.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
                     voice.replied(displaced.speaker(), companion, displaced.message(), spoken);
                 }
@@ -372,16 +440,19 @@ final class CompanionSocials {
             }
             if (voiced(player, companion, message, now)) return true;
         }
-        String spoken = habitReply.orElseGet(() -> fixedReply(companion, message, now));
+        String spoken = habitReply.orElseGet(() -> fixedReply(companion, player, message, now));
         schedule(companion, player, spoken, now + SpeechTiming.delayMillis(spoken), true);
         if (voice != null) voice.replied(player, companion, message, spoken);
         return true;
     }
 
-    private String fixedReply(Participant companion, String message, long now) {
+    /** The fixed reply to this listener: as the player sounds under the cap, and plain to one who asked for no jokes. */
+    private String fixedReply(Participant companion, ServerPlayerEntity listener, String message, long now) {
         var observed = withRecentDamage(companion.id(), now,
                 SocialPerception.observe(companion.body(), owns(companion), companion.profile(), companion.active(), aiPlayer, ignored -> false));
-        return SocialDialogue.reply(message, observed, companion.profile());
+        SocialProfile sounding = sounding(companion);
+        if (preferences(listener.getUuid()).noJokes()) sounding = sounding.capped(Expression.PLAIN);
+        return SocialDialogue.reply(message, observed, sounding);
     }
 
     /**
@@ -397,7 +468,7 @@ final class CompanionSocials {
             Participant now = lookup.apply(companion.id());
             long at = clock.getAsLong();
             if (now != null && canTalk(player, now)) {
-                String spoken = line.map(Spoken::text).orElseGet(() -> fixedReply(now, message, at));
+                String spoken = line.map(Spoken::text).orElseGet(() -> fixedReply(now, player, message, at));
                 var then = line.map(Spoken::then).orElse(null);
                 // A line that acts is said as it acts, at once; any other once it would have been typed.
                 scheduleInTurn(now, player, spoken, then != null ? at : at + Math.max(0, SpeechTiming.delayMillis(spoken) - (at - asked)), then);
@@ -413,7 +484,7 @@ final class CompanionSocials {
     /** The message that waited: phrased in turn if the voice can ask now, else the fixed reply. */
     private void answerWaiting(Waiting next, Participant companion, long now) {
         if (voice != null && voiced(next.speaker(), companion, next.message(), now)) return;
-        String spoken = fixedReply(companion, next.message(), now);
+        String spoken = fixedReply(companion, next.speaker(), next.message(), now);
         scheduleInTurn(companion, next.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
         if (voice != null) voice.replied(next.speaker(), companion, next.message(), spoken);
     }
@@ -457,7 +528,7 @@ final class CompanionSocials {
         SocialBrain b = brain(companionId);
         Participant p = lookup.apply(companionId);
         if (b != null && p != null) {
-            b.workCompleted(skill, detail, p.profile(), clock.getAsLong());
+            b.workCompleted(skill, detail, sounding(p), clock.getAsLong());
         }
     }
 
@@ -466,7 +537,7 @@ final class CompanionSocials {
         SocialBrain b = brain(companionId);
         Participant p = lookup.apply(companionId);
         if (b != null && p != null) {
-            b.workBlocked(skill, reason, p.profile(), clock.getAsLong());
+            b.workBlocked(skill, reason, sounding(p), clock.getAsLong());
         }
     }
 

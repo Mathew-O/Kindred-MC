@@ -110,6 +110,7 @@ class NativePlayerStoreTest {
         var changed = store.saveProfile(profile.withTrait(Personality.Trait.MINING, 83), profile.revision()).join();
         store.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var sql = connection.createStatement()) {
+            SqliteCompanionStoreTest.dropSchemaTen(sql);
             sql.execute("ALTER TABLE activity_limits DROP COLUMN window_start");
             sql.execute("ALTER TABLE activity_limits DROP COLUMN window_end");
             sql.execute("DROP TABLE IF EXISTS stock_reservations");
