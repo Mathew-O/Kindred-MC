@@ -207,14 +207,21 @@ public final class Compounds {
     }
 
     /**
-     * The cattle's doorway: two high through the pasture's south wall and its lining, in line with the pen's gate. It
-     * is built shut, of the wall's own stone and lining, so that nothing shows where it is; it is opened only to bring
-     * animals in, and shut behind them.
+     * The cattle's doorway: two high and two wide through the pasture's south wall and its lining, its west column in
+     * line with the pen's gate. Two wide, as a pair led in comes up to it together: through one a block wide, the two
+     * pressed into its mouth side by side and neither got in (the cattle fixture, half its runs). It is built shut, of
+     * the wall's own stone and lining, so that nothing shows where it is; it is opened only to bring animals in, and
+     * shut behind them.
      */
     public static List<Pos> doorway(BuildStyle style) {
         var ward = pastureWall(style);
         int x = pen(style).x() + 3;
-        return List.of(new Pos(x, 0, ward.south() - 1), new Pos(x, 1, ward.south() - 1), new Pos(x, 0, ward.south()), new Pos(x, 1, ward.south()));
+        var cells = new java.util.ArrayList<Pos>();
+        for (int dx = 0; dx <= 1; dx++) {
+            cells.addAll(List.of(new Pos(x + dx, 0, ward.south() - 1), new Pos(x + dx, 1, ward.south() - 1),
+                    new Pos(x + dx, 0, ward.south()), new Pos(x + dx, 1, ward.south())));
+        }
+        return List.copyOf(cells);
     }
 
     /** The doorway shut again: the pasture ward's own blocks there, its lining's planks and its wall's stone. */

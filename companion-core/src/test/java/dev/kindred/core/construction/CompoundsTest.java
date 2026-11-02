@@ -203,11 +203,13 @@ class CompoundsTest {
             assertNotNull(spec, "the pen whole at " + x + ", " + z);
             assertEquals(x == 3 && z == 6 ? "minecraft:oak_fence_gate" : "minecraft:oak_fence", spec.block());
         }
-        // The cattle's doorway built shut, of the wall's stone and the lining's planks, in line with the pen's gate.
+        // The cattle's doorway built shut, of the wall's stone and the lining's planks, two wide, its west column in
+        // line with the pen's gate.
         var doorway = Compounds.doorway(style);
-        assertEquals(4, doorway.size());
+        assertEquals(8, doorway.size());
+        assertEquals(pen.x() + 3, doorway.getFirst().x());
         for (var p : doorway) {
-            assertEquals(pen.x() + 3, p.x());
+            assertTrue(p.x() == pen.x() + 3 || p.x() == pen.x() + 4, "two wide: " + p);
             assertEquals(p.z() == wall.south() ? "minecraft:cobblestone" : "minecraft:oak_planks", at.get(p).block(), "shut at " + p);
         }
         assertFalse(ward.blocks().stream().anyMatch(b -> b.spec().block().endsWith("_door")), "no door: the way in is under the wall");

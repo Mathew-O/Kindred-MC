@@ -134,7 +134,7 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
             case "native_discard" -> new SkillDescriptor(id, Set.of("slot", "count"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
-            case "native_fight" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot"), Set.of("move"), Set.of(),
+            case "native_fight" -> new SkillDescriptor(id, Set.of("target"), Set.of("slot", "tactics", "style"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(25), Duration.ofSeconds(10), 0);
             case "native_bucket" -> new SkillDescriptor(id, Set.of("x", "y", "z", "mode"), Set.of(), Set.of("bucket"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
@@ -145,6 +145,9 @@ final class NativePlayerSkills {
                     Set.of(dev.kindred.core.EditPolicy.Kind.PLACE), Duration.ofSeconds(8), Duration.ofSeconds(8), 0);
             // An animal fed what it breeds on (M-01a), and a fence gate opened or shut by hand.
             case "native_feed" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A wolf tamed with a bone of its own, or its pet named with a name tag (E-37, E-36).
+            case "native_pet" -> new SkillDescriptor(id, Set.of("target", "slot", "mode"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // Fishing at water with its rod (E-05).
             case "native_fish" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of("seconds"), Set.of(), Set.of(),

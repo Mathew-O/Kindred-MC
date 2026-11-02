@@ -219,6 +219,17 @@ final class PlayerRuntime {
     private boolean dragonFight;
     /** The operator's leave for AI players to choose, site and build their own bases (M-01c); off by default. */
     private boolean bases;
+    /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
+    private boolean pets;
+    /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
+    private final dev.kindred.core.construction.DesignFingerprint.Registry designs = new dev.kindred.core.construction.DesignFingerprint.Registry();
+    /** Whether the strategist is asked for combat proposals (E-41f): an operator's choice, off by default. */
+    private boolean combatAdvice;
+    /** A learned melee model an operator turned on (E-41e), or null for the hand-set melee. */
+    private dev.kindred.core.tactics.LearnedMelee.Model meleeModel;
+    /** Humans who chose to have their duels recorded as demonstrations (E-41e), and what is being recorded of each. */
+    private final Set<UUID> demonstrators = new HashSet<>();
+    private final Map<UUID, Demonstration> demonstrations = new HashMap<>();
     private final AdmissionBoard admission = AdmissionBoard.serverTarget(10);
     private final ClaimRegistry claims = new ClaimRegistry();
     ClaimRegistry claims() { return claims; }
@@ -648,6 +659,8 @@ final class PlayerRuntime {
 
     boolean shutdownComplete() { requireThread(); return !running && shutdown.isDone() && !shutdown.isCompletedExceptionally(); }
 
+    boolean running() { requireThread(); return running; }
+
     int createNative(ServerCommandSource source, String name) {
         return createNative(source, name, null);
     }
@@ -1024,6 +1037,12 @@ final class PlayerRuntime {
         halt(entry, Actor.console(), "Resource-work patch changed; stopped until explicit resume.");
         entry.nativeSetupPending = true;
         entry.setup = changed; // Apply changed authority immediately; stop stays latched throughout IO.
+        // A patch of logs: where its trunks stand now, to replant once they are cut (E-02).
+        entry.trunkBases.clear();
+        entry.patchDrops.clear();
+        entry.patchSkipped.clear();
+        entry.patchMined = 0;
+        if (changed.patch().resourceId().endsWith("_log")) recordTrunks(entry, world);
         entry.setupWrite = store.saveWorkSetup(changed, previous.revision()).thenApply(saved -> {
             if (!changed.equals(saved)) throw new IllegalStateException("Mismatched durable native setup acknowledgement");
             return saved;
@@ -1159,6 +1178,12 @@ final class PlayerRuntime {
     int nativeGoto(ServerCommandSource source, UUID id, BlockPos target, double range) {
         return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
                 "z", String.valueOf(target.getZ()), "range", String.valueOf(range)));
+    }
+
+    /** As {@link #nativeGoto}, to the middle of the target block, as a straight walk on from there wants. */
+    int nativeGotoCentred(ServerCommandSource source, UUID id, BlockPos target) {
+        return nativeTask(source, id, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", "0", "centre", "true"));
     }
 
     /** As {@link #nativeGoto}, allowing one deliberate drop of up to {@code drop} blocks (broken with water when deep). */
@@ -1534,6 +1559,10 @@ final class PlayerRuntime {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
                         nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), arguments.get("name"));
+            } else if (skill.equals("native_pet")) {
+                task = new NativePetAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                        "name".equals(arguments.get("mode")) ? NativePetAction.Mode.NAME : NativePetAction.Mode.TAME,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -1592,7 +1621,11 @@ final class PlayerRuntime {
                 task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, source, target);
             } else if (skill.equals("native_fight")) {
                 task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
-                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
+                        UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
+                        !"false".equals(arguments.get("tactics")),
+                        entry.meleeTendencies ? entry.tendencies.computeIfAbsent(UUID.fromString(arguments.get("target")), t -> new dev.kindred.core.tactics.Tendencies()) : null,
+                        entry.meleePrediction, arguments.get("style"), meleeModel)
+                        .advised((self, opponent) -> combatProposal(entry, self, opponent));
             } else if (skill.equals("native_attack")) {
                 UUID targetId = UUID.fromString(arguments.get("target"));
                 Integer slot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : null;
@@ -1966,7 +1999,8 @@ final class PlayerRuntime {
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
-                    || ("native_feed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || (("native_feed".equals(entry.skillId) || "native_pet".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
@@ -2005,7 +2039,7 @@ final class PlayerRuntime {
                     || ("native_swap".equals(entry.skillId) && intent == NativePlayerBody.Intent.SWAP)
                     || ("native_attack".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_fight".equals(entry.skillId) && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT
-                        || intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.BLOCK))
+                        || intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.BLOCK || intent == NativePlayerBody.Intent.EAT))
                     || ("native_block".equals(entry.skillId) && intent == NativePlayerBody.Intent.BLOCK)
                     || ("native_till".equals(entry.skillId) && (intent == NativePlayerBody.Intent.TILL || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_plant".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLANT || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -2283,6 +2317,8 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
+        recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
         if (tick % 20 == 17) pollBuildBattles();
@@ -3289,6 +3325,10 @@ final class PlayerRuntime {
             }
         }
 
+        // Supplies it was asked to bring someone, fetched from its storage and handed over (E-01), before its own work.
+        var delivering = deliveryCandidates(entry, body);
+        if (delivering != null) return delivering;
+
         // Its weapons, armour and pickaxe enchanted at a table of its own (E-16a), then its best kit named (E-16d), between
         // its work.
         var enchanting = enchantCandidates(entry, body);
@@ -3301,6 +3341,18 @@ final class PlayerRuntime {
         if (brewing != null) return brewing;
         var naming = kitNameCandidates(entry, body);
         if (naming != null) return naming;
+        // Its approved work area lit, where no block light reaches (E-06).
+        var lighting = lightCandidates(entry, body);
+        if (lighting != null) return lighting;
+        // The trees of its approved patch replanted where it cut them (E-02).
+        var replanting = replantCandidates(entry, body);
+        if (replanting != null) return replanting;
+        // Its approved patch of ore or stone mined out, what drops picked up (E-03).
+        var mining = patchMineCandidates(entry, body);
+        if (mining != null) return mining;
+        // A wolf tamed with its own bones, and named (E-37, E-36), where the server allows pets.
+        var pets = petCandidates(entry, body);
+        if (pets != null) return pets;
 
         if (entry.ranch != null) {
             candidates.addAll(ranchCandidates(entry, body));
@@ -3369,9 +3421,12 @@ final class PlayerRuntime {
         var recommendations = ProgressionPolicy.recommend(entry.lastProgressionState, progObs);
         if (!entry.lastProgressionState.recoveryFrontier().isEmpty()) {
             var recoveryOnly = java.util.Set.copyOf(entry.lastProgressionState.recoveryFrontier());
-            recommendations = recommendations.stream()
+            var recovering = recommendations.stream()
                     .filter(rec -> recoveryOnly.contains(rec.milestoneId()))
                     .toList();
+            // What it had and lost comes first, but a loss it has no way to make good (the logs it made into planks,
+            // with no patch of trees to cut) does not hold back the rest.
+            if (!recovering.isEmpty()) recommendations = recovering;
         }
         for (var rec : recommendations) {
             switch (rec.skill()) {
@@ -4481,8 +4536,8 @@ final class PlayerRuntime {
         if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
         // Its style grown from its seed block, or the wood it has to hand, and its world (E-29a): this world's stage
         // is not the next world's.
-        var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : dev.kindred.core.construction.BuildStyle.grown(record.seed,
-                woodAtHand(entry, body), world.getSeed() ^ id.getMostSignificantBits() ^ id.getLeastSignificantBits() * 31 + stage.ordinal());
+        var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : unique(entry, stage, dev.kindred.core.construction.BuildStyle.grown(record.seed,
+                woodAtHand(entry, body), world.getSeed() ^ id.getMostSignificantBits() ^ id.getLeastSignificantBits() * 31 + stage.ordinal()));
         var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
         int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
         var plan = dev.kindred.core.construction.Houses.of(stage, style);
@@ -4524,9 +4579,35 @@ final class PlayerRuntime {
                 entry.bases.hall = null;
             }
             if (entry.seedBlock != null) entry.bases.seed = entry.seedBlock;
+            // Its bases' designs reserved as its own, as recorded (E-30).
+            for (var base : entry.bases.built) {
+                designs.reserve(id, entry.data.displayName() + "'s " + base.stage(), dev.kindred.core.construction.DesignFingerprint.of(planOf(base)));
+            }
             entry.basesLoading = false;
         }));
         return false;
+    }
+
+    /**
+     * The first of {@code grown}'s variants on whose plan is no near copy of a design another player has reserved
+     * (E-30), reserved as its own: two players' bases are not one design, turned or in other wood or with a window more.
+     */
+    private dev.kindred.core.construction.BuildStyle unique(Entry entry, dev.kindred.core.construction.Houses.Stage stage,
+                                                            dev.kindred.core.construction.BuildStyle grown) {
+        String copied = null;
+        for (int k = 0; k < dev.kindred.core.construction.BuildStyle.VARIANTS; k++) {
+            int variant = 1 + Math.floorMod(grown.variant() - 1 + k, dev.kindred.core.construction.BuildStyle.VARIANTS);
+            var style = new dev.kindred.core.construction.BuildStyle(grown.seed(), grown.wood(), grown.stone(), variant, grown.turns());
+            var refused = designs.reserve(entry.data.id(), entry.data.displayName() + "'s " + stage.noun,
+                    dev.kindred.core.construction.DesignFingerprint.of(dev.kindred.core.construction.Houses.of(stage, style)));
+            if (refused.isEmpty()) {
+                if (copied != null) KindredMod.LOGGER.info("{}'s {}: its plan {} would copy {}; plan {} instead", entry.data.displayName(), stage.noun,
+                        grown.variant(), copied, variant);
+                return style;
+            }
+            if (copied == null) copied = refused.get().name();
+        }
+        return grown;
     }
 
     private boolean startBase(Entry entry, PlayerMemoryStore.Base base, String why) {
@@ -6517,6 +6598,48 @@ final class PlayerRuntime {
             }
             entry.routineRefreshPending = true;
         }
+        if (entry.delivery != null && finishedTaskId != null && (finishedTaskId.equals(entry.delivery.stepId) || entry.delivery.tosses.containsKey(finishedTaskId))) {
+            var delivery = entry.delivery;
+            Integer tossed = delivery.tosses.remove(finishedTaskId);
+            if (tossed != null && state == SkillRunner.State.COMPLETED && "native_toss".equals(entry.skillId)) delivery.delivered += tossed;
+            if (state == SkillRunner.State.BLOCKED && ++delivery.failures >= 4) {
+                say(entry, "I could not bring you the rest of the " + delivery.name() + ": " + delivery.delivered + " of " + delivery.count + " handed over.", "");
+                KindredMod.LOGGER.info("{} gave up its delivery of {}: {} of {} handed over", entry.data.displayName(), delivery.item, delivery.delivered, delivery.count);
+                entry.delivery = null;
+            }
+            entry.routineRefreshPending = true;
+        }
+        if (finishedTaskId != null && (finishedTaskId.equals(entry.patchMineTaskId) || entry.patchMineIds.contains(finishedTaskId))) {
+            if (entry.patchMineIds.remove(finishedTaskId) && state == SkillRunner.State.COMPLETED && "native_mine".equals(entry.skillId)) {
+                entry.patchMined++;
+                entry.patchDropsAside.clear(); // A block out opens the way to what fell beside it.
+                entry.patchDropRetries = 0;
+            }
+            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null) entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            if ("native_goto".equals(entry.skillId) && entry.patchDropWalk < 0 && entry.patchWalkTo != null) entry.patchWalks++;
+            // A drop it could not walk to (fallen into a hole too low to step into), or that it reached twice and is still
+            // lying there out of its reach: set aside while the mining goes on.
+            if ("native_goto".equals(entry.skillId) && entry.patchDropWalk >= 0 && entry.nativeBody != null) {
+                var drop = entry.nativeBody.entity().getServerWorld().getEntityById(entry.patchDropWalk);
+                boolean lying = drop != null && drop.isAlive();
+                if (state == SkillRunner.State.BLOCKED || lying && entry.patchDropReached == entry.patchDropWalk) entry.patchDropsAside.add(entry.patchDropWalk);
+                entry.patchDropReached = lying ? entry.patchDropWalk : -1;
+            }
+            entry.patchDropWalk = -1;
+            entry.routineRefreshPending = true;
+        }
+        if (finishedTaskId != null && finishedTaskId.equals(entry.replantTaskId) && state == SkillRunner.State.COMPLETED && "native_place".equals(entry.skillId)) {
+            String wood = entry.setup == null || entry.setup.patch() == null ? "a" : entry.setup.patch().resourceId().replace("minecraft:", "").replace("_log", "").replace('_', ' ');
+            say(entry, "I planted " + (wood.startsWith("a") || wood.startsWith("o") ? "an " : "a ") + wood + " sapling where the tree stood.", "");
+            entry.routineRefreshPending = true;
+        }
+        if (finishedTaskId != null && (finishedTaskId.equals(entry.lightTaskId) || entry.lightTaskIds.contains(finishedTaskId))) {
+            // The light read again at once: a torch down changes it, and a step refused leaves it for a while.
+            entry.lightScanned = -1_000_000L;
+            if (entry.lightTaskIds.remove(finishedTaskId) && state == SkillRunner.State.COMPLETED && "native_place".equals(entry.skillId)) entry.lightPlaced++;
+            if (state == SkillRunner.State.BLOCKED) entry.lightAt = server.getTicks() + 400;
+            entry.routineRefreshPending = true;
+        }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.enchantTaskId)) {
             entry.enchantAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
@@ -6564,6 +6687,8 @@ final class PlayerRuntime {
             }
             if ("native_push".equals(entry.skillId)) {
                 entry.bring.pushes++;
+                entry.bring.rollAt = null; // A roll judged afresh from the end of each push.
+                entry.bring.repush = false;
                 KindredMod.LOGGER.info("{} bringing: a push ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
             }
             if ("native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
@@ -8197,8 +8322,20 @@ final class PlayerRuntime {
         boolean mayStrike = matches.mayAttack(hit.getUuid(), by.getUuid());
         boolean equipped = Weapons.choose(hit, NativePlayerBody.believedHealth(hit, by), false)
                 .filter(w -> w.weapon().kind() != dev.kindred.core.tactics.DamageModel.Kind.HAND).isPresent();
-        boolean cornered = openWayFrom(entry, hit, by) == null;
-        var answer = dev.kindred.core.tactics.FightOdds.answer(mayStrike, equipped, odds, cornered);
+        // In a duel both joined, judged by the kit on each side (E-41b), and those the odds it speaks of: the health already
+        // lost is the melee's to weigh.
+        boolean duel = matches.running(hit.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL
+                && m.invited().contains(by.getUuid())).isPresent();
+        // No way off, or in a duel none it can walk to (a walled arena's open ground lies past its wall).
+        BlockPos way = openWayFrom(entry, hit, by);
+        boolean cornered = way == null || duel && !new NativeNavigator(hit.getServerWorld())
+                .find(hit.getBlockPos(), way, feet -> feet.isWithinDistance(way, 3), 600, 24).complete();
+        if (duel && mayStrike) {
+            odds = dev.kindred.core.tactics.FightOdds.of(dev.kindred.core.tactics.FightOdds.at(fightSide(entry, hit, null), hit.getMaxHealth()),
+                    dev.kindred.core.tactics.FightOdds.at(fightSide(entry, by, hit), by.getMaxHealth()));
+        }
+        var answer = duel && mayStrike ? dev.kindred.core.tactics.FightOdds.answerInDuel(equipped, odds, cornered)
+                : dev.kindred.core.tactics.FightOdds.answer(mayStrike, equipped, odds, cornered);
         boolean fresh = held == null || !held.who().equals(by.getUuid()) || held.answer() != answer;
         entry.aggressor = new Aggressor(by.getUuid(), by.getName().getString(), answer, now + AGGRESSION_HOLD, odds);
         entry.aggressionInterrupt = true;
@@ -8285,6 +8422,11 @@ final class PlayerRuntime {
         UUID taskId = aggressionTaskId(entry, held.who());
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.9,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (held.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND && matches.running(player.getUuid())
+                .filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL && m.invited().contains(attacker.getUuid())).isPresent()) {
+            // Defending itself in its duel is the duel's own fight, with its own tactics (E-41b).
+            return null;
+        }
         if (held.answer() == dev.kindred.core.tactics.FightOdds.Answer.DEFEND && matches.mayAttack(player.getUuid(), attacker.getUuid())) {
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, attacker), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", attacker.getUuid().toString(), "slot", String.valueOf(slot))));
@@ -8538,6 +8680,15 @@ final class PlayerRuntime {
         int pushes, failed, doorTries, pickups;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
         long fetchFrom;
+        /**
+         * Where the rolling cart was two seconds ago, when, and whether it had moved a quarter of a block since the time
+         * before: a cart pressed against something, or rocking in a dip, keeps a speed it gets nowhere by.
+         */
+        Vec3d rollAt;
+        long rollSince;
+        boolean rollMoved = true;
+        /** Gone back along the line to push the stopped cart on again: kept to until the push is given. */
+        boolean repush;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -9000,35 +9151,52 @@ final class PlayerRuntime {
                 if (cart == null) return giveUp(entry, body, "The cart for the " + b.noun + " is gone.");
                 if (villager.getRootVehicle() != cart) return giveUp(entry, body, "The " + b.noun + " got out of the cart.");
                 double speed = cart.getVelocity().horizontalLength();
+                if (b.rollAt == null || now - b.rollSince >= 40) {
+                    b.rollMoved = b.rollAt == null || cart.getPos().squaredDistanceTo(b.rollAt) > 0.0625;
+                    b.rollAt = cart.getPos();
+                    b.rollSince = now;
+                }
+                // Still: no speed, or none it got a quarter of a block by in the last two seconds.
+                boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
-                if (cart.getBlockPos().equals(b.floor) && speed < 0.01 && !inFront) {
+                if (cart.getBlockPos().equals(b.floor) && still && !inFront) {
                     b.phase = Bring.Phase.LINTEL;
                     return bringCandidates(entry, body);
                 }
                 // At rest on the cell's floor but still half in its front: nudged on in from the corridor, against the bed.
-                if (cart.getBlockPos().equals(b.floor) && speed < 0.01) {
+                if (cart.getBlockPos().equals(b.floor) && still) {
                     if (b.pushes >= 8) return giveUp(entry, body, "The cart with the " + b.noun + " stopped half in its cell.");
                     var by = b.slot.south();
                     if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(by)) > 0.25) return List.of(standAt(bringTask(entry, "to nudge"), by));
                     return List.of(new NativeTaskCandidate(bringTask(entry, "nudge:" + b.pushes), "native_push", Map.of("target", cart.getUuid().toString(),
                             "seconds", "5", "x", String.valueOf(b.slot.getX()), "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()))));
                 }
-                if (speed > 0.01) {
+                // While it rolls, back behind the line's start, as a player keeps a cart from running off its end: one that
+                // runs out of way short of the cell and rolls back meets the player there and is sent on again.
+                boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) <= 0.25;
+                if (!still) {
                     b.since = now;
+                    b.repush = false;
+                    if (!behind && !cart.getBlockPos().equals(b.push)) {
+                        KindredMod.LOGGER.info("{} bringing: back behind the line's start at {} while the cart rolls", entry.data.displayName(), b.push.toShortString());
+                        return List.of(standAt(bringTask(entry, "back behind:" + b.pushes), b.push));
+                    }
                     return List.of(waitTask(task, "For the cart to roll in"));
                 }
-                if (now - b.since < 40) return List.of(waitTask(task, "For the cart to roll in"));
-                // Stopped short: pushed on again from behind it, along the line.
+                if (!b.repush && now - b.since < 40) return List.of(waitTask(task, "For the cart to roll in"));
+                // Stopped short: pushed on again from behind it, along the line (from behind the line's start, at its first rail).
+                // The walk back to it is kept to, not given up for the wait above at the next look.
                 int at = b.rails.indexOf(cart.getBlockPos());
-                if (at < 1 || b.pushes >= 8) {
+                if (at < 0 || b.pushes >= 8) {
                     KindredMod.LOGGER.info("{} bringing: the cart stopped at {} ({}), rail {} of {}, {} pushes; the line from {} to {}", entry.data.displayName(),
                             cart.getPos(), world.getBlockState(cart.getBlockPos()), at, b.rails.size(), b.pushes, b.rails.getFirst().toShortString(),
                             b.rails.getLast().toShortString());
                     return giveUp(entry, body, "The cart with the " + b.noun + " stopped short of its cell.");
                 }
                 // On the rail behind it: two behind ran through a turn into the corridor's wall.
-                var stand = b.rails.get(at - 1);
+                var stand = at >= 1 ? b.rails.get(at - 1) : b.push;
                 b.since = now;
+                b.repush = true;
                 if (player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
                             "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "centre", "true")));
@@ -10560,6 +10728,454 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(task, "native_craft", Map.of("recipe", recipe)));
     }
 
+    /** Supplies it was asked to bring (E-01): what, how many, to whom, and how many it has handed over. */
+    private static final class Delivery {
+        final String item;
+        final int count;
+        final UUID to;
+        int delivered, failures;
+        /** The tosses it set out to make, by task, and how many each hands over. */
+        final Map<UUID, Integer> tosses = new HashMap<>();
+        boolean short_;
+        UUID stepId;
+
+        Delivery(String item, int count, UUID to) {
+            this.item = item;
+            this.count = count;
+            this.to = to;
+        }
+
+        /** The item's name, plural but for one: "iron ingots". */
+        String name() {
+            String one = item.substring(item.indexOf(':') + 1).replace('_', ' ');
+            return count == 1 || one.endsWith("s") ? one : one + "s";
+        }
+    }
+
+    /**
+     * Asks a native player to bring {@code count} of {@code item} to the player {@code to} (E-01): what it holds of it,
+     * and what it lacks taken from its assigned storage, carried to them and handed over by a toss from close by,
+     * exactly as many, the items as they are (their enchantments, names and wear). With not enough between its pack and
+     * its storage it brings what there is and says so. A second ask replaces the first; {@code count} 0 calls it off.
+     */
+    int nativeDeliver(ServerCommandSource source, UUID id, String item, int count, UUID to) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || entry.nativeState == null || entry.nativeBody == null || !nativeMayControl(source, entry)) {
+            return reject(source, "Native player unavailable or administrative access denied.");
+        }
+        if (count <= 0) {
+            entry.delivery = null;
+            feedback(source, entry.data.displayName() + ": the delivery is called off.");
+            return 1;
+        }
+        var parsed = Identifier.tryParse(item);
+        if (parsed == null || !Registries.ITEM.containsId(parsed) || Registries.ITEM.get(parsed) == Items.AIR) return reject(source, "Unknown item " + item);
+        if (count > 64 * 27) return reject(source, "At most a chest's worth at a time");
+        entry.delivery = new Delivery(parsed.toString(), count, to);
+        if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+        }
+        entry.manualHoldUntilTick = Long.MIN_VALUE;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        feedback(source, entry.data.displayName() + " will bring " + count + " " + entry.delivery.name() + ".");
+        return 1;
+    }
+
+    /** A benchmark's switch (E-41b): with {@code on} false, its fights with players are the declared baseline's. */
+    void meleeTactics(UUID id, boolean on) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.meleeTactics = on;
+    }
+
+    /**
+     * A benchmark's declared opponent (E-41b, E-41c): its duel fought in a fixed style, "idle" not at all, or null for
+     * its own fight.
+     */
+    void meleeStyle(UUID id, String style) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.meleeStyle = style;
+    }
+
+    /** A benchmark's switch (E-41c): with {@code on} false, it closes in on where its opponent is, not where it will be. */
+    void meleePrediction(UUID id, boolean on) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) entry.meleePrediction = on;
+    }
+
+    /** A benchmark's switch (E-41c): with {@code on} false, it learns nothing of its opponents (the control). */
+    void meleeTendencies(UUID id, boolean on) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry != null) {
+            entry.meleeTendencies = on;
+            entry.tendencies.clear();
+        }
+    }
+
+    /** What it has handed over of the supplies it was asked to bring, and how many it was asked for; null when none. */
+    int[] deliveryStatus(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.delivery == null ? null : new int[]{entry.delivery.delivered, entry.delivery.count};
+    }
+
+    /**
+     * The next step of the supplies it was asked to bring (E-01): with fewer in its pack than are still to hand over,
+     * the rest taken from its storage, walked to first; then to its asker, and a toss of a stack (or what is still owed of
+     * it) from within three blocks with it in sight. Every one handed over, it says so; out of what it can get, it hands
+     * over what it has and says so. Its asker out of its world, it waits.
+     */
+    private List<NativeTaskCandidate> deliveryCandidates(Entry entry, NativePlayerBody body) {
+        var delivery = entry.delivery;
+        if (delivery == null) return null;
+        if ("native_toss".equals(entry.skillId) && runnerBusy(entry)) return List.of();
+        var player = body.entity();
+        Item item = Registries.ITEM.get(Identifier.of(delivery.item));
+        int owed = delivery.count - delivery.delivered;
+        if (owed <= 0) {
+            say(entry, "I brought you " + delivery.count + " " + delivery.name() + ".", "");
+            KindredMod.LOGGER.info("{} handed over all {} {} it was asked to bring", entry.data.displayName(), delivery.count, delivery.name());
+            entry.delivery = null;
+            return null;
+        }
+        var inventory = player.getInventory();
+        int held = inventory.count(item);
+        var storage = entry.setup == null ? null : entry.setup.storage();
+        BlockPos chest = storage == null ? null : new BlockPos(storage.position().x(), storage.position().y(), storage.position().z());
+        int stored = 0;
+        if (chest != null && player.getServerWorld().isChunkLoaded(chest) && player.getServerWorld().getBlockEntity(chest) instanceof net.minecraft.inventory.Inventory box) {
+            for (int slot = 0; slot < box.size(); slot++) if (box.getStack(slot).isOf(item)) stored += box.getStack(slot).getCount();
+        }
+        java.util.function.Function<String, dev.kindred.core.TaskPreferences.Candidate> step = key -> {
+            UUID stepId = UUID.nameUUIDFromBytes(("deliver:" + entry.data.id() + ":" + delivery.item + ":" + delivery.delivered + ":" + key).getBytes(StandardCharsets.UTF_8));
+            delivery.stepId = stepId;
+            return new dev.kindred.core.TaskPreferences.Candidate(stepId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 66.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        };
+        if (held < owed && stored > 0 && chest != null) {
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(chest)) > 4.0 * 4.0) {
+                return List.of(new NativeTaskCandidate(step.apply("tostore"), "native_goto", Map.of("x", String.valueOf(chest.getX()),
+                        "y", String.valueOf(chest.getY()), "z", String.valueOf(chest.getZ()), "range", "2.5")));
+            }
+            return List.of(new NativeTaskCandidate(step.apply("take"), "native_take", Map.of("item", delivery.item,
+                    "count", String.valueOf(Math.min(owed - held, stored)))));
+        }
+        if (held == 0) {
+            say(entry, "That is all the " + delivery.name() + " I could get: " + delivery.delivered + " of " + delivery.count + ".", "");
+            entry.delivery = null;
+            return null;
+        }
+        if (held < owed && !delivery.short_) {
+            delivery.short_ = true;
+            say(entry, "I have only " + (held + delivery.delivered) + " " + delivery.name() + " of the " + delivery.count + " you asked for; bringing those.", "");
+        }
+        var to = server.getPlayerManager().getPlayer(delivery.to);
+        if (to == null || !to.isAlive() || to.getWorld() != player.getWorld()) return null;
+        if (player.squaredDistanceTo(to) > 3 * 3 || !player.canSee(to)) {
+            BlockPos at = to.getBlockPos();
+            return List.of(new NativeTaskCandidate(step.apply("walk"), "native_goto", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                    "z", String.valueOf(at.getZ()), "range", "2.5")));
+        }
+        int slot = -1;
+        for (int i = 0; i < 36 && slot < 0; i++) if (inventory.getStack(i).isOf(item)) slot = i;
+        int toss = Math.min(owed, inventory.getStack(slot).getCount());
+        var tossStep = step.apply("toss");
+        delivery.tosses.put(tossStep.id(), toss);
+        return List.of(new NativeTaskCandidate(tossStep, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(toss),
+                "target", to.getUuid().toString())));
+    }
+
+    /**
+     * Its approved patch mined out (E-03), as a player works a vein it was given: the patch's ore or stone, every block
+     * of it with a face open to the air, nearest first, each mined with a pickaxe it holds that harvests it (the first
+     * such, from the hotbar or its main rows; a block that needs a better pickaxe than any it holds it leaves, and says
+     * so once), walked to until it is in sight and reach; and what the patch drops picked up, before the next. A block it
+     * cannot get in sight of after three walks is set aside. Once nothing of it is left open to the air it says how
+     * much it mined. A patch of logs is cut the same way, with an axe, and replanted (E-02).
+     */
+    private List<NativeTaskCandidate> patchMineCandidates(Entry entry, NativePlayerBody body) {
+        var setup = entry.setup;
+        if (setup == null || setup.patch() == null || !worldEditsEnabled()) return null;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        long now = server.getTicks();
+        if (now < entry.patchMineAt || !world.getRegistryKey().getValue().toString().equals(setup.dimension())
+                || matches.running(player.getUuid()).isPresent()) return null;
+        var patch = setup.patch();
+        var block = Registries.BLOCK.get(Identifier.tryParse(patch.resourceId()));
+        var resource = block.getDefaultState();
+        boolean logs = resource.isIn(BlockTags.LOGS);
+        if (!logs && !resource.isIn(BlockTags.PICKAXE_MINEABLE) || resource.hasBlockEntity()) return null;
+        String name = patch.resourceId().substring(patch.resourceId().indexOf(':') + 1).replace('_', ' ');
+        var inventory = player.getInventory();
+        int tool = -1;
+        for (int slot = 0; slot < 36 && tool < 0; slot++) {
+            var stack = inventory.getStack(slot);
+            if (logs ? stack.isIn(ItemTags.AXES) : stack.isIn(ItemTags.PICKAXES) && (!resource.isToolRequired() || stack.isSuitableFor(resource))) tool = slot;
+        }
+        if (tool < 0) {
+            if (!entry.patchToolSaid) {
+                entry.patchToolSaid = true;
+                say(entry, logs ? "I have no axe to cut the " + name + " with." : "None of my pickaxes can mine " + name + ".", "");
+            }
+            entry.patchMineAt = now + 1200;
+            return null;
+        }
+        entry.patchToolSaid = false;
+        if (!logs && toolsFirst(entry, body)) return null;
+        var box = new net.minecraft.util.math.Box(patch.min().x() - 2, patch.min().y() - 2, patch.min().z() - 2, patch.max().x() + 3, patch.max().y() + 3, patch.max().z() + 3);
+        // The nearest open block of the resource.
+        BlockPos feet = player.getBlockPos(), best = null;
+        for (BlockPos pos : BlockPos.iterate(patch.min().x(), patch.min().y(), patch.min().z(), patch.max().x(), patch.max().y(), patch.max().z())) {
+            if (!world.isChunkLoaded(pos) || !world.getBlockState(pos).isOf(block) || entry.patchSkipped.contains(pos.asLong())) continue;
+            boolean open = false;
+            for (Direction side : Direction.values()) if (world.getBlockState(pos.offset(side)).isReplaceable()) { open = true; break; }
+            if (!open) continue;
+            if (best == null || pos.getSquaredDistance(feet) < best.getSquaredDistance(feet)) best = pos.toImmutable();
+        }
+        if (best != null && entry.patchDrops.isEmpty()) {
+            for (var drop : net.minecraft.block.Block.getDroppedStacks(world.getBlockState(best), world, best, null, player, inventory.getStack(tool))) {
+                entry.patchDrops.add(Registries.ITEM.getId(drop.getItem()).toString());
+            }
+        }
+        // What the patch dropped, picked up first.
+        // With every block out, a drop set aside is tried again, twice at most: the holes are open now.
+        if (best == null && !entry.patchDropsAside.isEmpty() && entry.patchDropRetries < 2) {
+            entry.patchDropsAside.clear();
+            entry.patchDropRetries++;
+        }
+        var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box, e -> e.isAlive() && e.isOnGround()
+                && entry.patchDrops.contains(Registries.ITEM.getId(e.getStack().getItem()).toString()) && !entry.patchDropsAside.contains(e.getId()));
+        var task = (java.util.function.Function<String, dev.kindred.core.TaskPreferences.Candidate>) key -> {
+            UUID id = UUID.nameUUIDFromBytes(("patchmine:" + entry.data.id() + ":" + key).getBytes(StandardCharsets.UTF_8));
+            entry.patchMineTaskId = id;
+            return new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 63.5,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        };
+        if (!drops.isEmpty()) {
+            var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+            BlockPos at = drop.getBlockPos();
+            entry.patchWalkTo = null;
+            entry.patchDropWalk = drop.getId();
+            return List.of(new NativeTaskCandidate(task.apply("drop:" + drop.getId()), "native_goto", Map.of("x", String.valueOf(at.getX()),
+                    "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0.6")));
+        }
+        // A drop still falling (a block just out) waited for: "mined out" said over it, the player went off and left it.
+        if (best == null && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box, e -> e.isAlive() && !e.isOnGround()
+                && entry.patchDrops.contains(Registries.ITEM.getId(e.getStack().getItem()).toString()) && !entry.patchDropsAside.contains(e.getId())).isEmpty()) {
+            return List.of(new NativeTaskCandidate(task.apply("settle"), "native_wait", Map.of("seconds", "1")));
+        }
+        if (best == null) {
+            // Its last block may be out while the mine that took it is still finishing: it is counted once that ends.
+            if (!entry.patchMineIds.isEmpty() && (runnerBusy(entry) || entry.nativeActionPending)) return null;
+            if (entry.patchMined > 0) {
+                say(entry, (logs ? "I cut the patch down: " : "I mined out the patch: ") + entry.patchMined + " " + name + (logs && entry.patchMined != 1 ? "s." : "."), "");
+                KindredMod.LOGGER.info("{} mined out its patch: {} {}", entry.data.displayName(), entry.patchMined, name);
+                entry.patchMined = 0;
+            }
+            entry.patchMineAt = now + 600;
+            return null;
+        }
+        if (tool >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task.apply("tool"), "native_swap", Map.of("source", String.valueOf(tool), "target", String.valueOf(free))));
+        }
+        var coords = Map.of("x", String.valueOf(best.getX()), "y", String.valueOf(best.getY()), "z", String.valueOf(best.getZ()));
+        if (!best.equals(entry.patchWalkTo)) {
+            entry.patchWalkTo = best;
+            entry.patchWalks = 0;
+        }
+        if (body.miningEligible(best)) {
+            var args = new HashMap<>(coords);
+            args.put("slot", String.valueOf(tool));
+            var mine = task.apply("mine:" + best.asLong());
+            entry.patchMineIds.add(mine.id());
+            return List.of(new NativeTaskCandidate(mine, "native_mine", Map.copyOf(args)));
+        }
+        // Three walks to it ended (counted as each ends, not as it is planned) without it in sight and reach: set aside.
+        if (entry.patchWalks >= 3) {
+            entry.patchSkipped.add(best.asLong());
+            KindredMod.LOGGER.info("{} could not get {} at {} in sight to mine; set aside", entry.data.displayName(), name, best.toShortString());
+            return null;
+        }
+        var args = new HashMap<>(coords);
+        args.put("range", "2.5");
+        // A block high over open ground (a cut trunk's top log): to the ground under it, where it is in reach overhead.
+        BlockPos under = best.down();
+        for (int down = 0; down < 6 && world.getBlockState(under).isAir() && world.getBlockState(under.down()).isAir(); down++) under = under.down();
+        if (under.getY() < best.getY() - 1 && world.getBlockState(under).isAir() && world.getBlockState(under.down()).isSideSolidFullSquare(world, under.down(), Direction.UP)) {
+            args.put("x", String.valueOf(under.getX()));
+            args.put("y", String.valueOf(under.getY()));
+            args.put("z", String.valueOf(under.getZ()));
+            args.put("range", "1.0");
+        }
+        return List.of(new NativeTaskCandidate(task.apply("walk:" + best.asLong() + ":" + entry.patchWalks), "native_goto", Map.copyOf(args)));
+    }
+
+    /**
+     * The trees of its approved patch replanted (E-02), as players keep a tree farm: where a trunk of the patch's wood
+     * stood on dirt or grass and has been cut away, a sapling of that wood it holds planted on the dirt, walked to
+     * first. The trunks are those it saw when the patch was given it and when it looks again, every five seconds, so a
+     * tree grown from its sapling is replanted in its turn. Nothing without a patch of logs, or without the sapling.
+     */
+    private List<NativeTaskCandidate> replantCandidates(Entry entry, NativePlayerBody body) {
+        var setup = entry.setup;
+        if (setup == null || setup.patch() == null || !setup.patch().resourceId().endsWith("_log") || !worldEditsEnabled()) return null;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(setup.dimension()) || matches.running(player.getUuid()).isPresent()) return null;
+        long now = server.getTicks();
+        if (now - entry.trunksScanned >= 100) {
+            entry.trunksScanned = now;
+            recordTrunks(entry, world);
+        }
+        if (entry.trunkBases.isEmpty()) return null;
+        String wood = setup.patch().resourceId().substring(setup.patch().resourceId().indexOf(':') + 1).replace("_log", "");
+        Item sapling = Registries.ITEM.get(Identifier.ofVanilla(wood + "_sapling"));
+        if (sapling == Items.AIR) return null;
+        var inventory = player.getInventory();
+        int slot = -1;
+        for (int i = 0; i < 36 && slot < 0; i++) if (inventory.getStack(i).isOf(sapling)) slot = i;
+        if (slot < 0) return null;
+        BlockPos feet = player.getBlockPos(), best = null;
+        for (long key : entry.trunkBases) {
+            BlockPos base = BlockPos.fromLong(key);
+            if (!world.isChunkLoaded(base) || !world.getBlockState(base).isReplaceable() || !world.getFluidState(base).isEmpty()
+                    || !world.getBlockState(base.down()).isIn(BlockTags.DIRT)) continue;
+            // Only once the whole trunk is down: not under logs still standing over the cut.
+            boolean standing = false;
+            for (int y = base.getY() + 1; y <= setup.patch().max().y() && !standing; y++) {
+                standing = world.getBlockState(base.withY(y)).isIn(BlockTags.LOGS);
+            }
+            if (standing) continue;
+            if (best == null || base.getSquaredDistance(feet) < best.getSquaredDistance(feet)) best = base;
+        }
+        if (best == null || best.getSquaredDistance(feet) > 48 * 48) return null;
+        UUID taskId = UUID.nameUUIDFromBytes(("replant:" + entry.data.id() + ":" + best.asLong()).getBytes(StandardCharsets.UTF_8));
+        entry.replantTaskId = taskId;
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 63.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (slot >= 9) {
+            int free = 8;
+            for (int i = 0; i < 9; i++) if (inventory.getStack(i).isEmpty()) { free = i; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(free))));
+        }
+        var coords = Map.of("x", String.valueOf(best.getX()), "y", String.valueOf(best.getY()), "z", String.valueOf(best.getZ()));
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(best.down())) > 4.0 * 4.0) {
+            var args = new HashMap<>(coords);
+            args.put("range", "2.5");
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+        }
+        var args = new HashMap<>(coords);
+        args.put("side", "up");
+        args.put("slot", String.valueOf(slot));
+        return List.of(new NativeTaskCandidate(task, "native_place", Map.copyOf(args)));
+    }
+
+    /** The trunks of its patch's wood standing on dirt or grass in the patch now, added to those it knew (E-02). */
+    private static void recordTrunks(Entry entry, ServerWorld world) {
+        var patch = entry.setup == null ? null : entry.setup.patch();
+        if (patch == null) return;
+        var block = Registries.BLOCK.get(Identifier.tryParse(patch.resourceId()));
+        for (BlockPos pos : BlockPos.iterate(patch.min().x(), patch.min().y(), patch.min().z(), patch.max().x(), patch.max().y(), patch.max().z())) {
+            if (!world.isChunkLoaded(pos)) continue;
+            if (world.getBlockState(pos).isOf(block) && world.getBlockState(pos.down()).isIn(BlockTags.DIRT)) entry.trunkBases.add(pos.asLong());
+        }
+    }
+
+    /**
+     * Its approved work area lit (E-06), as players light theirs, out of any match: the floor cells of the area within
+     * sixteen blocks of it, where a player could stand and no block light reaches (where hostile mobs spawn), read
+     * from the world's own light every two seconds and again after every torch; a torch it holds put on the floor of
+     * the one {@link dev.kindred.core.survival.Lighting#next} names, walked to first; torches made of its coal or
+     * charcoal and a stick when it has none. Once none is dark it says so, if it put any down. Nothing without a work
+     * area, or out of it.
+     */
+    private List<NativeTaskCandidate> lightCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        long now = server.getTicks();
+        var setup = entry.setup;
+        if (setup == null || setup.area() == null || now < entry.lightAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        if (toolsFirst(entry, body)) return null;
+        var world = player.getServerWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(setup.dimension())) return null;
+        BlockPos feet = player.getBlockPos();
+        var area = setup.area();
+        if (!area.contains(new WorkSetup.BlockPoint(feet.getX(), feet.getY(), feet.getZ()))) return null;
+        if (now - entry.lightScanned >= 40) {
+            entry.lightScanned = now;
+            var dark = new ArrayList<dev.kindred.core.construction.Pos>();
+            for (int x = Math.max(area.minX(), feet.getX() - 16); x <= Math.min(area.maxX(), feet.getX() + 16); x++) {
+                for (int z = Math.max(area.minZ(), feet.getZ() - 16); z <= Math.min(area.maxZ(), feet.getZ() + 16); z++) {
+                    for (int y = feet.getY() - 4; y <= feet.getY() + 4; y++) {
+                        BlockPos cell = new BlockPos(x, y, z);
+                        if (!world.isChunkLoaded(cell) || world.getLightLevel(net.minecraft.world.LightType.BLOCK, cell) > 0) continue;
+                        var at = world.getBlockState(cell);
+                        if (!at.isReplaceable() || !world.getFluidState(cell).isEmpty() || !world.getBlockState(cell.up()).isReplaceable()) continue;
+                        if (!world.getBlockState(cell.down()).isSideSolidFullSquare(world, cell.down(), Direction.UP)) continue;
+                        dark.add(new dev.kindred.core.construction.Pos(x, y, z));
+                    }
+                }
+            }
+            entry.lightDark = List.copyOf(dark);
+        }
+        if (entry.lightDark.isEmpty()) {
+            if (entry.lightPlaced > 0) {
+                say(entry, dev.kindred.core.survival.Lighting.said(entry.lightPlaced), "");
+                KindredMod.LOGGER.info("{} lit its work area: {} torches, no floor of it dark within sixteen blocks", entry.data.displayName(), entry.lightPlaced);
+                entry.lightPlaced = 0;
+            }
+            entry.lightAt = now + 600;
+            return null;
+        }
+        var spot = dev.kindred.core.survival.Lighting.next(entry.lightDark, new dev.kindred.core.construction.Pos(feet.getX(), feet.getY(), feet.getZ())).orElseThrow();
+        BlockPos at = new BlockPos(spot.x(), spot.y(), spot.z());
+        var inventory = player.getInventory();
+        int torch = -1;
+        for (int slot = 0; slot < 36 && torch < 0; slot++) if (inventory.getStack(slot).isOf(Items.TORCH)) torch = slot;
+        UUID taskId = UUID.nameUUIDFromBytes(("light:" + entry.data.id() + ":" + at.asLong() + ":" + (torch < 0 ? "make" : "place")).getBytes(StandardCharsets.UTF_8));
+        entry.lightTaskId = taskId;
+        // A chore of the area it was given: ahead of its own progression's steps.
+        var task = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 64.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (torch < 0) {
+            int coal = inventory.count(Items.COAL) + inventory.count(Items.CHARCOAL);
+            if (coal == 0) {
+                entry.lightAt = now + 1200;
+                return null;
+            }
+            if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+            entry.campaign.policy(edits);
+            var made = inventory.count(Items.STICK) > 0 ? entry.campaign.craft(body, "torch") : entry.campaign.craft(body, "stick");
+            if (made.isEmpty()) {
+                entry.lightAt = now + 1200;
+                return null;
+            }
+            return List.of(new NativeTaskCandidate(task, made.get().skill(), made.get().args()));
+        }
+        if (torch >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(torch), "target", String.valueOf(free))));
+        }
+        var coords = Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()));
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(at.down())) > 4.0 * 4.0) {
+            var args = new HashMap<>(coords);
+            args.put("range", "2.5");
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+        }
+        var args = new HashMap<>(coords);
+        args.put("side", "up");
+        args.put("slot", String.valueOf(torch));
+        entry.lightTaskIds.add(taskId);
+        return List.of(new NativeTaskCandidate(task, "native_place", Map.copyOf(args)));
+    }
+
     /**
      * Its weapons, armour and pickaxe enchanted (E-16a), out of any match: with the levels and lapis the table's top offer
      * takes ({@link dev.kindred.core.Enchanting#ready}) and a piece to enchant ({@link dev.kindred.core.Enchanting#next}),
@@ -10984,6 +11600,11 @@ final class PlayerRuntime {
         long now = server.getTicks();
         if (state != SkillRunner.State.COMPLETED) {
             if (state == SkillRunner.State.BLOCKED || state == SkillRunner.State.CANCELLED) entry.kitNamesAt = now + 1200;
+            return;
+        }
+        // A name tag lettered for a pet (E-36): the pet's naming says it, once the tag is on it.
+        if (entry.petNames.containsValue(rename.name())) {
+            entry.petsAt = now;
             return;
         }
         String noun = "kit";
@@ -12133,8 +12754,18 @@ final class PlayerRuntime {
                     "z", String.valueOf(at.getZ()))));
             return candidates;
         }
+        Entry self = entryForPlayer(player.getUuid());
+        // A declared opponent that stands, for the mechanics suite.
+        if (self != null && "idle".equals(self.meleeStyle)) return candidates;
         int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, opponent), true).map(Weapons.Held::slot).orElse(-1);
-        candidates.add(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", opponentId.toString(), "slot", String.valueOf(slot))));
+        // Its melee's tactics (E-41b), on but for a declared baseline in a benchmark.
+        var args = new HashMap<String, String>(Map.of("target", opponentId.toString(), "slot", String.valueOf(slot)));
+        if (self != null && !self.meleeTactics) args.put("tactics", "false");
+        if (self != null && self.meleeStyle != null) {
+            args.put("tactics", "false");
+            args.put("style", self.meleeStyle);
+        }
+        candidates.add(new NativeTaskCandidate(candidate, "native_fight", Map.copyOf(args)));
         return candidates;
     }
 
@@ -12980,6 +13611,15 @@ final class PlayerRuntime {
     void playerFell(UUID playerId) {
         requireThread();
         matches.fallen(playerId).ifPresent(this::announce);
+        // A death is told to everyone, and a player comes back at full health: what any player believed of its health
+        // is gone with it (E-41a).
+        forgetHealth(playerId);
+    }
+
+    /** Each native player's belief of {@code playerId}'s health forgotten: it is known to be full again. */
+    void forgetHealth(UUID playerId) {
+        requireThread();
+        for (Entry entry : entries.values()) if (entry.nativeBody != null) entry.nativeBody.beliefs().forget(playerId);
     }
 
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
@@ -13125,6 +13765,52 @@ final class PlayerRuntime {
         private UUID netheriteTaskId;
         /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
         private PortalRunCampaign.Task netheriteStep;
+        /** Whether its fights with players use its melee tactics (E-41b); off only for a benchmark's declared baseline. */
+        private boolean meleeTactics = true;
+        /** Whether it learns its opponents' tendencies and uses them (E-41c); off for the control. What it has learned, by opponent. */
+        private boolean meleeTendencies = true;
+        /** Whether it closes in on where its opponent will be (E-41c); off for the control. */
+        private boolean meleePrediction = true;
+        /** Its pets as it knows them (E-37), the names it chose for them, when it next looks, and why it last let a wolf be. */
+        private final Set<UUID> petsKnown = new HashSet<>(), petsNamed = new HashSet<>();
+        private final Map<UUID, net.minecraft.entity.passive.TameableEntity> petsSeen = new HashMap<>();
+        private final Map<UUID, String> petNames = new HashMap<>();
+        private long petsAt;
+        private List<dev.kindred.core.PetPolicy.Blocker> petBlockers = List.of();
+        /** The strategist's combat proposals for this player's fights (E-41f), and the health at the last question. */
+        private final dev.kindred.core.tactics.CombatProposals.Gate combatGate = new dev.kindred.core.tactics.CombatProposals.Gate();
+        private double combatAskedHealth = -1;
+        private UUID combatAskedOf;
+        /** A declared opponent's fixed style in a benchmark ("idle", "turtle", "spammer", "evade"), or null. */
+        private String meleeStyle;
+        private final Map<UUID, dev.kindred.core.tactics.Tendencies> tendencies = new HashMap<>();
+        /** Supplies it was asked to bring someone (E-01), while it is bringing them. */
+        private Delivery delivery;
+        /** Its patch's mining (E-03): when it next looks, its step, what it has mined, what the patch drops, and spots set aside. */
+        private long patchMineAt;
+        private UUID patchMineTaskId;
+        /** The mines it set out to do for the patch, by task: credited as they finish, whatever it plans in between. */
+        private final Set<UUID> patchMineIds = new HashSet<>();
+        private int patchMined, patchWalks;
+        private BlockPos patchWalkTo;
+        private final Set<String> patchDrops = new HashSet<>();
+        private final Set<Long> patchSkipped = new HashSet<>();
+        /** Drops of the patch it could not walk to, by entity, until a block more is out; and the drop it walks to. */
+        private final Set<Integer> patchDropsAside = new HashSet<>();
+        private int patchDropWalk = -1, patchDropReached = -1, patchDropRetries;
+        private boolean patchToolSaid;
+        /** Where the trunks of its patch stood on dirt or grass (E-02), when it last looked, and its replanting step. */
+        private final Set<Long> trunkBases = new HashSet<>();
+        private long trunksScanned = -1_000_000L;
+        private UUID replantTaskId;
+        /** Its work area's dark floor cells as last read (E-06), when, when it next looks, and the torches it has put down. */
+        private List<dev.kindred.core.construction.Pos> lightDark = List.of();
+        /** Never yet: far enough back that the time since never overflows. */
+        private long lightScanned = -1_000_000L, lightAt;
+        private UUID lightTaskId;
+        /** The torches it set out to put down, by task. */
+        private final Set<UUID> lightTaskIds = new HashSet<>();
+        private int lightPlaced;
         /** Its brewing stand, once it put one down (E-16b); when it next looks to brew; and what it last put in to brew. */
         private BlockPos brewStand;
         private long brewAt;
@@ -13614,6 +14300,32 @@ final class PlayerRuntime {
                 "max_moves", "4")));
     }
 
+    /**
+     * Its own next step in tools first, before the chores of a work area (E-03, E-06), by its progression: a better
+     * pickaxe it can make now from what it carries, a furnace where it has none about, or iron enough for an iron
+     * pickaxe to smelt at one about with fuel it carries. A chore would wear out the worse pickaxe, or burn the coal and
+     * the sticks the better one wants.
+     */
+    private boolean toolsFirst(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        var world = player.getServerWorld();
+        int best = 0;
+        boolean fuel = false;
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            best = Math.max(best, toolTier(stack.getItem()));
+            fuel |= net.minecraft.block.entity.AbstractFurnaceBlockEntity.canUseAsFuel(stack);
+        }
+        for (var upgrade : List.of(Map.entry(3, "stone_pickaxe"), Map.entry(4, "iron_pickaxe"), Map.entry(5, "diamond_pickaxe"))) {
+            if (upgrade.getKey() > best && body.planCraft(upgrade.getValue(), entry.cachedCraftingTablePos).isPresent()) return true;
+        }
+        BlockPos furnace = entry.cachedFurnacePos != null ? entry.cachedFurnacePos : locateWorkstationBlock(world, player.getBlockPos(), Blocks.FURNACE, 8);
+        if (furnace == null && inventory.count(Items.FURNACE) == 0 && body.planCraft("furnace", entry.cachedCraftingTablePos).isPresent()) return true;
+        return best < 4 && inventory.count(Items.RAW_IRON) > 0 && inventory.count(Items.RAW_IRON) + inventory.count(Items.IRON_INGOT) >= 3
+                && (furnace != null || inventory.count(Items.FURNACE) > 0) && fuel;
+    }
+
     private static int toolTier(net.minecraft.item.Item item) {
         if (item == Items.NETHERITE_PICKAXE || item == Items.NETHERITE_AXE) return 6;
         if (item == Items.DIAMOND_PICKAXE || item == Items.DIAMOND_AXE) return 5;
@@ -13881,6 +14593,403 @@ final class PlayerRuntime {
      * Records whether AI players may choose, site and build their own bases as they go (M-01c), in edits.properties;
      * operators only. Their builds are still world edits: AI world edits must be on as well.
      */
+    /**
+     * The learned melee (E-41e) turned on, from {@code kindred/combat/melee.model} under the server's directory (read
+     * off the server thread), or off, back to the hand-set melee. An operator's choice; a model is never put in place
+     * by training alone. A fight already going keeps the policy it began with.
+     */
+    int setCombatModel(ServerCommandSource source, boolean on) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the combat model.");
+        if (!on) {
+            String was = meleeModel == null ? null : meleeModel.version();
+            meleeModel = null;
+            feedback(source, was == null ? "The hand-set melee is in use." : "Back to the hand-set melee (from " + was + ").");
+            return 1;
+        }
+        Path file = server.getRunDirectory().resolve("kindred").resolve("combat").resolve("melee.model");
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return dev.kindred.core.tactics.LearnedMelee.read(Files.readString(file, StandardCharsets.UTF_8));
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((model, failure) -> server.execute(() -> {
+            if (failure != null) {
+                Throwable cause = failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+                reject(source, "No combat model turned on: " + (cause instanceof java.nio.file.NoSuchFileException ? "there is no " + file : cause.getMessage()));
+                return;
+            }
+            if (!dev.kindred.core.tactics.LearnedMelee.RULESET.equals(model.ruleset())) {
+                reject(source, "The model in " + file + " was trained for " + model.ruleset() + ", not " + dev.kindred.core.tactics.LearnedMelee.RULESET + "; the hand-set melee stays.");
+                return;
+            }
+            meleeModel = model;
+            feedback(source, String.format(java.util.Locale.ROOT, "Learned melee %s on (trained on %d, %.0f%% of held-out moves made); /aiplayer combat model off goes back.",
+                    model.version(), model.trainedOn(), 100 * model.heldOut()));
+        }));
+        return 1;
+    }
+
+    /** The strategist's combat proposals turned on or off (E-41f); with no strategist set up, there is nothing to turn on. */
+    int setCombatAdvice(ServerCommandSource source, boolean on) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change combat advice.");
+        if (on && strategist.isEmpty()) return reject(source, "No strategist is set up, so there is no one to advise its fights.");
+        combatAdvice = on;
+        feedback(source, on ? "The strategist now advises AI players' duels: a tactic at a time, checked against the fight, never the fighting itself."
+                : "The strategist no longer advises fights; each fights by its own melee alone.");
+        return 1;
+    }
+
+    /** The fight with {@code opponent} as a proposal is checked against it (E-41f). */
+    private dev.kindred.core.tactics.CombatProposals.Facts combatFacts(Entry entry, ServerPlayerEntity self, net.minecraft.entity.player.PlayerEntity opponent) {
+        boolean food = false;
+        for (int s = 0; s < 9 && !food; s++) food = self.getInventory().getStack(s).get(net.minecraft.component.DataComponentTypes.FOOD) != null;
+        var verdict = opponent instanceof ServerPlayerEntity them ? fightOdds(entry, self, them).verdict() : dev.kindred.core.tactics.FightOdds.Verdict.EVEN;
+        return new dev.kindred.core.tactics.CombatProposals.Facts(self.getHealth(), NativePlayerBody.believedHealth(self, opponent),
+                self.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD), food, verdict, self.distanceTo(opponent));
+    }
+
+    /**
+     * The proposal leaning {@code entry}'s fight with {@code opponent} now (E-41f): one held while valid, and a question
+     * put to the strategist when advice is on, none is out, the cooldown has passed and the fight has changed (a new
+     * opponent, or six health gained or lost since the last). The answer comes back later and is checked again then.
+     */
+    private Optional<dev.kindred.core.tactics.CombatProposals.Tactic> combatProposal(Entry entry, ServerPlayerEntity self, net.minecraft.entity.player.PlayerEntity opponent) {
+        // Advice off (the default), or no one to ask: the melee alone, and nothing reckoned for it.
+        if (!combatAdvice || strategist.isEmpty()) return Optional.empty();
+        long tick = server.getTicks();
+        var facts = combatFacts(entry, self, opponent);
+        var gate = entry.combatGate;
+        String before = gate.dropped();
+        var current = gate.current(facts, tick).map(dev.kindred.core.tactics.CombatProposals.Proposal::tactic);
+        if (!gate.dropped().equals(before)) KindredMod.LOGGER.info("{} combat proposal dropped: {}", entry.data.displayName(), gate.dropped());
+        boolean changed = !opponent.getUuid().equals(entry.combatAskedOf) || Math.abs(facts.health() - entry.combatAskedHealth) >= 6;
+        if (changed && gate.mayAsk(tick)) {
+            gate.asked(tick);
+            entry.combatAskedHealth = facts.health();
+            entry.combatAskedOf = opponent.getUuid();
+            var question = new dev.kindred.model.Strategist.Question(dev.kindred.core.tactics.CombatProposals.SYSTEM,
+                    dev.kindred.core.tactics.CombatProposals.question(facts), dev.kindred.core.tactics.CombatProposals.choices(facts), 0);
+            strategist.get().ask(entry.data.id(), entry.data.displayName(), question, server).whenComplete((answer, failure) -> {
+                var tactic = answer == null ? Optional.<dev.kindred.core.tactics.CombatProposals.Tactic>empty()
+                        : answer.flatMap(a -> a.choice()).flatMap(dev.kindred.core.tactics.CombatProposals::parse);
+                String reason = answer == null ? "" : answer.map(dev.kindred.model.Strategist.Answer::reason).orElse("");
+                // Checked against the fight as it is now, not as it was asked about.
+                var now = opponent.isAlive() && self.isAlive() ? combatFacts(entry, self, opponent) : null;
+                var adopted = now == null ? Optional.<dev.kindred.core.tactics.CombatProposals.Proposal>empty()
+                        : gate.answered(tactic, reason, now, server.getTicks());
+                if (now == null) gate.answered(Optional.empty(), "", facts, server.getTicks());
+                KindredMod.LOGGER.info("{} combat proposal: {}{}", entry.data.displayName(),
+                        adopted.map(p -> p.tactic().name().toLowerCase(java.util.Locale.ROOT) + " adopted (" + p.reason() + ")")
+                                .orElse(tactic.isEmpty() ? "none usable; its own melee" : "not adopted, " + gate.dropped()), "");
+            });
+        }
+        return current;
+    }
+
+    /** The learned melee model in use, or "hand-set". */
+    String combatModel() {
+        return meleeModel == null ? "hand-set" : meleeModel.version();
+    }
+
+    /**
+     * A human's own choice to have its duels recorded as demonstrations for the learned melee (E-41e), or to stop: what
+     * it saw and the move it made each tick of a duel it plays, kept on this server under {@code kindred/demonstrations}.
+     * Only a human, and only for itself.
+     */
+    int setDemonstrating(ServerCommandSource source, boolean on) {
+        requireThread();
+        ServerPlayerEntity human = source.getPlayer();
+        if (human == null || entryForPlayer(human.getUuid()) != null) return reject(source, "Only a human player can record its own duels.");
+        if (on) demonstrators.add(human.getUuid());
+        else {
+            demonstrators.remove(human.getUuid());
+            var going = demonstrations.remove(human.getUuid());
+            if (going != null) writeDemonstration(human.getUuid(), going);
+        }
+        feedback(source, on ? "Your duels are recorded as demonstrations from now: what you see and the move you make each tick, kept on this server. /aiplayer combat record off stops it."
+                : "Your duels are no longer recorded.");
+        return 1;
+    }
+
+    /** What is being recorded of a demonstrator's duel. */
+    private static final class Demonstration {
+        final UUID match;
+        final List<String> lines = new ArrayList<>();
+        final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
+        final dev.kindred.core.tactics.Tendencies tendencies = new dev.kindred.core.tactics.Tendencies();
+        double lastX = Double.NaN, lastZ, lastDistance;
+        float lastCharge, lastFall;
+        boolean wasSwinging, opponentWasSwinging, wasFull, wasOnGround = true;
+        long opponentSwungAt = -1_000_000L;
+
+        Demonstration(UUID match) { this.match = match; }
+    }
+
+    /** A sample a tick of each demonstrator's running duel; a finished duel's written off the server thread. */
+    private void recordDemonstrations(long tick) {
+        if (demonstrators.isEmpty() && demonstrations.isEmpty()) return;
+        for (var it = demonstrations.entrySet().iterator(); it.hasNext(); ) {
+            var each = it.next();
+            boolean still = matches.running(each.getKey()).filter(m -> m.id().equals(each.getValue().match)).isPresent();
+            if (!still) {
+                writeDemonstration(each.getKey(), each.getValue());
+                it.remove();
+            }
+        }
+        for (UUID id : demonstrators) {
+            var human = server.getPlayerManager().getPlayer(id);
+            var match = matches.running(id).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.DUEL).orElse(null);
+            if (human == null || match == null || !human.isAlive()) continue;
+            UUID otherId = dev.kindred.core.match.MatchRegistry.other(match, id);
+            var opponent = otherId == null ? null : server.getPlayerManager().getPlayer(otherId);
+            if (opponent == null || !opponent.isAlive() || opponent.getServerWorld() != human.getServerWorld()) continue;
+            var demo = demonstrations.computeIfAbsent(id, k -> new Demonstration(match.id()));
+            long now = human.getServerWorld().getTime();
+            double distance = human.distanceTo(opponent);
+            // A blow it was seen to land on its opponent, believed as the ruleset says it dealt (E-41a).
+            var source = opponent.getRecentDamageSource();
+            if (opponent.hurtTime == opponent.maxHurtTime && source != null && source.getAttacker() == human) {
+                double raw = dev.kindred.core.tactics.DamageModel.hit(Weapons.of(human.getMainHandStack()).orElse(dev.kindred.core.tactics.DamageModel.Weapon.HAND),
+                        demo.lastCharge, demo.lastFall > 0 && !demo.wasOnGround, 0, demo.lastFall);
+                demo.beliefs.hit(opponent.getUuid(), opponent.getMaxHealth(), true, dev.kindred.core.tactics.CombatRuleset.afterArmour(raw, opponent.getArmor(),
+                        opponent.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ARMOR_TOUGHNESS)), now);
+            }
+            double cooldown = opponent.getAttackCooldownProgressPerTick();
+            if (opponent.handSwinging && !demo.opponentWasSwinging) {
+                demo.tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.SPAMS, now - demo.opponentSwungAt < 0.9 * cooldown);
+                demo.opponentSwungAt = now;
+            }
+            demo.opponentWasSwinging = opponent.handSwinging;
+            float charge = human.getAttackCooldownProgress(0.5f);
+            boolean full = charge >= dev.kindred.core.tactics.Melee.FULL && distance <= 2.8 && human.canSee(opponent);
+            if (full && !demo.wasFull) demo.tendencies.chance(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS, opponent.isBlocking());
+            demo.wasFull = full;
+            boolean food = false;
+            for (int s = 0; s < 9 && !food; s++) food = human.getInventory().getStack(s).get(net.minecraft.component.DataComponentTypes.FOOD) != null;
+            var sight = new dev.kindred.core.tactics.Melee.Sight(distance * dev.kindred.core.tactics.Melee.REACH / 2.8, charge, human.getHealth(),
+                    food && human.canConsume(false), human.getOffHandStack().isOf(net.minecraft.item.Items.SHIELD)
+                    && !human.getItemCooldownManager().isCoolingDown(net.minecraft.item.Items.SHIELD),
+                    now - demo.opponentSwungAt >= cooldown - 6, opponent.isBlocking(),
+                    demo.beliefs.of(opponent.getUuid(), opponent.getMaxHealth(), true, now).value(), human.canSee(opponent),
+                    demo.tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.BLOCKS), demo.tendencies.likely(dev.kindred.core.tactics.Tendencies.Habit.SPAMS),
+                    human.getMainHandStack().getItem() instanceof net.minecraft.item.AxeItem);
+            if (!Double.isNaN(demo.lastX)) {
+                // How it moved this tick against its opponent's bearing: sideways is across the line between them.
+                double mx = human.getX() - demo.lastX, mz = human.getZ() - demo.lastZ;
+                double bx = opponent.getX() - human.getX(), bz = opponent.getZ() - human.getZ(), len = Math.max(1e-6, Math.hypot(bx, bz));
+                double sideways = (mx * -bz + mz * bx) / len;
+                boolean swung = human.handSwinging && !demo.wasSwinging;
+                boolean eating = human.isUsingItem() && human.getActiveItem().get(net.minecraft.component.DataComponentTypes.FOOD) != null;
+                dev.kindred.core.tactics.MoveLabels.label(demo.lastDistance, distance, sideways, swung, human.isBlocking(), eating)
+                        .ifPresent(move -> {
+                            if (demo.lines.size() < 20_000) demo.lines.add(dev.kindred.core.tactics.LearnedMelee.line(new dev.kindred.core.tactics.LearnedMelee.Sample(sight, move)));
+                        });
+            }
+            demo.lastX = human.getX();
+            demo.lastZ = human.getZ();
+            demo.lastDistance = distance;
+            demo.lastCharge = charge;
+            demo.lastFall = human.fallDistance;
+            demo.wasOnGround = human.isOnGround();
+            demo.wasSwinging = human.handSwinging;
+        }
+    }
+
+    /** A finished demonstration written off the server thread, as {@code kindred/demonstrations/<player>/<match>.csv}. */
+    private void writeDemonstration(UUID player, Demonstration demo) {
+        if (demo.lines.isEmpty()) return;
+        var lines = new ArrayList<String>();
+        lines.add(dev.kindred.core.tactics.LearnedMelee.SAMPLE_HEADER);
+        lines.addAll(demo.lines);
+        Path file = server.getRunDirectory().resolve("kindred").resolve("demonstrations").resolve(player.toString()).resolve(demo.match + ".csv");
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(file.getParent());
+                Files.write(file, lines, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) KindredMod.LOGGER.warn("A demonstration could not be written to {}", file, failure);
+            else KindredMod.LOGGER.info("Demonstration of {} samples written to {}", lines.size() - 1, file);
+        });
+    }
+
+    /** Pets turned on or off (E-37): with them on, an AI player with bones of its own tames a wild wolf it comes across. */
+    int setPets(ServerCommandSource source, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change whether AI players keep pets.");
+        pets = allowed;
+        feedback(source, allowed ? "Pets are on: an AI player with bones of its own tames a wild wolf it comes across, at most "
+                + dev.kindred.core.PetPolicy.DEFAULT_CAP + " pets and one wolf each, and names it with a name tag it has. (Not kept over a restart.)"
+                : "Pets are off: no AI player tames another animal; those it has stay its own.");
+        return 1;
+    }
+
+    /** Its own pets within {@code range} of it: tamed to its body. */
+    private static List<net.minecraft.entity.passive.TameableEntity> ownPets(ServerPlayerEntity player, double range) {
+        return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.TameableEntity.class, player.getBoundingBox().expand(range),
+                pet -> pet.isAlive() && pet.isTamed() && player.getUuid().equals(pet.getOwnerUuid()));
+    }
+
+    /**
+     * Its pets' tasks (E-37, E-36): a wild wolf in sight tamed with its own bones, a bone a click, while the pet policy
+     * allows (pets on, under its caps, a wild wolf at peace in sight); then its unnamed pet named with a name tag it
+     * holds, the tag lettered first at an anvil it knows if it bears no name, the name its own from the name forge.
+     */
+    private List<NativeTaskCandidate> petCandidates(Entry entry, NativePlayerBody body) {
+        if (!pets) return null;
+        var player = body.entity();
+        long now = server.getTicks();
+        if (now < entry.petsAt || matches.running(player.getUuid()).isPresent()) return null;
+        var world = player.getServerWorld();
+        var own = ownPets(player, 48);
+        // A pet new to it, said once, and watched from now on.
+        for (var pet : own) {
+            entry.petsSeen.put(pet.getUuid(), pet);
+            if (entry.petsKnown.add(pet.getUuid())) {
+                say(entry, "The " + petKind(pet) + " has taken to me" + (pet.hasCustomName() ? ", " + pet.getCustomName().getString() : "") + ".", "");
+            }
+
+        }
+        var inventory = player.getInventory();
+        var task = new dev.kindred.core.TaskPreferences.Candidate(UUID.nameUUIDFromBytes(("pet:" + entry.data.id()).getBytes(StandardCharsets.UTF_8)),
+                dev.kindred.core.TaskPreferences.Priority.ROUTINE, 40.0, dev.kindred.core.TaskPreferences.Affinities.none(),
+                new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        // Naming: an unnamed pet of its own, and a name tag.
+        var unnamed = own.stream().filter(p -> !p.hasCustomName()).min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        int tag = -1;
+        for (int slot = 0; slot < 36 && tag < 0; slot++) if (inventory.getStack(slot).isOf(net.minecraft.item.Items.NAME_TAG)) tag = slot;
+        if (unnamed != null && tag >= 0) {
+            var stack = inventory.getStack(tag);
+            boolean lettered = stack.get(net.minecraft.component.DataComponentTypes.CUSTOM_NAME) != null;
+            if (!lettered) {
+                String name = entry.petNames.computeIfAbsent(unnamed.getUuid(), id -> {
+                    var taken = new HashSet<String>();
+                    for (var p : own) if (p.hasCustomName()) taken.add(p.getCustomName().getString());
+                    return dev.kindred.core.NameForge.propose(new dev.kindred.core.NameForge.Brief(dev.kindred.core.NameForge.Subject.PET, petKind(unnamed),
+                            entry.data.id(), entry.profile.personality(), taken)).map(dev.kindred.core.NameForge.Name::text).orElse(null);
+                });
+                if (name != null && entry.anvil != null && anvilAt(world, entry.anvil) && player.experienceLevel >= 1
+                        && player.getBlockPos().getSquaredDistance(entry.anvil) <= 48 * 48) {
+                    var at = Map.of("x", String.valueOf(entry.anvil.getX()), "y", String.valueOf(entry.anvil.getY()), "z", String.valueOf(entry.anvil.getZ()));
+                    if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(entry.anvil)) <= 4.5 * 4.5) {
+                        var args = new HashMap<>(at);
+                        args.put("slot", String.valueOf(tag));
+                        args.put("name", name);
+                        return List.of(new NativeTaskCandidate(task, "native_rename", Map.copyOf(args)));
+                    }
+                    var args = new HashMap<>(at);
+                    args.put("range", "2.5");
+                    return List.of(new NativeTaskCandidate(task, "native_goto", Map.copyOf(args)));
+                }
+                // No anvil it knows: one of its own put down, if it has one, as for naming its kit.
+                if (name != null && (entry.anvil == null || !anvilAt(world, entry.anvil)) && player.experienceLevel >= 1) {
+                    int held = -1;
+                    for (int slot = 0; slot < 36 && held < 0; slot++) if (inventory.getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.ANVIL)) held = slot;
+                    if (held >= 9) {
+                        int free = 8;
+                        for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                        return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
+                    }
+                    if (held >= 0) {
+                        BlockPos spot = anvilSpot(player, entry.setup);
+                        if (spot != null) {
+                            entry.anvil = spot.toImmutable();
+                            return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
+                                    "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
+                        }
+                    }
+                }
+            } else if (tag >= 9) {
+                int free = 8;
+                for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+                return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tag), "target", String.valueOf(free))));
+            } else if (player.distanceTo(unnamed) > 2.5) {
+                BlockPos to = unnamed.getBlockPos();
+                return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                        "z", String.valueOf(to.getZ()), "range", "2")));
+            } else {
+                return List.of(new NativeTaskCandidate(task, "native_pet", Map.of("target", unnamed.getUuid().toString(), "slot", String.valueOf(tag), "mode", "name")));
+            }
+        }
+        // Taming: a wild wolf at peace in sight, and bones of its own.
+        var wild = world.getEntitiesByClass(net.minecraft.entity.passive.WolfEntity.class, player.getBoundingBox().expand(16),
+                        w -> w.isAlive() && !w.isTamed() && !w.isBaby() && !w.hasAngerTime() && player.canSee(w))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+        int bones = inventory.count(net.minecraft.item.Items.BONE);
+        if (wild == null || bones == 0) {
+            entry.petsAt = now + 200;
+            return null;
+        }
+        int ownWolves = (int) own.stream().filter(p -> p instanceof net.minecraft.entity.passive.WolfEntity).count();
+        var decision = dev.kindred.core.PetPolicy.evaluate(new dev.kindred.core.PetPolicy.Request(dev.kindred.core.PetPolicy.Species.WOLF, true, pets,
+                dev.kindred.core.PetPolicy.DEFAULT_CAP, own.size(), ownWolves, bones, true, player.canSee(wild), true, false, false, false,
+                true, true, true, true));
+        if (!decision.eligible()) {
+            if (!decision.blockers().equals(entry.petBlockers)) KindredMod.LOGGER.info("{} leaves the wolf be: {}", entry.data.displayName(), decision.blockers());
+            entry.petBlockers = decision.blockers();
+            entry.petsAt = now + 600;
+            return null;
+        }
+        int bone = -1;
+        for (int slot = 0; slot < 36 && bone < 0; slot++) if (inventory.getStack(slot).isOf(net.minecraft.item.Items.BONE)) bone = slot;
+        if (bone >= 9) {
+            int free = 8;
+            for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
+            return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(bone), "target", String.valueOf(free))));
+        }
+        if (player.distanceTo(wild) > 2.5) {
+            BlockPos to = wild.getBlockPos();
+            return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                    "z", String.valueOf(to.getZ()), "range", "2")));
+        }
+        return List.of(new NativeTaskCandidate(task, "native_pet", Map.of("target", wild.getUuid().toString(), "slot", String.valueOf(bone), "mode", "tame")));
+    }
+
+    private static String petKind(net.minecraft.entity.Entity pet) {
+        return net.minecraft.registry.Registries.ENTITY_TYPE.getId(pet.getType()).getPath().replace('_', ' ');
+    }
+
+    /**
+     * Its pets looked to (E-38), each second: one it has seen that has since been killed is told, plainly, with what
+     * killed it as the game tells it, and forgotten; one only out of the loaded world is kept.
+     */
+    private void checkPets(Entry entry) {
+        for (var it = entry.petsSeen.entrySet().iterator(); it.hasNext(); ) {
+            var pet = it.next().getValue();
+            // Named as it meant: said, and remembered where the name came from (E-36).
+            String chosen = entry.petNames.get(pet.getUuid());
+            if (chosen != null && pet.hasCustomName() && chosen.equals(pet.getCustomName().getString()) && entry.petsNamed.add(pet.getUuid())) {
+                say(entry, "My " + petKind(pet) + " is called " + chosen + " now.", "");
+                if (store != null) {
+                    store.addMemory(new MemoryNote(UUID.randomUUID(), entry.data.id(), MemoryNote.Kind.FACT, "Named its " + petKind(pet) + " " + chosen
+                            + " with a name tag it lettered at its anvil; a name of its own", "pet_name", 0));
+                }
+            }
+            if (!pet.isRemoved() && pet.isAlive()) continue;
+            if (pet.isRemoved() && pet.getRemovalReason() != net.minecraft.entity.Entity.RemovalReason.KILLED && pet.isAlive()) {
+                it.remove(); // Unloaded with its chunk, or gone through a portal: not dead.
+                continue;
+            }
+            it.remove();
+            entry.petsKnown.remove(pet.getUuid());
+            entry.petNames.remove(pet.getUuid());
+            String told = pet.getDamageTracker().getDeathMessage().getString();
+            // What the game says of it ("was slain by Zombie"), less its name and the bare "died".
+            String how = told.replace(pet.getName().getString(), "").strip().replaceFirst("^was ", "");
+            String who = pet.hasCustomName() ? pet.getCustomName().getString() : "My " + petKind(pet);
+            KindredMod.LOGGER.info("{}'s pet {} died: {}", entry.data.displayName(), who, told);
+            say(entry, who + " is dead" + (how.isEmpty() || how.equals("died") ? "." : ": " + how + "."), "");
+        }
+    }
+
     int setBases(ServerCommandSource source, boolean allowed) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");

@@ -100,6 +100,13 @@ public final class PlayerCommands {
                                 .then(CommandManager.argument("target", StringArgumentType.string())
                                         .suggests((context, builder) -> suggestBots(builder))
                                         .executes(context -> pasture(context, true))))));
+        root.then(CommandManager.literal("bring")
+                .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 64 * 27))
+                        .then(CommandManager.argument("item", net.minecraft.command.argument.IdentifierArgumentType.identifier())
+                                .executes(context -> bring(context, false))
+                                .then(CommandManager.argument("target", StringArgumentType.string())
+                                        .suggests((context, builder) -> suggestBots(builder))
+                                        .executes(context -> bring(context, true))))));
         root.then(CommandManager.literal("field")
                 .then(CommandManager.literal("stop").executes(context -> field(context, false, false))
                         .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
@@ -159,6 +166,41 @@ public final class PlayerCommands {
                     return runtime.setDragonFight(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                 })));
         // The leave for AI players to build their own bases (M-01c): /aiplayer bases on|off.
+        // The learned melee (E-41e): an operator turns a trained model on or off; a human records its own duels.
+        root.then(CommandManager.literal("combat")
+                .then(CommandManager.literal("model").then(CommandManager.argument("enabled", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String raw = StringArgumentType.getString(context, "enabled");
+                            return runtime.setCombatModel(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                        })))
+                .then(CommandManager.literal("advice").then(CommandManager.argument("enabled", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String raw = StringArgumentType.getString(context, "enabled");
+                            return runtime.setCombatAdvice(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                        })))
+                .then(CommandManager.literal("record").then(CommandManager.argument("enabled", StringArgumentType.word())
+                        .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            String raw = StringArgumentType.getString(context, "enabled");
+                            return runtime.setDemonstrating(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                        }))));
+        // Pets (E-37): an operator lets AI players tame a wolf with their own bones, or not.
+        root.then(CommandManager.literal("pets").then(CommandManager.argument("enabled", StringArgumentType.word())
+                .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
+                .executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    if (runtime == null) return unavailable(context.getSource());
+                    String raw = StringArgumentType.getString(context, "enabled");
+                    return runtime.setPets(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
+                })));
         root.then(CommandManager.literal("bases").then(CommandManager.argument("enabled", StringArgumentType.word())
                 .suggests((context, builder) -> { builder.suggest("on"); builder.suggest("off"); return builder.buildFuture(); })
                 .executes(context -> {
@@ -1208,6 +1250,24 @@ public final class PlayerCommands {
         PlayerRuntime runtime = KindredMod.runtime();
         if (runtime == null) return unavailable(context.getSource());
         return runtime.listenerPreference(context.getSource(), setting, value);
+    }
+
+    /** Supplies brought to whoever asks (E-01): {@code count} of an item, fetched from its storage if need be; 0 calls it off. */
+    private static int bring(CommandContext<ServerCommandSource> context, boolean named) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = named ? resolveBotTarget(context, "target", runtime) : runtime.defaultBotId();
+        if (id == null) {
+            if (!named) context.getSource().sendError(Text.literal("Name the AI player. Available: " + runtime.availableBotNames()));
+            return 0;
+        }
+        var asker = context.getSource().getPlayer();
+        if (asker == null) {
+            context.getSource().sendError(Text.literal("Only a player in the world can be brought things."));
+            return 0;
+        }
+        return runtime.nativeDeliver(context.getSource(), id, net.minecraft.command.argument.IdentifierArgumentType.getIdentifier(context, "item").toString(),
+                IntegerArgumentType.getInteger(context, "count"), asker.getUuid());
     }
 
     private static int unavailable(ServerCommandSource source) {

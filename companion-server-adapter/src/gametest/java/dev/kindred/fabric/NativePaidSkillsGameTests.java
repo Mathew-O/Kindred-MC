@@ -163,6 +163,22 @@ public final class NativePaidSkillsGameTests implements FabricGameTest {
             // Never schedule stop below DEFAULT: per-test values near tickLimit used to fire mid-retry and flake the suite.
             int scheduledStop = Math.max(stopAtTick, DEFAULT_STOP_AT_TICK);
             context.runAtTick(scheduledStop, () -> runtime.stop());
+            stopWhenDone(context);
+        }
+
+        /**
+         * A test that ends, passed or failed, before it stops its own runtime leaves its player at work through the rest
+         * of the suite (nothing ticks the test's own scheduled stop once it is done): stop it as the test ends.
+         */
+        private void stopWhenDone(TestContext context) {
+            FixtureGround.whenDone(context, this::stopIfRunning);
+        }
+
+        private void stopIfRunning() {
+            if (runtime.running()) {
+                KindredMod.LOGGER.info("Fixture runtime still running as its test ended; stopping it.");
+                runtime.stop();
+            }
         }
         void established(TestContext context) {
             var statuses = runtime.nativeStatuses(Actor.console());

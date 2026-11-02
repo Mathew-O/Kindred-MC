@@ -22,6 +22,8 @@ class PlacementTest {
         assertEquals(Rule.GRAVITY, Placement.rule(BlockSpec.of("minecraft:sand")));
         assertEquals(Rule.UNSUPPORTED, Placement.rule(BlockSpec.parse("minecraft:oak_sign[rotation=4]")));
         assertEquals(Rule.UNSUPPORTED, Placement.rule(BlockSpec.parse("minecraft:dispenser[facing=up]")), "no rule, no guess");
+        assertEquals(Rule.HOPPER, Placement.rule(BlockSpec.parse("minecraft:hopper[facing=down]")));
+        assertEquals(Rule.HOPPER, Placement.rule(BlockSpec.parse("minecraft:hopper[facing=west]")));
     }
 
     @Test
@@ -37,6 +39,10 @@ class PlacementTest {
         assertEquals(Face.NORTH, Placement.facingOf(180));
         assertEquals(Face.EAST, Placement.facingOf(-90));
         assertEquals("minecraft:torch", Placement.item(BlockSpec.parse("minecraft:wall_torch[facing=east]")));
+        // A hopper is set against the block it feeds, on that block's face toward it.
+        assertEquals(List.of(Face.UP), Placement.faces(BlockSpec.parse("minecraft:hopper[facing=down]")), "on top of what it feeds");
+        assertEquals(List.of(Face.EAST), Placement.faces(BlockSpec.parse("minecraft:hopper[facing=west]")), "on the east face of the block west of it");
+        assertNull(Placement.playerFacing(BlockSpec.parse("minecraft:hopper[facing=south]")), "the look does not matter");
     }
 
     @Test

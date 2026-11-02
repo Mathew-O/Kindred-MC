@@ -24,7 +24,7 @@ public record BlockSpec(String block, Map<String, String> properties) {
      */
     public static final Set<String> DERIVED = Set.of("north", "south", "east", "west", "up", "shape", "waterlogged", "snowy",
             "distance", "persistent", "power", "powered", "lit", "open", "occupied", "attached", "disarmed", "in_wall",
-            "triggered", "has_book", "bottom", "age", "stage", "moisture", "level", "note", "instrument", "signal_fire", "hinge");
+            "triggered", "has_book", "bottom", "age", "stage", "moisture", "level", "note", "instrument", "signal_fire", "hinge", "enabled");
 
     public BlockSpec {
         block = Objects.requireNonNull(block).toLowerCase(Locale.ROOT);

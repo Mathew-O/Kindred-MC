@@ -84,4 +84,26 @@ class FightOddsTest {
         assertEquals(Answer.DEFEND, FightOdds.answer(true, true, even, true), "Even and cornered: it holds");
         assertEquals(Answer.GET_AWAY, FightOdds.answer(true, true, losing, true), "Losing: away, cornered or not");
     }
+
+    @Test
+    void inADuelItJoinedAHardHitIsJudgedByTheKitNotTheHealthItTook() {
+        var iron = side(IRON_SWORD, IRON, 0);
+        var diamond = side(DIAMOND_SWORD, DIAMOND, DIAMOND_TOUGH);
+        // Down to eight from a crit, against the same kit: by health it is losing, by kit even, and the duel goes on.
+        var hurt = FightOdds.at(iron, 8);
+        assertEquals(Verdict.LOSING, FightOdds.of(hurt, iron).verdict());
+        assertEquals(Answer.DEFEND, FightOdds.answerInDuel(true, FightOdds.of(FightOdds.at(hurt, 20), FightOdds.at(iron, 20)), false));
+        // Outclassed by kit: away, in a duel too; and with nothing to fight with.
+        assertEquals(Answer.GET_AWAY, FightOdds.answerInDuel(true, FightOdds.of(iron, diamond), false));
+        assertEquals(Answer.GET_AWAY, FightOdds.answerInDuel(false, FightOdds.of(iron, iron), false));
+        // Outclassed with no way away (a walled arena): it fights on with what it has; with nothing, it still tries.
+        assertEquals(Answer.DEFEND, FightOdds.answerInDuel(true, FightOdds.of(iron, diamond), true));
+        assertEquals(Answer.GET_AWAY, FightOdds.answerInDuel(false, FightOdds.of(iron, iron), true));
+        // A crit of six hearts landed by an equal: still its kit against an equal kit, and the duel goes on.
+        var critted = new FightOdds.Side(20, iron.armour(), iron.toughness(), 0, false, iron.weapon(), false, iron.crits(), iron.shield(), 0, 12.8);
+        assertEquals(Verdict.LOSING, FightOdds.of(FightOdds.at(iron, 20), critted).verdict(), "by the hit seen");
+        assertEquals(Answer.DEFEND, FightOdds.answerInDuel(true, FightOdds.of(FightOdds.at(iron, 20), FightOdds.at(critted, 20)), false));
+        assertEquals(8, FightOdds.at(iron, 8).health());
+        assertEquals(iron.weapon(), FightOdds.at(iron, 8).weapon());
+    }
 }

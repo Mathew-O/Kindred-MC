@@ -16,8 +16,9 @@ import java.util.Map;
  * Ground a fixture lays put back as it found it when the fixture ends, and the animals and items left on it taken
  * away. The test server keeps whatever a test changed, so the field one fixture laid lay under the tests placed there
  * after it, and its animals wandered on into them: a ranch went after a cow on ground another had raised above its
- * pen, and penned a cow not its own (full run 20 on 2026-10-24). A fixture that fails before its end leaves its ground
- * as it was.
+ * pen, and penned a cow not its own (full run 20 on 2026-10-24). A fixture that fails is put back as its test ends: its
+ * field left laid lay under the next test placed beside it (a failed bring left its hall and line where the pit test
+ * after it stood, full run 53 on 2026-10-29).
  */
 final class FixtureGround {
     /**
@@ -64,6 +65,27 @@ final class FixtureGround {
             states[i++] = world.getBlockState(at.set(min.getX() + x, min.getY() + y, min.getZ() + z));
         }
         KEPT.put(context, new Kept(min.toImmutable(), max.toImmutable(), states));
+        whenDone(context, () -> restore(context));
+    }
+
+    /**
+     * {@code action} run as the test ends, passed or failed (once a test is done the test server ticks nothing it
+     * scheduled, its own clean-up steps included).
+     */
+    static void whenDone(TestContext context, Runnable action) {
+        try {
+            var field = TestContext.class.getDeclaredField("test");
+            field.setAccessible(true);
+            ((net.minecraft.test.GameTestState) field.get(context)).addListener(new net.minecraft.test.TestListener() {
+                @Override public void onStarted(net.minecraft.test.GameTestState test) { }
+                @Override public void onPassed(net.minecraft.test.GameTestState test, net.minecraft.test.TestRunContext run) { action.run(); }
+                @Override public void onFailed(net.minecraft.test.GameTestState test, net.minecraft.test.TestRunContext run) { action.run(); }
+                @Override public void onRetry(net.minecraft.test.GameTestState previous, net.minecraft.test.GameTestState next,
+                                              net.minecraft.test.TestRunContext run) { action.run(); }
+            });
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            KindredMod.LOGGER.warn("A fixture cannot act as its test ends: {}", unavailable.toString());
+        }
     }
 
     /**

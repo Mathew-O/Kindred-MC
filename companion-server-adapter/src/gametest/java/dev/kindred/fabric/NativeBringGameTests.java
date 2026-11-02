@@ -155,6 +155,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its field is wider than its structure: put back as the test ends, passed or failed, so the tests
+                    // placed beside it after are not laid on its hall and line.
+                    FixtureGround.keep(context, o.add(-9, 0, -8), o.add(25, 16, 34));
                     FixtureGround.simulated(context, o.add(-8, 0, -8), o.add(24, 0, 34));
                     for (int x = -8; x <= 24; x++) for (int z = -8; z <= 34; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());

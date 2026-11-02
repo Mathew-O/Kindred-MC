@@ -1,6 +1,8 @@
 # AI-player building design
 E-08 executes builds; E-29/30/31 add individual architectural taste and distinct finished structures. See [the player contract](../minecraft_player_spec.md).
 
+Implementation is paused for handoff. Start with the [world-design integration review](world-design-implementation-handoff.md) for the current prototype's gaps, proposed improvements, Kindred integration points, and acceptance evidence required from the next agent. The [full target specification](../kindred-world-design/SPECIFICATION.md) remains proposed; the preserved prototype is not ready for production execution.
+
 Use functional construction rules and persistent preferences to generate declarative plans. Validate foundations, access, usable space, materials, site permissions, collisions and safe build order before execution. Freeze the accepted plan and budget; edits require a new revision.
 
 Persist structural fingerprints and reject duplicate/near-copy houses. Rotation, recoloring or another window does not establish novelty. Reservation of design/site/materials must settle before physical work. Use the existing claims, writer, arbiter and verified placement receipts.
