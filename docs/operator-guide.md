@@ -409,6 +409,20 @@ A race or a duel asked in chat is proposed only if every AI player in it says ye
 
 What stays a command: making and removing players, the operator's switches (`edits`, `dragonfight`, `bases`), limits, and anything with coordinates. Asked for one in chat, a player says which command does it ("That's not mine to change; an operator can, with /aiplayer dragonfight on."), to an operator as well. With the voice on, E-20b's four asks are still the model's to read; the rest are read locally either way, so asking in an unusual way may not be understood. The log says `<name> asked in chat by <who>: <ask>: done (<the command's message>)` or `refused (<why>)`, and for a match `<name> on a RACE with 1: yes|no (<its words>)`.
 
+#### Speaking first (E-53)
+A player speaks first, unasked, on these occasions, the most pressing first:
+
+| Occasion | What it says | Its own limit |
+| --- | --- | --- |
+| A monster near a person and behind them, that the player can see | "Behind you, Steve: a creeper!" | at once, then 30 seconds for that person |
+| A person near it is hungry (food 10 of 20 or less) and it has food to spare (more than the 4 it keeps) | "Need food? I've got bread." | once an hour for each person |
+| It needs something (its follow-up queue's gathering, as it tells its team) | "Anyone got flint?" | once an hour for each thing |
+| Idle together with someone for 20 seconds | a word in its manner ("Quiet out here.") | the budget alone |
+
+An offer waits a minute for an answer. Only "yes please" (or yes, sure, okay) hands anything over, through the toss method: up to four, as a recorded toss, within E-49's sixteen a day to one person; the player's own offer stands in for control for that toss alone. "No thanks" withdraws it. Nothing moves before the yes.
+
+Every line but a warning is held to each person's *attention budget*: one unasked line in three minutes, as that person's `/aiplayer prefs unasked fewer|more` stretches or shortens it (six or one and a half minutes). Someone who answers within a minute earns a little more (down to half the wait); someone who never answers gets a little less (up to half as long again); both drift back to the usual over a day of real time. Nothing unasked, warnings included, goes to a person out of earshot, in a match's countdown, or away (not moved for five minutes); nothing but a warning goes to someone fighting (they struck or were struck in the last ten seconds) or building fast (two or more blocks from their hand in a second). A player whose remarks are off (`/aiplayer social ambient false`) says nothing first at all. Greetings and the remarks from before (rain, nightfall, a passing word, work done) keep their own limits. The log says `<name> to <who> unasked (<occasion>): <line>` and `<name>'s offer of <count> <item> to <who>: taken|refused (<why>)`.
+
 #### How it sounds, and how each person asked to be spoken to (E-18a, E-19a)
 Every player's words are clean, whoever is listening: no swearing, flirting or dark jokes. Within that, each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
 

@@ -61,6 +61,8 @@ final class PeerRadio {
     private final Map<UUID, PeerLedger> ledgers = new HashMap<>();
     private final Set<UUID> loading = new HashSet<>();
     private final Map<UUID, String> names = new HashMap<>();
+    /** Each AI player's own last update to its team, as it was sent. */
+    private final Map<UUID, PeerUpdate> lastUpdates = new HashMap<>();
     private long lastUpdate = -UPDATE_TICKS, lastSave; // Not Long.MIN_VALUE: now minus that overflows, and no update would go.
 
     PeerRadio(PlayerMemoryStore store, MinecraftServer server, Source source) {
@@ -78,6 +80,7 @@ final class PeerRadio {
     void tick(long now, List<Member> members) {
         for (Member m : members) {
             names.put(m.id(), m.name());
+            if (m.update() != null) lastUpdates.put(m.id(), m.update());
             if (!ledgers.containsKey(m.id()) && loading.add(m.id())) load(m.id(), m.name());
         }
         for (Member m : members) {
@@ -123,6 +126,11 @@ final class PeerRadio {
             if (ledgers.containsKey(id)) return;
             ledgers.put(id, PeerLedger.restore(id, failure == null ? snapshot : null));
         }));
+    }
+
+    /** The AI player's own last update to its team (what it is doing, needs, could spare), or empty. */
+    Optional<PeerUpdate> lastUpdate(UUID id) {
+        return Optional.ofNullable(lastUpdates.get(id));
     }
 
     /** Every ledger written, as it is now. */

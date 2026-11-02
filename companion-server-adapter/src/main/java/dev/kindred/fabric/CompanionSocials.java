@@ -213,6 +213,9 @@ final class CompanionSocials {
         else preferences.put(changed.person(), changed);
     }
 
+    /** How the player sounds here, for another lane's words (E-53). */
+    Expression soundingOf(Participant player) { return sounding(player).effectiveExpression(); }
+
     /** How the player sounds here: its preset, or its humour with none, bounded by the server's cap (E-18a). */
     private SocialProfile sounding(Participant player) { return player.profile().capped(cap); }
 
@@ -426,6 +429,16 @@ final class CompanionSocials {
         if (partner != null) brain(partner.id()).didReplyToCompanion(speaker.id(), partner.profile(), now);
         nextAmbient = now + 10_000;
         // An exchange is terminal: system chat never enters the player-chat handler.
+    }
+
+    /**
+     * A line the player says first to one person (E-53), its budget already checked by the caller: said through the
+     * lane's own checks and typing delay, as any unasked line; false when it may not talk with them now.
+     */
+    boolean unasked(Participant speaker, ServerPlayerEntity to, String text, long now) {
+        if (!speaker.active() || !preferencesKnown || !canTalk(to, speaker)) return false;
+        schedule(speaker, to, text, now + SpeechTiming.delayMillis(text), false);
+        return true;
     }
 
     /** The usual pause before a person is spoken to unasked again; their own preference doubles or halves it (E-19a). */

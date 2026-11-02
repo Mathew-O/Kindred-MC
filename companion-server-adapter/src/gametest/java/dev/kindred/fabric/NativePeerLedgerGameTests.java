@@ -89,6 +89,9 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
                 .createAndAdd(() -> t.createOwned(context))
                 .createAndAdd(() -> two.makeSol(context))
                 .createAndAdd(() -> two.established(context))
+                // Sol's remarks off, so that it says nothing first (E-53 lets a player ask people for what it needs): the
+                // team's channel alone is tested, and "nothing said" below holds for every line.
+                .createAndAdd(() -> context.assertTrue(f.runtime.socialSetting(two.owner, two.sol, "ambient", false, null, 0) == 1, "Sol's remarks off"))
                 .createAndAdd(() -> {
                     if (done[0]) return;
                     done[0] = true;

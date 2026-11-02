@@ -16,6 +16,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Speaking first, within an attention budget (E-53) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 878 JUnit tests, 6 skipped, 0 failures (872
+  passed; 4 new: `InitiativeTest`).
+- `NativeInitiativeGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 3 of 5 at first,
+  its two counting fixtures counting lines by name when every mock player has the same one (now by id); then 5 of 5 in
+  each of three runs on the final code. Ten minutes idle together, counted: 5 lines to the one who answers, 3 to the one
+  who never does.
+- The nine social classes together on the final code: 47 of 47. `NativePeerLedgerGameTests`' teammate fixture now turns
+  Sol's remarks off, since a player may now ask people for what it needs; its check that nothing is said of Sol's needs
+  is unchanged.
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
 ## Play by asking (E-52) — 2 November 2026 (`claude/living-together-1101`)
 
 - Build: `./gradlew build` green on the commit that adds this section: 874 JUnit tests, 6 skipped, 0 failures (868

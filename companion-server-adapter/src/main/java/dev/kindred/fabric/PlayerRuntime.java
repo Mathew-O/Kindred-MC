@@ -200,6 +200,8 @@ final class PlayerRuntime {
     private final PeerRadio peerRadio;
     /** Asks in chat, run through their commands' methods as whoever asked (E-52). */
     private final ChatIntents chatIntents;
+    /** Speaking first, within each person's attention budget (E-53). */
+    private final InitiativeLane initiative;
     /** How the last ask in chat by its plain form went, by player ("GOAL: done"), for fixtures (E-52). */
     private final Map<UUID, String> chatAsked = new HashMap<>();
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
@@ -409,9 +411,12 @@ final class PlayerRuntime {
             }
         });
         chatIntents = new ChatIntents(this, server);
+        initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         socials.setHearing(new CompanionSocials.Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
-                return peerRadio.heard(player.id(), speaker, message);
+                var offer = initiative.heard(speaker, player, message); // An answer to its last line; an offer's yes or no (E-53).
+                var taken = peerRadio.heard(player.id(), speaker, message);
+                return offer.or(() -> taken);
             }
 
             @Override public Optional<String> answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
@@ -2314,6 +2319,7 @@ final class PlayerRuntime {
         }
         attentionScheduler.synchronizeEntries(batch);
         if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
+        if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
 
         java.util.Optional<WorkToken> nextToken;
         while ((nextToken = attentionScheduler.selectNext()).isPresent()) {
@@ -11160,11 +11166,19 @@ final class PlayerRuntime {
      * carry, is refused, never guessed at.
      */
     int nativeToss(ServerCommandSource source, UUID id, String item, int count) {
+        return nativeToss(source, id, item, count, false);
+    }
+
+    /**
+     * As the command, with {@code offered}: the player itself offered this to whoever runs it (E-53), and their yes stands
+     * in for control for this toss alone; every other check is made.
+     */
+    private int nativeToss(ServerCommandSource source, UUID id, String item, int count, boolean offered) {
         requireThread();
         if (!(source.getEntity() instanceof ServerPlayerEntity to)) return reject(source, "Only a player can be tossed to.");
         UUID target = id == null ? defaultBotId() : id;
         Entry entry = target == null ? null : entries.get(target);
-        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)
+        if (!running || !ready || entry == null || entry.nativeState == null || !(offered || nativeMayControl(source, entry))
                 || entry.nativeBody == null || !entry.nativeBody.connected()) {
             return reject(source, "Native player unavailable or administrative access denied.");
         }
@@ -11185,8 +11199,10 @@ final class PlayerRuntime {
             return reject(source, "That's all I hand out in a day.");
         }
         int tossed = Math.min(Math.min(Math.max(1, count), allowance), inventory.main.get(slot).getCount());
-        int started = nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
-                "target", to.getUuid().toString()));
+        var arguments = Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed), "target", to.getUuid().toString());
+        // An offer it made is its own task (E-53), the same recorded toss; anything else is the asker's, as the command is.
+        int started = offered ? dispatchNativeTask(null, entry, "native_toss", arguments, true) : nativeTask(source, target, "native_toss", arguments);
+        if (offered && started != 1) reject(source, entry.blocker);
         if (started == 1) {
             entry.trust.tossed(to.getUuid(), tossed, now);
             peerRadio.gave(entry.data.id(), to.getUuid(), to.getName().getString(), kind.getName().getString().toLowerCase(java.util.Locale.ROOT), tossed);
@@ -11217,6 +11233,65 @@ final class PlayerRuntime {
     void atlas(boolean on) { atlasOn = on; }
 
     /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
+    /** The runtime's side of speaking first (E-53): who may speak, what each has to spare and needs, and the offer's toss. */
+    private final class InitiativeSource implements InitiativeLane.Source {
+        @Override public List<CompanionSocials.Participant> players() {
+            var out = new ArrayList<CompanionSocials.Participant>();
+            for (Entry entry : entries.values()) {
+                if (entry.nativeState == null) continue;
+                var participant = socialParticipant(entry.data.id());
+                if (participant != null && participant.active()) out.add(participant);
+            }
+            return out;
+        }
+
+        @Override public Optional<Map.Entry<String, Integer>> spareFood(UUID id) {
+            var body = nativeBodyOf(id).orElse(null);
+            if (body == null) return Optional.empty();
+            var counts = new java.util.TreeMap<String, Integer>();
+            for (var stack : body.getInventory().main) {
+                if (stack.isEmpty() || stack.get(net.minecraft.component.DataComponentTypes.FOOD) == null) continue;
+                counts.merge(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString(), stack.getCount(), Integer::sum);
+            }
+            int total = counts.values().stream().mapToInt(Integer::intValue).sum();
+            return counts.entrySet().stream().max(Map.Entry.comparingByValue())
+                    .map(most -> Map.entry(most.getKey(), Math.min(most.getValue(), total - InitiativeLane.KEEP_FOOD)));
+        }
+
+        @Override public List<String> needs(UUID id) {
+            return peerRadio.lastUpdate(id).map(update -> update.needs().stream().map(need -> need.replaceFirst("^\\d+\\s+", "")).toList()).orElse(List.of());
+        }
+
+        @Override public boolean idle(UUID id) {
+            Entry entry = entries.get(id);
+            return entry != null && !(entry.runner != null && runnerBusy(entry));
+        }
+
+        @Override public boolean inCountdown(UUID person) {
+            return matches.active(person).filter(match -> match.state() == dev.kindred.core.match.MatchRegistry.State.COUNTDOWN).isPresent();
+        }
+
+        @Override public int offerToss(UUID id, ServerPlayerEntity to, String item, int count, java.util.function.Consumer<String> refused) {
+            var heard = new ArrayList<String>();
+            var output = new net.minecraft.server.command.CommandOutput() {
+                @Override public void sendMessage(Text message) { heard.add(message.getString()); }
+                @Override public boolean shouldReceiveFeedback() { return true; }
+                @Override public boolean shouldTrackOutput() { return true; }
+                @Override public boolean shouldBroadcastConsoleToOps() { return false; }
+            };
+            int done = nativeToss(to.getCommandSource().withOutput(output), id, item, count, true);
+            if (done != 1 && !heard.isEmpty()) refused.accept(heard.getLast());
+            return done;
+        }
+
+        @Override public dev.kindred.core.social.Expression sounding(CompanionSocials.Participant player) { return socials.soundingOf(player); }
+
+        @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+    }
+
+    /** Whether an offer from the player to this person waits for their answer, for fixtures (E-53). */
+    boolean offeringForFixtures(UUID id, UUID person) { return initiative.offering(id, person); }
+
     // ----- For asks in chat (E-52): what ChatIntents reads of a player, and the ways it acts, each the command's own -----
 
     boolean waryOf(UUID id, UUID person) {

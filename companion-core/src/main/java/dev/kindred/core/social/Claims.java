@@ -43,7 +43,7 @@ public final class Claims {
     private static final Pattern WHERE_Q = Pattern.compile("(?:where(?:'s| is) ([a-z0-9_]{2,16})|have you seen ([a-z0-9_]{2,16}))");
 
     /** The message as matched: lower case, one line, apostrophes plain, trailing punctuation dropped. */
-    static String plain(String message) {
+    public static String plain(String message) {
         if (message == null) return "";
         return message.toLowerCase(Locale.ROOT).replace('’', '\'').replaceAll("\\s+", " ").strip().replaceAll("[!?.,]+$", "").strip();
     }
