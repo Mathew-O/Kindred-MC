@@ -16,6 +16,21 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Play by asking (E-52) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 874 JUnit tests, 6 skipped, 0 failures (868
+  passed; 7 new: `IntentGrammarTest`).
+- `NativeChatAskGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 8 of 8 in each of
+  three runs; after the changes below, 8 of 8 in each of three more on the final code.
+- The eight social classes together: 41 of 42 at first, `NativeAskGameTests.aBystandersAskIsRefusedAndNothingIsDone`
+  failing because the new local fallback read "come here" after the stub voice had declined a bystander's ask, saying
+  "Coming." before the refusal; the fallback now reads E-20b's four only with no model at all and never answers "Coming."
+  to someone who may not command the player. Then 41 of 42 with `NativeChatAskGameTests` taking an ambient greeting for
+  a reply (the fixtures now turn ambient remarks off, as the voice fixtures do). Then 42 of 42 on the final code
+  (`NativeChatAskGameTests` 8, `NativePeerLedgerGameTests` 3, `NativeExpressionGameTests` 3, `SocialGameTests` 6,
+  `NativeVoiceGameTests` 9, `NativeAskGameTests` 6, `NativeMatchGameTests` 3, `MannerismGameTests` 4).
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
 ## What each player knows of the others (E-50) — 2 November 2026 (`claude/living-together-1101`)
 
 - Build: `./gradlew build` green on the commit that adds this section: 867 JUnit tests, 6 skipped, 0 failures (861

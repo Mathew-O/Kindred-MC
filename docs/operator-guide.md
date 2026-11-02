@@ -390,6 +390,25 @@ Whoever may command a native player (its controller or an operator) can also ask
 
 If the command would refuse, the player says why in the command's own words ("Echo has no diamond."). Nobody else is offered asks; a reply that carries one for anyone else is refused, and the fixed reply is said. An opponent in a match never may, operator or not. There is no follow in chat yet. The log says `<name> asked in chat by <who>: <ask>: done` or `refused (<why>)`.
 
+#### Play by asking (E-52)
+Beyond E-20b's four, a player does what it is asked in chat in plain words, with or without a model, exactly as the matching command does it when the person asking types it: the same method runs, with that person's own authority, so every check the command makes is made again. It says how it went: done in a few words ("On it: build a nether portal."), or the command's refusal as its own ("Only an operator or whoever looks after me can ask me that.", "AI world edits are disabled on this server; an operator must enable them first."). Nothing moves on an ask the command would refuse.
+
+| Say | As the command | Who may |
+| --- | --- | --- |
+| go for the Nether · find the End portal · beat the dragon · drop your goal | `/aiplayer goal nether\|end\|dragon\|none` | its controllers |
+| play it safe · take it easy · speed it up | `/aiplayer mode OPTIMAL\|IDLE\|SPEEDRUN` | its controllers |
+| work together · go solo | the panel's collaboration switch | its controllers |
+| build a hut\|cabin\|house\|manor here · make a cow\|sheep\|pig\|chicken ranch here · plant a field here | `/aiplayer build`, `ranch`, `field` at the speaker's feet | its controllers |
+| wear the knight skin | `/aiplayer skin knight` | its controllers |
+| race me · duel me (or name someone) | `/aiplayer match speedrun` / `duel` | anyone; see below |
+| I'm in · count me out | `/aiplayer match join` / `stop` | the person, for themselves |
+| keep it down · you can talk more | `/aiplayer prefs unasked fewer\|more` | the person, for themselves |
+| come here · wait · stop · toss me some bread | E-20b's asks | its controllers |
+
+A race or a duel asked in chat is proposed only if every AI player in it says yes by its own rule: not while hurt or hungry, nor out of the Overworld or already in a match, nor a duel against someone far better armed unless it is the fighting kind; otherwise as keen as its personality makes it. Its yes stands in for its controller's for that match alone. Each person named still joins only by their own "I'm in", and the match starts once everyone is in. A race or duel with nobody named is asked back once ("Race whom?"); an answer that names nobody drops it.
+
+What stays a command: making and removing players, the operator's switches (`edits`, `dragonfight`, `bases`), limits, and anything with coordinates. Asked for one in chat, a player says which command does it ("That's not mine to change; an operator can, with /aiplayer dragonfight on."), to an operator as well. With the voice on, E-20b's four asks are still the model's to read; the rest are read locally either way, so asking in an unusual way may not be understood. The log says `<name> asked in chat by <who>: <ask>: done (<the command's message>)` or `refused (<why>)`, and for a match `<name> on a RACE with 1: yes|no (<its words>)`.
+
 #### How it sounds, and how each person asked to be spoken to (E-18a, E-19a)
 Every player's words are clean, whoever is listening: no swearing, flirting or dark jokes. Within that, each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
 

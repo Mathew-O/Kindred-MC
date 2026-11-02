@@ -198,6 +198,10 @@ final class PlayerRuntime {
     private final TalkSettings talk;
     /** What each AI player knows of the others (E-50). */
     private final PeerRadio peerRadio;
+    /** Asks in chat, run through their commands' methods as whoever asked (E-52). */
+    private final ChatIntents chatIntents;
+    /** How the last ask in chat by its plain form went, by player ("GOAL: done"), for fixtures (E-52). */
+    private final Map<UUID, String> chatAsked = new HashMap<>();
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
     private final PlayerVoice voice;
     private boolean voiceOn = PlayerVoice.switchedOn(System.getenv());
@@ -404,13 +408,18 @@ final class PlayerRuntime {
                 return facts == null ? null : new PeerRadio.Audience(facts.relation(), facts.controls());
             }
         });
+        chatIntents = new ChatIntents(this, server);
         socials.setHearing(new CompanionSocials.Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
                 return peerRadio.heard(player.id(), speaker, message);
             }
 
             @Override public Optional<String> answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
-                return peerRadio.answer(player.id(), speaker, message);
+                return peerRadio.answer(player.id(), speaker, message).or(() -> chatIntents.early(speaker, player, message));
+            }
+
+            @Override public Optional<CompanionSocials.Spoken> fallback(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                return chatIntents.fallback(speaker, player, message);
             }
         });
         voice = new PlayerVoice(this::voiceFacts, new PlayerVoice.Asks() {
@@ -11208,6 +11217,94 @@ final class PlayerRuntime {
     void atlas(boolean on) { atlasOn = on; }
 
     /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
+    // ----- For asks in chat (E-52): what ChatIntents reads of a player, and the ways it acts, each the command's own -----
+
+    boolean waryOf(UUID id, UUID person) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.trust.wary(person, server.getTicks());
+    }
+
+    CollaborationMode collaborationOf(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.runtimeSettings.collaborationMode();
+    }
+
+    /** Whether {@code speaker} may command the native player {@code id}, as its come, wait, stop and toss require. */
+    boolean mayCommand(UUID id, ServerPlayerEntity speaker) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.nativeState != null && nativeMayControl(speaker.getCommandSource(), entry);
+    }
+
+    boolean mayAdjustFrom(ServerCommandSource source, UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null && mayAdjust(source, entry);
+    }
+
+    Optional<ServerPlayerEntity> nativeBodyOf(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.nativeBody == null || !entry.nativeBody.connected() ? Optional.empty() : Optional.ofNullable(entry.nativeBody.entity());
+    }
+
+    /** The AI player whose body this is, or null for a person. */
+    UUID aiPlayerFor(UUID bodyId) {
+        Entry entry = entryForPlayer(bodyId);
+        return entry == null ? null : entry.data.id();
+    }
+
+    /** A player online by name: a person's own name, or an AI player's. */
+    Optional<UUID> playerNamed(String name) {
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            if (player.getName().getString().equalsIgnoreCase(name)) return Optional.of(player.getUuid());
+        }
+        for (Entry entry : entries.values()) {
+            if (entry.data.displayName().equalsIgnoreCase(name)) {
+                var body = nativeBodyOf(entry.data.id());
+                if (body.isPresent()) return Optional.of(body.get().getUuid());
+            }
+        }
+        return Optional.empty();
+    }
+
+    String nameOf(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? id.toString().substring(0, 8) : entry.data.displayName();
+    }
+
+    dev.kindred.core.match.MatchRegistry matchRegistry() { return matches; }
+
+    /**
+     * Whether the AI player {@code id} says yes to a match with {@code players} (bodies), by its own rule: hurt, hungry, out
+     * of the Overworld or in a fight, or far worse kitted for a duel, it says no.
+     */
+    dev.kindred.core.match.MatchChoice.Choice matchChoice(UUID id, List<UUID> players, dev.kindred.core.match.MatchChoice.Kind kind) {
+        Entry entry = entries.get(id);
+        var body = nativeBodyOf(id).orElse(null);
+        if (entry == null || body == null) return new dev.kindred.core.match.MatchChoice.Choice(false, "I'm not in the world.");
+        boolean committed = body.getWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD || matches.active(body.getUuid()).isPresent();
+        int other = 0;
+        for (UUID player : players) {
+            if (player.equals(body.getUuid())) continue;
+            var them = server.getPlayerManager().getPlayer(player);
+            if (them != null) other = Math.max(other, them.getArmor() + (them.getMainHandStack().isEmpty() ? 0 : 3));
+        }
+        int kit = body.getArmor() + (body.getMainHandStack().isEmpty() ? 0 : 3);
+        return dev.kindred.core.match.MatchChoice.decide(entry.profile.personality(),
+                new dev.kindred.core.match.MatchChoice.State(body.getHealth(), body.getHungerManager().getFoodLevel(), committed, kit, other), kind);
+    }
+
+    /** An ask of E-20b's four read without a model, done as a model's is, after the player's look at the speaker. */
+    void askInChat(UUID id, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
+        voiceAsk(id, speaker, ask, item, refused);
+    }
+
+    void chatAskedForFixtures(UUID id, String how) {
+        chatAsked.put(id, how);
+        while (chatAsked.size() > 256) chatAsked.remove(chatAsked.keySet().iterator().next());
+    }
+
+    /** How the last ask in chat by its plain form went ("GOAL: done", "RACE: refused"), for fixtures (E-52); null before any. */
+    String chatAskedForFixtures(UUID id) { return chatAsked.get(id); }
+
     /** What a player knows of the others, for fixtures (E-50); null while it is being read. */
     dev.kindred.core.social.PeerLedger peersForFixtures(UUID id) { return peerRadio.ledger(id).orElse(null); }
 
@@ -12072,6 +12169,11 @@ final class PlayerRuntime {
      * it itself (/aiplayer match join), so no human is ever entered into a fight by anyone else (D7).
      */
     int proposeDuel(ServerCommandSource source, UUID first, UUID second) {
+        return proposeDuel(source, first, second, Set.of());
+    }
+
+    /** As the command, with the AI players that said yes for themselves when asked in chat ({@code chose}, E-52). */
+    int proposeDuel(ServerCommandSource source, UUID first, UUID second, Set<UUID> chose) {
         requireThread();
         // The server's own rule comes first: with PvP off, no player can hurt another, in a match or not.
         if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
@@ -12079,7 +12181,9 @@ final class PlayerRuntime {
         for (UUID player : invited) {
             Entry entry = entryForPlayer(player);
             if (entry == null && server.getPlayerManager().getPlayer(player) == null) return reject(source, "No such player online.");
-            if (entry != null && !nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+            if (entry != null && !nativeMayControl(source, entry) && !chose.contains(entry.data.id())) {
+                return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+            }
         }
         var result = matches.propose(dev.kindred.core.match.MatchRegistry.Mode.DUEL, invited);
         if (!result.accepted()) return reject(source, result.reason());
@@ -12137,13 +12241,20 @@ final class PlayerRuntime {
      * needs the server's leave for AI world edits and the dragon fight; a human joins for itself.
      */
     int proposeSpeedrun(ServerCommandSource source, List<UUID> runners) {
+        return proposeSpeedrun(source, runners, Set.of());
+    }
+
+    /** As the command, with the AI players that said yes for themselves when asked in chat ({@code chose}, E-52). */
+    int proposeSpeedrun(ServerCommandSource source, List<UUID> runners, Set<UUID> chose) {
         requireThread();
         for (UUID runner : runners) {
             Entry entry = entryForPlayer(runner);
             var player = server.getPlayerManager().getPlayer(runner);
             if (player == null) return reject(source, "No such player online.");
             if (entry != null) {
-                if (!nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                if (!nativeMayControl(source, entry) && !chose.contains(entry.data.id())) {
+                    return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                }
                 if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an AI runner needs them (/aiplayer edits on).");
                 if (!dragonFight) return reject(source, "The dragon fight is off on this server; an AI runner needs it (/aiplayer dragonfight on).");
             }

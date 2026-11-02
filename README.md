@@ -102,25 +102,28 @@ There's no download yet, so you build the mod yourself (it takes a couple of min
 
 ## ⌨️ Cheat sheet
 
-Press **K** in game (with the mod on your client) to open the player menu, or use commands. `[player]` means you can name one; leave it out if there's only one.
+Most things you just **ask in chat**, by its name. Whoever made it (and any operator) may ask anything here; anyone else can race or duel it, ask what it knows, and tell it how to talk to them. It answers either way: done, or why not.
+
+| Say | What happens |
+| --- | --- |
+| `Echo, go for the Nether` (or `find the End portal`, `beat the dragon`, `drop your goal`) | Sets its goal |
+| `Echo, play it safe` (or `take it easy`, `speed it up`) · `Echo, work together` (or `go solo`) | How it plays, and whether it teams up |
+| `Echo, build a cabin here` (`hut`, `house`, `manor`) · `make a cow ranch here` · `plant a field here` | Builds where you stand |
+| `Echo, race me` or `duel me`, then `Echo, I'm in` | It says yes or no for itself; nothing starts until you say "I'm in". `count me out` to leave |
+| `Echo, come here` · `wait` · `stop` · `toss me some bread` · `wear the knight skin` | The everyday asks |
+| `Echo, what does Sol need?` · `where is Sol?` | What it knows of the others |
+| `Echo, keep it down` (or `you can talk more`) · `forget that` | Fewer or more lines to you; take back what you told it |
+
+These stay commands. Press **K** in game (with the mod on your client) for the player menu, or:
 
 | Command | What it does |
 | --- | --- |
-| `/aiplayer native create <name>` | Make a player of your own beside you |
-| `/aiplayer roster spawn <name>` | Spawn a starter: Kindred, Sol or Echo |
-| `/aiplayer skin <skin> [player]` | Dress a player in a skin from `config/kindred/skins` |
-| `/aiplayer personality <trait> <0-100> [player]` | Tune one personality trait |
-| `/aiplayer edits on` / `off` | Allow or stop all block breaking and placing by your players |
-| `/aiplayer goal nether [player]` | Earn a lit Nether portal from scratch |
-| `/aiplayer goal end [player]` | Go on to find the End portal |
-| `/aiplayer dragonfight on` then `/aiplayer goal dragon [player]` | Allow the dragon fight, then go for it |
-| `/aiplayer goal none [player]` | Drop the current goal |
-| `/aiplayer build cabin <x y z> [player]` | Build a cabin there (also `hut`, `house`, `manor`, `keep`) |
-| `/aiplayer ranch cow <x y z> [player]` | Build a pen and breed a pair of cows (or `sheep`, `pig`, `chicken`) |
-| `/aiplayer match duel <first> <second>` | Set up a duel (also `speedrun`, `manhunt`, `build`) |
-| `/aiplayer limit cap <hours> [player]` | How many hours a day a player may be active |
-| `/aiplayer limit window 18.00 23.00 [player]` | Only let a player be active between those hours |
-| `/aiplayer watch on` / `off` | Let the AI players learn how deep you mine, or stop it and delete what they learned (each person for themselves) |
+| `/aiplayer native create <name>` · `/aiplayer roster spawn <name>` | Make a player of your own, or spawn a starter (Kindred, Sol or Echo) |
+| `/aiplayer edits on` / `off` · `/aiplayer dragonfight on` | Allow or stop block breaking and placing by your players; allow the dragon fight |
+| `/aiplayer personality <trait> <0-100> [player]` · `/aiplayer expression plain\|dry\|playful [player]` | Tune a trait; how it sounds |
+| `/aiplayer limit cap <hours> [player]` · `/aiplayer limit window 18.00 23.00 [player]` | How long, and when, a player may be active |
+| `/aiplayer prefs` · `/aiplayer watch on` / `off` | Your own: how AI players speak to you; whether they may learn how deep you mine |
+| `/aiplayer build cabin <x y z> [player]` (and anything else with coordinates) | Anything at a place you name, rather than where you stand |
 
 The full list, with every option, is in the [operator guide](docs/operator-guide.md).
 

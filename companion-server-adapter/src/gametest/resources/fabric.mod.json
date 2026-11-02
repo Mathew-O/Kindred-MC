@@ -18,6 +18,7 @@
       "dev.kindred.fabric.NativeAskGameTests",
       "dev.kindred.fabric.NativeExpressionGameTests",
       "dev.kindred.fabric.NativePeerLedgerGameTests",
+      "dev.kindred.fabric.NativeChatAskGameTests",
       "dev.kindred.fabric.NativePaidSkillsGameTests",
       "dev.kindred.fabric.NativeAccountingGameTests",
       "dev.kindred.fabric.NativeDeathConservationGameTests",

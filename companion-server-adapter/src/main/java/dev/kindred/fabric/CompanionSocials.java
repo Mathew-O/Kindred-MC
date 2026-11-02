@@ -84,6 +84,9 @@ final class CompanionSocials {
 
         /** A direct reply was said to {@code speaker}, the model's or the fixed one: the exchange as it went. */
         default void replied(ServerPlayerEntity speaker, Participant player, String said, String spoken) { }
+
+        /** Whether there is a model to ask at all (it may still decline a given line: budgets, rates, a refused ask). */
+        default boolean available() { return true; }
     }
 
     /**
@@ -104,8 +107,11 @@ final class CompanionSocials {
         /** A claim noted or taken back; the reply to a taking-back, or empty. */
         Optional<String> heard(ServerPlayerEntity speaker, Participant player, String message);
 
-        /** Its own answer to a question about someone it knows, or empty. */
+        /** Its own answer to a question about someone it knows, or to an ask it has done or refused (E-52), or empty. */
         Optional<String> answer(ServerPlayerEntity speaker, Participant player, String message);
+
+        /** With no voice to read it, E-20b's asks in their plain forms (E-52): said, then done; or empty. */
+        default Optional<Spoken> fallback(ServerPlayerEntity speaker, Participant player, String message) { return Optional.empty(); }
 
         Hearing NONE = new Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, Participant player, String message) { return Optional.empty(); }
@@ -466,6 +472,16 @@ final class CompanionSocials {
                 return true;
             }
             if (voiced(player, companion, message, now)) return true;
+        }
+        if (habitReply.isEmpty() && (voice == null || !voice.available())) {
+            // No model to read it at all: an ask in its plain form, said and then done (E-52). A model that declined the
+            // line (its budget, or an ask it refused) is not second-guessed here: the fixed reply is said, as before.
+            var asked = hearing.fallback(player, companion, message);
+            if (asked.isPresent()) {
+                scheduleInTurn(companion, player, asked.get().text(), now + SpeechTiming.delayMillis(asked.get().text()), asked.get().then());
+                if (voice != null) voice.replied(player, companion, message, asked.get().text());
+                return true;
+            }
         }
         String spoken = habitReply.orElseGet(() -> fixedReply(companion, player, message, now));
         schedule(companion, player, spoken, now + SpeechTiming.delayMillis(spoken), true);

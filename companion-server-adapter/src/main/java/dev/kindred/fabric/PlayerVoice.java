@@ -131,6 +131,9 @@ final class PlayerVoice implements CompanionSocials.Voice {
     }
 
     @Override
+    public boolean available() { return bridge.get().isPresent(); }
+
+    @Override
     public void replied(ServerPlayerEntity speaker, CompanionSocials.Participant player, String said, String spoken) {
         if (bridge.get().isEmpty()) return; // No voice, no talk kept.
         long now = clock.getAsLong();
