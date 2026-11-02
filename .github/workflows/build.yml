@@ -28,7 +28,8 @@ jobs:
         run: python3 tools/support-batch-01/support.py tracker
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # The build and the whole native suite: on 2 November the suite outgrew 60 minutes (cut off at about 93%).
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
