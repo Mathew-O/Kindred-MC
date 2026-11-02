@@ -19,8 +19,11 @@ import java.util.UUID;
 public final class SocialBrain {
     public enum Topic { THREAT, HURT, COMPANION, GREETING, RAIN, NIGHT, NOTICE, WORK_COMPLETED, WORK_BLOCKED, TEAM }
 
-    /** What kind of line it is (E-18a): plain, a joke, or teasing (between AI players only). */
-    public enum Tone { PLAIN, JOKE, TEASE }
+    /**
+     * What kind of line it is (E-18a, E-18b): plain, a joke, teasing (between AI players only), rough (blunt, maybe a swear
+     * word), a dark joke (about dying in the game), or flirting (between AI players, or with a person who said yes).
+     */
+    public enum Tone { PLAIN, JOKE, TEASE, ROUGH, DARK, FLIRT }
 
     /**
      * A line to say, with its plain wording beside it: a joke or a tease is said plainly instead to anyone who asked for
@@ -31,10 +34,26 @@ public final class SocialBrain {
 
         /** The words for these listeners: the strictest of everyone who will hear it. */
         public String textFor(dev.kindred.core.social.ListenerPreferences heard) {
-            if (heard == null || tone == Tone.PLAIN) return text;
-            if (tone == Tone.JOKE && heard.noJokes()) return plain;
-            if (tone == Tone.TEASE && (heard.noTeasing() || heard.noJokes())) return plain;
-            return text;
+            return wordsFor(tone, text, plain, heard);
+        }
+
+        /**
+         * The one rule every line of every lane follows (E-18a, E-19a, E-18b): a joke is said plainly to anyone who asked
+         * for no jokes, a tease to anyone who asked for no teasing; a rough line goes out (its swear words then softened at
+         * delivery for whoever did not say yes to them) unless jokes are off; a dark joke only to people who said yes to
+         * dark jokes, flirting only to people who said yes to flirting, each plainly to everyone else. With nobody's
+         * settings known, the rough stuff is said plainly.
+         */
+        public static String wordsFor(Tone tone, String text, String plain, dev.kindred.core.social.ListenerPreferences heard) {
+            if (tone == null || tone == Tone.PLAIN) return text;
+            var h = heard != null ? heard : dev.kindred.core.social.ListenerPreferences.defaults(null).resolved(false);
+            return switch (tone) {
+                case PLAIN -> text;
+                case JOKE, ROUGH -> h.noJokes() ? plain : text;
+                case TEASE -> h.noTeasing() || h.noJokes() ? plain : text;
+                case DARK -> h.dark() ? text : plain;
+                case FLIRT -> h.flirts() ? text : plain;
+            };
         }
     }
     private record Pending(Speech speech, long expires, int priority) { }
@@ -75,16 +94,18 @@ public final class SocialBrain {
                     "threat"), now, 100);
         }
         if (snapshot.hurt() && (previous == null || !previous.hurt())) {
-            queue(new Speech(Topic.HURT, null, hurt(snapshot.harm()), "hurt"), now, 90);
+            queue(hurt(snapshot.harm(), profile), now, 90);
         }
         if (snapshot.raining() && (previous == null || !previous.raining())) {
             queue(styled(Topic.RAIN, "rain", profile, pick("It's raining here.", "A bit wet out here."),
-                    "Rain. Lovely.", "Rain again. I seem to have forgotten my umbrella."), now, 20);
+                    "Rain. Lovely.", "Rain again. I seem to have forgotten my umbrella.",
+                    pick("Rain again? Damn it.", "Ugh, rain. Of course it's raining.")), now, 20);
         }
         if (snapshot.night() && (previous == null || !previous.night())) {
             queue(styled(Topic.NIGHT, "night", profile, pick("It's dark out here. Let's watch our footing.",
                     "Night out here. Keep an eye on the path."), "Night. Again.",
-                    "Dark already. Something out there is thinking about my boots."), now, 20);
+                    "Dark already. Something out there is thinking about my boots.",
+                    pick("Getting dark as hell out here. Creepers out soon.", "Night again. Zombies are gonna be all over this place.")), now, 20);
         }
         previous = snapshot;
         pending.values().removeIf(p -> p.expires() <= now || !stillRelevant(p.speech(), snapshot, contacts));
@@ -132,7 +153,8 @@ public final class SocialBrain {
     public void workCompleted(String skill, String detail, SocialProfile profile, long now) {
         if (!profile.ambientEnabled() || profile.personality().sociability() == 0) return;
         queue(styled(Topic.WORK_COMPLETED, "work_completed:" + skill, profile, "Finished " + skill + ". " + detail,
-                skill + ": done. " + detail, "All done with " + skill + "! " + detail), now, 70);
+                skill + ": done. " + detail, "All done with " + skill + "! " + detail,
+                "Finally done with " + skill + ", hell yeah. " + detail), now, 70);
     }
 
     /** Offers a line about a job the player got stuck on, and why. */
@@ -197,14 +219,27 @@ public final class SocialBrain {
 
     /**
      * A word on being hurt, of what the game says hurt it and nothing more: a player is named only when the damage was
-     * theirs, and a fall or a burn blames nobody.
+     * theirs, and a fall or a burn blames nobody. A rough one swears or makes a dark joke of it (E-18b), plainly to whoever
+     * did not ask for that.
      */
-    private String hurt(SocialSnapshot.Harm harm) {
-        if (harm == null) return pick("Ouch. I just took a hit.", "That hurt. Let's be careful here.");
-        return switch (harm.source()) {
+    private Speech hurt(SocialSnapshot.Harm harm, SocialProfile profile) {
+        String plain;
+        if (harm == null) plain = pick("Ouch. I just took a hit.", "That hurt. Let's be careful here.");
+        else plain = switch (harm.source()) {
             case PLAYER -> pick("Hey, " + harm.name() + ", watch it!", "Ow! That was you, " + harm.name() + ".");
             case MOB -> pick("Ouch, a " + harm.name() + " got me.", "That " + harm.name() + " hit me. Careful.");
             case WORLD -> pick("Ouch. " + harm.name() + ".", "That hurt: " + harm.name() + ".");
+        };
+        if (profile.effectiveExpression() != dev.kindred.core.social.Expression.ROUGH) return new Speech(Topic.HURT, null, plain, "hurt");
+        if (harm == null) return new Speech(Topic.HURT, null, "Ow, what the hell was that?", "hurt", plain, Tone.ROUGH);
+        return switch (harm.source()) {
+            case PLAYER -> new Speech(Topic.HURT, null, "Hey, " + harm.name() + ", watch it, damn!", "hurt", plain, Tone.ROUGH);
+            case MOB -> Math.floorMod(variation, 2) == 0
+                    ? new Speech(Topic.HURT, null, "Ow, wtf, a " + harm.name() + " got me.", "hurt", plain, Tone.ROUGH)
+                    : new Speech(Topic.HURT, null, "That " + harm.name() + " almost sent me back to spawn lol.", "hurt", plain, Tone.DARK);
+            case WORLD -> Math.floorMod(variation, 2) == 0
+                    ? new Speech(Topic.HURT, null, "Ow, shit. " + harm.name() + ".", "hurt", plain, Tone.ROUGH)
+                    : new Speech(Topic.HURT, null, "Nearly died to " + harm.name() + ". Tell my bed I loved it.", "hurt", plain, Tone.DARK);
         };
     }
 
@@ -213,10 +248,16 @@ public final class SocialBrain {
      * anyone who asked for no jokes. The profile is the one under the server's cap.
      */
     private static Speech styled(Topic topic, String key, SocialProfile profile, String plain, String dry, String playful) {
+        return styled(topic, key, profile, plain, dry, playful, playful);
+    }
+
+    /** As above, with a rough player's line (E-18b), marked rough: its swear words softened for whoever did not say yes. */
+    private static Speech styled(Topic topic, String key, SocialProfile profile, String plain, String dry, String playful, String rough) {
         return switch (profile.effectiveExpression()) {
             case PLAIN -> new Speech(topic, null, plain, key);
             case DRY -> new Speech(topic, null, dry, key, plain, Tone.PLAIN);
             case PLAYFUL -> new Speech(topic, null, playful, key, plain, Tone.JOKE);
+            case ROUGH -> new Speech(topic, null, rough, key, plain, Tone.ROUGH);
         };
     }
 
@@ -229,9 +270,17 @@ public final class SocialBrain {
                 + (companion ? " Good to see another companion around." : "");
         Topic topic = companion ? Topic.COMPANION : Topic.GREETING;
         String key = "hello:" + contact.id();
+        // A flirty one (E-18b) flirts with another AI player, plainly to whoever did not say yes to flirting.
+        if (companion && profile.flirty() && profile.effectiveExpression().ordinal() >= dev.kindred.core.social.Expression.PLAYFUL.ordinal()) {
+            return new Speech(topic, contact.id(), pick("Oh hey, " + contact.name() + ". Looking good in that armor, not gonna lie.",
+                    "There you are, " + contact.name() + ". Missed you down here."), key, plain, Tone.FLIRT);
+        }
         return switch (profile.effectiveExpression()) {
             case PLAIN -> new Speech(topic, contact.id(), plain, key);
             case DRY -> new Speech(topic, contact.id(), contact.name() + ". Hello.", key, plain, Tone.PLAIN);
+            case ROUGH -> companion
+                    ? new Speech(topic, contact.id(), "Well damn, " + contact.name() + " lives. Thought a creeper got you.", key, plain, Tone.TEASE)
+                    : new Speech(topic, contact.id(), "Yo, " + contact.name() + ", what's good?", key, plain, Tone.JOKE);
             case PLAYFUL -> companion
                     ? new Speech(topic, contact.id(), "Hey, " + contact.name() + ". Still here? I thought you'd have the Nether sorted by now.",
                             key, plain, Tone.TEASE)

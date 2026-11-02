@@ -95,6 +95,13 @@ final class PlayerVoice implements CompanionSocials.Voice {
     }
 
     /** Where the line on how to speak to each listener comes from: the social lane's preset, cap and preferences. */
+    /** Whether its line to a listener may swear (E-18b): by default never. */
+    private java.util.function.BiPredicate<CompanionSocials.Participant, ServerPlayerEntity> maySwear = (player, listener) -> false;
+
+    void setSwearing(java.util.function.BiPredicate<CompanionSocials.Participant, ServerPlayerEntity> maySwear) {
+        this.maySwear = java.util.Objects.requireNonNull(maySwear);
+    }
+
     void setManner(java.util.function.BiFunction<CompanionSocials.Participant, ServerPlayerEntity, String> manner) {
         this.manner = java.util.Objects.requireNonNull(manner);
     }
@@ -112,7 +119,8 @@ final class PlayerVoice implements CompanionSocials.Voice {
         Facts facts = source.facts(player.id(), speaker);
         if (facts == null) return false;
         var situation = situation(facts, player.body(), speaker, transcript(player.id(), speaker.getUuid()));
-        var conversation = ConversationPrompt.conversation(facts.name(), facts.personality(), situation, message, manner.apply(player, speaker));
+        var conversation = ConversationPrompt.conversation(facts.name(), facts.personality(), situation, message, manner.apply(player, speaker),
+                maySwear.test(player, speaker));
         var asked = lane.get().converse(player.id(), facts.name(), speaker.getName().getString(), conversation, server);
         if (asked.isDone() && asked.join().isEmpty()) return false; // Declined at once (budgets, rates, a line already out).
         // Never left waiting: past the deadline and a second's grace it is taken as no line, and the fixed reply is said.

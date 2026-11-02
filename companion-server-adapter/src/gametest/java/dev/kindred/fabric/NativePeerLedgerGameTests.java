@@ -76,14 +76,16 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
      * Staged: a lit portal, Sol stocked for the Nether as the follow-up fixtures stock it (sticks, a flint, no string, no
      * feathers, no bow), on the End goal. Its own planner wants string and feathers for the End fight's bow and arrows;
      * Echo's ledger has that from Sol's update, by Sol, with no line said to Echo or by Sol about it. Its owner asks Echo
-     * "what does Sol need?" and is answered from the ledger without the model; asked something open, the voice is told.
+     * "what does Sol need?": the voice is asked and told what the ledger says (E-50a, the owner's decision of 2 November);
+     * when it gives no line, the ledger's own words are said; when it does, its line is. Asked something open, the voice is
+     * told it too.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "peers", tickLimit = 1600)
     public void aTeammatesNeedsReachItsLedgerWithNothingSaidAndItAnswersFromThem(TestContext context) {
         var two = new Two(context, true);
         var t = two.t;
         var f = t.f;
-        boolean[] done = new boolean[3];
+        boolean[] done = new boolean[4];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
                 .createAndAdd(() -> t.createOwned(context))
@@ -122,22 +124,36 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     if (!done[1]) {
+                        t.stub.answer = conversation -> NativeVoiceGameTests.Stub.fails("a fixture's spent budget");
                         f.runtime.chat(t.owner.getUuid(), "Echo, what does Sol need?");
                         done[1] = true;
                     }
+                    context.assertTrue(t.stub.asked.size() == 1, "The voice asked to phrase it: " + t.stub.asked.size());
+                    String told = t.stub.asked.getFirst().text();
+                    context.assertTrue(told.contains("You know of others: Sol needs ") && told.contains("string"), "The voice is told the ledger: " + told);
                     var answer = t.heardBy(t.owner).stream().filter(h -> h.text().startsWith("[Kindred] Echo: Sol needs")).findFirst();
                     context.assertTrue(answer.isPresent() && answer.get().text().contains("string") && answer.get().text().contains("Sol's own update"),
-                            "Answered from the ledger: " + t.heardBy(t.owner));
-                    context.assertTrue(t.stub.asked.isEmpty(), "Without the model");
+                            "No line from the voice: the ledger's own words: " + t.heardBy(t.owner));
                 })
                 .createAndAdd(() -> {
                     if (!done[2]) {
                         NativeVoiceGameTests.Talk.waitFor(3_100); // The lane's three seconds between one speaker's replies.
-                        f.runtime.chat(t.owner.getUuid(), "Echo, how is everyone getting on?");
+                        t.stub.answer = conversation -> NativeVoiceGameTests.Stub.says("Sol's after string and feathers for a bow.");
+                        f.runtime.chat(t.owner.getUuid(), "Echo, what does Sol need?");
                         done[2] = true;
                     }
-                    context.assertTrue(t.stub.asked.size() == 1, "The voice asked once: " + t.stub.asked.size());
-                    String told = t.stub.asked.getFirst().text();
+                    context.assertTrue(t.stub.asked.size() == 2, "The voice asked again: " + t.stub.asked.size());
+                    context.assertTrue(t.heardBy(t.owner).stream().anyMatch(h -> h.text().equals("[Kindred] Echo: Sol's after string and feathers for a bow.")),
+                            "The voice's line, phrased from the ledger: " + t.heardBy(t.owner));
+                })
+                .createAndAdd(() -> {
+                    if (!done[3]) {
+                        NativeVoiceGameTests.Talk.waitFor(3_100);
+                        f.runtime.chat(t.owner.getUuid(), "Echo, how is everyone getting on?");
+                        done[3] = true;
+                    }
+                    context.assertTrue(t.stub.asked.size() == 3, "The voice asked a third time: " + t.stub.asked.size());
+                    String told = t.stub.asked.get(2).text();
                     context.assertTrue(told.contains("You know of others: Sol needs ") && told.contains("string"), "The voice is told: " + told);
                     t.cleanup(context);
                 })

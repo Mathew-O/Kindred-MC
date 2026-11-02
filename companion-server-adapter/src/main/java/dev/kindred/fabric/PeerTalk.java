@@ -141,6 +141,7 @@ final class PeerTalk {
             case NEEDS -> "what you needed";
             case EPISODE -> "old times";
             case HELLO -> "nothing much";
+            case FLIRT -> "small talk";
         };
         note(a, b, "talked: " + about);
         note(b, a, "talked: " + about);
@@ -202,7 +203,7 @@ final class PeerTalk {
         }
         return new Conversation.Side(self.id(), self.name(), self.profile().personality().sociability(), source.sounding(self),
                 update == null ? "" : update.doing(), update == null ? List.of() : update.needs(), update == null ? List.of() : update.spare(),
-                knownDoing, knownNeeds, episode);
+                knownDoing, knownNeeds, episode, self.profile().flirty());
     }
 
     private void note(CompanionSocials.Participant self, CompanionSocials.Participant other, String what) {

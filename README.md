@@ -120,9 +120,9 @@ These stay commands. Press **K** in game (with the mod on your client) for the p
 | --- | --- |
 | `/aiplayer native create <name>` · `/aiplayer roster spawn <name>` | Make a player of your own, or spawn a starter (Kindred, Sol or Echo) |
 | `/aiplayer edits on` / `off` · `/aiplayer dragonfight on` | Allow or stop block breaking and placing by your players; allow the dragon fight |
-| `/aiplayer personality <trait> <0-100> [player]` · `/aiplayer expression plain\|dry\|playful [player]` | Tune a trait; how it sounds |
+| `/aiplayer personality <trait> <0-100> [player]` · `/aiplayer expression plain\|dry\|playful\|rough [player]` · `/aiplayer chatstyle proper\|casual\|gamer\|chaotic [player]` | Tune a trait; how it sounds; how it types |
 | `/aiplayer limit cap <hours> [player]` · `/aiplayer limit window 18.00 23.00 [player]` | How long, and when, a player may be active |
-| `/aiplayer prefs` · `/aiplayer watch on` / `off` | Your own: how AI players speak to you; whether they may learn how deep you mine |
+| `/aiplayer prefs` · `/aiplayer prefs swearing\|dark\|flirting on` · `/aiplayer watch on` / `off` | Your own: how AI players speak to you, and whether you hear swearing, dark jokes or flirting (off unless you say yes); whether they may learn how deep you mine |
 | `/aiplayer build cabin <x y z> [player]` (and anything else with coordinates) | Anything at a place you name, rather than where you stand |
 
 The full list, with every option, is in the [operator guide](docs/operator-guide.md).

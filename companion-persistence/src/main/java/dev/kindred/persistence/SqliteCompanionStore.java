@@ -383,7 +383,9 @@ public final class SqliteCompanionStore {
                 while (rows.next()) {
                     all.add(new ListenerPreferences(UUID.fromString(rows.getString("person_id")),
                             ListenerPreferences.Unasked.parse(rows.getString("unasked")),
-                            rows.getBoolean("no_teasing"), rows.getBoolean("no_jokes"), rows.getLong("revision")));
+                            rows.getBoolean("no_teasing"), rows.getBoolean("no_jokes"),
+                            ListenerPreferences.Opt.parse(rows.getString("swearing")), ListenerPreferences.Opt.parse(rows.getString("dark_humor")),
+                            ListenerPreferences.Opt.parse(rows.getString("flirting")), rows.getLong("revision")));
                 }
             }
             return List.copyOf(all);
@@ -397,14 +399,19 @@ public final class SqliteCompanionStore {
         if (preferences.isDefault()) return forgetListenerPreferences(preferences.person()).thenApply(ignored -> preferences);
         return submit(() -> transaction(() -> {
             try (PreparedStatement upsert = database.prepareStatement(
-                    "INSERT INTO listener_preferences (person_id, unasked, no_teasing, no_jokes, revision) VALUES (?, ?, ?, ?, ?) "
+                    "INSERT INTO listener_preferences (person_id, unasked, no_teasing, no_jokes, revision, swearing, dark_humor, flirting) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                             + "ON CONFLICT(person_id) DO UPDATE SET unasked=excluded.unasked, no_teasing=excluded.no_teasing, "
-                            + "no_jokes=excluded.no_jokes, revision=excluded.revision")) {
+                            + "no_jokes=excluded.no_jokes, revision=excluded.revision, swearing=excluded.swearing, "
+                            + "dark_humor=excluded.dark_humor, flirting=excluded.flirting")) {
                 upsert.setString(1, preferences.person().toString());
                 upsert.setString(2, preferences.unasked().name().toLowerCase(java.util.Locale.ROOT));
                 upsert.setBoolean(3, preferences.noTeasing());
                 upsert.setBoolean(4, preferences.noJokes());
                 upsert.setLong(5, preferences.revision());
+                upsert.setString(6, preferences.swearing().id());
+                upsert.setString(7, preferences.darkHumor().id());
+                upsert.setString(8, preferences.flirting().id());
                 upsert.executeUpdate();
             }
             return preferences;
@@ -445,7 +452,7 @@ public final class SqliteCompanionStore {
             try (PreparedStatement update = database.prepareStatement("""
                     UPDATE social_profiles SET initiative=?, caution=?, curiosity=?, sociability=?, humor=?,
                     personality_revision=?, ambient_enabled=?, public_conversation=?, revision=?,
-                    combativeness=?, helpfulness=?, farming=?, mining=?, expression=?
+                    combativeness=?, helpfulness=?, farming=?, mining=?, expression=?, chat_style=?
                     WHERE companion_id=? AND revision=?
                     """)) {
                 Personality traits = profile.personality();
@@ -463,8 +470,9 @@ public final class SqliteCompanionStore {
                 update.setInt(12, traits.farming());
                 update.setInt(13, traits.mining());
                 update.setString(14, profile.expression() == null ? null : profile.expression().id());
-                update.setString(15, profile.companionId().toString());
-                update.setLong(16, expectedRevision);
+                update.setString(15, profile.chatStyle() == null ? null : profile.chatStyle().id());
+                update.setString(16, profile.companionId().toString());
+                update.setLong(17, expectedRevision);
                 if (update.executeUpdate() != 1) throw new ConcurrentModificationException("Stale profile revision");
             }
             return profile;
@@ -1320,7 +1328,8 @@ public final class SqliteCompanionStore {
                 row.getInt("sociability"), row.getInt("humor"), row.getInt("combativeness"), row.getInt("helpfulness"),
                 row.getInt("farming"), row.getInt("mining"), row.getLong("personality_revision")),
                 row.getBoolean("ambient_enabled"), row.getBoolean("public_conversation"), row.getLong("revision"),
-                Expression.parse(row.getString("expression")).orElse(null));
+                Expression.parse(row.getString("expression")).orElse(null),
+                dev.kindred.core.social.ChatStyle.parse(row.getString("chat_style")).orElse(null));
     }
 
     public CompletableFuture<JournalEvent> appendEvent(UUID companionId, Instant observedAt,
@@ -1478,7 +1487,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 10) {
+            if (schemaVersion < 0 || schemaVersion > 11) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1491,6 +1500,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 8) migrate(8, "V8__shared_projects.sql");
             if (schemaVersion < 9) migrate(9, "V9__activity_windows.sql");
             if (schemaVersion < 10) migrate(10, "V10__expression.sql");
+            if (schemaVersion < 11) migrate(11, "V11__rough_talk.sql");
         }
         recover();
     }

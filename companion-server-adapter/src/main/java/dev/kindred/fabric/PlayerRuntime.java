@@ -414,6 +414,7 @@ final class PlayerRuntime {
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
         socials.setExpressionCap(TalkSettings.cap(System.getenv()));
+        socials.setRoughAudience(TalkSettings.roughAudience(System.getenv())); // E-18b: the operator's say for people who said nothing.
         talk = new TalkSettings(socials, server);
         peerRadio = new PeerRadio(memories, server, new PeerRadio.Source() {
             @Override public UUID aiPlayerOf(net.minecraft.entity.Entity body) { return PlayerRuntime.this.aiPlayerOf(body); }
@@ -434,7 +435,11 @@ final class PlayerRuntime {
             }
 
             @Override public Optional<String> answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
-                return peerRadio.answer(player.id(), speaker, message).or(() -> chatIntents.early(speaker, player, message));
+                return chatIntents.early(speaker, player, message);
+            }
+
+            @Override public Optional<String> about(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                return peerRadio.answer(player.id(), speaker, message); // E-50a: phrased by the voice when there is one.
             }
 
             @Override public Optional<CompanionSocials.Spoken> fallback(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
@@ -457,6 +462,7 @@ final class PlayerRuntime {
         }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
         socials.setVoice(voice);
         voice.setManner(socials::manner);
+        voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
@@ -6342,6 +6348,36 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /** E-18b: how a player types, shown, or set by whoever may change how it sounds ({@code null} back to its personality). */
+    int chatStyle(ServerCommandSource source, UUID requestedId, dev.kindred.core.social.ChatStyle style, boolean change) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No AI player found.");
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change how it types.");
+        if (!change) {
+            feedback(source, TalkSettings.sounds(entry.data.displayName(), entry.profile, socials.expressionCap()));
+            return 1;
+        }
+        if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This player's profile is unavailable.");
+        if (!entry.profileWrite.isDone()) return reject(source, "The previous profile change is still being saved.");
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = previous.withChatStyle(style);
+        entry.profile = changed;
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Profile save failed; player stopped for storage inspection.");
+                KindredMod.LOGGER.error("Chat style write failed for {}", entry.data.id(), failure);
+                source.sendError(Text.literal("The chat style could not be saved. The player has stopped."));
+            } else feedback(source, "Saved. " + TalkSettings.sounds(entry.data.displayName(), changed, socials.expressionCap()));
+        }));
+        return 1;
+    }
+
     /** E-19a: a person's own preferences for how AI players speak to them, shown, set or deleted by them alone. */
     int listenerPreference(ServerCommandSource source, String setting, String value) {
         requireThread();
@@ -8268,7 +8304,7 @@ final class PlayerRuntime {
     private void sayToSide(Entry entry, String text) {
         entry.lastSaid = text;
         entry.said(text);
-        String line = "<" + entry.data.displayName() + "> " + text;
+        String line = "<" + entry.data.displayName() + "> " + typed(entry, text); // E-18b: in its chat style.
         KindredMod.LOGGER.info("{} (to its side)", line);
         var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
         if (self == null) return;
@@ -10537,7 +10573,7 @@ final class PlayerRuntime {
     private void sayToTeam(Entry entry, String text) {
         entry.lastSaid = text;
         entry.said(text);
-        String line = "<" + entry.data.displayName() + "> " + text;
+        String line = "<" + entry.data.displayName() + "> " + typed(entry, text); // E-18b: in its chat style.
         KindredMod.LOGGER.info("{} (to its team)", line);
         var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
         if (self == null) return;
@@ -12301,10 +12337,16 @@ final class PlayerRuntime {
      * it is; to others only when it talks in public, within earshot, without the place, and never to an opponent in a
      * match it is in. Not the whole server: where its portal or its base is is its own to tell. The log keeps it all.
      */
+    /** A line in the player's own chat style, softened, as the social lane's final check has it (E-18b). */
+    private String typed(Entry entry, String text) {
+        var anyone = server.getPlayerManager().getPlayerList().isEmpty() ? null : server.getPlayerManager().getPlayerList().getFirst();
+        return CompanionSocials.typed(entry.profile, entry.data.id(), dev.kindred.core.social.Decency.soften(text), CompanionSocials.namesOn(anyone));
+    }
+
     private void say(Entry entry, String text, String where) {
         entry.lastSaid = text;
         entry.said(text);
-        String line = "<" + entry.data.displayName() + "> " + text;
+        String line = "<" + entry.data.displayName() + "> " + typed(entry, text); // E-18b: in its chat style.
         String placed = where.isEmpty() ? line : line + " (" + where + ")";
         KindredMod.LOGGER.info("{}", placed);
         var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;

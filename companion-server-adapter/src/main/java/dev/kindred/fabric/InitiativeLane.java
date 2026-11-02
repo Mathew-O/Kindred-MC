@@ -169,6 +169,10 @@ final class InitiativeLane {
             case PLAIN -> "Quiet out here.";
             case DRY -> "Quiet. Too quiet.";
             case PLAYFUL -> noJokes ? "Quiet out here." : "If it gets any quieter I'll start naming the sheep.";
+            // E-18b: a rough one swears (softened at delivery for whoever did not say yes) or, to someone who said yes to
+            // dark jokes, makes one.
+            case ROUGH -> noJokes ? "Quiet out here." : prefs != null && prefs.dark()
+                    ? "So quiet. Perfect time for something to jump out and kill us." : "Quiet as hell out here. Almost miss the creepers.";
         };
     }
 
