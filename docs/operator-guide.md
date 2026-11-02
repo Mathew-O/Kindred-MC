@@ -432,22 +432,41 @@ KINDRED_CHATTER=4      optional; lines between AI players a minute, server-wide 
 
 The lines go only to people who can hear the one speaking (within eight blocks and in sight, and whoever may command it or, with public chat on, anyone), never to the whole server, and never to another AI player as chat. With nobody to hear, both still note the meeting in their ledgers ("talked: what you were doing") and nothing is said. A pair talks at most once in two minutes, and not while either is fighting, backing off, falling, asleep or in a match's countdown; a fight stops a talk under way. No model is asked: the turns are local, so they cost no tokens. They replace the old fixed peer conference, which whispered one line to anyone within six blocks. The log says `<speaker> to <other> (<n> hearing): <line>`, or that they met with nobody to hear, or that the chatter was spent.
 
-#### How it sounds, and how each person asked to be spoken to (E-18a, E-19a)
-Every player's words are clean, whoever is listening: no swearing, flirting or dark jokes. Within that, each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
+#### How it sounds, and how each person asked to be spoken to (E-18a, E-19a, E-18b)
+Each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
 
 | Preset | How it sounds |
 | --- | --- |
 | `plain` | Says things plainly, without jokes. |
 | `dry` | Short and understated ("Rain. Lovely."), without jokes. |
 | `playful` | A light joke or a callback when it fits, and a little teasing of other AI players. A person is never teased. |
+| `rough` | Like a mate on a survival server: swears ("Rain again? Damn it."), makes dark jokes about dying in the game ("That zombie almost sent me back to spawn lol."), and teases other AI players harder. |
 
 ```text
-/aiplayer expression [<player>]                       how it sounds, and why
-/aiplayer expression plain|dry|playful|auto [<player>] set it; auto goes back to sounding by its humour
-KINDRED_EXPRESSION_CAP=plain|dry|playful              optional; the most any player may be (default playful)
+/aiplayer expression [<player>]                             how it sounds and types, and why
+/aiplayer expression plain|dry|playful|rough|auto [<player>] set it; auto goes back to sounding by its personality
+/aiplayer chatstyle [<player>]                              how it types
+/aiplayer chatstyle proper|casual|gamer|chaotic|auto [<player>] set it; auto goes back to its personality
+KINDRED_EXPRESSION_CAP=plain|dry|playful|rough              optional; the most any player may be (default rough)
+KINDRED_ROUGH_AUDIENCE=on                                   optional; people who said nothing hear swearing and dark jokes (default off)
 ```
 
-A player with no preset keeps the rule from before presets: playful from humour 65 up, plain below. Playful now has more lines than before (a hello, nightfall, and the tease of another AI player, beside the rain, a passing word and work done). The cap bounds every preset to at most its own rank (under `dry`, a playful player sounds dry); a value it does not know is taken as `plain`, and the log says so. The preset is saved with the player's profile, so it survives a restart.
+A player with no preset sounds by its personality: playful from humour 65 up, plain below, as before presets, and rough when it is playful and combative from 80 up (Sol, of the starters). A sociable one with some humour (sociability 75 and humour 55 up: Kindred) also flirts, with other AI players and with a person who said yes to it, never sexually.
+
+**Who hears the rough stuff.** A preset never opts anyone in. A rough player's swear words reach only people who said yes to swearing (`/aiplayer prefs swearing on`); everyone else hears the same line softened ("Dang it.", "shoot", "heck"). Dark jokes reach only people who said yes to them, and flirting only people who said yes to it; everyone else hears the plain line. A line heard by several people follows the strictest of them. The operator can say yes to swearing and dark jokes for everyone who has said nothing (`KINDRED_ROUGH_AUDIENCE=on`, for a server of adults); a person's own `off` still holds, and flirting is never the server's to say. Some words are never said whatever anyone asked for: slurs, anything sexual, insults or threats to a person, jokes about real-world harm. Every line, from every lane and from the voice (E-20a), passes the same last check as it is delivered, so a change to someone's settings holds from the next line, even one already waiting.
+
+**How each player types.** Each player has a *chat style*, from its personality unless its controller sets one: the looser its humour and sociability and the less its caution, the more it types like a player in a hurry. It changes how a line looks, never what it says: names, numbers, coordinates, commands and item ids come through as they were.
+
+| Style | How it types | Starter |
+| --- | --- | --- |
+| `proper` | Capitals, full stops, whole words. | Echo, and an even personality |
+| `casual` | Lower case, no full stop at the end, the common shorthand (`u`, `ur`, `rn`, `idk`, `tbh`, `wanna`). | Kindred |
+| `gamer` | Lower case, no punctuation, more shorthand (`r`, `w`, `smth`), and now and then its own word (`ngl`, `fr`, `lol`, `xd`, `lmao`, `bruh`). | Sol |
+| `chaotic` | As a gamer, its own word more often, and a pleased last word stretched ("niceee"). | |
+
+The voice is told the style too, so a model's line already reads that way; the last check types it all the same.
+
+The preset and the chat style are saved with the player's profile, so they survive a restart. The cap bounds every preset to at most its own rank (under `dry`, a playful or rough player sounds dry); a value it does not know is taken as `plain`, and the log says so. Playful now has more lines than before (a hello, nightfall, and the tease of another AI player, beside the rain, a passing word and work done). The cap bounds every preset to at most its own rank (under `dry`, a playful player sounds dry); a value it does not know is taken as `plain`, and the log says so. The preset is saved with the player's profile, so it survives a restart.
 
 Each person sets, for themselves only, how AI players speak to them; nobody else can set or see it, and it gives nobody control of a player:
 
@@ -456,10 +475,13 @@ Each person sets, for themselves only, how AI players speak to them; nobody else
 /aiplayer prefs unasked fewer|usual|more  the pause before you are spoken to unasked again: 60, 30 or 15 seconds
 /aiplayer prefs teasing on|off            off: no teasing between AI players while you can hear it
 /aiplayer prefs jokes on|off              off: no jokes to you or near you; the plain line instead
+/aiplayer prefs swearing on|off|default   on: a rough player's swear words reach you; default: as the server says (off unless KINDRED_ROUGH_AUDIENCE=on)
+/aiplayer prefs dark on|off|default       on: dark jokes about dying in the game reach you; default as above
+/aiplayer prefs flirting on|off           on: a flirty player may flirt with you, and you hear AI players flirt; off by default
 /aiplayer prefs forget                    delete what you set
 ```
 
-The pause is per person, across all players; each player's own pause between remarks (about two minutes) and the server's ten seconds between any two still apply, so `more` shortens only the per-person part. A line said to several people at once is put as the strictest of them asked: one person with jokes off, and everyone there hears the plain line. A reply to one person follows that person's own preferences, and the voice (E-20a) is told in one line how to speak to them. Preferences are kept per person in the metadata database (`listener_preferences`) and survive a restart; going back to all the defaults deletes the row, as `forget` does. Until the saved preferences have been read at start, players say nothing unasked and make no jokes; if they cannot be read, that holds until the next restart, and the log says so.
+The pause is per person, across all players; each player's own pause between remarks (about two minutes) and the server's ten seconds between any two still apply, so `more` shortens only the per-person part. A line said to several people at once is put as the strictest of them asked: one person with jokes off, and everyone there hears the plain line. A reply to one person follows that person's own preferences, and the voice (E-20a) is told in one line how to speak to them. Jokes off also means no dark jokes and no flirting. Preferences are kept per person in the metadata database (`listener_preferences`) and survive a restart; going back to all the defaults deletes the row, as `forget` does. Until the saved preferences have been read at start, players say nothing unasked and make no jokes; if they cannot be read, that holds until the next restart, and the log says so.
 
 #### What each player knows of the others (E-50)
 Each AI player keeps a ledger of the people and players it has met in this world, filled from three sources, the most trusted first:
@@ -470,7 +492,7 @@ Each AI player keeps a ledger of the people and players it has met in this world
 
 Whoever said something can take it back: "forget that", "forget what I said about the Nether", or "that's wrong". The claim is marked with who took it back and when, keeping who said it, and is never used again; the player answers in its own words ("All right, I've forgotten it."), without the model. Only the person who said it can take it back.
 
-Asked "what does Sol need?", "what is Sol doing?" or "where is Sol?" about someone it knows, the player answers from its ledger, without the model, and only as far as the asker may be told: a place to whoever may command it; a teammate's needs and doing to its controllers and teammates; what someone said only back to them; nothing of others to an opponent. Its voice (E-20a) is told the same lines under the same rules. An unknown name is ordinary talk.
+Asked "what does Sol need?", "what is Sol doing?" or "where is Sol?" about someone it knows, the player answers from its ledger, only as far as the asker may be told: a place to whoever may command it; a teammate's needs and doing to its controllers and teammates; what someone said only back to them; nothing of others to an opponent. With its voice on (E-20a), the voice phrases the answer, told the same lines under the same rules and costed as any reply (E-50a); when the voice gives no line (its budget spent, a refused or failed reply), the player says the ledger's own words, as it does with no voice at all. An unknown name is ordinary talk.
 
 The ledger holds 64 peers (the least lately met dropped) and 20 episodes each, and is kept in `kindred/memory/<uuid>.peers.json` beside the atlas, saved every minute and at a stop; people's places and claims are not kept. To remove everything a native player knows of someone: `/aiplayer memory forget <their uuid> <player>` (operators and the player's controllers).
 

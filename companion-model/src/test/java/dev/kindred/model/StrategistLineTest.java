@@ -65,6 +65,16 @@ class StrategistLineTest {
     }
 
     @Test
+    void swearingOnlyToWhoSaidYesAndSomeWordsNeverWhateverTheySaid() {
+        var swearer = new Strategist.Conversation("s", "t", true, false, true);
+        assertTrue(Strategist.Line.checked(swearer, "Damn creepers blew up my wall.", "", 0, 0, 0, 0).failure().isEmpty(),
+                "a rough player to someone who said yes");
+        assertEquals(Optional.of("not clean"), refused(CONTROLLER, "Ow, wtf was that."), "and to nobody else");
+        assertEquals(Optional.of("words never said"), Strategist.Line.checked(swearer, "You're such a retard.", "", 0, 0, 0, 0).failure(),
+                "whatever they said yes to");
+    }
+
+    @Test
     void coordinatesAreForControllersOnly() {
         assertEquals(Optional.of("a place this listener may not know"), refused(PLAYER, "I'm at 120, 64, -35."));
         assertEquals(Optional.of("a place this listener may not know"), refused(PLAYER, "Around x 120 z -35."));

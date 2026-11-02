@@ -36,7 +36,13 @@ public final class Conversation {
      * thing they went through together).
      */
     public record Side(UUID id, String name, int sociability, Expression sounds, String doing, List<String> needs, List<String> spare,
-                       String knownDoing, String knownNeeds, String lastEpisode) {
+                       String knownDoing, String knownNeeds, String lastEpisode, boolean flirty) {
+        /** A side that does not flirt (as before E-18b). */
+        public Side(UUID id, String name, int sociability, Expression sounds, String doing, List<String> needs, List<String> spare,
+                    String knownDoing, String knownNeeds, String lastEpisode) {
+            this(id, name, sociability, sounds, doing, needs, spare, knownDoing, knownNeeds, lastEpisode, false);
+        }
+
         public Side {
             Objects.requireNonNull(id);
             Objects.requireNonNull(name);
@@ -50,23 +56,32 @@ public final class Conversation {
         }
     }
 
-    /** One line: who says it to whom, its words, its plain variant, and whether it teases (E-18a's tone). */
-    public record Turn(UUID speaker, UUID listener, String text, String plain, boolean tease) {
+    /** One line: who says it to whom, its words, its plain variant, and its tone (E-18a, E-18b). */
+    public record Turn(UUID speaker, UUID listener, String text, String plain, dev.kindred.core.SocialBrain.Tone tone) {
         public Turn {
             Objects.requireNonNull(speaker);
             Objects.requireNonNull(text);
             plain = plain == null ? text : plain;
+            tone = tone == null ? dev.kindred.core.SocialBrain.Tone.PLAIN : tone;
         }
 
-        /** The words for these hearers: the plain ones if any asked for no teasing or no jokes. */
+        /** A plain line, or a tease (as before E-18b). */
+        public Turn(UUID speaker, UUID listener, String text, String plain, boolean tease) {
+            this(speaker, listener, text, plain, tease ? dev.kindred.core.SocialBrain.Tone.TEASE : dev.kindred.core.SocialBrain.Tone.PLAIN);
+        }
+
+        /** Whether it teases. */
+        public boolean tease() { return tone == dev.kindred.core.SocialBrain.Tone.TEASE; }
+
+        /** The words for these hearers, by the one rule every lane follows ({@link dev.kindred.core.SocialBrain.Speech#wordsFor}). */
         public String textFor(ListenerPreferences heard) {
-            return tease && heard != null && (heard.noTeasing() || heard.noJokes()) ? plain : text;
+            return dev.kindred.core.SocialBrain.Speech.wordsFor(tone, text, plain, heard);
         }
     }
 
     /** What the two talk about, and the key that keeps it from being said again for half an hour. */
     public record Topic(String key, Kind kind) {
-        public enum Kind { DOING, NEEDS, EPISODE, HELLO }
+        public enum Kind { FLIRT, DOING, NEEDS, EPISODE, HELLO }
     }
 
     /** The talk planned: its topic and its turns, in order. */
@@ -81,7 +96,10 @@ public final class Conversation {
         Objects.requireNonNull(b);
         var topics = new ArrayList<Topic>();
         String pair = a.id().compareTo(b.id()) < 0 ? a.id() + ":" + b.id() : b.id() + ":" + a.id();
-        if (a.sounds() == Expression.PLAYFUL && !a.lastEpisode().isEmpty()) topics.add(new Topic(pair + ":episode:" + a.lastEpisode(), Topic.Kind.EPISODE));
+        boolean joking = a.sounds().ordinal() >= Expression.PLAYFUL.ordinal();
+        if (joking && !a.lastEpisode().isEmpty()) topics.add(new Topic(pair + ":episode:" + a.lastEpisode(), Topic.Kind.EPISODE));
+        // A flirty one (E-18b) flirts when there is no news, plainly to whoever did not say yes to flirting.
+        if (joking && a.flirty()) topics.add(new Topic(pair + ":flirt:" + Math.floorMod(now / DEDUPE_MILLIS, 2), Topic.Kind.FLIRT));
         if (!b.doing().isEmpty()) topics.add(new Topic(b.id() + ":doing:" + b.doing(), Topic.Kind.DOING));
         if (!b.needs().isEmpty()) topics.add(new Topic(b.id() + ":needs:" + String.join(",", b.needs()), Topic.Kind.NEEDS));
         topics.add(new Topic(pair + ":hello", Topic.Kind.HELLO));
@@ -91,24 +109,39 @@ public final class Conversation {
                 .min(rank.thenComparingInt(t -> t.kind().ordinal())).orElse(null);
         if (topic == null) return Optional.empty();
         var turns = new ArrayList<Turn>();
+        var ROUGH = dev.kindred.core.SocialBrain.Tone.ROUGH;
+        boolean rough = a.sounds() == Expression.ROUGH;
         switch (topic.kind()) {
+            case FLIRT -> {
+                boolean second = topic.key().endsWith(":1");
+                var FLIRT = dev.kindred.core.SocialBrain.Tone.FLIRT;
+                turns.add(new Turn(a.id(), b.id(), second ? "Is it hot in here, " + b.name() + ", or is that just the lava?"
+                        : "Hey, " + b.name() + ". You're looking extra blocky today.", "Hi, " + b.name() + ".", FLIRT));
+                turns.add(new Turn(b.id(), a.id(), b.sounds().ordinal() >= Expression.PLAYFUL.ordinal() ? "You're not so bad yourself, " + a.name() + "."
+                        : "Haha. Stop it, " + a.name() + ".", "Hi, " + a.name() + ".", FLIRT));
+            }
             case EPISODE -> {
                 String plain = "Hi, " + b.name() + ".";
-                turns.add(new Turn(a.id(), b.id(), "Hi, " + b.name() + ". After " + a.lastEpisode() + ", I'm keeping an eye on you.", plain, true));
+                turns.add(new Turn(a.id(), b.id(), rough ? "After " + a.lastEpisode() + "? Damn, " + b.name() + ", I'm keeping an eye on you."
+                        : "Hi, " + b.name() + ". After " + a.lastEpisode() + ", I'm keeping an eye on you.", plain, true));
                 turns.add(new Turn(b.id(), a.id(), answerDoing(b), null, false));
             }
             case DOING -> {
-                turns.add(new Turn(a.id(), b.id(), ask(a, b), null, false));
+                String asked = ask(a, b);
+                turns.add(rough && a.knownDoing().equals(b.doing()) || rough && a.knownDoing().isEmpty()
+                        ? new Turn(a.id(), b.id(), "Yo, " + b.name() + ", what the hell have you been up to?", asked, ROUGH)
+                        : new Turn(a.id(), b.id(), asked, null, false));
                 turns.add(new Turn(b.id(), a.id(), answerDoing(b), null, false));
-                if (!b.needs().isEmpty()) turns.add(new Turn(a.id(), b.id(), offerOrWish(a, b), null, false));
+                if (!b.needs().isEmpty()) turns.add(offerOrWishTurn(a, b));
             }
             case NEEDS -> {
                 turns.add(new Turn(a.id(), b.id(), "Still after " + b.needs().getFirst() + ", " + b.name() + "?", null, false));
                 turns.add(new Turn(b.id(), a.id(), "Yes, " + String.join(" and ", b.needs()) + ".", null, false));
-                turns.add(new Turn(a.id(), b.id(), offerOrWish(a, b), null, false));
+                turns.add(offerOrWishTurn(a, b));
             }
             case HELLO -> {
-                turns.add(new Turn(a.id(), b.id(), hello(a, b), null, false));
+                String hi = hello(a, b);
+                turns.add(rough ? new Turn(a.id(), b.id(), "Well damn, " + b.name() + ". Long time.", hi, ROUGH) : new Turn(a.id(), b.id(), hi, null, false));
                 turns.add(new Turn(b.id(), a.id(), "Hi, " + a.name() + "." + (b.doing().isEmpty() ? "" : " Just " + shortDoing(b.doing()) + "."), null, false));
             }
         }
@@ -118,6 +151,7 @@ public final class Conversation {
     /** How new a topic is to {@code a}: 0 when its record of {@code b} is out of date on it, 1 otherwise; a playful callback first. */
     private static int novelty(Topic t, Side a, Side b) {
         return switch (t.kind()) {
+            case FLIRT -> 1;
             case DOING -> a.knownDoing().equals(b.doing()) ? 1 : 0;
             case NEEDS -> a.knownNeeds().equals(String.join(", ", b.needs())) ? 1 : 0;
             case EPISODE -> -1;
@@ -134,7 +168,7 @@ public final class Conversation {
         return switch (a.sounds()) {
             case PLAIN -> "How's it going, " + b.name() + "?";
             case DRY -> b.name() + ". Busy?";
-            case PLAYFUL -> "There you are, " + b.name() + "! What are you up to?";
+            case PLAYFUL, ROUGH -> "There you are, " + b.name() + "! What are you up to?";
         };
     }
 
@@ -142,6 +176,14 @@ public final class Conversation {
     static String answerDoing(Side b) {
         String doing = b.doing().isEmpty() ? "Nothing much right now." : "I'm " + shortDoing(b.doing()) + ".";
         return b.needs().isEmpty() ? doing : doing + " I could use " + b.needs().getFirst() + ".";
+    }
+
+    /** {@code a}'s last word on what {@code b} needs, a rough one's with a swear word in it (E-18b). */
+    private static Turn offerOrWishTurn(Side a, Side b) {
+        String said = offerOrWish(a, b);
+        if (a.sounds() != Expression.ROUGH || said.startsWith("I've got")) return new Turn(a.id(), b.id(), said, null, false);
+        String word = b.needs().getFirst().replaceFirst("^\\d+\\s+", "");
+        return new Turn(a.id(), b.id(), "Good luck finding " + word + ", that shit's rare.", said, dev.kindred.core.SocialBrain.Tone.ROUGH);
     }
 
     /** {@code a}'s last word on what {@code b} needs: what it has spare of it, or a wish. */
@@ -152,7 +194,7 @@ public final class Conversation {
         return switch (a.sounds()) {
             case PLAIN -> "Good luck finding " + word + ".";
             case DRY -> "Good luck with that.";
-            case PLAYFUL -> "I'll keep an eye out for " + word + " for you.";
+            case PLAYFUL, ROUGH -> "I'll keep an eye out for " + word + " for you.";
         };
     }
 
@@ -160,7 +202,7 @@ public final class Conversation {
         return switch (a.sounds()) {
             case PLAIN -> "Hi, " + b.name() + ". Good to see you.";
             case DRY -> b.name() + ". Hello.";
-            case PLAYFUL -> "Hey, " + b.name() + "! Long time no see.";
+            case PLAYFUL, ROUGH -> "Hey, " + b.name() + "! Long time no see.";
         };
     }
 

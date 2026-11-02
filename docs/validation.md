@@ -16,6 +16,25 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The rough stuff and how each player types (E-18b); the voice phrases what it knows of others (E-50a) — 2 November 2026 (`claude/expression-1102`)
+
+- Merged first (the owner's "make sure everything is merged"): `claude/living-together-1101` as
+  [Mathew-O/Kindred-MC#5](https://github.com/Mathew-O/Kindred-MC/pull/5); then `claude/modest-faraday-r3spro`,
+  `codex/ci-validation-evidence` and both world-design branches (their persistence integration held back at `98ce3b8`)
+  as [Mathew-O/Kindred-MC#6](https://github.com/Mathew-O/Kindred-MC/pull/6). On that merge (`6b58ffc`): `./gradlew build`
+  908 JUnit tests, 902 passed, 6 skipped; `:kindred-world-design:check` 29 pure scenarios; the full native suite 511 of
+  514 locally (the tree standing in water, the lake librarian, the hungry search for animals) and 512 of 514 in CI 338
+  (the tree standing in water, the Nether portal-restart fixture). The tree standing in water is new with the merge:
+  it passed in both full suites before it and passes 3 of 3 alone on it; cause not found (open). The rest were open
+  before.
+- `:companion-core:test` and `:companion-model:test`: 793 tests, 6 skipped, 0 failures (`RoughTalkTest` 6, the model's
+  line +1). `:companion-persistence:test`: 50 of 50 (+1), after two faults of this change found by it: a semicolon in
+  the V11 migration's comment split it at its statement boundary (49 of 50 failed), and the new test changed a profile
+  twice before one save.
+- `NativeRoughTalkGameTests` alone, three runs: 4 of 4 each. `NativePeerLedgerGameTests` alone, three runs, its teammate
+  fixture changed to the owner's decision (the voice phrases a question about someone; the ledger's words when it does
+  not): 3 of 3 each. The ten social classes and the new one together: 55 of 55.
+
 ## Final validation of living together — 2 November 2026 (`claude/living-together-1101`)
 
 - Build: `bash ./gradlew build` green on `8537a03`, the final code: 882 JUnit tests, 876 passed, 6 skipped, 0 failures

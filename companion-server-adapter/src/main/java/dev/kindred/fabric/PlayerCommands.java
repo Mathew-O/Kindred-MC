@@ -440,13 +440,25 @@ public final class PlayerCommands {
                 .executes(context -> expression(context, null, false))
                 .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
                         .executes(context -> expression(context, null, false)));
-        for (String preset : new String[]{"plain", "dry", "playful", "auto"}) {
+        for (String preset : new String[]{"plain", "dry", "playful", "rough", "auto"}) {
             var chosen = dev.kindred.core.social.Expression.parse(preset).orElse(null);
             expression.then(CommandManager.literal(preset).executes(context -> expression(context, chosen, true))
                     .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
                             .executes(context -> expression(context, chosen, true))));
         }
         root.then(expression);
+        // E-18b: how a player types (proper, casual, gamer, chaotic), set by its controller; "auto" goes back to its personality.
+        var chatStyle = CommandManager.literal("chatstyle")
+                .executes(context -> chatStyle(context, null, false))
+                .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> chatStyle(context, null, false)));
+        for (String style : new String[]{"proper", "casual", "gamer", "chaotic", "auto"}) {
+            var chosen = dev.kindred.core.social.ChatStyle.parse(style).orElse(null);
+            chatStyle.then(CommandManager.literal(style).executes(context -> chatStyle(context, chosen, true))
+                    .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                            .executes(context -> chatStyle(context, chosen, true))));
+        }
+        root.then(chatStyle);
         var prefs = CommandManager.literal("prefs").executes(context -> prefs(context, null, null));
         var unasked = CommandManager.literal("unasked");
         for (String amount : new String[]{"fewer", "usual", "more"}) unasked.then(CommandManager.literal(amount).executes(context -> prefs(context, "unasked", amount)));
@@ -455,6 +467,12 @@ public final class PlayerCommands {
             prefs.then(CommandManager.literal(setting)
                     .then(CommandManager.literal("on").executes(context -> prefs(context, setting, "on")))
                     .then(CommandManager.literal("off").executes(context -> prefs(context, setting, "off"))));
+        }
+        // E-18b: the rough stuff, each the person's own yes or no ("default" leaves it to the server).
+        for (String setting : new String[]{"swearing", "dark", "flirting"}) {
+            var choice = CommandManager.literal(setting);
+            for (String value : new String[]{"on", "off", "default"}) choice.then(CommandManager.literal(value).executes(context -> prefs(context, setting, value)));
+            prefs.then(choice);
         }
         prefs.then(CommandManager.literal("forget").executes(context -> prefs(context, "forget", null)));
         root.then(prefs);
@@ -1243,6 +1261,18 @@ public final class PlayerCommands {
             if (id == null) return 0;
         }
         return runtime.expression(context.getSource(), id, preset, change);
+    }
+
+    /** {@code /aiplayer chatstyle [style] [player]} (E-18b). */
+    private static int chatStyle(CommandContext<ServerCommandSource> context, dev.kindred.core.social.ChatStyle style, boolean change) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = null;
+        if (context.getNodes().stream().anyMatch(node -> node.getNode().getName().equals("target"))) {
+            id = resolveBotTarget(context, "target", runtime);
+            if (id == null) return 0;
+        }
+        return runtime.chatStyle(context.getSource(), id, style, change);
     }
 
     /** {@code /aiplayer prefs ...} (E-19a). */

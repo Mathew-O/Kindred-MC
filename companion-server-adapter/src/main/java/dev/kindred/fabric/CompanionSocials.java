@@ -107,8 +107,14 @@ final class CompanionSocials {
         /** A claim noted or taken back; the reply to a taking-back, or empty. */
         Optional<String> heard(ServerPlayerEntity speaker, Participant player, String message);
 
-        /** Its own answer to a question about someone it knows, or to an ask it has done or refused (E-52), or empty. */
+        /** Its own answer to an ask it has done or refused (E-52), or empty. */
         Optional<String> answer(ServerPlayerEntity speaker, Participant player, String message);
+
+        /**
+         * Its own answer to a question about someone it knows, from its ledger (E-50), or empty. With a voice available the
+         * voice phrases the answer from the same record (E-50a), and this is said only if the voice does not.
+         */
+        default Optional<String> about(ServerPlayerEntity speaker, Participant player, String message) { return Optional.empty(); }
 
         /** With no voice to read it, E-20b's asks in their plain forms (E-52): said, then done; or empty. */
         default Optional<Spoken> fallback(ServerPlayerEntity speaker, Participant player, String message) { return Optional.empty(); }
@@ -147,7 +153,9 @@ final class CompanionSocials {
     private final Map<UUID, Waiting> waiting = new HashMap<>();
     private long turns;
     /** The most expressive any player may sound on this server (E-18a). */
-    private Expression cap = Expression.PLAYFUL;
+    private Expression cap = Expression.ROUGH;
+    /** Whether a person who said nothing hears swearing and dark jokes: the operator's say for the server (E-18b). */
+    private boolean roughAudience;
     /** What each person asked of how AI players speak to them (E-19a), by person; anyone absent asked for nothing. */
     private final Map<UUID, ListenerPreferences> preferences = new HashMap<>();
     /** False while the saved preferences are still being read: nothing unasked is said, and no jokes or teasing. */
@@ -173,8 +181,11 @@ final class CompanionSocials {
     }
 
     /** The most expressive any player may sound on this server (E-18a); null is no cap below playful. */
+    /** The operator's say for people who said nothing: swearing and dark jokes heard by everyone who did not say no (E-18b). */
+    void setRoughAudience(boolean everyone) { this.roughAudience = everyone; }
+
     void setExpressionCap(Expression cap) {
-        this.cap = cap == null ? Expression.PLAYFUL : cap;
+        this.cap = cap == null ? Expression.ROUGH : cap;
     }
 
     Expression expressionCap() { return cap; }
@@ -197,8 +208,15 @@ final class CompanionSocials {
      */
     ListenerPreferences preferences(UUID person) {
         ListenerPreferences own = preferences.get(person);
-        if (own != null) return own;
-        return preferencesKnown ? ListenerPreferences.defaults(person) : new ListenerPreferences(person, ListenerPreferences.Unasked.USUAL, true, true, 0);
+        if (own != null) return own.resolved(roughAudience);
+        return (preferencesKnown ? ListenerPreferences.defaults(person) : new ListenerPreferences(person, ListenerPreferences.Unasked.USUAL, true, true, 0))
+                .resolved(roughAudience && preferencesKnown);
+    }
+
+    /** What this person saved, as they set it (the server's default not read in), for {@code /aiplayer prefs}. */
+    ListenerPreferences ownPreferences(UUID person) {
+        ListenerPreferences own = preferences.get(person);
+        return own != null ? own : ListenerPreferences.defaults(person);
     }
 
     /** Whether the saved preferences have been read. */
@@ -224,7 +242,44 @@ final class CompanionSocials {
      * listener asked for (E-18a, E-19a).
      */
     String manner(Participant player, ServerPlayerEntity listener) {
-        return Expression.voiceLine(sounding(player).effectiveExpression(), preferences(listener.getUuid()));
+        SocialProfile sounds = sounding(player);
+        return Expression.voiceLine(sounds.effectiveExpression(), preferences(listener.getUuid()), sounds.flirty(), sounds.effectiveChatStyle());
+    }
+
+    /** Whether the voice's line to this listener may swear: a rough player, to someone who said yes to it (E-18b). */
+    boolean maySwear(Participant player, ServerPlayerEntity listener) {
+        return sounding(player).effectiveExpression() == Expression.ROUGH && preferences(listener.getUuid()).swears();
+    }
+
+    /**
+     * The last check of every line an AI player says, from every lane and the voice alike (E-18b), made as it is
+     * delivered, so a person who has just changed their settings is spoken to as they now asked: a line with a word
+     * never said is dropped; a swear word is softened for anyone who did not say yes to it or from a player that is not
+     * rough; then the line is typed in the player's own chat style. Null when nothing is to be said.
+     */
+    String finalWords(Participant speaker, ServerPlayerEntity recipient, String text) {
+        if (text == null || text.isBlank()) return null;
+        if (dev.kindred.core.social.Decency.blocked(text)) {
+            KindredMod.LOGGER.warn("{}'s line to {} dropped: words never said", speaker.name(), recipient.getName().getString());
+            return null;
+        }
+        SocialProfile sounds = sounding(speaker);
+        boolean swears = sounds.effectiveExpression() == Expression.ROUGH && preferences(recipient.getUuid()).swears();
+        String words = swears ? text : dev.kindred.core.social.Decency.soften(text);
+        return typed(sounds, speaker.id(), words, namesOn(recipient));
+    }
+
+    /** A line typed in a player's chat style (E-18b), its names kept as they are. */
+    static String typed(SocialProfile profile, UUID id, String text, java.util.List<String> keep) {
+        if (profile == null) return text;
+        return profile.effectiveChatStyle().apply(text, id, keep, text == null ? 0 : text.hashCode());
+    }
+
+    /** The names of everyone on the server, kept as they are typed when a line is lower-cased. */
+    static java.util.List<String> namesOn(ServerPlayerEntity anyone) {
+        var server = anyone == null ? null : anyone.getServer();
+        if (server == null) return java.util.List.of();
+        return server.getPlayerManager().getPlayerList().stream().map(p -> p.getName().getString()).distinct().toList();
     }
 
     /** Who handles two AI players comparing notes on their progress when they meet. */
@@ -236,9 +291,9 @@ final class CompanionSocials {
      * A line to say when due; a voiced one ({@code voiced}) is checked at delivery against the player as it is then, and
      * what follows it ({@code then}) happens only once it is said.
      */
-    private record Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct, boolean voiced,
+    private record Pending(Participant speaker, ServerPlayerEntity recipient, String text, long due, boolean direct, boolean voiced,
                            java.util.function.Consumer<java.util.function.Consumer<String>> then) {
-        Pending(Participant speaker, ServerPlayerEntity recipient, Text text, long due, boolean direct) {
+        Pending(Participant speaker, ServerPlayerEntity recipient, String text, long due, boolean direct) {
             this(speaker, recipient, text, due, direct, false, null);
         }
     }
@@ -297,8 +352,9 @@ final class CompanionSocials {
             if (!pendingLine.speaker().id().equals(companionId) || pendingLine.due() > now) return false;
             // A voiced line was asked for a while back: it is said only if the player, as it is now, may still say it.
             Participant speaker = pendingLine.voiced() ? lookup.apply(companionId) : pendingLine.speaker();
-            if (canTalk(pendingLine.recipient(), speaker)) {
-                output.accept(pendingLine.recipient(), pendingLine.text());
+            String words = canTalk(pendingLine.recipient(), speaker) ? finalWords(speaker, pendingLine.recipient(), pendingLine.text()) : null;
+            if (words != null) {
+                output.accept(pendingLine.recipient(), line(speaker, words));
                 if (pendingLine.then() != null) said.add(() -> pendingLine.then().accept(follow ->
                         scheduleInTurn(speaker, pendingLine.recipient(), follow, clock.getAsLong() + SpeechTiming.delayMillis(follow), null)));
             }
@@ -469,9 +525,13 @@ final class CompanionSocials {
         if (now < directSpeakers.getOrDefault(player.getUuid(), Long.MIN_VALUE)
                 || !brain(companion.id()).admitDirectReply(now)) return false;
         remember(directSpeakers, player.getUuid(), now + 3_000);
-        // Its own words, without the voice, for a taking-back and for a question about someone it knows, from what it knows;
-        // a remark about a habit gets a character answer. Each is finite dialogue with no task or settings effect.
-        Optional<String> habitReply = taken.or(() -> hearing.answer(player, companion, message))
+        // A question about someone it knows (E-50): with a voice to phrase it, the voice answers from the same record, told
+        // by tier, and costed as any reply (E-50a); its own words from the record if the voice does not.
+        Optional<String> known = taken.isPresent() ? Optional.empty() : hearing.about(player, companion, message);
+        boolean phrased = known.isPresent() && voice != null && voice.available();
+        // Its own words, without the voice, for a taking-back and for what it knows when nothing phrases it; a remark about a
+        // habit gets a character answer. Each is finite dialogue with no task or settings effect.
+        Optional<String> habitReply = phrased ? taken : taken.or(() -> known).or(() -> hearing.answer(player, companion, message))
                 .or(() -> habits.feedback(player, companion, message, now));
         if (habitReply.isEmpty() && voice != null) {
             if (voicing.containsKey(companion.id())) { // One line phrased at a time: this one waits, the newest in place of any waiting.
@@ -496,7 +556,7 @@ final class CompanionSocials {
                 return true;
             }
         }
-        String spoken = habitReply.orElseGet(() -> fixedReply(companion, player, message, now));
+        String spoken = habitReply.or(() -> known).orElseGet(() -> fixedReply(companion, player, message, now));
         schedule(companion, player, spoken, now + SpeechTiming.delayMillis(spoken), true);
         if (voice != null) voice.replied(player, companion, message, spoken);
         return true;
@@ -524,7 +584,8 @@ final class CompanionSocials {
             Participant now = lookup.apply(companion.id());
             long at = clock.getAsLong();
             if (now != null && canTalk(player, now)) {
-                String spoken = line.map(Spoken::text).orElseGet(() -> fixedReply(now, player, message, at));
+                // No line from the voice: what it knows of someone, in its own words (E-50a), or the fixed reply.
+                String spoken = line.map(Spoken::text).orElseGet(() -> hearing.about(player, now, message).orElseGet(() -> fixedReply(now, player, message, at)));
                 var then = line.map(Spoken::then).orElse(null);
                 // A line that acts is said as it acts, at once; any other once it would have been typed.
                 scheduleInTurn(now, player, spoken, then != null ? at : at + Math.max(0, SpeechTiming.delayMillis(spoken) - (at - asked)), then);
@@ -540,7 +601,7 @@ final class CompanionSocials {
     /** The message that waited: phrased in turn if the voice can ask now, else the fixed reply. */
     private void answerWaiting(Waiting next, Participant companion, long now) {
         if (voice != null && voiced(next.speaker(), companion, next.message(), now)) return;
-        String spoken = fixedReply(companion, next.speaker(), next.message(), now);
+        String spoken = hearing.about(next.speaker(), companion, next.message()).orElseGet(() -> fixedReply(companion, next.speaker(), next.message(), now));
         scheduleInTurn(companion, next.speaker(), spoken, now + SpeechTiming.delayMillis(spoken), null);
         if (voice != null) voice.replied(next.speaker(), companion, next.message(), spoken);
     }
@@ -551,13 +612,13 @@ final class CompanionSocials {
         for (Pending p : pending) {
             if (p.direct() && p.speaker().id().equals(speaker.id()) && p.recipient().getUuid().equals(recipient.getUuid())) due = Math.max(due, p.due() + 1);
         }
-        pending.add(new Pending(speaker, recipient, line(speaker, spoken), due, true, true, then));
+        pending.add(new Pending(speaker, recipient, spoken, due, true, true, then));
         while (pending.size() > 64) pending.removeFirst();
     }
 
     private void schedule(Participant speaker, ServerPlayerEntity recipient, String spoken, long due, boolean direct) {
         if (direct) pending.removeIf(p -> p.direct() && p.speaker().id().equals(speaker.id()) && p.recipient().getUuid().equals(recipient.getUuid()));
-        pending.add(new Pending(speaker, recipient, line(speaker, spoken), due, direct));
+        pending.add(new Pending(speaker, recipient, spoken, due, direct));
         while (pending.size() > 64) pending.removeFirst();
     }
 

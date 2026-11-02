@@ -150,15 +150,20 @@ public interface Strategist extends AutoCloseable {
      * things are, which decides whether a reply may give a place; and whether it may ask the player to do something
      * (E-20b), which decides whether a reply may carry an ask.
      */
-    record Conversation(String system, String text, boolean mayGivePlaces, boolean mayAsk) {
+    record Conversation(String system, String text, boolean mayGivePlaces, boolean mayAsk, boolean maySwear) {
         public Conversation {
             Objects.requireNonNull(system);
             Objects.requireNonNull(text);
         }
 
+        /** A conversation whose reply must be clean (as before E-18b). */
+        public Conversation(String system, String text, boolean mayGivePlaces, boolean mayAsk) {
+            this(system, text, mayGivePlaces, mayAsk, false);
+        }
+
         /** A conversation in which no ask may be made. */
         public Conversation(String system, String text, boolean mayGivePlaces) {
-            this(system, text, mayGivePlaces, false);
+            this(system, text, mayGivePlaces, false, false);
         }
     }
 
@@ -187,9 +192,9 @@ public interface Strategist extends AutoCloseable {
 
         /** An item as a reply may name it: a registry id's characters, at most 64 of them. */
 
-        /** Words no player says in chat while every listener gets clean speech (E-18's presets come later). */
+        /** Swear words, said only to a listener who said yes to them (E-18b); the words never said are {@code Decency}'s. */
         private static final java.util.regex.Pattern UNCLEAN = java.util.regex.Pattern.compile(
-                "\\b(fuck\\w*|shit\\w*|bitch\\w*|cunts?|bastards?|assholes?|dicks?|piss\\w*|damn\\w*|crap\\w*|sluts?|whores?|fags?|retard\\w*)\\b",
+                "\\b(fuck\\w*|shit\\w*|bitch\\w*|bastards?|assholes?|piss\\w*|damn\\w*|crap\\w*|wtf|stfu|lmfao)\\b",
                 java.util.regex.Pattern.CASE_INSENSITIVE);
 
         /**
@@ -234,7 +239,8 @@ public interface Strategist extends AutoCloseable {
                     : said.startsWith("/") ? "a command"
                     : said.indexOf('§') >= 0 ? "formatting codes"
                     : said.chars().anyMatch(Character::isISOControl) ? "control characters"
-                    : UNCLEAN.matcher(said).find() ? "not clean"
+                    : dev.kindred.core.social.Decency.blocked(said) ? "words never said"
+                    : !conversation.maySwear() && (UNCLEAN.matcher(said).find() || dev.kindred.core.social.Decency.profane(said)) ? "not clean"
                     : !conversation.mayGivePlaces() && dev.kindred.core.ConversationAudience.givesPlace(said) ? "a place this listener may not know"
                     : null;
             if (refused != null) return new Line(Optional.empty(), why, in, cached, out, millis, Optional.of(refused));

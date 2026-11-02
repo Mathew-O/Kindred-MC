@@ -116,7 +116,8 @@
       "dev.kindred.fabric.NativeDeliveryGameTests",
       "dev.kindred.fabric.NativeSmelterGameTests",
       "dev.kindred.fabric.NativeBunkerGameTests",
-      "dev.kindred.fabric.NativePetGameTests"
+      "dev.kindred.fabric.NativePetGameTests",
+      "dev.kindred.fabric.NativeRoughTalkGameTests"
     ]
   },
   "depends": {

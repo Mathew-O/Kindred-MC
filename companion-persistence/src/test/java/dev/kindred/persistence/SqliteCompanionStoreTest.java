@@ -289,7 +289,7 @@ class SqliteCompanionStoreTest {
         assertEquals(new ActivityLimit(id, 3_600_000, false, "UTC", 3), migrated, "a schema 8 limit upgrades to all day, nothing else changed");
         upgraded.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
-            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(10, row.getInt(1)); }
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(11, row.getInt(1)); } // The latest schema (E-18b).
             statement.execute("UPDATE activity_limits SET window_start = '09:00'");
         }
         assertCause(IllegalStateException.class, open(10).limit(id));
@@ -394,6 +394,34 @@ class SqliteCompanionStoreTest {
         assertCause(ConcurrentModificationException.class, store.saveProfile(defaults.withPublic(false), 0));
         store.closeAsync().join();
         assertEquals(List.of(muted), open(10).profiles().join());
+    }
+
+    @Test
+    void aRoughPresetAChatStyleAndAPersonsYesOrNoToTheRoughStuffSurviveARestart() {
+        SqliteCompanionStore store = open(10);
+        store.create(request(UUID.randomUUID())).join();
+        SocialProfile defaults = store.profiles().join().getFirst();
+        assertNull(defaults.chatStyle(), "a player made before chat styles types as its personality has it");
+        SocialProfile roughOnly = store.saveProfile(defaults.withExpression(Expression.ROUGH), 0).join();
+        SocialProfile rough = store.saveProfile(roughOnly.withChatStyle(dev.kindred.core.social.ChatStyle.GAMER), roughOnly.revision()).join();
+        UUID steve = UUID.randomUUID();
+        ListenerPreferences yes = ListenerPreferences.defaults(steve).withSwearing(ListenerPreferences.Opt.ON)
+                .withDarkHumor(ListenerPreferences.Opt.OFF).withFlirting(ListenerPreferences.Opt.ON);
+        store.saveListenerPreferences(yes).join();
+        store.closeAsync().join();
+
+        SqliteCompanionStore reopened = open(10);
+        assertEquals(List.of(rough), reopened.profiles().join());
+        assertEquals(dev.kindred.core.social.ChatStyle.GAMER, reopened.profiles().join().getFirst().chatStyle());
+        assertEquals(List.of(yes), reopened.listenerPreferences().join());
+        // Each back to the server's say is nothing to keep.
+        reopened.saveListenerPreferences(yes.withSwearing(ListenerPreferences.Opt.DEFAULT).withDarkHumor(ListenerPreferences.Opt.DEFAULT)
+                .withFlirting(ListenerPreferences.Opt.DEFAULT)).join();
+        assertEquals(List.of(), reopened.listenerPreferences().join());
+        SocialProfile auto = reopened.saveProfile(rough.withChatStyle(null), rough.revision()).join();
+        reopened.closeAsync().join();
+        assertNull(open(10).profiles().join().getFirst().chatStyle(), "auto: typing as its personality has it again");
+        assertNull(auto.chatStyle());
     }
 
     @Test
@@ -674,12 +702,15 @@ class SqliteCompanionStoreTest {
     }
 
     /** Back to before V10 (E-18a, E-19a): no expression preset, no listener preferences. */
+    /** What schemas 10 and 11 added taken out again, so that an older schema is emulated (E-18a, E-19a, E-18b). */
     static void dropSchemaTen(java.sql.Statement statement) throws java.sql.SQLException {
-        boolean hasExpression;
-        try (var row = statement.executeQuery("SELECT COUNT(*) FROM pragma_table_info('social_profiles') WHERE name = 'expression'")) {
-            hasExpression = row.getInt(1) > 0;
+        for (String column : new String[]{"chat_style", "expression"}) {
+            boolean has;
+            try (var row = statement.executeQuery("SELECT COUNT(*) FROM pragma_table_info('social_profiles') WHERE name = '" + column + "'")) {
+                has = row.getInt(1) > 0;
+            }
+            if (has) statement.execute("ALTER TABLE social_profiles DROP COLUMN " + column);
         }
-        if (hasExpression) statement.execute("ALTER TABLE social_profiles DROP COLUMN expression");
         statement.execute("DROP TABLE IF EXISTS listener_preferences");
     }
 
