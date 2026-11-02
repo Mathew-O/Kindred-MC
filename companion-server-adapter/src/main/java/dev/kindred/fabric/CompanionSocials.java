@@ -96,6 +96,23 @@ final class CompanionSocials {
         }
     }
 
+    /**
+     * What the player makes of what is said to it beyond the words (E-50): a claim the speaker makes of themselves noted,
+     * one they take back marked, and a question about someone it knows answered from what it knows. Never an ask.
+     */
+    interface Hearing {
+        /** A claim noted or taken back; the reply to a taking-back, or empty. */
+        Optional<String> heard(ServerPlayerEntity speaker, Participant player, String message);
+
+        /** Its own answer to a question about someone it knows, or empty. */
+        Optional<String> answer(ServerPlayerEntity speaker, Participant player, String message);
+
+        Hearing NONE = new Hearing() {
+            @Override public Optional<String> heard(ServerPlayerEntity speaker, Participant player, String message) { return Optional.empty(); }
+            @Override public Optional<String> answer(ServerPlayerEntity speaker, Participant player, String message) { return Optional.empty(); }
+        };
+    }
+
     /** A message that came while a line was being phrased: only the newest waits. */
     private record Waiting(ServerPlayerEntity speaker, String message) { }
 
@@ -129,6 +146,7 @@ final class CompanionSocials {
     private final Map<UUID, ListenerPreferences> preferences = new HashMap<>();
     /** False while the saved preferences are still being read: nothing unasked is said, and no jokes or teasing. */
     private boolean preferencesKnown = true;
+    private Hearing hearing = Hearing.NONE;
 
     /**
      * Who may command each AI player, as the runtime's access rules say: they are talked with as its owner is, in
@@ -136,6 +154,11 @@ final class CompanionSocials {
      */
     void setControllers(java.util.function.BiPredicate<ServerPlayerEntity, Participant> controls) {
         this.controls = controls;
+    }
+
+    /** What the player makes of what is said to it (E-50). */
+    void setHearing(Hearing hearing) {
+        this.hearing = java.util.Objects.requireNonNull(hearing);
     }
 
     /** The player's voice, or null for the fixed replies alone. */
@@ -421,12 +444,16 @@ final class CompanionSocials {
      */
     boolean reply(ServerPlayerEntity player, Participant companion, String message) {
         if (!canTalk(player, companion)) return false;
+        // Heard before any limit on replies (E-50): a claim noted, or one taken back.
+        Optional<String> taken = hearing.heard(player, companion, message);
         long now = clock.getAsLong();
         if (now < directSpeakers.getOrDefault(player.getUuid(), Long.MIN_VALUE)
                 || !brain(companion.id()).admitDirectReply(now)) return false;
         remember(directSpeakers, player.getUuid(), now + 3_000);
-        // A remark about a habit gets a character answer; it is still finite dialogue with no task or settings effect.
-        Optional<String> habitReply = habits.feedback(player, companion, message, now);
+        // Its own words, without the voice, for a taking-back and for a question about someone it knows, from what it knows;
+        // a remark about a habit gets a character answer. Each is finite dialogue with no task or settings effect.
+        Optional<String> habitReply = taken.or(() -> hearing.answer(player, companion, message))
+                .or(() -> habits.feedback(player, companion, message, now));
         if (habitReply.isEmpty() && voice != null) {
             if (voicing.containsKey(companion.id())) { // One line phrased at a time: this one waits, the newest in place of any waiting.
                 Waiting displaced = waiting.put(companion.id(), new Waiting(player, message));

@@ -61,6 +61,7 @@ import dev.kindred.core.progression.PlaystyleProfile;
 import dev.kindred.core.logistics.ChestOrganizationPolicy;
 import dev.kindred.core.team.CollaborationMode;
 import dev.kindred.core.team.HandOvers;
+import dev.kindred.core.social.PeerUpdate;
 import dev.kindred.core.team.ShareOut;
 import dev.kindred.core.progression.MilestoneGraph;
 import dev.kindred.core.progression.MilestoneId;
@@ -195,6 +196,8 @@ final class PlayerRuntime {
     private final CompanionSocials socials;
     /** The server's cap on how players sound, and each person's own preferences (E-18a, E-19a). */
     private final TalkSettings talk;
+    /** What each AI player knows of the others (E-50). */
+    private final PeerRadio peerRadio;
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
     private final PlayerVoice voice;
     private boolean voiceOn = PlayerVoice.switchedOn(System.getenv());
@@ -393,6 +396,23 @@ final class PlayerRuntime {
         }, new HabitHooks(), this::aiPlayerOf);
         socials.setExpressionCap(TalkSettings.cap(System.getenv()));
         talk = new TalkSettings(socials, server);
+        peerRadio = new PeerRadio(memories, server, new PeerRadio.Source() {
+            @Override public UUID aiPlayerOf(net.minecraft.entity.Entity body) { return PlayerRuntime.this.aiPlayerOf(body); }
+
+            @Override public PeerRadio.Audience audience(UUID id, ServerPlayerEntity speaker) {
+                var facts = voiceFacts(id, speaker);
+                return facts == null ? null : new PeerRadio.Audience(facts.relation(), facts.controls());
+            }
+        });
+        socials.setHearing(new CompanionSocials.Hearing() {
+            @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                return peerRadio.heard(player.id(), speaker, message);
+            }
+
+            @Override public Optional<String> answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                return peerRadio.answer(player.id(), speaker, message);
+            }
+        });
         voice = new PlayerVoice(this::voiceFacts, new PlayerVoice.Asks() {
             @Override
             public void ask(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
@@ -2284,6 +2304,7 @@ final class PlayerRuntime {
             }
         }
         attentionScheduler.synchronizeEntries(batch);
+        if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
 
         java.util.Optional<WorkToken> nextToken;
         while ((nextToken = attentionScheduler.selectNext()).isPresent()) {
@@ -7113,6 +7134,8 @@ final class PlayerRuntime {
     }
 
     int forgetMemory(ServerCommandSource source, UUID requestedId, UUID memoryId) {
+        Entry known = requestedId == null ? null : entries.get(requestedId);
+        if (known != null && known.nativeState != null) return peerRadioForget(source, known, memoryId);
         Entry entry = authorizedEntry(source, requestedId, "forget a memory");
         if (entry == null) return 0;
         if (memoryId == null) return reject(source, "Supply the memory UUID to forget.");
@@ -7123,6 +7146,16 @@ final class PlayerRuntime {
                 feedback(source, "Forgot memory " + memoryId + " for " + entry.data.displayName() + ".");
             }
         }));
+        return 1;
+    }
+
+    /** E-50: {@code memory forget <their id> <player>}: everything a native player knows of that person or player removed. */
+    private int peerRadioForget(ServerCommandSource source, Entry entry, UUID who) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change what it remembers.");
+        if (who == null || !peerRadio.forget(entry.data.id(), who)) return reject(source, entry.data.displayName() + " knows nothing of " + who + ".");
+        feedback(source, "Forgot everything " + entry.data.displayName() + " knew of " + who + ".");
         return 1;
     }
 
@@ -8276,6 +8309,7 @@ final class PlayerRuntime {
         };
         KindredMod.LOGGER.info("{} notes that {} {}: wariness {}{}", entry.data.displayName(), name, did, wariness,
                 !was && wariness >= dev.kindred.core.Trust.WARY ? "; it holds back from them now" : "");
+        peerRadio.episode(entry.data.id(), person, name, did); // The game's record of it (E-50).
     }
 
     /** Harm that got through (E-49): within ten seconds of arriving where someone asked it to come, theirs to answer for. */
@@ -8295,6 +8329,7 @@ final class PlayerRuntime {
         long now = server.getTicks();
         int before = entry.trust.wariness(from.getUuid(), now);
         entry.trust.gift(from.getUuid(), now);
+        peerRadio.received(entry.data.id(), from.getUuid(), from.getName().getString(), stack.getName().getString().toLowerCase(java.util.Locale.ROOT), stack.getCount());
         if (before > 0) {
             KindredMod.LOGGER.info("{} takes {} {} from {}: wariness {}", entry.data.displayName(), stack.getCount(),
                     stack.getName().getString().toLowerCase(java.util.Locale.ROOT), from.getName().getString(), entry.trust.wariness(from.getUuid(), now));
@@ -10999,7 +11034,34 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), peerRadio.told(id));
+    }
+
+    /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
+    private List<PeerRadio.Member> peerMembers() {
+        var out = new ArrayList<PeerRadio.Member>();
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null || entry.snapshot().lifecycle() == LifecycleState.REMOVED) continue;
+            var body = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+            boolean inMatch = body != null && matches.running(body.getUuid()).isPresent();
+            PeerUpdate update = null;
+            if (body != null) {
+                boolean busy = entry.runner != null && runnerBusy(entry);
+                String goal = PlayerVoice.goal(entry.goal);
+                String doing = !goal.isEmpty() ? "working on " + goal + (entry.goalProgress.isEmpty() ? "" : ": " + entry.goalProgress)
+                        : busy ? PlayerVoice.doing(entry.skillId) : "idle";
+                var spare = new java.util.TreeMap<String, Integer>();
+                for (var held : entry.heldFinds.entrySet()) {
+                    String item = HandOvers.materialItem(held.getKey());
+                    int free = held.getValue() - teamCoordinator.stockLedger().reservedCount(HandOvers.held(entry.data.id(), item));
+                    spare.put(net.minecraft.util.Identifier.of(item).getPath().replace('_', ' '), free);
+                }
+                update = PeerRadio.update(entry.data.id(), entry.data.displayName(), body, doing,
+                        entry.campaign == null ? List.of() : entry.campaign.followUps().provisions().chunks(), spare);
+            }
+            out.add(new PeerRadio.Member(entry.data.id(), entry.data.displayName(), body, inMatch, update));
+        }
+        return out;
     }
 
     /** An ask from chat: who asked, what of, until when it waits for the player's look at the speaker, and where a refusal goes. */
@@ -11116,7 +11178,10 @@ final class PlayerRuntime {
         int tossed = Math.min(Math.min(Math.max(1, count), allowance), inventory.main.get(slot).getCount());
         int started = nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
                 "target", to.getUuid().toString()));
-        if (started == 1) entry.trust.tossed(to.getUuid(), tossed, now);
+        if (started == 1) {
+            entry.trust.tossed(to.getUuid(), tossed, now);
+            peerRadio.gave(entry.data.id(), to.getUuid(), to.getName().getString(), kind.getName().getString().toLowerCase(java.util.Locale.ROOT), tossed);
+        }
         return started;
     }
 
@@ -11143,6 +11208,9 @@ final class PlayerRuntime {
     void atlas(boolean on) { atlasOn = on; }
 
     /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
+    /** What a player knows of the others, for fixtures (E-50); null while it is being read. */
+    dev.kindred.core.social.PeerLedger peersForFixtures(UUID id) { return peerRadio.ledger(id).orElse(null); }
+
     dev.kindred.core.atlas.Atlas atlasForFixtures(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? null : entry.atlas;
@@ -11646,6 +11714,7 @@ final class PlayerRuntime {
         matches.stopAll();
         presenter.clear();
         memory.close(); // The strategist's bridge, when there is one.
+        peerRadio.saveAll(); // What each knows of the others (E-50).
         for (Entry entry : entries.values()) {
             if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
         }

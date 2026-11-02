@@ -26,7 +26,8 @@ import java.util.concurrent.Executors;
  * places that matter on the way to the End (the portals it went through, the fortress it found, where its
  * eyes' flights cross, the End portal) and each eye flight it watched. One small JSON file per player in the
  * world's {@code kindred/memory} folder. Only what the player saw itself is kept, as it saw it; a restart no
- * longer sends it to throw eyes again, or to find a fortress again that it already found. Reads and writes
+ * longer sends it to throw eyes again, or to find a fortress again that it already found. Beside it, in files of their
+ * own: its bases, its work, its atlas and what it knows of the others ({@code <uuid>.peers.json}, E-50). Reads and writes
  * run on their own thread; a write replaces the file whole.
  */
 final class PlayerMemoryStore implements AutoCloseable {
@@ -117,6 +118,36 @@ final class PlayerMemoryStore implements AutoCloseable {
     private Path workFile(UUID id) { return folder.resolve(id + ".work.json"); }
 
     private Path atlasFile(UUID id) { return folder.resolve(id + ".atlas.json"); }
+
+    private Path peersFile(UUID id) { return folder.resolve(id + ".peers.json"); }
+
+    /** What this player knows of the others in this world (E-50), or none; read off the game thread. */
+    CompletableFuture<dev.kindred.core.social.PeerLedger.Snapshot> loadPeers(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (Files.isRegularFile(peersFile(id))) {
+                    return gson.fromJson(Files.readString(peersFile(id), StandardCharsets.UTF_8), dev.kindred.core.social.PeerLedger.Snapshot.class);
+                }
+            } catch (IOException | RuntimeException unreadable) {
+                KindredMod.LOGGER.warn("What {} knows of the others could not be read; starting afresh: {}", name, unreadable.toString());
+            }
+            return null;
+        }, io);
+    }
+
+    /** Write what it knows of the others, a copy taken on the game thread: turned into its file off it, after any write before it. */
+    void savePeers(UUID id, String name, dev.kindred.core.social.PeerLedger.Snapshot snapshot) {
+        io.execute(() -> {
+            String json;
+            try {
+                json = gson.toJson(snapshot);
+            } catch (RuntimeException failed) {
+                KindredMod.LOGGER.warn("What {} knows of the others could not be written: {}", name, failed.toString());
+                return;
+            }
+            writeNow(peersFile(id), json, name);
+        });
+    }
 
     /** This player's atlas of this world (F-30), or none; read off the game thread. */
     CompletableFuture<dev.kindred.core.atlas.Atlas.Snapshot> loadAtlas(UUID id, String name) {

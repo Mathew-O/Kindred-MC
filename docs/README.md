@@ -24,7 +24,7 @@ Kindred MC is a Minecraft Java mod (Fabric, 1.21.1) that lets you add **a player
 | **Goal** | A big aim a player works towards on its own, like "light a Nether portal" or "beat the dragon". |
 | **Skill** | One concrete thing a player does: walk somewhere, break a block, eat, craft, place a block. A goal is a long chain of skills. |
 | **Recorded action** | A skill that changes the world or the inventory (breaking, crafting, placing…). It's written down *before* it happens and checked *after*, so a crash can never duplicate or lose items. |
-| **Ledger** | The notebook those actions are written in. |
+| **Ledger** | Two things. The *action ledger*: the notebook those actions are written in. A player's *ledger of the others* (E-50): what it knows of each person and player it has met, from what it saw, from its teammates' own updates and, kept only as claims that fade in a game day, from what people said of themselves. |
 | **Held for reconciliation** | The player paused itself because something uncertain happened (say, the server crashed mid-action). A human checks the world, then lets it carry on. It's the safe choice: it never guesses. |
 | **Edits switch** | `/aiplayer edits on|off`. While it's off, your players never break or place blocks. It starts off. |
 | **Activity allowance** | How long a player may be active each day (the *cap*), optionally only between certain *hours*, counted in a chosen *timezone*. Each day is a *period*. Time is paid for in small *slices* of a few seconds, booked before the player acts. |

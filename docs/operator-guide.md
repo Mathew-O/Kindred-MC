@@ -419,6 +419,19 @@ Each person sets, for themselves only, how AI players speak to them; nobody else
 
 The pause is per person, across all players; each player's own pause between remarks (about two minutes) and the server's ten seconds between any two still apply, so `more` shortens only the per-person part. A line said to several people at once is put as the strictest of them asked: one person with jokes off, and everyone there hears the plain line. A reply to one person follows that person's own preferences, and the voice (E-20a) is told in one line how to speak to them. Preferences are kept per person in the metadata database (`listener_preferences`) and survive a restart; going back to all the defaults deletes the row, as `forget` does. Until the saved preferences have been read at start, players say nothing unasked and make no jokes; if they cannot be read, that holds until the next restart, and the log says so.
 
+#### What each player knows of the others (E-50)
+Each AI player keeps a ledger of the people and players it has met in this world, filled from three sources, the most trusted first:
+
+1. **What the game recorded.** Who it has seen and when (once a second, within 16 blocks and in sight); a person's place only while they are in sight; a blow, harm after coming where someone asked, a chest emptied (E-49); what it handed someone and what they handed it.
+2. **Its teammates' own updates**, sent through the team every five seconds, never in chat: what each is doing (its goal and where it has got to, or its task), what its follow-up queue still has to gather (the End fight's string and feathers, say), what it holds of its finds unpromised, and where it is. Teammates are AI players out of any match, as in co-op; in a match they send nothing.
+3. **What a person says of themselves**: "I'm off to the Nether", "I need iron", "I've got spare wheat". Each is kept only as a claim: it holds for a game day, is never told as a fact ("Steve said, 2 minutes ago, that they were going to the nether (said, not seen)"), and is retired once the player sees them there. Nothing else said in chat leaves a note, and what was said is never written to disk.
+
+Whoever said something can take it back: "forget that", "forget what I said about the Nether", or "that's wrong". The claim is marked with who took it back and when, keeping who said it, and is never used again; the player answers in its own words ("All right, I've forgotten it."), without the model. Only the person who said it can take it back.
+
+Asked "what does Sol need?", "what is Sol doing?" or "where is Sol?" about someone it knows, the player answers from its ledger, without the model, and only as far as the asker may be told: a place to whoever may command it; a teammate's needs and doing to its controllers and teammates; what someone said only back to them; nothing of others to an opponent. Its voice (E-20a) is told the same lines under the same rules. An unknown name is ordinary talk.
+
+The ledger holds 64 peers (the least lately met dropped) and 20 episodes each, and is kept in `kindred/memory/<uuid>.peers.json` beside the atlas, saved every minute and at a stop; people's places and claims are not kept. To remove everything a native player knows of someone: `/aiplayer memory forget <their uuid> <player>` (operators and the player's controllers).
+
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 
 ## How the players look about

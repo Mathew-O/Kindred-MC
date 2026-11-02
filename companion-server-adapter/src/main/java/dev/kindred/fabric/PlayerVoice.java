@@ -50,7 +50,13 @@ final class PlayerVoice implements CompanionSocials.Voice {
     /** What the runtime knows of a player as it is spoken to, beyond what its body shows. */
     record Facts(String name, Personality personality, ConversationAudience.Relation relation, boolean controls,
                  boolean stopped, boolean busy, String doing, String goal, String goalProgress, List<String> events,
-                 String lastSaid, List<String> remembered, String wary) { }
+                 String lastSaid, List<String> remembered, String wary, List<dev.kindred.core.social.PeerLedger.Told> peers) {
+        /** Knowing nothing of the others (before E-50). */
+        Facts(String name, Personality personality, ConversationAudience.Relation relation, boolean controls, boolean stopped, boolean busy,
+              String doing, String goal, String goalProgress, List<String> events, String lastSaid, List<String> remembered, String wary) {
+            this(name, personality, relation, controls, stopped, busy, doing, goal, goalProgress, events, lastSaid, remembered, wary, List.of());
+        }
+    }
 
     /** The runtime's side: the facts of a player spoken to by {@code speaker}, or null when it cannot be voiced now. */
     interface Source {
@@ -192,7 +198,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
         return new ConversationAudience.Situation(facts.name(), speaker.getName().getString(), facts.relation(), facts.controls(),
                 body.getHealth(), food, hurtBy(body), dimension, daytime, weather, facts.stopped(), facts.busy(), facts.doing(),
                 facts.goal(), facts.goalProgress(), position, threat, near, List.copyOf(held), foodItems, notables,
-                facts.events(), facts.remembered(), facts.lastSaid(), transcript, facts.wary());
+                facts.events(), facts.remembered(), facts.lastSaid(), transcript, facts.wary(), facts.peers());
     }
 
     private static final java.util.Set<net.minecraft.item.Item> NOTABLE = java.util.Set.of(Items.DIAMOND, Items.EMERALD, Items.IRON_INGOT,

@@ -16,6 +16,21 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## What each player knows of the others (E-50) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 867 JUnit tests, 6 skipped, 0 failures (861
+  passed; 13 new: `PeerLedgerTest` 9, `ClaimsTest` 4).
+- `NativePeerLedgerGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 1 of 3 at first,
+  the two fixtures needing a teammate's update failing (`PeerRadio`'s interval began at `Long.MIN_VALUE`, and `now` minus
+  that overflows, so no update was ever sent); then 2 of 3 in five runs, the restart fixture failing twice on its own faults
+  (it spoke before Echo's ledger was read; it compared a note made in the stop's own tick with `<`) and three times on
+  `memory forget`, which refused every native player. With those fixed, three runs at 3 of 3; after the restart fixture's
+  failure message alone was shortened, three more on the final code, 3 of 3 each.
+- The seven social classes together, on the final code: 34 of 34 (`NativePeerLedgerGameTests` 3,
+  `NativeExpressionGameTests` 3, `SocialGameTests` 6, `NativeVoiceGameTests` 9, `NativeAskGameTests` 6,
+  `NativeMatchGameTests` 3, `MannerismGameTests` 4).
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
 ## Expression presets and a person's own preferences (E-18a, E-19a) — 2 November 2026 (`claude/living-together-1101`)
 
 - Build: `./gradlew build` green on the commit that adds this section: 854 JUnit tests, 6 skipped, 0 failures (848
