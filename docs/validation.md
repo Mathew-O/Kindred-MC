@@ -16,6 +16,44 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Final validation of living together — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `bash ./gradlew build` green on `8537a03`, the final code: 882 JUnit tests, 876 passed, 6 skipped, 0 failures
+  (36 more than the 846 of `main`).
+- Each new GameTest class alone, three runs or more on its final code, every run passing (in each feature's section
+  below): `NativeExpressionGameTests` 3 of 3, `NativePeerLedgerGameTests` 3 of 3, `NativeChatAskGameTests` 8 of 8,
+  `NativeInitiativeGameTests` 5 of 5, `NativeConversationGameTests` 4 of 4. The ten social classes together, 51 of 51.
+- The full native suite on `8537a03`, nothing else on the cores: 503 of 504 in 50 minutes. Compared with the open list:
+  - failed, open before: the base repair (`NativeBaseRepairGameTests`), "stopped, 8 steps failed one after another (last:
+    No way to reach minecraft:oak_stairs ...: No walkable route ...)", its roof stairs out of reach: #82's family, as in
+    full run 41 and the second-night fixture on `77ddbb4`. This track changed no building, route or campaign code;
+  - passed this time, each open before: the keep's roof stairs (`NativeCompoundGameTests`), the lake librarian
+    (`NativeBringGameTests`), the ruined portal's chest (`NativeLootGameTests`), the trip's wood (F-25c4i), the hungry
+    search for animals (F-25c4ab), the cabin with its furniture, the night and its own bed, and the walk back up when
+    its pickaxe breaks;
+  - every social class passed in it (`SocialGameTests`, `NativeVoiceGameTests`, `NativeAskGameTests`,
+    `NativeMatchGameTests`, `MannerismGameTests` and the five new).
+- Ten seeds of the final build (`social-8537a03`: the jar `./gradlew build` made from `8537a03`), three starters, the
+  nether goal, 144,000 ticks, strategist and voice off, `KINDRED_CHATTER` unset (four lines a minute), two servers at a
+  time, 04:40 to 07:32, nothing else on the cores but a copy of the players' ledgers once a minute and a few searches of
+  finished seeds' logs. All ten complete and earned. [Summary](evidence/eval/social-8537a03/summary.md).
+  - The social lanes: 0 lines a game minute on every seed; 0 lines between AI players, 0 said first to people (an
+    evaluation run has none), 1 meeting noted with nobody to hear (seed 606, Kindred and Echo, "what you were doing");
+    model tokens 0 on every seed. The players were in sight of each other (eight blocks, a clear line) in their first
+    3,800 ticks (about three game minutes) and then, by the ledgers kept, once more on three of the nine seeds copied
+    (20261030, 606 and 707; 8675309 had ended before the copying began). Only 606's became a meeting; the other two were
+    not looked into.
+  - Against the next levers' final build on the same seeds ([comparison](evidence/eval/compare-social.md)), no measure
+    differs clearly: the team's furthest stage 5.5 [2 to 6] against 4.0 [2 to 6], deaths a game hour 1.25 [0.0 to 3.0]
+    against 1.75 [0.0 to 4.5], stuck game minutes 42.0 [12 to 84] against 42.0 [12 to 99]; a portal lit on 5 seeds
+    against 1. This track changed no goal, route or campaign code.
+  - Found, open: on 20261030 Kindred, killed by a warden at Y −49 and back at the world's spawn on a mountain with
+    nothing, cut logs, made sticks and a crafting table, placed it, and then walked to it 927 times in the run's last 19
+    game minutes: the goal's own step "Craft stone pickaxe" without the stone it needs, given out by the craft helper as
+    "Walk to the crafting table", which ends at once (`PortalRunCampaign.craft`, the hand-over loop's cause). So the
+    goal does ask the helper for a recipe it has not the makings of, and the two-line fix proposed for the hand-over
+    would leave this step with nothing to do: the step wants its stone first, or to be passed over, not a walk.
+
 ## Conversations between AI players (E-51) — 2 November 2026 (`claude/living-together-1101`)
 
 - Build: `./gradlew build` green on the commit that adds this section: 882 JUnit tests, 6 skipped, 0 failures (876
