@@ -9,4 +9,4 @@ pluginManagement {
 
 // The project's parts, each a folder of its own.
 rootProject.name = 'kindred-mc'
-include 'companion-core', 'companion-scheduler', 'companion-persistence', 'companion-testkit', 'companion-server-adapter', 'companion-model', 'companion-sim'
+include 'companion-core', 'companion-scheduler', 'companion-persistence', 'companion-testkit', 'companion-server-adapter', 'companion-model', 'companion-sim', 'kindred-world-design'

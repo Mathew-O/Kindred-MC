@@ -2,9 +2,13 @@ package dev.kindred.design;
 
 import dev.kindred.design.demo.DesignDemo;
 import dev.kindred.design.model.DesignModel.*;
+import dev.kindred.design.model.SemanticDesign;
 import dev.kindred.design.planning.*;
+import dev.kindred.design.preview.PreviewRenderer;
+import dev.kindred.design.proposal.ProposalEnvelope;
 import dev.kindred.design.validation.StaticValidator;
 import dev.kindred.design.validation.StaticValidator.Code;
+import java.time.Instant;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
@@ -190,6 +194,100 @@ public final class FoundationTests {
             expect(IllegalArgumentException.class, () -> DesignDemo.brief(4, 0, new Pos(0, 64, 0)));
             expect(IllegalArgumentException.class, () -> new Brief(BRIEF.projectId(), BRIEF.worldId(), BRIEF.dimension(),
                     BRIEF.site(), BRIEF.floorOrigin(), BRIEF.accessAnchor(), 0, 0, 0));
+        });
+        test("semantic revisions preserve identities and accepted revisions freeze", () -> {
+            var style = new SemanticDesign.StyleProfile("style.basic", Map.of("wall", Material.COBBLESTONE),
+                    3, 9, Set.of("gable"), Set.of(Material.OAK_PLANKS));
+            var scene = new SemanticDesign.Node("scene.one", SemanticDesign.NodeKind.SCENE, "workshop", false);
+            var building = new SemanticDesign.Node("building.one", SemanticDesign.NodeKind.BUILDING, "crafting", false);
+            var first = new SemanticDesign.Revision("rev.one", 1, null, OBS.observationId(), OBS.revision(), "local-1",
+                    SemanticDesign.RevisionStatus.DRAFT, Map.of(scene.id(), scene, building.id(), building),
+                    Set.of(new SemanticDesign.Edge(scene.id(), SemanticDesign.Relation.CONTAINS, building.id())), style);
+            var second = SemanticDesign.nextRevision(first, "rev.two", OBS.observationId(), OBS.revision(), "local-1",
+                    Map.of(scene.id(), scene, building.id(), building), Set.of(), style);
+            check(second.parentRevisionId().equals(first.revisionId()) && second.revision() == 2, "Revision lineage lost");
+            expect(IllegalArgumentException.class, () -> SemanticDesign.nextRevision(first, "rev.bad", OBS.observationId(), OBS.revision(),
+                    "local-1", Map.of(scene.id(), scene), Set.of(), style));
+            expect(IllegalStateException.class, () -> first.withStatus(SemanticDesign.RevisionStatus.ACCEPTED)
+                    .withStatus(SemanticDesign.RevisionStatus.DRAFT));
+        });
+        test("layout search returns bounded safe candidates and excludes protected cells", () -> {
+            Box site = new Box(new Pos(0, 0, 0), new Pos(10, 4, 10));
+            Map<Pos, Cell> cells = new HashMap<>();
+            for (Pos p : site.cells()) cells.put(p, p.y() == 0 ? Cell.SOLID : Cell.AIR);
+            Observation observed = new Observation("layout_obs", new UUID(9, 9), "minecraft:overworld", 1,
+                    OBS.capturedAt(), "fixture", site, cells, Set.of(new Pos(0, 1, 0)));
+            var request = new LayoutPlanner.Request("layout", site, new Pos(5, 1, 10), 3, 3, 3,
+                    Set.of(new Pos(1, 1, 1)), Set.of());
+            var result = new LayoutPlanner().plan(request, observed);
+            check(!result.candidates().isEmpty() && result.candidates().size() <= 3, "No bounded layout candidate");
+            check(result.candidates().stream().noneMatch(c -> c.footprint().contains(new Pos(1, 1, 1))), "Protected feature overwritten");
+        });
+        test("reference import strips executable payloads and marks unannotated references", () -> {
+            Box bounds = new Box(new Pos(0, 0, 0), new Pos(1, 1, 1));
+            var reference = new ReferenceImporter.Reference("ref.one", "credit.one", bounds,
+                    List.of(new Voxel(new Pos(0, 0, 0), Material.COBBLESTONE, Phase.FLOOR_AND_PATH)),
+                    List.of(new Port("door", new Pos(0, 1, 0))), Set.of(new Pos(1, 1, 1)), false, false, false);
+            check(!new ReferenceImporter().importReviewed(reference).executionEligible(), "Unannotated import became executable");
+            expect(IllegalArgumentException.class, () -> new ReferenceImporter().importReviewed(new ReferenceImporter.Reference(
+                    "ref.bad", "credit.one", bounds, reference.voxels(), reference.ports(), reference.clearance(), true, false, true)));
+        });
+        test("lifecycle only admits accepted revisions and inspection refuses uncertain repair", () -> {
+            var lifecycle = new ProjectLifecycle();
+            var initial = new ProjectLifecycle.State(SemanticDesign.RevisionStatus.DRAFT, ExecutionStatus.UNSCHEDULED, "");
+            expect(IllegalStateException.class, () -> lifecycle.transition(initial, SemanticDesign.RevisionStatus.DRAFT, ExecutionStatus.READY, ""));
+            var accepted = new ProjectLifecycle.State(SemanticDesign.RevisionStatus.ACCEPTED, ExecutionStatus.UNSCHEDULED, "");
+            check(lifecycle.transition(accepted, SemanticDesign.RevisionStatus.ACCEPTED, ExecutionStatus.READY, "").execution() == ExecutionStatus.READY,
+                    "Accepted revision not admitted");
+            Map<Pos, Cell> cells = new HashMap<>(OBS.cells()); cells.remove(DESIGN.voxels().getFirst().position());
+            check(!new InspectionPlanner().inspect(DESIGN, observation(cells, Set.of(), 1)).repairProposalAllowed(),
+                    "Unknown observation authorized repair");
+        });
+        test("construction phases bind exact resources but remain non-executable", () -> {
+            var plan = new ConstructionPlanner().compile(DESIGN, OBS,
+                    Map.of(Material.COBBLESTONE, 74L, Material.OAK_PLANKS, 25L), Map.of());
+            check(plan.phases().size() == 3 && plan.phases().stream().allMatch(ConstructionPlanner.WorkPhase::supplyFeasible),
+                    "Exact supply did not satisfy phase plan");
+            check(plan.phases().stream().mapToInt(p -> p.actions().size()).sum() == DESIGN.voxels().size(), "Actions lost geometry");
+            check(!plan.executionQualified() && plan.missingCapabilities().contains(ConstructionPlanner.Capability.STANCE_AND_REACH),
+                    "Pure plan gained execution authority");
+        });
+        test("preview diff and bounded proposal envelopes cannot manufacture authority", () -> {
+            var preview = new PreviewRenderer();
+            check(preview.overhead(DESIGN, 64).contains("#"), "Preview omitted geometry");
+            List<Voxel> altered = new ArrayList<>(DESIGN.voxels()); altered.removeLast();
+            var diff = preview.diff(DESIGN, copy(altered, DESIGN.requiredAir(), DESIGN.ports()));
+            check(diff.removed().size() == 1, "Preview diff missed removal");
+            Instant expiry = Instant.parse("2026-10-23T00:00:00Z");
+            var request = new ProposalEnvelope.Request("request.one", ProposalEnvelope.Tool.PROPOSE_SCENE, "project.one", "rev.one",
+                    OBS.observationId(), expiry, Map.of("goal", "shared workshop"));
+            var response = new ProposalEnvelope.Response("request.one", "project.one", "rev.one", OBS.observationId(), List.of("suggestion only"));
+            ProposalEnvelope.bind(request, response, Instant.parse("2026-10-22T12:00:00Z"));
+            expect(IllegalStateException.class, () -> ProposalEnvelope.bind(request, response, expiry));
+        });
+        test("semantic novelty reservations are deterministic, exclusive, and expire", () -> {
+            var style = new SemanticDesign.StyleProfile("style.novel", Map.of("roof", Material.OAK_PLANKS), 3, 8, Set.of(), Set.of());
+            var node = new SemanticDesign.Node("scene.novel", SemanticDesign.NodeKind.SCENE, "shelter", false);
+            var revision = new SemanticDesign.Revision("rev.novel", 1, null, OBS.observationId(), OBS.revision(), "local-1",
+                    SemanticDesign.RevisionStatus.DRAFT, Map.of(node.id(), node), Set.of(), style);
+            var registry = new NoveltyRegistry(); Instant now = Instant.parse("2026-10-22T12:00:00Z");
+            var reservation = registry.reserve("project.novel", revision, now, java.time.Duration.ofMinutes(5));
+            check(reservation.fingerprint().equals(NoveltyRegistry.fingerprint(revision)), "Unstable semantic fingerprint");
+            expect(IllegalStateException.class, () -> registry.reserve("project.other", revision, now, java.time.Duration.ofMinutes(5)));
+            check(registry.purge(now.plus(java.time.Duration.ofMinutes(5))) == 1, "Expired reservation retained");
+            registry.reserve("project.other", revision, now.plus(java.time.Duration.ofMinutes(5)), java.time.Duration.ofMinutes(1));
+        });
+        test("uncertain execution receipts fence replay until reconciliation", () -> {
+            var ledger = new ExecutionLedger(); Instant now = Instant.parse("2026-10-22T12:00:00Z");
+            ledger.admit("action.one", "hash", OBS.observationId(), OBS.revision(), now);
+            ledger.attempted("action.one", now.plusSeconds(1));
+            check(ledger.outcome("action.one", false, false, "timeout", now.plusSeconds(2)).state() == ExecutionLedger.State.UNCERTAIN,
+                    "Missing receipt did not become uncertain");
+            expect(IllegalStateException.class, () -> ledger.admit("action.one", "hash", OBS.observationId(), OBS.revision(), now.plusSeconds(3)));
+            expect(IllegalStateException.class, () -> ledger.reconcile("action.one", false, "still ambiguous", now.plusSeconds(4)));
+            ledger.reconcile("action.one", true, "observed-and-settled", now.plusSeconds(5));
+            check(ledger.admit("action.one", "hash", OBS.observationId(), OBS.revision(), now.plusSeconds(6)).state() == ExecutionLedger.State.ADMITTED,
+                    "Reconciled action could not be reconsidered");
         });
         String report = String.join("\n", RESULTS) + "\nPASS: " + RESULTS.size()
                 + " pure scenarios (128 rotation/site/seed cases); no native or live evidence.\n";

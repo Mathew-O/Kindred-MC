@@ -43,6 +43,9 @@ public final class DesignDemo {
                 Map.of(Material.COBBLESTONE, 70L, Material.OAK_PLANKS, 20L),
                 Map.of(Material.COBBLESTONE, 5L));
         var plan = new SupportCompiler().compile(design, observation);
+        var construction = new ConstructionPlanner().compile(design, observation,
+                Map.of(Material.COBBLESTONE, 70L, Material.OAK_PLANKS, 20L),
+                Map.of(Material.COBBLESTONE, 5L));
         StringBuilder text = new StringBuilder("Kindred world-design synthetic pilot\n")
                 .append("No world IO, inventory changes, reservations, or completion evidence.\n")
                 .append("Design: ").append(design.designId()).append(" revision ").append(design.revision()).append('\n')
@@ -57,6 +60,11 @@ public final class DesignDemo {
         }
         text.append("Preliminary support steps: ").append(plan.steps().size()).append('\n')
                 .append("Missing qualification: ").append(new TreeSet<>(plan.missingQualification())).append('\n');
+        for (var phase : construction.phases()) {
+            text.append("Phase ").append(phase.kind()).append(": actions=").append(phase.actions().size())
+                    .append(", supply-feasible=").append(phase.supplyFeasible())
+                    .append(", deficits=").append(phase.deficits()).append('\n');
+        }
         text.append("Floor/path overhead (z=-3..4, x=0..4; # block, . empty):\n");
         Set<Pos> occupied = new HashSet<>();
         design.voxels().forEach(v -> occupied.add(v.position()));

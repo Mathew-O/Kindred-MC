@@ -1,12 +1,16 @@
-# Kindred world-design foundation
+# Kindred world-design prototype — implementation paused
 
-An isolated Java 21 planning project. The [full proposed specification](SPECIFICATION.md)
-describes the target system; this folder implements the first pure planning slice.
+Start with the [integration review and next-agent handoff](../docs/world-design-implementation-handoff.md). The user paused this implementation attempt for review. Preserved source contains known contract defects and does not enable end-to-end native construction.
+
+A Java 21 planning module. The [full proposed specification](SPECIFICATION.md)
+describes the target system; this folder contains the foundation and subsequent unqualified planning prototypes.
 It has no Minecraft, provider, SQLite, or third-party runtime dependencies.
 
-Existing files and the root Gradle project are unchanged. This folder is not
-included in the root build or bundled in the server JAR. It uses the repository's
-existing Gradle 8.14.3 wrapper with a separate `settings.gradle`.
+On this handoff branch the root Gradle project includes the module, the server
+adapter declares it as a bundled dependency, and the existing SQLite writer has
+draft design metadata migrations 9–11. Packaging and migrations have not been
+validated. A separate `settings.gradle` also permits isolated use of the existing
+Gradle 8.14.3 wrapper.
 
 ## Run
 
@@ -36,16 +40,24 @@ Outputs (ignored by Git):
 `demo` always writes its report. `run` prints the same synthetic report and can
 take an optional output path with `--args`. Neither command contacts a server.
 
-## Implemented behavior
+## Prototype surface (see review before reuse)
 
 | Component | Foundation scope |
 | --- | --- |
-| Immutable records | Bounded positions/site, observation provenance, brief, geometry, ports |
+| Immutable records | Bounded positions/site, observation provenance, brief, geometry, ports, semantic revisions |
 | Workshop generator | Seeded 5x5 shell, two-block entrance, interior clearance, three-block path, four rotations |
 | Static validator | Unknown/occupied/protected targets, scope, ground support, required air, flat two-cell-high port connectivity, stale revision/world rejection |
 | Material planner | Exact direct block-item counts minus existing reservations; deficits only |
 | Artifact digest | Deterministic SHA-256 binds geometry, phases, ports, clearance, brief, revisions, generator |
 | Support compiler | Preliminary support-adjacency dependencies, deterministic phase ordering, floating-component rejection |
+| Semantic revisions | Stable node identities, explicit tombstones, bounded typed relationships, immutable accepted revisions |
+| Layout planner | At most three deterministic, known-safe flat-site candidates with protected features and corridors excluded |
+| Reference importer | Bounded data-only reviewed components; rejects executable/block-entity payloads and marks missing annotations |
+| Lifecycle/inspection | Explicit acceptance/execution transitions and observation-based drift classification that never assigns provenance |
+| Construction plan | Phase-scoped actions with exact direct item needs, support dependencies, expected receipts, and explicit missing capabilities |
+| Preview/proposals | Bounded diagnostic overhead/diff previews and strictly bound optional suggestion envelopes |
+| Novelty policy | Deterministic semantic fingerprints with bounded exclusive in-memory reservations; durable persistence remains external |
+| Recovery ledger | In-memory action admission/receipt state machine that fences retries until uncertain outcomes are reconciled |
 | Demo/tests | Synthetic observations and stock; no earned gameplay evidence |
 
 The pilot has 99 proposed blocks: 74 cobblestone and 25 oak planks for the even-seed
@@ -79,8 +91,9 @@ Future orchestration belongs in `PlayerRuntime`; core remains free of Minecraft
 objects. A server-thread adapter must supply trusted observed facts. Native
 skills retain the existing arbiter/runner/admission/checkpoint/cancellation path.
 Metadata must use the existing SQLite writer and physical items native saves.
-No alternate body controller, inventory, accounting ledger, or persistence writer
-is introduced here.
+The in-memory `ExecutionLedger` is a prototype with a known replay gap; do not
+integrate it as a second runtime ledger. Use the existing core `ActionRecord` and
+`ActionAdmission` with the ordered writer, as detailed in the handoff.
 
 Future work includes native stance/placement compilation, registry-derived
 recipes/fuel/tool costs, semantic design graph/style persistence, uniqueness
