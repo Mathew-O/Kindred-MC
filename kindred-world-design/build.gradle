@@ -1,0 +1,45 @@
+plugins {
+    id 'java-library'
+    id 'application'
+}
+
+group = 'dev.kindred'
+version = '0.1.0-foundation'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainClass = 'dev.kindred.design.demo.DesignDemo'
+}
+
+// No downloaded dependencies and no integration with the root runtime.
+def foundationTest = tasks.register('foundationTest', JavaExec) {
+    group = 'verification'
+    description = 'Runs deterministic pure foundation scenarios; no Minecraft world.'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.kindred.design.FoundationTests'
+    args layout.buildDirectory.file('reports/foundation-tests.txt').get().asFile.absolutePath
+}
+
+tasks.named('check') { dependsOn foundationTest }
+
+// Verification is the explicit executable suite above; no implicit test engine.
+tasks.named('test') { enabled = false }
+
+tasks.register('demo', JavaExec) {
+    group = 'application'
+    description = 'Writes a synthetic workshop planning report; never changes a world.'
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = application.mainClass
+    args layout.buildDirectory.file('reports/workshop-preview.txt').get().asFile.absolutePath
+}
