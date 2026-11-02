@@ -16,6 +16,54 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Gifts, friendship and outings (E-21a, E-22a, E-24a, E-27a); nothing to do at a table without the makings (F-25c4av) — 2 November 2026 (`claude/next-deps-1102`)
+
+- Build: `./gradlew build` green on `e732618`: 922 JUnit tests, 916 passed, 6 skipped, 0 failures. Six are new:
+  `RapportAndGiftsTest` 3 and `outing.OutingTest` 3, all passing at first. The commit after it changes a comment in
+  `GiftPolicy` and the docs only.
+- E-18b and E-50a's own commit, `a875512`, alone: `./gradlew build` green, 916 JUnit tests, 910 passed, 6 skipped. Its
+  full native suite, chained after that build, was stopped before it started: one suite runs on this branch instead,
+  which holds that commit.
+- CI for that commit:
+  - The run for `a875512` was cut off at the build job's 60-minute limit, with the native suite about 93% through.
+  - With the limit raised to 90 (`6a31725`), the run on the pull request
+    ([Mathew-O/Kindred-MC#7](https://github.com/Mathew-O/Kindred-MC/pull/7), merged) passed every JUnit suite and 517 of
+    518 native tests in 43.5 minutes. The one failure was the tree standing in water.
+- `NativeCraftHelperGameTests` (F-25c4av), with `PortalRunCampaign` as at `a875512`: fails, "No planks: nothing to do for
+  sticks, not Optional[Walk to the crafting table]". With the fix: 1 of 1 in each of three runs alone.
+- `NativeGiftGameTests` (E-21a, E-22a, E-24a), alone, while it was being finished:
+  - First run: the left toss's fixture hung. It slept six seconds of real time in a step retried each tick while waiting
+    for a deadline counted in ticks, so the deadline came after about ten minutes. Fixed in the fixture: it retries
+    without sleeping.
+  - Next run: 2 of 3. The iron offer was never made: the fixture said "I need iron" before Echo's ledger was read at
+    start, so the claim was not noted. The fixture now waits for the read, as the ledger's own fixtures do.
+  - Then 3 of 3.
+- `NativeOutingGameTests` (E-27a), alone, while it was being finished:
+  - First run: the outing was dropped after six seconds, its invitation never heard. `Outings` dated its lines with the wall clock, but the
+    social lane runs on the runtime's monotonic clock, so the line was due years ahead. Fixed in `Outings`.
+  - Second run: invited, "I'm in" heard, set off, but no walk. The walk was dispatched directly and waited for an idle
+    runner, which Echo's own decision loop kept busy with two-second waits. The run also showed the GameTest server
+    running about 170 ticks a second: its 3,000-tick limit was 18 seconds. When the test timed out the fixture read a
+    null player and crashed the server; the fixture now guards that.
+  - Fixed in the runtime: each leg is a candidate in the player's decision loop, beside the attention pause.
+  - Third run: there and back, friendship +5, but "Here we are" unheard. The line was still being typed when Echo, after
+    a 60-tick stay, walked out of earshot, and lines are checked for earshot as they are delivered. The fixture now holds
+    the stay until the arrival is heard, then ends it, and says so.
+  - Then 1 of 1.
+- The three new classes together on the final code: 5 of 5 in each of three runs. With the eleven social classes: 60 of
+  60.
+- The full native suite on `e732618`: 519 of 523 in 55 minutes, nothing else on the cores. Each of the four failures was seen before, and none touches the new code: no outing, offer, gift or "cannot make" line appears in the suite outside the new fixtures.
+  - The tree standing in water: F-25c4as's fixture, failing in full suites since #6 and passing alone; open.
+  - The Nether portal-restart fixture: "No walk back into the portal admitted", as in CI 338.
+  - Two builds left with roof stairs unplaced, #82's kind (suite runs 41 and 44): the walled keep (27 blocks) and the base cabin (4 blocks).
+  Rechecked alone:
+  - `NativeCompoundGameTests` and `NativeBaseGameTests` together with the Nether class: the keep and the base cabin both passed.
+  - The Nether portal-restart fixture fails alone too, on this branch (2 of 4 runs) and on main's code without it (`6a31725`, 1 of 3).
+    - Its messages: "No walk back into the portal admitted", or "Return portal preserves expected 8:1 linked region".
+    - No outing, offer or gift line in any of those runs.
+    - It is intermittent on main, as in CI 338, and open.
+- Not run: a live session with people, and an evaluation of this build on the ten seeds (F-25c4av stays open for it).
+
 ## The rough stuff and how each player types (E-18b); the voice phrases what it knows of others (E-50a) — 2 November 2026 (`claude/expression-1102`)
 
 - Merged first (the owner's "make sure everything is merged"): `claude/living-together-1101` as

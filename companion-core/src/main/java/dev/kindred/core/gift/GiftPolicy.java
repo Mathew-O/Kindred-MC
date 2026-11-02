@@ -14,9 +14,10 @@ import java.util.regex.Pattern;
  * gather for its goal, and at most half of what it could spare, so that a gift never leaves it short. A gift is offered,
  * never pushed; the person says yes.
  *
- * Technical: E-21a, pure. {@link #spare} reads the player's own record of its unpromised finds (E-50's {@code PeerUpdate}
- * spare list, which already leaves out what the team's share-out promised and what the goal's follow-ups still want) and
- * takes away what is never given; {@link #offerFor} matches a person's stated need to it. The adapter offers through E-53's
+ * Technical: E-21a, pure. {@link #spare} takes the player's own count of what it holds unpromised (the adapter's: its real
+ * stacks less what the team's share-out holds for others, food left to the food offer, and nothing at all while a goal of its
+ * own runs, whose stock is committed) and takes away what is never given; {@link #offerFor} matches a person's stated need
+ * to it. The adapter offers through E-53's
  * attention budget and hands over through the toss method on a yes; E-22a verifies the receipt.
  */
 public final class GiftPolicy {
