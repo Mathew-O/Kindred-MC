@@ -62,6 +62,19 @@
     - Its messages: "No walk back into the portal admitted", or "Return portal preserves expected 8:1 linked region".
     - No outing, offer or gift line in any of those runs.
     - It is intermittent on main, as in CI 338, and open.
+- CI on [Mathew-O/Kindred-MC#8](https://github.com/Mathew-O/Kindred-MC/pull/8) at `4e74b3d` (run 41499300275): every
+  JUnit suite passed. Native: 520 of 523 in 48 minutes. None of the three failures is this branch's:
+  - the tree standing in water, open;
+  - the portal cast from a lava pool with its water taken back (`goalMakesObsidianFromLavaWithPouredWaterAndRecoversTheWater`),
+    intermittent since suite run 17;
+  - `NativeDeliveryGameTests.stoppedPartWayAndResumedItHandsOverNoMoreThanAskedFor`.
+- The delivery class alone, three runs on each side:
+  - On main's code (`6a31725`): 3, 3, then 1 of 3. In the third run, that fixture and the iron one failed with Wren, the AI
+    receiver, holding nothing.
+  - On this branch: 2, 3 and 3 of 3. The one failure was the named sword, handed over and never picked up by Wren.
+  - The toss in all of them is the same recorded toss. This branch only watches a toss afterwards, reading the receiver's
+    `picked_up` count, and changes nothing about the throw or the pickup.
+  - Open: an AI receiver sometimes does not pick up what is tossed to it.
 - Not run: a live session with people, and an evaluation of this build on the ten seeds (F-25c4av stays open for it).
 
 ## The rough stuff and how each player types (E-18b); the voice phrases what it knows of others (E-50a) — 2 November 2026 (`claude/expression-1102`)

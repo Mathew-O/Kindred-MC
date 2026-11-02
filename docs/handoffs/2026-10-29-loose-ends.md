@@ -888,6 +888,8 @@ The owner's four asks, in order:
   (one meeting in ten runs before).
 - **Still open:** the tree standing in water (F-25c4as's fixture) fails only in the full suite since the merge in #6 and
   passes alone; its cause was not found.
+- **Also open:** an AI receiver sometimes does not pick up a stack tossed to it. `NativeDeliveryGameTests` fails that way
+  on main's code alone (1 of 3 in one run) and failed so in this branch's CI.
 - `/core-test.log` at the container's filesystem root, written there by mistake earlier, is still there (its removal was
   refused). It is outside the repository.
 
