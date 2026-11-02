@@ -74,6 +74,8 @@ public final class BuildNeeds {
             case "glass_pane" -> new Recipe(item(id), 16, Map.of("minecraft:glass", 6), true);
             case "bookshelf" -> new Recipe(item(id), 1, Map.of(planks, 6, "minecraft:book", 3), true);
             case "furnace" -> new Recipe(item(id), 1, Map.of("minecraft:cobblestone", 8), true);
+            // Redstone parts of functional builds (M-01d).
+            case "hopper" -> new Recipe(item(id), 1, Map.of("minecraft:iron_ingot", 5, "minecraft:chest", 1), true);
             default -> null;
         });
     }

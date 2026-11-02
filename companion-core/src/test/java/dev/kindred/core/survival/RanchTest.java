@@ -101,7 +101,16 @@ class RanchTest {
         assertEquals(new Pos(3, 64, 5), toGate.target());
         assertTrue(toGate.holdFood());
         assertEquals(new Ranch.Step.Wait(false, "That cow will not come in"), ranch.next(seen(3, 1, true, 8, 400, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
-        var leaving = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 1, true, 8, 410, cow(DAISY, 3, 3), cow(BESS, 3, 7))));
+        // Gone back to twice, as one given up may only have waited its turn behind another, and then left.
+        int tries = 0;
+        Ranch.Step.Go leaving = null;
+        for (int tick = 410; tick < 20_000 && leaving == null; tick += 10) {
+            var step = ranch.next(seen(3, 1, true, 8, tick, cow(DAISY, 3, 3), cow(BESS, 3, 7)));
+            if (step.equals(new Ranch.Step.Wait(true, "Try the cows again"))) tries++;
+            if (step instanceof Ranch.Step.Go go && !go.holdFood() && go.why().contains("Out")) leaving = go;
+        }
+        assertEquals(2, tries, "tried again twice");
+        assertNotNull(leaving, "then leaves");
         assertFalse(leaving.holdFood());
         ranch.next(seen(3, 7, true, 8, 420, cow(DAISY, 3, 3), cow(BESS, 3, 9)));
         var done = assertInstanceOf(Ranch.Step.Done.class, ranch.next(seen(3, 7, false, 8, 430, cow(DAISY, 3, 3), cow(BESS, 3, 9))));
