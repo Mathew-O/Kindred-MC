@@ -202,6 +202,8 @@ final class PlayerRuntime {
     private final ChatIntents chatIntents;
     /** Speaking first, within each person's attention budget (E-53). */
     private final InitiativeLane initiative;
+    /** Conversations between AI players (E-51). */
+    private final PeerTalk peerTalk;
     /** How the last ask in chat by its plain form went, by player ("GOAL: done"), for fixtures (E-52). */
     private final Map<UUID, String> chatAsked = new HashMap<>();
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
@@ -412,6 +414,7 @@ final class PlayerRuntime {
         });
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
+        peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         socials.setHearing(new CompanionSocials.Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
                 var offer = initiative.heard(speaker, player, message); // An answer to its last line; an offer's yes or no (E-53).
@@ -450,17 +453,8 @@ final class PlayerRuntime {
         });
         if (strategist.isPresent()) KindredMod.LOGGER.info("Kindred voice {}", voiceOn ? "on: replies in chat are phrased by the strategist's model"
                 : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
-        socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {
-            @Override
-            public void onConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
-                handlePeerConference(speaker, peer, exchange);
-            }
-
-            @Override
-            public PeerProgressDialogue.PeerState state(UUID id) {
-                return peerState(id);
-            }
-        });
+        // E-51: conversations between AI players (PeerTalk) replace the fixed peer conference, which whispered to anyone
+        // within six blocks; none is installed, so the lane's old conference never runs.
         this.attentionScheduler = new AttentionWorkScheduler(this.runtimeSession, AttentionSchedulePolicy.defaultPolicy());
         teamCoordinator.onChange(this::saveTeamChange);
     }
@@ -2320,6 +2314,7 @@ final class PlayerRuntime {
         attentionScheduler.synchronizeEntries(batch);
         if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
         if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
+        if (tick % 20 == 15) peerTalk.tick(); // E-51: AI players talking when they meet again.
 
         java.util.Optional<WorkToken> nextToken;
         while ((nextToken = attentionScheduler.selectNext()).isPresent()) {
@@ -11289,6 +11284,32 @@ final class PlayerRuntime {
         @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
     }
 
+    /** The runtime's side of conversations between AI players (E-51). */
+    private final class PeerTalkSource implements PeerTalk.Source {
+        /** A fight, a flight, a bed and the like: no talk. */
+        private static final java.util.Set<String> BUSY = java.util.Set.of("native_attack", "native_fight", "native_block", "native_shoot",
+                "native_retreat", "native_clutch", "native_dragon", "native_pearl", "native_sleep");
+
+        @Override public List<CompanionSocials.Participant> players() { return new InitiativeSource().players(); }
+        @Override public Optional<dev.kindred.core.social.PeerLedger> ledger(UUID id) { return peerRadio.ledger(id); }
+        @Override public Optional<PeerUpdate> update(UUID id) { return peerRadio.lastUpdate(id); }
+
+        @Override public boolean busy(UUID id) {
+            Entry entry = entries.get(id);
+            var body = nativeBodyOf(id).orElse(null);
+            if (entry == null || body == null) return true;
+            boolean busyTask = entry.runner != null && runnerBusy(entry) && entry.skillId != null && BUSY.contains(entry.skillId);
+            return busyTask || InitiativeLane.fighting(body) || new InitiativeSource().inCountdown(body.getUuid());
+        }
+
+        @Override public dev.kindred.core.social.Expression sounding(CompanionSocials.Participant player) { return socials.soundingOf(player); }
+        @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+        @Override public long tick() { return server.getTicks(); }
+    }
+
+    /** The conversations between AI players, for fixtures (E-51). */
+    PeerTalk peerTalkForFixtures() { return peerTalk; }
+
     /** Whether an offer from the player to this person waits for their answer, for fixtures (E-53). */
     boolean offeringForFixtures(UUID id, UUID person) { return initiative.offering(id, person); }
 
@@ -11679,60 +11700,6 @@ final class PlayerRuntime {
         }
     }
 
-    private void handlePeerConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
-        if (store != null) {
-            store.addMemory(new MemoryNote(UUID.randomUUID(), speaker.id(), MemoryNote.Kind.FACT,
-                    exchange.memoryFactInitiator(), "peer_dialogue:" + peer.id(), 0));
-            store.addMemory(new MemoryNote(UUID.randomUUID(), peer.id(), MemoryNote.Kind.FACT,
-                    exchange.memoryFactPeer(), "peer_dialogue:" + speaker.id(), 0));
-            store.appendEvent(speaker.id(), java.time.Instant.now(), "PEER_CONFERENCE",
-                    "Conferred with " + peer.name() + " on " + exchange.topic());
-            store.appendEvent(peer.id(), java.time.Instant.now(), "PEER_CONFERENCE",
-                    "Conferred with " + speaker.name() + " on " + exchange.topic());
-        }
-
-        if (speaker.body() != null && speaker.body().getWorld() instanceof ServerWorld serverWorld) {
-            String quote = exchange.openingRemark();
-            if (quote.length() > 60) quote = quote.substring(0, 57) + "...";
-            Text whisper = Text.literal("§7[Nearby] " + speaker.name() + " confers with " + peer.name() + ": \"" + quote + "\"");
-            for (ServerPlayerEntity player : serverWorld.getPlayers()) {
-                if (player.squaredDistanceTo(speaker.body()) <= 36.0 || (peer.body() != null && player.squaredDistanceTo(peer.body()) <= 36.0)) {
-                    player.sendMessage(whisper, false);
-                }
-            }
-        }
-    }
-
-    private PeerProgressDialogue.PeerState peerState(UUID id) {
-        Entry entry = entries.get(id);
-        if (entry == null || entry.body == null || !entry.body.isAlive()) return null;
-        int logs = countLogs(entry.body);
-        boolean hasStorage = entry.setup != null && entry.setup.storage() != null;
-        boolean hasPatch = entry.setup != null && entry.setup.patch() != null;
-        OperatingMode.Mode mode = entry.mode != null ? entry.mode.mode() : OperatingMode.Mode.COMPANION;
-        return new PeerProgressDialogue.PeerState(
-                entry.data.id(),
-                entry.data.displayName(),
-                mode,
-                entry.profile.personality(),
-                entry.skillId,
-                logs,
-                hasStorage,
-                hasPatch
-        );
-    }
-
-    private int countLogs(CompanionEntity body) {
-        if (body == null) return 0;
-        int count = 0;
-        for (int i = 0; i < body.inventory().size(); i++) {
-            net.minecraft.item.ItemStack stack = body.inventory().getStack(i);
-            if (!stack.isEmpty() && Registries.ITEM.getId(stack.getItem()).getPath().contains("log")) {
-                count += stack.getCount();
-            }
-        }
-        return count;
-    }
 
     private void mapAndSpawn(Entry entry, UUID owner, SpawnLocation location) {
         // A null durable mapping proves no initial body has been dispatched; mapped absence is ambiguous.

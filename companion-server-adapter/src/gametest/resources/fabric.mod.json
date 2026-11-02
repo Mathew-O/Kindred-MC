@@ -20,6 +20,7 @@
       "dev.kindred.fabric.NativePeerLedgerGameTests",
       "dev.kindred.fabric.NativeChatAskGameTests",
       "dev.kindred.fabric.NativeInitiativeGameTests",
+      "dev.kindred.fabric.NativeConversationGameTests",
       "dev.kindred.fabric.NativePaidSkillsGameTests",
       "dev.kindred.fabric.NativeAccountingGameTests",
       "dev.kindred.fabric.NativeDeathConservationGameTests",

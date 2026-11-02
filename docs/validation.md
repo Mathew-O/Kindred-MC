@@ -16,6 +16,17 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Conversations between AI players (E-51) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 882 JUnit tests, 6 skipped, 0 failures (876
+  passed; 4 new: `ConversationTest`, 3 of 4 at first, a tie putting a playful callback after the news).
+- `NativeConversationGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 4 of 4 at first,
+  but three players said only 3 lines in five minutes: a meeting the chatter budget refused still marked its topic
+  spoken. Fixed; then 16 lines (at most 20), and 4 of 4 in each of three runs on the final code.
+- The ten social classes together on the final code: 51 of 51.
+- `tools/eval/score.py` now counts, per seed, the lines between AI players said, the lines said first to people and the
+  meetings noted with nobody to hear, and the lines a game minute.
+
 ## Speaking first, within an attention budget (E-53) — 2 November 2026 (`claude/living-together-1101`)
 
 - Build: `./gradlew build` green on the commit that adds this section: 878 JUnit tests, 6 skipped, 0 failures (872

@@ -423,6 +423,15 @@ An offer waits a minute for an answer. Only "yes please" (or yes, sure, okay) ha
 
 Every line but a warning is held to each person's *attention budget*: one unasked line in three minutes, as that person's `/aiplayer prefs unasked fewer|more` stretches or shortens it (six or one and a half minutes). Someone who answers within a minute earns a little more (down to half the wait); someone who never answers gets a little less (up to half as long again); both drift back to the usual over a day of real time. Nothing unasked, warnings included, goes to a person out of earshot, in a match's countdown, or away (not moved for five minutes); nothing but a warning goes to someone fighting (they struck or were struck in the last ten seconds) or building fast (two or more blocks from their hand in a second). A player whose remarks are off (`/aiplayer social ambient false`) says nothing first at all. Greetings and the remarks from before (rain, nightfall, a passing word, work done) keep their own limits. The log says `<name> to <who> unasked (<occasion>): <line>` and `<name>'s offer of <count> <item> to <who>: taken|refused (<why>)`.
 
+#### Conversations between AI players (E-51)
+Two AI players who meet again after ten minutes or more apart talk: two or three lines, in each one's manner. The first asks after what its ledger last said the other was doing or needing; the other answers from its own record (what it is doing, and what it needs), never by reading the first one's words; the first says a last word (it has some spare, or wishes them luck). A playful one may open with something they went through together, a tease that goes out plainly to anyone in earshot who asked for no teasing. Nothing is talked of twice within half an hour.
+
+```text
+KINDRED_CHATTER=4      optional; lines between AI players a minute, server-wide (default 4); quiet for none
+```
+
+The lines go only to people who can hear the one speaking (within eight blocks and in sight, and whoever may command it or, with public chat on, anyone), never to the whole server, and never to another AI player as chat. With nobody to hear, both still note the meeting in their ledgers ("talked: what you were doing") and nothing is said. A pair talks at most once in two minutes, and not while either is fighting, backing off, falling, asleep or in a match's countdown; a fight stops a talk under way. No model is asked: the turns are local, so they cost no tokens. They replace the old fixed peer conference, which whispered one line to anyone within six blocks. The log says `<speaker> to <other> (<n> hearing): <line>`, or that they met with nobody to hear, or that the chatter was spent.
+
 #### How it sounds, and how each person asked to be spoken to (E-18a, E-19a)
 Every player's words are clean, whoever is listening: no swearing, flirting or dark jokes. Within that, each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
 
