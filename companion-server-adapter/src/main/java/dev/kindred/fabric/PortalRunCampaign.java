@@ -3544,11 +3544,25 @@ final class PortalRunCampaign {
             }
             return Optional.empty();
         }
-        if (eyeDistance(player, table.get()) <= 4.4 && body.planCraft(recipe, table.get()).isPresent()) {
-            return Optional.of(new Task("native_craft", Map.of("recipe", recipe), "Craft " + recipe.replace('_', ' ')));
+        if (eyeDistance(player, table.get()) <= 4.4) {
+            if (body.planCraft(recipe, table.get()).isPresent()) {
+                return Optional.of(new Task("native_craft", Map.of("recipe", recipe), "Craft " + recipe.replace('_', ' ')));
+            }
+            // At the table and not the makings: a walk to it would end at once, again and again (F-25c4av: 927 walks in a
+            // run's last 19 game minutes, seed 20261030; the hand-over's sticks with no planks, E-40a). Nothing to do for it.
+            long now = player.getServerWorld().getTime();
+            Long said = unmakeable.get(recipe);
+            if (said == null || now - said >= 1_200) {
+                unmakeable.put(recipe, now);
+                KindredMod.LOGGER.info("{} cannot make {} at the table in reach: not the makings", player.getName().getString(), recipe);
+            }
+            return Optional.empty();
         }
         return Optional.of(go(table.get(), 2.5, false, "Walk to the crafting table"));
     }
+
+    /** When it last said it could not make each recipe at a table in reach, for its log line once a minute. */
+    private final Map<String, Long> unmakeable = new HashMap<>();
 
     /** A boat of the wood it carries five planks of (bamboo makes a raft; Nether wood makes none). */
     private static String boatRecipe(NativePlayerBody body) {
