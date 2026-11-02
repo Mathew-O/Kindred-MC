@@ -19,7 +19,8 @@ import java.util.regex.Pattern;
 
 /**
  * In plain terms: an AI player speaking first. It warns a person of a creeper or other monster behind them; offers food to
- * someone hungry when it has some to spare, and hands it over only once they say "yes please"; asks those about for a
+ * someone hungry when it has some to spare, and something it has spare to someone who said they need it (E-21a), and
+ * hands either over only once they say "yes please"; asks those about for a
  * thing it needs, once an hour for each thing; and, idle with someone near, says a word now and then. All of it within each
  * person's attention budget ({@link Initiative}), which keeps quiet to someone fighting, building fast, waiting for a match
  * or away, and to anyone out of earshot. A player whose remarks are turned off says nothing first at all.
@@ -68,6 +69,15 @@ final class InitiativeLane {
         Expression sounding(CompanionSocials.Participant player);
 
         ListenerPreferences preferences(UUID person);
+
+        /** What a person has said they need, to this AI player, still a claim (E-50), newest first. */
+        default List<String> claimedNeeds(UUID id, UUID person) { return List.of(); }
+
+        /** What it could give (E-21a): half of its unpromised finds, never its tools or armour. */
+        default List<dev.kindred.core.gift.GiftPolicy.Spare> spare(UUID id) { return List.of(); }
+
+        /** Whether it is wary of this person (E-49): no offers to them. */
+        default boolean wary(UUID id, UUID person) { return false; }
     }
 
     private record Offer(String item, int count, long until) { }
@@ -134,15 +144,31 @@ final class InitiativeLane {
             say(player, person, "Behind you, " + person.getName().getString() + ": a " + danger + "!", Initiative.Occasion.WARNING, who.toString(), now);
             return;
         }
+        boolean wary = source.wary(player.id(), who);
         // Hungry, with food to spare: an offer, held a minute for their yes.
         var spare = source.spareFood(player.id());
-        if (person.getHungerManager().getFoodLevel() <= HUNGRY && spare.isPresent() && spare.get().getValue() > 0
+        if (!wary && person.getHungerManager().getFoodLevel() <= HUNGRY && spare.isPresent() && spare.get().getValue() > 0
                 && budget.may(who, state, Initiative.Occasion.OFFER, who.toString(), prefs, now)) {
             String item = spare.get().getKey();
             String words = net.minecraft.util.Identifier.of(item).getPath().replace('_', ' ');
             offers.put(key(player.id(), who), new Offer(item, Math.min(spare.get().getValue(), 4), now + OFFER_MILLIS));
             say(player, person, "Need food? I've got " + words + ".", Initiative.Occasion.OFFER, who.toString(), now);
             return;
+        }
+        // Something they said they need, that it has to spare (E-21a): an offer, held a minute for their yes; the toss only on
+        // it, and the gift counted only once they pick it up (E-22a).
+        if (!wary) {
+            var gifts = source.spare(player.id());
+            for (String need : source.claimedNeeds(player.id(), who)) {
+                var gift = dev.kindred.core.gift.GiftPolicy.offerFor(need, gifts);
+                if (gift.isEmpty()) continue;
+                String giftKey = "gift:" + gift.get().item();
+                if (!budget.may(who, state, Initiative.Occasion.OFFER, giftKey, prefs, now)) break;
+                offers.put(key(player.id(), who), new Offer(gift.get().item(), gift.get().count(), now + OFFER_MILLIS));
+                say(player, person, "You said you need " + need + "? I've got " + gift.get().count() + " " + gift.get().item().replace('_', ' ')
+                        + " spare. Want some?", Initiative.Occasion.OFFER, giftKey, now);
+                return;
+            }
         }
         // Something it needs: asked once an hour for each thing.
         for (String need : source.needs(player.id())) {

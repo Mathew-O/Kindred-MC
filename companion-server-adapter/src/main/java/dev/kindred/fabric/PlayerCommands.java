@@ -459,6 +459,16 @@ public final class PlayerCommands {
                             .executes(context -> chatStyle(context, chosen, true))));
         }
         root.then(chatStyle);
+        // E-24a: how a player stands with those it knows, and a thing struck out as wrong.
+        root.then(CommandManager.literal("rapport")
+                .executes(context -> rapport(context, false, null, 0))
+                .then(CommandManager.argument("target", StringArgumentType.string()).suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> rapport(context, true, null, 0))
+                        .then(CommandManager.argument("peer", StringArgumentType.string())
+                                .executes(context -> rapport(context, true, StringArgumentType.getString(context, "peer"), 0))
+                                .then(CommandManager.literal("strike").then(CommandManager.argument("number", IntegerArgumentType.integer(1, 50))
+                                        .executes(context -> rapport(context, true, StringArgumentType.getString(context, "peer"),
+                                                IntegerArgumentType.getInteger(context, "number"))))))));
         var prefs = CommandManager.literal("prefs").executes(context -> prefs(context, null, null));
         var unasked = CommandManager.literal("unasked");
         for (String amount : new String[]{"fewer", "usual", "more"}) unasked.then(CommandManager.literal(amount).executes(context -> prefs(context, "unasked", amount)));
@@ -1261,6 +1271,18 @@ public final class PlayerCommands {
             if (id == null) return 0;
         }
         return runtime.expression(context.getSource(), id, preset, change);
+    }
+
+    /** {@code /aiplayer rapport [player [peer [strike n]]]} (E-24a). */
+    private static int rapport(CommandContext<ServerCommandSource> context, boolean named, String peer, int strike) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(context.getSource());
+        UUID id = null;
+        if (named) {
+            id = resolveBotTarget(context, "target", runtime);
+            if (id == null) return 0;
+        }
+        return runtime.rapport(context.getSource(), id, peer, strike);
     }
 
     /** {@code /aiplayer chatstyle [style] [player]} (E-18b). */

@@ -59,6 +59,8 @@ final class PeerRadio {
     private final MinecraftServer server;
     private final Source source;
     private final Map<UUID, PeerLedger> ledgers = new HashMap<>();
+    /** How each AI player stands with those it knows (E-24a), read and kept beside its ledger. */
+    private final Map<UUID, dev.kindred.core.social.Rapport> rapports = new HashMap<>();
     private final Set<UUID> loading = new HashSet<>();
     private final Map<UUID, String> names = new HashMap<>();
     /** Each AI player's own last update to its team, as it was sent. */
@@ -126,6 +128,36 @@ final class PeerRadio {
             if (ledgers.containsKey(id)) return;
             ledgers.put(id, PeerLedger.restore(id, failure == null ? snapshot : null));
         }));
+        store.loadRapport(id, name).whenComplete((snapshot, failure) -> server.execute(() -> {
+            if (!rapports.containsKey(id)) rapports.put(id, dev.kindred.core.social.Rapport.restore(id, failure == null ? snapshot : null));
+        }));
+    }
+
+    /** How the AI player stands with those it knows (E-24a), once read; empty while it is being read. */
+    Optional<dev.kindred.core.social.Rapport> rapport(UUID id) {
+        return Optional.ofNullable(rapports.get(id));
+    }
+
+    /**
+     * Something that happened between the AI player and {@code other}, from the game's record (a gift picked up, a blow, an
+     * outing done), kept once under {@code key} (E-24a). Never anything said.
+     */
+    void note(UUID id, UUID other, String name, dev.kindred.core.social.Rapport.Kind kind, String detail, String key) {
+        var rapport = rapports.get(id);
+        if (rapport == null || id.equals(other)) return;
+        rapport.note(other, name, kind, detail, key, "game", server.getTicks()).ifPresent(event ->
+                KindredMod.LOGGER.info("{} notes with {}: {} {} ({}; friendship {})", names.getOrDefault(id, "?"), name, kind.name().toLowerCase(java.util.Locale.ROOT),
+                        detail, key, rapport.standing(other).friendship()));
+    }
+
+    /** What a person has said they need, to this AI player, still a claim (E-50), newest first: the words of each. */
+    List<String> claimedNeeds(UUID id, UUID person) {
+        PeerLedger ledger = ledgers.get(id);
+        if (ledger == null) return List.of();
+        var out = new java.util.ArrayList<String>();
+        var claims = ledger.claims(person, PeerLedger.Topic.NEEDS, server.getTicks());
+        for (var claim : claims) out.add(claim.text()); // The ledger gives them newest first.
+        return out;
     }
 
     /** The AI player's own last update to its team (what it is doing, needs, could spare), or empty. */
@@ -136,6 +168,7 @@ final class PeerRadio {
     /** Every ledger written, as it is now. */
     void saveAll() {
         for (var entry : ledgers.entrySet()) store.savePeers(entry.getKey(), names.getOrDefault(entry.getKey(), entry.getKey().toString()), entry.getValue().snapshot());
+        for (var entry : rapports.entrySet()) store.saveRapport(entry.getKey(), names.getOrDefault(entry.getKey(), entry.getKey().toString()), entry.getValue().snapshot());
     }
 
     /**
@@ -207,7 +240,9 @@ final class PeerRadio {
     /** An operator's {@code memory forget <their id>}: everything the AI player knows of that person or player removed. */
     boolean forget(UUID id, UUID who) {
         PeerLedger ledger = ledgers.get(id);
-        return ledger != null && ledger.forget(who);
+        var rapport = rapports.get(id);
+        boolean felt = rapport != null && rapport.forget(who); // How it stood with them goes too (E-24a).
+        return ledger != null && ledger.forget(who) || felt;
     }
 
     /**

@@ -416,10 +416,11 @@ A player speaks first, unasked, on these occasions, the most pressing first:
 | --- | --- | --- |
 | A monster near a person and behind them, that the player can see | "Behind you, Steve: a creeper!" | at once, then 30 seconds for that person |
 | A person near it is hungry (food 10 of 20 or less) and it has food to spare (more than the 4 it keeps) | "Need food? I've got bread." | once an hour for each person |
+| Someone told it they need something, and it has some spare (E-21a) | "You said you need iron? I've got 4 iron ingot spare. Want some?" | once an hour for each thing and person |
 | It needs something (its follow-up queue's gathering, as it tells its team) | "Anyone got flint?" | once an hour for each thing |
 | Idle together with someone for 20 seconds | a word in its manner ("Quiet out here.") | the budget alone |
 
-An offer waits a minute for an answer. Only "yes please" (or yes, sure, okay) hands anything over, through the toss method: up to four, as a recorded toss, within E-49's sixteen a day to one person; the player's own offer stands in for control for that toss alone. "No thanks" withdraws it. Nothing moves before the yes.
+An offer waits a minute for an answer. Only "yes please" (or yes, sure, okay) hands anything over, through the toss method: up to four of food, the offered count of anything else, as a recorded toss, within E-49's sixteen a day to one person; the player's own offer stands in for control for that toss alone. "No thanks" withdraws it. Nothing moves before the yes.
 
 Every line but a warning is held to each person's *attention budget*: one unasked line in three minutes, as that person's `/aiplayer prefs unasked fewer|more` stretches or shortens it (six or one and a half minutes). Someone who answers within a minute earns a little more (down to half the wait); someone who never answers gets a little less (up to half as long again); both drift back to the usual over a day of real time. Nothing unasked, warnings included, goes to a person out of earshot, in a match's countdown, or away (not moved for five minutes); nothing but a warning goes to someone fighting (they struck or were struck in the last ten seconds) or building fast (two or more blocks from their hand in a second). A player whose remarks are off (`/aiplayer social ambient false`) says nothing first at all. Greetings and the remarks from before (rain, nightfall, a passing word, work done) keep their own limits. The log says `<name> to <who> unasked (<occasion>): <line>` and `<name>'s offer of <count> <item> to <who>: taken|refused (<why>)`.
 
@@ -495,6 +496,62 @@ Whoever said something can take it back: "forget that", "forget what I said abou
 Asked "what does Sol need?", "what is Sol doing?" or "where is Sol?" about someone it knows, the player answers from its ledger, only as far as the asker may be told: a place to whoever may command it; a teammate's needs and doing to its controllers and teammates; what someone said only back to them; nothing of others to an opponent. With its voice on (E-20a), the voice phrases the answer, told the same lines under the same rules and costed as any reply (E-50a); when the voice gives no line (its budget spent, a refused or failed reply), the player says the ledger's own words, as it does with no voice at all. An unknown name is ordinary talk.
 
 The ledger holds 64 peers (the least lately met dropped) and 20 episodes each, and is kept in `kindred/memory/<uuid>.peers.json` beside the atlas, saved every minute and at a stop; people's places and claims are not kept. To remove everything a native player knows of someone: `/aiplayer memory forget <their uuid> <player>` (operators and the player's controllers).
+
+#### Gifts and friendship (E-21a, E-22a, E-24a)
+**Gifts.** Tell an AI player you need something ("Echo, I need iron") and, if it has some spare, it offers you some on its next turn (the table above). What is spare is half of what it holds that nobody has a claim on, at most 16. It never offers:
+- its tools, weapons or armour;
+- buckets, flint and steel, ender pearls or eyes, totems, elytra or beds;
+- food (that is the food offer's);
+- anything while a goal of its own runs;
+- what its team's share-out holds for someone else.
+
+It never offers to someone it is wary of (E-49).
+
+**When a toss counts.** Anything it tosses you through the toss method (your ask in chat, a command, an offer's yes) counts as given only once you pick it up. The game's own count of what you picked up decides. Then the gift goes into its ledger ("gave you 4 iron ingot") and its friendship with you. If nobody picks it up within ninety seconds, it notes that the toss was not taken. It does not count it and does not toss again: a dropped stack is not a gift received, and a second toss could be a copy. The log says `<giver>'s gift of <n> <item> was picked up by <who>`, or `<giver>'s toss of <n> <item> was not picked up by <who>: noted, nothing tossed again`.
+
+**Friendship.** Each AI player keeps a friendship with each person and player it knows. It is worked out only from what happened between them in the game:
+
+| What happened | Friendship |
+| --- | --- |
+| A gift it gave that was picked up | +3 |
+| A gift it was given | +6 |
+| An outing together | +5 |
+| A blow from them outside a match both joined | −12 |
+
+Each thing counts once. Nothing said in chat counts. Neither does:
+- a declined gift or a toss left lying;
+- a chest found short;
+- a fall after coming where someone asked;
+- an ask.
+
+The sum gives a band: friend (30 or more), friendly (8 or more), neutral, cool (below 0) and wary (−24 or less). For now friendship changes nothing the player does. It never changes who may control it, what it may do or its budgets, and it is never a reason to strike.
+
+**Looking and correcting.** Operators and a player's controllers can look and correct:
+- `/aiplayer rapport [player]` lists its standings.
+- `/aiplayer rapport <player> <peer>` lists the things with that peer, numbered.
+- `/aiplayer rapport <player> <peer> strike <n>` strikes one out as wrong. It keeps who struck it and when, and the friendship is worked out again at once.
+
+The record is kept in `kindred/memory/<uuid>.rapport.json` beside the ledger: 64 peers, the 50 newest things each. `/aiplayer memory forget` removes someone from it too.
+
+#### Outings (E-27a)
+An AI player with nothing of its own to do can ask people near to come and see somewhere it has seen.
+- **When it asks:** no goal, ranch, field, build or team task, and not fighting, fleeing or in a match. Someone it may talk with has been near for twenty seconds. It is daytime, and its sociability is 40 or more.
+- **Where:** a village or a lake it has itself seen (its atlas), 10 to 96 blocks off.
+- **What it says:** "I found a lake not far off. Anyone want to come and see it? Say "I'm in"." At most once in half an hour of game time for each player.
+- **Who goes:**
+  - A person answers within the minute: "I'm in", "count me in", "I'll come" or "let's go".
+  - Another AI player in sight answers by its own rule: yes only with nothing of its own on, out of danger and of any match, and sociable enough. It never goes because it was told to.
+- **The trip:**
+  - With a yes the host says "Off we go." and walks there: "Here we are: a lake.".
+  - It stays a minute, says "Right, heading back." and walks back. An AI player that came walks back to where it set off.
+  - Each walk is that player's own, chosen in its decision loop below its reflexes. A walk edits nothing, so it needs no leave for AI world edits.
+- **What it remembers:** who was within 16 blocks when it arrived, not who said they would come. Each of them gets an episode ("went to a lake together") and +5 friendship, on both sides for an AI player.
+- **Ending early:**
+  - A fight, nightfall or ten game minutes in all ends it: "Let's head back.", or "Never mind, another time." if it had not set off.
+  - Nobody's yes in the minute drops it.
+  - Saying no costs nothing.
+
+The log says `Outing: <host> invited <n> to <place>`, then `... set off ...`, `... got to ...; there with it: <n> of <m>`, `... is back ...`, `... cut short: <why>` or `... dropped: nobody wanted to come`.
 
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 

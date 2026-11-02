@@ -204,6 +204,10 @@ final class PlayerRuntime {
     private final InitiativeLane initiative;
     /** Conversations between AI players (E-51). */
     private final PeerTalk peerTalk;
+    /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
+    private final GiftWatch gifts;
+    /** Short trips together to somewhere it has seen (E-27a). */
+    private final Outings outings;
     /** How the last ask in chat by its plain form went, by player ("GOAL: done"), for fixtures (E-52). */
     private final Map<UUID, String> chatAsked = new HashMap<>();
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
@@ -427,11 +431,14 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
+        gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
+        outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
                 var offer = initiative.heard(speaker, player, message); // An answer to its last line; an offer's yes or no (E-53).
+                var outing = outings.heard(speaker, player, message); // "I'm in" to an outing it asked them on (E-27a).
                 var taken = peerRadio.heard(player.id(), speaker, message);
-                return offer.or(() -> taken);
+                return offer.or(() -> outing).or(() -> taken);
             }
 
             @Override public Optional<String> answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
@@ -1165,6 +1172,24 @@ final class PlayerRuntime {
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 99.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return new NativeTaskCandidate(candidate, "native_wait", Map.of("seconds", "2"));
+    }
+
+    /**
+     * Its next leg on an outing (E-27a), as a task: a walk there or back as near as it safely can, or a short wait once
+     * there. Ranked as a project, below its reflexes; null when it is on none.
+     */
+    private NativeTaskCandidate outingCandidate(Entry entry, NativePlayerBody body) {
+        ServerPlayerEntity player = body.entity();
+        if (player == null) return null;
+        var leg = outings.leg(entry.data.id(), player.getBlockPos()).orElse(null);
+        if (leg == null) return null;
+        String key = "outing:" + entry.data.id() + ":" + leg.label() + ":" + (leg.stay() ? "stay" : leg.to().asLong());
+        UUID taskId = UUID.nameUUIDFromBytes(key.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 72.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        if (leg.stay()) return new NativeTaskCandidate(candidate, "native_wait", Map.of("seconds", "2"));
+        return new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(leg.to().getX()), "y", String.valueOf(leg.to().getY()),
+                "z", String.valueOf(leg.to().getZ()), "range", "2", "partial", "true", "safe", "true"));
     }
 
     /** A wait looking at what it waits on, at {@code at} (E-33a). */
@@ -2357,6 +2382,8 @@ final class PlayerRuntime {
         if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
         if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
         if (tick % 20 == 15) peerTalk.tick(); // E-51: AI players talking when they meet again.
+        if (tick % 20 == 17) gifts.tick(); // E-22a: tosses picked up, or left.
+        if (tick % 20 == 7) outings.tick(); // E-27a: outings asked, walked and remembered.
 
         java.util.Optional<WorkToken> nextToken;
         while ((nextToken = attentionScheduler.selectNext()).isPresent()) {
@@ -5848,6 +5875,13 @@ final class PlayerRuntime {
             essentialCandidates = new ArrayList<>(essentialCandidates);
             essentialCandidates.add(attention);
         }
+        // On an outing it asked people on or said yes to (E-27a): its walk there or back, or its stay, a candidate of its own
+        // ranked with its reflexes; no world edit in it, so its work need not be admitted.
+        NativeTaskCandidate outing = mayDecide && !dueling ? outingCandidate(entry, body) : null;
+        if (outing != null) {
+            essentialCandidates = new ArrayList<>(essentialCandidates);
+            essentialCandidates.add(outing);
+        }
 
         if (autonomyAdmitted && (entry.routineRefreshPending || entry.cachedRoutineCandidates.isEmpty())) {
             bindBodyBlockScanBudget(body);
@@ -6345,6 +6379,50 @@ final class PlayerRuntime {
                 source.sendError(Text.literal("The preset could not be saved. The player has stopped."));
             } else feedback(source, "Saved. " + TalkSettings.sounds(entry.data.displayName(), changed, socials.expressionCap()));
         }));
+        return 1;
+    }
+
+    /**
+     * E-24a: how a player stands with those it knows, shown to whoever may change how it sounds: every standing, or one
+     * peer's events numbered; {@code strike} > 0 strikes that event out as wrong, keeping who did and when.
+     */
+    int rapport(ServerCommandSource source, UUID requestedId, String peerName, int strike) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No AI player found.");
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may look at how it stands with others.");
+        var rapport = peerRadio.rapport(entry.data.id()).orElse(null);
+        if (rapport == null) return reject(source, entry.data.displayName() + "'s record is still being read.");
+        String name = entry.data.displayName();
+        if (peerName == null) {
+            var standings = rapport.standings();
+            if (standings.isEmpty()) feedback(source, name + " has nothing on record with anyone yet.");
+            for (var st : standings) {
+                feedback(source, name + " and " + st.name() + ": " + st.band() + " (" + st.friendship() + ", from " + st.counted() + " things)");
+            }
+            return 1;
+        }
+        var peer = rapport.standings().stream().filter(st -> st.name().equalsIgnoreCase(peerName)).findFirst().orElse(null);
+        if (peer == null) return reject(source, name + " has nothing on record with " + peerName + ".");
+        var events = rapport.events(peer.peer());
+        if (strike > 0) {
+            if (strike > events.size()) return reject(source, "There is no thing " + strike + " with " + peer.name() + ".");
+            var event = events.get(strike - 1);
+            UUID by = player != null ? player : new UUID(0, 0);
+            if (!rapport.correct(peer.peer(), event.key(), by, server.getTicks())) return reject(source, "That one is already struck out.");
+            KindredMod.LOGGER.info("{}'s record with {}: {} struck out by {}", name, peer.name(), event.key(), source.getName());
+            feedback(source, "Struck out. " + name + " and " + peer.name() + ": " + rapport.standing(peer.peer()).band()
+                    + " (" + rapport.standing(peer.peer()).friendship() + ").");
+            return 1;
+        }
+        feedback(source, name + " and " + peer.name() + ": " + peer.band() + " (" + peer.friendship() + ")");
+        for (int i = 0; i < events.size(); i++) {
+            var e = events.get(i);
+            feedback(source, (i + 1) + ". " + e.kind().name().toLowerCase(java.util.Locale.ROOT) + " " + e.detail()
+                    + (e.corrected() ? " (struck out)" : ""));
+        }
         return 1;
     }
 
@@ -8498,6 +8576,11 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("{} notes that {} {}: wariness {}{}", entry.data.displayName(), name, did, wariness,
                 !was && wariness >= dev.kindred.core.Trust.WARY ? "; it holds back from them now" : "");
         peerRadio.episode(entry.data.id(), person, name, did); // The game's record of it (E-50).
+        // A blow from them is held against them (E-24a); a chest found short, a fall after coming where asked, or an ask
+        // past the cap are not: missing items, proximity and asking are not proof of anything.
+        if (event == dev.kindred.core.Trust.Event.HURT) {
+            peerRadio.note(entry.data.id(), person, name, dev.kindred.core.social.Rapport.Kind.HARMED, "hurt it", "harm:" + person + ":" + now / 20);
+        }
     }
 
     /** Harm that got through (E-49): within ten seconds of arriving where someone asked it to come, theirs to answer for. */
@@ -11857,7 +11940,8 @@ final class PlayerRuntime {
         if (offered && started != 1) reject(source, entry.blocker);
         if (started == 1) {
             entry.trust.tossed(to.getUuid(), tossed, now);
-            peerRadio.gave(entry.data.id(), to.getUuid(), to.getName().getString(), kind.getName().getString().toLowerCase(java.util.Locale.ROOT), tossed);
+            // Given once picked up, not when tossed: a dropped stack is not a gift received (E-22a).
+            gifts.watch(entry.data.id(), entry.data.displayName(), to, kind, tossed);
         }
         return started;
     }
@@ -11939,7 +12023,105 @@ final class PlayerRuntime {
         @Override public dev.kindred.core.social.Expression sounding(CompanionSocials.Participant player) { return socials.soundingOf(player); }
 
         @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+
+        // E-21a: what a person said they need, what it has spare, and whether it is wary of them.
+        @Override public List<String> claimedNeeds(UUID id, UUID person) { return peerRadio.claimedNeeds(id, person); }
+
+        /**
+         * What it holds beyond what is committed (E-21a): nothing while its goal runs (the run's stock is committed); else
+         * its real stacks less what the team's share-out holds for others, food left to the food offer.
+         */
+        @Override public List<dev.kindred.core.gift.GiftPolicy.Spare> spare(UUID id) {
+            Entry entry = entries.get(id);
+            var body = nativeBodyOf(id).orElse(null);
+            if (entry == null || body == null || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE) return List.of();
+            var counts = new java.util.TreeMap<String, Integer>();
+            for (var stack : body.getInventory().main) {
+                if (stack.isEmpty() || stack.get(net.minecraft.component.DataComponentTypes.FOOD) != null) continue;
+                counts.merge(Registries.ITEM.getId(stack.getItem()).toString(), stack.getCount(), Integer::sum);
+            }
+            var lines = new ArrayList<String>();
+            counts.forEach((item, count) -> {
+                int free = count - teamCoordinator.stockLedger().reservedCount(HandOvers.held(id, item));
+                if (free > 0) lines.add(free + " " + net.minecraft.util.Identifier.of(item).getPath().replace('_', ' '));
+            });
+            return dev.kindred.core.gift.GiftPolicy.spare(lines);
+        }
+
+        @Override public boolean wary(UUID id, UUID person) { return waryOf(id, person); }
     }
+
+    /** What a gift's pickup does (E-22a, E-24a): the ledgers and friendship of both, for an AI recipient too. */
+    private final class GiftOutcome implements GiftWatch.Outcome {
+        @Override public void received(UUID giver, String giverName, ServerPlayerEntity to, String item, int count, String key) {
+            peerRadio.gave(giver, to.getUuid(), to.getName().getString(), item, count);
+            peerRadio.note(giver, to.getUuid(), to.getName().getString(), dev.kindred.core.social.Rapport.Kind.GAVE, count + " " + item, key);
+            UUID ai = aiPlayerOf(to);
+            if (ai != null) {
+                peerRadio.received(ai, giver, giverName, item, count);
+                peerRadio.note(ai, giver, giverName, dev.kindred.core.social.Rapport.Kind.RECEIVED, count + " " + item, key);
+            }
+        }
+
+        @Override public void left(UUID giver, String giverName, ServerPlayerEntity to, String item, int count) {
+            peerRadio.episode(giver, to.getUuid(), to.getName().getString(), "tossed " + count + " " + item + ", not picked up");
+        }
+    }
+
+    /** The runtime's side of outings (E-27a): where it has seen, whether it is free, its own walks, and what it remembers. */
+    private final class OutingSource implements Outings.Source {
+        @Override public List<CompanionSocials.Participant> players() { return new InitiativeSource().players(); }
+
+        @Override public Optional<dev.kindred.core.outing.Outing.Destination> destination(UUID id) {
+            Entry entry = entries.get(id);
+            var body = nativeBodyOf(id).orElse(null);
+            if (entry == null || body == null || entry.atlas == null) return Optional.empty();
+            var from = PortalRunCampaign.place(body.getServerWorld(), body.getBlockPos());
+            for (var resource : List.of(dev.kindred.core.atlas.Atlas.Resource.VILLAGE, dev.kindred.core.atlas.Atlas.Resource.WATER)) {
+                var lead = entry.atlas.whereToLookFor(resource, from).filter(dev.kindred.core.atlas.Atlas.Lead::seen).orElse(null);
+                if (lead == null) continue;
+                double far = Math.hypot(lead.at().x() - from.x(), lead.at().z() - from.z());
+                if (far < Outings.NEAREST || far > Outings.FARTHEST) continue;
+                String words = resource == dev.kindred.core.atlas.Atlas.Resource.VILLAGE ? "a village" : "a lake";
+                return Optional.of(new dev.kindred.core.outing.Outing.Destination(words, lead.at().dimension(), lead.at().x(), lead.at().y(), lead.at().z()));
+            }
+            return Optional.empty();
+        }
+
+        /** Nothing of its own to do: no goal, no ranch, field or build, no team task. */
+        @Override public boolean idle(UUID id) {
+            Entry entry = entries.get(id);
+            return entry != null && entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE && entry.ranch == null && entry.field == null
+                    && entry.build == null && teamCoordinator.getPlayerCurrentTask(id).isEmpty();
+        }
+
+        @Override public boolean busy(UUID id) {
+            var body = nativeBodyOf(id).orElse(null);
+            return new PeerTalkSource().busy(id) || body != null && matches.running(body.getUuid()).isPresent();
+        }
+
+        @Override public boolean hasGoal(UUID id) {
+            Entry entry = entries.get(id);
+            return entry != null && entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE;
+        }
+
+        @Override public void remember(UUID id, UUID other, String name, String what, boolean together, String key) {
+            String who = name != null ? name : nameOf(other);
+            peerRadio.episode(id, other, who, what);
+            if (together && key != null) peerRadio.note(id, other, who, dev.kindred.core.social.Rapport.Kind.OUTING, what, key);
+        }
+
+        @Override public long tick() { return server.getTicks(); }
+    }
+
+    /** Outings, for fixtures (E-27a). */
+    Outings outingsForFixtures() { return outings; }
+
+    /** The gift watch, for fixtures (E-22a). */
+    GiftWatch giftsForFixtures() { return gifts; }
+
+    /** How a player stands with those it knows, for fixtures and the command (E-24a). */
+    Optional<dev.kindred.core.social.Rapport> rapportForFixtures(UUID id) { return peerRadio.rapport(id); }
 
     /** The runtime's side of conversations between AI players (E-51). */
     private final class PeerTalkSource implements PeerTalk.Source {
@@ -12020,7 +12202,9 @@ final class PlayerRuntime {
 
     String nameOf(UUID id) {
         Entry entry = entries.get(id);
-        return entry == null ? id.toString().substring(0, 8) : entry.data.displayName();
+        if (entry != null) return entry.data.displayName();
+        ServerPlayerEntity person = server.getPlayerManager().getPlayer(id); // A person online: their own name.
+        return person != null ? person.getName().getString() : id.toString().substring(0, 8);
     }
 
     dev.kindred.core.match.MatchRegistry matchRegistry() { return matches; }

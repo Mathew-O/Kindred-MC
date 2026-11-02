@@ -789,3 +789,107 @@ policy, COME's distance, E-47's other customs and the strategist from the releas
 - `/core-test.log` at the container's filesystem root was written there by mistake during this track (a JUnit run's
   output); removing it was refused by a safety check, so it was left. It is outside the repository and goes with the
   container.
+
+## Handoff, 2 November 2026 (evening): everything merged, rough talk, gifts, friendship, outings (`claude/expression-1102`, `claude/next-deps-1102`)
+
+The owner's four asks, in order:
+- profanity, flirting, dark humour and typing quirks (no punctuation, shorthand such as "ur");
+- everything merged and up on GitHub;
+- the voice phrases what a player knows of the others ("Yes the voice should phrase");
+- on to the next dependencies.
+
+### Merged
+
+- [Mathew-O/Kindred-MC#5](https://github.com/Mathew-O/Kindred-MC/pull/5): living together.
+- [Mathew-O/Kindred-MC#6](https://github.com/Mathew-O/Kindred-MC/pull/6): `claude/modest-faraday-r3spro`,
+  `codex/ci-validation-evidence` and both world-design branches, through an integration branch; nobody else's branch was
+  pushed to.
+  - The world-design persistence and adapter draft is held back at `98ce3b8` on `codex/world-design-handoff`, as the note
+    at the top of `docs/world-design-implementation-handoff.md` says.
+  - Its migrations need new numbers: main's V9, V10 and now V11 (`rough_talk`, below) are taken.
+- [Mathew-O/Kindred-MC#7](https://github.com/Mathew-O/Kindred-MC/pull/7): E-18b and E-50a, merged as `61848e6`.
+  - It also raises the CI build job's limit from 60 to 90 minutes: the native suite had outgrown 60.
+  - Its CI: every JUnit suite and 517 of 518 native tests. The one failure was the tree standing in water (below).
+- The pull request for `claude/next-deps-1102` (this branch): gifts, friendship, outings and F-25c4av.
+
+### Done
+
+- **E-18b, rough talk.**
+  - Swearing, dark humour, harder teasing (Sol by personality) and flirting (Kindred by personality).
+  - Four chat styles: proper, casual, gamer, chaotic. Kindred is casual, Sol gamer, Echo proper.
+  - Each kind is heard only by a person who said yes to it: `/aiplayer prefs swearing|dark|flirting on`. The operator's
+    `KINDRED_ROUGH_AUDIENCE` decides only for people who said nothing, and never for flirting. The strictest in earshot
+    decides.
+  - Slurs, sexual words and threats are never said, by any lane or the voice.
+  - Saved in schema 11.
+- **E-50a.** The voice phrases answers about others from the ledger; the ledger's words when it gives none.
+- **E-21a.** Something spare offered to a person who said they need it: half, at most 16, never tools, armour, food or a
+  running goal's stock, never to someone it is wary of. Tossed only on their yes.
+- **E-22a.** A toss counts as given only once its recipient picks it up, from their own `picked_up` statistic. A toss left
+  lying ninety seconds is noted and never tossed again.
+- **E-24a.** Friendship from what happened: a gift picked up +3, one received +6, an outing together +5, a blow outside a
+  match −12. Each counts once and can be struck out with `/aiplayer rapport`. It is kept in `<uuid>.rapport.json` and
+  grants and withholds nothing.
+- **E-27a.** Outings to a lake or village it has seen, with whoever says "I'm in" or an idle AI player's own yes. There, a
+  minute, and back, its walks its own decision candidates. Who was really there is what it remembers.
+- **F-25c4av, open.** At a table in reach without the makings, the craft helper gives nothing to do, not a walk to the
+  table. The fixture fails before and passes 3 of 3 after. The goal then passes the step over (it takes the first step
+  of its plan that gives a task). Seed 20261030 has not been evaluated again yet.
+
+### Validation
+
+- `./gradlew build` on `e732618`: green, 922 JUnit tests, 916 passed, 6 skipped. On `a875512`, E-18b and E-50a alone:
+  916, 910 passed.
+- The new GameTest classes together (`NativeCraftHelperGameTests`, `NativeGiftGameTests`, `NativeOutingGameTests`): 5
+  of 5 in each of three runs. With the eleven social classes: 60 of 60.
+- The full native suite on `e732618`: 519 of 523 in 55 minutes, nothing else on the cores. Each of the four failures was seen before, and none touches the new code: no outing, offer, gift or "cannot make" line appears in the suite outside the new fixtures.
+  - The tree standing in water: F-25c4as's fixture, failing in full suites since #6 and passing alone; open.
+  - The Nether portal-restart fixture: "No walk back into the portal admitted", as in CI 338.
+  - Two builds left with roof stairs unplaced, #82's kind (suite runs 41 and 44): the walled keep (27 blocks) and the base cabin (4 blocks).
+  Rechecked alone:
+  - `NativeCompoundGameTests` and `NativeBaseGameTests` together with the Nether class: the keep and the base cabin both passed.
+  - The Nether portal-restart fixture fails alone too, on this branch (2 of 4 runs) and on main's code without it (`6a31725`, 1 of 3).
+    - Its messages: "No walk back into the portal admitted", or "Return portal preserves expected 8:1 linked region".
+    - No outing, offer or gift line in any of those runs.
+    - It is intermittent on main, as in CI 338, and open.
+
+### Found and fixed on the way
+
+- `Outings` dated its lines with the wall clock. The social lane runs on the runtime's monotonic clock, so the invitation
+  was never said.
+- The outing's walks, dispatched directly, waited for an idle runner that the player's own decision loop kept busy. Each
+  leg is now a candidate in that loop, beside the attention pause. A walk edits nothing, so it does not wait on the edit
+  switch.
+- A gift fixture spoke before the player's ledger was read at start, so the claim was not noted. The fixture now waits for
+  the read. A need said in the first second after a join is still not noted (E-50's known limit).
+- Fixtures on this test server: it runs ticks several times faster than a line is typed. A stay or a deadline counted in
+  ticks can be over before a line arrives, and a real-time sleep inside a retried step stalls the test. The outing
+  fixture holds its stay until it has heard the arrival.
+
+### Decisions taken without asking (each reversible)
+
+- **Rough talk cap and default:** the server's cap for how rough a player may be defaults to rough. People still hear
+  clean unless they or the operator's audience setting say otherwise. Flirting is only ever a person's own yes.
+- **Friendship's effect:** it changes nothing a player does yet. E-25 is where it may shape tone and discretionary
+  choices.
+- **Who may go on outings:** a player in the default idle-observing playstyle is free to host and join them. They are not
+  work.
+
+### Next dependency
+
+- **E-25:** friendship read for tone and discretionary choices, such as who is offered first or a warmer greeting. Never
+  for control, access or budgets. With it, E-51's callbacks can read outings and gifts.
+- **E-35:** tone drift, kept apart from friendship.
+- **E-21, rest:** surplus noticed unasked; offers to AI players.
+- **E-22, rest:** the gift chest; a toss watched across a restart.
+- **E-23:** finds and maps shared.
+- **E-27, rest:** other destinations, supplies, a participant lost on the way.
+- **An evaluation of this build on the ten seeds:** F-25c4av on 20261030, and whether outings bring the players together
+  (one meeting in ten runs before).
+- **Still open:** the tree standing in water (F-25c4as's fixture) fails only in the full suite since the merge in #6 and
+  passes alone; its cause was not found.
+- **Also open:** an AI receiver sometimes does not pick up a stack tossed to it. `NativeDeliveryGameTests` fails that way
+  on main's code alone (1 of 3 in one run) and failed so in this branch's CI.
+- `/core-test.log` at the container's filesystem root, written there by mistake earlier, is still there (its removal was
+  refused). It is outside the repository.
+
