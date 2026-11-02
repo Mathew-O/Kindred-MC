@@ -50,7 +50,13 @@ final class PlayerVoice implements CompanionSocials.Voice {
     /** What the runtime knows of a player as it is spoken to, beyond what its body shows. */
     record Facts(String name, Personality personality, ConversationAudience.Relation relation, boolean controls,
                  boolean stopped, boolean busy, String doing, String goal, String goalProgress, List<String> events,
-                 String lastSaid, List<String> remembered, String wary) { }
+                 String lastSaid, List<String> remembered, String wary, List<dev.kindred.core.social.PeerLedger.Told> peers) {
+        /** Knowing nothing of the others (before E-50). */
+        Facts(String name, Personality personality, ConversationAudience.Relation relation, boolean controls, boolean stopped, boolean busy,
+              String doing, String goal, String goalProgress, List<String> events, String lastSaid, List<String> remembered, String wary) {
+            this(name, personality, relation, controls, stopped, busy, doing, goal, goalProgress, events, lastSaid, remembered, wary, List.of());
+        }
+    }
 
     /** The runtime's side: the facts of a player spoken to by {@code speaker}, or null when it cannot be voiced now. */
     interface Source {
@@ -77,6 +83,8 @@ final class PlayerVoice implements CompanionSocials.Voice {
     private final MinecraftServer server;
     private final LongSupplier clock;
     private final Map<String, ArrayDeque<Said>> transcripts = new LinkedHashMap<>();
+    /** The one line on how to speak to this listener (E-18a, E-19a), or null for none. */
+    private java.util.function.BiFunction<CompanionSocials.Participant, ServerPlayerEntity, String> manner = (player, listener) -> null;
 
     PlayerVoice(Source source, Asks asks, Supplier<Optional<StrategistBridge>> bridge, MinecraftServer server, LongSupplier clock) {
         this.source = source;
@@ -84,6 +92,11 @@ final class PlayerVoice implements CompanionSocials.Voice {
         this.bridge = bridge;
         this.server = server;
         this.clock = clock;
+    }
+
+    /** Where the line on how to speak to each listener comes from: the social lane's preset, cap and preferences. */
+    void setManner(java.util.function.BiFunction<CompanionSocials.Participant, ServerPlayerEntity, String> manner) {
+        this.manner = java.util.Objects.requireNonNull(manner);
     }
 
     /** Whether the voice is on: unless {@code KINDRED_VOICE=off}, whenever the strategist is. */
@@ -99,7 +112,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
         Facts facts = source.facts(player.id(), speaker);
         if (facts == null) return false;
         var situation = situation(facts, player.body(), speaker, transcript(player.id(), speaker.getUuid()));
-        var conversation = ConversationPrompt.conversation(facts.name(), facts.personality(), situation, message);
+        var conversation = ConversationPrompt.conversation(facts.name(), facts.personality(), situation, message, manner.apply(player, speaker));
         var asked = lane.get().converse(player.id(), facts.name(), speaker.getName().getString(), conversation, server);
         if (asked.isDone() && asked.join().isEmpty()) return false; // Declined at once (budgets, rates, a line already out).
         // Never left waiting: past the deadline and a second's grace it is taken as no line, and the fixed reply is said.
@@ -116,6 +129,9 @@ final class PlayerVoice implements CompanionSocials.Voice {
         if (withheld.isPresent()) return new CompanionSocials.Spoken(withheld.get(), null);
         return new CompanionSocials.Spoken(text, refused -> asks.ask(player.id(), speaker, line.ask(), line.item().orElse(null), refused));
     }
+
+    @Override
+    public boolean available() { return bridge.get().isPresent(); }
 
     @Override
     public void replied(ServerPlayerEntity speaker, CompanionSocials.Participant player, String said, String spoken) {
@@ -185,7 +201,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
         return new ConversationAudience.Situation(facts.name(), speaker.getName().getString(), facts.relation(), facts.controls(),
                 body.getHealth(), food, hurtBy(body), dimension, daytime, weather, facts.stopped(), facts.busy(), facts.doing(),
                 facts.goal(), facts.goalProgress(), position, threat, near, List.copyOf(held), foodItems, notables,
-                facts.events(), facts.remembered(), facts.lastSaid(), transcript, facts.wary());
+                facts.events(), facts.remembered(), facts.lastSaid(), transcript, facts.wary(), facts.peers());
     }
 
     private static final java.util.Set<net.minecraft.item.Item> NOTABLE = java.util.Set.of(Items.DIAMOND, Items.EMERALD, Items.IRON_INGOT,

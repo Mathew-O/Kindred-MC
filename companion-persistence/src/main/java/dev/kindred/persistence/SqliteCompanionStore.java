@@ -12,6 +12,8 @@ import dev.kindred.core.Mannerisms;
 import dev.kindred.core.Personality;
 import dev.kindred.core.SocialProfile;
 import dev.kindred.core.WorkSetup;
+import dev.kindred.core.social.Expression;
+import dev.kindred.core.social.ListenerPreferences;
 import dev.kindred.core.team.ProjectId;
 import dev.kindred.core.team.SharedProject;
 import dev.kindred.core.team.SharedTask;
@@ -373,6 +375,53 @@ public final class SqliteCompanionStore {
         });
     }
 
+    /** Every person's own preferences for how AI players speak to them (E-19a). */
+    public CompletableFuture<List<ListenerPreferences>> listenerPreferences() {
+        return submit(() -> {
+            List<ListenerPreferences> all = new ArrayList<>();
+            try (Statement query = database.createStatement(); ResultSet rows = query.executeQuery("SELECT * FROM listener_preferences")) {
+                while (rows.next()) {
+                    all.add(new ListenerPreferences(UUID.fromString(rows.getString("person_id")),
+                            ListenerPreferences.Unasked.parse(rows.getString("unasked")),
+                            rows.getBoolean("no_teasing"), rows.getBoolean("no_jokes"), rows.getLong("revision")));
+                }
+            }
+            return List.copyOf(all);
+        });
+    }
+
+    /** A person's preferences kept, replacing theirs; the defaults delete them, as there is then nothing to keep. */
+    public CompletableFuture<ListenerPreferences> saveListenerPreferences(ListenerPreferences preferences) {
+        Objects.requireNonNull(preferences);
+        Objects.requireNonNull(preferences.person());
+        if (preferences.isDefault()) return forgetListenerPreferences(preferences.person()).thenApply(ignored -> preferences);
+        return submit(() -> transaction(() -> {
+            try (PreparedStatement upsert = database.prepareStatement(
+                    "INSERT INTO listener_preferences (person_id, unasked, no_teasing, no_jokes, revision) VALUES (?, ?, ?, ?, ?) "
+                            + "ON CONFLICT(person_id) DO UPDATE SET unasked=excluded.unasked, no_teasing=excluded.no_teasing, "
+                            + "no_jokes=excluded.no_jokes, revision=excluded.revision")) {
+                upsert.setString(1, preferences.person().toString());
+                upsert.setString(2, preferences.unasked().name().toLowerCase(java.util.Locale.ROOT));
+                upsert.setBoolean(3, preferences.noTeasing());
+                upsert.setBoolean(4, preferences.noJokes());
+                upsert.setLong(5, preferences.revision());
+                upsert.executeUpdate();
+            }
+            return preferences;
+        }));
+    }
+
+    /** A person's preferences deleted at their request; true if there were any. */
+    public CompletableFuture<Boolean> forgetListenerPreferences(UUID person) {
+        Objects.requireNonNull(person);
+        return submit(() -> transaction(() -> {
+            try (PreparedStatement delete = database.prepareStatement("DELETE FROM listener_preferences WHERE person_id = ?")) {
+                delete.setString(1, person.toString());
+                return delete.executeUpdate() > 0;
+            }
+        }));
+    }
+
     public CompletableFuture<SocialProfile> saveProfile(SocialProfile profile, long expectedRevision) {
         Objects.requireNonNull(profile);
         return submit(() -> transaction(() -> {
@@ -396,7 +445,7 @@ public final class SqliteCompanionStore {
             try (PreparedStatement update = database.prepareStatement("""
                     UPDATE social_profiles SET initiative=?, caution=?, curiosity=?, sociability=?, humor=?,
                     personality_revision=?, ambient_enabled=?, public_conversation=?, revision=?,
-                    combativeness=?, helpfulness=?, farming=?, mining=?
+                    combativeness=?, helpfulness=?, farming=?, mining=?, expression=?
                     WHERE companion_id=? AND revision=?
                     """)) {
                 Personality traits = profile.personality();
@@ -413,8 +462,9 @@ public final class SqliteCompanionStore {
                 update.setInt(11, traits.helpfulness());
                 update.setInt(12, traits.farming());
                 update.setInt(13, traits.mining());
-                update.setString(14, profile.companionId().toString());
-                update.setLong(15, expectedRevision);
+                update.setString(14, profile.expression() == null ? null : profile.expression().id());
+                update.setString(15, profile.companionId().toString());
+                update.setLong(16, expectedRevision);
                 if (update.executeUpdate() != 1) throw new ConcurrentModificationException("Stale profile revision");
             }
             return profile;
@@ -1269,7 +1319,8 @@ public final class SqliteCompanionStore {
                 row.getInt("initiative"), row.getInt("caution"), row.getInt("curiosity"),
                 row.getInt("sociability"), row.getInt("humor"), row.getInt("combativeness"), row.getInt("helpfulness"),
                 row.getInt("farming"), row.getInt("mining"), row.getLong("personality_revision")),
-                row.getBoolean("ambient_enabled"), row.getBoolean("public_conversation"), row.getLong("revision"));
+                row.getBoolean("ambient_enabled"), row.getBoolean("public_conversation"), row.getLong("revision"),
+                Expression.parse(row.getString("expression")).orElse(null));
     }
 
     public CompletableFuture<JournalEvent> appendEvent(UUID companionId, Instant observedAt,
@@ -1427,7 +1478,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 9) {
+            if (schemaVersion < 0 || schemaVersion > 10) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1439,6 +1490,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 7) migrate(7, "V7__native_players.sql");
             if (schemaVersion < 8) migrate(8, "V8__shared_projects.sql");
             if (schemaVersion < 9) migrate(9, "V9__activity_windows.sql");
+            if (schemaVersion < 10) migrate(10, "V10__expression.sql");
         }
         recover();
     }

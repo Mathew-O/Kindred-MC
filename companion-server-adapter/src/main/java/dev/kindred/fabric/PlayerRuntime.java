@@ -61,6 +61,7 @@ import dev.kindred.core.progression.PlaystyleProfile;
 import dev.kindred.core.logistics.ChestOrganizationPolicy;
 import dev.kindred.core.team.CollaborationMode;
 import dev.kindred.core.team.HandOvers;
+import dev.kindred.core.social.PeerUpdate;
 import dev.kindred.core.team.ShareOut;
 import dev.kindred.core.progression.MilestoneGraph;
 import dev.kindred.core.progression.MilestoneId;
@@ -193,6 +194,18 @@ final class PlayerRuntime {
     private CompletableFuture<LoadedRegistry> startup;
     private CompletableFuture<Void> shutdown = CompletableFuture.completedFuture(null);
     private final CompanionSocials socials;
+    /** The server's cap on how players sound, and each person's own preferences (E-18a, E-19a). */
+    private final TalkSettings talk;
+    /** What each AI player knows of the others (E-50). */
+    private final PeerRadio peerRadio;
+    /** Asks in chat, run through their commands' methods as whoever asked (E-52). */
+    private final ChatIntents chatIntents;
+    /** Speaking first, within each person's attention budget (E-53). */
+    private final InitiativeLane initiative;
+    /** Conversations between AI players (E-51). */
+    private final PeerTalk peerTalk;
+    /** How the last ask in chat by its plain form went, by player ("GOAL: done"), for fixtures (E-52). */
+    private final Map<UUID, String> chatAsked = new HashMap<>();
     /** The player's voice in chat (E-20a): on with the strategist unless {@code KINDRED_VOICE=off}. */
     private final PlayerVoice voice;
     private boolean voiceOn = PlayerVoice.switchedOn(System.getenv());
@@ -389,6 +402,34 @@ final class PlayerRuntime {
             player.sendMessage(message, false);
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
+        socials.setExpressionCap(TalkSettings.cap(System.getenv()));
+        talk = new TalkSettings(socials, server);
+        peerRadio = new PeerRadio(memories, server, new PeerRadio.Source() {
+            @Override public UUID aiPlayerOf(net.minecraft.entity.Entity body) { return PlayerRuntime.this.aiPlayerOf(body); }
+
+            @Override public PeerRadio.Audience audience(UUID id, ServerPlayerEntity speaker) {
+                var facts = voiceFacts(id, speaker);
+                return facts == null ? null : new PeerRadio.Audience(facts.relation(), facts.controls());
+            }
+        });
+        chatIntents = new ChatIntents(this, server);
+        initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
+        peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
+        socials.setHearing(new CompanionSocials.Hearing() {
+            @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                var offer = initiative.heard(speaker, player, message); // An answer to its last line; an offer's yes or no (E-53).
+                var taken = peerRadio.heard(player.id(), speaker, message);
+                return offer.or(() -> taken);
+            }
+
+            @Override public Optional<String> answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                return peerRadio.answer(player.id(), speaker, message).or(() -> chatIntents.early(speaker, player, message));
+            }
+
+            @Override public Optional<CompanionSocials.Spoken> fallback(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
+                return chatIntents.fallback(speaker, player, message);
+            }
+        });
         voice = new PlayerVoice(this::voiceFacts, new PlayerVoice.Asks() {
             @Override
             public void ask(UUID playerId, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
@@ -404,6 +445,7 @@ final class PlayerRuntime {
             }
         }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
         socials.setVoice(voice);
+        voice.setManner(socials::manner);
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
@@ -411,17 +453,8 @@ final class PlayerRuntime {
         });
         if (strategist.isPresent()) KindredMod.LOGGER.info("Kindred voice {}", voiceOn ? "on: replies in chat are phrased by the strategist's model"
                 : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
-        socials.setConferenceHandler(new CompanionSocials.PeerConferenceHandler() {
-            @Override
-            public void onConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
-                handlePeerConference(speaker, peer, exchange);
-            }
-
-            @Override
-            public PeerProgressDialogue.PeerState state(UUID id) {
-                return peerState(id);
-            }
-        });
+        // E-51: conversations between AI players (PeerTalk) replace the fixed peer conference, which whispered to anyone
+        // within six blocks; none is installed, so the lane's old conference never runs.
         this.attentionScheduler = new AttentionWorkScheduler(this.runtimeSession, AttentionSchedulePolicy.defaultPolicy());
         teamCoordinator.onChange(this::saveTeamChange);
     }
@@ -566,6 +599,7 @@ final class PlayerRuntime {
                     bases = loaded.bases();
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
+                    talk.load(store); // E-19a: people's own preferences; nothing unasked and no jokes until they are read.
                     store.listProjects().whenComplete((loadedProjects, err) -> {
                         if (err == null && loadedProjects != null) {
                             server.execute(() -> {
@@ -2278,6 +2312,9 @@ final class PlayerRuntime {
             }
         }
         attentionScheduler.synchronizeEntries(batch);
+        if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
+        if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
+        if (tick % 20 == 15) peerTalk.tick(); // E-51: AI players talking when they meet again.
 
         java.util.Optional<WorkToken> nextToken;
         while ((nextToken = attentionScheduler.selectNext()).isPresent()) {
@@ -6190,6 +6227,48 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * E-18a: how a player sounds, shown, or set by whoever may control it ({@code change}); a null preset goes back to its
+     * humour. Saved as any profile change is.
+     */
+    int expression(ServerCommandSource source, UUID requestedId, dev.kindred.core.social.Expression preset, boolean change) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        UUID player = source.getEntity() instanceof ServerPlayerEntity entity ? entity.getUuid() : null;
+        Entry entry = requestedId == null ? byOwner(player) : entries.get(requestedId);
+        if (entry == null) return reject(source, "No AI player found.");
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change how it sounds.");
+        if (!change) {
+            feedback(source, TalkSettings.sounds(entry.data.displayName(), entry.profile, socials.expressionCap()));
+            return 1;
+        }
+        if (entry.metadataFault || entry.snapshot().lifecycle() == LifecycleState.REMOVED) return reject(source, "This player's profile is unavailable.");
+        if (!entry.profileWrite.isDone()) return reject(source, "The previous profile change is still being saved.");
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = previous.withExpression(preset);
+        entry.profile = changed;
+        socials.reset(entry.data.id()); // Nothing composed in the old manner is said.
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+            if (!running) return;
+            if (failure != null) {
+                entry.metadataFault = true;
+                halt(entry, Actor.console(), "Profile save failed; player stopped for storage inspection.");
+                KindredMod.LOGGER.error("Expression preset write failed for {}", entry.data.id(), failure);
+                source.sendError(Text.literal("The preset could not be saved. The player has stopped."));
+            } else feedback(source, "Saved. " + TalkSettings.sounds(entry.data.displayName(), changed, socials.expressionCap()));
+        }));
+        return 1;
+    }
+
+    /** E-19a: a person's own preferences for how AI players speak to them, shown, set or deleted by them alone. */
+    int listenerPreference(ServerCommandSource source, String setting, String value) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        if (setting == null) return talk.show(source);
+        return "forget".equals(setting) ? talk.forget(source) : talk.set(source, setting, value);
+    }
+
     int personality(ServerCommandSource source, UUID requestedId) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
@@ -7065,6 +7144,8 @@ final class PlayerRuntime {
     }
 
     int forgetMemory(ServerCommandSource source, UUID requestedId, UUID memoryId) {
+        Entry known = requestedId == null ? null : entries.get(requestedId);
+        if (known != null && known.nativeState != null) return peerRadioForget(source, known, memoryId);
         Entry entry = authorizedEntry(source, requestedId, "forget a memory");
         if (entry == null) return 0;
         if (memoryId == null) return reject(source, "Supply the memory UUID to forget.");
@@ -7075,6 +7156,16 @@ final class PlayerRuntime {
                 feedback(source, "Forgot memory " + memoryId + " for " + entry.data.displayName() + ".");
             }
         }));
+        return 1;
+    }
+
+    /** E-50: {@code memory forget <their id> <player>}: everything a native player knows of that person or player removed. */
+    private int peerRadioForget(ServerCommandSource source, Entry entry, UUID who) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading its saved records.");
+        if (!mayAdjust(source, entry)) return reject(source, "Only an operator or this player's controller may change what it remembers.");
+        if (who == null || !peerRadio.forget(entry.data.id(), who)) return reject(source, entry.data.displayName() + " knows nothing of " + who + ".");
+        feedback(source, "Forgot everything " + entry.data.displayName() + " knew of " + who + ".");
         return 1;
     }
 
@@ -8228,6 +8319,7 @@ final class PlayerRuntime {
         };
         KindredMod.LOGGER.info("{} notes that {} {}: wariness {}{}", entry.data.displayName(), name, did, wariness,
                 !was && wariness >= dev.kindred.core.Trust.WARY ? "; it holds back from them now" : "");
+        peerRadio.episode(entry.data.id(), person, name, did); // The game's record of it (E-50).
     }
 
     /** Harm that got through (E-49): within ten seconds of arriving where someone asked it to come, theirs to answer for. */
@@ -8247,6 +8339,7 @@ final class PlayerRuntime {
         long now = server.getTicks();
         int before = entry.trust.wariness(from.getUuid(), now);
         entry.trust.gift(from.getUuid(), now);
+        peerRadio.received(entry.data.id(), from.getUuid(), from.getName().getString(), stack.getName().getString().toLowerCase(java.util.Locale.ROOT), stack.getCount());
         if (before > 0) {
             KindredMod.LOGGER.info("{} takes {} {} from {}: wariness {}", entry.data.displayName(), stack.getCount(),
                     stack.getName().getString().toLowerCase(java.util.Locale.ROOT), from.getName().getString(), entry.trust.wariness(from.getUuid(), now));
@@ -10951,7 +11044,34 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), peerRadio.told(id));
+    }
+
+    /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
+    private List<PeerRadio.Member> peerMembers() {
+        var out = new ArrayList<PeerRadio.Member>();
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null || entry.snapshot().lifecycle() == LifecycleState.REMOVED) continue;
+            var body = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+            boolean inMatch = body != null && matches.running(body.getUuid()).isPresent();
+            PeerUpdate update = null;
+            if (body != null) {
+                boolean busy = entry.runner != null && runnerBusy(entry);
+                String goal = PlayerVoice.goal(entry.goal);
+                String doing = !goal.isEmpty() ? "working on " + goal + (entry.goalProgress.isEmpty() ? "" : ": " + entry.goalProgress)
+                        : busy ? PlayerVoice.doing(entry.skillId) : "idle";
+                var spare = new java.util.TreeMap<String, Integer>();
+                for (var held : entry.heldFinds.entrySet()) {
+                    String item = HandOvers.materialItem(held.getKey());
+                    int free = held.getValue() - teamCoordinator.stockLedger().reservedCount(HandOvers.held(entry.data.id(), item));
+                    spare.put(net.minecraft.util.Identifier.of(item).getPath().replace('_', ' '), free);
+                }
+                update = PeerRadio.update(entry.data.id(), entry.data.displayName(), body, doing,
+                        entry.campaign == null ? List.of() : entry.campaign.followUps().provisions().chunks(), spare);
+            }
+            out.add(new PeerRadio.Member(entry.data.id(), entry.data.displayName(), body, inMatch, update));
+        }
+        return out;
     }
 
     /** An ask from chat: who asked, what of, until when it waits for the player's look at the speaker, and where a refusal goes. */
@@ -11041,11 +11161,19 @@ final class PlayerRuntime {
      * carry, is refused, never guessed at.
      */
     int nativeToss(ServerCommandSource source, UUID id, String item, int count) {
+        return nativeToss(source, id, item, count, false);
+    }
+
+    /**
+     * As the command, with {@code offered}: the player itself offered this to whoever runs it (E-53), and their yes stands
+     * in for control for this toss alone; every other check is made.
+     */
+    private int nativeToss(ServerCommandSource source, UUID id, String item, int count, boolean offered) {
         requireThread();
         if (!(source.getEntity() instanceof ServerPlayerEntity to)) return reject(source, "Only a player can be tossed to.");
         UUID target = id == null ? defaultBotId() : id;
         Entry entry = target == null ? null : entries.get(target);
-        if (!running || !ready || entry == null || entry.nativeState == null || !nativeMayControl(source, entry)
+        if (!running || !ready || entry == null || entry.nativeState == null || !(offered || nativeMayControl(source, entry))
                 || entry.nativeBody == null || !entry.nativeBody.connected()) {
             return reject(source, "Native player unavailable or administrative access denied.");
         }
@@ -11066,9 +11194,14 @@ final class PlayerRuntime {
             return reject(source, "That's all I hand out in a day.");
         }
         int tossed = Math.min(Math.min(Math.max(1, count), allowance), inventory.main.get(slot).getCount());
-        int started = nativeTask(source, target, "native_toss", Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed),
-                "target", to.getUuid().toString()));
-        if (started == 1) entry.trust.tossed(to.getUuid(), tossed, now);
+        var arguments = Map.of("slot", String.valueOf(slot), "count", String.valueOf(tossed), "target", to.getUuid().toString());
+        // An offer it made is its own task (E-53), the same recorded toss; anything else is the asker's, as the command is.
+        int started = offered ? dispatchNativeTask(null, entry, "native_toss", arguments, true) : nativeTask(source, target, "native_toss", arguments);
+        if (offered && started != 1) reject(source, entry.blocker);
+        if (started == 1) {
+            entry.trust.tossed(to.getUuid(), tossed, now);
+            peerRadio.gave(entry.data.id(), to.getUuid(), to.getName().getString(), kind.getName().getString().toLowerCase(java.util.Locale.ROOT), tossed);
+        }
         return started;
     }
 
@@ -11095,6 +11228,182 @@ final class PlayerRuntime {
     void atlas(boolean on) { atlasOn = on; }
 
     /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
+    /** The runtime's side of speaking first (E-53): who may speak, what each has to spare and needs, and the offer's toss. */
+    private final class InitiativeSource implements InitiativeLane.Source {
+        @Override public List<CompanionSocials.Participant> players() {
+            var out = new ArrayList<CompanionSocials.Participant>();
+            for (Entry entry : entries.values()) {
+                if (entry.nativeState == null) continue;
+                var participant = socialParticipant(entry.data.id());
+                if (participant != null && participant.active()) out.add(participant);
+            }
+            return out;
+        }
+
+        @Override public Optional<Map.Entry<String, Integer>> spareFood(UUID id) {
+            var body = nativeBodyOf(id).orElse(null);
+            if (body == null) return Optional.empty();
+            var counts = new java.util.TreeMap<String, Integer>();
+            for (var stack : body.getInventory().main) {
+                if (stack.isEmpty() || stack.get(net.minecraft.component.DataComponentTypes.FOOD) == null) continue;
+                counts.merge(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString(), stack.getCount(), Integer::sum);
+            }
+            int total = counts.values().stream().mapToInt(Integer::intValue).sum();
+            return counts.entrySet().stream().max(Map.Entry.comparingByValue())
+                    .map(most -> Map.entry(most.getKey(), Math.min(most.getValue(), total - InitiativeLane.KEEP_FOOD)));
+        }
+
+        @Override public List<String> needs(UUID id) {
+            return peerRadio.lastUpdate(id).map(update -> update.needs().stream().map(need -> need.replaceFirst("^\\d+\\s+", "")).toList()).orElse(List.of());
+        }
+
+        @Override public boolean idle(UUID id) {
+            Entry entry = entries.get(id);
+            return entry != null && !(entry.runner != null && runnerBusy(entry));
+        }
+
+        @Override public boolean inCountdown(UUID person) {
+            return matches.active(person).filter(match -> match.state() == dev.kindred.core.match.MatchRegistry.State.COUNTDOWN).isPresent();
+        }
+
+        @Override public int offerToss(UUID id, ServerPlayerEntity to, String item, int count, java.util.function.Consumer<String> refused) {
+            var heard = new ArrayList<String>();
+            var output = new net.minecraft.server.command.CommandOutput() {
+                @Override public void sendMessage(Text message) { heard.add(message.getString()); }
+                @Override public boolean shouldReceiveFeedback() { return true; }
+                @Override public boolean shouldTrackOutput() { return true; }
+                @Override public boolean shouldBroadcastConsoleToOps() { return false; }
+            };
+            int done = nativeToss(to.getCommandSource().withOutput(output), id, item, count, true);
+            if (done != 1 && !heard.isEmpty()) refused.accept(heard.getLast());
+            return done;
+        }
+
+        @Override public dev.kindred.core.social.Expression sounding(CompanionSocials.Participant player) { return socials.soundingOf(player); }
+
+        @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+    }
+
+    /** The runtime's side of conversations between AI players (E-51). */
+    private final class PeerTalkSource implements PeerTalk.Source {
+        /** A fight, a flight, a bed and the like: no talk. */
+        private static final java.util.Set<String> BUSY = java.util.Set.of("native_attack", "native_fight", "native_block", "native_shoot",
+                "native_retreat", "native_clutch", "native_dragon", "native_pearl", "native_sleep");
+
+        @Override public List<CompanionSocials.Participant> players() { return new InitiativeSource().players(); }
+        @Override public Optional<dev.kindred.core.social.PeerLedger> ledger(UUID id) { return peerRadio.ledger(id); }
+        @Override public Optional<PeerUpdate> update(UUID id) { return peerRadio.lastUpdate(id); }
+
+        @Override public boolean busy(UUID id) {
+            Entry entry = entries.get(id);
+            var body = nativeBodyOf(id).orElse(null);
+            if (entry == null || body == null) return true;
+            boolean busyTask = entry.runner != null && runnerBusy(entry) && entry.skillId != null && BUSY.contains(entry.skillId);
+            return busyTask || InitiativeLane.fighting(body) || new InitiativeSource().inCountdown(body.getUuid());
+        }
+
+        @Override public dev.kindred.core.social.Expression sounding(CompanionSocials.Participant player) { return socials.soundingOf(player); }
+        @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+        @Override public long tick() { return server.getTicks(); }
+    }
+
+    /** The conversations between AI players, for fixtures (E-51). */
+    PeerTalk peerTalkForFixtures() { return peerTalk; }
+
+    /** Whether an offer from the player to this person waits for their answer, for fixtures (E-53). */
+    boolean offeringForFixtures(UUID id, UUID person) { return initiative.offering(id, person); }
+
+    // ----- For asks in chat (E-52): what ChatIntents reads of a player, and the ways it acts, each the command's own -----
+
+    boolean waryOf(UUID id, UUID person) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.trust.wary(person, server.getTicks());
+    }
+
+    CollaborationMode collaborationOf(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.runtimeSettings.collaborationMode();
+    }
+
+    /** Whether {@code speaker} may command the native player {@code id}, as its come, wait, stop and toss require. */
+    boolean mayCommand(UUID id, ServerPlayerEntity speaker) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.nativeState != null && nativeMayControl(speaker.getCommandSource(), entry);
+    }
+
+    boolean mayAdjustFrom(ServerCommandSource source, UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null && mayAdjust(source, entry);
+    }
+
+    Optional<ServerPlayerEntity> nativeBodyOf(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.nativeBody == null || !entry.nativeBody.connected() ? Optional.empty() : Optional.ofNullable(entry.nativeBody.entity());
+    }
+
+    /** The AI player whose body this is, or null for a person. */
+    UUID aiPlayerFor(UUID bodyId) {
+        Entry entry = entryForPlayer(bodyId);
+        return entry == null ? null : entry.data.id();
+    }
+
+    /** A player online by name: a person's own name, or an AI player's. */
+    Optional<UUID> playerNamed(String name) {
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            if (player.getName().getString().equalsIgnoreCase(name)) return Optional.of(player.getUuid());
+        }
+        for (Entry entry : entries.values()) {
+            if (entry.data.displayName().equalsIgnoreCase(name)) {
+                var body = nativeBodyOf(entry.data.id());
+                if (body.isPresent()) return Optional.of(body.get().getUuid());
+            }
+        }
+        return Optional.empty();
+    }
+
+    String nameOf(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? id.toString().substring(0, 8) : entry.data.displayName();
+    }
+
+    dev.kindred.core.match.MatchRegistry matchRegistry() { return matches; }
+
+    /**
+     * Whether the AI player {@code id} says yes to a match with {@code players} (bodies), by its own rule: hurt, hungry, out
+     * of the Overworld or in a fight, or far worse kitted for a duel, it says no.
+     */
+    dev.kindred.core.match.MatchChoice.Choice matchChoice(UUID id, List<UUID> players, dev.kindred.core.match.MatchChoice.Kind kind) {
+        Entry entry = entries.get(id);
+        var body = nativeBodyOf(id).orElse(null);
+        if (entry == null || body == null) return new dev.kindred.core.match.MatchChoice.Choice(false, "I'm not in the world.");
+        boolean committed = body.getWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD || matches.active(body.getUuid()).isPresent();
+        int other = 0;
+        for (UUID player : players) {
+            if (player.equals(body.getUuid())) continue;
+            var them = server.getPlayerManager().getPlayer(player);
+            if (them != null) other = Math.max(other, them.getArmor() + (them.getMainHandStack().isEmpty() ? 0 : 3));
+        }
+        int kit = body.getArmor() + (body.getMainHandStack().isEmpty() ? 0 : 3);
+        return dev.kindred.core.match.MatchChoice.decide(entry.profile.personality(),
+                new dev.kindred.core.match.MatchChoice.State(body.getHealth(), body.getHungerManager().getFoodLevel(), committed, kit, other), kind);
+    }
+
+    /** An ask of E-20b's four read without a model, done as a model's is, after the player's look at the speaker. */
+    void askInChat(UUID id, ServerPlayerEntity speaker, dev.kindred.model.Strategist.Ask ask, String item, java.util.function.Consumer<String> refused) {
+        voiceAsk(id, speaker, ask, item, refused);
+    }
+
+    void chatAskedForFixtures(UUID id, String how) {
+        chatAsked.put(id, how);
+        while (chatAsked.size() > 256) chatAsked.remove(chatAsked.keySet().iterator().next());
+    }
+
+    /** How the last ask in chat by its plain form went ("GOAL: done", "RACE: refused"), for fixtures (E-52); null before any. */
+    String chatAskedForFixtures(UUID id) { return chatAsked.get(id); }
+
+    /** What a player knows of the others, for fixtures (E-50); null while it is being read. */
+    dev.kindred.core.social.PeerLedger peersForFixtures(UUID id) { return peerRadio.ledger(id).orElse(null); }
+
     dev.kindred.core.atlas.Atlas atlasForFixtures(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? null : entry.atlas;
@@ -11391,60 +11700,6 @@ final class PlayerRuntime {
         }
     }
 
-    private void handlePeerConference(CompanionSocials.Participant speaker, CompanionSocials.Participant peer, PeerProgressDialogue.Exchange exchange) {
-        if (store != null) {
-            store.addMemory(new MemoryNote(UUID.randomUUID(), speaker.id(), MemoryNote.Kind.FACT,
-                    exchange.memoryFactInitiator(), "peer_dialogue:" + peer.id(), 0));
-            store.addMemory(new MemoryNote(UUID.randomUUID(), peer.id(), MemoryNote.Kind.FACT,
-                    exchange.memoryFactPeer(), "peer_dialogue:" + speaker.id(), 0));
-            store.appendEvent(speaker.id(), java.time.Instant.now(), "PEER_CONFERENCE",
-                    "Conferred with " + peer.name() + " on " + exchange.topic());
-            store.appendEvent(peer.id(), java.time.Instant.now(), "PEER_CONFERENCE",
-                    "Conferred with " + speaker.name() + " on " + exchange.topic());
-        }
-
-        if (speaker.body() != null && speaker.body().getWorld() instanceof ServerWorld serverWorld) {
-            String quote = exchange.openingRemark();
-            if (quote.length() > 60) quote = quote.substring(0, 57) + "...";
-            Text whisper = Text.literal("§7[Nearby] " + speaker.name() + " confers with " + peer.name() + ": \"" + quote + "\"");
-            for (ServerPlayerEntity player : serverWorld.getPlayers()) {
-                if (player.squaredDistanceTo(speaker.body()) <= 36.0 || (peer.body() != null && player.squaredDistanceTo(peer.body()) <= 36.0)) {
-                    player.sendMessage(whisper, false);
-                }
-            }
-        }
-    }
-
-    private PeerProgressDialogue.PeerState peerState(UUID id) {
-        Entry entry = entries.get(id);
-        if (entry == null || entry.body == null || !entry.body.isAlive()) return null;
-        int logs = countLogs(entry.body);
-        boolean hasStorage = entry.setup != null && entry.setup.storage() != null;
-        boolean hasPatch = entry.setup != null && entry.setup.patch() != null;
-        OperatingMode.Mode mode = entry.mode != null ? entry.mode.mode() : OperatingMode.Mode.COMPANION;
-        return new PeerProgressDialogue.PeerState(
-                entry.data.id(),
-                entry.data.displayName(),
-                mode,
-                entry.profile.personality(),
-                entry.skillId,
-                logs,
-                hasStorage,
-                hasPatch
-        );
-    }
-
-    private int countLogs(CompanionEntity body) {
-        if (body == null) return 0;
-        int count = 0;
-        for (int i = 0; i < body.inventory().size(); i++) {
-            net.minecraft.item.ItemStack stack = body.inventory().getStack(i);
-            if (!stack.isEmpty() && Registries.ITEM.getId(stack.getItem()).getPath().contains("log")) {
-                count += stack.getCount();
-            }
-        }
-        return count;
-    }
 
     private void mapAndSpawn(Entry entry, UUID owner, SpawnLocation location) {
         // A null durable mapping proves no initial body has been dispatched; mapped absence is ambiguous.
@@ -11598,6 +11853,7 @@ final class PlayerRuntime {
         matches.stopAll();
         presenter.clear();
         memory.close(); // The strategist's bridge, when there is one.
+        peerRadio.saveAll(); // What each knows of the others (E-50).
         for (Entry entry : entries.values()) {
             if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
         }
@@ -11955,6 +12211,11 @@ final class PlayerRuntime {
      * it itself (/aiplayer match join), so no human is ever entered into a fight by anyone else (D7).
      */
     int proposeDuel(ServerCommandSource source, UUID first, UUID second) {
+        return proposeDuel(source, first, second, Set.of());
+    }
+
+    /** As the command, with the AI players that said yes for themselves when asked in chat ({@code chose}, E-52). */
+    int proposeDuel(ServerCommandSource source, UUID first, UUID second, Set<UUID> chose) {
         requireThread();
         // The server's own rule comes first: with PvP off, no player can hurt another, in a match or not.
         if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
@@ -11962,7 +12223,9 @@ final class PlayerRuntime {
         for (UUID player : invited) {
             Entry entry = entryForPlayer(player);
             if (entry == null && server.getPlayerManager().getPlayer(player) == null) return reject(source, "No such player online.");
-            if (entry != null && !nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+            if (entry != null && !nativeMayControl(source, entry) && !chose.contains(entry.data.id())) {
+                return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+            }
         }
         var result = matches.propose(dev.kindred.core.match.MatchRegistry.Mode.DUEL, invited);
         if (!result.accepted()) return reject(source, result.reason());
@@ -12020,13 +12283,20 @@ final class PlayerRuntime {
      * needs the server's leave for AI world edits and the dragon fight; a human joins for itself.
      */
     int proposeSpeedrun(ServerCommandSource source, List<UUID> runners) {
+        return proposeSpeedrun(source, runners, Set.of());
+    }
+
+    /** As the command, with the AI players that said yes for themselves when asked in chat ({@code chose}, E-52). */
+    int proposeSpeedrun(ServerCommandSource source, List<UUID> runners, Set<UUID> chose) {
         requireThread();
         for (UUID runner : runners) {
             Entry entry = entryForPlayer(runner);
             var player = server.getPlayerManager().getPlayer(runner);
             if (player == null) return reject(source, "No such player online.");
             if (entry != null) {
-                if (!nativeMayControl(source, entry)) return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                if (!nativeMayControl(source, entry) && !chose.contains(entry.data.id())) {
+                    return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
+                }
                 if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an AI runner needs them (/aiplayer edits on).");
                 if (!dragonFight) return reject(source, "The dragon fight is off on this server; an AI runner needs it (/aiplayer dragonfight on).");
             }

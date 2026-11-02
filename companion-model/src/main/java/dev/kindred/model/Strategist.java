@@ -186,7 +186,6 @@ public interface Strategist extends AutoCloseable {
         }
 
         /** An item as a reply may name it: a registry id's characters, at most 64 of them. */
-        private static final java.util.regex.Pattern ITEM = java.util.regex.Pattern.compile("[a-z0-9_.:/ -]{1,64}");
 
         /** Words no player says in chat while every listener gets clean speech (E-18's presets come later). */
         private static final java.util.regex.Pattern UNCLEAN = java.util.regex.Pattern.compile(
@@ -214,7 +213,9 @@ public interface Strategist extends AutoCloseable {
             String of = item == null ? "" : item.strip().toLowerCase(java.util.Locale.ROOT);
             String refusedAsk = wanted == null ? "not one of the asks: " + asked
                     : wanted != Ask.NONE && !conversation.mayAsk() ? "an ask from one who may not command it"
-                    : wanted == Ask.TOSS && !ITEM.matcher(of).matches() ? "a toss of no item it could name"
+                    // The same check as an ask read in chat without a model (E-52's Intent), so neither may carry more than the other.
+                    : wanted == Ask.TOSS && dev.kindred.core.social.Intent.of(dev.kindred.core.social.Intent.Kind.TOSS, of.replace(' ', '_'),
+                            java.util.List.of()).isEmpty() ? "a toss of no item it could name"
                     : null;
             if (refusedAsk != null) return new Line(Optional.empty(), Ask.NONE, Optional.empty(), "", in, cached, out, millis, Optional.of(refusedAsk));
             Line words = checkedWords(conversation, say, reason, in, cached, out, millis);

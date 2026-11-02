@@ -2,6 +2,8 @@ package dev.kindred.model;
 
 import dev.kindred.core.ConversationAudience;
 import dev.kindred.core.Personality;
+import dev.kindred.core.social.Expression;
+import dev.kindred.core.social.ListenerPreferences;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -89,5 +91,20 @@ class ConversationPromptTest {
         }
         assertEquals(owner.system(), other.system(), "the asks are in the varying part, so the fixed part still caches");
         assertTrue(owner.text().indexOf("Asks this speaker") < owner.text().indexOf(ConversationPrompt.SAID), "before the message");
+    }
+
+    @Test
+    void theLineOnHowToSpeakToThisListenerGoesInTheTextNeverInTheFixedPart() {
+        var personality = Personality.defaults();
+        var situation = situation(ConversationAudience.Relation.PLAYER, false, "mining");
+        String manner = Expression.voiceLine(Expression.PLAYFUL, ListenerPreferences.defaults(java.util.UUID.randomUUID()).withNoJokes(true));
+        var plain = ConversationPrompt.conversation("Echo", personality, situation, "hi");
+        var styled = ConversationPrompt.conversation("Echo", personality, situation, "hi", manner);
+        assertEquals(plain.system(), styled.system(), "the cached part is the same whoever is listening");
+        assertFalse(plain.text().contains("How you speak to them"));
+        int line = styled.text().indexOf(manner), said = styled.text().indexOf(ConversationPrompt.SAID);
+        assertTrue(line > 0 && line < said, "after what it knows, before the quoted message");
+        assertEquals(1, styled.text().split("How you speak to them", -1).length - 1);
+        assertEquals(plain.text(), ConversationPrompt.conversation("Echo", personality, situation, "hi", "  ").text());
     }
 }

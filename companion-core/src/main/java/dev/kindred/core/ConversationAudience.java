@@ -40,6 +40,8 @@ public final class ConversationAudience {
      * @param events the goal's last few events, as it logged them
      * @param memory its deaths, notes and kept habits in this world
      * @param transcript the last lines between it and this speaker, oldest first, each "Name: text"
+     * @param wary what it holds against this speaker (E-49), empty for nothing
+     * @param peers what it knows of the others (E-50), each line with who may be told it
      */
     public record Situation(String player, String speaker, Relation relation, boolean speakerControls,
                             double health, int food, String hurtBy,
@@ -47,7 +49,17 @@ public final class ConversationAudience {
                             boolean stopped, boolean busy, String doing, String goal, String goalProgress,
                             String position, String threat, List<String> near,
                             List<String> held, int foodItems, List<String> notable,
-                            List<String> events, List<String> memory, String lastSaid, List<String> transcript, String wary) {
+                            List<String> events, List<String> memory, String lastSaid, List<String> transcript, String wary,
+                            List<dev.kindred.core.social.PeerLedger.Told> peers) {
+        /** Without what it knows of the others (before E-50). */
+        public Situation(String player, String speaker, Relation relation, boolean speakerControls, double health, int food, String hurtBy,
+                         String dimension, String time, String weather, boolean stopped, boolean busy, String doing, String goal,
+                         String goalProgress, String position, String threat, List<String> near, List<String> held, int foodItems,
+                         List<String> notable, List<String> events, List<String> memory, String lastSaid, List<String> transcript, String wary) {
+            this(player, speaker, relation, speakerControls, health, food, hurtBy, dimension, time, weather, stopped, busy, doing, goal,
+                    goalProgress, position, threat, near, held, foodItems, notable, events, memory, lastSaid, transcript, wary, List.of());
+        }
+
         /** As spoken to by someone it holds nothing against (E-49). */
         public Situation(String player, String speaker, Relation relation, boolean speakerControls, double health, int food, String hurtBy,
                          String dimension, String time, String weather, boolean stopped, boolean busy, String doing, String goal,
@@ -78,6 +90,7 @@ public final class ConversationAudience {
             events = List.copyOf(events);
             memory = List.copyOf(memory);
             transcript = List.copyOf(transcript);
+            peers = peers == null ? List.of() : List.copyOf(peers);
         }
     }
 
@@ -98,6 +111,22 @@ public final class ConversationAudience {
      */
     public static boolean mayAsk(Situation situation) {
         return tier(situation.relation(), situation.speakerControls()) == Tier.CONTROLLER;
+    }
+
+    /**
+     * Whether a line of what the player knows of the others may be told to this speaker (E-50): everything to whoever may
+     * command it; to anyone else what anyone might know, the team's business only to a teammate, and what was said only
+     * back to whoever it is about; nothing to an opponent. A place is for a controller alone.
+     */
+    public static boolean mayBeTold(dev.kindred.core.social.PeerLedger.Told told, Relation relation, boolean speakerControls, String speaker) {
+        Tier tier = tier(relation, speakerControls);
+        if (tier == Tier.CONTROLLER) return true;
+        if (tier == Tier.OPPONENT) return false;
+        return switch (told.reach()) {
+            case ANYONE -> true;
+            case SIDE -> relation == Relation.TEAMMATE && !told.claim() || told.name() != null && told.name().equalsIgnoreCase(speaker);
+            case CONTROLLER -> false;
+        };
     }
 
     /** Three numbers in a row, or numbers marked x, y and z: a place, however it is written. */
@@ -160,6 +189,11 @@ public final class ConversationAudience {
                 String told = tier == Tier.CONTROLLER ? kept : withoutPlaces(kept);
                 if (!told.isEmpty()) lines.add("You remember: " + told);
             }
+        }
+        for (var told : s.peers()) {
+            if (!mayBeTold(told, s.relation(), s.speakerControls(), s.speaker())) continue;
+            String line = tier == Tier.CONTROLLER ? told.text() : withoutPlaces(told.text());
+            if (!line.isEmpty()) lines.add("You know of others: " + line);
         }
         if (!s.lastSaid().isEmpty()) lines.add("The last thing you said aloud: " + (tier == Tier.CONTROLLER ? s.lastSaid() : withoutPlaces(s.lastSaid())));
         for (String said : s.transcript()) lines.add("Earlier in this talk: " + (tier == Tier.CONTROLLER ? said : withoutPlaces(said)));

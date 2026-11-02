@@ -390,6 +390,90 @@ Whoever may command a native player (its controller or an operator) can also ask
 
 If the command would refuse, the player says why in the command's own words ("Echo has no diamond."). Nobody else is offered asks; a reply that carries one for anyone else is refused, and the fixed reply is said. An opponent in a match never may, operator or not. There is no follow in chat yet. The log says `<name> asked in chat by <who>: <ask>: done` or `refused (<why>)`.
 
+#### Play by asking (E-52)
+Beyond E-20b's four, a player does what it is asked in chat in plain words, with or without a model, exactly as the matching command does it when the person asking types it: the same method runs, with that person's own authority, so every check the command makes is made again. It says how it went: done in a few words ("On it: build a nether portal."), or the command's refusal as its own ("Only an operator or whoever looks after me can ask me that.", "AI world edits are disabled on this server; an operator must enable them first."). Nothing moves on an ask the command would refuse.
+
+| Say | As the command | Who may |
+| --- | --- | --- |
+| go for the Nether · find the End portal · beat the dragon · drop your goal | `/aiplayer goal nether\|end\|dragon\|none` | its controllers |
+| play it safe · take it easy · speed it up | `/aiplayer mode OPTIMAL\|IDLE\|SPEEDRUN` | its controllers |
+| work together · go solo | the panel's collaboration switch | its controllers |
+| build a hut\|cabin\|house\|manor here · make a cow\|sheep\|pig\|chicken ranch here · plant a field here | `/aiplayer build`, `ranch`, `field` at the speaker's feet | its controllers |
+| wear the knight skin | `/aiplayer skin knight` | its controllers |
+| race me · duel me (or name someone) | `/aiplayer match speedrun` / `duel` | anyone; see below |
+| I'm in · count me out | `/aiplayer match join` / `stop` | the person, for themselves |
+| keep it down · you can talk more | `/aiplayer prefs unasked fewer\|more` | the person, for themselves |
+| come here · wait · stop · toss me some bread | E-20b's asks | its controllers |
+
+A race or a duel asked in chat is proposed only if every AI player in it says yes by its own rule: not while hurt or hungry, nor out of the Overworld or already in a match, nor a duel against someone far better armed unless it is the fighting kind; otherwise as keen as its personality makes it. Its yes stands in for its controller's for that match alone. Each person named still joins only by their own "I'm in", and the match starts once everyone is in. A race or duel with nobody named is asked back once ("Race whom?"); an answer that names nobody drops it.
+
+What stays a command: making and removing players, the operator's switches (`edits`, `dragonfight`, `bases`), limits, and anything with coordinates. Asked for one in chat, a player says which command does it ("That's not mine to change; an operator can, with /aiplayer dragonfight on."), to an operator as well. With the voice on, E-20b's four asks are still the model's to read; the rest are read locally either way, so asking in an unusual way may not be understood. The log says `<name> asked in chat by <who>: <ask>: done (<the command's message>)` or `refused (<why>)`, and for a match `<name> on a RACE with 1: yes|no (<its words>)`.
+
+#### Speaking first (E-53)
+A player speaks first, unasked, on these occasions, the most pressing first:
+
+| Occasion | What it says | Its own limit |
+| --- | --- | --- |
+| A monster near a person and behind them, that the player can see | "Behind you, Steve: a creeper!" | at once, then 30 seconds for that person |
+| A person near it is hungry (food 10 of 20 or less) and it has food to spare (more than the 4 it keeps) | "Need food? I've got bread." | once an hour for each person |
+| It needs something (its follow-up queue's gathering, as it tells its team) | "Anyone got flint?" | once an hour for each thing |
+| Idle together with someone for 20 seconds | a word in its manner ("Quiet out here.") | the budget alone |
+
+An offer waits a minute for an answer. Only "yes please" (or yes, sure, okay) hands anything over, through the toss method: up to four, as a recorded toss, within E-49's sixteen a day to one person; the player's own offer stands in for control for that toss alone. "No thanks" withdraws it. Nothing moves before the yes.
+
+Every line but a warning is held to each person's *attention budget*: one unasked line in three minutes, as that person's `/aiplayer prefs unasked fewer|more` stretches or shortens it (six or one and a half minutes). Someone who answers within a minute earns a little more (down to half the wait); someone who never answers gets a little less (up to half as long again); both drift back to the usual over a day of real time. Nothing unasked, warnings included, goes to a person out of earshot, in a match's countdown, or away (not moved for five minutes); nothing but a warning goes to someone fighting (they struck or were struck in the last ten seconds) or building fast (two or more blocks from their hand in a second). A player whose remarks are off (`/aiplayer social ambient false`) says nothing first at all. Greetings and the remarks from before (rain, nightfall, a passing word, work done) keep their own limits. The log says `<name> to <who> unasked (<occasion>): <line>` and `<name>'s offer of <count> <item> to <who>: taken|refused (<why>)`.
+
+#### Conversations between AI players (E-51)
+Two AI players who meet again after ten minutes or more apart talk: two or three lines, in each one's manner. The first asks after what its ledger last said the other was doing or needing; the other answers from its own record (what it is doing, and what it needs), never by reading the first one's words; the first says a last word (it has some spare, or wishes them luck). A playful one may open with something they went through together, a tease that goes out plainly to anyone in earshot who asked for no teasing. Nothing is talked of twice within half an hour.
+
+```text
+KINDRED_CHATTER=4      optional; lines between AI players a minute, server-wide (default 4); quiet for none
+```
+
+The lines go only to people who can hear the one speaking (within eight blocks and in sight, and whoever may command it or, with public chat on, anyone), never to the whole server, and never to another AI player as chat. With nobody to hear, both still note the meeting in their ledgers ("talked: what you were doing") and nothing is said. A pair talks at most once in two minutes, and not while either is fighting, backing off, falling, asleep or in a match's countdown; a fight stops a talk under way. No model is asked: the turns are local, so they cost no tokens. They replace the old fixed peer conference, which whispered one line to anyone within six blocks. The log says `<speaker> to <other> (<n> hearing): <line>`, or that they met with nobody to hear, or that the chatter was spent.
+
+#### How it sounds, and how each person asked to be spoken to (E-18a, E-19a)
+Every player's words are clean, whoever is listening: no swearing, flirting or dark jokes. Within that, each player has an *expression preset*, set by whoever may command it, and the server's operator sets the most expressive any player may be:
+
+| Preset | How it sounds |
+| --- | --- |
+| `plain` | Says things plainly, without jokes. |
+| `dry` | Short and understated ("Rain. Lovely."), without jokes. |
+| `playful` | A light joke or a callback when it fits, and a little teasing of other AI players. A person is never teased. |
+
+```text
+/aiplayer expression [<player>]                       how it sounds, and why
+/aiplayer expression plain|dry|playful|auto [<player>] set it; auto goes back to sounding by its humour
+KINDRED_EXPRESSION_CAP=plain|dry|playful              optional; the most any player may be (default playful)
+```
+
+A player with no preset keeps the rule from before presets: playful from humour 65 up, plain below. Playful now has more lines than before (a hello, nightfall, and the tease of another AI player, beside the rain, a passing word and work done). The cap bounds every preset to at most its own rank (under `dry`, a playful player sounds dry); a value it does not know is taken as `plain`, and the log says so. The preset is saved with the player's profile, so it survives a restart.
+
+Each person sets, for themselves only, how AI players speak to them; nobody else can set or see it, and it gives nobody control of a player:
+
+```text
+/aiplayer prefs                           what you asked for
+/aiplayer prefs unasked fewer|usual|more  the pause before you are spoken to unasked again: 60, 30 or 15 seconds
+/aiplayer prefs teasing on|off            off: no teasing between AI players while you can hear it
+/aiplayer prefs jokes on|off              off: no jokes to you or near you; the plain line instead
+/aiplayer prefs forget                    delete what you set
+```
+
+The pause is per person, across all players; each player's own pause between remarks (about two minutes) and the server's ten seconds between any two still apply, so `more` shortens only the per-person part. A line said to several people at once is put as the strictest of them asked: one person with jokes off, and everyone there hears the plain line. A reply to one person follows that person's own preferences, and the voice (E-20a) is told in one line how to speak to them. Preferences are kept per person in the metadata database (`listener_preferences`) and survive a restart; going back to all the defaults deletes the row, as `forget` does. Until the saved preferences have been read at start, players say nothing unasked and make no jokes; if they cannot be read, that holds until the next restart, and the log says so.
+
+#### What each player knows of the others (E-50)
+Each AI player keeps a ledger of the people and players it has met in this world, filled from three sources, the most trusted first:
+
+1. **What the game recorded.** Who it has seen and when (once a second, within 16 blocks and in sight); a person's place only while they are in sight; a blow, harm after coming where someone asked, a chest emptied (E-49); what it handed someone and what they handed it.
+2. **Its teammates' own updates**, sent through the team every five seconds, never in chat: what each is doing (its goal and where it has got to, or its task), what its follow-up queue still has to gather (the End fight's string and feathers, say), what it holds of its finds unpromised, and where it is. Teammates are AI players out of any match, as in co-op; in a match they send nothing.
+3. **What a person says of themselves**: "I'm off to the Nether", "I need iron", "I've got spare wheat". Each is kept only as a claim: it holds for a game day, is never told as a fact ("Steve said, 2 minutes ago, that they were going to the nether (said, not seen)"), and is retired once the player sees them there. Nothing else said in chat leaves a note, and what was said is never written to disk.
+
+Whoever said something can take it back: "forget that", "forget what I said about the Nether", or "that's wrong". The claim is marked with who took it back and when, keeping who said it, and is never used again; the player answers in its own words ("All right, I've forgotten it."), without the model. Only the person who said it can take it back.
+
+Asked "what does Sol need?", "what is Sol doing?" or "where is Sol?" about someone it knows, the player answers from its ledger, without the model, and only as far as the asker may be told: a place to whoever may command it; a teammate's needs and doing to its controllers and teammates; what someone said only back to them; nothing of others to an opponent. Its voice (E-20a) is told the same lines under the same rules. An unknown name is ordinary talk.
+
+The ledger holds 64 peers (the least lately met dropped) and 20 episodes each, and is kept in `kindred/memory/<uuid>.peers.json` beside the atlas, saved every minute and at a stop; people's places and claims are not kept. To remove everything a native player knows of someone: `/aiplayer memory forget <their uuid> <player>` (operators and the player's controllers).
+
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 
 ## How the players look about

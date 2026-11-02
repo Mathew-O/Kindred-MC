@@ -16,6 +16,111 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Final validation of living together — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `bash ./gradlew build` green on `8537a03`, the final code: 882 JUnit tests, 876 passed, 6 skipped, 0 failures
+  (36 more than the 846 of `main`).
+- Each new GameTest class alone, three runs or more on its final code, every run passing (in each feature's section
+  below): `NativeExpressionGameTests` 3 of 3, `NativePeerLedgerGameTests` 3 of 3, `NativeChatAskGameTests` 8 of 8,
+  `NativeInitiativeGameTests` 5 of 5, `NativeConversationGameTests` 4 of 4. The ten social classes together, 51 of 51.
+- The full native suite on `8537a03`, nothing else on the cores: 503 of 504 in 50 minutes. Compared with the open list:
+  - failed, open before: the base repair (`NativeBaseRepairGameTests`), "stopped, 8 steps failed one after another (last:
+    No way to reach minecraft:oak_stairs ...: No walkable route ...)", its roof stairs out of reach: #82's family, as in
+    full run 41 and the second-night fixture on `77ddbb4`. This track changed no building, route or campaign code;
+  - passed this time, each open before: the keep's roof stairs (`NativeCompoundGameTests`), the lake librarian
+    (`NativeBringGameTests`), the ruined portal's chest (`NativeLootGameTests`), the trip's wood (F-25c4i), the hungry
+    search for animals (F-25c4ab), the cabin with its furniture, the night and its own bed, and the walk back up when
+    its pickaxe breaks;
+  - every social class passed in it (`SocialGameTests`, `NativeVoiceGameTests`, `NativeAskGameTests`,
+    `NativeMatchGameTests`, `MannerismGameTests` and the five new).
+- Ten seeds of the final build (`social-8537a03`: the jar `./gradlew build` made from `8537a03`), three starters, the
+  nether goal, 144,000 ticks, strategist and voice off, `KINDRED_CHATTER` unset (four lines a minute), two servers at a
+  time, 04:40 to 07:32, nothing else on the cores but a copy of the players' ledgers once a minute and a few searches of
+  finished seeds' logs. All ten complete and earned. [Summary](evidence/eval/social-8537a03/summary.md).
+  - The social lanes: 0 lines a game minute on every seed; 0 lines between AI players, 0 said first to people (an
+    evaluation run has none), 1 meeting noted with nobody to hear (seed 606, Kindred and Echo, "what you were doing");
+    model tokens 0 on every seed. The players were in sight of each other (eight blocks, a clear line) in their first
+    3,800 ticks (about three game minutes) and then, by the ledgers kept, once more on three of the nine seeds copied
+    (20261030, 606 and 707; 8675309 had ended before the copying began). Only 606's became a meeting; the other two were
+    not looked into.
+  - Against the next levers' final build on the same seeds ([comparison](evidence/eval/compare-social.md)), no measure
+    differs clearly: the team's furthest stage 5.5 [2 to 6] against 4.0 [2 to 6], deaths a game hour 1.25 [0.0 to 3.0]
+    against 1.75 [0.0 to 4.5], stuck game minutes 42.0 [12 to 84] against 42.0 [12 to 99]; a portal lit on 5 seeds
+    against 1. This track changed no goal, route or campaign code.
+  - Found, open: on 20261030 Kindred, killed by a warden at Y −49 and back at the world's spawn on a mountain with
+    nothing, cut logs, made sticks and a crafting table, placed it, and then walked to it 927 times in the run's last 19
+    game minutes: the goal's own step "Craft stone pickaxe" without the stone it needs, given out by the craft helper as
+    "Walk to the crafting table", which ends at once (`PortalRunCampaign.craft`, the hand-over loop's cause). So the
+    goal does ask the helper for a recipe it has not the makings of, and the two-line fix proposed for the hand-over
+    would leave this step with nothing to do: the step wants its stone first, or to be passed over, not a walk.
+
+## Conversations between AI players (E-51) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 882 JUnit tests, 6 skipped, 0 failures (876
+  passed; 4 new: `ConversationTest`, 3 of 4 at first, a tie putting a playful callback after the news).
+- `NativeConversationGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 4 of 4 at first,
+  but three players said only 3 lines in five minutes: a meeting the chatter budget refused still marked its topic
+  spoken. Fixed; then 16 lines (at most 20), and 4 of 4 in each of three runs on the final code.
+- The ten social classes together on the final code: 51 of 51.
+- `tools/eval/score.py` now counts, per seed, the lines between AI players said, the lines said first to people and the
+  meetings noted with nobody to hear, and the lines a game minute.
+
+## Speaking first, within an attention budget (E-53) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 878 JUnit tests, 6 skipped, 0 failures (872
+  passed; 4 new: `InitiativeTest`).
+- `NativeInitiativeGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 3 of 5 at first,
+  its two counting fixtures counting lines by name when every mock player has the same one (now by id); then 5 of 5 in
+  each of three runs on the final code. Ten minutes idle together, counted: 5 lines to the one who answers, 3 to the one
+  who never does.
+- The nine social classes together on the final code: 47 of 47. `NativePeerLedgerGameTests`' teammate fixture now turns
+  Sol's remarks off, since a player may now ask people for what it needs; its check that nothing is said of Sol's needs
+  is unchanged.
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
+## Play by asking (E-52) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 874 JUnit tests, 6 skipped, 0 failures (868
+  passed; 7 new: `IntentGrammarTest`).
+- `NativeChatAskGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 8 of 8 in each of
+  three runs; after the changes below, 8 of 8 in each of three more on the final code.
+- The eight social classes together: 41 of 42 at first, `NativeAskGameTests.aBystandersAskIsRefusedAndNothingIsDone`
+  failing because the new local fallback read "come here" after the stub voice had declined a bystander's ask, saying
+  "Coming." before the refusal; the fallback now reads E-20b's four only with no model at all and never answers "Coming."
+  to someone who may not command the player. Then 41 of 42 with `NativeChatAskGameTests` taking an ambient greeting for
+  a reply (the fixtures now turn ambient remarks off, as the voice fixtures do). Then 42 of 42 on the final code
+  (`NativeChatAskGameTests` 8, `NativePeerLedgerGameTests` 3, `NativeExpressionGameTests` 3, `SocialGameTests` 6,
+  `NativeVoiceGameTests` 9, `NativeAskGameTests` 6, `NativeMatchGameTests` 3, `MannerismGameTests` 4).
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
+## What each player knows of the others (E-50) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 867 JUnit tests, 6 skipped, 0 failures (861
+  passed; 13 new: `PeerLedgerTest` 9, `ClaimsTest` 4).
+- `NativePeerLedgerGameTests` alone (the gametest entrypoints narrowed for each run and restored after): 1 of 3 at first,
+  the two fixtures needing a teammate's update failing (`PeerRadio`'s interval began at `Long.MIN_VALUE`, and `now` minus
+  that overflows, so no update was ever sent); then 2 of 3 in five runs, the restart fixture failing twice on its own faults
+  (it spoke before Echo's ledger was read; it compared a note made in the stop's own tick with `<`) and three times on
+  `memory forget`, which refused every native player. With those fixed, three runs at 3 of 3; after the restart fixture's
+  failure message alone was shortened, three more on the final code, 3 of 3 each.
+- The seven social classes together, on the final code: 34 of 34 (`NativePeerLedgerGameTests` 3,
+  `NativeExpressionGameTests` 3, `SocialGameTests` 6, `NativeVoiceGameTests` 9, `NativeAskGameTests` 6,
+  `NativeMatchGameTests` 3, `MannerismGameTests` 4).
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
+## Expression presets and a person's own preferences (E-18a, E-19a) — 2 November 2026 (`claude/living-together-1101`)
+
+- Build: `./gradlew build` green on the commit that adds this section: 854 JUnit tests, 6 skipped, 0 failures (848
+  passed; 8 new: `ExpressionTest` 6, the store's preset and preferences round trip, the prompt's manner line). The
+  older-schema emulations in `SqliteCompanionStoreTest` and `NativePlayerStoreTest` now go back past V10 too; before that
+  change five of them failed on V10's re-added column and table, as an emulation that leaves a later schema's parts in
+  place must.
+- `NativeExpressionGameTests` alone, three runs (the gametest entrypoints narrowed for each and restored after): 3 of 3,
+  3 of 3, 3 of 3 (28 and 27 seconds for the last two).
+- `SocialGameTests`, `NativeVoiceGameTests`, `NativeAskGameTests` and `NativeMatchGameTests` together: 24 of 24 (6, 9, 6
+  and 3). `MannerismGameTests`, which also builds the social lane: 4 of 4.
+- Not run for this change: the full native suite and the ten seeds, which come at the end of the social track.
+
 ## Final validation of the next levers — 1 November 2026 (`claude/loose-ends-1029`)
 
 - Build: `./gradlew build` green on `f1a15b6`, the final code: 846 JUnit tests, 6 skipped, 0 failures.

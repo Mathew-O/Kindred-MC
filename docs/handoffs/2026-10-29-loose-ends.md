@@ -667,3 +667,125 @@ As before: F24/F25, A1, C14, C15, B6, B12, D19, D20, E22, the CI artifact, `mode
   - a listener that stops a failed fixture's player, so one failure does not load every batch after it;
   - the hungry hunt that never lands in the suite's world (cause not found);
   - F-30's frontier exploration, the fortress and stronghold searches, and the sightings shared in a team.
+
+## Handoff, 2 November 2026: living together (`claude/living-together-1101`)
+
+The owner: E-18a and E-19a, then E-50, E-52, E-53 and E-51, on a branch from `main` with the next levers merged
+(`04f2859`) and the design (`c6a042b`) merged in (`c6e9814`). The design is
+[living together](../proposals/living-together.md); each feature's evidence says where the code differs from it.
+`claude/modest-faraday-r3spro` changes two of the files this track touched, `PlayerRuntime` and `PlayerCommands`; its
+hunks were checked before each change, and this branch's changes there are hook lines and new commands away from them.
+
+### Each feature
+
+| Feature | State | Commits |
+| --- | --- | --- |
+| E-18a Expression presets | Complete (2 November): `plain`, `dry`, `playful` per player (`/aiplayer expression`), under `KINDRED_EXPRESSION_CAP` (default `playful`; unknown is `plain`); clean wording for everyone; teasing only between AI players; one line in the voice's prompt; saved with the profile (`V10`) | `12fbb53`, `50baba4` |
+| E-19a A person's own preferences | Complete (2 November): `/aiplayer prefs` (fewer, usual or more unasked lines; no teasing; no jokes; forget), the person's own, kept per person and deletable; the strictest of those a line is said to applies | `50baba4` |
+| E-50 What each player knows of the others | Complete (2 November): `social.PeerLedger` per player per world, 64 peers and 20 episodes; the game's record, then teammates' updates through the runtime, then first-person claims, which hold a game day, are never told as facts and are never written to disk; "forget that" and "that's wrong" with provenance kept; a person's place only while seen, a teammate's through the team; the voice reads it by the same tiers; `<uuid>.peers.json` | `0db3cc0`, `ae7ddc4` |
+| E-52 Play by asking | Complete (2 November): `social.Intent` and the local `IntentGrammar`; `ChatIntents` runs each ask through its command's method as the speaker and says the command's refusal as its own; a race or duel only on each AI player's own yes (`MatchChoice`) and each person's own "I'm in"; an unclear ask asked back once, then dropped; operator switches, creation, limits and coordinates stay commands | `7b9393e`, `046b3b6` |
+| E-53 Speaking first | Complete (2 November): `social.Initiative`, a budget per person (none out of earshot, in a countdown or away; nothing but a warning to someone fighting or building fast); a warning behind a person, food offered and tossed through the toss method only on "yes please", a request for a need, a word when idle | `0e82c72`, `811ea58` |
+| E-51 Conversations between AI players | Complete (2 November): `social.Conversation` and `PeerTalk`, two or three turns on meeting again after ten minutes apart, each reply from its speaker's own record; said only to people who can hear, never to an AI player; with nobody to hear, noted in both ledgers and nothing said; `KINDRED_CHATTER` (four a minute, `quiet`), a pair's two minutes, a fight, flight, bed or countdown stopping it; the fixed peer conference removed | `19f3e72`, `8537a03` |
+
+Found by the track's own tests while building, and fixed (each in its feature's evidence): `PeerRadio`'s first update
+interval overflowed from `Long.MIN_VALUE`, so no update was ever sent (1 of 3, then 3 of 3); `memory forget` refused
+every native player; the claims parser missed "I've got spare"; E-52's no-model fallback said "Coming." to a bystander
+after the voice had declined (it now runs only with no voice, and never for someone who may not command the player); the
+offer's toss re-checked control and refused the player's own offer (it now runs as the player's own task); the
+initiative lane spoke for a player whose remarks were off; a talk the chatter budget refused still marked its topic
+spoken, so three players said 3 lines in five minutes instead of 16.
+
+### Validation
+
+- `bash ./gradlew build` green on `8537a03`, the final code: 882 JUnit tests, 0 failures, 6 skipped (876 passed); 36 more
+  than the 846 of `main`: `ExpressionTest` 6, the store and the prompt 1 each, `PeerLedgerTest` 9, `ClaimsTest` 4,
+  `IntentGrammarTest` 7, `InitiativeTest` 4, `ConversationTest` 4.
+- Each new GameTest class alone, three runs or more on its final code (the gametest entrypoints narrowed for each run and
+  restored after), every run passing: `NativeExpressionGameTests` 3 of 3, `NativePeerLedgerGameTests` 3 of 3 (six runs),
+  `NativeChatAskGameTests` 8 of 8 (six runs), `NativeInitiativeGameTests` 5 of 5, `NativeConversationGameTests` 4 of 4.
+- The ten social classes together on the final code: 51 of 51 (`SocialGameTests` 6, `NativeVoiceGameTests` 9,
+  `NativeAskGameTests` 6, `NativeMatchGameTests` 3, `MannerismGameTests` 4, and the five above).
+- The full native suite on `8537a03`, nothing else on the cores: 503 of 504 in 50 minutes. The one failure was open
+  before: the base repair, its roof stairs out of reach (#82's family, as in full run 41). The rest of the open list
+  passed this time (the keep's roof stairs, the lake librarian, the ruined portal's chest, the trip's wood, the hungry
+  search for animals, the cabin with its furniture, the night and its own bed, the walk back up), and every social
+  class passed in it.
+- Ten seeds of the final build (`social-8537a03`: the jar `./gradlew build` made from `8537a03`), three starters, the
+  nether goal, 144,000 ticks, strategist and voice off, `KINDRED_CHATTER` unset (four lines a minute), two servers at a
+  time, 04:40 to 07:32, nothing else on the cores but a copy of the players' ledgers once a minute and a few searches of
+  finished seeds' logs. All ten complete and earned. [Summary](../evidence/eval/social-8537a03/summary.md).
+  - The social lanes: 0 lines a game minute on every seed; 0 lines between AI players, 0 said first to people (an
+    evaluation run has none), 1 meeting noted with nobody to hear (seed 606, Kindred and Echo, "what you were doing");
+    model tokens 0 on every seed. The players were in sight of each other (eight blocks, a clear line) in their first
+    3,800 ticks (about three game minutes) and then, by the ledgers kept, once more on three of the nine seeds copied
+    (20261030, 606 and 707; 8675309 had ended before the copying began). Only 606's became a meeting; the other two were
+    not looked into.
+  - Against the next levers' final build on the same seeds ([comparison](../evidence/eval/compare-social.md)), no measure
+    differs clearly: the team's furthest stage 5.5 [2 to 6] against 4.0 [2 to 6], deaths a game hour 1.25 [0.0 to 3.0]
+    against 1.75 [0.0 to 4.5], stuck game minutes 42.0 [12 to 84] against 42.0 [12 to 99]; a portal lit on 5 seeds
+    against 1. This track changed no goal, route or campaign code.
+  - Found, open: on 20261030 Kindred, killed by a warden at Y −49 and back at the world's spawn on a mountain with
+    nothing, cut logs, made sticks and a crafting table, placed it, and then walked to it 927 times in the run's last 19
+    game minutes: the goal's own step "Craft stone pickaxe" without the stone it needs, given out by the craft helper as
+    "Walk to the crafting table", which ends at once (`PortalRunCampaign.craft`, the hand-over loop's cause). So the
+    goal does ask the helper for a recipe it has not the makings of, and the two-line fix proposed for the hand-over
+    would leave this step with nothing to do: the step wants its stone first, or to be passed over, not a walk.
+
+### What the owner must decide
+
+As before: F24/F25, A1, C14, C15, B6, B12, D19, D20, E22, the CI artifact, `modest-faraday`'s merge, the dragon-fight
+policy, COME's distance, E-47's other customs and the strategist from the release jar. New:
+- **The rest of E-18's expression beyond clean.** Every line is clean for everyone; profanity, flirting and dark humour
+  are not built and are not reachable by any preset. `playful` is a tone (a callback, a tease between AI players, plain
+  to anyone who asked for none), not a licence. What a "mature" preset would allow, who may turn it on (the cap is the
+  operator's; a person's own `prefs` can only make it stricter) and how a listener who has not opted in is kept out of
+  it are the owner's to say before any of it is built.
+- **Questions answered from the ledger without the model.** "What is Sol doing?" is answered from the record locally even
+  with the voice on: exact, free, but in the template's words. Say if the voice should phrase those (each would then be
+  a costed reply).
+- **The model's ask vocabulary.** The local grammar reads every ask kind; the model still emits only E-20b's four. Widening
+  its schema changes the cached instructions; say if it is wanted.
+
+### What changed from the design, and why
+
+- E-18a/E-19a: the commands are `/aiplayer expression` and `/aiplayer prefs`, since `/aiplayer talk` already exists. The
+  cap is read where the runtime is built. The voice's cached instructions still describe the personality's humour; the
+  one line in the varying part says how to speak to this listener, and wins. "Strictest in earshot" is everyone the
+  line is said to: someone whose own pause has not run out is not sent it and does not count.
+- E-50: claims are first-person only and never saved, so nothing said survives a restart; a claim said in the second
+  after a player joins, before its ledger is read, is not noted. Teammates are AI players out of any match (the
+  share-out's reckoning); people are not sent updates. Not built from the design: promises and asks said yes to as
+  entries, feeling (wariness is E-49's, friendship E-24's), the share-out fed from needs, the watch page.
+- E-52: the model's vocabulary is unchanged (above). Not built: manhunts and build battles by chat (they stay `match
+  manhunt` and `match build`), go home and sleep (a native player has no command for either), "you two" to more than
+  one player. Quiet and talk are the person's own `prefs unasked`, not a player-wide setting. A race asked by someone
+  who does not control the AI player is proposed on the AI's own yes; the registry's join rule is unchanged.
+- E-53: the budget governs the new occasions only; greetings and the remarks from before keep their limits, since
+  folding them in would cut today's chatter to a line in three minutes per person. A warning is not held by the budget
+  nor kept from someone fighting (it is about the fight), but has its thirty seconds and needs earshot. A player whose
+  remarks are off says nothing first, warnings included (the teammate fixture of E-50 now turns Sol's off). Offers are
+  of food only; the budget is held in memory.
+- E-51: the only occasion built is meeting again after ten minutes apart; the others in the design (a find, a need met,
+  a death seen, a milestone, a danger, a match, night at base, a promise) are not. No model phrases a turn: every turn
+  is a local template, so the rule that a model phrases only when a person can hear holds without a call. The fixed
+  peer conference is removed with its `[Nearby]` whisper to anyone within six blocks. Sheltering is read as a bed; a
+  sealed dig-in is not a task the lane can see.
+
+### Next dependency
+
+- E-21 and E-22, gifts as items: surplus and the gift policy, then a chest deposit or a deliberate drop, through the
+  recorded actions as E-53's food toss is; E-50's `spare` and needs are their input.
+- E-24, durable friendship: attributed rapport events kept per peer, which E-51's callbacks and E-53's budget would read
+  in place of the session's counts.
+- E-27, outings: a shared trip proposed, accepted by each one's own yes as E-52's matches are, and remembered as an
+  episode for E-51's callbacks. In the ten seeds the players were seldom in sight of each other after their first few
+  game minutes (one meeting in ten runs); outings, or a shared base, are what would bring them together for E-51.
+- Still open from the last handoff, and wider than it said: the craft helper's walk to a table in reach for a recipe it
+  cannot plan (`PortalRunCampaign.craft`). The last handoff found it from the hand-over (E-40a) and proposed a two-line
+  fix as this branch's first change; this track did not take it, as it is not a social item and no goal or campaign
+  code was otherwise touched. This track's seeds show the goal itself reaching it (the stone pickaxe with no stone, 927
+  walks on 20261030), so the fix must also give the goal's step its stone first or pass it over; each case wants its own
+  fixture, failing before.
+- `/core-test.log` at the container's filesystem root was written there by mistake during this track (a JUnit run's
+  output); removing it was refused by a safety check, so it was left. It is outside the repository and goes with the
+  container.

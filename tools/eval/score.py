@@ -103,6 +103,30 @@ def metrics_for(logs):
 SHORT = "not every starter came into the world"
 
 
+# The social lanes' log lines (E-51, E-53): a line between AI players said to people, a line said first to a person, and
+# a meeting noted with nobody to hear.
+TALK_LINE = " hearing): "
+UNASKED_LINE = " unasked ("
+SILENT_MEETING = "with nobody to hear: noted, nothing said"
+
+
+def chatter_of(log):
+    """How many lines between AI players were said, how many said first to people, and how many meetings were noted in
+    silence, in a run's whole console."""
+    talk = unasked = silent = 0
+    if log is None:
+        return {"talkLines": 0, "unaskedLines": 0, "silentMeetings": 0}
+    with open(log, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            if TALK_LINE in line:
+                talk += 1
+            elif UNASKED_LINE in line:
+                unasked += 1
+            elif SILENT_MEETING in line:
+                silent += 1
+    return {"talkLines": talk, "unaskedLines": unasked, "silentMeetings": silent}
+
+
 def log_of(folder):
     """A run's whole log: the server's console, which run.py keeps from its start (latest.log begins again at midnight,
     and a run across midnight kept only its end); latest.log where there is no console."""
@@ -150,7 +174,10 @@ def score(build_dir, use_metrics=True):
                              "rescues": len(rescues), "rescuesUnstuck": sum(1 for r in rescues if r["line"].endswith("-> unstuck")),
                              "tokens": p.get("tokens", 0),
                              "metrics": metrics.get(str(log_of(folder)), {}).get(name)}
-        per_seed[folder.name] = {"complete": result["complete"], "ticksRun": result["ticksRun"], "hours": round(hours, 2),
+        chatter = chatter_of(log_of(folder))
+        minutes = max(result["ticksRun"], 1) / 1200
+        chatter["linesPerMinute"] = round((chatter["talkLines"] + chatter["unaskedLines"]) / minutes, 3)
+        per_seed[folder.name] = {"complete": result["complete"], "ticksRun": result["ticksRun"], "hours": round(hours, 2), "chatter": chatter,
                                  "teamFurthest": STAGES[best] if best >= 0 else "none", "teamFurthestIndex": best,
                                  "teamDeathsPerHour": round(sum(p["deaths"] for p in players.values()) / hours, 2), "players": players}
     team = {
@@ -161,6 +188,10 @@ def score(build_dir, use_metrics=True):
         "rescues": spread([sum(p["rescues"] for p in s["players"].values()) for s in per_seed.values()]),
         "rescuesUnstuck": spread([sum(p["rescuesUnstuck"] for p in s["players"].values()) for s in per_seed.values()]),
         "tokens": spread([sum(p["tokens"] for p in s["players"].values()) for s in per_seed.values()]),
+        "linesPerMinute": spread([s["chatter"]["linesPerMinute"] for s in per_seed.values()]),
+        "talkLines": spread([s["chatter"]["talkLines"] for s in per_seed.values()]),
+        "unaskedLines": spread([s["chatter"]["unaskedLines"] for s in per_seed.values()]),
+        "silentMeetings": spread([s["chatter"]["silentMeetings"] for s in per_seed.values()]),
     }
     for stage in STAGES:
         firsts = [min((p["minutesTo"][stage] for p in s["players"].values() if stage in p["minutesTo"]), default=None) for s in per_seed.values()]
@@ -211,6 +242,10 @@ def markdown(summary):
     lines.append("| Stuck game minutes, the team | %s |" % fmt(t["stuckMinutes"]))
     lines.append("| Rescue plans, the team (of them, out) | %s (%s) |" % (fmt(t["rescues"]), fmt(t["rescuesUnstuck"])))
     lines.append("| Model tokens, the team | %s |" % fmt(t["tokens"]))
+    if "linesPerMinute" in t:
+        lines.append("| Lines spoken a game minute (between AI players, and said first to people) | %s |" % fmt(t["linesPerMinute"]))
+        lines.append("| Lines between AI players said / said first to people / meetings noted with nobody to hear | %s / %s / %s |"
+                     % (fmt(t["talkLines"]), fmt(t["unaskedLines"]), fmt(t["silentMeetings"])))
     for stage in STAGES:
         if t["reached_" + stage]:
             lines.append("| First to %s, game minutes (a seed not reaching it counted as later than all) | %s |"
