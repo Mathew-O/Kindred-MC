@@ -192,15 +192,9 @@ public final class ConstructionPlanner {
             // Built: the scaffolding comes down, each column from its top, the highest first and of those the nearest.
             // One it cannot reach from here waits while another it can comes down (a suite run stood beside one column
             // and gave up on another across the hut, the higher only by the order the set gave them).
-            var tops = scaffold.stream().filter(p -> site.cell(p).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false))
-                    .filter(p -> !scaffold.contains(p.up()) || site.cell(p.up()).map(c -> c.kind() != BuildSite.Kind.SOLID).orElse(true))
-                    .sorted(Comparator.<Pos>comparingInt(p -> -p.y()).thenComparingLong(p -> p.distanceSquared(feet)).thenComparing(Comparator.naturalOrder()))
-                    .toList();
-            for (Pos top : tops) {
-                Optional<Pos> stance = stanceToBreak(site, top, feet, wanted, box, walk);
-                if (stance.isPresent()) return Step.breaking(top, stance.get(), "Scaffolding down");
-                if (feet.equals(top.up())) return Step.breaking(top, feet, "Scaffolding down, from on top of it");
-            }
+            var tops = scaffoldTops(site, scaffold, feet);
+            var down = takeDown(site, tops, feet, wanted, box, walk, "Scaffolding down");
+            if (down.isPresent()) return down.get();
             if (!tops.isEmpty()) return Step.blockedAt(tops.getFirst(), "Scaffolding at " + tops.getFirst() + " is out of reach to take down");
             return Step.done();
         }
@@ -237,7 +231,37 @@ public final class ConstructionPlanner {
             var prop = prop(site, b, feet, wanted, keepClear, box, walk);
             if (prop.isPresent()) return prop.get();
         }
+        // Hemmed in by its own scaffolding (columns it walked off before they were down, round the cell it stands in):
+        // what of it is in reach comes down, the plan looked at again after each, before the block is called out of
+        // reach. Called out of reach, its walks round found "no walkable route" eight times, the navigator able to reach
+        // only the cell it stood in, and the build stopped short of its roof (#82: a seed cabin's last slab, a spruce
+        // cabin's stairs, in CI suites).
+        var clearing = takeDown(site, scaffoldTops(site, scaffold, feet), feet, wanted, box, walk,
+                "Its own scaffolding in the way to " + lowest.at());
+        if (clearing.isPresent()) return clearing.get();
         return Step.blockedAt(lowest.at(), "No way to reach " + lowest.spec().block() + " at " + lowest.at());
+    }
+
+    /**
+     * The tops of its scaffolding's columns still standing, the highest first and of those the nearest: a column comes
+     * down from its top.
+     */
+    private static List<Pos> scaffoldTops(BuildSite site, Set<Pos> scaffold, Pos feet) {
+        return scaffold.stream().filter(p -> site.cell(p).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false))
+                .filter(p -> !scaffold.contains(p.up()) || site.cell(p.up()).map(c -> c.kind() != BuildSite.Kind.SOLID).orElse(true))
+                .sorted(Comparator.<Pos>comparingInt(p -> -p.y()).thenComparingLong(p -> p.distanceSquared(feet)).thenComparing(Comparator.naturalOrder()))
+                .toList();
+    }
+
+    /** The first of {@code tops} it can break from a spot it can walk to, or from on top of it where it stands there. */
+    private static Optional<Step> takeDown(BuildSite site, List<Pos> tops, Pos feet, Map<Pos, BlockSpec> wanted, Box box, Set<Pos> walk,
+                                           String reason) {
+        for (Pos top : tops) {
+            Optional<Pos> stance = stanceToBreak(site, top, feet, wanted, box, walk);
+            if (stance.isPresent()) return Optional.of(Step.breaking(top, stance.get(), reason));
+            if (feet.equals(top.up())) return Optional.of(Step.breaking(top, feet, reason + ", from on top of it"));
+        }
+        return Optional.empty();
     }
 
     /**
