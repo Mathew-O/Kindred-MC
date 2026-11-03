@@ -16,6 +16,30 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## CI on #12: a trading hall short of its beds' wool, and two fixtures that stopped the server (E-45d, E-08g) — 3 November 2026 (`claude/hollow-1103`)
+
+Both builds of #12 failed, each on something the change did not cause. [E-45d](evidence/E-45d.md), [E-08g](evidence/E-08g.md).
+
+- **The push build** (528 game tests, 1 failed): the trading hall's beds. All nine sheep were shorn and the hall still
+  ended "built but for 3 white bed". The fixture had passed in the 15 saved CI logs before it, and locally the build
+  took 4 to 7 of the 9 sheep, where 3 to 5 should do.
+  - The cause: each drop of wool is let go after six tries, and the tries were counted each time the plan was asked
+    for its next step. The routine goals ask every 5 ticks while a step runs, so one second's wait for a drop to land
+    counted six, and a drop that came down out of reach was let lie for good. A try is now counted when its wait or
+    walk ends.
+  - **Native:** a new fixture, a bed to build with its third wool beside the player and not to be picked up for four
+    seconds (staged), fails 3 of 3 before the fix: it goes looking for sheep with the wool beside it. The beds
+    fixture now also counts the drops from an earlier sheep still lying when the beds are made. Before the fix it
+    fails 2 of 3 (4 drops and 1 drop left lying; the third run none). With the fix: both pass 3 of 3, and the build and trading-hall classes together 8 of 8 in each of three runs.
+- **The PR build** stopped the whole game test server: the bunker fixture's progress line read the player after the
+  fixture's own stop had taken its body away, its dig having run out of time on CI. The line is now safe, and so is
+  the beds fixture's last step, which crashed the same way in the runs before the fix. Locally the bunker passes as
+  before, 2 of 2 on main and 2 of 2 on #12 earlier.
+- **E-08g:** its climb out of a hollow is now never from within the build's own box: a hideout's room dug below its
+  floor is the build, not a hollow beside it. The bunker, build and trading-hall classes: 8 of 8.
+- Environment: Linux x64 cloud container, OpenJDK 21. Classes run alone with the gametest entrypoints narrowed (not
+  committed).
+
 ## Up out of a hollow beside the build (E-08g) — 3 November 2026 (`claude/hollow-1103`)
 
 The last 3 of the 17 roof-reach stops in the saved CI logs (E-08f): a player below the build's floor in a hollow beside

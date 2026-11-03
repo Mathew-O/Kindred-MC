@@ -162,6 +162,12 @@ final class BuildRunner {
         return p.x() >= box[0] - 1 && p.x() <= box[3] + 1 && p.z() >= box[2] - 1 && p.z() <= box[5] + 1 && p.y() >= box[1] - 3 && p.y() <= box[4];
     }
 
+    /** Within the build's box itself. */
+    private boolean inBox(Pos p) {
+        onSite(p);
+        return p.x() >= box[0] && p.x() <= box[3] && p.y() >= box[1] && p.y() <= box[4] && p.z() >= box[2] && p.z() <= box[5];
+    }
+
     /** The build's box, min x y z then max x y z, once worked out. */
     private int[] box;
 
@@ -498,8 +504,9 @@ final class BuildRunner {
         // Down in a hollow below the build's floor, nothing of the build in reach and a walk round already failed: up out
         // of it first, as from a trip down for stone, by a route or by climbing. Fallen three blocks into a hollow beside
         // its cabin, its walks round to the last scaffold found "no walkable route" eight times and the build stopped (#82:
-        // an oak cabin in CI 9).
-        if (step.kind() == ConstructionPlanner.Kind.BLOCKED && supply != null && player.isOnGround() && overFailed >= 1 && feet.y() < siteFloor()) {
+        // an oak cabin in CI 9). Not from within the build's own box: a hideout's room dug below its floor is the build.
+        if (step.kind() == ConstructionPlanner.Kind.BLOCKED && supply != null && player.isOnGround() && overFailed >= 1 && feet.y() < siteFloor()
+                && !inBox(feet)) {
             var out = backUp(body, supply);
             if (out.isPresent()) {
                 progress = blueprint.name() + ": up out of the hollow to the build";
@@ -745,6 +752,9 @@ final class BuildRunner {
 
     /** How often it has gone for each drop of wool, walked or waited, which it lets go after a few (one that keeps drifting off). */
     private final Map<java.util.UUID, Integer> woolWalks = new HashMap<>();
+    /** The drop of wool its last pick-up went for, and that pick-up's label: counted in {@link #woolWalks} once it ends. */
+    private java.util.UUID woolFor;
+    private String woolLabel;
 
     /**
      * Wool for the build (a trading hall's beds, E-45d), as players get it: what has dropped picked up first; a sheep of
@@ -767,7 +777,11 @@ final class BuildRunner {
         if (!drops.isEmpty()) {
             var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
             needsNote = "Picking up " + shortName(wool) + " for the rest of the build";
-            woolWalks.merge(drop.getUuid(), 1, Integer::sum);
+            // Counted once the wait or walk has ended, not here: the plan is asked for its next step again and again while
+            // one runs, and a count kept here passed six in a wait for a drop to land, which was then let lie (on CI on
+            // #12, short of the beds' wool after all nine sheep were shorn).
+            woolFor = drop.getUuid();
+            woolLabel = "Pick up " + shortName(wool);
             // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling from
             // the sheep: a moment for it to land, a walk to a block in the air being no walk at all.
             if (player.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox()) || !drop.isOnGround()) {
@@ -836,6 +850,10 @@ final class BuildRunner {
      * given up on (the planner breaks it and places it again until then, as anything else in a target's way).
      */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
+        if (woolFor != null && task.label().equals(woolLabel)) {
+            woolWalks.merge(woolFor, 1, Integer::sum);
+            woolFor = null;
+        }
         // A step for the build's needs is no placement: the run's own gathering keeps account of those that fail.
         if (needsTask(task)) {
             needsTask = null;

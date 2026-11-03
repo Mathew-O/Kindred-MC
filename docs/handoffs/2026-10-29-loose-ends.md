@@ -988,5 +988,13 @@ E-25: the voice given the band; a friend's ask answered first; help offered to a
 - **CI on #11** saw one new failure once: the hungry life-first fixture began its base at 31 food, not 32. Its hunt
   passed over the cows left after two strikes came up out of reach. It passed in the other two runs. Open.
 
+- **CI on #12** ([validation](../validation.md)):
+  - A trading hall was left short of its beds' wool after all nine sheep were shorn. Each drop was given up after six
+    tries, and the tries were counted each time the plan was asked for its next step, every 5 ticks, so one second's
+    wait used them up. Tries are now counted when a pick-up ends (E-45d). The new fixture fails 3 of 3 before the fix
+    and passes 3 of 3 with it.
+  - Two fixtures stopped the server when their body was gone at their own stop; their lines are now safe.
+  - E-08g's climb is now kept out of the build's own box.
+
 Next dependency: the water livelock (a player under water whose walks out find no route), seen on two of ten seeds in
 each of the last two evaluations.

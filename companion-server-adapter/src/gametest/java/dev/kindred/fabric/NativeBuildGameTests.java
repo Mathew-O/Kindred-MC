@@ -316,4 +316,69 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A bed to build, two of its three wool held, and the third lying beside the player, not to be picked up for four
+     * seconds (staged: a player's toss is two): it waits by it, picks it up once it may, makes the bed and puts it in.
+     * Before, each look at the drop while it waited counted as a try, the plan being asked again every few ticks, and
+     * after a second it let the drop lie and went out to look for sheep (on CI on #12 a trading hall was left short of
+     * its beds' wool after all nine sheep were shorn).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildWoolDrop", tickLimit = 3000)
+    public void aDropOfWoolItWaitsBesideIsPickedUpAndMadeIntoTheBed(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2500);
+        var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
+        blocks.add(new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(0, 0, 0),
+                dev.kindred.core.construction.BlockSpec.parse("minecraft:white_bed[facing=north,part=head]")));
+        blocks.add(new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(0, 0, 1),
+                dev.kindred.core.construction.BlockSpec.parse("minecraft:white_bed[facing=north,part=foot]")));
+        var bed = new dev.kindred.core.construction.Blueprint("bed", "fixture", "Kindred", "fixture", blocks);
+        BlockPos[] origin = new BlockPos[1];
+        net.minecraft.entity.ItemEntity[] drop = new net.minecraft.entity.ItemEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -8; x <= 16; x++) for (int z = -8; z <= 16; z++) {
+                        for (int y = -3; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    origin[0] = o.add(4, 2, 4);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(1, new ItemStack(Items.WHITE_WOOL, 2));
+                    inventory.setStack(2, new ItemStack(Items.OAK_PLANKS, 3));
+                    inventory.setStack(3, new ItemStack(Items.CRAFTING_TABLE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(o.getX() + 8.5, o.getY() + 2, o.getZ() + 8.5, 0, 0);
+                    // Staged: the third wool, lying beside it, and not to be picked up for four seconds.
+                    var wool = new net.minecraft.entity.ItemEntity(world, o.getX() + 9.3, o.getY() + 2, o.getZ() + 8.5, new ItemStack(Items.WHITE_WOOL, 1), 0, 0, 0);
+                    wool.setPickupDelay(80);
+                    world.spawnEntity(wool);
+                    drop[0] = wool;
+                })
+                .createAndAdd(() -> context.assertTrue(drop[0].isOnGround(), "The wool lying"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, bed, origin[0], 0) == 1, "Build started"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
+                        "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = f.player();
+                    KindredMod.LOGGER.info("Wool drop fixture: the drop {}, {} wool held, the bed {}", drop[0].isAlive() ? "lying" : "picked up",
+                            player.getInventory().count(Items.WHITE_WOOL), world.getBlockState(origin[0]));
+                    context.assertTrue(!drop[0].isAlive(), "The wool picked up, not let lie: " + drop[0].getPos());
+                    context.assertTrue(world.getBlockState(origin[0]).isOf(Blocks.WHITE_BED) && world.getBlockState(origin[0].add(0, 0, 1)).isOf(Blocks.WHITE_BED),
+                            "The bed made and put in: " + world.getBlockState(origin[0]) + " / " + f.runtime.nativeLastResult(f.id));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
