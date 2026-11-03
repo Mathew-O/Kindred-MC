@@ -2430,10 +2430,10 @@ final class NativePlayerBody implements BodyAdapter {
             ItemStack live = player.getInventory().getStack(inventorySlot);
             if (live.isEmpty() || live.getCount() < count) return;
             ItemStack gift = live.split(count);
-            // Thrown to land just past their feet, whichever way the player faces (F-25c4ax). The stack was looked up by
-            // its thrower, which a drop that keeps no owner never has: every toss flew where the player faced, two blocks
-            // or so, and a delivery to an AI player failed whenever that was not at the receiver's feet. Never inside the
-            // thrower's own reach either, where it would pick its gift straight back up: a hand-over walks up close.
+            // Thrown to land just past their feet, whichever way the player faces (E-22b). The stack was looked
+            // up by its thrower, which a drop that keeps no owner never has: every toss flew where the player faced, two
+            // blocks or so, and a delivery to an AI player failed whenever that was not at the receiver's feet. Never inside
+            // the thrower's own reach either, where it would pick its gift straight back up: a hand-over walks up close.
             var item = player.dropItem(gift, false, false);
             if (item == null) return;
             double dx = recipient.getX() - player.getX(), dz = recipient.getZ() - player.getZ();
@@ -2453,7 +2453,8 @@ final class NativePlayerBody implements BodyAdapter {
     /**
      * How far past the receiver's feet a toss lands, and the least it travels: a player picks up what is within a block
      * of its body (about 1.4 blocks from its middle), so a stack 0.6 past the receiver is in their reach, and one 1.6
-     * from the thrower out of its own.
+     * from the thrower out of its own. Past rather than short: a hand-over walks up close, and a stack short of the
+     * receiver was in the thrower's reach as it stepped on (the team hand-over fixture, 2 of 2 runs so).
      */
     static final double TOSS_PAST = 0.6, TOSS_CLEAR = 1.6;
     /** The toss's upward speed, as a player's own throw. */

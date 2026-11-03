@@ -136,7 +136,7 @@ public final class NativeGiftGameTests implements FabricGameTest {
     }
 
     /**
-     * A toss lands at the feet of whoever it is for, just past them, whichever way the thrower faces (F-25c4ax). The toss meant to aim the
+     * A toss lands at the feet of whoever it is for, whichever way the thrower faces (E-22b). The toss meant to aim the
      * thrown stack at its recipient, but it looked the stack up by its thrower, which a drop that does not keep its owner
      * never has: every toss flew where the thrower faced, two blocks or so, and a delivery to an AI player failed whenever
      * that was not at the receiver's feet (Wren left holding nothing, in CI and alone on main's code). Staged: Echo facing
