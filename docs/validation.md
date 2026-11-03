@@ -16,6 +16,68 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The three open failures: the tree in water (F-25c4aw), deliveries' tosses (E-22b), the lava cast (diagnosed, open) — 3 November 2026 (`claude/fixtures-1103`)
+
+The owner's ask: take care of the three failures the last CI runs left, the tree standing in water, the portal cast from
+lava, and a delivery whose AI receiver did not pick up what was tossed. Single fixtures were run from a scratch class that
+calls them (not committed) or with their class alone.
+
+- **The tree standing in water (F-25c4aw).**
+  - The full suite's trace on `e732618`:
+    1. The player's first step was "Explore west for logs", before its look about had reached the stump.
+    2. The next plan named the stump, but the walk already under way ran its 28 blocks, off the fixture's ground and two
+       blocks down.
+    3. From there the stump had "No walkable route".
+  - The look about reads a few chunk sections a tick, and a test world full of other fixtures' logs and ore is slower to
+    sweep. That is why the fixture passed alone.
+  - The fix ends a walk out to look for logs once a log the goal would gather is known.
+  - New fixture, `aTreeThatComesIntoViewOnItsWayOutToLookEndsTheWalk`:
+    - on main's code: fails 3 of 3, 25 blocks out against 0, 0 and 21 when the tree was first known;
+    - with the fix: passes 5 of 5, known at 0 or 19 to 20 blocks out, at most 1 further.
+  - The tree-in-water fixture alone with the fix: 5 of 5.
+  - `NativePortalCampaignGameTests` alone with the fix: 95 of 97.
+    - One failure was the new fixture's first measure (distance in any direction, so going back for the tree counted as
+      going out); it now measures along the heading.
+    - The other, `badlyHurtAndCorneredByAZombieItFightsItRatherThanBreakEachFightOff` ("The zombie still stands"), passed
+      3 of 3 alone on main's code and 5 of 5 with the fix.
+- **Deliveries' tosses (E-22b).**
+  - The toss looked its stack up by a thrower a plain drop never has, so the aim was never applied. Every toss flew where
+    the thrower faced.
+  - New fixture, `aTossLandsAtTheFeetOfWhoeverItIsForWhicheverWayTheThrowerFaces`:
+    - on main's code: fails 3 of 3, 6.2 blocks from its owner;
+    - aimed at the feet: 0.8 short (5 of 5 passing), then 0.1 once the carry was measured.
+  - Aimed exactly at the feet, `NativeTeamShareGameTests`' hand-over failed 3 of 3, where it had passed 3 of 3 without the
+    change. Mason, walked up close, picked its pieces straight back up.
+  - The toss now lands 0.6 past the receiver and at least 1.6 from the thrower:
+    - team share: 3 of 3 in each of three runs;
+    - the fixture: 0.7 from its owner;
+    - `NativeDeliveryGameTests`: 3 of 3 in each of five runs (on main's code: 3, 3, 1 of 3);
+    - every class that tosses together (asks, initiative, trust, team share, chat asks, deliveries, gifts): 36 of 36 in
+      each of two runs.
+- **The portal cast from lava (`goalMakesObsidianFromLavaWithPouredWaterAndRecoversTheWater`), diagnosed, not fixed.**
+  - CI's log for run 41499300275 shows:
+    - the obsidian mined from the shore, its drop fallen into the hole a block below under the poured water;
+    - "Wait for the drop to settle", the water taken back, and then "Make and mine obsidian (0/10)";
+    - branch mining for lava, never back for the drop.
+  - The same sequence happened alone once, in a scratch run without the candidate fix below.
+  - Ten copies side by side, three runs each way:
+    - without a candidate fix: 30 of 30;
+    - with it (the wait for a drop restarted when the player takes its water back): 29 of 30.
+  - In that one failure the drop was waited for and planned for ("Pick up obsidian"), and still not picked up. Copies side
+    by side also saw each other's obsidian.
+  - The candidate fix showed no difference and was not kept. Two other staged fixtures did not reproduce the failure: in
+    one the running water pushed the player into the hole, where it took the drop; in the other the walk into the water was
+    refused. Open, about one run in thirty to forty.
+- Build and full native suite on `373bb90`: on `373bb90`, `./gradlew build` green: 922 JUnit tests, 916 passed, 6 skipped. The full native suite: 522 of 525 in 57 minutes. The tree standing in water and the lava cast both passed. The three failures:
+  - **`NativeDeliveryGameTests.stoppedPartWayAndResumedItHandsOverNoMoreThanAskedFor`, Wren left holding nothing again.**
+    - Its coordinates show why: Wren stood on its chunk's last column, and the stack, now aimed, came to rest 0.6 past it, over the line.
+    - The test server ticks only the chunks its players and the test's structure stand in, so there the stack's pickup delay never ran out.
+    - A server with a simulation distance ticks the chunks round its players. The fixture now keeps its field's chunks simulated (`FixtureGround.simulated`) and says so (`40b4412`).
+    - Landing short of the receiver instead was tried: the team hand-over failed 2 of 2, the stack in Mason's reach as it stepped on. So the toss still lands just past the receiver.
+    - After: every class that tosses, 36 of 36 in each of two runs; the deliveries alone, 3 of 3 in each of three runs.
+  - **`NativeLifeFirstGameTests.atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning`** ("The hut under way: 0"): it failed before in a full suite ("Its body"); open.
+  - **The pasture's cattle (`NativeCompoundGameTests`, a cow brought back into the pen):** open before.
+
 ## Gifts, friendship and outings (E-21a, E-22a, E-24a, E-27a); nothing to do at a table without the makings (F-25c4av) — 2 November 2026 (`claude/next-deps-1102`)
 
 - Build: `./gradlew build` green on `e732618`: 922 JUnit tests, 916 passed, 6 skipped, 0 failures. Six are new:

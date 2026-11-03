@@ -893,3 +893,48 @@ The owner's four asks, in order:
 - `/core-test.log` at the container's filesystem root, written there by mistake earlier, is still there (its removal was
   refused). It is outside the repository.
 
+## Handoff, 3 November 2026: the three open failures (`claude/fixtures-1103`)
+
+The owner's asks:
+- "From now on when done with a block merge to main": each finished block goes to main by pull request and merge, after
+  its CI.
+- Take care of the three failures the last CI runs left.
+
+The three:
+- **The tree standing in water: fixed (F-25c4aw, open until an evaluation).**
+  - Cause: the goal's walk out to look for logs ran its full 28 blocks even once the player knew of a log. In a busy test
+    world the first look about is slow to reach the stump, so the first step was a walk out. That walk ran off the
+    fixture's ground and down a step it could not climb back.
+  - The walk now ends as soon as a log the goal would gather is known.
+  - Its fixture fails before (25 blocks out, 3 of 3) and passes after (5 of 5).
+- **A delivery whose AI receiver did not pick up the toss: fixed (E-22b).**
+  - Cause: every toss flew where the thrower faced. The aim at the receiver looked its stack up by a thrower a plain drop
+    never has.
+  - A toss now lands just past the receiver's feet and clear of the thrower, who otherwise picks it straight back up.
+    The team hand-over fixture showed that.
+  - Deliveries: 15 of 15 after, against 7 of 9 on main's code.
+- **The portal cast from lava: diagnosed, open.**
+  - CI's log shows the mined obsidian left in its hole under the poured water: the goal waited, took its water back, and
+    went on with 0 of 10.
+  - It happens about once in thirty to forty runs alone.
+  - A candidate fix (the wait restarted when the water is taken back) changed nothing measurable (30 of 30 without, 29 of
+    30 with), so it was not kept.
+  - In the one failure with it the drop was planned for and still not picked up. Ten copies side by side also saw each
+    other's obsidian.
+  - Next:
+    - a fixture where the obsidian drop rests in the dry hole with the player beside it, to see the pickup walk;
+    - the lava-cast fixture given a batch of its own, so neighbours' obsidian is out of its sight.
+
+Validation: on `373bb90`, `./gradlew build` green: 922 JUnit tests, 916 passed, 6 skipped. The full native suite: 522 of 525 in 57 minutes. The tree standing in water and the lava cast both passed. The three failures:
+  - **`NativeDeliveryGameTests.stoppedPartWayAndResumedItHandsOverNoMoreThanAskedFor`, Wren left holding nothing again.**
+    - Its coordinates show why: Wren stood on its chunk's last column, and the stack, now aimed, came to rest 0.6 past it, over the line.
+    - The test server ticks only the chunks its players and the test's structure stand in, so there the stack's pickup delay never ran out.
+    - A server with a simulation distance ticks the chunks round its players. The fixture now keeps its field's chunks simulated (`FixtureGround.simulated`) and says so (`40b4412`).
+    - Landing short of the receiver instead was tried: the team hand-over failed 2 of 2, the stack in Mason's reach as it stepped on. So the toss still lands just past the receiver.
+    - After: every class that tosses, 36 of 36 in each of two runs; the deliveries alone, 3 of 3 in each of three runs.
+  - **`NativeLifeFirstGameTests.atNightItLeavesItsBuildForItsOwnBedThenBuildsOnInTheMorning`** ("The hut under way: 0"): it failed before in a full suite ("Its body"); open.
+  - **The pasture's cattle (`NativeCompoundGameTests`, a cow brought back into the pen):** open before.
+
+Next dependency: as before (E-25, then an evaluation of the current build on the ten seeds, which also checks F-25c4av
+and F-25c4aw in the open).
+

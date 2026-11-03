@@ -4180,6 +4180,82 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * With no wood and no tree in sight it sets out to look for one; a tree that comes into view behind it on the way ends
+     * that walk, and it goes back for the tree rather than walk on to the end of its 28 blocks (F-25c4aw). The tree-in-water
+     * fixture above failed so in every full suite since the merge of 2 November: its first look about had not yet reached
+     * the stump (a test world full of other fixtures' logs and ore is slower to sweep), its first step was a walk out to
+     * look, and the walk ran on west off its ground and down a step it could not climb back, the stump out of its reach
+     * from there. Staged: a field of grass sixty blocks across with the player in its middle; daylight; bread; the tree,
+     * three logs on the grass five blocks behind it, put there once it has set out. How far it has walked when it first
+     * knows of the tree depends on how soon its look about comes round to it; the check is that it goes no more than three
+     * blocks further out along its heading after that (going back for the tree is not going out).
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "treeOnTheWay", tickLimit = 1600)
+    public void aTreeThatComesIntoViewOnItsWayOutToLookEndsTheWalk(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] start = new BlockPos[1];
+        BlockPos[] tree = new BlockPos[1];
+        Direction[] heading = new Direction[1];
+        double[] farthest = {0};
+        double[] known = {-1000};
+        boolean[] placed = {false};
+        var setOut = java.util.regex.Pattern.compile("Explore (north|south|east|west) for logs");
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wayfarer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = context.getAbsolutePos(new BlockPos(40, 2, 40));
+                    start[0] = p;
+                    FixtureGround.keep(context, p.add(-30, -3, -30), p.add(30, 5, 30));
+                    for (BlockPos c : BlockPos.iterate(p.add(-30, -3, -30), p.add(30, 5, 30))) {
+                        int dy = c.getY() - p.getY();
+                        world.setBlockState(c, (dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
+                    }
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(start[0]), "On the field: " + f.player().getBlockPos()))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> {
+                    if (placed[0]) return;
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    var walk = setOut.matcher(progress);
+                    context.assertTrue(walk.find(), "Setting out to look: " + progress);
+                    // Staged: a tree five blocks behind it, beside where it set off, once it is on its way.
+                    heading[0] = Direction.byName(walk.group(1));
+                    BlockPos base = start[0].offset(heading[0].getOpposite(), 5).offset(heading[0].rotateYClockwise(), 2);
+                    for (int y = 0; y < 3; y++) context.getWorld().setBlockState(base.up(y), Blocks.OAK_LOG.getDefaultState());
+                    tree[0] = base;
+                    placed[0] = true;
+                })
+                .createAndAdd(() -> {
+                    // How far out along its heading: going back for the tree, behind it, is not going out.
+                    var away = f.player().getPos().subtract(start[0].getX() + 0.5, start[0].getY(), start[0].getZ() + 0.5);
+                    double out = away.x * heading[0].getOffsetX() + away.z * heading[0].getOffsetZ();
+                    farthest[0] = Math.max(farthest[0], out);
+                    if (known[0] <= -100 && f.runtime.campaignForTest(f.id).knowledge().all(WorldKnowledge.Kind.LOG).stream()
+                            .anyMatch(log -> log.getX() == tree[0].getX() && log.getZ() == tree[0].getZ())) known[0] = out;
+                    var inventory = f.player().getInventory();
+                    int wood = inventory.count(Items.OAK_LOG) + inventory.count(Items.OAK_PLANKS) + inventory.count(Items.CRAFTING_TABLE) + inventory.count(Items.STICK);
+                    context.assertTrue(wood > 0, "No wood yet: at " + f.player().getBlockPos().subtract(start[0]).toShortString() + ", farthest "
+                            + Math.round(farthest[0]) + ", " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> KindredMod.LOGGER.info("Tree-on-the-way fixture: {} blocks out when it first knew of the tree, {} at the farthest",
+                        Math.round(known[0]), Math.round(farthest[0])))
+                .createAndAdd(() -> context.assertTrue(known[0] > -100 && farthest[0] <= known[0] + 3, "Walked on out with the tree known: "
+                        + Math.round(farthest[0]) + " blocks from where it set off, " + Math.round(known[0]) + " when it first knew of the tree"))
+                .createAndAdd(() -> f.runtime.stop())
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * With no wood, a log afloat in the pool beside it, where a log cut from the water came down (F-25c4as): it swims out
      * for it. In CI's full suite the tree-in-water fixture above cut its stump's log, then went ashore without it, its
      * one tree gone to the pool (runs 292, 299 and 309), and looked for trees that were not there. Staged: grass to stand

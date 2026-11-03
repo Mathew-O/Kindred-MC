@@ -48,6 +48,11 @@ public final class NativeDeliveryGameTests implements FabricGameTest {
                     wren[1] = status.nativeId();
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Staged: the field's chunks kept simulated, as a server with a simulation distance keeps those round its
+                    // players. The test server ticks only the chunks its players and the test's structure stand in; in the
+                    // full suite on 373bb90 Wren stood on its chunk's last column, the stack thrown to it came to rest over
+                    // the line, and there it never ticked, its pickup delay never ran out, and Wren was left holding nothing.
+                    FixtureGround.simulated(context, o.add(-2, 0, -2), o.add(12, 0, 12));
                     for (int x = -2; x <= 12; x++) for (int z = -2; z <= 12; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
