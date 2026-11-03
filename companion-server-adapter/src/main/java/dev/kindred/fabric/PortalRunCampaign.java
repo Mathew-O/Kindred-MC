@@ -1869,6 +1869,19 @@ final class PortalRunCampaign {
             if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
+        // Head under, rock straight above, and the way up through the water to air too low somewhere for its body: the
+        // block that makes it so dug first, then up. In the ten seeds on `7c8febf` Kindred, its stair dug up into a lake's
+        // floor, stood in its flooded pocket under rock with the lake's sand come down the shaft beside it: the one way to
+        // air was a block high, every walk out found no route, and it went over "to the wall" 830 times in 19 minutes
+        // (on the fixture, as there, it drowned) (F-25c4ax).
+        if (player.isSubmergedInWater() && above == null) {
+            var gap = lowGapToAir(world, feet);
+            if (gap.isPresent() && !blocked(gap.get()) && !(world.getBlockState(gap.get().up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {
+                String label = "Get out of the water: open the way up at " + gap.get().toShortString();
+                if (breakableNow(body, gap.get())) return Optional.of(clearAt(gap.get(), label));
+                if (handClearable(body, gap.get())) return Optional.of(clearAt(gap.get(), label + " by hand"));
+            }
+        }
         // Head under, breath short, and rock straight above, as in a shaft that bends on its way up into a lake: up through
         // the water to the nearest air, round the bend, before anything is dug. Under water a pickaxe works at a fifth of
         // its pace, afloat at a twenty-fifth, and a step dug beside water floods. In F-27's capture run on seed 101 Echo,
@@ -1910,6 +1923,45 @@ final class PortalRunCampaign {
                         || next.getY() > feet.getY() + 48 || next.getY() < feet.getY() - 4 || !seen.add(next.asLong())) continue;
                 var state = world.getBlockState(next);
                 if (state.getFluidState().isIn(FluidTags.WATER) && state.getCollisionShape(world, next).isEmpty()) queue.add(next);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * On the way through the water from {@code feet} to the nearest air ({@link #airThroughTheWater}), the first solid
+     * block over a cell of the way: where the way is a block high, too low for a body two high to swim through. None
+     * when the way fits it, or no air is reached.
+     */
+    static Optional<BlockPos> lowGapToAir(ServerWorld world, BlockPos feet) {
+        var from = new java.util.HashMap<Long, BlockPos>();
+        var queue = new java.util.ArrayDeque<BlockPos>();
+        queue.add(feet.toImmutable());
+        from.put(feet.asLong(), feet.toImmutable());
+        while (!queue.isEmpty() && from.size() < 4_000) {
+            BlockPos cell = queue.poll();
+            BlockPos up = cell.up();
+            var overhead = world.getBlockState(up);
+            if (!cell.equals(feet) && overhead.getFluidState().isEmpty() && overhead.getCollisionShape(world, up).isEmpty()) {
+                var way = new java.util.ArrayList<BlockPos>();
+                for (BlockPos at = cell; !at.equals(feet); at = from.get(at.asLong())) way.add(at);
+                java.util.Collections.reverse(way);
+                for (BlockPos at : way) {
+                    BlockPos head = at.up();
+                    var state = world.getBlockState(head);
+                    if (state.getFluidState().isEmpty() && !state.getCollisionShape(world, head).isEmpty()) return Optional.of(head);
+                }
+                return Optional.empty();
+            }
+            for (Direction way : List.of(Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN)) {
+                BlockPos next = cell.offset(way);
+                if (Math.abs(next.getX() - feet.getX()) > 24 || Math.abs(next.getZ() - feet.getZ()) > 24
+                        || next.getY() > feet.getY() + 48 || next.getY() < feet.getY() - 4 || from.containsKey(next.asLong())) continue;
+                var state = world.getBlockState(next);
+                if (state.getFluidState().isIn(FluidTags.WATER) && state.getCollisionShape(world, next).isEmpty()) {
+                    from.put(next.asLong(), cell);
+                    queue.add(next);
+                }
             }
         }
         return Optional.empty();

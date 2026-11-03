@@ -16,6 +16,26 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Out of its own flooded shaft (F-25c4ax) — 3 November 2026 (`claude/flooded-shaft-1103`)
+
+The water livelock of the last two evaluations (8675309 on `e25a-7c8febf`, 830 walks "to the wall" in 19 minutes; 404
+and 505 on `social-8537a03`). [Evidence](evidence/F-25c4ax.md).
+
+- **The cause, from the 8675309 log:** climbing for food, its stair dug up into a lake's floor. The sand came down the
+  shaft and the lake after it. In its flooded pocket the one way up through the water was a block high: rock over the
+  pocket's top cell, the sand in the shaft's bottom cell. No route found any way out.
+- **The fix:** head under, rock above, it breaks the first solid block over the way through the water to air, then
+  swims up as before.
+- **Native:** the new fixture stages that pocket, shaft, sand and lake. On main's code it fails 3 of 3: it drowns in the
+  pocket. With the fix it passes 5 of 5, ashore within 2 seconds of the block breaking. Three earlier stagings (the
+  pocket open to the lake, the lake's sides sheer, the lake left to pour into a dry pocket) did not reproduce it on
+  main's code and were not kept.
+- **The water fixtures** (the goal's class, the replays, survival, boats): 110 of 110 on main's code with the fix. On
+  top of `36b4b49`, 109 of 110: the hungry-up fixture's hunt, where the rule never fired; the class alone then passed
+  95 of 95 twice.
+- Environment: Linux x64 cloud container, OpenJDK 21. Classes run alone with the gametest entrypoints narrowed (not
+  committed).
+
 ## CI on #12: a trading hall short of its beds' wool, and two fixtures that stopped the server (E-45d, E-08g) — 3 November 2026 (`claude/hollow-1103`)
 
 Both builds of #12 failed, each on something the change did not cause. [E-45d](evidence/E-45d.md), [E-08g](evidence/E-08g.md).

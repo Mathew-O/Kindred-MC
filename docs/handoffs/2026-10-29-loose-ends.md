@@ -998,3 +998,16 @@ E-25: the voice given the band; a friend's ask answered first; help offered to a
 
 Next dependency: the water livelock (a player under water whose walks out find no route), seen on two of ten seeds in
 each of the last two evaluations.
+
+## Handoff, 3 November 2026 (night): out of its own flooded shaft (`claude/flooded-shaft-1103`)
+
+- **F-25c4ax** ([evidence](../evidence/F-25c4ax.md)): the water livelock.
+  - Its stair dug up into a lake's floor flooded its pocket. The one way up to air was a block high: rock over the
+    pocket, the lake's sand in the shaft.
+  - It now breaks that block and swims up. The fixture fails 3 of 3 on main's code (it drowns) and passes 5 of 5 with
+    the fix.
+- **Open:** a hunt that does not get its cow in time: the hungry-up fixture once locally, and the hungry life-first
+  fixture once on #11's CI.
+
+Next dependency: ten seeds of main with E-08g, E-45d's wool and F-25c4ax, to see the flooded shaft in the open; then
+that hunt.
