@@ -3173,8 +3173,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         if (!player.isOnGround() || !boxedIn(world, feet) || !passable(world, feet.up(2))) return Optional.empty();
         var inventory = player.getInventory();
-        int slot = -1;
-        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        int slot = wayBlockSlot(inventory);
         if (slot < 0) return Optional.empty();
         if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
         return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up"));
@@ -3368,8 +3367,7 @@ final class PortalRunCampaign {
                     .map(cell -> clearAt(cell, label + ": dig " + cell.toShortString()));
             case BRIDGE -> placeBlock(body, step.cells().getFirst(), label + ": bridge " + step.cells().getFirst().toShortString());
             case PILLAR -> {
-                int slot = -1;
-                for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+                int slot = wayBlockSlot(inventory);
                 if (slot < 0) yield Optional.empty();
                 if (slot >= 9) yield Optional.of(swapToHotbar(body, slot, "Ready a block"));
                 yield Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up"));
@@ -3384,8 +3382,7 @@ final class PortalRunCampaign {
      */
     private Optional<Task> stairs(NativePlayerBody body, NativeRoutePlanner.Route route, String label) {
         var inventory = body.entity().getInventory();
-        int slot = -1;
-        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        int slot = wayBlockSlot(inventory);
         if (slot < 0) return Optional.empty();
         if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
         int blocks = inventory.getStack(slot).getCount();
@@ -4706,8 +4703,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         if (blocked(cell) || eyeDistance(player, cell) > 5.0) return Optional.empty();
         var inventory = player.getInventory();
-        int slot = -1;
-        for (int s = 0; s < 36 && slot < 0; s++) if (SEALING.contains(inventory.getStack(s).getItem())) slot = s;
+        int slot = wayBlockSlot(inventory);
         // With none of those, sand or gravel into a cell over solid ground, where it rests: a desert dug by hand gives nothing
         // else, and its night shelter was left open (in the live run on `91c1290` Kindred, its staircase unsealed, was killed
         // by a husk come down it; F-25c4aq). Never over an open cell, which it would fall through, onto the player below.
@@ -5253,6 +5249,49 @@ final class PortalRunCampaign {
     /** An opening with a mob standing in it cannot be sealed: the block would not go in (live run 55 tried until it died). */
     private static boolean occupied(ServerWorld world, BlockPos cell) {
         return !world.getEntitiesByClass(net.minecraft.entity.LivingEntity.class, new Box(cell), net.minecraft.entity.LivingEntity::isAlive).isEmpty();
+    }
+
+    /**
+     * While a build makes its way back up to its site: the blocks it spends first on the way, before those the build
+     * itself still takes (E-08g). Every block alike otherwise.
+     */
+    private Predicate<Item> spendFirst = item -> true;
+
+    /** The slot of a block to make a way with: one {@link #spendFirst} allows if it holds any, else the first it holds. */
+    private int wayBlockSlot(net.minecraft.entity.player.PlayerInventory inventory) {
+        int any = -1;
+        for (int s = 0; s < 36; s++) {
+            Item item = inventory.getStack(s).getItem();
+            if (!SEALING.contains(item)) continue;
+            if (spendFirst.test(item)) return s;
+            if (any < 0) any = s;
+        }
+        return any;
+    }
+
+    /**
+     * As {@link #buildRoute(NativePlayerBody, BlockPos, Predicate, boolean, String)}, spending blocks {@code first}
+     * allows before the rest: a build climbing back up to its site keeps its own blocks for itself (E-08g).
+     */
+    Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, Predicate<BlockPos> goal, boolean needEdit, String label, Predicate<Item> first) {
+        var before = spendFirst;
+        spendFirst = first;
+        try {
+            return buildRoute(body, target, goal, needEdit, label);
+        } finally {
+            spendFirst = before;
+        }
+    }
+
+    /** As {@link #climbOut(NativePlayerBody)}, spending blocks {@code first} allows before the rest (E-08g). */
+    Optional<Task> climbOut(NativePlayerBody body, Predicate<Item> first) {
+        var before = spendFirst;
+        spendFirst = first;
+        try {
+            return climbOut(body);
+        } finally {
+            spendFirst = before;
+        }
     }
 
     private static final Set<Item> SEALING = Set.of(Items.DIRT, Items.COBBLESTONE, Items.COBBLED_DEEPSLATE, Items.STONE,

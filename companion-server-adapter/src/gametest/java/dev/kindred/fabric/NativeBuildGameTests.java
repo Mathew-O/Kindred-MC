@@ -253,4 +253,67 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * E-08g. A wall of cobblestone nine long and six high, all built but the top block at its far end, and the player down
+     * in a closed pit three deep just off the near end (staged, as a fall into a hollow beside a cabin left it in CI 9).
+     * From the pit nothing of the build is in reach, nor any spot a scaffold to that block could stand on, and no walk
+     * leads out: it climbs out first, then scaffolds up and places the block. Without that, its walks round to the block
+     * found "no walkable route" eight times and the build stopped.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildHollow", tickLimit = 6000)
+    public void aBuildBegunFromAHollowBelowItsFloorClimbsOutAndIsFinished(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
+        for (int x = 0; x <= 8; x++) for (int y = 0; y <= 5; y++) blocks.add(new dev.kindred.core.construction.Blueprint.Block(
+                new dev.kindred.core.construction.Pos(x, y, 0), dev.kindred.core.construction.BlockSpec.parse("minecraft:cobblestone")));
+        var column = new dev.kindred.core.construction.Blueprint("wall", "fixture", "Kindred", "fixture", blocks);
+        BlockPos[] origin = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -8; x <= 16; x++) for (int z = -8; z <= 16; z++) {
+                        for (int y = -3; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    origin[0] = o.add(4, 2, 4);
+                    for (int x = 0; x <= 8; x++) for (int y = 0; y <= 5; y++) {
+                        if (x == 8 && y == 5) continue; // The block left to place.
+                        world.setBlockState(origin[0].add(x, y, 0), Blocks.COBBLESTONE.getDefaultState());
+                    }
+                    // The pit, two by two and three deep, its near side three blocks west of the wall's near end (within
+                    // the four round the site where it works from a hollow), twelve from the block left; its sides stone.
+                    BlockPos pit = origin[0].add(-4, -3, 0);
+                    for (int dx = 0; dx <= 1; dx++) for (int dz = 0; dz <= 1; dz++) for (int y = 0; y <= 2; y++)
+                        world.setBlockState(pit.add(dx, y, dz), Blocks.AIR.getDefaultState());
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 1));
+                    inventory.setStack(2, new ItemStack(Items.DIRT, 64));
+                    inventory.setStack(3, new ItemStack(Items.STONE_PICKAXE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    // Staged: down in the pit.
+                    player.refreshPositionAndAngles(pit.getX() + 0.5, pit.getY(), pit.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockY() == origin[0].getY() - 3, "In the pit: " + f.player().getBlockPos()))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, column, origin[0], 0) == 1, "Build started"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
+                        "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(world.getBlockState(origin[0].add(8, 5, 0)).isOf(Blocks.COBBLESTONE),
+                            "The top placed; the last word: " + f.runtime.nativeLastResult(f.id));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

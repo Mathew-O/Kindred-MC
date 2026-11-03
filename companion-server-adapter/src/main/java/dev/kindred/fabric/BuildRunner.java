@@ -176,11 +176,26 @@ final class BuildRunner {
         onSite(feet);
         int floor = siteFloor();
         BlockPos toward = new BlockPos(Math.max(box[0] - 1, Math.min(box[3] + 1, feet.x())), floor, Math.max(box[2] - 1, Math.min(box[5] + 1, feet.z())));
+        // Its way up made of blocks the build does not take before those it does: climbing out of a pit beside a wall
+        // with the wall's last cobblestone, it had to go off for more (E-08g).
+        java.util.function.Predicate<Item> spare = item -> !buildItems().contains(item);
         var route = supply.campaign().buildRoute(body, toward, p -> {
             Pos at = pos(p);
             return p.getY() >= floor && !onSite(at) && nearSite(at);
-        }, false, "Back up to the build");
-        return route.isPresent() ? route : supply.campaign().climbOut(body);
+        }, false, "Back up to the build", spare);
+        return route.isPresent() ? route : supply.campaign().climbOut(body, spare);
+    }
+
+    private Set<Item> buildItems;
+
+    /** The items the build's blocks are placed from. */
+    private Set<Item> buildItems() {
+        if (buildItems == null) {
+            var items = new java.util.HashSet<Item>();
+            for (var b : blocks) items.add(Registries.ITEM.get(Identifier.of(dev.kindred.core.construction.Placement.item(b.spec()))));
+            buildItems = Set.copyOf(items);
+        }
+        return buildItems;
     }
 
     /** The square of the distance across the ground between two cells, height aside. */
@@ -479,6 +494,17 @@ final class BuildRunner {
         if (down && player.isOnGround()) {
             return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
                     "collect", "true", "underfoot", "true"), "Down the scaffold"));
+        }
+        // Down in a hollow below the build's floor, nothing of the build in reach and a walk round already failed: up out
+        // of it first, as from a trip down for stone, by a route or by climbing. Fallen three blocks into a hollow beside
+        // its cabin, its walks round to the last scaffold found "no walkable route" eight times and the build stopped (#82:
+        // an oak cabin in CI 9).
+        if (step.kind() == ConstructionPlanner.Kind.BLOCKED && supply != null && player.isOnGround() && overFailed >= 1 && feet.y() < siteFloor()) {
+            var out = backUp(body, supply);
+            if (out.isPresent()) {
+                progress = blueprint.name() + ": up out of the hollow to the build";
+                return out;
+            }
         }
         return switch (step.kind()) {
             case DONE -> {
