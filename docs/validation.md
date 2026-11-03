@@ -37,6 +37,13 @@ Both builds of #12 failed, each on something the change did not cause. [E-45d](e
   before, 2 of 2 on main and 2 of 2 on #12 earlier.
 - **E-08g:** its climb out of a hollow is now never from within the build's own box: a hideout's room dug below its
   floor is the build, not a hollow beside it. The bunker, build and trading-hall classes: 8 of 8.
+- **CI on `25dde40`:** the PR build 528 of 529, its one failure the Nether portal restart (open, as before). The push
+  build 526 of 529:
+  - Two copies of the drowning replay `echo-50149` were never made ("Creation area is no longer available"), as in
+    CI 305 before.
+  - The new drop fixture failed on its own staging ("The wool lying"): the wool lay over the edge of the player's
+    chunk, in one that did not tick. The player and the wool now stand mid-chunk; 3 of 3 with the fix, and it still
+    fails on main's code.
 - Environment: Linux x64 cloud container, OpenJDK 21. Classes run alone with the gametest entrypoints narrowed (not
   committed).
 

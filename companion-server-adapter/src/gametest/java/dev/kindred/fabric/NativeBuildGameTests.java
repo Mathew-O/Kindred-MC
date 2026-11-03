@@ -343,7 +343,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
-                    for (int x = -8; x <= 16; x++) for (int z = -8; z <= 16; z++) {
+                    for (int x = -8; x <= 24; x++) for (int z = -8; z <= 24; z++) {
                         for (int y = -3; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
@@ -357,14 +357,19 @@ public final class NativeBuildGameTests implements FabricGameTest {
                     inventory.setStack(3, new ItemStack(Items.CRAFTING_TABLE));
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
-                    player.refreshPositionAndAngles(o.getX() + 8.5, o.getY() + 2, o.getZ() + 8.5, 0, 0);
+                    // Where it stands and the wool lies: the middle of one chunk, whichever way the test's ground lies across
+                    // chunks. On CI the wool once lay a block over the edge of the player's chunk, in one that did not tick,
+                    // and never came to rest.
+                    BlockPos stand = o.add(12, 2, 12);
+                    stand = stand.add(8 - (stand.getX() & 15), 0, 8 - (stand.getZ() & 15));
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
                     // Staged: the third wool, lying beside it, and not to be picked up for four seconds.
-                    var wool = new net.minecraft.entity.ItemEntity(world, o.getX() + 9.3, o.getY() + 2, o.getZ() + 8.5, new ItemStack(Items.WHITE_WOOL, 1), 0, 0, 0);
+                    var wool = new net.minecraft.entity.ItemEntity(world, stand.getX() + 1.3, stand.getY(), stand.getZ() + 0.5, new ItemStack(Items.WHITE_WOOL, 1), 0, 0, 0);
                     wool.setPickupDelay(80);
                     world.spawnEntity(wool);
                     drop[0] = wool;
                 })
-                .createAndAdd(() -> context.assertTrue(drop[0].isOnGround(), "The wool lying"))
+                .createAndAdd(() -> context.assertTrue(drop[0].isOnGround(), "The wool lying: " + drop[0].getPos() + ", alive " + drop[0].isAlive()))
                 .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, bed, origin[0], 0) == 1, "Build started"))
                 .createAndAdd(() -> context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
                         "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id)))
