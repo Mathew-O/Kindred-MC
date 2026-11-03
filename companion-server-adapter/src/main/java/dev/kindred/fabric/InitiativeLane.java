@@ -47,6 +47,8 @@ final class InitiativeLane {
 
     /** The runtime's side. */
     interface Source {
+        /** Its friendship with {@code other} (E-24a), for tone and its own choices only (E-25a); 0 when none is kept. */
+        default int friendship(UUID id, UUID other) { return 0; }
         /** The AI players who may speak now, in the social lane's terms. */
         List<CompanionSocials.Participant> players();
 
@@ -117,7 +119,10 @@ final class InitiativeLane {
             // Its remarks turned off, or not sociable at all: nothing unasked, warnings included.
             if (!player.active() || player.body() == null || !player.profile().ambientEnabled() || player.profile().personality().sociability() == 0) continue;
             if (!(player.body().getWorld() instanceof net.minecraft.server.world.ServerWorld world)) continue;
-            for (ServerPlayerEntity person : List.copyOf(world.getPlayers())) {
+            // Friends first (E-25a): where its word for one uses up what it may say, a friend has it.
+            var people = new java.util.ArrayList<>(world.getPlayers());
+            people.sort(java.util.Comparator.comparingInt((ServerPlayerEntity person) -> -source.friendship(player.id(), person.getUuid())));
+            for (ServerPlayerEntity person : people) {
                 if (socials.aiPlayerOf(person) != null) continue;
                 Track track = track(person, now);
                 boolean earshot = socials.canTalk(person, player);
@@ -145,6 +150,9 @@ final class InitiativeLane {
             return;
         }
         boolean wary = source.wary(player.id(), who);
+        var warmth = dev.kindred.core.social.Warmth.of(source.friendship(player.id(), who));
+        // A friend, or a friendly one, it calls by name (E-25a).
+        String to = warmth == dev.kindred.core.social.Warmth.WARM || warmth == dev.kindred.core.social.Warmth.KIND ? person.getName().getString() : "";
         // Hungry, with food to spare: an offer, held a minute for their yes.
         var spare = source.spareFood(player.id());
         if (!wary && person.getHungerManager().getFoodLevel() <= HUNGRY && spare.isPresent() && spare.get().getValue() > 0
@@ -152,7 +160,7 @@ final class InitiativeLane {
             String item = spare.get().getKey();
             String words = net.minecraft.util.Identifier.of(item).getPath().replace('_', ' ');
             offers.put(key(player.id(), who), new Offer(item, Math.min(spare.get().getValue(), 4), now + OFFER_MILLIS));
-            say(player, person, "Need food? I've got " + words + ".", Initiative.Occasion.OFFER, who.toString(), now);
+            say(player, person, (to.isEmpty() ? "Need food?" : "Need food, " + to + "?") + " I've got " + words + ".", Initiative.Occasion.OFFER, who.toString(), now);
             return;
         }
         // Something they said they need, that it has to spare (E-21a): an offer, held a minute for their yes; the toss only on
@@ -165,7 +173,7 @@ final class InitiativeLane {
                 String giftKey = "gift:" + gift.get().item();
                 if (!budget.may(who, state, Initiative.Occasion.OFFER, giftKey, prefs, now)) break;
                 offers.put(key(player.id(), who), new Offer(gift.get().item(), gift.get().count(), now + OFFER_MILLIS));
-                say(player, person, "You said you need " + need + "? I've got " + gift.get().count() + " " + gift.get().item().replace('_', ' ')
+                say(player, person, (to.isEmpty() ? "You said" : to + ", you said") + " you need " + need + "? I've got " + gift.get().count() + " " + gift.get().item().replace('_', ' ')
                         + " spare. Want some?", Initiative.Occasion.OFFER, giftKey, now);
                 return;
             }
@@ -177,7 +185,9 @@ final class InitiativeLane {
             return;
         }
         // Idle together a while: a word, as it sounds.
-        if (source.idle(player.id()) && now - track.nearSince >= IDLE_TOGETHER_MILLIS && budget.may(who, state, Initiative.Occasion.BANTER, "", prefs, now)) {
+        // No small talk with someone it is cool with (E-25a).
+        if (warmth.smallTalk() && source.idle(player.id()) && now - track.nearSince >= IDLE_TOGETHER_MILLIS
+                && budget.may(who, state, Initiative.Occasion.BANTER, "", prefs, now)) {
             say(player, person, banter(source.sounding(player), prefs), Initiative.Occasion.BANTER, "", now);
         }
     }

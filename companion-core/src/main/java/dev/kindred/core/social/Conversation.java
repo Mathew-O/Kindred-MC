@@ -36,7 +36,13 @@ public final class Conversation {
      * thing they went through together).
      */
     public record Side(UUID id, String name, int sociability, Expression sounds, String doing, List<String> needs, List<String> spare,
-                       String knownDoing, String knownNeeds, String lastEpisode, boolean flirty) {
+                       String knownDoing, String knownNeeds, String lastEpisode, boolean flirty, Warmth warmth) {
+        /** A side neither warm nor cool with the other (as before E-25a). */
+        public Side(UUID id, String name, int sociability, Expression sounds, String doing, List<String> needs, List<String> spare,
+                    String knownDoing, String knownNeeds, String lastEpisode, boolean flirty) {
+            this(id, name, sociability, sounds, doing, needs, spare, knownDoing, knownNeeds, lastEpisode, flirty, Warmth.PLAIN);
+        }
+
         /** A side that does not flirt (as before E-18b). */
         public Side(UUID id, String name, int sociability, Expression sounds, String doing, List<String> needs, List<String> spare,
                     String knownDoing, String knownNeeds, String lastEpisode) {
@@ -53,6 +59,7 @@ public final class Conversation {
             knownDoing = knownDoing == null ? "" : knownDoing;
             knownNeeds = knownNeeds == null ? "" : knownNeeds;
             lastEpisode = lastEpisode == null ? "" : lastEpisode;
+            warmth = warmth == null ? Warmth.PLAIN : warmth;
         }
     }
 
@@ -94,6 +101,8 @@ public final class Conversation {
     public static Optional<Plan> plan(Side a, Side b, Map<String, Long> spoken, long now) {
         Objects.requireNonNull(a);
         Objects.requireNonNull(b);
+        // Cool with the other (E-25a): it does not start a talk with them.
+        if (a.warmth().curt()) return Optional.empty();
         var topics = new ArrayList<Topic>();
         String pair = a.id().compareTo(b.id()) < 0 ? a.id() + ":" + b.id() : b.id() + ":" + a.id();
         boolean joking = a.sounds().ordinal() >= Expression.PLAYFUL.ordinal();
@@ -136,13 +145,18 @@ public final class Conversation {
             }
             case NEEDS -> {
                 turns.add(new Turn(a.id(), b.id(), "Still after " + b.needs().getFirst() + ", " + b.name() + "?", null, false));
-                turns.add(new Turn(b.id(), a.id(), "Yes, " + String.join(" and ", b.needs()) + ".", null, false));
-                turns.add(offerOrWishTurn(a, b));
+                // Cool with the one asking (E-25a): what it needs it keeps to itself.
+                turns.add(new Turn(b.id(), a.id(), b.warmth().curt() ? "Hm." : "Yes, " + String.join(" and ", b.needs()) + ".", null, false));
+                if (!b.warmth().curt()) turns.add(offerOrWishTurn(a, b));
             }
             case HELLO -> {
                 String hi = hello(a, b);
-                turns.add(rough ? new Turn(a.id(), b.id(), "Well damn, " + b.name() + ". Long time.", hi, ROUGH) : new Turn(a.id(), b.id(), hi, null, false));
-                turns.add(new Turn(b.id(), a.id(), "Hi, " + a.name() + "." + (b.doing().isEmpty() ? "" : " Just " + shortDoing(b.doing()) + "."), null, false));
+                // A friend's hello, or a friendly one's, is warmer (E-25a), whatever its manner.
+                turns.add(a.warmth() != Warmth.PLAIN ? new Turn(a.id(), b.id(), a.warmth().hello(a.sounds(), b.name()), null, false)
+                        : rough ? new Turn(a.id(), b.id(), "Well damn, " + b.name() + ". Long time.", hi, ROUGH) : new Turn(a.id(), b.id(), hi, null, false));
+                String doing = b.doing().isEmpty() || b.warmth().curt() ? "" : " Just " + shortDoing(b.doing()) + ".";
+                turns.add(new Turn(b.id(), a.id(), b.warmth() != Warmth.PLAIN ? b.warmth().helloBack(a.name()) + doing
+                        : "Hi, " + a.name() + "." + doing, null, false));
             }
         }
         return Optional.of(new Plan(topic, List.copyOf(turns)));
@@ -174,6 +188,8 @@ public final class Conversation {
 
     /** {@code b}'s answer, written from its own record: what it is doing, and what it needs. */
     static String answerDoing(Side b) {
+        // Cool with the one asking (E-25a): a word, what it is doing and needs kept to itself.
+        if (b.warmth().curt()) return "Busy.";
         String doing = b.doing().isEmpty() ? "Nothing much right now." : "I'm " + shortDoing(b.doing()) + ".";
         return b.needs().isEmpty() ? doing : doing + " I could use " + b.needs().getFirst() + ".";
     }
@@ -181,7 +197,7 @@ public final class Conversation {
     /** {@code a}'s last word on what {@code b} needs, a rough one's with a swear word in it (E-18b). */
     private static Turn offerOrWishTurn(Side a, Side b) {
         String said = offerOrWish(a, b);
-        if (a.sounds() != Expression.ROUGH || said.startsWith("I've got")) return new Turn(a.id(), b.id(), said, null, false);
+        if (a.sounds() != Expression.ROUGH || a.warmth() == Warmth.WARM || said.startsWith("I've got")) return new Turn(a.id(), b.id(), said, null, false);
         String word = b.needs().getFirst().replaceFirst("^\\d+\\s+", "");
         return new Turn(a.id(), b.id(), "Good luck finding " + word + ", that shit's rare.", said, dev.kindred.core.SocialBrain.Tone.ROUGH);
     }
@@ -190,7 +206,13 @@ public final class Conversation {
     private static String offerOrWish(Side a, Side b) {
         String need = b.needs().getFirst();
         String word = need.replaceFirst("^\\d+\\s+", "");
-        for (String spare : a.spare()) if (spare.contains(word)) return "I've got some " + word + " spare if you want it.";
+        boolean friend = a.warmth() == Warmth.WARM;
+        if (a.warmth().sharesSpare()) {
+            for (String spare : a.spare()) if (spare.contains(word)) return friend ? "I've got some " + word + " spare. It's yours if you want it."
+                    : "I've got some " + word + " spare if you want it.";
+        }
+        // A friend, whatever its manner, keeps an eye out for it (E-25a).
+        if (friend) return "I'll keep an eye out for " + word + " for you.";
         return switch (a.sounds()) {
             case PLAIN -> "Good luck finding " + word + ".";
             case DRY -> "Good luck with that.";
