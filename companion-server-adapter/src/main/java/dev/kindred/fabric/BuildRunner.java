@@ -466,9 +466,17 @@ final class BuildRunner {
         // Wanted elsewhere while on its own scaffold: down it first, digging out the block underfoot, as a player gets
         // off a pillar too high to jump from.
         Pos under = feet.down();
-        if (scaffold.contains(under) && player.isOnGround() && site.cell(under).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false) && (step.kind() == ConstructionPlanner.Kind.PLACE
+        boolean down = scaffold.contains(under) && site.cell(under).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false) && (step.kind() == ConstructionPlanner.Kind.PLACE
                 || step.kind() == ConstructionPlanner.Kind.SUPPORT
-                || step.kind() == ConstructionPlanner.Kind.SCAFFOLD || step.kind() == ConstructionPlanner.Kind.BREAK) && !feet.equals(step.stance())) {
+                || step.kind() == ConstructionPlanner.Kind.SCAFFOLD || step.kind() == ConstructionPlanner.Kind.BREAK) && !feet.equals(step.stance());
+        // Still dropping onto the next block of it, the block underfoot just dug out: landed first, then on down. Planned
+        // from mid-drop, the walk to the next spot set out from that block's top and left the rest of the column standing,
+        // and stubs so left round a cell walled it in (#82: a seed cabin's roof and a spruce cabin's, in CI suites).
+        if (down && !player.isOnGround() && ++airWaits <= 5) {
+            progress = blueprint.name() + ": landing on its scaffold";
+            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Landing on its scaffold"));
+        }
+        if (down && player.isOnGround()) {
             return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
                     "collect", "true", "underfoot", "true"), "Down the scaffold"));
         }

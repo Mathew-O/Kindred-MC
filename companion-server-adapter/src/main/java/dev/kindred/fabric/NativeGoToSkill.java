@@ -154,6 +154,31 @@ final class NativeGoToSkill implements SkillBody {
 
     boolean holds() { return hold >= 0; }
 
+    /**
+     * The cell a walk starts from: the one its feet are in, or, stood at the edge of a block with its middle over the
+     * open side, the one over the block it rests on, under a corner of its body and nearest its middle. Started from the
+     * open side, the search began on whatever stood beside it there, found no way back up onto the block it stood on,
+     * and a build's walk to that very spot, the foot of its scaffold, was "no walkable route" eight times in a row (#82:
+     * an oak cabin's scaffold and an oak keep's planks, in CI suites).
+     */
+    static BlockPos restingOn(net.minecraft.server.network.ServerPlayerEntity player, NativeNavigator navigator) {
+        BlockPos feet = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        if (!player.isOnGround() || navigator.standable(feet) || navigator.swimmable(feet)) return feet;
+        var box = player.getBoundingBox();
+        BlockPos best = feet;
+        double nearest = Double.MAX_VALUE;
+        for (double x : new double[] {box.minX + 0.01, box.maxX - 0.01}) for (double z : new double[] {box.minZ + 0.01, box.maxZ - 0.01}) {
+            BlockPos corner = BlockPos.ofFloored(x, feet.getY(), z);
+            if (corner.equals(feet) || !navigator.standable(corner)) continue;
+            double d = Math.hypot(corner.getX() + 0.5 - player.getX(), corner.getZ() + 0.5 - player.getZ());
+            if (d < nearest) {
+                nearest = d;
+                best = corner;
+            }
+        }
+        return best;
+    }
+
     private boolean plan() {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
@@ -163,7 +188,10 @@ final class NativeGoToSkill implements SkillBody {
         }
         if (engage != null) navigator.avoiding(dangers());
         if (shun != null) navigator.shunning(shun);
-        BlockPos start = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        // Where its middle is, when that is already the goal: a block just dug out from under it, its body still on the
+        // edge of the next, it is where it was asked to be (searched from the edge, the walk was "no walkable route").
+        BlockPos over = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
+        BlockPos start = goalReached(over) ? over : restingOn(player, navigator);
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
         // A body over an edge searches from the block below its feet; when that is the goal, the route is the step off.
         boolean below = found.complete() && found.nodes().size() == 1 && goalReached(found.nodes().getFirst());
