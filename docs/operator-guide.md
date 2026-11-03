@@ -499,7 +499,7 @@ Asked "what does Sol need?", "what is Sol doing?" or "where is Sol?" about someo
 
 The ledger holds 64 peers (the least lately met dropped) and 20 episodes each, and is kept in `kindred/memory/<uuid>.peers.json` beside the atlas, saved every minute and at a stop; people's places and claims are not kept. To remove everything a native player knows of someone: `/aiplayer memory forget <their uuid> <player>` (operators and the player's controllers).
 
-#### Gifts and friendship (E-21a, E-22a, E-24a)
+#### Gifts and friendship (E-21a, E-22a, E-24a, E-25a)
 **Gifts.** Tell an AI player you need something ("Echo, I need iron") and, if it has some spare, it offers you some on its next turn (the table above). What is spare is half of what it holds that nobody has a claim on, at most 16. It never offers:
 - its tools, weapons or armour;
 - buckets, flint and steel, ender pearls or eyes, totems, elytra or beds;
@@ -528,7 +528,16 @@ Each thing counts once. Nothing said in chat counts. Neither does:
 - a fall after coming where someone asked;
 - an ask.
 
-The sum gives a band: friend (30 or more), friendly (8 or more), neutral, cool (below 0) and wary (−24 or less). For now friendship changes nothing the player does. It never changes who may control it, what it may do or its budgets, and it is never a reason to strike.
+The sum gives a band: friend (30 or more), friendly (8 or more), neutral, cool (below 0) and wary (−24 or less).
+
+**What friendship changes (E-25a).** Only how the player is with someone, and choices that are its own to make:
+- **Its words.** A friend gets a warmer hello ("Hi, Sol! Always good to see you."), a friendly one a kind one, and either is called by name when it offers food or something it has spare. With a neutral one everything is as before.
+- **Who comes first.** With several people near, it turns to its friends first, so where what it may say runs short a friend hears it.
+- **Small talk.** It starts no talk with someone it is cool with or wary of, and makes no small talk with them. Asked, it answers in a word ("Busy."), keeping what it is doing and needs to itself.
+- **Sharing in talk.** It offers what it has spare to anyone but one it is wary of; a friend hears "It's yours if you want it."
+- **Outings.** Invited by a friend, it goes if its sociability is 20 or more (30 for a friendly one, 40 for anyone else). Invited by one it is cool with, it says no. Its own goal, work, danger and matches come first, whoever asks.
+
+Friendship never changes who may control it, what it may do or its budgets, it never overrides a stop, and it is never a reason to strike. Whether it warns someone of danger, or offers food to someone hungry, does not depend on it.
 
 **Looking and correcting.** Operators and a player's controllers can look and correct:
 - `/aiplayer rapport [player]` lists its standings.
