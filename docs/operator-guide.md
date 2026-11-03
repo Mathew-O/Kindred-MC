@@ -126,6 +126,7 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 - Where nothing is in reach from the ground it scaffolds up with spare dirt or cobblestone (never blocks the build still needs) and digs its scaffold down to get off it. It takes all the scaffolding away at the end.
   - It comes all the way down a column before it walks off to the next, one block at a time, landing on each before it digs the next (E-08f).
   - Hemmed in by its own scaffolding, with nothing it can walk to in reach of the block it wants, it takes that scaffolding down first, rather than give up on the block (E-08f).
+  - Down in a hollow beside the build, below its floor, with nothing in reach and no walk round, it climbs out first, on blocks the build does not take (dirt before the build's own cobblestone), then goes on (E-08g).
 - Survival needs still come first. The build goes ahead of a standing goal and the goal resumes when it is done.
 - After eight failed steps in a row it stops and says why. `/aiplayer build stop` ends a build; what is built stays.
 
