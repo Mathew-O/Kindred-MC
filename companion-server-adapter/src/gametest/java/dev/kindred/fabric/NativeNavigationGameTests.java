@@ -326,4 +326,62 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Stood at the edge of a block two high, its middle over the open side, it walks to the very block it stands on.
+     * Next to it on that side stands another, its top a cell from which there is no way back up: a column four high
+     * between the two. Searched from beside it there, the walk was "no walkable route" (#82: a build's walk to the foot of
+     * its own scaffold, from the scaffold's edge, eight times in a row, and the build stopped). Searched from the block
+     * its body rests on, it is there.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "edgeStart", tickLimit = 600)
+    public void aWalkFromTheEdgeOfABlockStartsOnTheBlockItRestsOn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] goal = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Edgewise"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute positions around wherever the player stood up, so the test's rotation does not matter.
+                    var world = context.getWorld();
+                    BlockPos base = f.player().getBlockPos().toImmutable();
+                    for (int x = -3; x <= 5; x++) for (int z = -3; z <= 4; z++) {
+                        world.setBlockState(base.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 5; y++) world.setBlockState(base.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    // The block it stands on, two high; beside its open side, north, another two high; between those two,
+                    // a column four high.
+                    for (int y = 0; y <= 1; y++) {
+                        world.setBlockState(base.add(2, y, 1), Blocks.STONE.getDefaultState());
+                        world.setBlockState(base.add(1, y, 0), Blocks.STONE.getDefaultState());
+                    }
+                    for (int y = 0; y <= 3; y++) world.setBlockState(base.add(2, y, 0), Blocks.STONE.getDefaultState());
+                    goal[0] = base.add(2, 2, 1);
+                    // Staged: stood on the block's west edge, its middle a twentieth of a block out over the open side.
+                    f.player().refreshPositionAndAngles(goal[0].getX() - 0.05, goal[0].getY(), goal[0].getZ() + 0.5, 90, 0);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isOnGround() && Math.abs(player.getY() - goal[0].getY()) < 0.01,
+                            "Resting on the block's edge: " + player.getPos());
+                    context.assertTrue(player.getBlockX() == goal[0].getX() - 1, "Its middle over the open side: " + player.getPos());
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeGoto(f.source, f.id, goal[0], 0.5) == 1, "Route requested");
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_goto"),
+                            "The walk to the block it stood on completes: " + activity + " at " + f.player().getPos());
+                })
+                .createAndAdd(() -> {
+                    Vec3d at = f.player().getPos();
+                    context.assertTrue(Math.hypot(at.x - (goal[0].getX() + 0.5), at.z - (goal[0].getZ() + 0.5)) < 0.8
+                            && Math.abs(at.y - goal[0].getY()) < 0.1, "On top of it at " + at);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

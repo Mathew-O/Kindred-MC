@@ -124,6 +124,8 @@ The log shows `<name> in the End: N crystals left (C caged), the dragon at H hea
 - It stands in each block's centre to place it and looks the way that gives the block its state: a stair's facing and half, a log's axis, a slab's half, a torch on its wall. Every block is checked in that state afterwards; one placed wrong is broken and placed again, and after two tries it is left for the operator.
 - What is in the build's way is broken first, but never a container or anything not the build's to break.
 - Where nothing is in reach from the ground it scaffolds up with spare dirt or cobblestone (never blocks the build still needs) and digs its scaffold down to get off it. It takes all the scaffolding away at the end.
+  - It comes all the way down a column before it walks off to the next, one block at a time, landing on each before it digs the next (E-08f).
+  - Hemmed in by its own scaffolding, with nothing it can walk to in reach of the block it wants, it takes that scaffolding down first, rather than give up on the block (E-08f).
 - Survival needs still come first. The build goes ahead of a standing goal and the goal resumes when it is done.
 - After eight failed steps in a row it stops and says why. `/aiplayer build stop` ends a build; what is built stays.
 

@@ -274,6 +274,45 @@ class ConstructionPlannerTest {
     }
 
     /**
+     * Hemmed in by its own scaffolding: three columns it walked off before they were down, two high, round the cell it
+     * stands in, and stone on the fourth side. Nothing it can walk to reaches the block left, so before it calls the
+     * block out of reach it takes down what of its scaffolding is in reach, the plan looked at again after each, until
+     * the way is open. Called out of reach, its walks round found "no walkable route" eight times and the build stopped
+     * short of its roof (#82: the seed cabin's last slab and the spruce cabin's stairs in CI suites, the navigator able
+     * to reach only the one cell it stood in).
+     */
+    @Test
+    void hemmedInByItsOwnScaffoldingItTakesThatDownBeforeCallingABlockOutOfReach() {
+        var cells = BuildTestSites.flat();
+        // The build: a wall's end six high, a block to go on top, eight blocks away.
+        var blocks = new ArrayList<Blueprint.Block>();
+        for (int y = 1; y <= 7; y++) blocks.add(block(8, y, 0, "minecraft:cobblestone"));
+        for (int y = 1; y <= 6; y++) cells.put(new Pos(8, y, 0), BuildTestSites.solid("minecraft:cobblestone"));
+        Pos feet = new Pos(0, 1, 0);
+        var scaffold = new java.util.LinkedHashSet<Pos>();
+        for (Face side : List.of(Face.EAST, Face.NORTH, Face.SOUTH)) for (int h = 0; h < 2; h++) {
+            cells.put(feet.offset(side).add(0, h, 0), BuildTestSites.solid("minecraft:dirt"));
+            scaffold.add(feet.offset(side).add(0, h, 0));
+        }
+        for (int h = 0; h < 2; h++) cells.put(feet.offset(Face.WEST).add(0, h, 0), BuildTestSites.STONE);
+        assertEquals(Set.of(feet), ConstructionPlanner.walkable(new BuildSite(cells), feet, scaffold), "walled in where it stands");
+
+        var step = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, ALL, scaffold);
+        assertEquals(ConstructionPlanner.Kind.BREAK, step.kind(), "its own scaffolding comes down, not the block called out of reach: " + step);
+        assertTrue(scaffold.contains(step.target()) && step.target().y() == 2, "a column's top: " + step.target());
+        assertEquals(feet, step.stance(), "broken from where it stands");
+        // Taken down as the plan says, a block at a time, the way opens and a scaffold to the block goes up.
+        Step after = step;
+        for (int i = 0; i < 6 && after.kind() == ConstructionPlanner.Kind.BREAK; i++) {
+            cells.put(after.target(), Cell.AIR);
+            scaffold.remove(after.target());
+            after = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, ALL, scaffold);
+        }
+        assertEquals(ConstructionPlanner.Kind.SCAFFOLD, after.kind(), after.reason());
+        assertEquals(new Pos(8, 7, 0), after.target());
+    }
+
+    /**
      * Scaffolding out of reach from everywhere it can walk to waits while what it can reach comes down; then it is
      * blocked over that column, with the column's place, for the runner to go over to it.
      */

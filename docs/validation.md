@@ -16,6 +16,36 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The roof-reach stops: hemmed in by its own scaffolding (E-08f) — 3 November 2026 (`claude/roof-reach-1103`)
+
+The most common red in CI, a build stopped "8 steps failed one after another", each a walk with "no walkable route" (#82's
+family). Code on `9627fa8`. [Evidence](evidence/E-08f.md).
+
+- **The stops, from the navigator's own notes** over the 17 in the saved CI logs (runs 223, 298, 305, 309, 313 and 9):
+  - 8 hemmed in, the navigator able to reach only the cell it stood in (a seed cabin's last slab, a spruce cabin's
+    stairs) or 27 to 36 cells (the keep). Coming down a column, a walk planned while it was still dropping onto the next
+    block set off from that block's top and left the rest standing: 169 of 726 walks to a column's foot in run 9 set off
+    from above the floor. Such stubs round a cell beside a wall shut it in.
+  - 4 started from the wrong cell: at a column's edge with its middle over the open side, the search began from what
+    stood beside it there ("standing false").
+  - 3 below the floor in a hollow beside the build: not covered, open.
+- **The fix:** landed on its scaffold before it plans on down it; its own scaffolding in reach taken down before a block
+  is called out of reach; a walk from a block's edge started on the block it rests on, or where its middle is when that
+  is already the goal.
+- **Pure:** the new planner case fails before ("No way to reach minecraft:cobblestone at Pos[x=8, y=7, z=0]") and passes
+  after; `./gradlew :companion-core:test` 751 of 751.
+- **Native:**
+  - The new edge fixture, `aWalkFromTheEdgeOfABlockStartsOnTheBlockItRestsOn`: on main's code fails 3 of 3 ("No route
+    from … (expanded 6000, standing false)"); with the fix passes 3 of 3.
+  - The build classes (seed builds, compounds, houses, base, build), on main's code and with the fix: 18 of 18 both
+    times. Walks to a column's foot from above the floor, 84 of 365 and 33 of 419; walks hemmed in or from the wrong
+    cell, 11 and 0; builds stopped, 1 and 0.
+  - Eight walking classes together (movement, paths, falls, gathering, deliveries, team share, bringing, life first): 33
+    of 36 with the fix and on main's code alike; the same three librarian fixtures fail in that mix both times ("No rail
+    line from the librarian to its cell"), and pass 7 of 7 alone with the fix.
+- Environment: Linux x64 cloud container, OpenJDK 21. Single classes run with the gametest entrypoints narrowed (not
+  committed).
+
 ## The three open failures: the tree in water (F-25c4aw), deliveries' tosses (E-22b), the lava cast (diagnosed, open) — 3 November 2026 (`claude/fixtures-1103`)
 
 The owner's ask: take care of the three failures the last CI runs left, the tree standing in water, the portal cast from
