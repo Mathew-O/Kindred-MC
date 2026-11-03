@@ -154,6 +154,52 @@ public final class NativeConversationGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * E-25a. Staged: ten minutes apart, as in the first fixture, their owner beside them; and each cool with the other, a
+     * blow from the other noted in its friendship record (−12) though nobody was struck. Neither starts a talk with one it
+     * is cool with, so over three seconds of the lane's turns nothing is said, where the first fixture's pair talk at once.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "peerTalk", tickLimit = 1600)
+    public void twoPlayersCoolWithEachOtherMeetingAfterTenMinutesApartSayNothing(TestContext context) {
+        var p = new Pair(context);
+        var f = p.t.f;
+        long[] stagedAt = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> p.t.createOwned(context))
+                .createAndAdd(() -> p.makeSol(context))
+                .createAndAdd(() -> p.established(context))
+                .createAndAdd(() -> context.assertTrue(f.runtime.rapportForFixtures(p.echo).isPresent() && f.runtime.rapportForFixtures(p.sol).isPresent(),
+                        "Both friendships read"))
+                .createAndAdd(() -> {
+                    p.hear();
+                    // Staged: a blow each way, noted as the game's record would note it; nobody is struck.
+                    long at = context.getWorld().getServer().getTicks();
+                    f.runtime.rapportForFixtures(p.echo).orElseThrow().note(p.sol, "Sol", dev.kindred.core.social.Rapport.Kind.HARMED, "a blow",
+                            "fixture:blow:sol", "fixture", at);
+                    f.runtime.rapportForFixtures(p.sol).orElseThrow().note(p.echo, "Echo", dev.kindred.core.social.Rapport.Kind.HARMED, "a blow",
+                            "fixture:blow:echo", "fixture", at);
+                    context.assertTrue(f.runtime.rapportForFixtures(p.echo).orElseThrow().standing(p.sol).band().equals("cool")
+                            && f.runtime.rapportForFixtures(p.sol).orElseThrow().standing(p.echo).band().equals("cool"), "Each cool with the other");
+                    NativeVoiceGameTests.Talk.waitFor(1_200); // A turn of the lane: they have been seen together.
+                })
+                .createAndAdd(() -> {
+                    p.talk().apartForFixtures(p.echo, p.sol, Conversation.APART_MILLIS + 60_000); // Staged: ten minutes apart.
+                    stagedAt[0] = System.currentTimeMillis();
+                })
+                .createAndAdd(() -> {
+                    // Three seconds of the lane's turns, the server running: the first fixture's pair begin within one.
+                    context.assertTrue(System.currentTimeMillis() - stagedAt[0] >= 3_000, "Three seconds on");
+                    context.assertTrue(p.talk().linesSaid() == 0 && p.talk().talksUnderWay() == 0, "Nothing said: " + p.talk().saidForFixtures());
+                    // A word to the person beside them is theirs to say; a word between the two is a talk.
+                    context.assertTrue(p.t.heard.stream().noneMatch(h -> h.text().startsWith("[Kindred] Echo: ") && h.text().contains("Sol")
+                            || h.text().startsWith("[Kindred] Sol: ") && h.text().contains("Echo")), "No talk between them heard: " + p.t.heard);
+                    p.t.cleanup(context);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A stand-in for the runtime's side: the players, their ledgers and updates, and who is busy. */
     private static final class Stand implements PeerTalk.Source {
         final List<CompanionSocials.Participant> players = new ArrayList<>();

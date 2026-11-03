@@ -1,6 +1,7 @@
 package dev.kindred.core.outing;
 
 import dev.kindred.core.Personality;
+import dev.kindred.core.social.Warmth;
 
 /**
  * In plain terms: whether an AI player, invited on a trip by another, says yes: only if it has nothing of its own to do
@@ -19,11 +20,22 @@ public final class OutingChoice {
     public record Answer(boolean yes, String why) { }
 
     public static Answer answer(boolean hasGoal, boolean busy, boolean inDanger, boolean inMatch, Personality personality) {
+        return answer(hasGoal, busy, inDanger, inMatch, personality, Warmth.PLAIN);
+    }
+
+    /**
+     * As {@link #answer(boolean, boolean, boolean, boolean, Personality)}, with how warm it is with the one inviting
+     * (E-25a): a friend's outing it joins at sociability 20, a friendly one's at 30; one it is cool with, never. Its own
+     * goal, work, danger and matches come first whoever asks.
+     */
+    public static Answer answer(boolean hasGoal, boolean busy, boolean inDanger, boolean inMatch, Personality personality, Warmth toHost) {
         if (inMatch) return new Answer(false, "in a match");
         if (inDanger) return new Answer(false, "in danger");
         if (hasGoal) return new Answer(false, "has its own goal");
         if (busy) return new Answer(false, "busy");
-        if (personality == null || personality.sociability() < SOCIABLE) return new Answer(false, "not one for company");
-        return new Answer(true, "nothing else on");
+        Warmth warmth = toHost == null ? Warmth.PLAIN : toHost;
+        if (warmth.curt()) return new Answer(false, "would rather not go with them");
+        if (personality == null || personality.sociability() < warmth.outingSociability(SOCIABLE)) return new Answer(false, "not one for company");
+        return new Answer(true, warmth == Warmth.WARM ? "with a friend" : "nothing else on");
     }
 }

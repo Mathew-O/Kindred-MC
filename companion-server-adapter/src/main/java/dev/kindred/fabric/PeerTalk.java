@@ -32,6 +32,8 @@ import java.util.function.LongSupplier;
 final class PeerTalk {
     /** The runtime's side. */
     interface Source {
+        /** Its friendship with {@code other} (E-24a), for tone and its own choices only (E-25a); 0 when none is kept. */
+        default int friendship(UUID id, UUID other) { return 0; }
         /** The AI players who may talk now, in the social lane's terms. */
         List<CompanionSocials.Participant> players();
 
@@ -126,6 +128,13 @@ final class PeerTalk {
 
     private void begin(CompanionSocials.Participant a, CompanionSocials.Participant b, long now) {
         var plan = Conversation.plan(side(a, b), side(b, a), spoken, now).orElse(null);
+        // Cool with the other, the readier talker starts nothing (E-25a); the other, not cool with it, may.
+        if (plan == null && side(a, b).warmth().curt() && !side(b, a).warmth().curt()) {
+            var swap = a;
+            a = b;
+            b = swap;
+            plan = Conversation.plan(side(a, b), side(b, a), spoken, now).orElse(null);
+        }
         if (plan == null) return;
         boolean heard = !hearers(a).isEmpty() || !hearers(b).isEmpty();
         // The server's chatter spent: nothing said and nothing noted, so the topic is still new another time.
@@ -203,7 +212,7 @@ final class PeerTalk {
         }
         return new Conversation.Side(self.id(), self.name(), self.profile().personality().sociability(), source.sounding(self),
                 update == null ? "" : update.doing(), update == null ? List.of() : update.needs(), update == null ? List.of() : update.spare(),
-                knownDoing, knownNeeds, episode, self.profile().flirty());
+                knownDoing, knownNeeds, episode, self.profile().flirty(), dev.kindred.core.social.Warmth.of(source.friendship(self.id(), other.id())));
     }
 
     private void note(CompanionSocials.Participant self, CompanionSocials.Participant other, String what) {

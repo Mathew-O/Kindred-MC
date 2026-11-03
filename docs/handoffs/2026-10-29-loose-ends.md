@@ -957,3 +957,17 @@ after another", each a walk with "no walkable route" (#82's family). E-08f ([evi
   the next slice of it.
 
 Next dependency: as before (E-25, then an evaluation of the current build on the ten seeds).
+
+## Handoff, 3 November 2026 (afternoon): friendship shapes tone (`claude/friendship-tone-1103`)
+
+E-25a ([evidence](../evidence/E-25a.md)). The friendship each AI player keeps (E-24a) now shapes how it is with someone:
+- a friend gets a warmer hello, is called by name in offers and is turned to first;
+- one it is cool with gets no talk started, no small talk and a word for an answer;
+- spare is shared in talk with anyone but one it is wary of;
+- a friend's outing is joined at sociability 20 (30 for a friendly one); a cool one's, never.
+
+It never changes control, access, budgets, a stop or a strike, nor whether it warns of danger or offers food to someone
+hungry. Shown: the new conversation fixture fails 3 of 3 on main's code and passes with this; the social classes 50 of 50.
+
+Next dependency: the ten-seed evaluation of main with E-08f and E-25a (F-25c4av and F-25c4aw in the open too). Open in
+E-25: the voice given the band; a friend's ask answered first; help offered to a friend in trouble; E-35's drift.

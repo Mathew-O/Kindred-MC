@@ -16,6 +16,20 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Friendship shapes tone and the player's own choices (E-25a) — 3 November 2026 (`claude/friendship-tone-1103`)
+
+Code on `8184b1b`. [Evidence](evidence/E-25a.md).
+
+- **Pure:** `WarmthTest`, 5 cases (the bands; a friend's hello; cool, no talk started and a word for an answer; spare
+  shared but with a wary one; outings); the social and outing packages 51 of 51.
+- **Native:** the new fixture, two players cool with each other meeting after ten minutes apart (staged: a blow each way
+  in the friendship records, nobody struck; the ten minutes): on main's code fails 3 of 3, the two talking ("Nothing
+  said: [Sol: How's it going, Echo?, Echo: I'm idle.]"); with E-25a, `NativeConversationGameTests` 5 of 5 in each of
+  three runs. The other social classes together (outings, initiative, gifts, chat asks, expression, trust, voice, peer
+  ledger, attention, `SocialGameTests`): 50 of 50.
+- Environment: Linux x64 cloud container, OpenJDK 21. Single classes run with the gametest entrypoints narrowed (not
+  committed).
+
 ## The roof-reach stops: hemmed in by its own scaffolding (E-08f) — 3 November 2026 (`claude/roof-reach-1103`)
 
 The most common red in CI, a build stopped "8 steps failed one after another", each a walk with "no walkable route" (#82's

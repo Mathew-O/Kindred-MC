@@ -11970,7 +11970,16 @@ final class PlayerRuntime {
 
     /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
     /** The runtime's side of speaking first (E-53): who may speak, what each has to spare and needs, and the offer's toss. */
+    /**
+     * The player's friendship with {@code other} (E-24a), 0 with none kept: read for tone and the player's own choices
+     * (E-25a), never for control, access, budgets, a stop or a strike.
+     */
+    private int friendshipOf(UUID id, UUID other) {
+        return peerRadio.rapport(id).map(r -> r.standing(other).friendship()).orElse(0);
+    }
+
     private final class InitiativeSource implements InitiativeLane.Source {
+        @Override public int friendship(UUID id, UUID other) { return friendshipOf(id, other); }
         @Override public List<CompanionSocials.Participant> players() {
             var out = new ArrayList<CompanionSocials.Participant>();
             for (Entry entry : entries.values()) {
@@ -12070,6 +12079,7 @@ final class PlayerRuntime {
 
     /** The runtime's side of outings (E-27a): where it has seen, whether it is free, its own walks, and what it remembers. */
     private final class OutingSource implements Outings.Source {
+        @Override public int friendship(UUID id, UUID other) { return friendshipOf(id, other); }
         @Override public List<CompanionSocials.Participant> players() { return new InitiativeSource().players(); }
 
         @Override public Optional<dev.kindred.core.outing.Outing.Destination> destination(UUID id) {
@@ -12125,6 +12135,7 @@ final class PlayerRuntime {
 
     /** The runtime's side of conversations between AI players (E-51). */
     private final class PeerTalkSource implements PeerTalk.Source {
+        @Override public int friendship(UUID id, UUID other) { return friendshipOf(id, other); }
         /** A fight, a flight, a bed and the like: no talk. */
         private static final java.util.Set<String> BUSY = java.util.Set.of("native_attack", "native_fight", "native_block", "native_shoot",
                 "native_retreat", "native_clutch", "native_dragon", "native_pearl", "native_sleep");

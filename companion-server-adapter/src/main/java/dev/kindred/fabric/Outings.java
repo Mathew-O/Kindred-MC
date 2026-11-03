@@ -48,6 +48,8 @@ final class Outings {
 
     /** The runtime's side. */
     interface Source {
+        /** Its friendship with {@code other} (E-24a), for tone and its own choices only (E-25a); 0 when none is kept. */
+        default int friendship(UUID id, UUID other) { return 0; }
         List<CompanionSocials.Participant> players();
 
         /** Somewhere worth seeing it has itself seen, between {@value #NEAREST} and {@value #FARTHEST} blocks off, or empty. */
@@ -156,7 +158,8 @@ final class Outings {
         // Another idle AI player in sight answers by its own rule, as a record, never as chat.
         for (var peer : source.players()) {
             if (peer.id().equals(host.id()) || peer.body() == null || !SocialPerception.visible(host.body(), peer.body())) continue;
-            var answer = OutingChoice.answer(source.hasGoal(peer.id()), !source.idle(peer.id()), source.busy(peer.id()), false, peer.profile().personality());
+            var answer = OutingChoice.answer(source.hasGoal(peer.id()), !source.idle(peer.id()), source.busy(peer.id()), false, peer.profile().personality(),
+                    dev.kindred.core.social.Warmth.of(source.friendship(peer.id(), host.id())));
             trip.invited.add(peer.id());
             if (answer.yes()) trip.outing.accept(peer.id(), now);
             note(host.name() + " asked " + peer.name() + ": " + (answer.yes() ? "yes" : "no (" + answer.why() + ")"));
