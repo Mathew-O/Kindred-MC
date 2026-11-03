@@ -66,8 +66,10 @@ public final class NativeBunkerGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     if (context.getWorld().getTime() % 400 == 0) {
+                        // Its body may be gone once the fixture's runtime has stopped at the end of its time: noted, not a crash.
+                        var body = f.player();
                         KindredMod.LOGGER.info("Bunker fixture: {} at {}; {}", f.runtime.buildStatus(f.id).orElse("built"),
-                                f.player().getBlockPos().toShortString(), f.runtime.nativeLastResult(f.id));
+                                body == null ? "no body" : body.getBlockPos().toShortString(), f.runtime.nativeLastResult(f.id));
                     }
                     context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
                             "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id));

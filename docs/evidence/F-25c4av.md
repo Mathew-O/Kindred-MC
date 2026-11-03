@@ -3,7 +3,7 @@
 Date: 2026-11-02
 Agent / branch: Claude / claude/next-deps-1102
 Build: `e732618`; recorded in [validation](../validation.md)
-Status: complete as a native fix (fails before, passes after). Not yet watched in a live or evaluation run.
+Status: native fix complete (fails before, passes after); on seed 20261030 in the evaluation of 3 November, 2 walks to the table against 928. Open: why the plan asked for a stone pickaxe with no stone.
 
 ## Scope and implementation
 
@@ -38,7 +38,9 @@ the class for each run and restored after; the full suite and build as in [valid
 
 ## Remaining limitations and handoff
 
-Not tested: the evaluation seed 20261030 run again with the fix, to see the goal go on to the stone. Why the goal's plan
-asked for a stone pickaxe with no stone in hand was not looked into: the planner's count and the recipe's ingredients
-differ somewhere. Next: an evaluation of the next build on the same seeds. Updated documentation: none for users; the
+Seed 20261030 run again in the ten seeds of `e25a-7c8febf` (3 November, [validation](../validation.md)): 2 walks to the
+crafting table in the run, against 928; the goal mined its cobblestone first ("Mine cobblestone for a stone pickaxe").
+Nobody died on the seed this time, so the case behind the loop (back at spawn with nothing) did not come up. Why the
+goal's plan asked for a stone pickaxe with no stone in hand then was not looked into: the planner's count and the
+recipe's ingredients differ somewhere. Next: that. Updated documentation: none for users; the
 operator guide's log lines are unchanged apart from the new line above.

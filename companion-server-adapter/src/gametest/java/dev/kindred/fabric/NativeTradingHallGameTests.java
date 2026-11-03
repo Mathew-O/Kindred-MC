@@ -204,6 +204,26 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
         BlockPos cabinAt = o.add(10, 7, 10), home = o.add(16, 7, 20), at = o.add(19, 7, 20);
         VillagerEntity[] librarian = new VillagerEntity[1];
         var flock = new java.util.ArrayList<net.minecraft.entity.passive.SheepEntity>();
+        // Each drop of wool seen, with how many sheep had been shorn when it was first seen; and, once it holds its beds,
+        // how many drops from a sheep before the last it left lying (each was given up after a few looks while it waited
+        // for it to land, the plan asked again and again during the wait: CI on #12, short of wool after all nine).
+        var woolSeen = new java.util.HashMap<java.util.UUID, Long>();
+        long[] leftLying = {-1};
+        int[] woolDropped = {0};
+        Runnable watchWool = () -> {
+            var player = f.player();
+            if (beds || leftLying[0] >= 0 || flock.isEmpty() || player == null) return;
+            long shorn = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isSheared).count();
+            var drops = context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
+                    new net.minecraft.util.math.Box(o.add(16, 7, 29)).expand(24, 8, 24),
+                    drop -> drop.isAlive() && drop.getStack().isOf(Items.WHITE_WOOL));
+            for (var drop : drops) if (woolSeen.putIfAbsent(drop.getUuid(), shorn) == null) woolDropped[0] += drop.getStack().getCount();
+            if (player.getInventory().count(Items.WHITE_BED) > 0) {
+                leftLying[0] = drops.stream().filter(drop -> woolSeen.get(drop.getUuid()) < shorn).count();
+                KindredMod.LOGGER.info("Trading hall beds: made once {} were shorn ({} wool seen fall, {} lying); {} drops of wool from a sheep before the last left lying",
+                        shorn, woolDropped[0], drops.stream().mapToInt(drop -> drop.getStack().getCount()).sum(), leftLying[0]);
+            }
+        };
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
@@ -306,8 +326,11 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                     check(context, first, off <= 28, "By its cabin: " + off + " blocks off");
                     check(context, first, site.y() == cabinAt.getY(), "On the ground its cabin stands on: " + site.y());
                 })
-                .createAndAdd(() -> context.assertTrue(f.runtime.hall(f.id).map(PlayerMemoryStore.Hall::complete).orElse(false),
-                        "The hall stands: " + f.runtime.baseNote(f.id) + " / " + f.runtime.buildStatus(f.id).orElse("")))
+                .createAndAdd(() -> {
+                    watchWool.run();
+                    context.assertTrue(f.runtime.hall(f.id).map(PlayerMemoryStore.Hall::complete).orElse(false),
+                            "The hall stands: " + f.runtime.baseNote(f.id) + " / " + f.runtime.buildStatus(f.id).orElse(""));
+                })
                 .createAndAdd(() -> {
                     var site = f.runtime.hall(f.id).orElseThrow();
                     var world = context.getWorld();
@@ -329,11 +352,16 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                         // Its beds made from wool it shore: every sheep alive, some shorn, the shears worn and kept.
                         long alive = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isAlive).count();
                         long shorn = flock.stream().filter(net.minecraft.entity.passive.SheepEntity::isSheared).count();
-                        var shears = f.player().getInventory().main.stream().filter(stack -> stack.isOf(Items.SHEARS)).findFirst();
+                        // Its body may be gone once the fixture's runtime has stopped at the end of its time: a failed check, not a crash.
+                        var body = f.player();
+                        var shears = body == null ? java.util.Optional.<ItemStack>empty()
+                                : body.getInventory().main.stream().filter(stack -> stack.isOf(Items.SHEARS)).findFirst();
                         KindredMod.LOGGER.info("Trading hall beds: {} of 9 sheep shorn, {} alive, shears {}", shorn, alive, shears.map(ItemStack::getDamage).orElse(-1));
                         check(context, first, alive == 9, "No sheep killed for the beds: " + alive + " of 9 alive");
                         check(context, first, shorn >= (bedsInHall * 3 + 2) / 3, "Sheep shorn for the beds' wool: " + shorn);
                         check(context, first, shears.map(stack -> stack.getDamage() == shorn).orElse(false), "The shears worn once a sheep: " + shears);
+                        check(context, first, leftLying[0] == 0, "Each sheep's wool picked up before the next was shorn: " + leftLying[0]
+                                + " drops from a sheep before the last left lying (-1: no beds made)");
                     }
                     context.assertTrue(first[0] == null, first[0]);
                     librarian[0].discard();

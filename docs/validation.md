@@ -16,6 +16,85 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## CI on #12: a trading hall short of its beds' wool, and two fixtures that stopped the server (E-45d, E-08g) — 3 November 2026 (`claude/hollow-1103`)
+
+Both builds of #12 failed, each on something the change did not cause. [E-45d](evidence/E-45d.md), [E-08g](evidence/E-08g.md).
+
+- **The push build** (528 game tests, 1 failed): the trading hall's beds. All nine sheep were shorn and the hall still
+  ended "built but for 3 white bed". The fixture had passed in the 15 saved CI logs before it, and locally the build
+  took 4 to 7 of the 9 sheep, where 3 to 5 should do.
+  - The cause: each drop of wool is let go after six tries, and the tries were counted each time the plan was asked
+    for its next step. The routine goals ask every 5 ticks while a step runs, so one second's wait for a drop to land
+    counted six, and a drop that came down out of reach was let lie for good. A try is now counted when its wait or
+    walk ends.
+  - **Native:** a new fixture, a bed to build with its third wool beside the player and not to be picked up for four
+    seconds (staged), fails 3 of 3 before the fix: it goes looking for sheep with the wool beside it. The beds
+    fixture now also counts the drops from an earlier sheep still lying when the beds are made. Before the fix it
+    fails 2 of 3 (4 drops and 1 drop left lying; the third run none). With the fix: both pass 3 of 3, and the build and trading-hall classes together 8 of 8 in each of three runs.
+- **The PR build** stopped the whole game test server: the bunker fixture's progress line read the player after the
+  fixture's own stop had taken its body away, its dig having run out of time on CI. The line is now safe, and so is
+  the beds fixture's last step, which crashed the same way in the runs before the fix. Locally the bunker passes as
+  before, 2 of 2 on main and 2 of 2 on #12 earlier.
+- **E-08g:** its climb out of a hollow is now never from within the build's own box: a hideout's room dug below its
+  floor is the build, not a hollow beside it. The bunker, build and trading-hall classes: 8 of 8.
+- **CI on `25dde40`:** the PR build 528 of 529, its one failure the Nether portal restart (open, as before). The push
+  build 526 of 529:
+  - Two copies of the drowning replay `echo-50149` were never made ("Creation area is no longer available"), as in
+    CI 305 before.
+  - The new drop fixture failed on its own staging ("The wool lying"): the wool lay over the edge of the player's
+    chunk, in one that did not tick. The player and the wool now stand mid-chunk; 3 of 3 with the fix, and it still
+    fails on main's code.
+- Environment: Linux x64 cloud container, OpenJDK 21. Classes run alone with the gametest entrypoints narrowed (not
+  committed).
+
+## Up out of a hollow beside the build (E-08g) — 3 November 2026 (`claude/hollow-1103`)
+
+The last 3 of the 17 roof-reach stops in the saved CI logs (E-08f): a player below the build's floor in a hollow beside
+it ("expanded 6000, standing true"). Code on `abe0c20`. [Evidence](evidence/E-08g.md).
+
+- **The fix:** blocked below the floor, a walk round failed, it climbs out first (a route up, or the campaign's climb
+  out), on blocks the build does not take before those it does.
+- **Native:** the new fixture, a wall's last top block twelve blocks off a closed pit three deep beside its near end:
+  on main's code fails 3 of 3 ("stopped, 8 steps failed one after another"); with the fix passes 3 of 3, up dirt stairs
+  and a scaffold, 54 of 54. A first version of the fix climbed out on the wall's last cobblestone and went off for more;
+  the climb now spends what the build does not take first. A first version of the fixture (a single column four
+  blocks off the pit) passed on main's code too, a scaffold from the pit reaching it, and was not kept.
+- **Build classes with the fix** (seed builds, compounds, houses, base, life first, build needs): 22 of 22, no build
+  stopped.
+- Environment: Linux x64 cloud container, OpenJDK 21. Single classes run with the gametest entrypoints narrowed (not
+  committed).
+
+## Ten seeds of main with E-08f and E-25a (`e25a-7c8febf`) — 3 November 2026
+
+The jar `run.py` built from `7c8febf` (main after #11 is the same tree with a merge commit): three starters, the nether
+goal, 144,000 ticks, strategist and voice off, two servers at a time, 14:17 to about 18:12, nothing else on the cores
+but reading finished seeds' logs (CI ran remotely). All ten complete and earned.
+[Summary](evidence/eval/e25a-7c8febf/summary.md); [against `social-8537a03`](evidence/eval/compare-e25a.md).
+
+- **Against the last build's ten seeds, no measure differs clearly** (every range overlaps):
+  - the team's furthest stage 4.0 [3 to 6] against 5.5 [2 to 6];
+  - deaths a game hour 1.5 [0.0 to 4.0] against 1.25 [0.0 to 3.0];
+  - stuck game minutes 36.0 [24 to 147] against 42.0 [12 to 84];
+  - the iron pickaxe on 10 of 10 seeds against 9;
+  - obsidian on 5 against 7, and a portal lit on 1 against 5. The comparison before this one went 1 to 5 the other way;
+    a lit portal swings this much from build to build on these seeds.
+- **F-25c4av in the open:** on 20261030, where the last build walked to its crafting table 928 times, 2 walks. Nobody
+  died there this time, so the case behind it (back at spawn with nothing, a stone pickaxe planned with no stone) did not
+  come up; why the plan asked for one then is still open.
+- **F-25c4aw in the open:** a walk out to look for logs ended once a log was in view 17 times, on 7 of the 10 seeds.
+  Of four looked at, two walked to the log and chopped it, one found no route to its trunk's foot and explored on, and
+  one went after rabbits instead.
+- **E-08f:** no build in this scenario (the nether goal builds none), so nothing of it to see here; CI's three suites
+  on the two merges had no build stopped.
+- **E-25a:** no lines between AI players on any seed, as in the last build; a meeting noted with nobody to hear on 0
+  to 2 per seed.
+- **Found, open (as before):** a player under water whose walks out found no route, again and again:
+  - Kindred on 8675309, "Climb out of the water: to the wall", 830 walks in 19 minutes (the run's worst repeat, 829);
+  - Kindred on 505, "Get out of the water: to dry ground", tried elsewhere 35 times, at stone tools all run.
+  - The last build had the same on 505 (891 walks).
+- **Found, open:** the desert seed 31102026 again left one player with nothing (Kindred, two deaths); the last build left
+  Echo so there.
+
 ## Friendship shapes tone and the player's own choices (E-25a) — 3 November 2026 (`claude/friendship-tone-1103`)
 
 Code on `8184b1b`. [Evidence](evidence/E-25a.md).

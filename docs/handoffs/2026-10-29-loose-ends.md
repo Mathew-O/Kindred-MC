@@ -971,3 +971,30 @@ hungry. Shown: the new conversation fixture fails 3 of 3 on main's code and pass
 
 Next dependency: the ten-seed evaluation of main with E-08f and E-25a (F-25c4av and F-25c4aw in the open too). Open in
 E-25: the voice given the band; a friend's ask answered first; help offered to a friend in trouble; E-35's drift.
+
+## Handoff, 3 November 2026 (evening): the ten seeds, and up out of a hollow (`claude/hollow-1103`)
+
+- **Ten seeds of main with E-08f and E-25a** (`e25a-7c8febf`; [validation](../validation.md)). All complete and earned.
+  - Against the last build's ten seeds no measure differs clearly. A portal was lit on 1 seed against 5; the comparison
+    before went 1 to 5 the other way, so a lit portal swings this much from build to build.
+  - F-25c4av seen working: on 20261030, 2 walks to the crafting table against 928. Still open: why the plan asked for a
+    stone pickaxe with no stone.
+  - F-25c4aw done: 17 walks out for logs ended with a log in view, on 7 seeds.
+  - Open, as before: a player under water whose walks out find no route again and again (Kindred on 8675309, 830 walks;
+    on 505 35 tries; the last build on 505, 891).
+- **E-08g** ([evidence](../evidence/E-08g.md)): down in a hollow beside its build, below the floor, a walk round failed,
+  it climbs out first, on blocks the build does not take, and builds on. The fixture fails 3 of 3 on main's code and
+  passes 3 of 3 with it; the build classes 22 of 22. That was the last kind of the 17 CI roof stops.
+- **CI on #11** saw one new failure once: the hungry life-first fixture began its base at 31 food, not 32. Its hunt
+  passed over the cows left after two strikes came up out of reach. It passed in the other two runs. Open.
+
+- **CI on #12** ([validation](../validation.md)):
+  - A trading hall was left short of its beds' wool after all nine sheep were shorn. Each drop was given up after six
+    tries, and the tries were counted each time the plan was asked for its next step, every 5 ticks, so one second's
+    wait used them up. Tries are now counted when a pick-up ends (E-45d). The new fixture fails 3 of 3 before the fix
+    and passes 3 of 3 with it.
+  - Two fixtures stopped the server when their body was gone at their own stop; their lines are now safe.
+  - E-08g's climb is now kept out of the build's own box.
+
+Next dependency: the water livelock (a player under water whose walks out find no route), seen on two of ten seeds in
+each of the last two evaluations.
