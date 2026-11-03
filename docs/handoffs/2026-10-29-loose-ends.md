@@ -1006,8 +1006,13 @@ each of the last two evaluations.
     pocket, the lake's sand in the shaft.
   - It now breaks that block and swims up. The fixture fails 3 of 3 on main's code (it drowns) and passes 5 of 5 with
     the fix.
-- **Open:** a hunt that does not get its cow in time: the hungry-up fixture once locally, and the hungry life-first
-  fixture once on #11's CI.
+- **Open:**
+  - A hunt that does not get its cow in time: the hungry-up fixture once locally, and the hungry life-first fixture
+    once on #11's CI.
+  - Two timing collisions, each once, in the push build of #12's `36b4b49`:
+    - the long fall's water clutch was checked while the player ate;
+    - the fire fixture's walk command was refused while an activity slice settled.
+  - The lake librarian off its line, as before.
 
 Next dependency: ten seeds of main with E-08g, E-45d's wool and F-25c4ax, to see the flooded shaft in the open; then
 that hunt.
