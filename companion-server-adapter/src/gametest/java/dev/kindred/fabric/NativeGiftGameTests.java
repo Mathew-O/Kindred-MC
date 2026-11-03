@@ -135,6 +135,52 @@ public final class NativeGiftGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * A toss lands at the feet of whoever it is for, just past them, whichever way the thrower faces (F-25c4ax). The toss meant to aim the
+     * thrown stack at its recipient, but it looked the stack up by its thrower, which a drop that does not keep its owner
+     * never has: every toss flew where the thrower faced, two blocks or so, and a delivery to an AI player failed whenever
+     * that was not at the receiver's feet (Wren left holding nothing, in CI and alone on main's code). Staged: Echo facing
+     * west with its owner 3.8 blocks east of it; Echo's iron. The owner, a mock player, does not pick it up; where the stack
+     * comes to rest is what is checked.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "tossAimed", tickLimit = 800)
+    public void aTossLandsAtTheFeetOfWhoeverItIsForWhicheverWayTheThrowerFaces(TestContext context) {
+        var t = new NativeVoiceGameTests.Talk(context, false);
+        var f = t.f;
+        ItemEntity[] thrown = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var from = context.getAbsolute(new Vec3d(2.5, 2, 3.5));
+                    f.player().refreshPositionAndAngles(from.x, from.y, from.z, 90, 0); // Staged: facing west.
+                    t.owner.refreshPositionAndAngles(from.x + 3.8, from.y, from.z, 90, 0); // East of it, behind its back.
+                    f.player().getInventory().setStack(0, new ItemStack(Items.IRON_INGOT, 8)); // Staged.
+                })
+                .createAndAdd(() -> {
+                    f.player().setYaw(90);
+                    f.player().setHeadYaw(90);
+                    context.assertTrue(f.runtime.nativeToss(t.owner.getCommandSource(), f.id, "iron_ingot", 2) == 1, "Its owner's toss");
+                })
+                .createAndAdd(() -> {
+                    var items = context.getWorld().getEntitiesByClass(ItemEntity.class, f.player().getBoundingBox().expand(12), e -> e.getStack().isOf(Items.IRON_INGOT));
+                    context.assertTrue(!items.isEmpty(), "Tossed: " + f.player().getInventory().count(Items.IRON_INGOT) + " left");
+                    thrown[0] = items.getFirst();
+                })
+                .createAndAdd(() -> context.assertTrue(thrown[0].isOnGround() && thrown[0].getVelocity().horizontalLengthSquared() < 1.0E-5, "Still moving"))
+                .createAndAdd(() -> KindredMod.LOGGER.info("Aimed toss fixture: the stack came to rest {} blocks from its recipient",
+                        Math.round(Math.hypot(thrown[0].getX() - t.owner.getX(), thrown[0].getZ() - t.owner.getZ()) * 10) / 10.0))
+                .createAndAdd(() -> {
+                    double off = Math.hypot(thrown[0].getX() - t.owner.getX(), thrown[0].getZ() - t.owner.getZ());
+                    context.assertTrue(off <= 1.2, "Landed " + Math.round(off * 10) / 10.0 + " blocks from its owner, at "
+                            + thrown[0].getPos().subtract(f.player().getPos()) + " from the thrower");
+                    t.cleanup(context);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rapport", tickLimit = 2000)
     public void aBlowIsHeldAgainstThemStruckOutByItsControllerAndBothSurviveARestart(TestContext context) {
         var t = new NativeVoiceGameTests.Talk(context, false);

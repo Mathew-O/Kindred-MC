@@ -2430,13 +2430,36 @@ final class NativePlayerBody implements BodyAdapter {
             ItemStack live = player.getInventory().getStack(inventorySlot);
             if (live.isEmpty() || live.getCount() < count) return;
             ItemStack gift = live.split(count);
-            Vec3d toward = recipient.getEyePos().subtract(player.getEyePos()).normalize();
-            player.dropItem(gift, false, false);
-            var dropped = player.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
-                    player.getBoundingBox().expand(2.0), e -> e.getOwner() == player).stream().findFirst();
-            dropped.ifPresent(item -> item.setVelocity(toward.x * 0.35, 0.2, toward.z * 0.35));
+            // Thrown to land just past their feet, whichever way the player faces (F-25c4ax). The stack was looked up by
+            // its thrower, which a drop that keeps no owner never has: every toss flew where the player faced, two blocks
+            // or so, and a delivery to an AI player failed whenever that was not at the receiver's feet. Never inside the
+            // thrower's own reach either, where it would pick its gift straight back up: a hand-over walks up close.
+            var item = player.dropItem(gift, false, false);
+            if (item == null) return;
+            double dx = recipient.getX() - player.getX(), dz = recipient.getZ() - player.getZ();
+            double flat = Math.hypot(dx, dz);
+            if (flat < 1.0E-3) return;
+            double speed = Math.min(TOSS_MOST, Math.max(flat + TOSS_PAST, TOSS_CLEAR) / TOSS_CARRY);
+            item.setVelocity(dx / flat * speed, TOSS_LIFT, dz / flat * speed);
         });
     }
+
+    /**
+     * How far a tossed stack goes for each unit of speed, from eye height with {@link #TOSS_LIFT} up, its slide over stone
+     * included: measured in the game (a stack thrown at 0.227 came to rest 3.0 blocks off). A toss to someone {@code d}
+     * blocks off is thrown at {@code d / TOSS_CARRY}.
+     */
+    static final double TOSS_CARRY = 13.2;
+    /**
+     * How far past the receiver's feet a toss lands, and the least it travels: a player picks up what is within a block
+     * of its body (about 1.4 blocks from its middle), so a stack 0.6 past the receiver is in their reach, and one 1.6
+     * from the thrower out of its own.
+     */
+    static final double TOSS_PAST = 0.6, TOSS_CLEAR = 1.6;
+    /** The toss's upward speed, as a player's own throw. */
+    static final double TOSS_LIFT = 0.2;
+    /** The fastest toss: about four and a half blocks, a little beyond the four a toss reaches. */
+    static final double TOSS_MOST = 0.35;
 
     /** Drops owned items at the player's feet the way a person presses Q; the items stay in the world. */
     boolean discard(ActionLease lease, int inventorySlot, int count) {

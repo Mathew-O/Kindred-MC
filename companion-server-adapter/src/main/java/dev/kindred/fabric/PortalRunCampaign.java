@@ -2670,12 +2670,7 @@ final class PortalRunCampaign {
                                   Predicate<BlockPos> also) {
         var player = body.entity();
         BlockPos feet = player.getBlockPos();
-        BlockPos support = feet.down();
-        Predicate<BlockPos> usable = p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
-                && also.test(p)
-                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
-                && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
-                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
+        Predicate<BlockPos> usable = gatherable(body, kind, radius, also);
         for (int candidate = 0; candidate < 4; candidate++) {
             var target = knowledge.nearest(player.getServerWorld(), kind, feet, usable);
             if (target.isEmpty()) return Optional.empty();
@@ -2710,6 +2705,18 @@ final class PortalRunCampaign {
             avoid(pos, true, lastTick);
         }
         return Optional.empty();
+    }
+
+    /** A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both. */
+    private Predicate<BlockPos> gatherable(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
+        var player = body.entity();
+        BlockPos feet = player.getBlockPos();
+        BlockPos support = feet.down();
+        return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+                && also.test(p)
+                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
+                && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
+                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
     }
 
     /**
@@ -5274,6 +5281,24 @@ final class PortalRunCampaign {
     }
 
     /** Why the running goal task should stop, or null: a hostile after the player while other work runs, or a fight that has worn the player down. */
+    /**
+     * As {@link #stopFor(ServerPlayerEntity, Task)}, and a walk out to look for logs ends once a log the goal would gather
+     * is known: it goes for that rather than walk on to the end of the walk (F-25c4aw). In every full suite since the merge
+     * of 2 November the tree-in-water fixture's first look about had not reached the stump before its first step, a walk
+     * out to look; the walk ran on off its ground and down a step it could not climb back, and the stump was out of reach.
+     * A log the goal would not go for (out of reach, given up, without a stand under it) does not end the walk.
+     */
+    String stopFor(NativePlayerBody body, Task running) {
+        String stop = stopFor(body.entity(), running);
+        if (stop != null || running == null || !"native_goto".equals(running.skill())) return stop;
+        if (running.label().startsWith("Explore ") && running.label().endsWith(" for logs")) {
+            var player = body.entity();
+            if (knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.LOG, player.getBlockPos(),
+                    gatherable(body, WorldKnowledge.Kind.LOG, 64, p -> true)).isPresent()) return "Logs in view; the walk out to look for them is over";
+        }
+        return null;
+    }
+
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         // Sinking or swimming in a task that will not take it out of the water (a wait, a seal, a fight): up for air first.
