@@ -938,3 +938,22 @@ Validation: on `373bb90`, `./gradlew build` green: 922 JUnit tests, 916 passed, 
 Next dependency: as before (E-25, then an evaluation of the current build on the ten seeds, which also checks F-25c4av
 and F-25c4aw in the open).
 
+
+## Handoff, 3 November 2026 (afternoon): the roof-reach stops (`claude/roof-reach-1103`)
+
+The owner's ask, after the three failures: carry on. The most common red in CI was a build stopped "8 steps failed one
+after another", each a walk with "no walkable route" (#82's family). E-08f ([evidence](../evidence/E-08f.md)).
+
+- **Why, from the navigator's own notes** over the 17 such stops in the saved CI logs:
+  - 8 hemmed in by its own scaffolding. Coming down a column, a walk planned while it was still dropping onto the next
+    block left the rest of the column standing; stubs so left round a cell beside a wall shut it in.
+  - 4 started from the wrong cell at a column's edge, its middle over the open side.
+  - 3 below the floor in a hollow beside the build: open.
+- **Fixed:** it lands on its scaffold before it plans on down it; its own scaffolding in reach comes down before a block is
+  called out of reach; a walk from a block's edge starts on the block it rests on.
+- **Shown:** the new planner case and the new edge fixture fail before and pass after. In the build classes, walks off a
+  column left standing fell from 84 of 365 to 33 of 419, and walks hemmed in or from the wrong cell from 11 to 0.
+- **Not shown yet:** whether CI's roof stops are gone; that shows over the next suite runs. The hollow below the floor is
+  the next slice of it.
+
+Next dependency: as before (E-25, then an evaluation of the current build on the ten seeds).
