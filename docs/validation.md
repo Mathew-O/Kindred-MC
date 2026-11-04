@@ -16,6 +16,46 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## On a cavern's rim (F-25c4bb) — 4 November 2026 (`claude/e40-ladder-2-1104`)
+
+Kindred's 32 stuck spells on 505 in `e40a1-e9d33c0`. [Evidence](evidence/F-25c4bb.md).
+
+- **The place:** read offline from a fresh world made from seed 505, as diagnosis only. -42, 4, -3 is the crust over a
+  cavern from Y=3 down to an aquifer at Y=-30.
+- **What it did there:** its tunnel cleared the cells on three sides before finding a drop under each. The climb back
+  then had no step left.
+- **A first fixture, not kept:** cave floors seen in a sealed room 22 above, the player then moved to a pocket below.
+  On the code before the fix it passed 3 of 3: one refused walk left it stranded there, and it branch mined.
+- **The rim fixture:** on `79f2a3e` fails 3 of 3, waiting 3,818 to 3,823 ticks. With the fix passes 3 of 3, away and
+  digging after 260 to 292 ticks.
+- **The goal's tunnelling classes with the fix**, alone (`NativePortalCampaignGameTests`, `NativeAtlasGameTests`,
+  `NativeFloodedShaftGameTests`, `NativeLessonsGameTests`, `ReplayGameTests`, `NativeMiningGameTests`,
+  `NativeBranchMineGameTests`): 115 of 116. The one failure was the walk back up when its pickaxe breaks ("Well down
+  the staircase when it broke"), open since CI 298 and suite runs 36 and 37. Its staircase is dug by `digDown`, which
+  this change leaves alone.
+
+## E-40, rung a, iteration 1: the ten seeds of `e9d33c0`, and CI on #14 — 4 November 2026 (`claude/e40-ladder-2-1104`)
+
+- **The evaluation, `e40a1-e9d33c0`:** ten seeds, earned, nothing else on the cores. Iron pickaxe within the first game
+  hour on 10 of 10 (median 16.75 minutes [11.9 to 36.7]), against 9 of 10 on `f25c4ax-84b331c`. Stuck time under a tenth
+  of the run on 1 of 10, as before. Stuck spells 9.5 [1 to 61], against 15.5 [4 to 22]. Every range overlaps, so no
+  clear difference by the convention; the earlier build was measured at the slower pace F-26a removed.
+  [Summary](evidence/eval/e40a1-e9d33c0/summary.md), [comparison](evidence/eval/compare-e40a1.md), [deaths](evidence/eval/e40a1-e9d33c0/deaths.md),
+  [E-40](evidence/E-40.md) for the spells by place and cause.
+- **Its first try was lost:** the container was reclaimed while the session was idle, five minutes after it started,
+  and both servers died at 24,000 ticks. Run again from the start; the two seeds of the lost try are not counted.
+- **CI on #14, head `e9d33c0`:**
+  - the pull-request run's build passed, 532 of 532;
+  - the push run's build: 528 of 532. Open before: the hungry climb's hunt, the pasture's doorway pair, and a
+    librarian bring from the family that fails in the mix. New: the wait carried over its period's end
+    (`NativeAccountingGameTests`), cancelled at 05:26:50.03 against the period's end at 05:26:50. A permit is sized in
+    whole milliseconds of wall time and timed with `nanoTime`, so it can lapse up to a millisecond before the wall-clock
+    end; on a tick in that gap `holdOverPeriodEnd` declines to hold. A race in F-11g's hold, not in F-26a's hand-backs,
+    which move neither clock. A patch is proposed on #14; it is not made here;
+  - that build's one re-run: 531 of 532, the accounting fixture passing. The one failure was the cabin built on its
+    second go (`NativeBaseGameTests`), open since full run 22.
+  - Merged as `79f2a3e`.
+
 ## E-40, rung a: the first three fixes (F-25c4az, F-25c4ba, F-26a) — 4 November 2026 (`claude/e40-ladder-1104`)
 
 From the stuck spells recorded on the ten seeds of main (`f25c4ax-84b331c`, E-40's starting build): 144 spells. 45

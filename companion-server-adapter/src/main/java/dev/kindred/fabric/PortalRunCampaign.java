@@ -3543,6 +3543,14 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         for (int turn = 0; turn < tunnelTurns; turn++) {
             BlockPos ahead = feet.offset(digDirection);
+            // A drop under the way ahead, too deep to step down and not one it would bridge: that way is not dug into at
+            // all. Dug, its cells were the steps a climb back would have stood on: in the ten seeds on `e9d33c0` Kindred's
+            // branch mine on 505 came out on the crust over a cavern 34 deep, dug the crust out on three sides, found a drop
+            // under each, and waited there for 97 minutes with no step left to climb (F-25c4bb).
+            if (passable(world, ahead.down()) && passable(world, ahead.down(2)) && !bridgeDrops && !dug.contains(ahead.down().asLong())) {
+                digDirection = digDirection.rotateYClockwise();
+                continue;
+            }
             boolean refused = false;
             for (BlockPos cell : List.of(ahead.up(), ahead)) {
                 if (passable(world, cell)) continue;
