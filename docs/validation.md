@@ -16,6 +16,43 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The block over its head not to be dug: out from beside it (F-25c4bd) — 4 November 2026 (`claude/e40-ladder-4-1104`)
+
+Two players out of sticks with no pickaxe in `e40a2-143806e`, each in a shaft of its own one wide, both stuck to the end
+of the run: 22 spells. [Evidence](evidence/F-25c4bd.md).
+
+- **The places,** read offline from fresh worlds made from the seeds, as diagnosis only:
+  - Sol on 31102026 at Y=64: sandstone to 66 with sand from 67 to 70 over it.
+  - Kindred on 101 at Y=53: stone over its head with three water sources beside the block at 55.
+- **The sand fixture:** on `0467a5f` fails 3 of 3, where it stood 5,991 to 5,994 ticks on. With the fix it passes 3 of
+  3, out on the sand after 1,371 to 1,399 ticks.
+- **The water fixture:** with the sand half of the fix only, it fails 3 of 3, where it stood 5,988 to 5,994 ticks on.
+  With the fix it passes 3 of 3, out after 2,892 to 2,900 ticks, no water let out.
+- **The goal's climbing and tunnelling classes with both fixes**, alone (`NativePortalCampaignGameTests`,
+  `NativeAtlasGameTests`, `NativeFloodedShaftGameTests`, `NativeLessonsGameTests`, `ReplayGameTests`,
+  `NativeMiningGameTests`, `NativeBranchMineGameTests`, `NativeTripDownGameTests`): 119 of 119. The walk back up when
+  its pickaxe breaks, open since CI 298, passed in this run.
+- **Build:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped.
+
+## Sealed in with cobbled deepslate and no pickaxe (F-25c4bc) — 4 November 2026 (`claude/e40-ladder-4-1104`)
+
+The most common stuck cause in `e40a2-143806e`: 14 of 94 spells "Head back up toward home", every way up refused.
+[Evidence](evidence/F-25c4bc.md).
+
+- **Sol on 20261030, at 101, 35, 92 (7 spells, the last 41 game minutes):** its last pickaxe wore out on its stair down
+  for lava. It sealed itself in for the night and never got out. The terrain round it, read offline from a fresh world
+  on the seed (diagnosis only), is stone, granite, dirt and coal ore, with no liquid near. The console does not name
+  the seal's block. It carried cobbled deepslate from Y=-54, and of the blocks it seals with, only that one (3.5) was
+  past the by-hand limit of 3.0.
+- **A first fixture, not kept:** the same stair with a cobblestone seal. On `7b2766e` it punched the seal and climbed
+  at once, so it reproduced nothing of Sol's. Near the top its walk out for logs took it back down to the foot, a
+  separate fault, not looked at yet.
+- **The stair-foot fixture:** a cobbled deepslate seal. On `7b2766e` it fails 3 of 3, at the foot 5,959 to 5,966 ticks
+  after daylight. With the fix it passes 3 of 3, 6 up after 2,758 to 2,763 ticks.
+- **The goal's own fixtures with the fix**, alone (`NativePortalCampaignGameTests` and `NativeTripDownGameTests`):
+  96 of 96, the night-seal fixture under a pool (F-25c4at) among them.
+- **Build:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped.
+
 ## E-40, rung a, iteration 2: the ten seeds of `143806e`, and the closing checks — 4 November 2026 (`claude/e40-ladder-3-1104`)
 
 - **The evaluation, `e40a2-143806e`:** ten seeds, earned, nothing else on the cores.
