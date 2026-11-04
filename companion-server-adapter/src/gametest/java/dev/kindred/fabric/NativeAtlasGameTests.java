@@ -128,9 +128,10 @@ public final class NativeAtlasGameTests implements FabricGameTest {
      * ended in the water and was reckoned done, its swim to dry ground took it back to the near bank, and it set out
      * again, Echo for 24 minutes (F-25c4az). Staged: the causeway and the channel cut across it, twelve deep, its far
      * side a sheer wall three blocks over the causeway; the ore seen with a diamond-stage kit (no use for iron then);
-     * the move 66 blocks off, past its reach for ore; the kit after it, as though made, with no iron.
+     * the move 66 blocks off, past its reach for ore; the kit after it, as though made, with no iron; and the habit of
+     * leaving caves alone (F-19c), as with no mob in earshot its causeway, below the sea's level, would be a cave to it.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "atlasLeadWater", tickLimit = 3000)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "atlasLeadWater", tickLimit = 3000)
     public void ironItSawAcrossDeepWaterItCannotClimbOutOfIsLetGoAfterAWalkOrTwo(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2600);
         BlockPos[] origin = new BlockPos[1];
@@ -147,7 +148,10 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     world.setTimeOfDay(1000);
-                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // Its field, 84 blocks along x, inside its own wide structure, open to the sky as before: laid from an empty
+                    // one's corner, it lay over the tests beside it, and in a full suite it went for a log of another test's tree,
+                    // into its channel. Under the wide structure's roof its causeway would be a cave floor to explore.
+                    BlockPos o = origin[0] = context.getAbsolutePos(new BlockPos(16, 22, 60)).toImmutable();
                     chunks(world, o.add(-8, -14, -8), o.add(AWAY + 10, 0, 8), true);
                     for (int x = -6; x <= AWAY + 8; x++) for (int z = -5; z <= 5; z++) {
                         boolean channel = x >= 20 && x <= 28;
@@ -205,7 +209,14 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().getX() == origin[0].getX() + AWAY,
                         "Put far off"))
                 .createAndAdd(() -> context.assertTrue(++settle[0] >= 30, "A moment"))
-                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal again"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal again");
+                    // Below the sea's level any open stone floor is a cave's to the goal, its causeway too: in its own field,
+                    // with no mob within earshot, it would explore that as a cave rather than show what it does with the lead.
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", List.of(),
+                            "Leave the caves alone", "", List.of(), null, "NO_CAVES", null).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
                 .createAndAdd(() -> {
                     String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
                     if (steps.isEmpty() || !steps.getLast().equals(progress)) steps.add(progress);

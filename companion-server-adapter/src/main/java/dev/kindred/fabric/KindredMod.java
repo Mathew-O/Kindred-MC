@@ -84,6 +84,8 @@ public final class KindredMod implements ModInitializer {
             });
         });
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(server -> {
+            // Work handed back from other threads first, every runtime's, as each tick starts (F-26a).
+            PlayerRuntime.runHandedBack(server);
             PlayerRuntime rt = runtime;
             if (rt != null) rt.onServerTick(server);
         });

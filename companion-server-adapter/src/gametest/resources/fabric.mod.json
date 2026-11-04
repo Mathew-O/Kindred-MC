@@ -60,6 +60,7 @@
       "dev.kindred.fabric.NativeFloodedShaftGameTests",
       "dev.kindred.fabric.NativeLessonsGameTests",
       "dev.kindred.fabric.NativeAtlasGameTests",
+      "dev.kindred.fabric.NativeBranchMineGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",
