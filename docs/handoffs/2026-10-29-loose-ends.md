@@ -1090,3 +1090,85 @@ F-26a removed. Summaries, comparisons and every death's record are under [eval](
 3. Then the ten seeds again.
 4. **Keep the session busy while an evaluation runs.** The container is reclaimed when the session goes idle. The
    first try of iteration 1 died that way, five minutes after it started.
+
+## Handoff, 4 November 2026 (evening): E-40's ladder, rung a, iterations 3 and 4 (`claude/e40-ladder-4-1104` to `-6-1104`)
+
+**Rung reached:** none in full. Rung a is still half met:
+- the iron pickaxe within the first game hour on 10 of 10 seeds in both new evaluations;
+- stuck time under a tenth of the run on 1 of 10 in each.
+
+Rungs b to g are not started, and the gate has not been run. The three reserved gate seeds in [E-40](../evidence/E-40.md)
+are still unused.
+
+**Numbers** (ten development seeds, earned, two game hours, strategist off; medians [ranges]):
+
+| Measure | starting build `f25c4ax-84b331c` | iteration 2 `e40a2-143806e` | iteration 3 `e40a3-05b58fd` | iteration 4 `e40a4-c237a6e` |
+| --- | --- | --- | --- | --- |
+| Iron pickaxe in the first hour | 9 of 10 | 10 of 10 | 10 of 10 | 10 of 10 |
+| First iron pickaxe, minutes | 37.3 [13.0 to not reached] | 16.35 [12.3 to 23.3] | 20.15 [13.5 to 46.5] | 17.35 [9.8 to 31.7] |
+| Stuck time under a tenth | 1 of 10 | 1 of 10 | 1 of 10 | 1 of 10 |
+| Stuck spells | 15.5 [4 to 22] | 8.0 [1 to 20] | 22.5 [2 to 48] | 18.0 [3 to 39] |
+| Obsidian / portal lit | 5 / 3 of 10 | 8 / 5 of 10 | 5 / 2 of 10 | 6 / 5 of 10 |
+| Deaths | 38 | 19 | 28 | 26 |
+
+Every range overlaps, so by the convention no difference is clear. The seeds' worst places move from run to run: each
+fix removes the place it was found at, and the next run finds others.
+
+**Fixes, each with its fixture failing before and passing after (all in `NativeTripDownGameTests`):**
+- **F-25c4bc** (`0467a5f`): with no pickaxe, cobbled deepslate is punched by hand (the limit 3.5, not 3.0).
+  - Sol on 20261030 had sealed itself in for the night with it, inferred, and stood there 41 minutes.
+  - Stair-foot fixture: fails 3 of 3, passes 3 of 3.
+- **F-25c4bd** (`05b58fd`): when the block over its head may not be dug (sand on it, or water beside it), it gets out
+  from the cell beside it.
+  - Sol under the desert's sand on 31102026, and Kindred beside a pocket of water on 101, stood so to the end of
+    their runs.
+  - Sand and water fixtures: each fails 3 of 3, passes 3 of 3.
+- **F-25c4be** (`c237a6e`): on ground it cannot climb or walk off, it pillars up into a hole one wide over it, or over a
+  cell beside it.
+  - Echo on 20261030 stood 38 spells on an island in a lava lake, under the hole it came down through.
+  - Lava-island fixture: fails 3 of 3, passes 3 of 3.
+- **Merges:** #16 (`914dd97`), #17 (`9df95ac`) and #18 (`04f302d`). Each was red on CI with timing intermittents only,
+  no fixture failing in both builds.
+- **Not kept:** a staged flooded-stair fixture, which got out on the old code.
+- **Tried and taken out, for want of a fixture that fails without them:**
+  - passing over a refused "to the wall" target for a minute (F-25c4ay);
+  - keeping F-25c4bd's step aside out of water (on 404 it fired 546 times in flood water).
+- **Corrected:** this page and E-40 had said Sol died twice on 20261030 in iteration 2. It did not die there.
+
+**Validation on the final code (`c237a6e`):**
+- `bash ./gradlew build` green: 929 JUnit tests, none failing, 6 skipped.
+- Every new fixture passes 3 of 3 alone.
+- Full native suite, nothing else on the cores: 535 of 537 in 52.6 minutes.
+  - The two failures (the wolf tamed and named, the librarian brought home) were not on the open list.
+  - Alone, their classes passed 8 of 8 in each of three runs.
+- The final ten-seed summary is filed with its comparison against the starting build
+  ([compare-e40a4-base](../evidence/eval/compare-e40a4-base.md)).
+
+**What stops rung a now: the water loop (F-25c4ay).** It is 70 of iteration 4's 194 spells, on five seeds, and 65 of
+iteration 3's 232.
+- **How it starts:** a player's stair up toward water breaks into it, or into the sand under it, from below. The water
+  comes down the stair.
+- **Then:** standing in the flowing water, it walks "to the wall" at its stair's next step, with the water falling
+  down it. On 202 in iteration 3 it asked for that walk 9,792 times, each refused, and 5,076 more were cancelled for
+  air.
+- **The staged form did not reproduce it:** a lake one deep over a stair of one step. The player swam out over the
+  lake.
+- **The real ones:** stand in a column of flowing water at the stair's foot, with sand come down and the lake's edge
+  further off. Build the fixture from a seed's own terrain. Read offline from a fresh world on 202 (diagnosis only), 20, 56, -88
+  lies under shallow water at Y=62 over sand from 60 to 62, with diorite under that.
+
+**Deaths** (each recorded with cause, place, light, time, stance and step):
+- 28 in iteration 3: 24 below ground, 18 in the dark (light 0 or 1), 19 while fighting back.
+- 26 in iteration 4: 23 below ground, 15 in the dark, 19 while fighting back.
+- Zombies most of all, then skeletons, spiders and creepers.
+
+**Decisions for the owner** (as in the morning's handoff, still open):
+- **The accounting race:** the patch proposed on #14.
+- **CI's timing intermittents:** one to nine a build on #16 to #18, a different set each time.
+
+**Exact next action:**
+1. The flooded stair (F-25c4ay): a fixture from 202's or 606's own terrain that fails at least 2 of 3. Then the
+   pass-over of a refused wall target, and what gets it out of the water once it no longer walks to the wall (up the
+   falling water, or a block set to stop the flow).
+2. Then the ten seeds again, and on to rung b.
+3. **Keep the session busy while an evaluation runs.** The container is reclaimed when the session goes idle.
