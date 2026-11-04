@@ -16,6 +16,29 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, rung a, iteration 2: the ten seeds of `143806e`, and the closing checks — 4 November 2026 (`claude/e40-ladder-3-1104`)
+
+- **The evaluation, `e40a2-143806e`:** ten seeds, earned, nothing else on the cores.
+  - Iron pickaxe within the first game hour on 10 of 10 (median 16.35 minutes [12.3 to 23.3]).
+  - Stuck time under a tenth of the run on 1 of 10.
+  - Stuck spells 8.0 [1 to 20], against 9.5 [1 to 61] on iteration 1 and 15.5 [4 to 22] on the starting build.
+  - Obsidian on 8 of 10, a portal lit on 5 of 10, 19 deaths.
+  - Every range overlaps both, so no clear difference by the convention.
+  - [Summary](evidence/eval/e40a2-143806e/summary.md), [against iteration 1](evidence/eval/compare-e40a2.md),
+    [against the starting build](evidence/eval/compare-e40a2-base.md), [deaths](evidence/eval/e40a2-143806e/deaths.md),
+    [E-40](evidence/E-40.md) for the spells by place and cause.
+- **Build on `143806e`:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped. The JUnit tasks were
+  up to date: this tree changes no module that has JUnit tests since F-26a's build.
+- **The full native suite on `143806e`, nothing else on the cores:** 532 of 533 in 48 minutes. The one failure is the
+  Nether portal restart (`NativeNetherGameTests`, "No observed-Blaze attack candidate after Nether portal arrival"),
+  open before. Every fixture new in E-40 passed: the sprinting branch mine, the cavern's rim, and the lead over water.
+- **CI on #15, head `143806e`:** its two builds went 530 and 526 of 533, failing on different fixtures, some open
+  before. New in them: the stair's pace check and two trust walks refused while an activity slice settled. Alone on this
+  head, `NativeStairGameTests` and `NativeTrustGameTests` pass 9 of 9 twice; neither path calls `tunnel`. Their
+  re-runs: 531 and 530 of 533, every failure on the open list (the Nether portal restart in both, the seed-build
+  cabin, the tree standing in water, the hungry climb's hunt), the stair and trust fixtures passing. Merged as
+  `f82b8a9`.
+
 ## On a cavern's rim (F-25c4bb) — 4 November 2026 (`claude/e40-ladder-2-1104`)
 
 Kindred's 32 stuck spells on 505 in `e40a1-e9d33c0`. [Evidence](evidence/F-25c4bb.md).
