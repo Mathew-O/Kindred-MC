@@ -1016,3 +1016,76 @@ each of the last two evaluations.
 
 Next dependency: ten seeds of main with E-08g, E-45d's wool and F-25c4ax, to see the flooded shaft in the open; then
 that hunt.
+
+## Handoff, 4 November 2026: E-40's ladder, rung a (`claude/e40-ladder-1104`, `-2-1104`, `-3-1104`)
+
+**Rung reached:** none in full. Rung a is half met. The iron pickaxe within the first game hour came on 10 of 10 seeds in
+both evaluations after the fixes; stuck time under a tenth of the run on 1 of 10 in each. Rungs b to g not started;
+the gate not run. The three reserved gate seeds are in [E-40](../evidence/E-40.md), rolled before any run and not used.
+
+**Numbers** (ten development seeds, earned, two game hours, strategist off; medians [ranges]):
+
+| Measure | starting build `f25c4ax-84b331c` | iteration 1 `e40a1-e9d33c0` | iteration 2 `e40a2-143806e` |
+| --- | --- | --- | --- |
+| Iron pickaxe in the first hour | 9 of 10 | 10 of 10 | 10 of 10 |
+| First iron pickaxe, minutes | 37.3 [13.0 to not reached] | 16.75 [11.9 to 36.7] | 16.35 [12.3 to 23.3] |
+| Stuck time under a tenth | 1 of 10 | 1 of 10 | 1 of 10 |
+| Stuck spells | 15.5 [4 to 22] | 9.5 [1 to 61] | 8.0 [1 to 20] |
+| Obsidian / portal lit (rung b's) | 5 / 3 of 10 | 5 / 4 of 10 | 8 / 5 of 10 |
+| Deaths | 38 | 39 | 19 |
+
+Every range overlaps, so by the convention no difference is clear. The starting build was measured at the slower pace
+F-26a removed. Summaries, comparisons and every death's record are under [eval](../evidence/eval/).
+
+**Fixes, each with its fixture failing before and passing after:**
+- **F-25c4az** (`78fdb82`): walks that keep ending in deep water set their place aside. Fixture: fails 2 of 3 on the
+  old code, passes 3 of 3. It was moved into a wide structure of its own, because in the full suite its field lay over
+  the tests beside it.
+- **F-25c4ba** (`f0258b6`): a spare stone pickaxe is not made from the iron pickaxe's sticks. JUnit case: fails
+  before, passes after.
+- **F-26a** (`e9d33c0`): work handed back to the server thread runs within a tick on a sprinting server.
+  - Every player task had waited on two to four of vanilla's three-tick holds, so the evaluation measured the players
+    at half their pace. That pace, not the mine, was behind the 45 branch-mine spells.
+  - Sprinting branch-mine fixture: fails 3 of 3, passes 3 of 3.
+- **F-25c4bb** (`143806e`): on a cavern's rim the way over the drop is not dug into, and it climbs away. Kindred on
+  505 waited 97 minutes there. Rim fixture: fails 3 of 3, passes 3 of 3.
+- **Merges:** #14 (`79f2a3e`) and #15 (`f82b8a9`, F-25c4bb and iteration 1's evidence) merged. Their CI failures
+  were all on the open list or analysed on the PR; the accounting race there has a proposed patch.
+
+**Validation on the final code (`143806e`):**
+- `bash ./gradlew build` green: 929 JUnit tests, none failing, 6 skipped.
+- Every new fixture passes 3 of 3 alone.
+- Full native suite, nothing else on the cores: 532 of 533 in 48 minutes. The one failure is the Nether portal
+  restart, on the open list.
+- The final ten-seed summary is filed with its comparison against the starting build
+  ([compare-e40a2-base](../evidence/eval/compare-e40a2-base.md)).
+
+**What stops rung a now.** 94 stuck spells in iteration 2. A team is stuck for more than a tenth of the run on 9 of
+10 seeds.
+- **Pickaxes and sticks on the way down:** the longest spells are players out of sticks or a pickaxe below ground.
+  "Gather logs for sticks - Head back up toward home" finds no route: 12 spells, Sol on 20261030 and the desert.
+  - On 20261030, Sol made 14 stone pickaxes and 10 batches of torches in the run, two deaths among them, and lost its
+    last pickaxe at Y=35 on its stair down for lava.
+  - The wood for the trip down is not kept against the pickaxes and torches the trip will use.
+- **One waiting place on 101:** Kindred, 14 spells, not looked at yet.
+- **Also seen on iteration 1 and open:**
+  - 505 Echo's aquifer swims at Y=2 (25 spells, the stair down for lava breaking into an aquifer);
+  - the desert's by-hand climb under sand (Sol, Y=59: every way up refused for the sand over its head).
+
+**Deaths** (each recorded with cause, place, light, time, stance and step):
+- 19 in iteration 2, all underground, 11 in the dark (light 0 or 1), 15 while fighting back.
+- Zombies are most of them. A player fights in the dark tunnels it digs.
+
+**Decisions for the owner:**
+- **The accounting race:** whether to make the patch proposed on #14. A lapse within `RENEW_GAIN_MIN` of a period's
+  end counts as at the end. It is open as an intermittent.
+- **CI:** main's suite is red on every merge, two to seven timing intermittents a run, different each time. Whether
+  to spend a slice on them before the ladder goes on.
+
+**Exact next action:**
+1. The trip-down's wood: make the reserve for the way down cover the pickaxes and torches its depth will use, or keep
+   a log to make them from. Fixture first: Sol's 20261030 stair.
+2. Then 101's waiting place.
+3. Then the ten seeds again.
+4. **Keep the session busy while an evaluation runs.** The container is reclaimed when the session goes idle. The
+   first try of iteration 1 died that way, five minutes after it started.
