@@ -16,6 +16,32 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, rung a, iteration 4, and the closing checks — 4 November 2026 (`claude/e40-ladder-6-1104`)
+
+- **The evaluation, `e40a4-c237a6e` (F-25c4be on main):** ten seeds, earned, nothing else on the cores.
+  - The iron pickaxe within the first game hour on 10 of 10 (median 17.35 minutes [9.8 to 31.7]).
+  - Stuck time under a tenth of the run on 1 of 10 (707).
+  - Stuck spells 18.0 [3 to 39], against 22.5 [2 to 48] on iteration 3 and 15.5 [4 to 22] on the starting build.
+    Every range overlaps, so no clear difference by the convention.
+  - Obsidian on 6 of 10, a portal lit on 5 of 10, 26 deaths.
+  - The water loop ("Climb out of the water: to the wall", F-25c4ay, open) is 70 of its 194 spells.
+  - [Summary](evidence/eval/e40a4-c237a6e/summary.md), [against iteration 3](evidence/eval/compare-e40a4.md),
+    [against the starting build](evidence/eval/compare-e40a4-base.md), [deaths](evidence/eval/e40a4-c237a6e/deaths.md),
+    [E-40](evidence/E-40.md).
+- **The full native suite on `c237a6e`, nothing else on the cores:** 535 of 537 in 52.6 minutes.
+  - The two failures: the wolf tamed and named (`NativePetGameTests`, "One wolf tamed and named: 0 / 0") and the
+    librarian brought home (`NativeBringGameTests`, "Brought home").
+  - Neither was on the open list. Alone, the two classes then passed 8 of 8 in each of three runs.
+  - Every fixture new in this session passed: the four trip-down fixtures.
+- **Build on `c237a6e`:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped.
+- **Every new fixture alone, 3 of 3:**
+  - the stair foot, the sand shaft and the wet shaft, on `05b58fd` and again on `c237a6e`;
+  - the lava island, on `c237a6e`.
+- **CI on #18 (head `c237a6e`):**
+  - The merge ref went 536 of 537, failing only the Nether portal restart (open).
+  - The branch build, 14 minutes slower, went 528 of 537. Each of its nine failures passed in the merge-ref build.
+  - Merged as `04f302d`.
+
 ## E-40, rung a, iteration 3, and the lava-lake island (F-25c4be) — 4 November 2026 (`claude/e40-ladder-5-1104`)
 
 - **The evaluation, `e40a3-05b58fd` (F-25c4bc and F-25c4bd on main):** ten seeds, earned, nothing else on the cores.
