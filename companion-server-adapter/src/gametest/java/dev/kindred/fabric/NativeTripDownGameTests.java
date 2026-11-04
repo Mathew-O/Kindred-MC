@@ -258,4 +258,84 @@ public final class NativeTripDownGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Come down through a cave's ceiling onto a little island in a lava lake, every walk off it over the lava: it pillars
+     * back up into the hole it came down through, rather than walk "to the wall" across the lava again and again
+     * (F-25c4be). On 20261030 in E-40's iteration 3 (`e40a3-05b58fd`) Echo's stair down for iron broke through the ceiling
+     * of a cave two high over a lava lake at 41, 72, 23. It came down onto two blocks of stone and andesite in the lava
+     * (read offline from a fresh world on the seed, diagnosis only). Its walks "to the wall" found no route 40,419 times,
+     * each asked for again at once, and it stood there from tick 4,500 to the end of the run, 38 stuck spells. Staged: a block of stone with open sky over it; a cave two high in it with a floor of lava but for an
+     * island of two blocks; a hole one wide from the cave's ceiling over the island's second block up to the surface;
+     * daylight held; the player on the island's first block, fed, with a stone pickaxe, cobblestone, torches and bread.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "lavaIsland", tickLimit = 4000)
+    public void onAnIslandInALavaLakeUnderTheHoleItCameDownThroughItPillarsBackUpIntoIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3900);
+        BlockPos o = context.getAbsolutePos(new BlockPos(60, 6, 60));
+        long[] start = {0};
+        int[] highest = {Integer.MIN_VALUE};
+        int[] walls = {0};
+        String[] last = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Islander"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    FixtureGround.keep(context, o.add(-8, -4, -6), o.add(8, 12, 6));
+                    FixtureGround.simulated(context, o.add(-8, 0, -6), o.add(8, 0, 6));
+                    for (int x = -8; x <= 8; x++) for (int z = -6; z <= 6; z++) for (int y = -4; y <= 12; y++) {
+                        BlockPos at = o.add(x, y, z);
+                        boolean cave = x >= -5 && x <= 3 && Math.abs(z) <= 3;
+                        boolean island = z == 0 && (x == 0 || x == 1) && y == -1;
+                        boolean hole = x == 1 && z == 0 && y >= 2 && y <= 9;
+                        var state = y >= 10 || hole || cave && (y == 0 || y == 1) ? Blocks.AIR.getDefaultState()
+                                : cave && y == -1 && !island ? Blocks.LAVA.getDefaultState()
+                                : island && x == 1 ? Blocks.ANDESITE.getDefaultState() : Blocks.STONE.getDefaultState();
+                        world.setBlockState(at, state);
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 32));
+                    inventory.setStack(2, new ItemStack(Items.TORCH, 8));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "On the island"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    start[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var bots = f.runtime.panelBots(Actor.console());
+                    context.assertTrue(!bots.isEmpty() && f.player() != null && f.player().isAlive(), "Its panel and body");
+                    String progress = bots.getFirst().goalProgress();
+                    if (progress.endsWith(": to the wall") && !progress.equals(last[0])) walls[0]++;
+                    last[0] = progress;
+                    BlockPos feet = f.player().getBlockPos();
+                    highest[0] = Math.max(highest[0], feet.getY() - o.getY());
+                    // Back up into the hole it came down through, off the island.
+                    context.assertTrue(highest[0] >= 3, "Still on the island at " + feet.subtract(o).toShortString() + ", "
+                            + (context.getTick() - start[0]) + " ticks on, " + walls[0] + " walks to the wall; " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18 && !player.isOnFire(), "Unhurt: " + player.getHealth());
+                    KindredMod.LOGGER.info("Lava island: up into its hole {} ticks on, {} walks to the wall; {}", context.getTick() - start[0], walls[0], last[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
 }
