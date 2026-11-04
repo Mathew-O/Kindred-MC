@@ -3305,6 +3305,9 @@ final class PortalRunCampaign {
         while (swimming && world.getFluidState(feet.up()).isIn(net.minecraft.registry.tag.FluidTags.WATER)) feet = feet.up();
         // Water over the ceiling, a lake's or a river's, refusing a step up: then every way up here meets the same water.
         boolean waterOver = false;
+        // The block over its head refused, for sand or gravel resting on it or a liquid beside it: then so is every way up
+        // from here (F-25c4bd).
+        boolean headRoomRefused = false;
         for (int turn = 0; turn < 4; turn++) {
             BlockPos step = feet.offset(digDirection);
             BlockPos landing = step.up();
@@ -3314,6 +3317,7 @@ final class PortalRunCampaign {
                 if (refused || passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) {
                     waterOver |= world.getFluidState(cell.up()).isIn(FluidTags.WATER);
+                    headRoomRefused |= cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell);
                     refused = true;
                     break;
                 }
@@ -3321,6 +3325,7 @@ final class PortalRunCampaign {
                 // block after another as each is dug out of its head room (Kindred suffocated twice so in B7's second pairs).
                 if (cell.equals(feet.up(2)) && world.getBlockState(cell.up()).getBlock() instanceof net.minecraft.block.FallingBlock) {
                     waterOver |= world.getFluidState(cell.up(2)).isIn(FluidTags.WATER);
+                    headRoomRefused = true;
                     refused = true;
                     break;
                 }
@@ -3370,6 +3375,10 @@ final class PortalRunCampaign {
             underWaterHeading = digDirection;
             if (out.isPresent()) return out;
         }
+        if (headRoomRefused && !swimming) {
+            Optional<Task> aside = fromBeside(body, feet, label);
+            if (aside.isPresent()) return aside;
+        }
         // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
         // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square). Swimming,
         // across the water to it (F-25c4t).
@@ -3391,6 +3400,92 @@ final class PortalRunCampaign {
         if (toWall == null) return Optional.empty();
         digDirection = toWall;
         return Optional.of(go(feet.offset(toWall, nearest - 1), 0.4, false, label + ": to the wall"));
+    }
+
+    /**
+     * Out from under a block over its head it may not dig, as a player gets out: from the cell beside it. The block is
+     * refused for sand or gravel resting on it, which would come down onto the player, or for a liquid beside it, which
+     * would be let in.
+     * <ul>
+     * <li>It digs a pocket two high beside it, on solid ground, where the pocket's own head room has no liquid beside it.</li>
+     * <li>Under sand, it opens the pocket's ceiling from where it stands, so what rested there comes down into the pocket
+     * and not onto the player, and digs what came down out from beside it, the lowest first, until nothing rests over the
+     * pocket.</li>
+     * <li>Then it steps into the pocket, whose head room it may dig or is clear, and climbs from there.</li>
+     * </ul>
+     * In E-40's iteration 2 (`e40a2-143806e`) two players, out of sticks with no pickaxe, came up shafts of their own one
+     * wide to such a block, and stood there to the end of the run (F-25c4bd). On 31102026 Sol had sandstone with four sand
+     * on it over its head at Y=64, 6 stuck spells. On 101 Kindred had stone at Y=55 with a pocket of water beside it, 16.
+     */
+    private Optional<Task> fromBeside(NativePlayerBody body, BlockPos feet, String label) {
+        var world = body.entity().getServerWorld();
+        if (!world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, new Box(feet).expand(1, 0, 1).stretch(0, 8, 0), e -> true).isEmpty()) {
+            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle"));
+        }
+        var ways = new java.util.ArrayList<Direction>();
+        for (Direction way = digDirection; ways.size() < 4; way = way.rotateYClockwise()) ways.add(way);
+        // A pocket beside it whose head room it may dig or is clear: into it, and up from there.
+        for (Direction way : ways) {
+            BlockPos side = feet.offset(way);
+            if (pocket(world, side) && !blocked(side) && !headRoomRefused(world, side)) {
+                digDirection = way;
+                return Optional.of(go(side, 0.4, false, label + ": step aside"));
+            }
+        }
+        // What came down into a pocket, dug out from beside it, the lowest first: what rests above comes down after it.
+        for (Direction way : ways) {
+            BlockPos side = feet.offset(way);
+            if (passable(world, side.down())) continue;
+            BlockPos fallen = passable(world, side) ? side.up() : side;
+            if (passable(world, fallen) || !(world.getBlockState(fallen).getBlock() instanceof net.minecraft.block.FallingBlock)) continue;
+            Optional<Task> dig = digBeside(body, fallen, label + ": dig out what came down");
+            if (dig.isPresent()) return dig;
+        }
+        // A pocket beside it under what rests there: its ceiling opened from here, so that comes down into the pocket.
+        for (Direction way : ways) {
+            BlockPos side = feet.offset(way);
+            if (!pocket(world, side) || blocked(side) || !capped(world, side)) continue;
+            Optional<Task> dig = digBeside(body, side.up(2), label + ": open the ceiling beside it");
+            if (dig.isPresent()) return dig;
+        }
+        // No pocket yet: one dug beside it, on solid ground, its head-level cell first; not where the pocket's own head room
+        // would have a liquid beside it.
+        for (Direction way : ways) {
+            BlockPos side = feet.offset(way);
+            if (passable(world, side.down()) || blocked(side) || blocked(side.up())) continue;
+            if (!passable(world, side.up(2)) && liquidNear(world, side.up(2))) continue;
+            BlockPos cell = !passable(world, side.up()) ? side.up() : side;
+            if (passable(world, cell)) continue;
+            Optional<Task> dig = digBeside(body, cell, label + ": dig a pocket beside it");
+            if (dig.isPresent()) {
+                digDirection = way;
+                return dig;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Open at its feet and head, on solid ground. */
+    private static boolean pocket(ServerWorld world, BlockPos feet) {
+        return passable(world, feet) && passable(world, feet.up()) && !passable(world, feet.down());
+    }
+
+    /** The block over a player's head there with sand or gravel resting on it, which would come down on it if dug out. */
+    private static boolean capped(ServerWorld world, BlockPos feet) {
+        return !passable(world, feet.up(2)) && world.getBlockState(feet.up(3)).getBlock() instanceof net.minecraft.block.FallingBlock;
+    }
+
+    /** The block over a player's head there not to be dug: sand or gravel resting on it, or a liquid beside it. */
+    private static boolean headRoomRefused(ServerWorld world, BlockPos feet) {
+        return capped(world, feet) || !passable(world, feet.up(2)) && liquidNear(world, feet.up(2));
+    }
+
+    /** A block beside the player dug out, with a tool if it has one fit for it, else by hand; never one by a liquid. */
+    private Optional<Task> digBeside(NativePlayerBody body, BlockPos cell, String label) {
+        if (blocked(cell) || liquidNear(body.entity().getServerWorld(), cell)) return Optional.empty();
+        if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+        if (handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
+        return Optional.empty();
     }
 
     private BlockPos settleAt;

@@ -16,6 +16,24 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The block over its head not to be dug: out from beside it (F-25c4bd) — 4 November 2026 (`claude/e40-ladder-4-1104`)
+
+Two players out of sticks with no pickaxe in `e40a2-143806e`, each in a shaft of its own one wide, both stuck to the end
+of the run: 22 spells. [Evidence](evidence/F-25c4bd.md).
+
+- **The places,** read offline from fresh worlds made from the seeds, as diagnosis only:
+  - Sol on 31102026 at Y=64: sandstone to 66 with sand from 67 to 70 over it.
+  - Kindred on 101 at Y=53: stone over its head with three water sources beside the block at 55.
+- **The sand fixture:** on `0467a5f` fails 3 of 3, where it stood 5,991 to 5,994 ticks on. With the fix it passes 3 of
+  3, out on the sand after 1,371 to 1,399 ticks.
+- **The water fixture:** with the sand half of the fix only, it fails 3 of 3, where it stood 5,988 to 5,994 ticks on.
+  With the fix it passes 3 of 3, out after 2,892 to 2,900 ticks, no water let out.
+- **The goal's climbing and tunnelling classes with both fixes**, alone (`NativePortalCampaignGameTests`,
+  `NativeAtlasGameTests`, `NativeFloodedShaftGameTests`, `NativeLessonsGameTests`, `ReplayGameTests`,
+  `NativeMiningGameTests`, `NativeBranchMineGameTests`, `NativeTripDownGameTests`): 119 of 119. The walk back up when
+  its pickaxe breaks, open since CI 298, passed in this run.
+- **Build:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped.
+
 ## Sealed in with cobbled deepslate and no pickaxe (F-25c4bc) — 4 November 2026 (`claude/e40-ladder-4-1104`)
 
 The most common stuck cause in `e40a2-143806e`: 14 of 94 spells "Head back up toward home", every way up refused.

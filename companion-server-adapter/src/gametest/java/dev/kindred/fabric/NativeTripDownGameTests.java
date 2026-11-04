@@ -108,4 +108,154 @@ public final class NativeTripDownGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * In a shaft of its own under the desert's sandstone, the block over its head with sand resting on it and no pickaxe:
+     * it gets out from under the sand from the cell beside it and climbs to the surface (F-25c4bd). On 31102026 in E-40's
+     * iteration 2 (`e40a2-143806e`) Sol, out of sticks with no pickaxe, pillared and punched its way up a shaft one wide
+     * from Y=52 to 64. There the block over its head was sandstone with four sand on it (read offline from a fresh world
+     * on the seed, diagnosis only). Every way up was refused for the sand, the pillar for the block over its head, and it
+     * stood there for the rest of the run, 6 stuck spells ("Gather logs for sticks - Head back up toward home"). Staged: a
+     * block of sandstone with four sand on top, open sky above; a pocket two high in the sandstone, its ceiling a block
+     * of sandstone under the sand; daylight held; the player in the pocket, fed, with cobblestone and bread, no pickaxe
+     * and no wood.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "underSand", tickLimit = 6000)
+    public void inAShaftUnderSandstoneWithSandOnItAndNoPickaxeItGetsOutFromBesideAndClimbs(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5900);
+        BlockPos o = context.getAbsolutePos(new BlockPos(60, 4, 60));
+        long[] start = {0};
+        String[] last = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sandshaft"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    FixtureGround.keep(context, o.add(-8, -4, -8), o.add(8, 12, 8));
+                    FixtureGround.simulated(context, o.add(-8, 0, -8), o.add(8, 0, 8));
+                    for (int x = -8; x <= 8; x++) for (int z = -8; z <= 8; z++) for (int y = -4; y <= 12; y++) {
+                        BlockPos at = o.add(x, y, z);
+                        boolean pocket = x == 0 && z == 0 && (y == 0 || y == 1);
+                        var state = pocket || y >= 7 ? Blocks.AIR.getDefaultState()
+                                : y >= 3 ? Blocks.SAND.getDefaultState() : Blocks.SANDSTONE.getDefaultState();
+                        world.setBlockState(at, state);
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.COBBLESTONE, 16));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "In the shaft"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    start[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var bots = f.runtime.panelBots(Actor.console());
+                    context.assertTrue(!bots.isEmpty() && f.player() != null && f.player().isAlive(), "Its panel and body");
+                    String progress = bots.getFirst().goalProgress();
+                    last[0] = progress;
+                    BlockPos feet = f.player().getBlockPos();
+                    // Out on the sand: the open ground at the top.
+                    context.assertTrue(feet.getY() >= o.getY() + 7 && f.player().isOnGround(), "Still at " + feet.subtract(o).toShortString()
+                            + " from where it stood, " + (context.getTick() - start[0]) + " ticks on; " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    KindredMod.LOGGER.info("Sand shaft: out on the sand {} ticks on; {}", context.getTick() - start[0], last[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * In a shaft of its own through rock, water beside the block over its head and no pickaxe: it gets out from the cell
+     * beside it on the dry side and climbs to the surface, the water left where it is (F-25c4bd). On 101 in E-40's
+     * iteration 2 (`e40a2-143806e`) Kindred, out of sticks with no pickaxe, pillared and punched its way up a shaft one
+     * wide from Y=48 to 53. There the block over its head (stone) had water beside it, a pocket of three sources at
+     * Y=55 to 57 (read offline from a fresh world on the seed, diagnosis only). Every way up was refused for the water,
+     * the pillar for the block over its head, and it stood there from the first quarter of the run to its end, 16 stuck
+     * spells. Staged: a block of stone with open sky over it; a pocket two high in it; three water sources in a column
+     * beside the block over its head, walled in by stone; daylight held; the player in the pocket, fed, with cobblestone
+     * and bread, no pickaxe and no wood.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "besideWater", tickLimit = 6000)
+    public void inAShaftWithWaterBesideTheBlockOverItsHeadAndNoPickaxeItGetsOutFromBesideAndClimbs(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5900);
+        BlockPos o = context.getAbsolutePos(new BlockPos(60, 4, 60));
+        long[] start = {0};
+        String[] last = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wetshaft"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    FixtureGround.keep(context, o.add(-8, -4, -8), o.add(8, 12, 8));
+                    FixtureGround.simulated(context, o.add(-8, 0, -8), o.add(8, 0, 8));
+                    for (int x = -8; x <= 8; x++) for (int z = -8; z <= 8; z++) for (int y = -4; y <= 12; y++) {
+                        BlockPos at = o.add(x, y, z);
+                        boolean pocket = x == 0 && z == 0 && (y == 0 || y == 1);
+                        boolean water = x == 0 && z == 1 && y >= 2 && y <= 4;
+                        var state = pocket || y >= 7 ? Blocks.AIR.getDefaultState()
+                                : water ? Blocks.WATER.getDefaultState() : Blocks.STONE.getDefaultState();
+                        world.setBlockState(at, state);
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.COBBLESTONE, 16));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "In the shaft"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    start[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var bots = f.runtime.panelBots(Actor.console());
+                    context.assertTrue(!bots.isEmpty() && f.player() != null && f.player().isAlive(), "Its panel and body");
+                    String progress = bots.getFirst().goalProgress();
+                    last[0] = progress;
+                    BlockPos feet = f.player().getBlockPos();
+                    // Out on the open ground at the top.
+                    context.assertTrue(feet.getY() >= o.getY() + 7 && f.player().isOnGround(), "Still at " + feet.subtract(o).toShortString()
+                            + " from where it stood, " + (context.getTick() - start[0]) + " ticks on; " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive() && player.getHealth() >= 18, "Unhurt: " + player.getHealth());
+                    // The water left where it was: its three sources, and no water anywhere else.
+                    var world = context.getWorld();
+                    int wet = 0;
+                    for (BlockPos at : BlockPos.iterate(o.add(-8, -4, -8), o.add(8, 12, 8))) if (!world.getFluidState(at).isEmpty()) wet++;
+                    context.assertTrue(wet == 3, "Water let out: " + wet + " cells wet");
+                    KindredMod.LOGGER.info("Wet shaft: out on top {} ticks on; {}", context.getTick() - start[0], last[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
 }
