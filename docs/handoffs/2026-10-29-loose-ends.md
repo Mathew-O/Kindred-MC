@@ -1064,8 +1064,9 @@ F-26a removed. Summaries, comparisons and every death's record are under [eval](
 10 seeds.
 - **Pickaxes and sticks on the way down:** the longest spells are players out of sticks or a pickaxe below ground.
   "Gather logs for sticks - Head back up toward home" finds no route: 12 spells, Sol on 20261030 and the desert.
-  - On 20261030, Sol made 14 stone pickaxes and 10 batches of torches in the run, two deaths among them, and lost its
-    last pickaxe at Y=35 on its stair down for lava.
+  - On 20261030, Sol made 14 stone pickaxes and 10 batches of torches in the run, and lost its last pickaxe at Y=35 on
+    its stair down for lava. (Corrected 4 November: this line said two deaths were among them; Sol did not die on
+    20261030 in this run.)
   - The wood for the trip down is not kept against the pickaxes and torches the trip will use.
 - **One waiting place on 101:** Kindred, 14 spells, not looked at yet.
 - **Also seen on iteration 1 and open:**

@@ -2710,6 +2710,15 @@ final class PortalRunCampaign {
         return NativeBreakAction.bestTool(body, player.getServerWorld().getBlockState(pos)) != -2;
     }
 
+    /**
+     * The hardest block a player with no pickaxe punches through: cobbled deepslate, the hardest of the blocks it seals its
+     * shelter and builds its ways with ({@link #SEALING}), about eighteen seconds by hand. At 3.0 its own night seal of
+     * cobbled deepslate shuts it in for good. On 20261030 in E-40's iteration 2 (`e40a2-143806e`) Sol's last pickaxe wore
+     * out on its stair down for lava at Y=35; sealed in for the night, carrying the cobbled deepslate it had dug at Y=-54,
+     * it stood there with every way up refused for the last 41 game minutes of the run, 7 stuck spells (F-25c4bc).
+     */
+    private static final float HAND_HARDNESS = 3.5f;
+
     /** Rock a player with no pickaxe at all can still punch through: no drop, but a way out. */
     private boolean handClearable(NativePlayerBody body, BlockPos pos) {
         var player = body.entity();
@@ -2717,7 +2726,7 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isIn(ItemTags.PICKAXES)) return false;
         BlockState state = world.getBlockState(pos);
-        if (state.getHardness(world, pos) > 3.0f || eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
+        if (state.getHardness(world, pos) > HAND_HARDNESS || eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
         return RoamingEdits.breakDenial(player, pos, policy, false) == null;
     }
 
