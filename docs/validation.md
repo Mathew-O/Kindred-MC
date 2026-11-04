@@ -16,6 +16,39 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, rung a: the first three fixes (F-25c4az, F-25c4ba, F-26a) — 4 November 2026 (`claude/e40-ladder-1104`)
+
+From the stuck spells recorded on the ten seeds of main (`f25c4ax-84b331c`, E-40's starting build): 144 spells. 45
+were branch mines for iron, 21 swims to dry ground, and 11 desert walks home for sticks. [E-40](evidence/E-40.md).
+
+- **F-25c4az, walks that kept ending in deep water** (505). On main's code the atlas fixture fails 3 of 3, back toward
+  the ore 120 to 122 times. With the fix it passes 3 of 3 after 3 walks back. The water fixtures pass 110 of 110, the
+  atlas fixtures 4 of 4 three times. [Evidence](evidence/F-25c4az.md).
+- **F-25c4ba, the iron pickaxe's sticks made into a spare** (31102026). The planner case fails on main's code and
+  passes with the fix. `dev.kindred.core.survival.*` 116 of 116; `NativePortalCampaignGameTests` with
+  `NativeAtlasGameTests` 99 of 99. [Evidence](evidence/F-25c4ba.md).
+- **F-26a, work handed back to the server thread waited on vanilla's queue.** The branch mines were not
+  where the spells came from. A step took about 100 ticks in the evaluation against 42 off a sprint. On a sprinting
+  server, vanilla runs a task queued from another thread only once it is more than three ticks old, and every task
+  waited on two to four such hand-backs. The new fixture mines fresh stone on a sprinting server. On `f0258b6` it
+  fails 3 of 3, a stuck spell after 55, 72 and 73 blocks, about 104 ticks a block. With the fix it passes 3 of 3, 160
+  blocks in 6,772 to 6,802 ticks. Every evaluation before this fix measured the players at the slower pace, so
+  comparisons across it compare the pace as well as the play. [Evidence](evidence/F-26a.md).
+- **The full native suite with F-26a, nothing else on the cores:** 529 of 532 in 50 minutes. Compared with the open
+  list:
+  - failed, open before: the Nether portal restart (`NativeNetherGameTests`, "Return portal preserves expected 8:1
+    linked region"), and the hungry climb's hunt (`NativePortalCampaignGameTests`, "It found a cow and has its beef"):
+    its strikes land on the cow with no effect, as on #11's CI;
+  - failed, new: F-25c4az's own fixture, its field laid 76 blocks past an empty structure over the tests beside it; it
+    went for another test's log. Moved into a wide structure of its own (and given the habit of leaving caves alone, as
+    its causeway is a cave floor there): without the fix 2 of 3 fail, with it 3 of 3 pass. Alone before the move, on
+    the suite's code, 4 of 4 three times.
+- **The thinking budget, ruled out:** a 40-game-minute run on 8675309 with the evaluation's new report gave each
+  player's goal its slice every 5 ticks, 170 µs a slice, about 20 refused for time in each ten minutes.
+- **Build:** `bash ./gradlew build` with F-26a: 929 JUnit tests, none failing, 6 skipped.
+- Environment: Linux x64 cloud container (4 cores), OpenJDK 21. Classes run alone with the gametest entrypoints narrowed
+  (not committed).
+
 ## Out of its own flooded shaft (F-25c4ax) — 3 November 2026 (`claude/flooded-shaft-1103`)
 
 The water livelock of the last two evaluations (8675309 on `e25a-7c8febf`, 830 walks "to the wall" in 19 minutes; 404

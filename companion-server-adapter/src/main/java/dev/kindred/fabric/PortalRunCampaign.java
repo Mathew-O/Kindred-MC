@@ -973,6 +973,41 @@ final class PortalRunCampaign {
      * shelter, waiting for daylight and resting do not count as time stuck.
      */
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
+        Optional<Task> given = nextTask(body, policy, tick);
+        lastGiven = given.orElse(null);
+        return given;
+    }
+
+    /** The task the plan last gave out: the walk a turn up for air or ashore cut short, say. */
+    private Task lastGiven;
+
+    /** How often a walk toward each place has been cut short in deep water, by the place it names (F-25c4az). */
+    private final Map<Long, Integer> wetDips = new HashMap<>();
+
+    private static final java.util.regex.Pattern NAMED_PLACE = java.util.regex.Pattern.compile(" at (-?\\d+), (-?\\d+), (-?\\d+)$");
+
+    /**
+     * The plan turned to getting out of deep water straight after it gave out {@code walk}: that walk went into the water.
+     * A third such for one place sets the place aside, as a target out of reach is (and a sighting of it is let go): in
+     * the ten seeds on `84b331c` Echo and Kindred on 505 walked back to iron ore seen across deep water, each walk ending
+     * in the water and its swim to dry ground taking it back to the near bank, Echo for 24 minutes (F-25c4az). A walk
+     * into deep water is turned up for air or ashore at once wherever it is bound (but on the way to the End), so no
+     * crossing is lost by it.
+     */
+    private void wetDip(Task walk, long tick) {
+        if (walk == null || !"native_goto".equals(walk.skill()) || surfacing(walk) || climbingOut(walk)) return;
+        var named = NAMED_PLACE.matcher(walk.label());
+        BlockPos at = named.find() ? new BlockPos(Integer.parseInt(named.group(1)), Integer.parseInt(named.group(2)), Integer.parseInt(named.group(3)))
+                : position(walk.args());
+        if (at == null) return;
+        if (wetDips.size() > 256) wetDips.clear();
+        if (wetDips.merge(at.asLong(), 1, Integer::sum) < 3) return;
+        wetDips.remove(at.asLong());
+        avoid(at, true, tick);
+        event("its walks toward " + at.toShortString() + " end in deep water; set aside for now");
+    }
+
+    private Optional<Task> nextTask(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         // The dragon goal is won once it has seen the dragon die and is out of the End: nothing of the run is left to
         // do (staged dragon run 6, home after the credits, started over on iron with no portal of its own about).
         if (goal == SurvivalGoal.DRAGON && stronghold.endFight().dragonKilled() && body.entity().getWorld().getRegistryKey() != net.minecraft.world.World.END) {
@@ -1555,6 +1590,7 @@ final class PortalRunCampaign {
         // it swims, with breath to spare, it cuts there, treading water (F-25c4as).
         Optional<Task> air = surface(body);
         if (air.isPresent()) {
+            wetDip(lastGiven, tick);
             Optional<Task> chop = chopFromTheWater(body);
             if (chop.isPresent()) {
                 progress = stageLabel(stage) + ": " + chop.get().label() + " from the water";
@@ -2480,6 +2516,11 @@ final class PortalRunCampaign {
         if (lead.isEmpty()) return Optional.empty();
         var seen = lead.get().at();
         BlockPos at = new BlockPos(seen.x(), seen.y(), seen.z());
+        // A sighting its walks back to could not reach is let go, and the next one looked to (F-25c4az).
+        if (blocked(at) || unreachable(at)) {
+            atlas.gone(resource, seen);
+            return Optional.empty();
+        }
         if (at.getSquaredDistance(lastFeet) <= 6 * 6) {
             atlas.gone(resource, seen);
             return Optional.empty();

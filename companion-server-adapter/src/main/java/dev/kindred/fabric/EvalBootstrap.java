@@ -150,10 +150,34 @@ final class EvalBootstrap implements RunObserver {
             case 3 -> { // Running: a look once a second, the end when its ticks have run.
                 long run = lastTick - startTick;
                 if (run % LOOK == 0) look(server, runtime);
+                if (run % ATTENTION_REPORT == 0) attention(runtime, run);
                 if (run >= scenario.ticks()) end(server, true);
             }
             default -> { }
         }
+    }
+
+    /** How often the shared thinking budget's use is put in the console: every ten game minutes. */
+    private static final long ATTENTION_REPORT = 12_000;
+    private dev.kindred.core.attention.SchedulerDiagnostics attentionBefore;
+
+    /**
+     * The thinking slices the players were given in the last ten game minutes, by kind, the ticks whose two
+     * milliseconds ran out, and the time the slices took: a goal plans its next step only in its slice, so a step
+     * waits on it.
+     */
+    private void attention(PlayerRuntime runtime, long run) {
+        var now = runtime.schedulerDiagnostics();
+        var before = attentionBefore;
+        attentionBefore = now;
+        if (before == null) return;
+        var kinds = new java.util.TreeMap<String, Long>();
+        now.slicesByKind().forEach((kind, n) -> kinds.put(kind.name(), n - before.slicesByKind().getOrDefault(kind, 0L)));
+        long slices = now.totalSlicesStarted() - before.totalSlicesStarted();
+        long nanos = now.totalOptionalNanos() - before.totalOptionalNanos();
+        KindredMod.LOGGER.info("Evaluation run: thinking at tick {}: {} slices in {} ticks {}; slices refused for time {}; {} ms in all, {} us a slice; overruns {}",
+                run, slices, ATTENTION_REPORT, kinds, now.softLimitExceededEvents() - before.softLimitExceededEvents(), nanos / 1_000_000,
+                slices == 0 ? 0 : nanos / 1_000 / slices, now.overruns() - before.overruns());
     }
 
     /** The server is stopping before the ticks have run: what there is, marked incomplete. */

@@ -506,6 +506,23 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void aSparePickaxeIsNotMadeFromTheSticksTheIronPickaxeNeeds() {
+        // In the ten seeds on 84b331c, on the desert seed 31102026, Sol made a shield and a chestplate from its first iron,
+        // then two spare stone pickaxes from its last sticks: with iron for its pickaxe it had no sticks left and no tree
+        // near, and spent the rest of the run looking for logs (F-25c4ba).
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.chest = 3; sim.shields = 1; sim.cobble = 24; sim.sticks = 2; sim.coal = 2;
+        sim.tableNearby = true;
+        var step = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast();
+        assertNotEquals("stone_pickaxe", step.item(), "the iron pickaxe's two sticks kept: " + step.why());
+        // With sticks over those kept (the iron pickaxe's two and, the frame being mined, the diamond one's), the spare is
+        // made from them as before.
+        sim.sticks = 6;
+        var spare = PortalRunPlanner.plan(sim.snapshot(), WorldFacts.ordinary()).getLast();
+        assertEquals("stone_pickaxe", spare.item(), "a spare from the sticks over: " + spare.why());
+    }
+
+    @Test
     void beforeTheWorkBelowItPacksASparePickaxeAndATablesWorthOfWood() {
         // Live run 57 left its table in a branch tunnel and wore out its last pickaxe at Y=54, with no way to make another.
         Sim sim = new Sim();

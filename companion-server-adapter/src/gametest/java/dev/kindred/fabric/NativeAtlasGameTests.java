@@ -121,6 +121,127 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Iron ore it saw across a deep channel it cannot climb out of on the far side: after a walk back or two that ends
+     * in the water, it lets the sighting go and looks for iron another way, rather than swim out and back for ever. In
+     * the ten seeds on `84b331c` Echo and Kindred on 505 each walked back to iron ore seen across deep water: each walk
+     * ended in the water and was reckoned done, its swim to dry ground took it back to the near bank, and it set out
+     * again, Echo for 24 minutes (F-25c4az). Staged: the causeway and the channel cut across it, twelve deep, its far
+     * side a sheer wall three blocks over the causeway; the ore seen with a diamond-stage kit (no use for iron then);
+     * the move 66 blocks off, past its reach for ore; the kit after it, as though made, with no iron; and the habit of
+     * leaving caves alone (F-19c), as with no mob in earshot its causeway, below the sea's level, would be a cave to it.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "atlasLeadWater", tickLimit = 3000)
+    public void ironItSawAcrossDeepWaterItCannotClimbOutOfIsLetGoAfterAWalkOrTwo(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2600);
+        BlockPos[] origin = new BlockPos[1];
+        BlockPos[] ores = new BlockPos[2];
+        List<String> steps = new ArrayList<>();
+        int[] leadWalks = {0};
+        String[] last = {""};
+        int[] settle = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Prospector"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    // Its field, 84 blocks along x, inside its own wide structure, open to the sky as before: laid from an empty
+                    // one's corner, it lay over the tests beside it, and in a full suite it went for a log of another test's tree,
+                    // into its channel. Under the wide structure's roof its causeway would be a cave floor to explore.
+                    BlockPos o = origin[0] = context.getAbsolutePos(new BlockPos(16, 22, 60)).toImmutable();
+                    chunks(world, o.add(-8, -14, -8), o.add(AWAY + 10, 0, 8), true);
+                    for (int x = -6; x <= AWAY + 8; x++) for (int z = -5; z <= 5; z++) {
+                        boolean channel = x >= 20 && x <= 28;
+                        for (int y = -13; y <= -1; y++) {
+                            var state = channel && z > -5 && z < 5 && y >= -12 ? Blocks.WATER.getDefaultState()
+                                    : y >= -3 || channel ? Blocks.STONE.getDefaultState() : null;
+                            if (state != null) world.setBlockState(o.add(x, y, z), state);
+                        }
+                        boolean edge = x == -6 || x == AWAY + 8 || z == -5 || z == 5;
+                        // The channel's far (west) side, a sheer wall three over the causeway, from the water up.
+                        boolean wall = x == 19 && !edge;
+                        for (int y = 0; y <= 4; y++) {
+                            var state = edge && y <= 2 || wall && y <= 2 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState();
+                            world.setBlockState(o.add(x, y, z), state);
+                        }
+                    }
+                    ores[0] = o.add(3, 0, 4);
+                    ores[1] = o.add(4, 0, 4);
+                    for (BlockPos ore : ores) world.setBlockState(ore, Blocks.IRON_ORE.getDefaultState());
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(origin[0]), "On the causeway"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.atlasForFixtures(f.id) != null, "Its atlas read"))
+                .createAndAdd(() -> {
+                    kit(f, true);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var sighting = f.runtime.atlasForFixtures(f.id).lastSeen(Atlas.Resource.IRON);
+                    context.assertTrue(sighting.isPresent(), "Its atlas has the iron it saw");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", f.id) == 1, "Stopped");
+                })
+                .createAndAdd(() -> {
+                    // Far off now, on the far side of the channel, with no iron and a stone pickaxe: it wants iron.
+                    var player = f.player();
+                    player.refreshPositionAndAngles(origin[0].getX() + AWAY + 0.5, origin[0].getY(), origin[0].getZ() + 0.5, 90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(3, new ItemStack(Items.TORCH, 16));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 32));
+                    inventory.setStack(5, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(6, new ItemStack(Items.FURNACE));
+                    inventory.setStack(7, new ItemStack(Items.COAL, 8));
+                    inventory.setStack(9, new ItemStack(Items.STICK, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().getX() == origin[0].getX() + AWAY,
+                        "Put far off"))
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 30, "A moment"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal again");
+                    // Below the sea's level any open stone floor is a cave's to the goal, its causeway too: in its own field,
+                    // with no mob within earshot, it would explore that as a cave rather than show what it does with the lead.
+                    var advice = dev.kindred.core.survival.StrategyAdvice.validated("PRESS_ON", List.of(),
+                            "Leave the caves alone", "", List.of(), null, "NO_CAVES", null).orElseThrow();
+                    context.assertTrue(f.runtime.adviseGoal(f.id, advice), "Advice taken");
+                })
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (steps.isEmpty() || !steps.getLast().equals(progress)) steps.add(progress);
+                    // A walk back for the ore it saw: by its sighting, or to the ore by name.
+                    boolean back = java.util.Arrays.stream(ores).anyMatch(ore -> progress.contains(ore.toShortString()));
+                    boolean wasBack = java.util.Arrays.stream(ores).anyMatch(ore -> last[0].contains(ore.toShortString()));
+                    if (back && !wasBack) leadWalks[0]++;
+                    last[0] = progress;
+                    context.assertTrue(leadWalks[0] <= 4, "Back to the iron across the water again and again: " + leadWalks[0] + " times; " + progress);
+                    // Done once it has been back at least once and is now looking for iron another way, on this side.
+                    boolean search = progress.contains("Mine iron ore") && (progress.contains("Branch mine") || progress.contains("Dig down")
+                            || progress.contains("Explore the cave") || progress.contains("Tunnel"));
+                    context.assertTrue(leadWalks[0] >= 1 && search && f.player().getX() > origin[0].getX() + 28,
+                            "Let go and on to look for iron another way: " + progress + " after " + leadWalks[0] + " walks back");
+                })
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Atlas lead over water: {} walks back; its steps {}", leadWalks[0], steps);
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    chunks(context.getWorld(), origin[0].add(-8, -14, -8), origin[0].add(AWAY + 10, 0, 8), false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** Its kit at the diamond stage: iron tools, a water bucket, the chestplate and shield; with or without a diamond pickaxe. */
     private static void kit(NativePaidSkillsGameTests.Fixture f, boolean diamondPickaxe) {
         var player = f.player();

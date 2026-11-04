@@ -158,6 +158,58 @@ final class PlayerRuntime {
     }
 
     private final MinecraftServer server;
+
+    /**
+     * Work handed back to the server thread from another (the store's writer, the strategist's), run at the start of the
+     * next server tick at the latest, or by the server's own queue if that comes first, never twice (F-26a). On a server
+     * sprinting through its ticks ({@code /tick sprint}, as the evaluation runs one), or one too loaded to keep up,
+     * vanilla runs a task queued from another thread only once it is more than three ticks old: each hand-back cost four
+     * ticks, and every task waited on two to four of them, so a step of a tunnel took about 100 ticks against 42.
+     */
+    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> handedBack = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+    /** Every runtime on the server, for its work handed back to be run as each tick starts (F-26a); server thread only. */
+    private static final Set<PlayerRuntime> LIVE = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /** As the server's own {@code execute}: at once on the server thread, or once it has stopped; else handed back. */
+    private void handBack(Runnable task) {
+        if (!server.shouldExecuteAsync()) {
+            task.run();
+            return;
+        }
+        var once = new HandedBack(task);
+        handedBack.add(once);
+        server.execute(once);
+    }
+
+    /** A task handed back by both ways, run by whichever comes first. */
+    private static final class HandedBack implements Runnable {
+        private final Runnable task;
+        private final java.util.concurrent.atomic.AtomicBoolean ran = new java.util.concurrent.atomic.AtomicBoolean();
+
+        HandedBack(Runnable task) { this.task = task; }
+
+        @Override public void run() {
+            if (ran.compareAndSet(false, true)) task.run();
+        }
+    }
+
+    /** As a server tick starts: the work handed back to each runtime on it since the last, in the order it came (F-26a). */
+    static void runHandedBack(MinecraftServer server) {
+        for (PlayerRuntime runtime : List.copyOf(LIVE)) {
+            if (runtime.server != server) continue;
+            Runnable task;
+            while ((task = runtime.handedBack.poll()) != null) {
+                try {
+                    task.run();
+                } catch (RuntimeException failure) {
+                    // As the server's own queue does: the failure is logged and the rest are run.
+                    KindredMod.LOGGER.error("Work handed back to the server thread failed", failure);
+                }
+            }
+        }
+    }
+
     private final Path metadataDirectory;
     /** The optional model strategist for goals (F-19b), when switched on and a key is set. */
     private Optional<StrategistBridge> strategist;
@@ -370,7 +422,7 @@ final class PlayerRuntime {
         long expectedRevision = entry.nativeState.revision();
         entry.nativeState = new StoredNativePlayer(entry.nativeState.metadata(), entry.nativeState.controllerId(),
                 entry.nativeState.phase(), receipt, entry.nativeState.blocker(), expectedRevision + 1);
-        store.establishNativePlayer(entry.data.id(), receipt, expectedRevision).whenComplete((established, failure) -> server.execute(() -> {
+        store.establishNativePlayer(entry.data.id(), receipt, expectedRevision).whenComplete((established, failure) -> handBack(() -> {
             if (!running || entries.get(entry.data.id()) != entry) return;
             if (failure != null) {
                 nativeFailure(server.getCommandSource(), entry, "Native save receipt could not be recorded", failure);
@@ -404,6 +456,7 @@ final class PlayerRuntime {
                   java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriterDecorator,
                   StartupLedgerReader startupLedgerReader) {
         this.server = server;
+        LIVE.add(this);
         this.presenter = new MatchPresenter(server);
         this.metadataDirectory = metadataDirectory;
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
@@ -559,7 +612,7 @@ final class PlayerRuntime {
                 if (loaded != null) loaded.store().closeAsync();
                 return; // Shutdown chains resource cleanup directly to startup, independent of ticks.
             }
-            server.execute(() -> {
+            handBack(() -> {
                 if (!running || startupGeneration != currentStartupGen) {
                     if (loaded != null) loaded.store().closeAsync();
                     return;
@@ -626,7 +679,7 @@ final class PlayerRuntime {
                     talk.load(store); // E-19a: people's own preferences; nothing unasked and no jokes until they are read.
                     store.listProjects().whenComplete((loadedProjects, err) -> {
                         if (err == null && loadedProjects != null) {
-                            server.execute(() -> {
+                            handBack(() -> {
                                 for (SharedProject proj : loadedProjects) {
                                     storedProjects.add(proj.id());
                                     teamCoordinator.registerProject(proj);
@@ -695,7 +748,7 @@ final class PlayerRuntime {
         } catch (IllegalArgumentException invalid) { return reject(source, invalid.getMessage()); }
         ++nativeCreationsPending;
         feedback(source, "Allocating a native AI identity; autonomous work remains disabled.");
-        store.createNativePlayer(request).whenComplete((record, failure) -> server.execute(() -> {
+        store.createNativePlayer(request).whenComplete((record, failure) -> handBack(() -> {
             --nativeCreationsPending;
             if (!running || !ready) return;
             if (failure != null) { reject(source, "Native identity could not be saved; no body was created."); return; }
@@ -837,7 +890,7 @@ final class PlayerRuntime {
         ConnectionToken token = new ConnectionToken(startupGeneration, entry.data.id(), generation, requestId, expectedRevision);
         entry.pendingConnection = token;
 
-        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), nativeId).whenComplete((saved, readFailure) -> server.execute(
+        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), nativeId).whenComplete((saved, readFailure) -> handBack(
                 () -> completeNativeConnection(source, entry, token, fresh, saved, readFailure, 0)));
     }
 
@@ -950,13 +1003,13 @@ final class PlayerRuntime {
     }
 
     private void establishNative(ServerCommandSource source, Entry entry, NativePlayerBody body, UUID receipt) {
-        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), entry.data.entityId()).whenComplete((saved, failure) -> server.execute(() -> {
+        nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), entry.data.entityId()).whenComplete((saved, failure) -> handBack(() -> {
             if (!running || entries.get(entry.data.id()) != entry) return;
             try {
                 if (failure != null) throw new IllegalStateException("Native save verification failed", failure);
                 body.verifySave(saved.orElseThrow(() -> new IllegalStateException("Native save was not written")).decode(server), receipt);
                 // This settles save bookkeeping even after stop; it cannot resume work or spawn a body.
-                store.establishNativePlayer(entry.data.id(), receipt, entry.nativeState.revision()).whenComplete((established, storeFailure) -> server.execute(() -> {
+                store.establishNativePlayer(entry.data.id(), receipt, entry.nativeState.revision()).whenComplete((established, storeFailure) -> handBack(() -> {
                     if (!running || entries.get(entry.data.id()) != entry) return;
                     if (storeFailure != null) { nativeFailure(source, entry, "Native establishment could not be saved", storeFailure); return; }
                     entry.nativeState = established;
@@ -974,7 +1027,7 @@ final class PlayerRuntime {
         entry.reconciliationBlocked = true;
         detachNative(entry, reason);
         entry.nativePending = false;
-        store.blockNativePlayer(entry.data.id(), reason, entry.nativeState.revision()).whenComplete((blocked, error) -> server.execute(() -> {
+        store.blockNativePlayer(entry.data.id(), reason, entry.nativeState.revision()).whenComplete((blocked, error) -> handBack(() -> {
             if (!running || entries.get(entry.data.id()) != entry) return;
             if (error == null) entry.nativeState = blocked;
             else entry.metadataFault = true;
@@ -1060,7 +1113,7 @@ final class PlayerRuntime {
             if (!changed.equals(saved)) throw new IllegalStateException("Mismatched durable native setup acknowledgement");
             return saved;
         });
-        entry.setupWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.setupWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running || entries.get(id) != entry) return;
             entry.nativeSetupPending = false;
             if (failure != null) {
@@ -1102,7 +1155,7 @@ final class PlayerRuntime {
             if (!changed.equals(saved)) throw new IllegalStateException("Mismatched durable native setup acknowledgement");
             return saved;
         });
-        entry.setupWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.setupWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running || entries.get(id) != entry) return;
             entry.nativeSetupPending = false;
             if (failure != null) {
@@ -1500,16 +1553,16 @@ final class PlayerRuntime {
                         Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
                 entry.nativeBody.faceBlock(mineTarget);
                 task = new NativeMiningAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute, mineTarget, Integer.parseInt(arguments.get("slot")));
+                        claims, nativeActionWriter(), this::handBack, mineTarget, Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_gather")) {
                 task = new NativeGatherAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute, Integer.parseInt(arguments.get("count")), Integer.parseInt(arguments.get("slot")));
+                        claims, nativeActionWriter(), this::handBack, Integer.parseInt(arguments.get("count")), Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_craft")) {
-                task = new NativeCraftAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeCraftAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         arguments.get("recipe"), entry.cachedCraftingTablePos);
             } else if (skill.equals("native_pillar")) {
                 task = new NativePillarAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_stair")) {
@@ -1520,31 +1573,31 @@ final class PlayerRuntime {
                     directions.add(direction);
                 }
                 task = new NativeStairAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         directions, Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_clutch")) {
-                task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), server::execute,
+                task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_pearl")) {
-                task = new NativePearlAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativePearlAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")), Float.parseFloat(arguments.get("pitch")),
                         arguments.containsKey("x") ? new Vec3d(Double.parseDouble(arguments.get("x")), Double.parseDouble(arguments.get("y")),
                                 Double.parseDouble(arguments.get("z"))) : null);
             } else if (skill.equals("native_throw_eye")) {
-                task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeThrowEyeAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), Float.parseFloat(arguments.get("yaw")));
             } else if (skill.equals("native_dragon")) {
-                task = new NativeDragonAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeDragonAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
                         arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                                 Integer.parseInt(arguments.get("z"))) : null);
             } else if (skill.equals("native_shoot")) {
-                task = new NativeShootAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeShootAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")), "high".equals(arguments.get("arc")));
             } else if (skill.equals("native_take")) {
                 task = new NativeTakeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute, arguments.get("item"), Integer.parseInt(arguments.get("count")));
+                        claims, nativeActionWriter(), this::handBack, arguments.get("item"), Integer.parseInt(arguments.get("count")));
             } else if (skill.equals("native_loot")) {
                 BlockPos chest = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))) : null;
@@ -1553,29 +1606,29 @@ final class PlayerRuntime {
                     UUID owner = UUID.fromString(arguments.get("raid"));
                     UUID self = entry.nativeBody.entity().getUuid();
                     task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
-                            server::execute, chest, cart, () -> lootWanted(entry), owner, () -> matches.opponents(self, owner));
+                            this::handBack, chest, cart, () -> lootWanted(entry), owner, () -> matches.opponents(self, owner));
                 } else {
                     task = new NativeLootAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
-                            server::execute, chest, cart, () -> lootWanted(entry));
+                            this::handBack, chest, cart, () -> lootWanted(entry));
                 }
             } else if (skill.equals("native_store")) {
                 BlockPos chest = new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
                 boolean out = "all".equals(arguments.get("take"));
                 var items = out || arguments.containsKey("look") ? Set.<String>of() : Set.of(arguments.getOrDefault("items", "").split(","));
                 task = new NativeStoreAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims, nativeActionWriter(),
-                        server::execute, chest, items, out,
+                        this::handBack, chest, items, out,
                         () -> entry.nativeBody != null && entry.nativeBody.connected() && ownStore(entry, entry.nativeBody.entity(), chest) != null);
             } else if (skill.equals("native_trade")) {
-                task = new NativeTradeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), claims, nativeActionWriter(), server::execute,
+                task = new NativeTradeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), claims, nativeActionWriter(), this::handBack,
                         UUID.fromString(arguments.get("target")), arguments.containsKey("look"),
                         () -> Valuables.holding(entry.nativeBody.entity(), lootWanted(entry)));
             } else if (skill.equals("native_enchant")) {
                 task = new NativeEnchantAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
-                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        nativeActionWriter(), this::handBack, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("lapis")));
             } else if (skill.equals("native_smith")) {
                 task = new NativeSmithAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
-                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        nativeActionWriter(), this::handBack, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("template")), Integer.parseInt(arguments.get("slot")),
                         Integer.parseInt(arguments.get("material")));
             } else if (skill.equals("native_brew")) {
@@ -1583,32 +1636,32 @@ final class PlayerRuntime {
                 int[] bottles = arguments.containsKey("bottles") && !arguments.get("bottles").isEmpty()
                         ? java.util.Arrays.stream(arguments.get("bottles").split(",")).mapToInt(Integer::parseInt).toArray() : new int[0];
                 task = new NativeBrewAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
-                        nativeActionWriter(), server::execute, mode, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        nativeActionWriter(), this::handBack, mode, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), bottles, Integer.parseInt(arguments.getOrDefault("ingredient", "-1")),
                         Integer.parseInt(arguments.getOrDefault("fuel", "-1")), Integer.parseInt(arguments.getOrDefault("slot", "-1")));
             } else if (skill.equals("native_rename")) {
                 task = new NativeRenameAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits, claims,
-                        nativeActionWriter(), server::execute, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                        nativeActionWriter(), this::handBack, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                         Integer.parseInt(arguments.get("z"))), Integer.parseInt(arguments.get("slot")), arguments.get("name"));
             } else if (skill.equals("native_pet")) {
-                task = new NativePetAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativePetAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         "name".equals(arguments.get("mode")) ? NativePetAction.Mode.NAME : NativePetAction.Mode.TAME,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_feed")) {
-                task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_shear")) {
-                task = new NativeShearAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeShearAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_fill_frame")) {
-                task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeFillFrameAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")),
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
             } else if (skill.equals("native_boat")) {
                 var mode = NativeBoatAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
                 BlockPos water = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
                         Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
-                task = new NativeBoatAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeBoatAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), water,
                         arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null,
                         arguments.containsKey("hx") && water != null ? new Vec3d(Double.parseDouble(arguments.get("hx")), water.getY() + 1.0,
@@ -1617,17 +1670,17 @@ final class PlayerRuntime {
                 var mode = NativeCartAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
                 BlockPos rail = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
                         Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))) : null;
-                task = new NativeCartAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeCartAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         mode, Integer.parseInt(arguments.getOrDefault("slot", "-1")), rail,
                         arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null);
             } else if (skill.equals("native_bed")) {
                 task = new NativeBedAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Direction.byName(arguments.get("facing")), Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_place")) {
                 task = new NativePlaceAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Direction.byName(arguments.getOrDefault("side", "up")), Integer.parseInt(arguments.get("slot")),
                         BuildRunner.aim(entry.nativeBody.entity(), arguments));
@@ -1644,14 +1697,14 @@ final class PlayerRuntime {
                 Integer inputSlotArg = arguments.containsKey("input_slot") ? Integer.parseInt(arguments.get("input_slot")) : null;
                 Integer countArg = arguments.containsKey("count") ? Integer.parseInt(arguments.get("count")) : null;
                 task = new NativeSmeltAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute, targetPos, actionArg, fuelSlotArg, inputSlotArg, countArg);
+                        claims, nativeActionWriter(), this::handBack, targetPos, actionArg, fuelSlotArg, inputSlotArg, countArg);
             } else if (skill.equals("native_swap")) {
                 int source = Integer.parseInt(arguments.get("source"));
                 int target = Integer.parseInt(arguments.get("target"));
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
-                task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, source, target);
+                task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack, source, target);
             } else if (skill.equals("native_fight")) {
-                task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
                         !"false".equals(arguments.get("tactics")),
                         entry.meleeTendencies ? entry.tendencies.computeIfAbsent(UUID.fromString(arguments.get("target")), t -> new dev.kindred.core.tactics.Tendencies()) : null,
@@ -1661,43 +1714,43 @@ final class PlayerRuntime {
                 UUID targetId = UUID.fromString(arguments.get("target"));
                 Integer slot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : null;
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
-                task = new NativeAttackAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute, targetId, slot);
+                task = new NativeAttackAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack, targetId, slot);
             } else if (skill.equals("native_till")) {
                 task = new NativeTillAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")), Boolean.parseBoolean(arguments.getOrDefault("roam", "false")));
             } else if (skill.equals("native_plant")) {
                 task = new NativePlantAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")), Boolean.parseBoolean(arguments.getOrDefault("roam", "false")));
             } else if (skill.equals("native_harvest")) {
                 int harvestSlot = arguments.containsKey("slot") ? Integer.parseInt(arguments.get("slot")) : -1;
                 boolean replant = Boolean.parseBoolean(arguments.getOrDefault("replant", "true"));
                 task = new NativeHarvestAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         harvestSlot, replant);
             } else if (skill.equals("native_sleep")) {
                 task = new NativeSleepAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         bed -> ownBed(entry, entry.nativeBody.entity().getServerWorld(), bed));
             } else if (skill.equals("native_ignite_portal")) {
                 task = new NativeIgnitePortalAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Integer.parseInt(arguments.get("slot")));
             } else if (skill.equals("native_organize_chest")) {
                 int maxMoves = arguments.containsKey("max_moves") ? Integer.parseInt(arguments.get("max_moves")) : 4;
                 task = new NativeChestOrganizeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute,
+                        claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         maxMoves);
             } else if (skill.equals("native_break")) {
                 task = new NativeBreakAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
-                        nativeActionWriter(), server::execute,
+                        nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         Boolean.parseBoolean(arguments.getOrDefault("collect", "true")),
                         Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")),
@@ -1705,25 +1758,25 @@ final class PlayerRuntime {
                         Boolean.parseBoolean(arguments.getOrDefault("over_lava", "false")));
             } else if (skill.equals("native_bucket")) {
                 task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
-                        nativeActionWriter(), server::execute,
+                        nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         "pour".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR
                                 : "pour_lava".equals(arguments.get("mode")) ? NativeBucketAction.Mode.POUR_LAVA : NativeBucketAction.Mode.FILL);
             } else if (skill.equals("native_cast")) {
                 task = new NativeCastAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
-                        nativeActionWriter(), server::execute,
+                        nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
             } else if (skill.equals("native_discard")) {
-                task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("count")), null);
             } else if (skill.equals("native_toss")) {
-                task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute,
+                task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")),
                         Integer.parseInt(arguments.get("count")),
                         UUID.fromString(arguments.get("target")));
             } else {
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
-                task = skill.equals("native_equip") ? new NativeEquipmentAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), server::execute) : operation;
+                task = skill.equals("native_equip") ? new NativeEquipmentAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack) : operation;
             }
         } catch (IllegalArgumentException invalid) {
             entry.blocker = invalid.getMessage();
@@ -1739,7 +1792,7 @@ final class PlayerRuntime {
                 java.time.ZoneId.of(limit.timezone())).thenApply(chargeable -> new NativeBudget(limit, chargeable)));
         // Track preparation as well as settlement so shutdown never closes the store underneath it.
         entry.activityFlush = preparation.handle((ignored, failure) -> null);
-        preparation.whenComplete((prepared, failure) -> server.execute(() -> {
+        preparation.whenComplete((prepared, failure) -> handBack(() -> {
             if (!running || entry.generation != generation || (actor != null && !entry.nativeState.access().mayControl(actor))
                     || entry.metadataFault || entry.reconciliationBlocked
                     || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR
@@ -1784,7 +1837,7 @@ final class PlayerRuntime {
             java.time.Instant deadline = open.map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(budget.period().endExclusive());
             try {
                 entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
-                        store::saveBudget, server::execute, java.time.Clock.systemUTC(), System::nanoTime);
+                        store::saveBudget, this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
                 entry.activity.request(deadline).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -1905,7 +1958,7 @@ final class PlayerRuntime {
         var preparation = store.limit(id).thenCompose(limit -> store.chargeableBudget(id, java.time.Instant.now(),
                 java.time.ZoneId.of(limit.timezone())).thenApply(chargeable -> new NativeBudget(limit, chargeable)));
         entry.activityFlush = CompletableFuture.allOf(entry.activityFlush, preparation.handle((ignored, failure) -> null));
-        preparation.whenComplete((prepared, failure) -> server.execute(() -> {
+        preparation.whenComplete((prepared, failure) -> handBack(() -> {
             if (!running || entry.generation != generation || entry.periodHold != hold) return;
             if (failure != null) { nativeActivityFailure(entry, "Activity budget could not be loaded"); return; }
             if (!prepared.chargeable().transition().chargeable()) { hold.failed = true; return; }
@@ -1915,7 +1968,7 @@ final class PlayerRuntime {
             entry.activityLimit = prepared.limit();
             try {
                 var next = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
-                        store::saveBudget, server::execute, java.time.Clock.systemUTC(), System::nanoTime);
+                        store::saveBudget, this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
                 entry.activity = next; // Closed with the entry on shutdown, as a dispatched session is.
                 next.request(open.orElseThrow().endExclusive()).whenComplete((paid, error) -> {
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -1983,7 +2036,7 @@ final class PlayerRuntime {
         entry.nativeActionPending = true;
         var flush = recorded.close();
         entry.nativeActionFlush = CompletableFuture.allOf(entry.nativeActionFlush, flush);
-        flush.whenComplete((saved, failure) -> server.execute(() -> {
+        flush.whenComplete((saved, failure) -> handBack(() -> {
             if (!running || entries.get(entry.data.id()) != entry) return;
             entry.nativeActionPending = false;
             if (saved != null) entry.lastNativeAction = saved;
@@ -4095,7 +4148,7 @@ final class PlayerRuntime {
             if (entry.atlasLoading) return;
             entry.atlasLoading = true;
             UUID id = entry.data.id();
-            memories.loadAtlas(id, entry.data.displayName()).whenComplete((snapshot, failure) -> server.execute(() -> {
+            memories.loadAtlas(id, entry.data.displayName()).whenComplete((snapshot, failure) -> handBack(() -> {
                 entry.atlasLoading = false;
                 if (!running || entries.get(id) != entry || entry.atlas != null) return;
                 entry.atlas = dev.kindred.core.atlas.Atlas.restore(failure == null ? snapshot : null, PRIORS);
@@ -4134,7 +4187,7 @@ final class PlayerRuntime {
             entry.memorySaved = -1;
             entry.memoryLoaded = false;
             String name = entry.data.displayName();
-            memories.load(id, name).whenComplete((memory, failure) -> server.execute(() -> {
+            memories.load(id, name).whenComplete((memory, failure) -> handBack(() -> {
                 if (!running || entries.get(id) != entry || entry.memoryCampaign != campaign) return;
                 if (memory != null) campaign.stronghold().recall(memory);
                 entry.memoryLoaded = true;
@@ -4598,7 +4651,7 @@ final class PlayerRuntime {
         if (entry.basesLoading) return false;
         entry.basesLoading = true;
         UUID id = entry.data.id();
-        memories.loadBases(id, entry.data.displayName()).whenComplete((loaded, failure) -> server.execute(() -> {
+        memories.loadBases(id, entry.data.displayName()).whenComplete((loaded, failure) -> handBack(() -> {
             if (!running || entries.get(id) != entry) return;
             entry.bases = loaded != null ? loaded : new PlayerMemoryStore.Bases();
             // A record it cannot read as one of its stages (an edited file, a stage since renamed) is left out.
@@ -5297,7 +5350,7 @@ final class PlayerRuntime {
         String name = entry.data.displayName();
         if (entry.workRead == WorkRead.UNREAD) {
             entry.workRead = WorkRead.READING;
-            memories.loadWork(id, name).whenComplete((work, failure) -> server.execute(() -> {
+            memories.loadWork(id, name).whenComplete((work, failure) -> handBack(() -> {
                 if (!running || entries.get(id) != entry) return;
                 entry.savedWork = work;
                 entry.workRead = WorkRead.READ;
@@ -5339,7 +5392,7 @@ final class PlayerRuntime {
             takeUpBuild(entry, work, generated);
             return;
         }
-        schematics.load(work.plan()).whenComplete((loaded, failure) -> server.execute(() -> {
+        schematics.load(work.plan()).whenComplete((loaded, failure) -> handBack(() -> {
             if (!running || entries.get(id) != entry || entry.build != null || entry.ranch != null || entry.field != null) return;
             if (failure != null || loaded == null) {
                 KindredMod.LOGGER.warn("{} was building the schematic {}, which could not be read again; none taken up", name, work.plan());
@@ -5400,7 +5453,7 @@ final class PlayerRuntime {
             return reject(source, "Native player unavailable or administrative access denied.");
         }
         if (!worldEditsEnabled()) return reject(source, "AI world edits are disabled on this server; an operator must enable them first.");
-        schematics.load(name).whenComplete((loaded, failure) -> server.execute(() -> {
+        schematics.load(name).whenComplete((loaded, failure) -> handBack(() -> {
             if (!running || entries.get(id) != entry) return;
             if (failure != null) {
                 Throwable cause = failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null ? failure.getCause() : failure;
@@ -5417,7 +5470,7 @@ final class PlayerRuntime {
     /** The blueprints there are to build: the generators and the library's schematics. */
     int listBlueprints(ServerCommandSource source) {
         requireThread();
-        schematics.names().whenComplete((names, failure) -> server.execute(() -> feedback(source,
+        schematics.names().whenComplete((names, failure) -> handBack(() -> feedback(source,
                 "Generators: hut (hut-<width>x<depth>x<walls>), tower (tower-<width>x<height>), pyramid (pyramid-<base>), lighthouse (lighthouse-<height>), pen (pen-<width>x<depth>), and a base's three stages: cabin, house, manor. Schematics in " + schematics.directory() + ": "
                         + (names == null || names.isEmpty() ? "none" : String.join(", ", names)))));
         return 1;
@@ -6092,7 +6145,7 @@ final class PlayerRuntime {
         CreationRequest request = new CreationRequest(UUID.randomUUID(), owner, name, worldId,
                 player.getWorld().getRegistryKey().getValue().toString());
         feedback(source, "Saving your companion. It will begin sleeping.");
-        store.create(request).whenComplete((record, failure) -> server.execute(() -> {
+        store.create(request).whenComplete((record, failure) -> handBack(() -> {
             if (!running) return;
             if (failure != null) {
                 creating.remove(owner);
@@ -6333,7 +6386,7 @@ final class PlayerRuntime {
         entry.profile = changed; // Privacy restrictions and mute take effect synchronously.
         socials.reset(entry.data.id());
         entry.profileWrite = store.saveProfile(changed, previous.revision());
-        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.profileWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running) return;
             if (failure != null) {
                 entry.metadataFault = true;
@@ -6370,7 +6423,7 @@ final class PlayerRuntime {
         entry.profile = changed;
         socials.reset(entry.data.id()); // Nothing composed in the old manner is said.
         entry.profileWrite = store.saveProfile(changed, previous.revision());
-        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.profileWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running) return;
             if (failure != null) {
                 entry.metadataFault = true;
@@ -6444,7 +6497,7 @@ final class PlayerRuntime {
         SocialProfile changed = previous.withChatStyle(style);
         entry.profile = changed;
         entry.profileWrite = store.saveProfile(changed, previous.revision());
-        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.profileWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running) return;
             if (failure != null) {
                 entry.metadataFault = true;
@@ -6555,7 +6608,7 @@ final class PlayerRuntime {
                     }
                     entry.nativeWorkPending = true;
                     long generation = entry.generation;
-                    entry.activity.request(deadline).whenComplete((paid, error) -> server.execute(() -> {
+                    entry.activity.request(deadline).whenComplete((paid, error) -> handBack(() -> {
                         entry.nativeWorkPending = false;
                         if (!running || generation != entry.generation || entry.runner == null || entry.runner.state() != SkillRunner.State.PAUSED) {
                             admission.release(entry.data.id());
@@ -6601,7 +6654,7 @@ final class PlayerRuntime {
         // After a restart the checkpoint lives only in metadata; rebuild the body and start from it explicitly.
         feedback(source, "Looking for a saved checkpoint.");
         long generation = entry.generation;
-        store.checkpoint(entry.data.id()).whenComplete((saved, failure) -> server.execute(() -> {
+        store.checkpoint(entry.data.id()).whenComplete((saved, failure) -> handBack(() -> {
             if (!running || generation != entry.generation) return;
             if (failure != null || saved.isEmpty()) { reply(entry.data.ownerId(), "No saved checkpoint to continue."); return; }
             Checkpoint checkpoint = saved.orElseThrow();
@@ -6610,7 +6663,7 @@ final class PlayerRuntime {
             if (entry.nativeBody != null && checkpoint.skillId().equals("native_gather")) {
                 descriptor = NativePlayerSkills.descriptor("native_gather");
                 body = new NativeGatherAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
-                        claims, nativeActionWriter(), server::execute, Integer.parseInt(checkpoint.arguments().get("count")), Integer.parseInt(checkpoint.arguments().get("slot")));
+                        claims, nativeActionWriter(), this::handBack, Integer.parseInt(checkpoint.arguments().get("count")), Integer.parseInt(checkpoint.arguments().get("slot")));
             } else if (entry.body != null) {
                 descriptor = MovementSkills.descriptor(checkpoint.skillId()).orElse(null);
                 body = MovementSkills.body(checkpoint.skillId(), checkpoint.arguments(), entry.body, entry.setup, () -> edits, entry).orElse(null);
@@ -6903,7 +6956,7 @@ final class PlayerRuntime {
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);
                     entry.routineRefreshPending = true;
-                    server.execute(() -> persistNativeSaveReceipt(entry));
+                    handBack(() -> persistNativeSaveReceipt(entry));
                 }
                 store.appendEvent(companionId, java.time.Instant.now(), "WORK_VERIFIED", entry.blocker);
                 checkpointWrite(entry, store.clearCheckpoint(companionId).thenApply(ignored -> null));
@@ -6947,7 +7000,7 @@ final class PlayerRuntime {
 
     private void checkpointWrite(Entry entry, CompletableFuture<Void> write) {
         write.whenComplete((ignored, failure) -> {
-            if (failure != null) server.execute(() -> {
+            if (failure != null) handBack(() -> {
                 if (!running) return;
                 entry.metadataFault = true;
                 halt(entry, Actor.console(), "Checkpoint write failed; companion stopped pending storage inspection.");
@@ -7121,7 +7174,7 @@ final class PlayerRuntime {
         }
         entry.setup = changed; // Narrower or changed authority applies immediately; nothing autonomous uses it yet.
         entry.setupWrite = store.saveWorkSetup(changed, previous.revision());
-        entry.setupWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.setupWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running) return;
             if (failure != null) {
                 entry.metadataFault = true;
@@ -7256,13 +7309,13 @@ final class PlayerRuntime {
         Entry entry = authorizedEntry(source, requestedId, "change this mode");
         if (entry == null) return 0;
         feedback(source, "Saving the mode. Traits, inventory and allowance stay as they are.");
-        store.mode(entry.data.id()).whenComplete((current, failure) -> server.execute(() -> {
+        store.mode(entry.data.id()).whenComplete((current, failure) -> handBack(() -> {
             if (!running || failure != null || current == null) {
                 source.sendError(Text.literal("The mode could not be read."));
                 return;
             }
             OperatingMode next = current.withMode(companionMode ? OperatingMode.Mode.COMPANION : OperatingMode.Mode.INDEPENDENT);
-            store.saveMode(next, current.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveMode(next, current.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) source.sendError(Text.literal("The mode could not be saved."));
                 else {
                     entry.mode = next;
@@ -7287,13 +7340,13 @@ final class PlayerRuntime {
         Entry entry = authorizedEntry(source, requestedId, "change this scope");
         if (entry == null) return 0;
         feedback(source, "Saving the scope restriction.");
-        store.mode(entry.data.id()).whenComplete((current, failure) -> server.execute(() -> {
+        store.mode(entry.data.id()).whenComplete((current, failure) -> handBack(() -> {
             if (!running || failure != null || current == null) {
                 source.sendError(Text.literal("The mode and scope could not be read."));
                 return;
             }
             OperatingMode next = current.withScope(homeScope ? OperatingMode.Scope.HOME : OperatingMode.Scope.APPROVED);
-            store.saveMode(next, current.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveMode(next, current.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) source.sendError(Text.literal("The scope could not be saved."));
                 else {
                     entry.mode = next;
@@ -7311,7 +7364,7 @@ final class PlayerRuntime {
         GoalRecord record = new GoalRecord(UUID.randomUUID(), entry.data.id(), GoalRecord.Origin.OWNER,
                 description, outcome, priority, GoalRecord.Status.OPEN, 0);
         feedback(source, "Adding project goal for " + entry.data.displayName() + "...");
-        store.addGoal(record).whenComplete((saved, failure) -> server.execute(() -> {
+        store.addGoal(record).whenComplete((saved, failure) -> handBack(() -> {
             if (failure != null || saved == null) source.sendError(Text.literal("Goal could not be saved."));
             else feedback(source, "Added goal " + saved.id() + ": " + saved.description() + " (priority " + saved.priority() + ").");
         }));
@@ -7321,7 +7374,7 @@ final class PlayerRuntime {
     int listGoals(ServerCommandSource source, UUID requestedId) {
         Entry entry = authorizedEntry(source, requestedId, "list project goals");
         if (entry == null) return 0;
-        store.goals(entry.data.id()).whenComplete((goals, failure) -> server.execute(() -> {
+        store.goals(entry.data.id()).whenComplete((goals, failure) -> handBack(() -> {
             if (failure != null || goals == null) {
                 source.sendError(Text.literal("Goals could not be retrieved."));
                 return;
@@ -7344,7 +7397,7 @@ final class PlayerRuntime {
     int listMemories(ServerCommandSource source, UUID requestedId) {
         Entry entry = authorizedEntry(source, requestedId, "list memories");
         if (entry == null) return 0;
-        store.memories(entry.data.id()).whenComplete((memories, failure) -> server.execute(() -> {
+        store.memories(entry.data.id()).whenComplete((memories, failure) -> handBack(() -> {
             if (failure != null || memories == null) {
                 source.sendError(Text.literal("Memories could not be retrieved."));
                 return;
@@ -7375,7 +7428,7 @@ final class PlayerRuntime {
         }
         UUID actorId = source.getEntity() != null ? source.getEntity().getUuid() : new UUID(0, 0);
         MemoryNote note = new MemoryNote(UUID.randomUUID(), entry.data.id(), kind, text, "owner:" + actorId, 0);
-        store.addMemory(note).whenComplete((saved, failure) -> server.execute(() -> {
+        store.addMemory(note).whenComplete((saved, failure) -> handBack(() -> {
             if (failure != null || saved == null) source.sendError(Text.literal("Memory could not be saved."));
             else feedback(source, "Recorded memory (" + saved.id() + "): " + saved.text() + ".");
         }));
@@ -7388,7 +7441,7 @@ final class PlayerRuntime {
         Entry entry = authorizedEntry(source, requestedId, "forget a memory");
         if (entry == null) return 0;
         if (memoryId == null) return reject(source, "Supply the memory UUID to forget.");
-        store.forgetMemory(entry.data.id(), memoryId).whenComplete((success, failure) -> server.execute(() -> {
+        store.forgetMemory(entry.data.id(), memoryId).whenComplete((success, failure) -> handBack(() -> {
             if (failure != null || Boolean.FALSE.equals(success)) {
                 source.sendError(Text.literal("Memory could not be deleted (not found or database error)."));
             } else {
@@ -7411,7 +7464,7 @@ final class PlayerRuntime {
     int limitStatus(ServerCommandSource source, UUID requestedId) {
         Entry entry = limitEntry(source, requestedId, "view schedule limits");
         if (entry == null) return 0;
-        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> handBack(() -> {
             if (failure != null || limit == null) {
                 source.sendError(Text.literal("Activity limits could not be retrieved."));
                 return;
@@ -7430,13 +7483,13 @@ final class PlayerRuntime {
         Entry entry = limitEntry(source, requestedId, "change daily cap");
         if (entry == null) return 0;
         long capMs = (long) hours * 3600 * 1000;
-        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> handBack(() -> {
             if (failure != null || limit == null) {
                 source.sendError(Text.literal("Could not read current limit."));
                 return;
             }
             ActivityLimit next = limit.editCap(capMs);
-            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) source.sendError(Text.literal("Failed to save daily cap."));
                 else feedback(source, entry.data.displayName() + " daily activity cap set to " + hours + " hours.");
             }));
@@ -7455,7 +7508,7 @@ final class PlayerRuntime {
         // A saved period keeps its own zone to its end, and the new zone begins at its first whole local day after,
         // so an edit never resets spent time (F-11d chooses the period at each request).
         store.limit(id).thenCompose(limit -> store.latestPeriod(id).thenApply(latest -> Map.entry(limit, latest)))
-                .whenComplete((read, failure) -> server.execute(() -> {
+                .whenComplete((read, failure) -> handBack(() -> {
             if (failure != null || read == null) {
                 source.sendError(Text.literal("Could not read current limit."));
                 return;
@@ -7466,7 +7519,7 @@ final class PlayerRuntime {
                 return;
             }
             ActivityLimit edited = limit.editTimezone(next.getId());
-            store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) {
                     source.sendError(Text.literal("Failed to save accounting timezone."));
                     return;
@@ -7503,13 +7556,13 @@ final class PlayerRuntime {
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may set activity hours.");
         Entry entry = limitEntry(source, requestedId, "set activity hours");
         if (entry == null) return 0;
-        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> handBack(() -> {
             if (failure != null || limit == null) {
                 source.sendError(Text.literal("Could not read current limit."));
                 return;
             }
             ActivityLimit edited = limit.editWindow(hours);
-            store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveLimit(edited, limit.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) {
                     source.sendError(Text.literal("Failed to save activity hours."));
                     return;
@@ -7527,13 +7580,13 @@ final class PlayerRuntime {
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may toggle offline work permissions.");
         Entry entry = authorizedEntry(source, requestedId, "change offline work permission");
         if (entry == null) return 0;
-        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> handBack(() -> {
             if (failure != null || limit == null) {
                 source.sendError(Text.literal("Could not read current limit."));
                 return;
             }
             ActivityLimit next = limit.editOfflineWork(offline);
-            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) source.sendError(Text.literal("Failed to save offline work permission."));
                 else feedback(source, entry.data.displayName() + " offline work is now " + (offline ? "enabled" : "disabled") + ".");
             }));
@@ -7553,7 +7606,7 @@ final class PlayerRuntime {
                     .filter(event -> event.type().equals("WORK_VERIFIED") || event.type().equals("WORK_BLOCKED"))
                     .map(event -> event.detail()).limit(5).toList();
             return JournalSummary.render(entry.data.displayName(), verified, failed, uncertain, lines);
-        }).whenComplete((text, failure) -> server.execute(() -> {
+        }).whenComplete((text, failure) -> handBack(() -> {
             if (failure != null || text == null) source.sendError(Text.literal("The journal could not be read."));
             else feedback(source, text + " Reading it does not start anything.");
         }));
@@ -7712,7 +7765,7 @@ final class PlayerRuntime {
         long expected = entry.mannerisms.profile().revision();
         Mannerisms changed = entry.mannerisms.edit(quirk, setting); // Takes effect at the next movement tick; clears any chat promise.
         entry.mannerismWrite = store.saveMannerisms(changed, expected);
-        entry.mannerismWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.mannerismWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running) return;
             if (failure != null) {
                 entry.metadataFault = true;
@@ -12476,7 +12529,7 @@ final class PlayerRuntime {
     java.util.concurrent.CompletableFuture<SharedProject> createSharedProject(SharedProject project) {
         requireThread();
         var known = new java.util.concurrent.CompletableFuture<SharedProject>();
-        store.createProject(project).whenComplete((saved, failure) -> server.execute(() -> {
+        store.createProject(project).whenComplete((saved, failure) -> handBack(() -> {
             if (failure != null) { known.completeExceptionally(failure); return; }
             storedProjects.add(saved.id());
             teamCoordinator.registerProject(saved);
@@ -12563,7 +12616,7 @@ final class PlayerRuntime {
         // A null durable mapping proves no initial body has been dispatched; mapped absence is ambiguous.
         entry.data = entry.data.withEntityId(entry.data.id());
         long generation = ++entry.generation;
-        persist(entry).whenComplete((mappedRecord, failure) -> server.execute(() -> {
+        persist(entry).whenComplete((mappedRecord, failure) -> handBack(() -> {
             creating.remove(owner);
             if (!running || generation != entry.generation) return;
             if (failure != null) {
@@ -12654,7 +12707,7 @@ final class PlayerRuntime {
         // Serialize this companion's optimistic writes; a failed chain never silently overwrites a newer record.
         entry.writes = entry.writes.thenCompose(previous -> database.save(snapshot, previous.revision()));
         entry.writes.whenComplete((saved, failure) -> {
-            if (failure != null) server.execute(() -> {
+            if (failure != null) handBack(() -> {
                 if (!running) return;
                 entry.metadataFault = true;
                 entry.blocker = "Metadata write failed; companion stopped pending operator inspection.";
@@ -14779,7 +14832,7 @@ final class PlayerRuntime {
             } catch (IOException failure) {
                 throw new CompletionException(failure);
             }
-        }).whenComplete((ignored, failure) -> server.execute(() -> {
+        }).whenComplete((ignored, failure) -> handBack(() -> {
             if (failure != null) {
                 KindredMod.LOGGER.error("Kindred edit policy could not be saved", failure);
                 reject(source, "The edit policy applies now but could not be saved; it resets on restart.");
@@ -14813,7 +14866,7 @@ final class PlayerRuntime {
             } catch (IOException failure) {
                 throw new CompletionException(failure);
             }
-        }).whenComplete((ignored, failure) -> server.execute(() -> {
+        }).whenComplete((ignored, failure) -> handBack(() -> {
             if (failure != null) {
                 KindredMod.LOGGER.error("Kindred dragon fight setting could not be saved", failure);
                 reject(source, "The setting applies now but could not be saved; it resets on restart.");
@@ -14852,7 +14905,7 @@ final class PlayerRuntime {
             } catch (IOException failure) {
                 throw new CompletionException(failure);
             }
-        }).whenComplete((model, failure) -> server.execute(() -> {
+        }).whenComplete((model, failure) -> handBack(() -> {
             if (failure != null) {
                 Throwable cause = failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
                 reject(source, "No combat model turned on: " + (cause instanceof java.nio.file.NoSuchFileException ? "there is no " + file : cause.getMessage()));
@@ -15241,7 +15294,7 @@ final class PlayerRuntime {
             } catch (IOException failure) {
                 throw new CompletionException(failure);
             }
-        }).whenComplete((ignored, failure) -> server.execute(() -> {
+        }).whenComplete((ignored, failure) -> handBack(() -> {
             if (failure != null) {
                 KindredMod.LOGGER.error("Kindred bases setting could not be saved", failure);
                 reject(source, "The setting applies now but could not be saved; it resets on restart.");
@@ -15305,10 +15358,10 @@ final class PlayerRuntime {
         }
         if (hours < 1 || hours > 24) return reject(source, "The daily cap is 1 to 24 hours.");
         long capMs = (long) hours * 3600 * 1000;
-        store.limit(entry.data.id()).whenComplete((limit, failure) -> server.execute(() -> {
+        store.limit(entry.data.id()).whenComplete((limit, failure) -> handBack(() -> {
             if (failure != null || limit == null) { reject(source, "Could not read the current activity limit."); return; }
             ActivityLimit next = limit.editCap(capMs);
-            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> server.execute(() -> {
+            store.saveLimit(next, limit.revision()).whenComplete((saved, saveFailure) -> handBack(() -> {
                 if (saveFailure != null) reject(source, "Failed to save the daily cap.");
                 else feedback(source, entry.data.displayName() + " daily activity cap set to " + hours + " hours.");
             }));
@@ -15524,7 +15577,7 @@ final class PlayerRuntime {
         SocialProfile changed = previous.withPersonality(preset);
         entry.profile = changed;
         entry.profileWrite = store.saveProfile(changed, previous.revision());
-        entry.profileWrite.whenComplete((saved, failure) -> server.execute(() -> {
+        entry.profileWrite.whenComplete((saved, failure) -> handBack(() -> {
             if (!running || failure == null) return;
             entry.metadataFault = true;
             halt(entry, Actor.console(), "Profile save failed; player stopped for storage inspection.");
