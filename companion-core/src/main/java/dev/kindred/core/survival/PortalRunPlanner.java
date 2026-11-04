@@ -352,7 +352,12 @@ public final class PortalRunPlanner {
         // Only from sticks or wood in hand, or a tree close by: fetched from the surface, a spare sent the player up a
         // fresh staircase that wore out the pickaxe it had (two players in the runs that checked F-25c4b to h, from Y=8
         // and Y=18).
-        boolean spareWithin = s.sticks() >= 2 || spareWood >= 2 || treesNear;
+        // Not from the sticks the iron pickaxe still to make needs (or the planks for them): on the desert seed 31102026 in
+        // the ten seeds on 84b331c, Sol made two spares from its last sticks and, with iron for the pickaxe, had none left
+        // and no tree near, and looked for logs for the rest of the run (F-25c4ba).
+        int sticksFree = s.sticks() - sticksKept(s, frame, caves(facts));
+        int woodFree = spareWood - (sticksFree < 0 ? 2 : 0);
+        boolean spareWithin = sticksFree >= 2 || woodFree >= 2 || treesNear;
         if (below && s.pickaxes() < pickaxesPacked && s.cobble() >= 3 && spareWithin) {
             return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.STONE, "Craft a spare stone pickaxe for the work below");
         }
