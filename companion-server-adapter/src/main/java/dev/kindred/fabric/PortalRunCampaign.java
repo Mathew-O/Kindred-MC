@@ -3379,6 +3379,12 @@ final class PortalRunCampaign {
             Optional<Task> aside = fromBeside(body, feet, label);
             if (aside.isPresent()) return aside;
         }
+        // Under a hole up through the ceiling, nothing beside it to climb onto: up into the hole on blocks of its own, as a
+        // player gets back up the way it fell or dug down (F-25c4be).
+        if (!swimming && player.isOnGround()) {
+            Optional<Task> hole = intoTheHoleOverhead(body, feet, label);
+            if (hole.isPresent()) return hole;
+        }
         // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
         // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square). Swimming,
         // across the water to it (F-25c4t).
@@ -3463,6 +3469,48 @@ final class PortalRunCampaign {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Up into a hole one wide in the ceiling over it, or over a cell beside it on the same ground, on blocks of its own: a
+     * player come down through a cave's ceiling gets back up the same way. On 20261030 in E-40's iteration 3
+     * (`e40a3-05b58fd`) Echo's stair down for iron broke through the ceiling of a cave two high over a lava lake, and it
+     * came down onto an island of two blocks in the lava. With nothing to climb onto and every walk to a wall across the
+     * lava refused, it stood there from tick 4,500 to the end of the run, 38 stuck spells, the hole it came down through
+     * over the island's other block (F-25c4be).
+     */
+    private Optional<Task> intoTheHoleOverhead(NativePlayerBody body, BlockPos feet, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (holeOver(world, feet)) {
+            var inventory = player.getInventory();
+            int slot = wayBlockSlot(inventory);
+            if (slot < 0) return Optional.empty();
+            if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+            return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up into the hole over it"));
+        }
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            BlockPos next = feet.offset(side);
+            if (pocket(world, next) && !blocked(next) && holeOver(world, next) && wayBlockSlot(player.getInventory()) >= 0) {
+                return Optional.of(go(next, 0.4, false, label + ": under the hole beside it"));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * A hole one wide up through the ceiling over a player standing there: its head room clear, and the cell over its head
+     * walled in on every side, or the one over that walled in with room over it.
+     */
+    private static boolean holeOver(ServerWorld world, BlockPos feet) {
+        if (!passable(world, feet.up()) || !passable(world, feet.up(2))) return false;
+        return walledIn(world, feet.up()) || walledIn(world, feet.up(2)) && passable(world, feet.up(3));
+    }
+
+    /** Nothing open beside it on any side. */
+    private static boolean walledIn(ServerWorld world, BlockPos cell) {
+        for (Direction side : Direction.Type.HORIZONTAL) if (passable(world, cell.offset(side))) return false;
+        return true;
     }
 
     /** Open at its feet and head, on solid ground. */

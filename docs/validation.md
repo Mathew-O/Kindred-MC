@@ -16,6 +16,39 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, rung a, iteration 3, and the lava-lake island (F-25c4be) — 4 November 2026 (`claude/e40-ladder-5-1104`)
+
+- **The evaluation, `e40a3-05b58fd` (F-25c4bc and F-25c4bd on main):** ten seeds, earned, nothing else on the cores.
+  - The iron pickaxe within the first game hour on 10 of 10 (median 20.15 minutes [13.5 to 46.5]).
+  - Stuck time under a tenth of the run on 1 of 10 (606).
+  - Stuck spells 22.5 [2 to 48], against 8.0 [1 to 20] on iteration 2 and 15.5 [4 to 22] on the starting build. Every
+    range overlaps, so no clear difference by the convention.
+  - Obsidian on 5 of 10, a portal lit on 2 of 10, 28 deaths.
+  - Its worst places:
+    - stairs flooded from above, "Climb out of the water: to the wall" (65 spells, F-25c4ay, open);
+    - an island in a lava lake (38, F-25c4be).
+  - On 31102026, where Sol had stood 6 spells under sand, the team had 8 in all.
+  - [Summary](evidence/eval/e40a3-05b58fd/summary.md), [against iteration 2](evidence/eval/compare-e40a3.md),
+    [against the starting build](evidence/eval/compare-e40a3-base.md), [deaths](evidence/eval/e40a3-05b58fd/deaths.md),
+    [E-40](evidence/E-40.md).
+- **The lava-island fixture** (F-25c4be, [evidence](evidence/F-25c4be.md)):
+  - On `9df95ac` it fails 3 of 3, still on the island 3,993 to 3,994 ticks on, 1,183 refused walks to the wall in the
+    first run.
+  - With the fix it passes 3 of 3, up into its hole after 77 to 82 ticks.
+- **The goal's climbing and tunnelling classes with the fix**, alone (`NativePortalCampaignGameTests`,
+  `NativeAtlasGameTests`, `NativeFloodedShaftGameTests`, `NativeLessonsGameTests`, `ReplayGameTests`,
+  `NativeMiningGameTests`, `NativeBranchMineGameTests`, `NativeTripDownGameTests`): 120 of 120.
+- **Build:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped.
+- **A flooded-stair fixture, not kept:** on `9df95ac` it passed 3 of 3, out over the lake in 192 to 199 ticks.
+- **Two changes tried with the island's and taken out again, for want of a fixture that fails without them:**
+  - a refused wall target passed over for a minute (F-25c4ay);
+  - F-25c4bd's step aside kept out of water (404).
+- **CI on #17 (head `05b58fd`):** 535 and 533 of 536. The four failures each passed in the other build: the tree
+  standing in water, the Nether portal restart, the ranch's cow pen and the seed-build cabin. Merged as `9df95ac`.
+- **CI on #16 (docs only, head `7b2766e`):** 532 and 529 of 533. Again no fixture failed in both: the villager
+  reroll, the fall broken with water, the stair's pace, the voice's gather and the frame cast under a roof. Merged as
+  `914dd97`.
+
 ## The block over its head not to be dug: out from beside it (F-25c4bd) — 4 November 2026 (`claude/e40-ladder-4-1104`)
 
 Two players out of sticks with no pickaxe in `e40a2-143806e`, each in a shaft of its own one wide, both stuck to the end
