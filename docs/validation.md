@@ -2700,3 +2700,52 @@ New acceptance test coverage under `NativeTeamGameTests` covers:
 - Full evidence record: `docs/evidence/E-11.md`.
 
 
+
+## CI fully green, block 1: the native suite's flaky fixtures (F-22c1 to F-22c11) — 5 November 2026
+
+Run in a Linux container (4 cores, 15 GB) with JDK 21 (Temurin), Minecraft 1.21.1, Fabric Loader 0.19.5 and Fabric API
+0.116.17+1.21.1. Nothing else ran on the cores during the full suites.
+
+```bash
+bash ./gradlew --no-daemon build
+bash ./gradlew --no-daemon :companion-server-adapter:runGametest   # build/gametest/world removed first
+```
+
+| Check | Build | Result |
+| --- | --- | --- |
+| JUnit | `7cfddd5` (`c52d2e8` for the count) | 931 tests, 0 failures, 6 skipped |
+| Full native suite, before the fixes | `6effd66` plus F-22c1 and F-22c2 | 537 of 538; the librarian brought across a lake failed |
+| Full native suite | `edefa00` (before F-22c9, the merge, F-22c10 and F-22c11) | 537 of 539: the hideout (a loop, F-22c10) and the voice fixture (F-22c11) |
+| Full native suite | `c52d2e8` (merged with `cdec035`) | 542 of 545: the hideout and the farm ward stopped at their first steps (a regression in the first version of F-22c10), and the seed cabin's "Down the scaffold: Nothing solid to break" (F-22c9) |
+| Full native suite, run 1 | `7cfddd5` | **545 of 545**, 53 minutes |
+| Full native suite, run 2 | `7cfddd5` (code; `c807487` adds docs only) | **545 of 545**, 50 minutes |
+
+The CI record before this block: 13 runs (378 to 393) had results; 1 was green. The Nether portal restart failed in 7.
+Per-fixture before and after results are in each evidence file: [F-22c1](evidence/F-22c1.md) to
+[F-22c11](evidence/F-22c11.md). The slow-store experiment is in [F-22c5](evidence/F-22c5.md).
+
+After the block's first merge from main, CI on PR #25 found:
+- **[F-22c12](evidence/F-22c12.md):** the lake bring left a rail.
+- **[F-22c13](evidence/F-22c13.md):** the tree in water went ashore without its log, failing both runs on `b3f1590`.
+  On a 25 ms store, 5 of 52 copies failed before the fix and 36 of 36 passed after.
+  `NativeAtlasGameTests` passed 4 of 4.
+- **[F-22c14](evidence/F-22c14.md):** the librarian off the line, given up with it aboard (it failed on main's `f4bce7a`
+  too). On a 25 ms store, 1 of 4 copies failed before the fix and 6 of 6 passed after. `NativeBringGameTests` passed 7
+  of 7.
+- **[F-22c15](evidence/F-22c15.md):** the hideout's to and fro between two placements. 1 of 4 copies failed before the
+  fix and 8 of 8 passed after. The build fixture classes passed 32 of 32. Main's `1c5ac61` was merged first (`a701f72`).
+- **[F-22c16](evidence/F-22c16.md):** the base cabin, stopped with its player shut indoors by a scaffold on the door's
+  step. `ConstructionPlannerTest.noScaffoldGoesUpOnADoorsStep` fails without the rule and passes with it.
+  `:companion-core:test` passed. The build classes, the bunker's among them, passed 33 of 33.
+- CI on `b2fe399` (run 42065936843): 560 of 561.
+  - **[F-22c17](evidence/F-22c17.md):** the one failure, the hours fixture asking while the stopped break was still
+    being settled.
+  - On a 25 ms store, 6 of 6 copies failed before the fixture fix and 6 of 6 passed after.
+  - `NativeAccountingGameTests` passed 7 of 7.
+- CI on `78f081b`: one run green; the other 562 of 563.
+  - **[F-22c18](evidence/F-22c18.md):** the strolling librarian's boat, aimed six times at a spot behind its lectern.
+  - Not reproduced locally: 6 of 6 passed before the fix. After it, 6 of 6 and `NativeBringGameTests` 7 of 7.
+- CI on `bbe5ae8`: 563 of 564.
+  - **[F-22c19](evidence/F-22c19.md):** the made-rails bring took a cart's pause at the top of its climb for home.
+  - Not reproduced locally: 8 of 8 passed before the fix, on a 25 ms store. After it, 8 of 8, and
+    `NativeBringGameTests` 7 of 7.

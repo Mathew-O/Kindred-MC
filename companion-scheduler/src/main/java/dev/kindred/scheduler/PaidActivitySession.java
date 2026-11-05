@@ -44,6 +44,7 @@ public final class PaidActivitySession {
     private UUID renewalId;
     private long renewalStarted, stoppedNanos;
     private CompletableFuture<Boolean> renewal;
+    private Instant bookedUntil;
     private CompletableFuture<BudgetState> tail;
     private CompletableFuture<BudgetState> closeFuture;
 
@@ -96,6 +97,7 @@ public final class PaidActivitySession {
                 result.complete(false);
             } else {
                 permit = admitted.orElseThrow();
+                bookedUntil = permit.bookedUntil();
                 phase = Phase.ACTIVE;
                 blocker = "";
                 result.complete(true);
@@ -148,12 +150,21 @@ public final class PaidActivitySession {
                 result.complete(false);
             } else {
                 permit = admitted.orElseThrow();
+                bookedUntil = permit.bookedUntil();
                 blocker = "";
                 result.complete(true);
             }
         });
         return result;
     }
+
+    /**
+     * Where the latest acknowledged slice was booked to end on the wall clock, kept once it has lapsed or been
+     * stopped; empty before the first. A slice booked to its deadline lapses short of it by its monotonic clock: a
+     * renewed slice counts from the renewal's request, so the write's latency shortens it (and a renewal gaining
+     * too little is not made), while it is still booked to the deadline.
+     */
+    public Optional<Instant> bookedUntil() { requireOwner(); return Optional.ofNullable(bookedUntil); }
 
     /** Whether a renewal is written and waiting for its acknowledgement. */
     public boolean renewing() { requireOwner(); return renewing; }

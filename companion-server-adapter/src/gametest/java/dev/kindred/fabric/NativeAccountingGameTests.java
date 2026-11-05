@@ -226,6 +226,11 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    // Asked while the stopped break's slice was still being settled to the store, the request is turned
+                    // away until it is ("activity settlement must finish first"), as all new work is; asked again then,
+                    // it meets the hours. Asked once only, on CI's slower disk the settlement was still being written
+                    // the tick after the player went idle, in CI on PR #25 and in 6 of 6 copies on a 25 ms store (F-22c17).
+                    if (activity.work().contains("activity settlement must finish first")) f.runtime.nativeBreak(f.source, f.id, obsidian);
                     context.assertTrue(activity.work().startsWith("Outside its activity hours"), "Refused outside its hours: " + activity.work());
                     f.runtime.stop();
                 })
@@ -286,6 +291,72 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                     context.assertTrue(split.before().outstanding().isEmpty() && split.after().outstanding().isEmpty(), "Nothing left reserved");
                     context.assertTrue(split.before().chargedMillis() + split.after().chargedMillis() <= 5_000, "No more than the wait was charged");
                 })
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A walk running at its period's end on a slow store carries on into the next all the same (F-22c2). Each budget
+     * write is held 400 ms, as on a loaded disk. A renewed slice counts from the renewal's request, so its write's
+     * latency comes off its end: the slice renewed up to midnight lapses about 0.4 s before it, booked to midnight all
+     * the same. Only a lapse at or after the end was held, so on a slow write the walk stopped short there ("Prepaid
+     * activity deadline reached"); the wait above failed so on CI (a slice sized in whole milliseconds, its lapse seen
+     * by the monotonic clock, the period's end by the wall clock). Held, the next period is asked for once midnight
+     * has passed. Staged: a stone way 72 blocks long and three wide on the test's field, the player at its west end;
+     * a walk of 68 blocks at a live server's pace, about 16 seconds, its first slice five, midnight 8 seconds away.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "realTimePeriod", tickLimit = 800)
+    public void aWalkRunningAtItsPeriodsEndOnASlowStoreCarriesOnIntoTheNext(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        ZoneOffset[] zone = new ZoneOffset[1];
+        long[] lastTick = new long[1];
+        boolean[] carried = {false};
+        BlockPos start = context.getAbsolutePos(new BlockPos(6, 2, 40));
+        BlockPos end = start.east(68);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "SlowMidnight"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, start.add(-2, -1, -1), end.add(2, 3, 1));
+                    for (BlockPos c : BlockPos.iterate(start.add(-2, -1, -1), end.add(2, 3, 1))) {
+                        world.setBlockState(c, (c.getY() < start.getY() ? Blocks.STONE : Blocks.AIR).getDefaultState());
+                    }
+                    // Fixture staging: the body set at the way's west end.
+                    f.player().refreshPositionAndAngles(start.getX() + 0.5, start.getY(), start.getZ() + 0.5, -90, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(start), "At the way's end: " + f.player().getBlockPos()))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    zone[0] = midnightIn(8);
+                    context.assertTrue(f.runtime.setLimitTimezone(f.source, f.id, zone[0].getId()) == 1, "Zone set");
+                })
+                .createAndAdd(() -> {
+                    var limit = f.runtime.activityLimitForTest(f.id);
+                    context.assertTrue(limit != null && limit.timezone().equals(zone[0].getId()), "Zone saved");
+                    f.runtime.delayBudgetWritesForTest(java.time.Duration.ofMillis(400));
+                    lastTick[0] = System.nanoTime();
+                    context.assertTrue(f.runtime.nativeGotoCentred(f.source, f.id, end) == 1, "A walk of 68 blocks over its period's end: "
+                            + f.runtime.nativeActivityStatus(Actor.console(), f.id).work());
+                })
+                .createAndAdd(() -> {
+                    pace(lastTick);
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    if (activity.work().contains("carried into a new accounting period")) carried[0] = true;
+                    context.assertTrue(activity.phase().equals("IDLE") && !activity.work().startsWith("Running"), "Settled: " + activity.work());
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.work().startsWith("Completed native_goto"), "The same walk ran to its end: " + activity.work()
+                            + "; at " + f.player().getBlockPos().subtract(start).toShortString() + " from the way's west end");
+                    context.assertTrue(f.player().getBlockPos().equals(end), "At the way's far end: " + f.player().getBlockPos().subtract(start).toShortString());
+                    context.assertTrue(carried[0], "It was carried into the next period, not started again");
+                    context.assertTrue(!f.runtime.nativeStatuses(Actor.console()).getFirst().stopped(), "Not halted");
+                    f.runtime.delayBudgetWritesForTest(java.time.Duration.ZERO);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Writer closed"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 

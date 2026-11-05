@@ -90,7 +90,7 @@ public final class NativeBunkerGameTests implements FabricGameTest {
                     var room = BuildRunner.blockPos(Bunkers.ROOM.add(BuildRunner.pos(origin[0])));
                     context.assertTrue(f.player().getBlockPos().getSquaredDistance(room) <= 4, "In the room: " + f.player().getBlockPos().toShortString()
                             + " / " + f.runtime.nativeLastResult(f.id));
-                    KindredMod.LOGGER.info("Bunker fixture: the hideout built exact, and it walked from outside the shed's door down to the room");
+                    KindredMod.LOGGER.info("Bunker fixture: the hideout built exact, and it walked from outside the shed's door down to the room, at tick {}", context.getTick());
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

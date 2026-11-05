@@ -221,7 +221,7 @@ final class NativeGoToSkill implements SkillBody {
             body.stopInputs();
             return Step.blocked("Could not take hotbar slot " + hold + " in hand", true);
         }
-        if (goalReached(feet) && (!centre || reached(player.getPos(), target)) && (player.isOnGround() || player.isTouchingWater())) {
+        if (goalReached(feet) && (!centre || reached(player.getPos(), target) && reached(atRest(player), target)) && (player.isOnGround() || player.isTouchingWater())) {
             body.stopInputs();
             shutOnArrival(player);
             return Step.completed(Map.of("arrived", feet.toShortString()));
@@ -252,7 +252,7 @@ final class NativeGoToSkill implements SkillBody {
         while (index < path.size() - 1 && (reached(pos, path.get(index)) || passed(pos, index))) index++;
         if (index < path.size() - 1 && reached(pos, path.get(index + 1))) index++;
         BlockPos next = path.get(index);
-        if (index == path.size() - 1 && reached(pos, next)) {
+        if (index == path.size() - 1 && reached(pos, next) && (!centre || reached(atRest(player), next))) {
             body.stopInputs();
             if (pathComplete) {
                 shutOnArrival(player);
@@ -442,6 +442,19 @@ final class NativeGoToSkill implements SkillBody {
         double length = Math.hypot(bx, bz);
         double along = (px * bx + pz * bz) / length, across = Math.abs(px * bz - pz * bx) / length;
         return along > 0 && along < length && across < 0.8;
+    }
+
+    /**
+     * Where the body comes to rest if its inputs stop now: on the ground it slides on, its speed kept by 0.546 a tick (a
+     * block's slipperiness 0.6 by 0.91), some 1.2 times its speed further on. A walk to a block's middle had ended inside
+     * 0.4 of it while still moving, slid out of the 0.45 a build counts as standing there, and the build sent it there
+     * again: 2,783 walks to some 400 breaks in a hideout, over half its ticks, and in CI it ran out of them (F-22c7). A
+     * walk to a block's middle ends with the body inside 0.4 of it both now and where it comes to rest.
+     */
+    private static Vec3d atRest(net.minecraft.server.network.ServerPlayerEntity player) {
+        Vec3d v = player.getVelocity();
+        double slide = player.isOnGround() ? 0.546 / (1 - 0.546) : 0;
+        return player.getPos().add(v.x * slide, 0, v.z * slide);
     }
 
     private static boolean reached(Vec3d pos, BlockPos node) {

@@ -47,7 +47,7 @@ final class NativePlayerSkills {
     static SkillDescriptor descriptor(String id) {
         return switch (id) {
             // The optional point is what it waits on, looked at as it waits (E-33a).
-            case "native_wait" -> new SkillDescriptor(id, Set.of("seconds"), Set.of("x", "y", "z"), Set.of(), Set.of(),
+            case "native_wait" -> new SkillDescriptor(id, Set.of("seconds"), Set.of("x", "y", "z", "landed"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_eat" -> new SkillDescriptor(id, Set.of("slot"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -256,6 +256,8 @@ final class NativePlayerSkills {
         }
         int value = Integer.parseInt(arguments.get(id.equals("native_wait") ? "seconds" : "slot"));
         if (id.equals("native_wait") && value >= 1 && value <= 4) {
+            // Until it lands, at most the seconds given (F-22c8).
+            if (Boolean.parseBoolean(arguments.get("landed"))) return new MovementSkills.Landing(body, value);
             if (habits == null || habits.gaze() == null) return new MovementSkills.Wait(value);
             Gaze.Point work = arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z")
                     ? new Gaze.Point(Integer.parseInt(arguments.get("x")) + 0.5, Integer.parseInt(arguments.get("y")) + 0.5,

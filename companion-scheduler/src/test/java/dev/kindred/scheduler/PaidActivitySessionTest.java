@@ -177,6 +177,29 @@ class PaidActivitySessionTest {
         assertTrue(h.session.snapshot().outstanding().isEmpty());
     }
 
+    @Test void aSliceRenewedToItsDeadlineLapsesShortOfItByTheWriteAndKeepsWhereItWasBookedTo() {
+        Harness h = new Harness();
+        assertTrue(h.session.bookedUntil().isEmpty());
+        h.request(); h.writer.ack(); h.pump();
+        assertEquals(Optional.of(h.time.wall.plusSeconds(5)), h.session.bookedUntil());
+        h.time.advance(4000);
+        Instant deadline = h.time.wall.plusSeconds(3);
+        var renewed = h.session.renew(deadline);
+        h.time.advance(400); // The renewal's write takes 400 ms.
+        h.writer.ack(); h.pump();
+        assertTrue(renewed.join());
+        assertEquals(Optional.of(deadline), h.session.bookedUntil());
+        // Counted from the renewal's request and sized at its acknowledgement: it lapses 400 ms short of its deadline.
+        h.time.advance(2199);
+        assertTrue(h.session.paid());
+        h.time.advance(1);
+        assertFalse(h.session.paid());
+        assertTrue(h.time.wall.isBefore(deadline));
+        h.writer.ack(); h.pump();
+        assertEquals(PaidActivitySession.Phase.IDLE, h.session.phase());
+        assertEquals(Optional.of(deadline), h.session.bookedUntil()); // Kept once it has lapsed and settled.
+    }
+
     @Test void stopOrLapseWhileRenewingChargesTheNewSliceOnlyUntilThen() {
         for (boolean lapse : List.of(false, true)) {
             Harness h = new Harness();

@@ -229,7 +229,7 @@ public final class NativeNetherGameTests implements FabricGameTest {
      * the fixture opens and floors that line first (two blocks out: a body standing just beside the portal still touches
      * it, and every tick it touches it the cooldown starts again).
      */
-    private static void stepOutAndBack(TestContext context, NativePaidSkillsGameTests.Fixture f, int attempts, Runnable next) {
+    private static void stepOutAndBack(TestContext context, NativePaidSkillsGameTests.Fixture f, String[] arrival, int attempts, Runnable next) {
         var world = f.player().getServerWorld();
         BlockPos portal = f.player().getBlockPos();
         var state = world.getBlockState(portal);
@@ -251,19 +251,20 @@ public final class NativeNetherGameTests implements FabricGameTest {
         // To the middle of the cell two out, so the straight walk back has the body's whole width over its line.
         if (f.runtime.nativeGotoCentred(f.source, f.id, portal.offset(direction, 2)) != 1) {
             if (attempts >= 40) { context.throwGameTestException("No walk out of the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
-            later(context, () -> stepOutAndBack(context, f, attempts + 1, next));
+            later(context, () -> stepOutAndBack(context, f, arrival, attempts + 1, next));
             return;
         }
         waitForStepped(context, f, portal, 0, () -> {
             context.assertTrue(!world.getBlockState(f.player().getBlockPos()).isOf(Blocks.NETHER_PORTAL), "Out of the portal: at " + f.player().getPos());
-            waitForPortalCooldown(context, f, 0, () -> walkBack(context, f, direction.getOpposite().asString(), 0, next));
+            waitForPortalCooldown(context, f, 0, () -> walkBack(context, f, direction.getOpposite().asString(), arrival, 0, next));
         });
     }
 
-    private static void walkBack(TestContext context, NativePaidSkillsGameTests.Fixture f, String direction, int attempts, Runnable next) {
+    private static void walkBack(TestContext context, NativePaidSkillsGameTests.Fixture f, String direction, String[] arrival, int attempts, Runnable next) {
         if (f.runtime.nativeWalk(f.source, f.id, direction, 2) == 1) { next.run(); return; }
-        if (attempts >= 40) { context.throwGameTestException("No walk back into the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)); return; }
-        later(context, () -> walkBack(context, f, direction, attempts + 1, next));
+        if (attempts >= 40) { context.throwGameTestException("No walk back into the portal admitted: " + f.runtime.nativeActivityStatus(Actor.console(), f.id)
+                + "; " + arrival[0] + "; now at " + f.player().getBlockPos().toShortString()); return; }
+        later(context, () -> walkBack(context, f, direction, arrival, attempts + 1, next));
     }
 
     /** A walk keeps no action receipt: it is done once the player stands elsewhere and its activity is idle again. */
@@ -294,15 +295,29 @@ public final class NativeNetherGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
         ServerWorld overworld = context.getWorld();
         ServerWorld nether = overworld.getServer().getWorld(World.NETHER);
-        BlockPos interior = context.getAbsolutePos(new BlockPos(3, 3, 3));
-        var min = context.getAbsolutePos(new BlockPos(0, 0, 0));
-        var max = context.getAbsolutePos(new BlockPos(7, 7, 7));
+        // Fixture staging, both ends of the trip laid at Y=100, the Overworld frame over the test's own structure:
+        // vanilla links a portal to the portal block nearest the scaled arrival point in all three axes, searched for
+        // 16 blocks round it in the Nether and 128 in the Overworld, and the test server lays its tests at a random
+        // place, never clears them, and leaves lit what they lit. Left to vanilla, the Nether end was a portal made in
+        // whatever ground lay there (at the lava sea, 15 blocks off; the walk out and back then found no flat ground),
+        // and the way back could link to a portal another test left lit nearer the scaled point than its own. At
+        // Y=100 the only portals near either scaled point are the fixture's own two.
+        int lift = 100 - context.getAbsolutePos(new BlockPos(3, 3, 3)).getY();
+        java.util.function.Function<BlockPos, BlockPos> at = local -> context.getAbsolutePos(local).up(lift);
+        BlockPos interior = at.apply(new BlockPos(3, 3, 3));
+        var min = at.apply(new BlockPos(0, 0, 0));
+        var max = at.apply(new BlockPos(7, 7, 7));
+        // The Nether end: a closed room of netherrack at the scaled point of the walk in, with a frame of its own lit
+        // there, so the arrival and the ground round it are the same in every run.
+        BlockPos netherPortal = new BlockPos(Math.floorDiv(interior.getX(), 8), interior.getY(), Math.floorDiv(interior.getZ(), 8));
         ArrayList<ItemStack> mainInventory = new ArrayList<>();
         ItemStack[] armor = new ItemStack[4];
         ItemStack[] offhand = {ItemStack.EMPTY};
         float[] health = new float[1];
         int[] food = new int[1];
         int[] selected = new int[1];
+        // Where the body arrived and which portals vanilla chose among, for the failures' words.
+        String[] arrival = {"not arrived"};
 
         f.runnerAwaitingReady(context, "Runtime ready with edit policy")
                 .createAndAdd(() -> f.runtime.createNative(f.source, "PortalRestart"))
@@ -310,21 +325,45 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     // The fixture provides prepared terrain; the body must enter through vanilla portal collision.
                     for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
-                        context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
-                        for (int y = 2; y <= 7; y++) context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, y, z)), Blocks.AIR.getDefaultState());
+                        context.getWorld().setBlockState(at.apply(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 7; y++) context.getWorld().setBlockState(at.apply(new BlockPos(x, y, z)), Blocks.AIR.getDefaultState());
                         // Ground level with the frame's sill on the near side, so the walk into the portal is flat.
-                        if (z < 3) context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 2, z)), Blocks.STONE.getDefaultState());
+                        if (z < 3) context.getWorld().setBlockState(at.apply(new BlockPos(x, 2, z)), Blocks.STONE.getDefaultState());
                     }
                     // 10-block 4x5 frame, aligned along X in the Z=3 plane.
                     for (int x : new int[]{3, 4}) {
-                        context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 2, 3)), Blocks.OBSIDIAN.getDefaultState());
-                        context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(x, 6, 3)), Blocks.OBSIDIAN.getDefaultState());
+                        context.getWorld().setBlockState(at.apply(new BlockPos(x, 2, 3)), Blocks.OBSIDIAN.getDefaultState());
+                        context.getWorld().setBlockState(at.apply(new BlockPos(x, 6, 3)), Blocks.OBSIDIAN.getDefaultState());
                     }
                     for (int y = 3; y <= 5; y++) {
-                        context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(2, y, 3)), Blocks.OBSIDIAN.getDefaultState());
-                        context.getWorld().setBlockState(context.getAbsolutePos(new BlockPos(5, y, 3)), Blocks.OBSIDIAN.getDefaultState());
+                        context.getWorld().setBlockState(at.apply(new BlockPos(2, y, 3)), Blocks.OBSIDIAN.getDefaultState());
+                        context.getWorld().setBlockState(at.apply(new BlockPos(5, y, 3)), Blocks.OBSIDIAN.getDefaultState());
                     }
+                    for (int dx = -4; dx <= 5; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -2; dy <= 4; dy++) {
+                        boolean shell = dx == -4 || dx == 5 || Math.abs(dz) == 4 || dy == -2 || dy == 4 || dy == -1;
+                        nether.setBlockState(netherPortal.add(dx, dy, dz), (shell ? Blocks.NETHERRACK : Blocks.AIR).getDefaultState());
+                    }
+                    for (int dx = -1; dx <= 2; dx++) for (int dy = -1; dy <= 3; dy++) {
+                        if (dx == -1 || dx == 2 || dy == -1 || dy == 3) nether.setBlockState(netherPortal.add(dx, dy, 0), Blocks.OBSIDIAN.getDefaultState());
+                    }
+                    net.minecraft.world.dimension.NetherPortal.getNewPortal(nether, netherPortal, net.minecraft.util.math.Direction.Axis.X)
+                            .ifPresent(net.minecraft.world.dimension.NetherPortal::createPortal);
+                    context.assertTrue(nether.getBlockState(netherPortal).isOf(Blocks.NETHER_PORTAL), "The Nether end's frame lit");
+                    // Its chunks held loaded while the test runs, so the blaze set there is seen at once, and let go,
+                    // and both ends' portals put out, as it ends.
+                    for (int cx = (netherPortal.getX() - 4) >> 4; cx <= (netherPortal.getX() + 5) >> 4; cx++) {
+                        for (int cz = (netherPortal.getZ() - 4) >> 4; cz <= (netherPortal.getZ() + 4) >> 4; cz++) {
+                            int x = cx, z = cz;
+                            nether.setChunkForced(x, z, true);
+                            FixtureGround.whenDone(context, () -> nether.setChunkForced(x, z, false));
+                        }
+                    }
+                    FixtureGround.whenDone(context, () -> {
+                        nether.setBlockState(netherPortal, Blocks.AIR.getDefaultState());
+                        overworld.setBlockState(interior, Blocks.AIR.getDefaultState());
+                    });
                     var player = f.player();
+                    // Fixture staging: the body stood on the lifted ground before the frame.
                     player.setPosition(interior.getX() + 0.5, interior.getY(), interior.getZ() - 0.5);
                     player.getInventory().setStack(0, new ItemStack(Items.FLINT_AND_STEEL));
                     for (int slot = 1; slot < 36; slot++) {
@@ -370,9 +409,11 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     offhand[0] = player.getInventory().offHand.get(0).copy();
                     health[0] = player.getHealth(); food[0] = player.getHungerManager().getFoodLevel(); selected[0] = player.getInventory().selectedSlot;
                     f.runtime.nativeBody(f.id).orElseThrow().setPortalTravelAuthorized(true);
+                    BlockPos intoNether = BlockPos.ofFloored(player.getX() / 8, player.getY(), player.getZ() / 8);
                     int walk = f.runtime.nativeWalk(f.source, f.id, "south", 1);
                     context.assertTrue(walk == 1, "Admitted paid walk crosses portal plane; activity=" + f.runtime.nativeActivityStatus(Actor.console(), f.id));
                     waitForDimension(context, f, nether, 0, () -> {
+                    arrival[0] = "arrived at " + f.player().getBlockPos().toShortString() + "; " + portalsFound(nether, intoNether, 16);
                     // Let the runtime persist both the companion dimension and its native save receipt.
                     waitTicks(context, 3, () -> {
                     context.assertTrue(f.player().getServerWorld() == nether, "Vanilla portal collision transferred body to Nether");
@@ -411,7 +452,9 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     blaze.setAiDisabled(true);
                     blaze.setHealth(1.0f);
                     context.assertTrue(nether.spawnEntity(blaze), "Fixture Blaze spawned in the arrived Nether world");
-                    waitForBlazeAttackCandidate(context, f, blaze.getUuid(), 0, () -> {
+                    waitForBlazeAttackCandidate(context, f, blaze.getUuid(), () -> arrival[0] + "; the blaze at "
+                            + blaze.getBlockPos().toShortString() + (blaze.isAlive() ? "" : ", gone: " + blaze.getRemovalReason())
+                            + ", seen " + traveler.canSee(blaze), 0, () -> {
                     var beforeAttack = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(f.runtime.nativeAttack(f.source, f.id, blaze.getUuid(), 1) == 1,
                             "Visible Nether Blaze attack admitted through the existing durable action path");
@@ -453,16 +496,24 @@ public final class NativeNetherGameTests implements FabricGameTest {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                     f.runtime.holdAutonomyForTest(f.id, 8000);
                     // As in vanilla, a player that came through a portal steps out of it and back in to take it again.
-                    stepOutAndBack(context, f, 0, () -> waitForDimension(context, f, overworld, 0, () -> waitTicks(context, 3, () -> {
+                    BlockPos[] intoOverworld = new BlockPos[1];
+                    stepOutAndBack(context, f, arrival, 0, () -> {
+                    intoOverworld[0] = BlockPos.ofFloored(f.player().getX() * 8, f.player().getY(), f.player().getZ() * 8);
+                    waitForDimension(context, f, overworld, 0, () -> waitTicks(context, 3, () -> {
                         context.assertTrue(f.player().getServerWorld() == overworld, "Vanilla return portal transferred body back to Overworld");
+                        KindredMod.LOGGER.info("Portal restart fixture: {}; back at {} from its portal at {}; {}", arrival[0],
+                                f.player().getBlockPos().toShortString(), interior.toShortString(), portalsFound(overworld, intoOverworld[0], 128));
                         context.assertTrue(Math.abs(f.player().getX() - (interior.getX() + 0.5)) < 16
-                                && Math.abs(f.player().getZ() - (interior.getZ() + 0.5)) < 16, "Return portal preserves expected 8:1 linked region");
+                                && Math.abs(f.player().getZ() - (interior.getZ() + 0.5)) < 16, "Return portal preserves expected 8:1 linked region: "
+                                + arrival[0] + "; back at " + f.player().getBlockPos().toShortString() + " from its portal at "
+                                + interior.toShortString() + "; " + portalsFound(overworld, intoOverworld[0], 128));
                         for (int slot = 0; slot < 36; slot++) context.assertTrue(ItemStack.areEqual(mainInventory.get(slot), f.player().getInventory().getStack(slot)), "Return preserves exact inventory slot/components: " + slot);
                         context.assertTrue(ItemStack.areEqual(offhand[0], f.player().getInventory().offHand.get(0)), "Return conserves offhand components");
                         context.assertTrue(f.player().getHealth() == health[0] && f.player().getHungerManager().getFoodLevel() == food[0], "Return conserves health and hunger");
                         f.runtime.stop();
                         waitForShutdown(context, f, 0, context::complete);
-                    })));
+                    }));
+                    });
                     });
                     });
                     });
@@ -473,6 +524,23 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 }))
                 .createAndAdd(() -> settled(context))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * Where the body stands and the portals vanilla would choose among from there: every portal block within the
+     * square it searches ({@code 16} in the Nether, {@code 128} in the Overworld), nearest first, as a failure's words.
+     */
+    private static String portalsFound(ServerWorld world, BlockPos target, int radius) {
+        var storage = world.getPointOfInterestStorage();
+        storage.preloadChunks(world, target, radius);
+        var near = storage.getInSquare(type -> type.matchesKey(net.minecraft.world.poi.PointOfInterestTypes.NETHER_PORTAL),
+                        target, radius, net.minecraft.world.poi.PointOfInterestStorage.OccupationStatus.ANY)
+                .map(net.minecraft.world.poi.PointOfInterest::getPos)
+                .sorted(java.util.Comparator.comparingDouble(pos -> pos.getSquaredDistance(target)))
+                .toList();
+        var shown = near.stream().limit(6).map(pos -> pos.toShortString() + " (" + Math.round(Math.sqrt(pos.getSquaredDistance(target))) + ")").toList();
+        return world.getRegistryKey().getValue().getPath() + " portals within " + radius + " of " + target.toShortString()
+                + ": " + near.size() + " blocks, nearest " + shown;
     }
 
     /** Waits a test's steps start with {@code later}, counted so that its runner does not move on or pass while they run. */
@@ -503,7 +571,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
     }
 
     private static void waitForBlazeAttackCandidate(TestContext context, NativePaidSkillsGameTests.Fixture f,
-                                                     java.util.UUID blazeId, int attempts, Runnable next) {
+                                                     java.util.UUID blazeId, java.util.function.Supplier<String> where,
+                                                     int attempts, Runnable next) {
         boolean found = f.runtime.nativeCandidates(Actor.console(), f.id).stream().anyMatch(candidate ->
                 "native_attack".equals(candidate.skill()) && blazeId.toString().equals(candidate.arguments().get("target")));
         if (found) {
@@ -511,10 +580,10 @@ public final class NativeNetherGameTests implements FabricGameTest {
             return;
         }
         if (attempts >= 80) {
-            context.throwGameTestException("No observed-Blaze attack candidate after Nether portal arrival");
+            context.throwGameTestException("No observed-Blaze attack candidate after Nether portal arrival: " + where.get());
             return;
         }
-        later(context, () -> waitForBlazeAttackCandidate(context, f, blazeId, attempts + 1, next));
+        later(context, () -> waitForBlazeAttackCandidate(context, f, blazeId, where, attempts + 1, next));
     }
 
     private static void waitForDimension(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerWorld target, int attempts, Runnable next) {
