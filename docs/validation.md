@@ -16,6 +16,24 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, rung a, batch 7: 303's aquifer ledge (F-25c4bf) and the flooded stair (F-25c4ay) — 5 November 2026 (`claude/e40-ladder-7-1105`)
+
+- **The aquifer-ledge fixture** (F-25c4bf, [evidence](evidence/F-25c4bf.md)), from 303's own terrain, staged:
+  - On `6effd66`: fails 3 of 3, still where it stood 5,991 to 5,994 ticks on, "waiting for a feasible step", one or two
+    walks "to the wall".
+  - With the fix: passes 3 of 3, up on the wall after 194, 187 and 236 ticks, no pillar refused.
+  - On the way, a slow pass: before the pillar skill stepped to the middle of its cell, two of six runs took 3,801 and
+    3,811 ticks, one cell by the wall refusing 151 jumps in a row ("The jump did not rise a block").
+- **The flooded stair (F-25c4ay), not kept.** A fixture from 202's own terrain round Echo's stair (its 46 dug cells
+  opened) seemed to reproduce the water loop. It failed 3 of 3 on `6effd66`, and a stop for the water's inflow made it
+  pass. Its player had been set one block low, inside the stair's floor. A GameTest structure is placed one above the
+  test's origin, so the file's y is the test's y + 1. Set where it was meant to be, the player was out of the water in
+  83 to 89 ticks on `6effd66`, 3 of 3. Neither the fixture nor the stop is kept; F-25c4ay stays open.
+- **The trip-down class** (`NativeTripDownGameTests`, five fixtures) with the fix: 5 of 5 in each of three runs; the
+  lava island up its hole after 80 to 88 ticks.
+- **Build:** `bash ./gradlew build` green, 929 JUnit tests, none failing, 6 skipped.
+- **The full native suite** on the batch's commit: run after the pull request opened; its result is in the next entry.
+
 ## E-40, rung a, iteration 4, and the closing checks — 4 November 2026 (`claude/e40-ladder-6-1104`)
 
 - **The evaluation, `e40a4-c237a6e` (F-25c4be on main):** ten seeds, earned, nothing else on the cores.

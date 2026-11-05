@@ -338,4 +338,78 @@ public final class NativeTripDownGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Down off the wall of an aquifer onto a ledge on the cave's side, every step back up beside the water: it pillars up
+     * beside the wall and steps onto its top, as a player does (303's ledge, F-25c4bf). On 303 in E-40's iteration 4
+     * (`e40a4-c237a6e`) Kindred swam the top of an aquifer's lake, came onto the stone wall between the lake and a cave far
+     * deeper than it could fall, and went down its cave side onto a ledge at 127, 11, 41. It dug two cells into the wall for
+     * its branch mine and three by its side, and from then to the end of the run, 27 stuck spells, it stepped aside from the
+     * cell in the wall and walked "to the wall" back into it, 1,466 times each. Staged: the 21 cube round it from a fresh
+     * world on the seed (read offline, diagnosis only), the five cells Kindred dug, from its console, opened, and the lake's
+     * water on the region's sides and floor made stone so that it does not spill out; the cave's floor, 65 below the ledge
+     * in the world, stood for by lava on the region's floor, nine below, so that no way down is survivable, as none was;
+     * the rock over the cave, some 50 above the ledge, stood for by stone on the region's top, eleven above; daylight held; the player at 126, 11, 40, where it went to and fro, with what the goal's iron stage has, a stone
+     * pickaxe, sticks, planks and a crafting table, with cobblestone, torches and bread.
+     */
+    @GameTest(templateName = "kindred_gametest:aquifer-ledge-303", skyAccess = true, batchId = "aquiferLedge303", tickLimit = 6000)
+    public void downOffAnAquifersWallOntoALedgeEveryStepUpBesideTheWaterItPillarsUpAndStepsOntoTheWall(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5900);
+        // The structure is placed one above the test's origin: the file's 12, 9, 12 (126, 11, 40 in the world) is here 12, 10, 12.
+        BlockPos o = context.getAbsolutePos(new BlockPos(12, 10, 12));
+        long[] start = {0};
+        int[] walls = {0};
+        String[] last = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ledge"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(6000);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 32));
+                    inventory.setStack(2, new ItemStack(Items.TORCH, 8));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(5, new ItemStack(Items.OAK_PLANKS, 8));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "On the ledge: at "
+                        + f.player().getBlockPos().subtract(o).toShortString()))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    start[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(6000);
+                    var bots = f.runtime.panelBots(Actor.console());
+                    context.assertTrue(!bots.isEmpty() && f.player() != null && f.player().isAlive(), "Its panel and body");
+                    String progress = bots.getFirst().goalProgress();
+                    if (progress.endsWith(": to the wall") && !progress.equals(last[0])) walls[0]++;
+                    last[0] = progress;
+                    var player = f.player();
+                    // Up off the ledge, three or more above it, on ground and out of the water.
+                    boolean up = player.isOnGround() && !player.isTouchingWater() && player.getBlockPos().getY() >= o.getY() + 3;
+                    context.assertTrue(up, "Still below the wall's top at " + player.getBlockPos().subtract(o).toShortString() + ", "
+                            + (context.getTick() - start[0]) + " ticks on, " + walls[0] + " walks to the wall; " + progress);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive(), "Alive");
+                    KindredMod.LOGGER.info("Aquifer ledge 303: up off the ledge {} ticks on at {}, {} walks to the wall; {}", context.getTick() - start[0],
+                            player.getBlockPos().subtract(o).toShortString(), walls[0], last[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
