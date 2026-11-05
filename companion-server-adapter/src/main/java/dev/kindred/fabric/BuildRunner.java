@@ -79,6 +79,8 @@ final class BuildRunner {
     private ConstructionPlanner.Step placeStep;
     /** The cells it has asked a pillar step of its scaffold for, until it sees whether a block went down there (F-22c9). */
     private final Set<Pos> pillarsAsked = new HashSet<>();
+    /** Breaks refused in a row for nothing solid there (F-22c9). */
+    private int goneInARow;
     /** The last two blocks it set out to place, to see it walk to and fro between them. */
     private Pos lastPlaceTo, placeToBefore;
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
@@ -882,13 +884,29 @@ final class BuildRunner {
         // A walk to a spot to place from is counted when it ends, not when it is asked for: the runtime may ask for the
         // next step more than once before it sets out, and a count kept there passed a dozen in two walks, in the farm
         // ward's first course, and gave up every spot round a block it could reach.
-        if ("native_goto".equals(task.skill()) && task.label().startsWith("To break ")) breakWalks++;
+        // A walk to a break that found no way there lets the break go, to be planned again from where it is: kept, the
+        // same walk was asked for again, and eight such failures in a row stopped a hideout at its first steps (F-22c10).
+        if ("native_goto".equals(task.skill()) && task.label().startsWith("To break ")) {
+            breakWalks++;
+            if (!completed) breakTarget = breakStance = null;
+        }
         if ("native_goto".equals(task.skill()) && task.label().startsWith("To ") && task.label().contains(" to place ")) {
             Pos to = new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
             stanceWalks = to.equals(lastStance) ? stanceWalks + 1 : 1;
             lastStance = to;
         }
         if ("native_goto".equals(task.skill()) && task.label().contains(OVER)) overFailed = completed ? 0 : overFailed + 1;
+        // A break refused for nothing solid there is a block already gone, as the step wanted: no failure, and no longer
+        // its scaffold. Counted as one, a cabin taking its scaffold down stopped short with eight in a row, "Down the
+        // scaffold: Nothing solid to break" (CI run 384, and a full local suite on 5 November) (F-22c9).
+        // Eight such in a row count as failures again, so that a plan that keeps asking for it still stops.
+        boolean gone = "native_break".equals(task.skill()) && !completed && reason.contains("Nothing solid to break") && ++goneInARow <= STUCK;
+        if (!gone && completed) goneInARow = 0;
+        if (gone) {
+            scaffold.remove(new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z"))));
+            pause = true;
+            return;
+        }
         if (completed) {
             failures = 0;
         } else if (!"native_wait".equals(task.skill())) {
