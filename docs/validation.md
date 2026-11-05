@@ -18,8 +18,9 @@
 
 ## M-01e: Co-op Survival at the group's pace, 2026-11-05
 
-Branch `claude/modes-1105-5`, on M-05's branch. M-01e opened, still in progress. See [M-01e](evidence/M-01e.md).
-- JUnit: `GroupPaceTest` 3 of 3.
+Branch `claude/modes-1105-5`, on M-05's branch. M-01e closed. See [M-01e](evidence/M-01e.md).
+- JUnit: `GroupPaceTest` 4 of 4 (the trip rule added on `044eeab`).
+- Native, trips: `NativeCoopPaceGameTests` alone, three runs, 2 of 2 each. Control (the trip hold off): fails, through to the Nether before the human.
 - Native: `NativeCoopPaceGameTests` alone. Before the fix (`50d8dea`) it failed 3 of 3: the house was begun before the poll had seen the human's step. After it (`92a36fe`) it passed 3 of 3. Control (the hold off): fails.
 - Staged in the fixture: the cabin set and recorded as the player's own, iron tools, the clock, the human's advancements granted as though earned.
 

@@ -20,3 +20,13 @@ failure message="(2015434, -60, -3835272) Begun before the group smelted iron: o
 [07:15:07] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
 [07:15:07] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
 [07:15:08] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - All the cobblestone the rest of the build takes, in one go (258)
+
+# Trips (044eeab): control (the trip hold off) failed
+failure message="(1753916, -60, 14896977) Through before the group entered the Nether
+# With the hold: NativeCoopPaceGameTests alone, 3 runs, 2 of 2 each
+[14:33:44] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - Looking for sheep for the rest of the build
+[14:33:51] [Server thread/INFO] (Kindred) Coop pace: held at the portal, then through once someone entered the Nether
+[14:34:19] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - Looking for sheep for the rest of the build
+[14:34:25] [Server thread/INFO] (Kindred) Coop pace: held at the portal, then through once someone entered the Nether
+[14:34:54] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - Looking for sheep for the rest of the build
+[14:35:01] [Server thread/INFO] (Kindred) Coop pace: held at the portal, then through once someone entered the Nether
