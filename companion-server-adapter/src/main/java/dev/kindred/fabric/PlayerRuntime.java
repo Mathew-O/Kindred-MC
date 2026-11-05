@@ -277,6 +277,11 @@ final class PlayerRuntime {
     private boolean bases;
     /** The world's game mode (M-00), from mode.properties; null where none was chosen, as before modes existed. */
     private dev.kindred.core.match.GameModes.WorldMode worldMode;
+    /**
+     * The furthest step of the game any human in this world has reached (M-01e), from vanilla's own advancements, kept
+     * in pace.properties so it does not go back when that human logs off; null until a human has made a start.
+     */
+    private dev.kindred.core.match.GroupPace.Step groupStep;
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
     /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
@@ -577,6 +582,20 @@ final class PlayerRuntime {
         }
     }
 
+    /** The group's furthest step from pace.properties (M-01e); none (null) when absent or unreadable. */
+    private static dev.kindred.core.match.GroupPace.Step readPace(Path directory) {
+        try {
+            java.nio.file.Path file = directory.resolve("pace.properties");
+            if (!java.nio.file.Files.exists(file)) return null;
+            java.util.Properties properties = new java.util.Properties();
+            try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            return dev.kindred.core.match.GroupPace.Step.named(properties.getProperty("furthest", "")).orElse(null);
+        } catch (Exception failure) {
+            KindredMod.LOGGER.error("Kindred group pace could not be read; it starts afresh", failure);
+            return null;
+        }
+    }
+
     private static EditPolicy.ServerPolicy readEdits(Path directory) {
         try {
             java.nio.file.Path file = directory.resolve("edits.properties");
@@ -603,6 +622,9 @@ final class PlayerRuntime {
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
+        CompletableFuture.supplyAsync(() -> readPace(directory)).whenComplete((step, failure) -> handBack(() -> {
+            if (step != null && startupGeneration == currentStartupGen) groupStep = dev.kindred.core.match.GroupPace.further(Optional.ofNullable(groupStep), Optional.of(step)).orElse(null);
+        }));
         startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
                         .thenCompose(database -> database.list().thenCompose(records -> {
@@ -2432,6 +2454,7 @@ final class PlayerRuntime {
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
         if (tick % 20 == 17) pollBuildBattles();
+        if (tick % 100 == 41) pollGroupPace();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
         presenter.tick(matches.list(), tick, this::playerName, this::raceProgress, this::standing);
 
@@ -4634,6 +4657,13 @@ final class PlayerRuntime {
         noteBase(entry, decision.why());
         if (decision.next().isEmpty()) return false;
         var stage = decision.next().get();
+        // In Co-op Survival it keeps to the humans' pace (M-01e): no stage ahead of the furthest step any of them reached.
+        var held = dev.kindred.core.match.GroupPace.hold(stage, worldMode == dev.kindred.core.match.GameModes.WorldMode.COOP_SURVIVAL,
+                java.util.Optional.ofNullable(groupStep));
+        if (held.isPresent()) {
+            noteBase(entry, held.get());
+            return false;
+        }
         if (record.anchor == null) {
             BlockPos home = entry.setup == null || entry.setup.home() == null ? player.getBlockPos()
                     : new BlockPos(entry.setup.home().position().x(), entry.setup.home().position().y(), entry.setup.home().position().z());
@@ -5218,6 +5248,18 @@ final class PlayerRuntime {
         Entry entry = id != null ? entries.get(id) : null;
         if (entry == null || entry.bases == null || entry.bases.built.isEmpty()) return Optional.empty();
         return Optional.of(entry.bases.built.get(entry.bases.built.size() - 1));
+    }
+
+    /**
+     * Fixtures only: a base recorded as the player's own, as though it had built it (staged; the fixture sets its blocks).
+     * False until the player's record of its bases is read.
+     */
+    boolean stageBaseForTest(UUID id, PlayerMemoryStore.Base base) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.built.add(base);
+        return true;
     }
 
     /** What a player last decided about its base (M-01c). */
@@ -13173,6 +13215,43 @@ final class PlayerRuntime {
 
     /** The world's game mode (M-00), or null where none was chosen. */
     dev.kindred.core.match.GameModes.WorldMode worldMode() { return worldMode; }
+
+    /**
+     * The group's pace (M-01e): the furthest of vanilla's story steps any human online has reached, from their own
+     * advancement progress (announced to everyone, so nothing hidden), kept when it goes further and saved off the game
+     * thread. AI players are not the group whose pace is kept.
+     */
+    private void pollGroupPace() {
+        var loader = server.getAdvancementLoader();
+        java.util.Optional<dev.kindred.core.match.GroupPace.Step> furthest = java.util.Optional.ofNullable(groupStep);
+        for (var player : server.getPlayerManager().getPlayerList()) {
+            if (entryForPlayer(player.getUuid()) != null || player.isSpectator()) continue;
+            var done = new java.util.ArrayList<String>();
+            for (var step : dev.kindred.core.match.GroupPace.Step.values()) {
+                var advancement = loader.get(Identifier.of(step.advancement));
+                if (advancement != null && player.getAdvancementTracker().getProgress(advancement).isDone()) done.add(step.advancement);
+            }
+            furthest = dev.kindred.core.match.GroupPace.further(furthest, dev.kindred.core.match.GroupPace.furthest(done));
+        }
+        if (furthest.isEmpty() || furthest.get() == groupStep) return;
+        groupStep = furthest.get();
+        KindredMod.LOGGER.info("Group pace: someone has {}", groupStep.deed);
+        Path file = metadataDirectory.resolve("pace.properties");
+        String content = "# Kindred group pace (M-01e): the furthest step any human in this world has reached.\nfurthest=" + groupStep.name() + "\n";
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("Kindred group pace could not be saved", failure);
+        });
+    }
+
+    /** The group's furthest step (M-01e), for fixtures and the status line. */
+    java.util.Optional<dev.kindred.core.match.GroupPace.Step> groupStep() { return java.util.Optional.ofNullable(groupStep); }
 
     /**
      * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
