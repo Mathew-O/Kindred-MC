@@ -161,6 +161,14 @@ public final class KindredMod implements ModInitializer {
                 server.execute(() -> { if (runtime != null) runtime.playerLeft(left); });
             }
         });
+        // A strike at a player refused by the match both are in (M-00, M-02b): its lobby, countdown or head start, the
+        // same side, or a mode with no striking; the same for humans and AI players. Outside matches the server decides.
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
+            if (runtime == null || world.isClient() || !(player instanceof net.minecraft.server.network.ServerPlayerEntity attacker)
+                    || !(entity instanceof net.minecraft.server.network.ServerPlayerEntity target)) return net.minecraft.util.ActionResult.PASS;
+            return runtime.isReady() && runtime.matchForbidsStrike(attacker.getUuid(), target.getUuid())
+                    ? net.minecraft.util.ActionResult.FAIL : net.minecraft.util.ActionResult.PASS;
+        });
         // A player joining is told the world's mode and its rules (M-00).
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             var joined = handler.player;

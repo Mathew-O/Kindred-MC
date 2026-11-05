@@ -267,9 +267,17 @@ public final class PlayerCommands {
                         .executes(context -> {
                             PlayerRuntime runtime = KindredMod.runtime();
                             if (runtime == null) return unavailable(context.getSource());
-                            String[] sides = StringArgumentType.getString(context, "players").trim().split("\\s+vs\\s+");
+                            String text = StringArgumentType.getString(context, "players").trim();
+                            // An optional head start for the runners, at the end: "headstart <seconds>" (M-02b).
+                            int headStart = 0;
+                            var head = java.util.regex.Pattern.compile("\\s+headstart\\s+(\\d{1,4})$").matcher(text);
+                            if (head.find()) {
+                                headStart = Integer.parseInt(head.group(1)) * 20;
+                                text = text.substring(0, head.start()).trim();
+                            }
+                            String[] sides = text.split("\\s+vs\\s+");
                             if (sides.length != 2) {
-                                context.getSource().sendError(Text.literal("Name the runners, then 'vs', then the hunters: /aiplayer match manhunt Ada vs Bram Cy"));
+                                context.getSource().sendError(Text.literal("Name the runners, then 'vs', then the hunters: /aiplayer match manhunt Ada vs Bram Cy [headstart <seconds>]"));
                                 return 0;
                             }
                             var runners = new java.util.ArrayList<UUID>();
@@ -282,7 +290,7 @@ public final class PlayerCommands {
                                 }
                                 (side == 0 ? runners : hunters).add(player);
                             }
-                            return runtime.proposeManhunt(context.getSource(), runners, hunters);
+                            return runtime.proposeManhunt(context.getSource(), runners, hunters, headStart);
                         })))
                 // A build battle (M-04a): the builders' names, then optionally "for <seconds>" and "theme <name>".
                 .then(CommandManager.literal("build").then(CommandManager.argument("builders", StringArgumentType.greedyString())

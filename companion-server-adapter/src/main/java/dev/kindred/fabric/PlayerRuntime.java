@@ -2420,6 +2420,7 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
@@ -7943,10 +7944,10 @@ final class PlayerRuntime {
             if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
             var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
             if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
-                    || other.snapshot().stopLatched() || matches.running(mate.getUuid()).isPresent()) continue;
+                    || other.snapshot().stopLatched() || matches.active(mate.getUuid()).isPresent()) continue;
             team.add(other);
         }
-        if (team.size() < 2 || matches.running(player.getUuid()).isPresent()) {
+        if (team.size() < 2 || matches.active(player.getUuid()).isPresent()) {
             entry.campaign.team(dev.kindred.core.survival.PortalRunPlanner.Team.ALONE);
             entry.runPart = null;
             return;
@@ -8014,8 +8015,8 @@ final class PlayerRuntime {
     /**
      * A find shared out with the team as it comes (E-40a): when it holds more of a material than at its last reckoning,
      * what it holds unpromised is shared by {@link ShareOut} between it and its teammates (the other native players in its
-     * world within {@link #TEAM_RANGE}, as all play together in co-op; none while it or they are in a match, whose own rules
-     * hand out items), and if anyone else is better for some of it, the share-out
+     * world within {@link #TEAM_RANGE}, as all play together in co-op; none while it or they are in a match that has not
+     * ended, its lobby and countdown included, whose own rules hand out items), and if anyone else is better for some of it, the share-out
      * is saved as a project of hand-overs ({@link HandOvers}), each held by it with its material reserved, and it tells
      * its team what it found and who gets what. A first sight of what it holds is no find. Its hand-overs let go by a
      * stop or a lapsed hold are taken up again.
@@ -8036,14 +8037,16 @@ final class PlayerRuntime {
             if (before == null || held != before) teamCoordinator.stockLedger().registerStock(key, held);
             if (before == null || held <= before || entry.sharing.contains(material)) continue;
             int free = held - teamCoordinator.stockLedger().reservedCount(key);
-            if (free <= 0 || matches.running(player.getUuid()).isPresent()) continue;
+            // Not while it is in a match that has not ended, its lobby and countdown included: the players in it are
+            // about to be opponents, and a promise made now would be kept to an opponent once it runs (M-02b).
+            if (free <= 0 || matches.active(player.getUuid()).isPresent()) continue;
             var members = new ArrayList<ShareOut.Member>();
             members.add(member(self, entry.data.displayName(), player));
             for (Entry other : entries.values()) {
                 if (other == entry) continue;
                 var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
                 if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
-                        || other.snapshot().stopLatched() || matches.running(mate.getUuid()).isPresent()) continue;
+                        || other.snapshot().stopLatched() || matches.active(mate.getUuid()).isPresent()) continue;
                 members.add(member(other.data.id(), other.data.displayName(), mate));
             }
             var grants = members.size() < 2 ? List.<ShareOut.Grant>of() : ShareOut.share(members, material, free);
@@ -13369,6 +13372,14 @@ final class PlayerRuntime {
      * it fair game (D7).
      */
     int proposeManhunt(ServerCommandSource source, List<UUID> runners, List<UUID> hunters) {
+        return proposeManhunt(source, runners, hunters, 0);
+    }
+
+    /**
+     * As the command, with the runners' head start ({@code headStartTicks}, zero for none): from the start, the hunters
+     * are held where they stand and nobody may strike until it is over, the same for human and AI hunters.
+     */
+    int proposeManhunt(ServerCommandSource source, List<UUID> runners, List<UUID> hunters, int headStartTicks) {
         requireThread();
         if (!modeAllows(source, dev.kindred.core.match.MatchRegistry.Mode.MANHUNT)) return 0;
         if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no manhunt can be played.");
@@ -13385,7 +13396,7 @@ final class PlayerRuntime {
             }
             if (!online.getInventory().isEmpty()) return reject(source, playerName(player) + " is not at a fresh start: it carries items.");
         }
-        var result = matches.proposeManhunt(runners, hunters);
+        var result = matches.proposeManhunt(runners, hunters, headStartTicks);
         if (!result.accepted()) return reject(source, result.reason());
         var match = enter(result.match().orElseThrow());
         feedback(source, "Manhunt " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
@@ -13657,12 +13668,79 @@ final class PlayerRuntime {
             // The one item the hunt hands out, announced before it is, the same for every hunter (D6).
             String rule = "Rule: every hunter holds a tracking compass. It points at the nearest runner in the hunter's world, or where a "
                     + "runner last left it; it vanishes when its hunter dies and is given again, and every one is taken back when the hunt ends.";
+            int head = matches.headStart(match.id());
+            if (head > 0) {
+                // The runners' head start (M-02b): every hunter held where it stands, human or AI alike, and nobody strikes.
+                rule += " The runners have a head start of " + head / 20 + " seconds: until it is over, every hunter is held where it stands and nobody may strike.";
+                heldHunts.put(match.id(), match.countdownEnds() + head);
+                for (UUID hunter : match.joined()) if (match.hunter(hunter)) hold(server.getPlayerManager().getPlayer(hunter), true);
+            }
             for (UUID invited : match.invited()) {
                 var player = server.getPlayerManager().getPlayer(invited);
                 if (player != null) player.sendMessage(Text.literal(rule).formatted(net.minecraft.util.Formatting.GOLD), false);
             }
             pollHunts();
         }
+    }
+
+    /** Manhunts in their runners' head start: when each ends, by tick. */
+    private final Map<UUID, Long> heldHunts = new HashMap<>();
+    private static final net.minecraft.util.Identifier HELD = net.minecraft.util.Identifier.of("kindred", "head_start");
+
+    /** A hunter held where it stands for the head start, or let go: no walking, no jumping (M-02b). Not saved. */
+    private static void hold(ServerPlayerEntity player, boolean held) {
+        if (player == null) return;
+        for (var attribute : List.of(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED,
+                net.minecraft.entity.attribute.EntityAttributes.GENERIC_JUMP_STRENGTH)) {
+            var instance = player.getAttributeInstance(attribute);
+            if (instance == null) continue;
+            instance.removeModifier(HELD);
+            if (held) instance.addTemporaryModifier(new net.minecraft.entity.attribute.EntityAttributeModifier(HELD, -1.0,
+                    net.minecraft.entity.attribute.EntityAttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+    }
+
+    /** Each tick: a head start that is over lets its hunters go, and says so; an ended hunt's hunters let go at once. */
+    private void releaseHunts(long tick) {
+        for (var it = heldHunts.entrySet().iterator(); it.hasNext(); ) {
+            var held = it.next();
+            var match = matches.get(held.getKey()).orElse(null);
+            boolean over = match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING;
+            if (!over && tick < held.getValue()) continue;
+            it.remove();
+            if (match == null) continue;
+            for (UUID hunter : match.invited()) if (match.hunter(hunter)) hold(server.getPlayerManager().getPlayer(hunter), false);
+            if (over) continue;
+            KindredMod.LOGGER.info("Manhunt {}: the head start is over", dev.kindred.core.match.MatchRegistry.shortId(match.id()));
+            for (UUID invited : match.invited()) {
+                var player = server.getPlayerManager().getPlayer(invited);
+                if (player != null) player.sendMessage(Text.literal("The head start is over: the hunters are free.").formatted(net.minecraft.util.Formatting.GOLD), false);
+                Entry entry = entryForPlayer(invited);
+                if (entry != null) {
+                    entry.cachedRoutineCandidates = List.of();
+                    entry.routineRefreshPending = true;
+                }
+            }
+        }
+    }
+
+    /** Whether a hunter is held by its manhunt's head start now, for a fixture. */
+    boolean heldForTest(UUID player) {
+        requireThread();
+        return matches.running(player).filter(m -> m.hunter(player) && matches.heldBack(m, server.getTicks())).isPresent();
+    }
+
+    /**
+     * Whether a strike by {@code attacker} at {@code target}, both players, is refused by their match's rules: both in the
+     * same match that has not ended, and the match does not let them strike one another now (its lobby, countdown or
+     * head start, the same side, or a mode with no striking). The same for humans and AI players. Outside matches the
+     * server's own rules stand.
+     */
+    boolean matchForbidsStrike(UUID attacker, UUID target) {
+        requireThread();
+        var match = matches.active(attacker).orElse(null);
+        if (match == null || !match.invited().contains(target) || match.out().contains(target)) return false;
+        return !matches.mayAttack(attacker, target);
     }
 
     /** An AI runner out of its race (it ended, or the runner dropped out): the race's goal ends and its own pace is back. */
@@ -13762,6 +13840,8 @@ final class PlayerRuntime {
         var player = body.entity();
         var match = matches.running(player.getUuid()).filter(m -> m.hunter(player.getUuid())).orElse(null);
         if (match == null) return null;
+        // The runners' head start: held where it stands, it does nothing, as a held human hunter can do nothing.
+        if (matches.heldBack(match, server.getTicks())) return List.of();
         UUID taskId = UUID.nameUUIDFromBytes(("hunt:" + match.id() + ":" + player.getUuid()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         ServerPlayerEntity prey = null;
         for (UUID runner : match.runners()) {
@@ -13784,6 +13864,8 @@ final class PlayerRuntime {
         // hand, before the needle is followed on.
         var wear = equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 92.0);
         if (wear.isPresent()) return List.of(wear.get());
+        var better = betterArmour(entry, body);
+        if (better != null) return better;
         var gear = hunterArmour(entry, body);
         if (gear != null) return gear;
         var bearing = HuntCompass.bearing(player, match.id());
@@ -13795,25 +13877,70 @@ final class PlayerRuntime {
                 "z", String.valueOf(toward.getZ()), "range", "3", "partial", "true", "sprint", "true")));
     }
 
-    /** Iron armour a hunter makes, best protection for its iron first: the piece, its ingots. */
-    private static final List<Map.Entry<net.minecraft.item.Item, Integer>> HUNTER_ARMOUR = List.of(
-            Map.entry(Items.IRON_CHESTPLATE, 8), Map.entry(Items.IRON_LEGGINGS, 7), Map.entry(Items.IRON_HELMET, 5), Map.entry(Items.IRON_BOOTS, 4));
+    /**
+     * Armour it carries that guards better than what it wears in that slot, swapped on as a player swaps it with the
+     * number key over the armour slot (M-02b): readied to the hotbar first if it is further in. Null when it carries none.
+     */
+    private List<NativeTaskCandidate> betterArmour(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!(stack.getItem() instanceof net.minecraft.item.ArmorItem piece) || stack.getCount() != 1) continue;
+            var worn = player.getEquippedStack(player.getPreferredEquipmentSlot(stack));
+            if (worn.isEmpty() || worn.getItem() instanceof net.minecraft.item.ArmorItem on && on.getProtection() >= piece.getProtection()) continue;
+            // Gold worn in the Nether stays on: it keeps piglins neutral (E-07e).
+            if (FollowUps.golden(worn) && player.getServerWorld().getRegistryKey() == net.minecraft.world.World.NETHER) continue;
+            UUID id = UUID.nameUUIDFromBytes(("wear:" + entry.data.id() + ":" + slot).getBytes(StandardCharsets.UTF_8));
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 92.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            if (slot >= 9) {
+                int hotbar = 8;
+                for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+                return List.of(new NativeTaskCandidate(candidate, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(hotbar))));
+            }
+            if (body.wearDestination(slot).isEmpty()) continue;
+            return List.of(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(slot), "swap", "true")));
+        }
+        return null;
+    }
+
+    /** A piece of a hunter's gear: the item, what it is made of, and how many of that. */
+    private record GearPiece(net.minecraft.item.Item item, net.minecraft.item.Item material, int count) { }
 
     /**
-     * The next piece of iron armour a kitted hunter can make from the iron ingots it holds, at a crafting table, or
-     * null when it has the iron for none it lacks. A slot already holding iron or better is not made again.
+     * The gear a hunter makes as the hunt goes on, best first (M-02b): a diamond sword, then diamond armour, from the
+     * diamonds it holds; then iron armour, best protection for its iron first. Nothing is made that it already has as
+     * good or better.
+     */
+    private static final List<GearPiece> HUNTER_GEAR = List.of(
+            new GearPiece(Items.DIAMOND_SWORD, Items.DIAMOND, 2),
+            new GearPiece(Items.DIAMOND_CHESTPLATE, Items.DIAMOND, 8), new GearPiece(Items.DIAMOND_LEGGINGS, Items.DIAMOND, 7),
+            new GearPiece(Items.DIAMOND_HELMET, Items.DIAMOND, 5), new GearPiece(Items.DIAMOND_BOOTS, Items.DIAMOND, 4),
+            new GearPiece(Items.IRON_CHESTPLATE, Items.IRON_INGOT, 8), new GearPiece(Items.IRON_LEGGINGS, Items.IRON_INGOT, 7),
+            new GearPiece(Items.IRON_HELMET, Items.IRON_INGOT, 5), new GearPiece(Items.IRON_BOOTS, Items.IRON_INGOT, 4));
+
+    /**
+     * The next piece of gear a kitted hunter can make from the diamonds or iron ingots it holds, at a crafting table, or
+     * null when it has the makings of none it lacks. A slot already holding as good or better is not made again, and a
+     * diamond sword only where it has none. Three diamonds are kept back while it has no diamond pickaxe.
      */
     private List<NativeTaskCandidate> hunterArmour(Entry entry, NativePlayerBody body) {
         var player = body.entity();
-        int iron = player.getInventory().count(Items.IRON_INGOT);
-        for (var piece : HUNTER_ARMOUR) {
-            var slot = player.getPreferredEquipmentSlot(new ItemStack(piece.getKey()));
-            var worn = player.getEquippedStack(slot);
-            boolean covered = worn.getItem() instanceof net.minecraft.item.ArmorItem armour
-                    && armour.getProtection() >= ((net.minecraft.item.ArmorItem) piece.getKey()).getProtection();
-            if (covered || player.getInventory().count(piece.getKey()) > 0 || iron < piece.getValue()) continue;
+        var inventory = player.getInventory();
+        // Three diamonds kept for a diamond pickaxe while it has none: its goal's obsidian needs one.
+        boolean pickaxe = inventory.count(Items.DIAMOND_PICKAXE) > 0 || inventory.count(Items.NETHERITE_PICKAXE) > 0;
+        for (var piece : HUNTER_GEAR) {
+            int kept = piece.material() == Items.DIAMOND && !pickaxe ? 3 : 0;
+            if (inventory.count(piece.material()) < piece.count() + kept || inventory.count(piece.item()) > 0) continue;
+            if (piece.item() instanceof net.minecraft.item.ArmorItem made) {
+                var worn = player.getEquippedStack(player.getPreferredEquipmentSlot(new ItemStack(made)));
+                if (worn.getItem() instanceof net.minecraft.item.ArmorItem armour && armour.getProtection() >= made.getProtection()) continue;
+            } else if (inventory.count(Items.NETHERITE_SWORD) > 0) {
+                continue;
+            }
             if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
-            var task = entry.campaign.craftAtTable(body, net.minecraft.registry.Registries.ITEM.getId(piece.getKey()).getPath());
+            var task = entry.campaign.craftAtTable(body, net.minecraft.registry.Registries.ITEM.getId(piece.item()).getPath());
             if (task.isEmpty()) return null;
             var t = task.get();
             UUID id = UUID.nameUUIDFromBytes(("gear:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
@@ -13891,6 +14018,10 @@ final class PlayerRuntime {
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, hunter), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", hunter.getUuid().toString(), "slot", String.valueOf(slot))));
         }
+        // Blocking pursuit (M-02b): going through a way one block wide with the hunter coming along it, the gap behind
+        // is shut with two of its own filler blocks before it runs on.
+        var shut = shutBehind(body, hunter, candidate);
+        if (shut != null) return shut;
         BlockPos target = awayFrom(entry, player, hunter);
         var last = evadingTo.get(player.getUuid());
         if (last == null || last.getSquaredDistance(target) > 16) {
@@ -13901,6 +14032,66 @@ final class PlayerRuntime {
         }
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
                 "z", String.valueOf(target.getZ()), "range", "3", "partial", "true", "sprint", "true")));
+    }
+
+    /** How many cells each runner has chosen to shut behind it, for its log (M-02b). */
+    private final Map<UUID, Integer> shutWays = new HashMap<>();
+    /** The cell each runner last chose to shut, so a choice made again each look is logged and counted once. */
+    private final Map<UUID, BlockPos> shutting = new HashMap<>();
+
+    int shutWays(UUID player) {
+        requireThread();
+        return shutWays.getOrDefault(player, 0);
+    }
+
+    /**
+     * The next block a fleeing player puts into the one-wide gap behind it, toward {@code threat} (M-02b), as
+     * {@link dev.kindred.core.match.PursuitBlock} picks the gap: a filler block of its own from its hotbar, readied there
+     * first if it is further in. Null when the way behind is not one wide, the threat is not coming along it, it has no
+     * filler, or the world's edit policy does not let it place there.
+     */
+    private List<NativeTaskCandidate> shutBehind(NativePlayerBody body, ServerPlayerEntity threat, dev.kindred.core.TaskPreferences.Candidate candidate) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!player.isOnGround() || !worldEditsEnabled()) return null;
+        BlockPos feet = player.getBlockPos();
+        var ground = new dev.kindred.core.match.PursuitBlock.Ground() {
+            @Override public boolean open(dev.kindred.core.construction.Pos cell) {
+                BlockPos at = new BlockPos(cell.x(), cell.y(), cell.z());
+                var state = world.getBlockState(at);
+                return state.getCollisionShape(world, at).isEmpty() && state.getFluidState().isEmpty();
+            }
+            @Override public boolean solid(dev.kindred.core.construction.Pos cell) {
+                BlockPos at = new BlockPos(cell.x(), cell.y(), cell.z());
+                return world.getBlockState(at).isSolidBlock(world, at);
+            }
+        };
+        var cells = dev.kindred.core.match.PursuitBlock.behind(new dev.kindred.core.construction.Pos(feet.getX(), feet.getY(), feet.getZ()),
+                threat.getX() - player.getX(), threat.getZ() - player.getZ(), ground);
+        if (cells.isEmpty()) return null;
+        // The gap's first open cell: the lower one, then the one above it.
+        var cell = cells.stream().filter(ground::open).findFirst().orElse(null);
+        if (cell == null) return null;
+        BlockPos at = new BlockPos(cell.x(), cell.y(), cell.z());
+        if (!mayEditAt(player, at)) return null;
+        int slot = -1;
+        var inventory = player.getInventory();
+        for (int s = 0; s < 36 && slot < 0; s++) {
+            var stack = inventory.getStack(s);
+            if (!stack.isEmpty() && dev.kindred.core.match.PursuitBlock.FILLERS.contains(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString())) slot = s;
+        }
+        if (slot < 0) return null;
+        if (slot >= 9) {
+            int hotbar = 8;
+            for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+            return List.of(new NativeTaskCandidate(candidate, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(hotbar))));
+        }
+        if (!at.equals(shutting.put(player.getUuid(), at.toImmutable()))) {
+            shutWays.merge(player.getUuid(), 1, Integer::sum);
+            KindredMod.LOGGER.info("{} shuts the way behind it from {}: a block at {}", player.getName().getString(), threat.getName().getString(), at.toShortString());
+        }
+        return List.of(new NativeTaskCandidate(candidate, "native_place", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                "z", String.valueOf(at.getZ()), "slot", String.valueOf(slot))));
     }
 
     /**
