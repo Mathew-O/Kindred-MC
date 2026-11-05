@@ -18,6 +18,18 @@
 
 ## E-40, rung a, batch 7: 303's aquifer ledge (F-25c4bf), the sea bed (F-25c4bg), the flooded stair (F-25c4ay) — 5 November 2026 (`claude/e40-ladder-7-1105`)
 
+- **The evaluation, `e40a5-5a48c43` (both fixes, on `6effd66`):** ten seeds, earned, nothing else on the cores.
+  - The iron pickaxe within the first game hour on 9 of 10: not on 31102026, the desert, where two players never
+    found a tree.
+  - Stuck time under a tenth of the run on 3 of 10 (20261030, 606, 8675309), against 1 of 10 before.
+  - Stuck spells 10.0 [3 to 43], against 18.0 [3 to 39] in iteration 4. Every range overlaps, so no clear difference
+    by the convention.
+  - Obsidian on 5 of 10, a portal lit on 3 of 10, 19 deaths.
+  - The water loop ("Climb out of the water: to the wall"), 70 of iteration 4's spells, is gone. The worst place now is
+    505's stone search in a cave beside water (29 spells).
+  - [Summary](evidence/eval/e40a5-5a48c43/summary.md), [against iteration 4](evidence/eval/compare-e40a5.md),
+    [against the starting build](evidence/eval/compare-e40a5-base.md), [deaths](evidence/eval/e40a5-5a48c43/deaths.md),
+    [E-40](evidence/E-40.md).
 - **The aquifer-ledge fixture** (F-25c4bf, [evidence](evidence/F-25c4bf.md)), from 303's own terrain, staged:
   - On `6effd66`: fails 3 of 3, still where it stood 5,991 to 5,994 ticks on, "waiting for a feasible step", one or two
     walks "to the wall".
@@ -47,6 +59,13 @@
   furnishes its hideout"). That fixture failed in 2 of 24 saved full runs before, uses no pillar, and passed alone 3 of 3
   with both fixes.
 - **The bunker class alone** (`NativeBunkerGameTests`), with both fixes: 1 of 1 in each of three runs.
+- **CI on #21 after main (M-00) was merged in (`2b194e3`):**
+  - The branch build went 544 of 545, failing only the tree chopped from the water (F-25c4as).
+  - The merge ref went 541 of 545:
+    - two of the three runs of the replay `echo-50149`, at their setup step;
+    - the Nether portal restart;
+    - the hoglin with lava at the player's back.
+  - Each failed on earlier builds without these changes; see the PR's comments.
 
 ## M-00: the game-mode and match framework, 2026-11-05
 
