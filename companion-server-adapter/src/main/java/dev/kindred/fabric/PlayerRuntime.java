@@ -9404,6 +9404,11 @@ final class PlayerRuntime {
                 // Stopped short: pushed on again from behind it, along the line (from behind the line's start, at its first rail).
                 // The walk back to it is kept to, not given up for the wait above at the next look.
                 int at = b.rails.indexOf(cart.getBlockPos());
+                // Rolled back off the line's start and stopped against the player standing behind it, as it is meant to
+                // be met: its middle a little into the player's own cell, off the rails. It is at the line's start, to be
+                // pushed on again from there. Taken for a cart stopped off the line, the bring gave up with the librarian
+                // aboard, three blocks short of its first climb (CI on PR #25, b3f1590 and main's f4bce7a) (F-22c14).
+                if (at < 0 && cart.getBlockPos().equals(b.push)) at = 0;
                 if (at < 0 || b.pushes >= 8) {
                     KindredMod.LOGGER.info("{} bringing: the cart stopped at {} ({}), rail {} of {}, {} pushes; the line from {} to {}", entry.data.displayName(),
                             cart.getPos(), world.getBlockState(cart.getBlockPos()), at, b.rails.size(), b.pushes, b.rails.getFirst().toShortString(),

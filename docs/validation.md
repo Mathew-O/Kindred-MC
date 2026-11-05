@@ -2628,3 +2628,6 @@ After the block's first merge from main, CI on PR #25 found:
 - **[F-22c13](evidence/F-22c13.md):** the tree in water went ashore without its log, failing both runs on `b3f1590`.
   On a 25 ms store, 5 of 52 copies failed before the fix and 36 of 36 passed after.
   `NativeAtlasGameTests` passed 4 of 4.
+- **[F-22c14](evidence/F-22c14.md):** the librarian off the line, given up with it aboard (it failed on main's `f4bce7a`
+  too). On a 25 ms store, 1 of 4 copies failed before the fix and 6 of 6 passed after. `NativeBringGameTests` passed 7
+  of 7.
