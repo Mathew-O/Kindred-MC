@@ -4,7 +4,7 @@ import java.awt.event.KeyEvent;
 /**
  * Presses keys on the X display the ordinary client runs on (java.awt.Robot through Xvfb's XTEST), as a person at
  * the keyboard would. Usage: DISPLAY=:99 java Keys.java chat "/aiplayer match join 1a2b3c4d" | key T | hold W 2000 |
- * click | wait 500. Each argument pair is one action, in order. Test tooling only.
+ * click | rclick | mclick | move X Y | wait 500. Each argument pair is one action, in order. Test tooling only.
  */
 public final class Keys {
     public static void main(String[] args) throws Exception {
@@ -31,6 +31,16 @@ public final class Keys {
                     robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
                     robot.delay(40);
                     robot.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+                }
+                case "rclick" -> {
+                    robot.mousePress(java.awt.event.InputEvent.BUTTON3_DOWN_MASK);
+                    robot.delay(40);
+                    robot.mouseRelease(java.awt.event.InputEvent.BUTTON3_DOWN_MASK);
+                }
+                case "mclick" -> {
+                    robot.mousePress(java.awt.event.InputEvent.BUTTON2_DOWN_MASK);
+                    robot.delay(40);
+                    robot.mouseRelease(java.awt.event.InputEvent.BUTTON2_DOWN_MASK);
                 }
                 case "move" -> robot.mouseMove(Integer.parseInt(args[++i]), Integer.parseInt(args[++i]));
                 case "wait" -> robot.delay(Integer.parseInt(args[++i]));

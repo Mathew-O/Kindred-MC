@@ -96,6 +96,9 @@ final class MatchPresenter {
               BiFunction<MatchRegistry.Match, UUID, String> standing) {
         var live = new HashSet<UUID>();
         var viewing = new HashSet<UUID>();
+        // Players in a match of their own: never onlookers of another (its sidebar would take the place of their own).
+        var busy = new HashSet<UUID>();
+        for (var match : matches) if (match.state() != MatchRegistry.State.ENDED) busy.addAll(match.invited());
         for (var match : matches) {
             if (match.state() == MatchRegistry.State.ENDED) continue;
             live.add(match.id());
@@ -105,7 +108,7 @@ final class MatchPresenter {
                 bar.setName(Text.literal(shownBar.text()));
                 bar.setPercent(shownBar.progress());
                 bar.setColor(match.state() == MatchRegistry.State.RUNNING ? BossBar.Color.RED : BossBar.Color.YELLOW);
-                var watchers = watchers(match);
+                var watchers = watchers(match, busy);
                 onlookers.put(match.id(), watchers);
                 var everyone = new ArrayList<UUID>(match.invited());
                 everyone.addAll(watchers);
@@ -160,11 +163,11 @@ final class MatchPresenter {
         }
     }
 
-    /** Players not in the match, near one who is in it and in the same world: its onlookers. */
-    private List<UUID> watchers(MatchRegistry.Match match) {
+    /** Players in no match of their own, near one who is in this one and in the same world: its onlookers. */
+    private List<UUID> watchers(MatchRegistry.Match match, java.util.Set<UUID> busy) {
         var found = new ArrayList<UUID>();
         for (var player : server.getPlayerManager().getPlayerList()) {
-            if (match.invited().contains(player.getUuid())) continue;
+            if (busy.contains(player.getUuid())) continue;
             for (UUID invited : match.invited()) {
                 var in = server.getPlayerManager().getPlayer(invited);
                 if (in != null && in.getServerWorld() == player.getServerWorld()

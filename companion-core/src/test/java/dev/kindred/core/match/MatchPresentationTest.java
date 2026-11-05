@@ -109,7 +109,7 @@ class MatchPresentationTest {
         assertEquals("Hunt!", MatchPresentation.start(running, bram).title(), "a hunter's");
         var hunted = registry.fallen(ada).orElseThrow();
         assertEquals("Victory", MatchPresentation.result(hunted, cy, names).title());
-        assertEquals("The hunters caught Ada", MatchPresentation.result(hunted, cy, names).subtitle());
+        assertEquals("Ada fell: the hunters win", MatchPresentation.result(hunted, cy, names).subtitle());
         assertEquals("Defeat", MatchPresentation.result(hunted, ada, names).title());
         assertEquals("The hunters win", MatchPresentation.result(hunted, UUID.randomUUID(), names).title(), "an onlooker");
     }
@@ -158,5 +158,22 @@ class MatchPresentationTest {
         var on = hunts.tick(60).getFirst();
         assertEquals("Runner: free the End - 0:01", MatchPresentation.actionBar(on, ada, 80, names).orElseThrow());
         assertEquals("Hunter: follow your compass - 0:01", MatchPresentation.actionBar(on, bram, 80, names).orElseThrow());
+    }
+
+    @Test
+    void anOnlookerSeesATiedBuildBattleAsATie() {
+        // Found live: a tie has no one winner, and an onlooker's "<winner> wins" crashed the server.
+        var registry = new MatchRegistry();
+        var battle = registry.proposeBuild(List.of(ada, bram), 20 * 30).match().orElseThrow();
+        registry.join(battle.id(), ada);
+        registry.join(battle.id(), bram);
+        registry.start(battle.id(), 0);
+        registry.tick(MatchRegistry.COUNTDOWN_TICKS);
+        registry.tick(MatchRegistry.COUNTDOWN_TICKS + 20 * 30);
+        var tied = registry.decide(battle.id(), java.util.Set.of(ada, bram), "the best mean vote").match().orElseThrow();
+        var seen = MatchPresentation.result(tied, cy, names);
+        assertTrue(seen.title().equals("Ada and Bram tie") || seen.title().equals("Bram and Ada tie"), seen.title());
+        assertEquals(MatchPresentation.Cue.WIN, seen.cue());
+        assertEquals("Victory", MatchPresentation.result(tied, ada, names).title(), "each tied builder has won");
     }
 }
