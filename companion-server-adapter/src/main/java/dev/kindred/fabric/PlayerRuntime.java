@@ -4657,9 +4657,11 @@ final class PlayerRuntime {
         noteBase(entry, decision.why());
         if (decision.next().isEmpty()) return false;
         var stage = decision.next().get();
-        // In Co-op Survival it keeps to the humans' pace (M-01e): no stage ahead of the furthest step any of them reached.
-        var held = dev.kindred.core.match.GroupPace.hold(stage, worldMode == dev.kindred.core.match.GameModes.WorldMode.COOP_SURVIVAL,
-                java.util.Optional.ofNullable(groupStep));
+        // In Co-op Survival it keeps to the humans' pace (M-01e): no stage ahead of the furthest step any of them reached,
+        // read afresh as it decides, not as the last poll left it.
+        boolean paced = worldMode == dev.kindred.core.match.GameModes.WorldMode.COOP_SURVIVAL;
+        if (paced) pollGroupPace();
+        var held = dev.kindred.core.match.GroupPace.hold(stage, paced, java.util.Optional.ofNullable(groupStep));
         if (held.isPresent()) {
             noteBase(entry, held.get());
             return false;
