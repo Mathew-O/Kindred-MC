@@ -109,7 +109,7 @@ class MatchPresentationTest {
         assertEquals("Hunt!", MatchPresentation.start(running, bram).title(), "a hunter's");
         var hunted = registry.fallen(ada).orElseThrow();
         assertEquals("Victory", MatchPresentation.result(hunted, cy, names).title());
-        assertEquals("The hunters caught Ada", MatchPresentation.result(hunted, cy, names).subtitle());
+        assertEquals("Ada fell: the hunters win", MatchPresentation.result(hunted, cy, names).subtitle());
         assertEquals("Defeat", MatchPresentation.result(hunted, ada, names).title());
         assertEquals("The hunters win", MatchPresentation.result(hunted, UUID.randomUUID(), names).title(), "an onlooker");
     }

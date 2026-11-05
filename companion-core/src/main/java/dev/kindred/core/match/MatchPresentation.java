@@ -178,7 +178,8 @@ public final class MatchPresentation {
         String how = match.result() == null ? "" : match.result();
         if (match.mode() == MatchRegistry.Mode.MANHUNT) {
             if (how.equals("finished")) return names.apply(match.winner()) + " freed the End: the runners win";
-            if (how.equals("hunted")) return "The hunters caught " + side(match, true, names);
+            // Every runner fell, to a hunter or anything else (a fall is all the match knows): the hunters win.
+            if (how.equals("hunted")) return side(match, true, names) + " fell: the hunters win";
             if (how.startsWith("Every runner")) return "The runners gave up";
             if (how.startsWith("Every hunter")) return "The hunters gave up";
             return how;

@@ -331,6 +331,85 @@ public final class NativeManhuntGameTests implements FabricGameTest {
     }
 
     /**
+     * A hunter that sees a runner it cannot walk to makes a way up to it (M-02a): Rue stands on a stone tower four
+     * high, in Hal's sight and out of a walk's reach; Hal's fight cannot close in, and it builds its way up with its own
+     * cobblestone and strikes. Found in a live hunt, where a hunter in a hollow below a runner started the same fight
+     * again every fifteen seconds and never reached it. Staged: Hal's cobblestone and kit handed after the fresh start, as
+     * if mined and made; Rue held on the tower.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "manhuntTower", tickLimit = 2400)
+    public void aHunterMakesAWayUpToARunnerItCannotWalkTo(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2200);
+        var server = context.getWorld().getServer();
+        boolean pvp = server.isPvpEnabled();
+        UUID[] ids = new UUID[2], players = new UUID[2], match = new UUID[1];
+        BlockPos o = context.getAbsolutePos(new BlockPos(20, 0, 20));
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-10, 1, -10), o.add(20, 12, 20));
+                    for (int x = -10; x <= 20; x++) for (int z = -10; z <= 20; z++) {
+                        boolean edge = x == -10 || x == 20 || z == -10 || z == 20;
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 12; y++) world.setBlockState(o.add(x, y, z), edge && y <= 4 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                    }
+                    // A tower three by three and four high, its top at y 5.
+                    for (int x = 4; x <= 6; x++) for (int z = 9; z <= 11; z++) for (int y = 2; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                    f.runtime.createNative(f.source, "Hal");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Hal allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Rue"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "Both established");
+                    for (var status : statuses) {
+                        int i = player(f, status.nativeId()).getName().getString().equals("Hal") ? 0 : 1;
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    var hal = player(f, players[0]);
+                    var rue = player(f, players[1]);
+                    hal.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 2, o.getZ() + 3.5, 0, 0);
+                    rue.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 6, o.getZ() + 10.5, 180, 0);
+                    hal.getInventory().clear();
+                    rue.getInventory().clear();
+                    server.setPvpEnabled(true);
+                    context.getWorld().setTimeOfDay(1000);
+                    f.runtime.setDragonFightForTest(true);
+                    context.assertTrue(f.runtime.proposeManhunt(f.source, java.util.List.of(players[1]), java.util.List.of(players[0])) == 1, "Proposed");
+                    match[0] = f.runtime.matches().getFirst().id();
+                })
+                .createAndAdd(() -> {
+                    var hal = player(f, players[0]);
+                    hal.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    hal.getInventory().setStack(1, new ItemStack(Items.COBBLESTONE, 32));
+                    hal.getInventory().setStack(2, new ItemStack(Items.STONE_PICKAXE));
+                    hal.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                    context.assertTrue(f.runtime.startMatch(f.source, match[0]) == 1, "Started");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().state() == MatchRegistry.State.RUNNING, "Running");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", ids[1]) == 1, "Rue held on the tower");
+                })
+                .createAndAdd(() -> {
+                    var rue = player(f, players[1]);
+                    var hunt = f.runtime.matches().getFirst();
+                    context.assertTrue(hunt.state() == MatchRegistry.State.ENDED || rue.getHealth() < 20, "Hal reaches Rue on the tower and strikes: Hal at "
+                            + player(f, players[0]).getBlockPos().subtract(o).toShortString() + ", " + player(f, players[0]).getInventory().count(Items.COBBLESTONE) + " cobblestone left");
+                    KindredMod.LOGGER.info("Manhunt tower: Hal reached Rue with {} cobblestone left", player(f, players[0]).getInventory().count(Items.COBBLESTONE));
+                    server.setPvpEnabled(pvp);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The runners' head start (M-02b): an AI hunter and a human hunter (a stand-in, joined by its own command) are held
      * where they stand for the head start, the same way, and nobody may strike, while the AI runner, starting beside
      * them, moves away; once it is over both are let go and the AI hunter goes after the runner. Without it the AI hunter fights the

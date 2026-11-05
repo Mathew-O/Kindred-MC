@@ -6920,7 +6920,12 @@ final class PlayerRuntime {
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED)) {
-            if (state == SkillRunner.State.BLOCKED && "native_goto".equals(entry.skillId)) entry.walksFailed++;
+            if (state == SkillRunner.State.BLOCKED && "native_goto".equals(entry.skillId)) {
+                entry.walksFailed++;
+                entry.walkFailedAt = server.getTicks();
+            }
+            if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
+                    && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
                     entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
@@ -13850,6 +13855,18 @@ final class PlayerRuntime {
                     || !player.canSee(target)) continue;
             if (prey == null || player.squaredDistanceTo(target) < player.squaredDistanceTo(prey)) prey = target;
         }
+        long now = server.getTicks();
+        if (prey != null) {
+            entry.preySeen = prey.getBlockPos().toImmutable();
+            entry.preySeenAt = now;
+        }
+        if (now - entry.fightStalledAt < STALLED_FIGHT && entry.preySeen != null && now - entry.preySeenAt < STALLED_FIGHT) {
+            // Its last fight could not close in (a runner up a tower, across a gap): it makes a way to where it last saw
+            // the runner as a player does, with its own blocks, digging and stairs, rather than start the same fight
+            // again (M-02a).
+            var way = wayTo(entry, body, entry.preySeen);
+            if (way != null) return way;
+        }
         if (prey != null) {
             var fight = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
                     dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
@@ -13871,6 +13888,12 @@ final class PlayerRuntime {
         var bearing = HuntCompass.bearing(player, match.id());
         if (bearing.isEmpty()) return null;
         BlockPos toward = HuntCompass.along(player.getBlockPos(), bearing.get(), 16);
+        // A walk along the needle that has just failed: it makes a way along it instead, and with no way to make, it gets
+        // on with its goal's work for now (a hunter in a cave walked at rock over nine thousand times in a live hunt).
+        if (now - entry.walkFailedAt < 100) {
+            var way = wayTo(entry, body, toward);
+            return way;
+        }
         var follow = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(follow, "native_goto", Map.of("x", String.valueOf(toward.getX()), "y", String.valueOf(toward.getY()),
@@ -13903,6 +13926,59 @@ final class PlayerRuntime {
             return List.of(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(slot), "swap", "true")));
         }
         return null;
+    }
+
+    /** How long after a fight that could not close in a hunter makes its own way to the runner instead. */
+    private static final int STALLED_FIGHT = 20 * 30;
+
+    /**
+     * A way made to {@code at}: where it is two or more blocks up, a walk to its foot and a pillar of its own filler
+     * blocks up beside it; otherwise the run's own route builder (bridges, stairs and pillars of its own blocks, digging
+     * through), to within two blocks of it. Null when there is none, and the fight is tried again.
+     */
+    private List<NativeTaskCandidate> wayTo(Entry entry, NativePlayerBody body, BlockPos at) {
+        if (!worldEditsEnabled()) return null;
+        var player = body.entity();
+        BlockPos feet = player.getBlockPos();
+        double dx = at.getX() + 0.5 - player.getX(), dz = at.getZ() + 0.5 - player.getZ();
+        int rise = at.getY() - feet.getY();
+        if (rise >= 2) {
+            UUID climbId = UUID.nameUUIDFromBytes(("climb:" + entry.data.id() + ":" + feet.asLong()).getBytes(StandardCharsets.UTF_8));
+            var climb = new dev.kindred.core.TaskPreferences.Candidate(climbId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            if (dx * dx + dz * dz > 2.5 * 2.5) {
+                // To the foot of where it is up: as near below it as it can walk.
+                return List.of(new NativeTaskCandidate(climb, "native_goto", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                        "z", String.valueOf(at.getZ()), "range", "2", "partial", "true", "sprint", "true")));
+            }
+            // At its foot: up a pillar of its own filler blocks, as a player climbs to someone on a ledge.
+            var world = player.getServerWorld();
+            if (player.isOnGround() && world.getBlockState(feet.up(2)).getCollisionShape(world, feet.up(2)).isEmpty()) {
+                var inventory = player.getInventory();
+                for (int slot = 0; slot < 36; slot++) {
+                    var stack = inventory.getStack(slot);
+                    if (stack.isEmpty() || !dev.kindred.core.match.PursuitBlock.FILLERS.contains(Registries.ITEM.getId(stack.getItem()).toString())) continue;
+                    if (slot >= 9) {
+                        int hotbar = 8;
+                        for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+                        return List.of(new NativeTaskCandidate(climb, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(hotbar))));
+                    }
+                    return List.of(new NativeTaskCandidate(climb, "native_pillar", Map.of("x", String.valueOf(feet.getX()), "y", String.valueOf(feet.getY()),
+                            "z", String.valueOf(feet.getZ()), "slot", String.valueOf(slot))));
+                }
+            }
+        }
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        var task = entry.campaign.buildRoute(body, at, p -> p.getSquaredDistance(at) <= 4, true, "Make a way to the runner");
+        if (task.isEmpty()) return null;
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("way:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.campaignTasks.clear();
+        entry.campaignTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
     /** A piece of a hunter's gear: the item, what it is made of, and how many of that. */
@@ -13968,6 +14044,8 @@ final class PlayerRuntime {
      * home it still keeps its hunters from.
      */
     private static final double EVADE = 20, CAUGHT = 3.2, HOME_KEPT = 160;
+    /** How much further than {@link #EVADE} a runner already moving off keeps going before it counts itself clear. */
+    private static final double CLEAR_MARGIN = 8;
 
     /**
      * The home a chased player keeps its pursuers from (M-02c): its first base in this world, else the bed its spawn
@@ -13999,10 +14077,13 @@ final class PlayerRuntime {
                 .filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT && m.runners().contains(player.getUuid())).orElse(null);
         if (match == null) return null;
         ServerPlayerEntity hunter = null;
+        // Once moving off, it keeps going until well clear, not just past the edge where it started: its goal would walk
+        // it straight back toward a hunter it has only just left (found in the head start fixture, M-02b).
+        double reach = evadingTo.containsKey(player.getUuid()) ? EVADE + CLEAR_MARGIN : EVADE;
         for (UUID other : match.joined()) {
             if (!match.hunter(other) || !match.playing(other)) continue;
             var seen = server.getPlayerManager().getPlayer(other);
-            if (seen == null || !seen.isAlive() || seen.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(seen) > EVADE * EVADE
+            if (seen == null || !seen.isAlive() || seen.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(seen) > reach * reach
                     || !player.canSee(seen)) continue;
             if (hunter == null || player.squaredDistanceTo(seen) < player.squaredDistanceTo(hunter)) hunter = seen;
         }
@@ -14342,6 +14423,11 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
         private int walksFailed;
+        /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
+        private long fightStalledAt = Long.MIN_VALUE / 2;
+        /** When a walk last failed, and where and when a hunter last saw a runner (M-02a). */
+        private long walkFailedAt = Long.MIN_VALUE / 2, preySeenAt = Long.MIN_VALUE / 2;
+        private BlockPos preySeen;
         /** The shore its way out of deep water makes for, and those it could not reach, until when each is passed over. */
         private BlockPos waterEscapeShore;
         private final Map<Long, Long> unreachedShores = new HashMap<>();

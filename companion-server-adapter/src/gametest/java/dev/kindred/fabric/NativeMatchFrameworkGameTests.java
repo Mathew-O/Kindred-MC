@@ -152,6 +152,70 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
     }
 
     /**
+     * A player in a match of its own is not an onlooker of another nearby: its sidebar is its own match's, and the other's
+     * result is not shown to it (found on an ordinary client in a live manhunt, where a runner's sidebar showed the
+     * other hunt beside it).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "matchTwo", tickLimit = 1600)
+    public void aPlayerInItsOwnMatchSeesItsOwnSidebarNotANearbyMatchs(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1400);
+        UUID[] ids = new UUID[3], players = new UUID[3], match = new UUID[2];
+        ServerPlayerEntity[] mira = new ServerPlayerEntity[1];
+        var server = context.getWorld().getServer();
+        boolean pvp = server.isPvpEnabled();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Ada allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bram"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 2, "Bram allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Cy"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 3 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "All three established");
+                    for (var status : statuses) {
+                        String name = player(f, status.nativeId()).getName().getString();
+                        int i = name.equals("Ada") ? 0 : name.equals("Bram") ? 1 : 2;
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    for (UUID id : ids) f.runtime.meleeStyle(id, "idle");
+                    server.setPvpEnabled(true);
+                    // Staged: a person stands in for a human at an ordinary client, beside the first duel.
+                    mira[0] = MockPlayers.survival(context, "Mira", new BlockPos(3, 2, 5));
+                    context.assertTrue(f.runtime.proposeDuel(f.source, players[0], players[1]) == 1, "Ada and Bram's duel proposed first");
+                    match[0] = f.runtime.matches().getFirst().id();
+                    context.assertTrue(f.runtime.startMatch(f.source, match[0]) == 1, "Started");
+                    context.assertTrue(f.runtime.proposeDuel(f.source, players[2], mira[0].getUuid()) == 1, "Cy and Mira's duel proposed");
+                    match[1] = f.runtime.matches().getLast().id();
+                    context.assertTrue(f.runtime.joinMatch(mira[0].getCommandSource(), match[1]) == 1, "Mira joined her own");
+                    context.assertTrue(f.runtime.startMatch(mira[0].getCommandSource(), match[1]) == 1, "Mira started her own");
+                })
+                .createAndAdd(() -> {
+                    var presenter = f.runtime.presenter();
+                    var lines = presenter.sidebarLines(mira[0].getUuid());
+                    context.assertTrue(f.runtime.matches().stream().allMatch(m -> m.state() == MatchRegistry.State.RUNNING), "Both running");
+                    context.assertTrue(lines.contains("Cy") && lines.contains("Mira"), "Mira's sidebar is her own duel's: " + lines);
+                    context.assertTrue(!presenter.onlookers(match[0]).contains(mira[0].getUuid()), "Mira is no onlooker of the other: " + presenter.onlookers(match[0]));
+                    f.runtime.stopMatch(f.source, match[0]);
+                    f.runtime.stopMatch(f.source, match[1]);
+                })
+                .createAndAdd(() -> {
+                    var shown = f.runtime.presenter().shown(mira[0].getUuid());
+                    context.assertTrue(!shown.isEmpty() && shown.getLast().equals("Stopped") && !shown.contains("Ada wins") && shown.stream().filter("Stopped"::equals).count() == 1,
+                            "Mira shown her own result only: " + shown);
+                    server.getPlayerManager().remove(mira[0]);
+                    server.setPvpEnabled(pvp);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * An operator's stop takes back every rule the match gave, in the same tick: mid-fight, the leave to strike and the
      * bar; and no strike lands after it.
      */
