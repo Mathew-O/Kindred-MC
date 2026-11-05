@@ -87,6 +87,8 @@ final class BuildRunner {
     private Pos lastPlaceTo, placeToBefore;
     /** The placement it last set out for, to make from the spot it walked to for it when the plan goes to and fro (F-22c10). */
     private ConstructionPlanner.Step lastPlaceStep;
+    /** The placement the to-and-fro guard chose to make from where it stands, held until that placement's task ends (F-22c15). */
+    private ConstructionPlanner.Step heldPlace;
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
     private Pos lastStance;
     private int stanceWalks;
@@ -625,6 +627,16 @@ final class BuildRunner {
                         PROP + step.target()));
             }
             case PLACE -> {
+                // The placement the guard below chose, while it stands where it chose it and the block is still to go:
+                // the runtime may ask for the next step again before that placement starts, and planned afresh, with the
+                // guard's record cleared, it walked away again. A hideout walked between two spots 1,700 times, each
+                // to place a block from the other, 266 of 345 placed (CI on PR #25, b3f1590) (F-22c15).
+                if (heldPlace != null) {
+                    var held = heldPlace;
+                    boolean done = site.cell(held.target()).map(c -> c.state() != null && c.state().sameAs(held.spec())).orElse(false);
+                    if (done || !player.isOnGround() || !standing(player).equals(held.stance())) heldPlace = null;
+                    else yield placeTask(player, held);
+                }
                 // Planned again for the block it set out for two walks ago, another between, and standing in the spot it
                 // walked to for the one between: that one is placed from here. Committed to the block planned again, it
                 // was never "at" that block's spot on arriving, and it walked between the two, 1,104 walks each way, a
@@ -637,6 +649,7 @@ final class BuildRunner {
                     lastPlaceStep = null;
                     lastStance = null;
                     stanceWalks = 0;
+                    heldPlace = between;
                     yield placeTask(player, between);
                 }
                 // Walked to the same spot three times over, its feet in that spot's own block but never standing just
@@ -921,6 +934,7 @@ final class BuildRunner {
             return;
         }
         if (PAUSE.equals(task.label())) return;
+        if ("native_place".equals(task.skill())) heldPlace = null; // Made or not, the held placement has had its go.
         // A walk to a spot to place from is counted when it ends, not when it is asked for: the runtime may ask for the
         // next step more than once before it sets out, and a count kept there passed a dozen in two walks, in the farm
         // ward's first course, and gave up every spot round a block it could reach.

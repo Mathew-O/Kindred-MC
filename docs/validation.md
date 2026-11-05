@@ -2663,3 +2663,5 @@ After the block's first merge from main, CI on PR #25 found:
 - **[F-22c14](evidence/F-22c14.md):** the librarian off the line, given up with it aboard (it failed on main's `f4bce7a`
   too). On a 25 ms store, 1 of 4 copies failed before the fix and 6 of 6 passed after. `NativeBringGameTests` passed 7
   of 7.
+- **[F-22c15](evidence/F-22c15.md):** the hideout's to and fro between two placements. 1 of 4 copies failed before the
+  fix and 8 of 8 passed after. The build fixture classes passed 32 of 32. Main's `1c5ac61` was merged first (`a701f72`).
