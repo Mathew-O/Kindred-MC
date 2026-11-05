@@ -130,11 +130,27 @@ public final class NativeBuildGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildSchematic", tickLimit = 9000)
     public void aStructureSavedByVanillaIsReadAndBuiltTurnedAQuarter(TestContext context) {
+        kiosk(context, false);
+    }
+
+    /**
+     * A Litematica schematic (M-05): the same kiosk written as Litematica writes a {@code .litematic}, one region selected
+     * backwards (its position the far corner, its sizes negative), its palette of block states as the game writes them,
+     * and the indices packed three bits a block (eight states), running over from one long into the next. The native player builds it
+     * as it builds the structure file, turned a quarter, and every block must match the original as vanilla turns it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildLitematic", tickLimit = 9000)
+    public void aLitematicaSchematicIsReadAndBuiltTurnedAQuarter(TestContext context) {
+        kiosk(context, true);
+    }
+
+    /** The kiosk, saved as a structure file or as a Litematica schematic, then read from the library and built. */
+    private static void kiosk(TestContext context, boolean litematic) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8500);
         String[] first = {null};
         var original = new java.util.LinkedHashMap<BlockPos, net.minecraft.block.BlockState>();
         BlockPos[] origin = new BlockPos[1];
-        String name = "kiosk-" + Long.toHexString(context.getWorld().getTime());
+        String name = (litematic ? "kiosk-litematic-" : "kiosk-") + Long.toHexString(context.getWorld().getTime());
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Joiner"))
@@ -172,17 +188,23 @@ public final class NativeBuildGameTests implements FabricGameTest {
                     world.setBlockState(k.add(1, 3, 1), Blocks.LANTERN.getDefaultState());
                     for (BlockPos pos : BlockPos.iterate(k, k.add(2, 3, 2))) original.put(pos.subtract(k).toImmutable(), world.getBlockState(pos));
                     // Saved as a structure block saves it: air kept as air, structure void left out.
-                    var template = new net.minecraft.structure.StructureTemplate();
-                    template.saveFromWorld(world, k, new net.minecraft.util.math.Vec3i(3, 4, 3), false, Blocks.STRUCTURE_VOID);
-                    var nbt = template.writeNbt(new net.minecraft.nbt.NbtCompound());
+                    net.minecraft.nbt.NbtCompound nbt;
+                    if (litematic) {
+                        nbt = litematic(original);
+                    } else {
+                        var template = new net.minecraft.structure.StructureTemplate();
+                        template.saveFromWorld(world, k, new net.minecraft.util.math.Vec3i(3, 4, 3), false, Blocks.STRUCTURE_VOID);
+                        nbt = template.writeNbt(new net.minecraft.nbt.NbtCompound());
+                    }
                     try {
                         var directory = f.runtime.schematics().directory();
                         java.nio.file.Files.createDirectories(directory);
-                        try (var out = java.nio.file.Files.newOutputStream(directory.resolve(name + ".nbt"))) {
+                        try (var out = java.nio.file.Files.newOutputStream(directory.resolve(name + (litematic ? ".litematic" : ".nbt")))) {
                             net.minecraft.nbt.NbtIo.writeCompressed(nbt, out);
                         }
                         java.nio.file.Files.writeString(directory.resolve(name + ".license"),
-                                "creator=Kindred fixture\nlicense=CC0-1.0\nsource=saved by a structure block in the fixture\n");
+                                "creator=Kindred fixture\nlicense=CC0-1.0\nsource=" + (litematic ? "written as a Litematica schematic" : "saved by a structure block")
+                                        + " in the fixture\n");
                     } catch (java.io.IOException failure) {
                         throw new RuntimeException(failure);
                     }
@@ -252,6 +274,58 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * The kiosk (3 x 4 x 3, by position from its corner) as Litematica writes it: one region whose position is its far
+     * corner and whose sizes are negative, as when the selection is made from that corner; a palette of block states,
+     * air first; and each block's palette index packed least significant bit first, as wide as the palette needs (two
+     * bits at least), x fastest, then z, then y, an index running over into the next long where it does not fit.
+     */
+    private static net.minecraft.nbt.NbtCompound litematic(java.util.Map<BlockPos, net.minecraft.block.BlockState> blocks) {
+        int sx = 3, sy = 4, sz = 3;
+        var palette = new java.util.ArrayList<net.minecraft.block.BlockState>();
+        palette.add(Blocks.AIR.getDefaultState());
+        for (var state : blocks.values()) if (!palette.contains(state)) palette.add(state);
+        int bits = Math.max(2, 32 - Integer.numberOfLeadingZeros(palette.size() - 1));
+        long[] packed = new long[(sx * sy * sz * bits + 63) / 64];
+        for (int y = 0; y < sy; y++) for (int z = 0; z < sz; z++) for (int x = 0; x < sx; x++) {
+            var state = blocks.getOrDefault(new BlockPos(x, y, z), Blocks.AIR.getDefaultState());
+            long index = palette.indexOf(state);
+            int first = ((y * sz + z) * sx + x) * bits;
+            packed[first >>> 6] |= index << (first & 63);
+            if ((first & 63) + bits > 64) packed[(first >>> 6) + 1] |= index >>> (64 - (first & 63));
+        }
+        var states = new net.minecraft.nbt.NbtList();
+        for (var state : palette) states.add(net.minecraft.nbt.NbtHelper.fromBlockState(state));
+        var region = new net.minecraft.nbt.NbtCompound();
+        region.put("Position", corner(sx - 1, sy - 1, sz - 1));
+        region.put("Size", corner(-sx, -sy, -sz));
+        region.put("BlockStatePalette", states);
+        region.putLongArray("BlockStates", packed);
+        region.put("TileEntities", new net.minecraft.nbt.NbtList());
+        region.put("Entities", new net.minecraft.nbt.NbtList());
+        var regions = new net.minecraft.nbt.NbtCompound();
+        regions.put("Kiosk", region);
+        var metadata = new net.minecraft.nbt.NbtCompound();
+        metadata.putString("Name", "Kiosk");
+        metadata.putString("Author", "Kindred fixture");
+        metadata.put("EnclosingSize", corner(sx, sy, sz));
+        var root = new net.minecraft.nbt.NbtCompound();
+        root.putInt("Version", 6);
+        root.putInt("SubVersion", 1);
+        root.putInt("MinecraftDataVersion", net.minecraft.SharedConstants.getGameVersion().getSaveVersion().getId());
+        root.put("Metadata", metadata);
+        root.put("Regions", regions);
+        return root;
+    }
+
+    private static net.minecraft.nbt.NbtCompound corner(int x, int y, int z) {
+        var at = new net.minecraft.nbt.NbtCompound();
+        at.putInt("x", x);
+        at.putInt("y", y);
+        at.putInt("z", z);
+        return at;
     }
 
     /**

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,6 +122,114 @@ class SchematicsTest {
         return root;
     }
 
+    /** The gate as Litematica saves it (version 6): one region, its palette by name and properties, two bits a block. */
+    @Test
+    void aLitematicaSchematicIsRead() {
+        var palette = List.<Object>of(state("minecraft:air", Map.of()), state("minecraft:oak_log", Map.of("axis", "x")),
+                state("minecraft:stone_brick_stairs", Map.of("facing", "west", "half", "bottom", "shape", "straight", "waterlogged", "false")),
+                state("minecraft:glass", Map.of()));
+        var region = litematicRegion(0, 0, 0, 2, 2, 2, palette, new int[] {1, 2, 3, 0, 0, 0, 3, 0});
+        region.put("TileEntities", List.of());
+        var read = Schematics.read(gzip(compound(litematic(6, Map.of("Gate", region)))), "", "user:gate.litematic", "", "");
+        check(read);
+        assertEquals("Gate", read.blueprint().name(), "the schematic's own name when none is given");
+        assertEquals("Bram", read.blueprint().creator(), "the schematic's own author");
+        assertEquals("user:gate.litematic", read.blueprint().source());
+    }
+
+    /**
+     * Five bits a block (a palette of twenty), so the thirteenth block's index starts in the first long and ends in the
+     * second; and a second region selected backwards (negative sizes), placed by its far corner.
+     */
+    @Test
+    void litematicaIndicesSpanLongsAndRegionsSelectedBackwardsArePlaced() {
+        String[] colours = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan",
+                "purple", "blue", "brown", "green", "red", "black"};
+        var palette = new ArrayList<Object>();
+        palette.add(state("minecraft:air", Map.of()));
+        for (String colour : colours) palette.add(state("minecraft:" + colour + "_wool", Map.of()));
+        for (String colour : List.of("white", "orange", "magenta")) palette.add(state("minecraft:" + colour + "_concrete", Map.of()));
+        assertEquals(20, palette.size());
+        // Every block of the palette once, x fastest; the thirteenth (bits 60 to 64) is index 18, whose top bit is in
+        // the second long, swapped with the eighteenth.
+        int[] row = new int[19];
+        for (int x = 0; x < row.length; x++) row[x] = x + 1;
+        row[12] = 18;
+        row[17] = 13;
+        var wool = litematicRegion(0, 0, 0, 19, 1, 1, palette, row);
+        // Selected from (5, 2, 3) back to (4, 1, 3): a 2x2x1 box whose corner is (4, 1, 3); stone everywhere but air at its top west.
+        var stonePalette = List.<Object>of(state("minecraft:air", Map.of()), state("minecraft:stone", Map.of()));
+        var stone = litematicRegion(5, 2, 3, -2, -2, 1, stonePalette, new int[] {1, 1, 0, 1});
+        var regions = new LinkedHashMap<String, Object>();
+        regions.put("Wool", wool);
+        regions.put("Stone", stone);
+        var read = Schematics.read(gzip(compound(litematic(7, regions))), "row", "", "", "");
+        var at = Blueprint.byPosition(read.blueprint().blocks());
+        for (int x = 0; x < row.length; x++) {
+            @SuppressWarnings("unchecked")
+            var expected = (String) ((Map<String, Object>) palette.get(row[x])).get("Name");
+            assertEquals(BlockSpec.of(expected), at.get(new Pos(x, 0, 0)), "block " + x);
+        }
+        assertEquals(BlockSpec.of("minecraft:orange_concrete"), at.get(new Pos(12, 0, 0)), "the index spanning two longs");
+        assertEquals(BlockSpec.of("minecraft:stone"), at.get(new Pos(4, 1, 3)));
+        assertEquals(BlockSpec.of("minecraft:stone"), at.get(new Pos(5, 1, 3)));
+        assertEquals(BlockSpec.of("minecraft:stone"), at.get(new Pos(5, 2, 3)));
+        assertEquals(List.of(new Pos(4, 2, 3)), read.blueprint().clear());
+        assertEquals(22, read.blueprint().blocks().size());
+        assertTrue(read.notes().contains("2 regions read together"), read.notes().toString());
+    }
+
+    @Test
+    void aBrokenOrUnknownLitematicaSchematicIsRefusedWithAReason() {
+        var palette = List.<Object>of(state("minecraft:air", Map.of()), state("minecraft:glass", Map.of()));
+        var region = litematicRegion(0, 0, 0, 2, 2, 2, palette, new int[8]);
+        var old = assertThrows(IllegalArgumentException.class,
+                () -> Schematics.read(gzip(compound(litematic(3, Map.of("A", region)))), "x", "", "", ""));
+        assertTrue(old.getMessage().contains("version 3"), old.getMessage());
+        var tooFew = litematicRegion(0, 0, 0, 40, 40, 1, palette, new int[8]);
+        var shortStates = assertThrows(IllegalArgumentException.class,
+                () -> Schematics.read(gzip(compound(litematic(6, Map.of("A", tooFew)))), "x", "", "", ""));
+        assertTrue(shortStates.getMessage().contains("of 1600 cells"), shortStates.getMessage());
+        var outOfPalette = litematicRegion(0, 0, 0, 2, 1, 1, palette, new int[] {1, 3});
+        assertThrows(IllegalArgumentException.class,
+                () -> Schematics.read(gzip(compound(litematic(6, Map.of("A", outOfPalette)))), "x", "", "", ""));
+        var far = litematicRegion(90, 0, 0, 10, 1, 1, palette, new int[10]);
+        var regions = new LinkedHashMap<String, Object>();
+        regions.put("A", region);
+        regions.put("B", far);
+        assertThrows(IllegalArgumentException.class, () -> Schematics.read(gzip(compound(litematic(6, regions))), "x", "", "", ""));
+    }
+
+    private static Map<String, Object> litematic(int version, Map<String, Object> regions) {
+        var root = new LinkedHashMap<String, Object>();
+        root.put("Version", version);
+        root.put("SubVersion", 1);
+        root.put("MinecraftDataVersion", 3955);
+        root.put("Metadata", Map.of("Name", "Gate", "Author", "Bram"));
+        root.put("Regions", regions);
+        return root;
+    }
+
+    /** A region with its indices packed as Litematica packs them, bit by bit: x fastest, then z, then y, spanning longs. */
+    private static Map<String, Object> litematicRegion(int x, int y, int z, int sx, int sy, int sz, List<Object> palette, int[] indices) {
+        int bits = Math.max(2, 32 - Integer.numberOfLeadingZeros(palette.size() - 1));
+        long[] packed = new long[(int) (((long) indices.length * bits + 63) / 64)];
+        for (int i = 0; i < indices.length; i++) {
+            for (int b = 0; b < bits; b++) {
+                if ((indices[i] >> b & 1) != 0) {
+                    int bit = i * bits + b;
+                    packed[bit / 64] |= 1L << (bit % 64);
+                }
+            }
+        }
+        var region = new LinkedHashMap<String, Object>();
+        region.put("Position", Map.of("x", x, "y", y, "z", z));
+        region.put("Size", Map.of("x", sx, "y", sy, "z", sz));
+        region.put("BlockStatePalette", palette);
+        region.put("BlockStates", packed);
+        return region;
+    }
+
     private static void check(Schematics.Read read) {
         var at = Blueprint.byPosition(read.blueprint().blocks());
         assertEquals("x", at.get(new Pos(0, 0, 0)).property("axis"));
@@ -182,6 +291,7 @@ class SchematicsTest {
             case List<?> l -> 9;
             case Map<?, ?> m -> 10;
             case int[] a -> 11;
+            case long[] a -> 12;
             default -> throw new IllegalArgumentException(value.getClass().toString());
         };
     }
@@ -209,6 +319,7 @@ class SchematicsTest {
                 out.writeByte(0);
             }
             case int[] a -> { out.writeInt(a.length); for (int i : a) out.writeInt(i); }
+            case long[] a -> { out.writeInt(a.length); for (long l : a) out.writeLong(l); }
             default -> throw new IllegalArgumentException(value.getClass().toString());
         }
     }

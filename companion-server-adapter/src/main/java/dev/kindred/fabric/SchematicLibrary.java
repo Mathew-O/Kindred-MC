@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * which is kept and said when a build starts. Nothing is downloaded from anywhere.
  *
  * Technical: The schematics a server's players may build (M-05): vanilla structure files ({@code .nbt}) and
- * Sponge schematics ({@code .schem}) put in {@code config/kindred/schematics} by the operator. Beside each, a
+ * Sponge schematics ({@code .schem}) and Litematica schematics ({@code .litematic}) put in {@code config/kindred/schematics} by the operator. Beside each, a
  * {@code <name>.license} file may say who made it, where it came from and under what terms ({@code creator=},
  * {@code source=}, {@code license=}); that is kept with the blueprint and said when a build starts (D8).
  * Nothing is fetched from anywhere. Files are read off the game thread.
@@ -51,7 +51,7 @@ final class SchematicLibrary {
         return CompletableFuture.supplyAsync(() -> {
             if (!Files.isDirectory(directory)) return List.of();
             try (Stream<Path> files = Files.list(directory)) {
-                return files.map(p -> p.getFileName().toString()).filter(n -> n.endsWith(".nbt") || n.endsWith(".schem"))
+                return files.map(p -> p.getFileName().toString()).filter(n -> n.endsWith(".nbt") || n.endsWith(".schem") || n.endsWith(".litematic"))
                         .map(n -> n.substring(0, n.lastIndexOf('.'))).sorted().toList();
             } catch (IOException failure) {
                 return List.of();
@@ -67,7 +67,7 @@ final class SchematicLibrary {
         return CompletableFuture.supplyAsync(() -> {
             if (!NAME.matcher(name).matches()) throw new IllegalArgumentException("Not a schematic name: " + name);
             Path file = null;
-            for (String extension : List.of(".nbt", ".schem")) {
+            for (String extension : List.of(".nbt", ".schem", ".litematic")) {
                 Path candidate = directory.resolve(name + extension);
                 if (Files.isRegularFile(candidate)) { file = candidate; break; }
             }
