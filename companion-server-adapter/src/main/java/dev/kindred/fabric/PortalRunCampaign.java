@@ -1612,6 +1612,11 @@ final class PortalRunCampaign {
                 progress = stageLabel(stage) + ": " + chop.get().label() + " from the water";
                 return chop;
             }
+            Optional<Task> pail = fillFromTheWater(body, steps);
+            if (pail.isPresent()) {
+                progress = stageLabel(stage) + ": " + pail.get().label() + " from the water";
+                return pail;
+            }
             Optional<Task> afloat = woodAfloat(body);
             if (afloat.isPresent()) {
                 progress = stageLabel(stage) + ": " + afloat.get().label();
@@ -2033,6 +2038,21 @@ final class PortalRunCampaign {
         return gather(body, WorldKnowledge.Kind.LOG, 5, "logs", false).filter(PortalRunCampaign::gathering);
     }
 
+    /**
+     * A bucket the plan wants filled with water, breath to spare and a source in reach from where it swims: filled there,
+     * treading water, as a player does. Sent ashore first each time, it was back in the water for the source at the next
+     * step: in E-40's iteration 8 (`e40a8-aed3e82`) on 303 Sol, at a lake whose gravel beach dropped into deep water,
+     * chose the fill 255 times in four game minutes, began it 13 and had each cancelled for air, and filled nothing
+     * (F-25c4bq).
+     */
+    private Optional<Task> fillFromTheWater(NativePlayerBody body, List<PortalRunPlanner.Step> steps) {
+        var player = body.entity();
+        if (player.getAir() < player.getMaxAir() * 2 / 3 || obsidianSite != null || generatorPlan != null) return Optional.empty();
+        if (player.getInventory().count(Items.BUCKET) == 0 || player.getInventory().count(Items.WATER_BUCKET) > 0) return Optional.empty();
+        if (steps.stream().noneMatch(step -> step.action() == PortalRunPlanner.Action.FILL_WATER)) return Optional.empty();
+        return fillWater(body).filter(PortalRunCampaign::fillingBucket);
+    }
+
     /** A goal task taking the player up out of deep water, which the runtime's drowning check leaves to finish. */
     /**
      * A task that takes the player out of the water, or settles a boat: swimming up or ashore, into a boat, or out of
@@ -2051,6 +2071,11 @@ final class PortalRunCampaign {
     /** A block of what it gathers broken where it stands or swims: a log, an ore ({@link #gather}'s "Mine ... at"). */
     static boolean gathering(Task task) {
         return task != null && "native_break".equals(task.skill()) && task.label().startsWith("Mine ");
+    }
+
+    /** A bucket filled with water where it stands or swims ({@link #fillWater}'s "Fill a bucket at"). */
+    static boolean fillingBucket(Task task) {
+        return task != null && "native_bucket".equals(task.skill()) && task.label().startsWith("Fill a bucket at ");
     }
 
     /**
@@ -2997,6 +3022,15 @@ final class PortalRunCampaign {
         if (!player.getServerWorld().isSkyVisible(player.getBlockPos().up())) return Optional.empty();
         if (lastTick - treeLookTick >= 100) {
             treeLookTick = lastTick;
+            // Come within its sweep of the tree it walked toward and still no log it can take there (the gather goes before
+            // this): that tree is given up, not walked back to from afar. Its look sees past the sweep only, so at a tree
+            // it could not take it saw the next, and each switch began the minute after which a tree is let be over
+            // again: in E-40's iteration 8 (`e40a8-aed3e82`) on 101 Kindred walked between two oaks whose lower trunks
+            // were gone, 60 blocks apart, for nine stuck spells (F-25c4br).
+            if (treeSeen != null && Math.hypot(treeSeen.getX() - lastFeet.getX(), treeSeen.getZ() - lastFeet.getZ()) <= WorldKnowledge.HORIZONTAL_RADIUS) {
+                treesGivenUp.add(BlockPos.asLong(treeSeen.getX() >> 2, 0, treeSeen.getZ() >> 2));
+                treeSeen = null;
+            }
             BlockPos seen = knowledge.treeInView(player, TREE_SIGHT, p -> !blocked(p) && !unreachable(p)
                     && !treesGivenUp.contains(BlockPos.asLong(p.getX() >> 2, 0, p.getZ() >> 2))).orElse(null);
             if (seen != null && (treeSeen == null || !seen.isWithinDistance(treeSeen, 8))) treeSince = lastTick;
@@ -5716,10 +5750,11 @@ final class PortalRunCampaign {
         // A climb out digs on while its breath lasts: in a flooded pit with no dry ground in reach it is the way out, and
         // cut short each time it left Kindred swimming there for the rest of the live run on 03faab9 (F-25c4t). So does a
         // block it gathers from the water, as the log of a tree standing in a lake: in the live pair on 00e98f5 Echo, the
-        // only tree it knew of so, began the log each time it bobbed up and gave it up each time it sank (F-25c4as).
+        // only tree it knew of so, began the log each time it bobbed up and gave it up each time it sank (F-25c4as). So
+        // does a bucket it fills from the water (F-25c4bq).
         if (running != null && !surfacing(running) && PlayerRuntime.inDeepWater(player)
                 && (player.getAir() < player.getMaxAir() * 2 / 3
-                        || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running))) {
+                        || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running) && !fillingBucket(running))) {
             return "In deep water; up for air first";
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
