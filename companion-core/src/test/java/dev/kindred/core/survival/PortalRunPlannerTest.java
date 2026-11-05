@@ -687,6 +687,44 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void whereTheFrameIsCastTheFirstBucketIsMadeFromTheIronAfterTheChestplatesBeforeTheRest() {
+        // E-40's iteration 6 (`e40a6-cb4a545`): the buckets were made once all the route's iron was in hand, deep below by
+        // the lava, and with no water in reach there the player dug a staircase to the surface for it and back down; a
+        // tenth of the players' time on the ten seeds went to that one bucket of water (F-25c4bm). With a bucket in hand
+        // early, water passed close by on the way is taken while it is close.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 30; sim.sticks = 8; sim.shields = 1; sim.coal = 30;
+        sim.tableNearby = true; sim.furnaceNearby = true; sim.food = 20;
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH));
+        int wanted = PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN);
+        int mined = 0, minedBeforeChest = -1, minedBeforeBucket = -1;
+        List<String> steps = new ArrayList<>();
+        for (int i = 0; i < 300 && !(sim.buckets + sim.water >= 2 && sim.pick == 3 && sim.fns > 0); i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).stream().filter(candidate -> candidate.action() != Action.HUNT).findFirst().orElseThrow();
+            steps.add(step.action() + (step.item().isEmpty() ? "" : " " + step.item()));
+            if (step.action() == Action.CRAFT && "iron_chestplate".equals(step.item())) minedBeforeChest = mined;
+            if (step.action() == Action.CRAFT && "bucket".equals(step.item()) && minedBeforeBucket < 0) minedBeforeBucket = mined;
+            sim.apply(step);
+            if (step.action() == Action.MINE_IRON) mined++;
+        }
+        assertEquals(8, minedBeforeChest, "the chestplate still from the first eight iron: " + steps);
+        assertEquals(11, minedBeforeBucket, "the first bucket from the next three, before the rest is looked for: " + steps);
+        assertTrue(sim.buckets + sim.water >= 2 && sim.pick == 3, "both buckets and the iron pickaxe made: " + steps);
+        assertEquals(wanted, mined, "no more iron mined in all than the route wants: " + steps);
+        // A bucket already in hand, of whatever: no first bucket again; the rest of the iron is looked for.
+        Sim held = new Sim();
+        held.pick = 2; held.pickaxes = 2; held.sword = 2; held.cobble = 30; held.sticks = 8; held.shields = 1; held.coal = 30;
+        held.tableNearby = true; held.furnaceNearby = true; held.food = 20; held.chest = 3; held.water = 1; held.iron = 3;
+        assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(held.snapshot(), BOTH).getLast().action(), "its bucket of water in hand");
+        // On the mined route the buckets still come with the rest: there the frame's water is poured where the lava is found.
+        Sim mined2 = new Sim();
+        mined2.pick = 2; mined2.pickaxes = 2; mined2.sword = 2; mined2.cobble = 30; mined2.sticks = 8; mined2.shields = 1; mined2.coal = 30;
+        mined2.tableNearby = true; mined2.furnaceNearby = true; mined2.food = 20; mined2.chest = 3; mined2.iron = 3;
+        var minedFacts = new WorldFacts(java.util.Map.of(), java.util.Set.of(WorldFacts.Method.MINE_OBSIDIAN, WorldFacts.Method.DIG_FOR_STONE));
+        assertNotEquals("bucket", PortalRunPlanner.plan(mined2.snapshot(), minedFacts).getLast().item(), "not on the mined route");
+    }
+
+    @Test
     void theStickReserveIsPackedFromATreeFurtherOffBeforeTheWorkBelow() {
         // Live run 68 went into a cave by spawn with few sticks and no wood, the nearest tree forty blocks off, and at
         // Y=19 had none left: it climbed fifty-five blocks for logs and wore out its pickaxes on the way.
