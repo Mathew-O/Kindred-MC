@@ -88,6 +88,11 @@ final class NativeBucketAction extends NativeRecordedAction {
         }
         sourceSlot = slotOf(held);
         if (sourceSlot < 0) throw new IllegalArgumentException("No owned " + (mode == Mode.FILL ? "empty bucket" : mode == Mode.POUR_LAVA ? "lava bucket" : "water bucket"));
+        // Filled from a stack, the full bucket needs a slot of its own: with none free vanilla drops it at the player's feet,
+        // and that read as an outcome to reconcile and stopped the player (Echo's replay from 404, F-25c4bl).
+        if (mode == Mode.FILL && player.getInventory().getStack(sourceSlot).getCount() > 1 && player.getInventory().getEmptySlot() < 0) {
+            throw new IllegalArgumentException("No room for the filled bucket");
+        }
         hotbarSlot = sourceSlot < 9 ? sourceSlot : freeHotbarSlot();
         claimKey = "block:" + worldId + ":" + world.getRegistryKey().getValue() + ":" + target.toShortString();
     }
