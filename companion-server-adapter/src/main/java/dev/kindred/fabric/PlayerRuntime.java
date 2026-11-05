@@ -277,8 +277,15 @@ final class PlayerRuntime {
     private boolean bases;
     /** The world's game mode (M-00), from mode.properties; null where none was chosen, as before modes existed. */
     private dev.kindred.core.match.GameModes.WorldMode worldMode;
+    /**
+     * The furthest step of the game any human in this world has reached (M-01e), from vanilla's own advancements, kept
+     * in pace.properties so it does not go back when that human logs off; null until a human has made a start.
+     */
+    private dev.kindred.core.match.GroupPace.Step groupStep;
     /** The last save of mode.properties: each save waits on the one before, so the last mode chosen is the one kept. */
     private CompletableFuture<Void> modeSaved = CompletableFuture.completedFuture(null);
+    /** The last save of pace.properties (M-01e), each waiting on the one before, as the mode's saves do. */
+    private CompletableFuture<Void> paceSaved = CompletableFuture.completedFuture(null);
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
     /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
@@ -579,6 +586,20 @@ final class PlayerRuntime {
         }
     }
 
+    /** The group's furthest step from pace.properties (M-01e); none (null) when absent or unreadable. */
+    private static dev.kindred.core.match.GroupPace.Step readPace(Path directory) {
+        try {
+            java.nio.file.Path file = directory.resolve("pace.properties");
+            if (!java.nio.file.Files.exists(file)) return null;
+            java.util.Properties properties = new java.util.Properties();
+            try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            return dev.kindred.core.match.GroupPace.Step.named(properties.getProperty("furthest", "")).orElse(null);
+        } catch (Exception failure) {
+            KindredMod.LOGGER.error("Kindred group pace could not be read; it starts afresh", failure);
+            return null;
+        }
+    }
+
     private static EditPolicy.ServerPolicy readEdits(Path directory) {
         try {
             java.nio.file.Path file = directory.resolve("edits.properties");
@@ -605,6 +626,9 @@ final class PlayerRuntime {
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
+        CompletableFuture.supplyAsync(() -> readPace(directory)).whenComplete((step, failure) -> handBack(() -> {
+            if (step != null && startupGeneration == currentStartupGen) groupStep = dev.kindred.core.match.GroupPace.further(Optional.ofNullable(groupStep), Optional.of(step)).orElse(null);
+        }));
         startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
                         .thenCompose(database -> database.list().thenCompose(records -> {
@@ -2440,6 +2464,7 @@ final class PlayerRuntime {
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
         if (tick % 20 == 17) pollBuildBattles();
+        if (tick % 100 == 41) pollGroupPace();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
         presenter.tick(matches.list(), tick, this::playerName, this::raceProgress, this::standing);
 
@@ -4257,11 +4282,14 @@ final class PlayerRuntime {
         // digging stone by its lit portal stood in it and was carried into the Nether (suite on 2026-10-22).
         boolean mayTravel = entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight;
-        body.setPortalTravelAuthorized(mayTravel && (task.filter(PortalRunCampaign::throughPortal).isPresent()
-                || PortalRunCampaign.throughPortal(entry.activeCampaignTask)));
+        boolean trip = task.filter(PortalRunCampaign::throughPortal).isPresent() || PortalRunCampaign.throughPortal(entry.activeCampaignTask);
+        // In Co-op Survival a trip into another world keeps to the humans' pace (M-01e): it waits by the portal until
+        // someone has entered that world. The way home is never held.
+        var tripHeld = trip ? tripHold(body) : java.util.Optional.<String>empty();
+        body.setPortalTravelAuthorized(mayTravel && trip && tripHeld.isEmpty());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         memory.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry));
-        entry.goalProgress = entry.campaign.progress();
+        entry.goalProgress = tripHeld.orElse(entry.campaign.progress());
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
             var pos = body.entity().getBlockPos();
@@ -4287,6 +4315,7 @@ final class PlayerRuntime {
             KindredMod.LOGGER.info("{} goal at {} {} {}: {}", entry.data.displayName(), at.getX(), at.getY(), at.getZ(), entry.goalProgress);
             if (watch != null) entry.decided(server.getTicks(), "goal at " + at.getX() + " " + at.getY() + " " + at.getZ() + ": " + entry.goalProgress);
         }
+        if (tripHeld.isPresent()) return List.of();
         // A way out asked for just now, at the bridge's look above: what the goal chose before it asked is not given out (F-29).
         if (entry.campaign.holdingForRescue(body.entity())) return List.of();
         if (task.isEmpty()) return List.of();
@@ -4300,6 +4329,24 @@ final class PlayerRuntime {
                 urgent ? dev.kindred.core.TaskPreferences.Priority.URGENT : dev.kindred.core.TaskPreferences.Priority.PROJECT, urgent ? 99.0 : 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /**
+     * Why a trip through a portal waits for the group (M-01e), or none: only in Co-op Survival, only from the Overworld
+     * (the way home is never held), into the End where its End portal is the one at hand, else into the Nether.
+     */
+    private java.util.Optional<String> tripHold(NativePlayerBody body) {
+        if (worldMode != dev.kindred.core.match.GameModes.WorldMode.COOP_SURVIVAL) return java.util.Optional.empty();
+        var player = body.entity();
+        if (player.getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return java.util.Optional.empty();
+        pollGroupPace();
+        boolean end = false;
+        BlockPos at = player.getBlockPos();
+        for (BlockPos near : BlockPos.iterate(at.add(-4, -2, -4), at.add(4, 2, 4))) {
+            if (player.getServerWorld().getBlockState(near).isOf(net.minecraft.block.Blocks.END_PORTAL)) { end = true; break; }
+        }
+        return dev.kindred.core.match.GroupPace.holdTrip(end ? dev.kindred.core.match.GroupPace.Step.END : dev.kindred.core.match.GroupPace.Step.NETHER,
+                true, java.util.Optional.ofNullable(groupStep));
     }
 
     private void campaignTaskFinished(Entry entry, SkillRunner.State state) {
@@ -4642,6 +4689,15 @@ final class PlayerRuntime {
         noteBase(entry, decision.why());
         if (decision.next().isEmpty()) return false;
         var stage = decision.next().get();
+        // In Co-op Survival it keeps to the humans' pace (M-01e): no stage ahead of the furthest step any of them reached,
+        // read afresh as it decides, not as the last poll left it.
+        boolean paced = worldMode == dev.kindred.core.match.GameModes.WorldMode.COOP_SURVIVAL;
+        if (paced) pollGroupPace();
+        var held = dev.kindred.core.match.GroupPace.hold(stage, paced, java.util.Optional.ofNullable(groupStep));
+        if (held.isPresent()) {
+            noteBase(entry, held.get());
+            return false;
+        }
         if (record.anchor == null) {
             BlockPos home = entry.setup == null || entry.setup.home() == null ? player.getBlockPos()
                     : new BlockPos(entry.setup.home().position().x(), entry.setup.home().position().y(), entry.setup.home().position().z());
@@ -5226,6 +5282,18 @@ final class PlayerRuntime {
         Entry entry = id != null ? entries.get(id) : null;
         if (entry == null || entry.bases == null || entry.bases.built.isEmpty()) return Optional.empty();
         return Optional.of(entry.bases.built.get(entry.bases.built.size() - 1));
+    }
+
+    /**
+     * Fixtures only: a base recorded as the player's own, as though it had built it (staged; the fixture sets its blocks).
+     * False until the player's record of its bases is read.
+     */
+    boolean stageBaseForTest(UUID id, PlayerMemoryStore.Base base) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.built.add(base);
+        return true;
     }
 
     /** What a player last decided about its base (M-01c). */
@@ -13222,6 +13290,43 @@ final class PlayerRuntime {
 
     /** The world's game mode (M-00), or null where none was chosen. */
     dev.kindred.core.match.GameModes.WorldMode worldMode() { return worldMode; }
+
+    /**
+     * The group's pace (M-01e): the furthest of vanilla's story steps any human online has reached, from their own
+     * advancement progress (announced to everyone, so nothing hidden), kept when it goes further and saved off the game
+     * thread. AI players are not the group whose pace is kept.
+     */
+    private void pollGroupPace() {
+        var loader = server.getAdvancementLoader();
+        java.util.Optional<dev.kindred.core.match.GroupPace.Step> furthest = java.util.Optional.ofNullable(groupStep);
+        for (var player : server.getPlayerManager().getPlayerList()) {
+            if (entryForPlayer(player.getUuid()) != null || player.isSpectator()) continue;
+            var done = new java.util.ArrayList<String>();
+            for (var step : dev.kindred.core.match.GroupPace.Step.values()) {
+                var advancement = loader.get(Identifier.of(step.advancement));
+                if (advancement != null && player.getAdvancementTracker().getProgress(advancement).isDone()) done.add(step.advancement);
+            }
+            furthest = dev.kindred.core.match.GroupPace.further(furthest, dev.kindred.core.match.GroupPace.furthest(done));
+        }
+        if (furthest.isEmpty() || furthest.get() == groupStep) return;
+        groupStep = furthest.get();
+        KindredMod.LOGGER.info("Group pace: someone has {}", groupStep.deed);
+        Path file = metadataDirectory.resolve("pace.properties");
+        String content = "# Kindred group pace (M-01e): the furthest step any human in this world has reached.\nfurthest=" + groupStep.name() + "\n";
+        paceSaved = paceSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("Kindred group pace could not be saved", failure);
+        });
+    }
+
+    /** The group's furthest step (M-01e), for fixtures and the status line. */
+    java.util.Optional<dev.kindred.core.match.GroupPace.Step> groupStep() { return java.util.Optional.ofNullable(groupStep); }
 
     /**
      * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
