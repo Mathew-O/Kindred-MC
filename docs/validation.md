@@ -24,6 +24,38 @@ Branch `claude/modes-1105-5`, on M-05's branch. M-01e closed. See [M-01e](eviden
 - Native: `NativeCoopPaceGameTests` alone. Before the fix (`50d8dea`) it failed 3 of 3: the house was begun before the poll had seen the human's step. After it (`92a36fe`) it passed 3 of 3. Control (the hold off): fails.
 - Staged in the fixture: the cabin set and recorded as the player's own, iron tools, the clock, the human's advancements granted as though earned.
 
+## E-40, rung a, iteration 6 and batch 9: surplus thrown back (F-25c4bi), a drop asked for under attack (F-25c4bk), a bucket with no slot free (F-25c4bl) — 5 November 2026 (`claude/e40-ladder-9-1105`)
+
+- **The evaluation, `e40a6-cb4a545` (batch 8 with F-25c4bh), worlds kept:** ten seeds, earned, nothing else on
+  the cores.
+  - The iron pickaxe within the first game hour on 10 of 10 (the slowest at 50.7 minutes).
+  - Stuck time under a tenth of the run on 1 of 10 (707), against 3 of 10 in iteration 5.
+  - Stuck spells 9.5 [0 to 21], against 10.0 [3 to 43]. Every range overlaps, against iteration 5 and the starting
+    build, so no clear difference by the convention.
+  - Obsidian on 4 of 10, a portal lit on 3 of 10, 29 deaths: 4 suffocated, 3 while a drop of surplus was asked for under
+    attack.
+  - [Summary](evidence/eval/e40a6-cb4a545/summary.md), [against iteration 5](evidence/eval/compare-e40a6.md),
+    [against the starting build](evidence/eval/compare-e40a6-base.md), [deaths](evidence/eval/e40a6-cb4a545/deaths.md),
+    [E-40](evidence/E-40.md).
+- **The night-shelter fixture** (F-25c4bi, [evidence](evidence/F-25c4bi.md)), staged:
+  - On `f4bce7a`: fails 3 of 3, its surplus thrown out 90 times in 3,000 ticks.
+  - A first form of the fix still threw three times. While the first stack lay at its feet, a second was thrown.
+  - With the fix: 3 of 3, its surplus thrown out once in 2,000 ticks each time.
+- **Echo's death replay** (F-25c4bk, [evidence](evidence/F-25c4bk.md)), `echo-73670`, from 404:
+  - On `f4bce7a`: dies again in 6 of 6 replays, two runs of three. A third run did not compile: a build of mine ran beside
+    it.
+  - With F-25c4bk alone: one replay of three was stopped for reconciliation, filling a bucket with its inventory full.
+  - With F-25c4bk and F-25c4bl: survives in 9 of 9, three runs of three; `echo-50149` passes throughout.
+- **The bucket fixture** (F-25c4bl, [evidence](evidence/F-25c4bl.md)), staged: on `f4bce7a` fails 3 of 3, its body
+  stopped for reconciliation; with the fix passes 3 of 3.
+- **Gravel in the cell a player stands in, not kept.**
+  - In iteration 6, 19 spells ended a climb's walk refused from a cell beside the player's own, the navigator searching
+    from where the player rested. In 15 of them the player's own cell held gravel or sand at the run's end.
+  - A fixture from 8675309's kept world, the gravel where the run left it, got out on `f4bce7a` in 122 to 136 ticks
+    (3 of 3), and again hurt and out of food (127 ticks).
+  - Neither it nor its fix (dig out gravel or sand in the cell the feet are in) is kept.
+- **The trip-down class with both fixes:** 7 of 7 in each of three runs.
+
 ## E-40, rung a, batch 8: the portal lit from out of reach (F-25c4bh), 505's stone search — 5 November 2026 (`claude/e40-ladder-8-1105`)
 
 - **The lighting fixture** (F-25c4bh, [evidence](evidence/F-25c4bh.md)), staged, on the cast route:

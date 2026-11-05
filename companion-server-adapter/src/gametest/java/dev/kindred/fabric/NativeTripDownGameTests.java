@@ -485,4 +485,69 @@ public final class NativeTripDownGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Sealed in below ground for the night with its inventory full, wanting logs it cannot go up for until morning: it
+     * throws its surplus once, and when the toss falls back at its feet and is picked up again it lets it be and waits
+     * (F-25c4bi). On 20261030 in E-40's iteration 6 (`e40a6-cb4a545`) Sol, at Y=-26 with no pickaxe and no sticks,
+     * threw the same stack of cobbled deepslate at its shelter's wall and picked it up again 607 times, nine stuck
+     * spells. Staged: a pocket two high in a block of stone, sealed, its roof three thick, at night, held; the player in
+     * it with no pickaxe and no wood, a crafting table, bread and torches, and the rest of its inventory full of cobbled
+     * deepslate. Passes once 2,000 ticks have gone by with surplus thrown out at most twice.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "fullAtNight", tickLimit = 3000)
+    public void sealedInForTheNightWithItsInventoryFullItThrowsItsSurplusOnceAndWaits(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2900);
+        BlockPos[] origin = new BlockPos[1];
+        long[] start = {0};
+        int[] drops = {0}, last = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Pocket"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(18000);
+                    BlockPos o = origin[0] = context.getAbsolutePos(new BlockPos(10, 6, 10)).toImmutable();
+                    for (BlockPos at : BlockPos.iterate(o.add(-3, -3, -3), o.add(3, 6, 3))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                    world.setBlockState(o, Blocks.AIR.getDefaultState());
+                    world.setBlockState(o.up(), Blocks.AIR.getDefaultState());
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (int slot = 0; slot < 33; slot++) inventory.setStack(slot, new ItemStack(Items.COBBLED_DEEPSLATE, 64));
+                    inventory.setStack(33, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(34, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(35, new ItemStack(Items.TORCH, 4));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(origin[0]), "In the pocket"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    start[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(18000);
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive(), "Alive");
+                    int held = ItemMoves.count(player.getInventory(), Items.COBBLED_DEEPSLATE);
+                    if (last[0] >= 0 && held <= last[0] - 32) drops[0]++;
+                    last[0] = held;
+                    var bots = f.runtime.panelBots(Actor.console());
+                    String progress = bots.isEmpty() ? "" : bots.getFirst().goalProgress();
+                    context.assertTrue(drops[0] <= 2, "Surplus thrown out " + drops[0] + " times in " + (context.getTick() - start[0])
+                            + " ticks; " + progress);
+                    context.assertTrue(context.getTick() - start[0] >= 2000, "Waiting the night out; " + drops[0] + " throws; " + progress);
+                })
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Full at night: {} throws in 2,000 ticks", drops[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
