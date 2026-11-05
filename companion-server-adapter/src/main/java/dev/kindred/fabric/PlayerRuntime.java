@@ -13580,14 +13580,15 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            player.getInventory().clear();
             if (entry != null && entry.nativeBody != null) {
-                // Its game mode changes only once what it was doing has settled: an action caught half done by the change
-                // (or cut short to make way for it) leaves an outcome only reconciliation can settle, and the body is
-                // taken out (found live, twice). With its build stopped and nothing in hand, nothing new begins meanwhile.
+                // Its hands are emptied and its game mode changed only once what it was doing has settled: an action
+                // caught half done by the change, cut short to make way for it, or with its block taken from its hand,
+                // leaves an outcome only reconciliation can settle, and the body is taken out (found live, three times).
+                // With its build stopped, nothing new begins meanwhile.
                 toAdventure.add(entry.data.id());
                 continue;
             }
+            player.getInventory().clear();
             player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
         }
         // The builds are then shown one at a time, each for its share of the vote (pollBuildBattles): every voter walks

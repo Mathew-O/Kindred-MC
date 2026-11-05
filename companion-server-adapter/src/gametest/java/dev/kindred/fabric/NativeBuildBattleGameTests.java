@@ -103,12 +103,14 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                     spotOf[0] = arena.spots();
                 })
                 .createAndAdd(() -> {
-                    // Kept: whether a builder ever held anything after the vote began.
+                    // Kept: whether a builder ever held anything outside creative once the vote began. An AI voter keeps
+                    // its creative stock for the few ticks its last action takes to settle, still in creative; its hands
+                    // are emptied as it leaves creative (a change under an action in flight needs reconciliation).
                     var state = f.runtime.matches().getFirst().state();
                     if (state != MatchRegistry.State.RUNNING && state != MatchRegistry.State.COUNTDOWN) {
                         for (UUID p : players) {
                             var held = player(f, p).getInventory();
-                            if (held.isEmpty()) continue;
+                            if (held.isEmpty() || player(f, p).interactionManager.getGameMode() == GameMode.CREATIVE) continue;
                             leaked[0] = true;
                             if (heldWhat[0].isEmpty()) {
                                 var what = new StringBuilder(player(f, p).getName().getString() + " in " + state + ":");
