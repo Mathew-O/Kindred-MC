@@ -241,13 +241,17 @@ See [M-03a](evidence/M-03a.md).
 
 See [M-01a](evidence/M-01a.md).
 
-**Build battles (M-04a; in development).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
+**Build battles (M-04).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
 - **The plots.** One per builder, fifteen blocks a side, in a row east of where you stand, three apart, marked in white concrete with a grey edge. They need open, level ground, clear sixteen blocks up.
 - **The theme.** Announced as a title at the start, by chance or as you name it: cottage, watchtower, pyramid or lighthouse. The build lasts five minutes unless you say otherwise (`for 120`; thirty seconds to half an hour).
 - **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves with nothing in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included.
 - **Each to its own plot.** While it builds, a human may break or place only on its own plot, and nobody may on another's.
 - **AI builders** turn the theme into a design of their own, with a size and materials by chance, and build it block by block with the same planner as a survival build. The theme alone decides the design.
 - **The vote.** When the time is up, everyone looks on in adventure mode and scores every other build one to five: AI players at once by what they see standing on each plot, humans by clicking a score in chat or `/aiplayer match vote <builder> <score>`. Once everyone has voted, or after thirty seconds, the best mean wins (ties together), with fireworks over the winner's plot. With no votes it is a draw.
+- **The arena.** Laid out with the plots: a lobby pad at one end (each human invited is told where), a raised walkway along the front of the plots with a railing for onlookers, a gold mark in front of each plot, and a podium at the far end for the results. Builder only, where blocks are free.
+- **The vote is a tour.** One build at a time, in plot order, fifteen seconds each. Everyone is told whose it is (a title, the bar, the sidebar). A human is offered [1] to [5] for that build and told where its gold mark is. An AI voter walks to the mark and scores what it sees from there. A vote counts only on the build being shown.
+- **The podium.** Gold, iron and copper steps, with each winner's name and mean vote on a sign, facing the walkway.
+- **Designs from your schematics.** Put a schematic whose file name names the theme (for example `my-lighthouse.nbt`, with a `my-lighthouse.license` beside it) in `config/kindred/schematics`, and it fits a plot. AI builders then build it in a round on that theme, and its credit is said to everyone in the round. Without one they build Kindred's own designs.
 
 See [M-04a](evidence/M-04a.md).
 
