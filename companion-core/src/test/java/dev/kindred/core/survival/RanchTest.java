@@ -91,6 +91,58 @@ class RanchTest {
         assertTrue(fetch.holdFood());
     }
 
+    /**
+     * One wandered off while the pen went up (the own-ranch fixture: 43 blocks off): it goes to look where it last saw it,
+     * leads in the one it finds near it there though beyond the gate's reach, and with none there it leaves as before.
+     */
+    @Test
+    void oneShortItLooksWhereItLastSawTheOtherAndLeadsItInFromThere() {
+        var ranch = ranch();
+        ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 20, 20)));
+        ranch.next(seen(3, 7, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 20, 20)));
+        // Bess gone from sight: to where it last saw her, the food in hand.
+        var look = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3))));
+        assertEquals(new Pos(20, 64, 20), look.target());
+        assertTrue(look.holdFood());
+        assertTrue(look.why().startsWith("Look for the other cow"), look.why());
+        // There, she is in sight close by, though farther from the gate than it fetches from: led in from there.
+        var fetch = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(20, 20, false, 8, 30, cow(DAISY, 3, 3), cow(BESS, 30, 28))));
+        assertEquals(new Pos(30, 64, 28), fetch.target());
+        assertTrue(fetch.holdFood());
+
+        // One that wandered off while the pen was still going up is looked for where it was last seen then.
+        var early = ranch();
+        early.next(new Ranch.Observation(new Pos(3, 64, 9), false, false, 8, List.of(cow(DAISY, 15, 10), cow(BESS, 25, 25)), 0));
+        early.next(seen(3, 9, false, 8, 10, cow(DAISY, 15, 10)));
+        var lookEarly = assertInstanceOf(Ranch.Step.Go.class, early.next(seen(3, 1, true, 8, 20, cow(DAISY, 3, 3))));
+        assertEquals(new Pos(25, 64, 25), lookEarly.target(), "where it saw Bess as it built");
+        // And one only seen as the ranch was chosen, before it began.
+        var told = ranch();
+        told.remember(BESS, new Pos(28, 64, 4));
+        told.next(new Ranch.Observation(new Pos(3, 64, 9), false, false, 8, List.of(), 0));
+        assertEquals(new Pos(28, 64, 4), assertInstanceOf(Ranch.Step.Go.class, told.next(seen(3, 1, true, 8, 20, cow(DAISY, 3, 3)))).target());
+
+        // One still in sight but far off, beyond the gate's reach and its own: walked toward, the food in hand.
+        var far = ranch();
+        far.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        far.next(seen(3, 7, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        var toward = assertInstanceOf(Ranch.Step.Go.class, far.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3), cow(BESS, 40, 40))));
+        assertEquals(new Pos(40, 64, 40), toward.target(), "toward the one it can see far off");
+        assertTrue(toward.holdFood());
+
+        // Not there either: it leaves, saying so, as before.
+        var gone = ranch();
+        gone.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 20, 20)));
+        gone.next(seen(3, 7, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 20, 20)));
+        assertInstanceOf(Ranch.Step.Go.class, gone.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3))));
+        Ranch.Step step = gone.next(seen(20, 20, false, 8, 30, cow(DAISY, 3, 3)));
+        for (int tick = 40; tick < 2000 && !(step instanceof Ranch.Step.Done); tick += 10) {
+            var feet = step instanceof Ranch.Step.Go go ? go.target() : new Pos(3, 64, 7);
+            step = gone.next(new Ranch.Observation(feet, true, false, 8, List.of(cow(DAISY, 3, 3)), tick));
+        }
+        assertEquals("Only one cow in the pen; no other in sight", assertInstanceOf(Ranch.Step.Done.class, step).outcome());
+    }
+
     @Test
     void oneThatWillNotComeInIsLeftAndWithNoneLeftItSaysSoAndLeaves() {
         var ranch = ranch();
