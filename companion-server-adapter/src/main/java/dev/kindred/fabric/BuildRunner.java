@@ -74,6 +74,8 @@ final class BuildRunner {
     private Pos issuedFrom;
     /** A break it is walking to, and where from: broken on arriving, not planned again from there. */
     private Pos breakTarget, breakStance;
+    /** The breaks it was last planned for, and the spot it was to stand at for the latest, to know a to and fro (F-22c10). */
+    private Pos lastBreakTo, breakToBefore, lastBreakStance;
     private int breakWalks;
     /** A placement it walked over to make, to be made there, as it was planned when it set out. */
     private ConstructionPlanner.Step placeStep;
@@ -578,6 +580,22 @@ final class BuildRunner {
                     if (!player.isOnGround()) yield Optional.of(landing("Landing first"));
                     yield Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
                             "collect", "true", "underfoot", "true"), "Down the scaffold"));
+                }
+                // Planned again for the block it set out for two walks ago, another between: it walks to and fro (two
+                // blocks of a hideout's floor, each to be broken from on top of the other, 1,231 walks each way to the end
+                // of its ticks, 5 November). It breaks the one it walked over for, from the spot it walked to for it, as
+                // a placement does (F-22c10).
+                if (step.target().equals(breakToBefore) && lastBreakTo != null && feet.equals(lastBreakStance) && player.isOnGround()
+                        && !world.getBlockState(blockPos(lastBreakTo)).isAir()) {
+                    Pos walkedFor = lastBreakTo;
+                    lastBreakTo = breakToBefore = lastBreakStance = null;
+                    issuedFrom = feet;
+                    yield Optional.of(breakTask(walkedFor, feet, "The break it had walked over for"));
+                }
+                if (!step.target().equals(lastBreakTo)) {
+                    breakToBefore = lastBreakTo;
+                    lastBreakTo = step.target();
+                    lastBreakStance = step.stance();
                 }
                 if (!at(player, step.stance())) {
                     breakTarget = step.target();
