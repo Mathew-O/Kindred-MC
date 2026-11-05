@@ -2693,3 +2693,7 @@ After the block's first merge from main, CI on PR #25 found:
 - CI on `78f081b`: one run green; the other 562 of 563.
   - **[F-22c18](evidence/F-22c18.md):** the strolling librarian's boat, aimed six times at a spot behind its lectern.
   - Not reproduced locally: 6 of 6 passed before the fix. After it, 6 of 6 and `NativeBringGameTests` 7 of 7.
+- CI on `bbe5ae8`: 563 of 564.
+  - **[F-22c19](evidence/F-22c19.md):** the made-rails bring took a cart's pause at the top of its climb for home.
+  - Not reproduced locally: 8 of 8 passed before the fix, on a 25 ms store. After it, 8 of 8, and
+    `NativeBringGameTests` 7 of 7.

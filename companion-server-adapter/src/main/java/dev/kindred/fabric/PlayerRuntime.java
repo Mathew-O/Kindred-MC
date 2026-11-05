@@ -9080,6 +9080,8 @@ final class PlayerRuntime {
         Vec3d rollAt;
         long rollSince;
         boolean rollMoved = true;
+        /** When the cart was first seen at rest on its cell's floor, this stop; -1 while it is not (F-22c19). */
+        long floorSince = -1;
         /** Gone back along the line to push the stopped cart on again: kept to until the push is given. */
         boolean repush;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
@@ -9568,6 +9570,15 @@ final class PlayerRuntime {
                 // Still: no speed, or none it got a quarter of a block by in the last two seconds.
                 boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
+                // At rest on its floor for a second, not a moment: a cart that runs out of way at the top of the climb into
+                // its cell stops there a tick before it rolls back. Taken for one come to rest, the cell was shut with the
+                // librarian rolled back down the line in it, and the cart was walked to in the cell without end (CI on PR
+                // #25, bbe5ae8) (F-22c19).
+                if (cart.getBlockPos().equals(b.floor) && still) {
+                    if (b.floorSince < 0) b.floorSince = now;
+                } else b.floorSince = -1;
+                boolean settled = b.floorSince >= 0 && now - b.floorSince >= 20;
+                if (cart.getBlockPos().equals(b.floor) && still && !settled) return List.of(waitTask(task, "For the cart to come to rest"));
                 if (cart.getBlockPos().equals(b.floor) && still && !inFront) {
                     b.phase = Bring.Phase.LINTEL;
                     return bringCandidates(entry, body);
