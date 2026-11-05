@@ -4276,11 +4276,14 @@ final class PlayerRuntime {
         // digging stone by its lit portal stood in it and was carried into the Nether (suite on 2026-10-22).
         boolean mayTravel = entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
                 || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight;
-        body.setPortalTravelAuthorized(mayTravel && (task.filter(PortalRunCampaign::throughPortal).isPresent()
-                || PortalRunCampaign.throughPortal(entry.activeCampaignTask)));
+        boolean trip = task.filter(PortalRunCampaign::throughPortal).isPresent() || PortalRunCampaign.throughPortal(entry.activeCampaignTask);
+        // In Co-op Survival a trip into another world keeps to the humans' pace (M-01e): it waits by the portal until
+        // someone has entered that world. The way home is never held.
+        var tripHeld = trip ? tripHold(body) : java.util.Optional.<String>empty();
+        body.setPortalTravelAuthorized(mayTravel && trip && tripHeld.isEmpty());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         memory.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry));
-        entry.goalProgress = entry.campaign.progress();
+        entry.goalProgress = tripHeld.orElse(entry.campaign.progress());
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
             var pos = body.entity().getBlockPos();
@@ -4306,6 +4309,7 @@ final class PlayerRuntime {
             KindredMod.LOGGER.info("{} goal at {} {} {}: {}", entry.data.displayName(), at.getX(), at.getY(), at.getZ(), entry.goalProgress);
             if (watch != null) entry.decided(server.getTicks(), "goal at " + at.getX() + " " + at.getY() + " " + at.getZ() + ": " + entry.goalProgress);
         }
+        if (tripHeld.isPresent()) return List.of();
         // A way out asked for just now, at the bridge's look above: what the goal chose before it asked is not given out (F-29).
         if (entry.campaign.holdingForRescue(body.entity())) return List.of();
         if (task.isEmpty()) return List.of();
@@ -4319,6 +4323,24 @@ final class PlayerRuntime {
                 urgent ? dev.kindred.core.TaskPreferences.Priority.URGENT : dev.kindred.core.TaskPreferences.Priority.PROJECT, urgent ? 99.0 : 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /**
+     * Why a trip through a portal waits for the group (M-01e), or none: only in Co-op Survival, only from the Overworld
+     * (the way home is never held), into the End where its End portal is the one at hand, else into the Nether.
+     */
+    private java.util.Optional<String> tripHold(NativePlayerBody body) {
+        if (worldMode != dev.kindred.core.match.GameModes.WorldMode.COOP_SURVIVAL) return java.util.Optional.empty();
+        var player = body.entity();
+        if (player.getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return java.util.Optional.empty();
+        pollGroupPace();
+        boolean end = false;
+        BlockPos at = player.getBlockPos();
+        for (BlockPos near : BlockPos.iterate(at.add(-4, -2, -4), at.add(4, 2, 4))) {
+            if (player.getServerWorld().getBlockState(near).isOf(net.minecraft.block.Blocks.END_PORTAL)) { end = true; break; }
+        }
+        return dev.kindred.core.match.GroupPace.holdTrip(end ? dev.kindred.core.match.GroupPace.Step.END : dev.kindred.core.match.GroupPace.Step.NETHER,
+                true, java.util.Optional.ofNullable(groupStep));
     }
 
     private void campaignTaskFinished(Entry entry, SkillRunner.State state) {

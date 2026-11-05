@@ -4,6 +4,7 @@ import dev.kindred.core.construction.Houses;
 import dev.kindred.core.match.GameModes;
 import dev.kindred.core.match.GroupPace;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+
 import net.minecraft.command.argument.BlockArgumentParser;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -103,6 +104,66 @@ public final class NativeCoopPaceGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A trip waits too: in Co-op Survival the End goal, stocked for the trip beside a lit Nether portal, stays on this
+     * side while the only human has smelted iron but not entered the Nether, saying why; once the human has entered the
+     * Nether, it goes through. Staged as the stronghold fixture is (the portal lit, the trip's stock given), and the
+     * human's advancements granted by the fixture, as though earned.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "coopPaceTrip", tickLimit = 2400)
+    public void theNetherWaitsUntilAHumanHasEnteredIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        ServerPlayerEntity[] human = new ServerPlayerEntity[1];
+        var server = context.getWorld().getServer();
+        long[] heldFrom = {-1};
+        boolean[] crossedEarly = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wayfarer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    NativeStrongholdGameTests.litPortal(context);
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    BlockPos stand = context.getAbsolutePos(new BlockPos(3, 2, 7));
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 180, 0);
+                    NativeStrongholdGameTests.stockedForTheNether(player);
+                    context.assertTrue(f.runtime.setWorldMode(f.source, GameModes.WorldMode.COOP_SURVIVAL) == 1, "Co-op Survival");
+                    // Staged: a human who has smelted iron and no more (granted by the fixture, as though earned).
+                    human[0] = MockPlayers.survival(context, "Wren", new BlockPos(6, 2, 7));
+                    grant(server, human[0], GroupPace.Step.STONE);
+                    grant(server, human[0], GroupPace.Step.IRON);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    if (f.player().getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) crossedEarly[0] = true;
+                    context.assertTrue(!crossedEarly[0], "Through before the group entered the Nether");
+                    String progress = f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress();
+                    context.assertTrue(progress.startsWith("Keeping to the group's pace: into the Nether"), "Held at the portal: " + progress);
+                    heldFrom[0] = server.getTicks();
+                })
+                // Held: still on this side ten seconds on.
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    if (f.player().getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) crossedEarly[0] = true;
+                    context.assertTrue(!crossedEarly[0], "Through before the group entered the Nether");
+                    context.assertTrue(server.getTicks() - heldFrom[0] >= 200, "Holding");
+                })
+                .createAndAdd(() -> grant(server, human[0], GroupPace.Step.NETHER))
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.player().getServerWorld().getRegistryKey() == net.minecraft.world.World.NETHER,
+                            "Through once a human entered the Nether: " + f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress());
+                    KindredMod.LOGGER.info("Coop pace: held at the portal, then through once someone entered the Nether");
+                    f.runtime.stop();
+                    server.getPlayerManager().remove(human[0]);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
 

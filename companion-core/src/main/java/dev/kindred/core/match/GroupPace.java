@@ -14,7 +14,9 @@ import java.util.Optional;
  * when that human logs off.
  *
  * Technical: The group's pace (M-01e, M-01's "progress tracks the human: the AI player does not run ahead of the
- * group's milestones", owner 2026-10-23). The milestones are vanilla's story advancements, read from the humans'
+ * group's milestones", owner 2026-10-23). A base stage waits on its step ({@link #hold}); so does a trip into another
+ * world ({@link #holdTrip}): into the Nether once a human has entered it, into the End (and so to the dragon, which
+ * in Co-op is fought alongside the humans, never ahead of them) once a human has. The way home is never held. The milestones are vanilla's story advancements, read from the humans'
  * own advancement progress: announced to everyone, so nothing hidden is known. A stage is held only while the group
  * has a step and it is short of the stage's. A world in which no human has reached any step yet is not paced: an AI
  * player's decisions are never gated on a human being present (AGENTS.md), only kept from outrunning the humans
@@ -91,5 +93,16 @@ public final class GroupPace {
         if (needed.isEmpty() || group.get().compareTo(needed.get()) >= 0) return Optional.empty();
         return Optional.of("Keeping to the group's pace: a " + stage.noun + " once someone has " + needed.get().deed
                 + " (the furthest so far: " + group.get().deed + ")");
+    }
+
+    /**
+     * Why a trip into {@code into} (the Nether or the End) waits for the group, or none when it may go: the world is
+     * paced and the group has a step, short of entering that world. Any other step is never a trip's to wait for.
+     */
+    public static Optional<String> holdTrip(Step into, boolean paced, Optional<Step> group) {
+        if (!paced || group.isEmpty() || (into != Step.NETHER && into != Step.END)) return Optional.empty();
+        if (group.get().compareTo(into) >= 0) return Optional.empty();
+        return Optional.of("Keeping to the group's pace: into " + (into == Step.NETHER ? "the Nether" : "the End") + " once someone has "
+                + into.deed + " (the furthest so far: " + group.get().deed + ")");
     }
 }

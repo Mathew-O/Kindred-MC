@@ -43,4 +43,16 @@ class GroupPaceTest {
         assertTrue(GroupPace.hold(Houses.Stage.MANOR, false, Optional.of(GroupPace.Step.STONE)).isEmpty(), "not paced in another mode");
         assertTrue(GroupPace.hold(Houses.Stage.MANOR, true, Optional.empty()).isEmpty(), "never gated on a human being there");
     }
+
+    @Test
+    void aTripIntoAnotherWorldWaitsUntilAHumanHasEnteredIt() {
+        var iron = Optional.of(GroupPace.Step.IRON);
+        var nether = GroupPace.holdTrip(GroupPace.Step.NETHER, true, iron);
+        assertTrue(nether.isPresent() && nether.get().contains("into the Nether once someone has entered the Nether"), nether.toString());
+        assertTrue(GroupPace.holdTrip(GroupPace.Step.NETHER, true, Optional.of(GroupPace.Step.NETHER)).isEmpty());
+        assertTrue(GroupPace.holdTrip(GroupPace.Step.END, true, Optional.of(GroupPace.Step.NETHER)).isPresent(), "the End waits for the End");
+        assertTrue(GroupPace.holdTrip(GroupPace.Step.END, true, Optional.of(GroupPace.Step.END)).isEmpty());
+        assertTrue(GroupPace.holdTrip(GroupPace.Step.NETHER, false, iron).isEmpty(), "not paced in another mode");
+        assertTrue(GroupPace.holdTrip(GroupPace.Step.NETHER, true, Optional.empty()).isEmpty(), "never gated on a human being there");
+    }
 }
