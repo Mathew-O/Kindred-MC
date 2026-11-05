@@ -1,0 +1,54 @@
+[04:25:30] [Server thread/INFO] (Minecraft) Hal joined the game
+[04:25:54] [Server thread/INFO] (Minecraft) Rue joined the game
+[04:26:00] [Server thread/INFO] (Minecraft) Cass joined the game
+[04:26:06] [Server thread/INFO] (Kindred) World mode: Manhunt
+[04:26:11] [Server thread/INFO] (Kindred) Manhunt Rue hunted by Hal: starting in three seconds
+[04:26:14] [Server thread/INFO] (Kindred) Manhunt Rue hunted by Hal: the hunt is on!
+[04:26:14] [Server thread/INFO] (Kindred) Manhunt d37e7c5a: a tracking compass handed to Hal
+[04:26:14] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 3.0 blocks off: toward 56, 65, 18
+[04:26:15] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 4.0 blocks off: toward 64, 66, 12
+[04:26:15] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 4.3 blocks off: toward 62, 65, 16
+[04:26:35] [Server thread/INFO] (Minecraft) Mira joined the game
+[04:27:14] [Server thread/INFO] (Kindred) Manhunt d37e7c5a: the head start is over
+[04:27:34] [Server thread/INFO] (Kindred) Manhunt Mira hunted by Cass: starting in three seconds
+[04:27:37] [Server thread/INFO] (Kindred) Manhunt Mira hunted by Cass: the hunt is on!
+[04:27:37] [Server thread/INFO] (Kindred) Manhunt 320ac64e: a tracking compass handed to Cass
+[04:28:07] [Server thread/INFO] (Kindred) Manhunt 320ac64e: the head start is over
+[04:28:29] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 3.4 blocks off: toward 38, 61, 20
+[04:28:29] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 3.4 blocks off: toward 64, 60, 6
+[04:41:21] [Server thread/INFO] (Minecraft) Mira was slain by Zombie
+[04:41:21] [Server thread/INFO] (Kindred) Manhunt Mira hunted by Cass: hunted
+[04:41:21] [Server thread/INFO] (Kindred) Manhunt 320ac64e: the tracking compass taken back from Cass
+[04:54:31] [Server thread/INFO] (Minecraft) Hal joined the game
+[04:54:37] [Server thread/INFO] (Minecraft) Rue joined the game
+[04:54:43] [Server thread/INFO] (Minecraft) Cass joined the game
+[04:54:49] [Server thread/INFO] (Kindred) World mode: Manhunt
+[04:54:54] [Server thread/INFO] (Kindred) Manhunt Rue hunted by Hal: starting in three seconds
+[04:54:57] [Server thread/INFO] (Kindred) Manhunt Rue hunted by Hal: the hunt is on!
+[04:54:57] [Server thread/INFO] (Kindred) Manhunt d4926a5f: a tracking compass handed to Hal
+[04:54:57] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 3.6 blocks off: toward 13, 79, 11
+[04:54:58] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 4.3 blocks off: toward 18, 80, 6
+[04:54:58] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 6.6 blocks off: toward 19, 79, 12
+[04:54:59] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 9.8 blocks off: toward 20, 79, 16
+[04:55:00] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 14.3 blocks off: toward 24, 79, 17
+[04:55:00] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 17.4 blocks off: toward 26, 79, 21
+[04:55:01] [Server thread/INFO] (Kindred) Rue keeps away from Hal, 23.5 blocks off: toward 31, 79, 24
+[04:55:06] [Server thread/INFO] (Minecraft) Mira joined the game
+[04:55:24] [Server thread/INFO] (Kindred) Manhunt Mira hunted by Cass: starting in three seconds
+[04:55:27] [Server thread/INFO] (Kindred) Manhunt Mira hunted by Cass: the hunt is on!
+[04:55:27] [Server thread/INFO] (Kindred) Manhunt 5b902b39: a tracking compass handed to Cass
+[04:55:57] [Server thread/INFO] (Kindred) Manhunt d4926a5f: the head start is over
+[04:55:57] [Server thread/INFO] (Kindred) Manhunt 5b902b39: the head start is over
+[04:56:10] [Server thread/INFO] (Kindred) Manhunt Mira hunted by Cass: hunted
+[04:56:10] [Server thread/INFO] (Kindred) Manhunt 5b902b39: the tracking compass taken back from Cass
+[05:12:11] [Server thread/INFO] (Minecraft) Mira was slain by Zombie
+[05:12:37] [Server thread/INFO] (Kindred) Cass died at 16, 72, -6: Cass was slain by Zombie (tick 21751, night, under the sky, hunger 17, armour 0, holding nothing, no shield; doing "native_retreat" in "Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 20, 69, -33"; stance PRESS_ON, focus NONE, habits [])
+[05:12:37] [Server thread/INFO] (Minecraft) Cass was slain by Zombie
+[05:13:05] [Server thread/INFO] (Kindred) Cass died at -6, 79, 7: Cass was slain by Zombie (tick 22305, night, under the sky, hunger 19, armour 0, holding nothing, no shield; doing "native_retreat" in "Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 20, 69, -33"; stance PRESS_ON, focus NONE, habits [])
+[05:13:05] [Server thread/INFO] (Minecraft) Cass was slain by Zombie
+[05:13:24] [Server thread/INFO] (Kindred) Cass died at 16, 72, -7: Cass was slain by Zombie (tick 22686, night, under the sky, hunger 19, armour 0, holding nothing, no shield; doing "native_retreat" in "Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 20, 69, -33"; stance PRESS_ON, focus NONE, habits [])
+[05:13:24] [Server thread/INFO] (Minecraft) Cass was slain by Zombie
+[05:13:56] [Server thread/INFO] (Kindred) Cass died at 12, 79, 12: Cass was slain by Zombie (tick 23331, night, under the sky, hunger 20, armour 0, holding nothing, no shield; doing "native_retreat" in "Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 20, 69, -33"; stance PRESS_ON, focus NONE, habits [])
+[05:13:56] [Server thread/INFO] (Minecraft) Cass was slain by Zombie
+[05:14:20] [Server thread/INFO] (Kindred) Cass died at 7, 70, -13: Cass was slain by Zombie (tick 23810, day, under the sky, hunger 17, armour 0, holding nothing, no shield; doing "native_retreat" in "Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 20, 69, -33"; stance PRESS_ON, focus NONE, habits [])
+[05:14:20] [Server thread/INFO] (Minecraft) Cass was slain by Zombie

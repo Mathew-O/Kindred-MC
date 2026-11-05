@@ -113,6 +113,27 @@ public final class BuildBattle {
         return out;
     }
 
+    /**
+     * Whether a schematic from the server's library may serve as a design for {@code theme} (M-04, M-05): its name names
+     * the theme, and it fits a plot with a block to walk round it on each side and is no taller than sixteen.
+     */
+    public static boolean fitsTheme(String schematic, Blueprint design, Theme theme) {
+        if (schematic == null || !schematic.toLowerCase(java.util.Locale.ROOT).contains(theme.name().toLowerCase(java.util.Locale.ROOT))) return false;
+        int width = 0, depth = 0, height = 0;
+        for (var b : design.blocks()) {
+            if (b.at().x() < 0 || b.at().y() < 0 || b.at().z() < 0) return false;
+            width = Math.max(width, b.at().x() + 1);
+            depth = Math.max(depth, b.at().z() + 1);
+            height = Math.max(height, b.at().y() + 1);
+        }
+        return !design.blocks().isEmpty() && width <= PLOT - 2 && depth <= PLOT - 2 && height <= 16;
+    }
+
+    /** Whether {@code voter} has voted on {@code builder}'s build. */
+    public boolean voted(UUID voter, UUID builder) {
+        return votes.getOrDefault(builder, Map.of()).containsKey(voter);
+    }
+
     /** Whether {@code voter} has voted on every other build. */
     public boolean votedAll(UUID voter) {
         for (var plot : plots) {

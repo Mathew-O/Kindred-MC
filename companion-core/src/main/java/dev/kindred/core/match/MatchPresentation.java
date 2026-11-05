@@ -65,6 +65,10 @@ public final class MatchPresentation {
         if (match.mode() == MatchRegistry.Mode.MANHUNT) {
             return new Title(match.winners().stream().anyMatch(match.runners()::contains) ? "The runners win" : "The hunters win", subtitle(match, names), Cue.WIN);
         }
+        // An onlooker: who won, every one of them where it is a tie (a build battle's vote can tie; then there is no one winner).
+        if (match.winner() == null) {
+            return new Title(match.winners().stream().map(names).collect(Collectors.joining(" and ")) + " tie", how, Cue.WIN);
+        }
         return new Title(names.apply(match.winner()) + " wins", how, Cue.WIN);
     }
 
@@ -89,8 +93,14 @@ public final class MatchPresentation {
                 long left = Math.max(0, match.endsAt() - tick), total = Math.max(1, match.endsAt() - match.countdownEnds());
                 yield new Bar(mode + ": " + who + " - " + clock(left), Math.clamp(left / (float) total, 0f, 1f));
             }
-            case VOTING -> new Bar(mode + ": " + who + " - vote on the builds: " + clock(Math.max(0, match.endsAt() - tick)),
-                    Math.clamp((match.endsAt() - tick) / (float) MatchRegistry.VOTE_TICKS, 0f, 1f));
+            case VOTING -> {
+                // One build at a time: whose is up, and how long it has left.
+                long start = match.endsAt() - MatchRegistry.voteTicks(match);
+                long left = MatchRegistry.SHOW_TICKS - Math.floorMod(tick - start, MatchRegistry.SHOW_TICKS);
+                String showing = MatchRegistry.showing(match, tick).map(names).orElse("");
+                yield new Bar(mode + ": vote on " + showing + "'s build - " + clock(left),
+                        Math.clamp((match.endsAt() - tick) / (float) MatchRegistry.voteTicks(match), 0f, 1f));
+            }
             case ENDED -> new Bar(mode + ": " + who + " - over", 0f);
         };
     }
@@ -178,7 +188,8 @@ public final class MatchPresentation {
         String how = match.result() == null ? "" : match.result();
         if (match.mode() == MatchRegistry.Mode.MANHUNT) {
             if (how.equals("finished")) return names.apply(match.winner()) + " freed the End: the runners win";
-            if (how.equals("hunted")) return "The hunters caught " + side(match, true, names);
+            // Every runner fell, to a hunter or anything else (a fall is all the match knows): the hunters win.
+            if (how.equals("hunted")) return side(match, true, names) + " fell: the hunters win";
             if (how.startsWith("Every runner")) return "The runners gave up";
             if (how.startsWith("Every hunter")) return "The hunters gave up";
             return how;

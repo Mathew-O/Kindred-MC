@@ -39,7 +39,7 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer mode rules [mode or match] the rules of a mode (coop, speedrun, manhunt, builder, factions) or match (duel, build)
 /aiplayer match duel <first> <second> [seconds]  propose a duel between two players (AI players or humans online); 30-1800 s, five minutes by default
 /aiplayer match speedrun <runner...> propose a speedrun race to the dragon for one to eight runners
-/aiplayer match manhunt <runners> vs <hunters>  propose a manhunt: runners make for the dragon, hunters hunt them
+/aiplayer match manhunt <runners> vs <hunters> [headstart <seconds>]  propose a manhunt: runners make for the dragon, hunters hunt them
 /aiplayer match build <builders> [for <seconds>] [theme <name>]  propose a build battle (operators; plots laid where you stand)
 /aiplayer match vote <builder> <1-5> score another builder's build while a build battle is voted on
 /aiplayer match join <match>         join a match you were invited to (a human joins only for itself)
@@ -228,6 +228,10 @@ See [M-03a](evidence/M-03a.md).
 - **The runners** make for the dragon. An AI runner plays the dragon goal quickly but reliably, at its own steady pace rather than speedrun pace. It keeps its distance from a hunter it can see within twenty blocks, running off away from it, and fights only once caught. It never runs toward its home, its base or else the bed its spawn is set by, while any other way off is open, so it does not lead its hunters there. Running weighs more than eating, so it eats only once no hunter is in sight within twenty blocks. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
 - **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see. It gears up as the hunt goes on: iron armour from the iron it holds (a chestplate, leggings, a helmet, boots, in that order), made and put on before it follows the needle on.
 - **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Every one is taken back when the hunt ends. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
+- **A head start.** `headstart <seconds>` at the end (up to 120) gives the runners a head start. It is announced with the compass rule. Until it is over, every hunter is held where it stands, human or AI alike, and nobody may strike.
+- **Strikes the match does not allow.** A strike by one player at another in the same unfinished match is refused unless the match allows it now. That covers its lobby, countdown and head start, two players on the same side, and a mode with no striking. It is the same for humans and AI players; outside matches the server's own PvP setting stands.
+- **Blocking pursuit.** An AI runner going through a way one block wide, with a hunter coming along it behind, shuts the gap behind it with two of its own filler blocks (cobblestone, dirt, stone and the like) and runs on. A runner within a hunter's reach fights back only when the match allows a strike; in a head start it runs.
+- **Gearing beyond iron.** A kitted AI hunter makes a diamond sword, then diamond armour, from the diamonds it holds, keeping three for a diamond pickaxe while it has none, then iron armour. It puts on any better armour it carries.
 
 **A ranch (M-01a; in development).** `/aiplayer ranch <cow|sheep|pig|chicken> <x y z> [player]` has a native player make a ranch with the pen's north-west post at that spot. Only its administrator may ask, and only where AI world edits are allowed.
 - **The pen.** Seven by seven: 23 fences and a gate in the middle of the south side, of the wood it has most of. It crafts them at a crafting table from its own logs or planks, setting down or making a table if none is near. It builds the pen as it builds anything. With too little wood it says so and stops.
@@ -237,13 +241,17 @@ See [M-03a](evidence/M-03a.md).
 
 See [M-01a](evidence/M-01a.md).
 
-**Build battles (M-04a; in development).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
+**Build battles (M-04).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
 - **The plots.** One per builder, fifteen blocks a side, in a row east of where you stand, three apart, marked in white concrete with a grey edge. They need open, level ground, clear sixteen blocks up.
 - **The theme.** Announced as a title at the start, by chance or as you name it: cottage, watchtower, pyramid or lighthouse. The build lasts five minutes unless you say otherwise (`for 120`; thirty seconds to half an hour).
 - **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves with nothing in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included.
 - **Each to its own plot.** While it builds, a human may break or place only on its own plot, and nobody may on another's.
 - **AI builders** turn the theme into a design of their own, with a size and materials by chance, and build it block by block with the same planner as a survival build. The theme alone decides the design.
 - **The vote.** When the time is up, everyone looks on in adventure mode and scores every other build one to five: AI players at once by what they see standing on each plot, humans by clicking a score in chat or `/aiplayer match vote <builder> <score>`. Once everyone has voted, or after thirty seconds, the best mean wins (ties together), with fireworks over the winner's plot. With no votes it is a draw.
+- **The arena.** Laid out with the plots: a lobby pad at one end (each human invited is told where), a raised walkway along the front of the plots with a railing for onlookers, a gold mark in front of each plot, and a podium at the far end for the results. Builder only, where blocks are free.
+- **The vote is a tour.** One build at a time, in plot order, fifteen seconds each. Everyone is told whose it is (a title, the bar, the sidebar). A human is offered [1] to [5] for that build and told where its gold mark is. An AI voter walks to the mark and scores what it sees from there. A vote counts only on the build being shown.
+- **The podium.** Gold, iron and copper steps, with each winner's name and mean vote on a sign, facing the walkway.
+- **Designs from your schematics.** Put a schematic whose file name names the theme (for example `my-lighthouse.nbt`, with a `my-lighthouse.license` beside it) in `config/kindred/schematics`, and it fits a plot. AI builders then build it in a round on that theme, and its credit is said to everyone in the round. Without one they build Kindred's own designs.
 
 See [M-04a](evidence/M-04a.md).
 
