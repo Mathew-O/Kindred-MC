@@ -64,6 +64,8 @@
       "dev.kindred.fabric.NativeTripDownGameTests",
       "dev.kindred.fabric.NativePortalLightGameTests",
       "dev.kindred.fabric.NativeBucketGameTests",
+      "dev.kindred.fabric.NativeBreakOutcomeGameTests",
+      "dev.kindred.fabric.NativeTreeSightGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",

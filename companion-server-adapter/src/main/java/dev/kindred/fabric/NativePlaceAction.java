@@ -200,9 +200,12 @@ final class NativePlaceAction extends NativeRecordedAction {
                 admission.noEffect(before.description() + "; all owned slots unchanged", result.reason());
             } else {
                 unknown = true;
-                result = Step.blocked("Native placement effect cannot be verified; reconcile", true);
-                admission.uncertain(result.reason() + " (placed=" + placed + ", at " + placedPos.toShortString() + ": "
-                        + Registries.BLOCK.getId(state.getBlock()).getPath() + "; slots changed: " + changedSlots(before) + ")");
+                // The detail goes into the reason too, so the console's stop shows what was seen (E-40's iteration 8, seed
+                // 303: a player stopped here for the rest of the run with no record of why).
+                result = Step.blocked("Native placement effect cannot be verified; reconcile (placed=" + placed + ", at "
+                        + placedPos.toShortString() + ": " + Registries.BLOCK.getId(state.getBlock()).getPath()
+                        + "; slots changed: " + changedSlots(before) + ")", true);
+                admission.uncertain(result.reason());
             }
         } catch (RuntimeException failure) {
             unknown = true;

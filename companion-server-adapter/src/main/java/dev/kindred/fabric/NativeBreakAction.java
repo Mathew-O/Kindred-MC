@@ -189,6 +189,17 @@ final class NativeBreakAction extends NativeRecordedAction {
     }
 
     private boolean intact() { return body.entity().getWorld().isChunkLoaded(target) && body.entity().getWorld().getBlockState(target) == state; }
+    /**
+     * The target still holds a block, changed by the world rather than broken by this player: no break at the target has
+     * been received since the action began, whatever the block was, and its cell is neither empty nor fluid (F-25c4bp).
+     */
+    private boolean unbroken() {
+        var world = body.entity().getWorld();
+        if (!world.isChunkLoaded(target)) return false;
+        var now = world.getBlockState(target);
+        return !now.isAir() && now.getFluidState().isEmpty()
+                && body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)).isEmpty();
+    }
     private boolean ownsClaim() { return claim != null && claims.holdsAll(claim, System.currentTimeMillis()); }
     private boolean eligible() {
         return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot, overLava) == null;
@@ -327,15 +338,19 @@ final class NativeBreakAction extends NativeRecordedAction {
         } else if (before.sameContents(body)) {
             admission.noEffect(before.description() + "; inventory contents unchanged", reason);
             result = Step.blocked(reason + "; nothing was broken", true);
-        } else if (intact() && before.onlyGained(body)) {
+        } else if ((intact() || unbroken()) && before.onlyGained(body)) {
             // The block stands as it was and nothing held is gone: what is new was picked up from the ground by
             // walking over it (a drop a step earlier left a tick behind), not anything this break made.
-            admission.noEffect(InventoryEvidence.capture(body).description() + "; target intact, loose items picked up", reason);
+            // So too where the world changed the block without breaking it: redstone ore that lit up as mining began,
+            // dirt grown over with grass once the block over it was cleared. In E-40's iteration 8 (`e40a8-aed3e82`)
+            // each of those, met while a drop from the break before was picked up, left a player stopped for
+            // reconciliation for the rest of the run, on 20261030 and on 404 (F-25c4bp).
+            admission.noEffect(InventoryEvidence.capture(body).description() + "; target not broken, loose items picked up", reason);
             result = Step.blocked(reason + "; nothing was broken", true);
         } else {
             unknown = true;
             admission.uncertain(reason + "; inventory changed without an attributable break");
-            result = Step.blocked("Native break outcome requires reconciliation", true);
+            result = Step.blocked("Native break outcome requires reconciliation (" + reason + "; inventory changed without an attributable break)", true);
         }
     }
 

@@ -16,6 +16,31 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 8 and batch 11: a break the world changed, a bucket filled afloat, a tree not walked back to (F-25c4bp, F-25c4bq, F-25c4br) — 5 November 2026 (`claude/e40-ladder-11-1105`)
+
+- **The evaluation, `e40a8-aed3e82` (batches 9 and 10):** all ten seeds, 144,000 ticks each, earned.
+  - Stuck spells 10.0 [5 to 22]; deaths 1.0 a game hour [0 to 3]; a portal lit on 6 of 10, obsidian on 8 of 10, the
+    iron pickaxe on 9 of 10; stuck time under a tenth on 0 of 10.
+  - Against iteration 6 and the starting build `f25c4ax-84b331c`: every range overlaps.
+  - [Summary](evidence/eval/e40a8-aed3e82/summary.md), [deaths](evidence/eval/e40a8-aed3e82/deaths.md),
+    [against iteration 6](evidence/eval/compare-e40a8.md), [against the start](evidence/eval/compare-e40a8-base.md),
+    [E-40](evidence/E-40.md).
+- **The break fixture** (F-25c4bp, [evidence](evidence/F-25c4bp.md)), `NativeBreakOutcomeGameTests`, staged: redstone
+  ore that lights as mining begins, a cobblestone put into the inventory as it lights.
+  - On `c9de40f`: fails 3 of 3, the player stopped for reconciliation and its body taken out of the world.
+  - With the fix: passes 3 of 3.
+- **The bucket fixture** (F-25c4bq, [evidence](evidence/F-25c4bq.md)), `NativeBucketGameTests`, staged: afloat in a
+  well of obsidian it cannot climb out of, an empty bucket, full breath.
+  - On `c9de40f`: fails 3 of 3, the bucket still empty at 30 seconds.
+  - With the fix: passes 3 of 3. The class's other two fixtures pass in all six runs.
+- **The trees fixture** (F-25c4br, [evidence](evidence/F-25c4br.md)), `NativeTreeSightGameTests`, staged: two crowns
+  54 blocks apart whose logs are six and seven blocks up.
+  - On `c9de40f`: fails 3 of 3, walking back toward the far crown after coming to it.
+  - With the fix: passes 3 of 3. F-25c4ap's two skyline fixtures, run alone in a class of their own, pass with it.
+- **Diagnostics:** a break's or a placement's unverifiable outcome now gives what was seen in its reason, which the
+  console prints when the player is stopped. No behaviour changed.
+- **Build:** `bash ./gradlew build` successful; JUnit 955 tests, 0 failures, 6 skipped (companion-core 783, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 61, companion-sim 3, companion-testkit 9).
+
 ## E-40, iteration 7 (cut short) and batch 10: the first bucket on the cast route (F-25c4bm) — 5 November 2026 (`claude/e40-ladder-10-1105`)
 
 - **The evaluation, `e40a7-88ccf2d` (batch 9):** cut short when its container restarted, after 2 of its 10 seeds.
