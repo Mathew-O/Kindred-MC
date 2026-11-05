@@ -48,6 +48,34 @@
   with both fixes.
 - **The bunker class alone** (`NativeBunkerGameTests`), with both fixes: 1 of 1 in each of three runs.
 
+## M-00: the game-mode and match framework, 2026-11-05
+
+Branch `claude/modes-1105`, on top of `6effd66`. It closes M-00, M-00a and M-00b; see [M-00](evidence/M-00.md).
+
+- **Build:** `bash ./gradlew build` green, 937 JUnit tests, none failing, 6 skipped. The new tests: `GameModesTest` (4), three in `MatchPresentationTest` and one in `MatchRegistryTest`.
+  - One offline build stopped before `companion-model`'s tests: a dependency had not been cached. The online build ran them.
+- **Native, the match classes alone** (`NativeMatchGameTests`, `NativeMatchFrameworkGameTests`): 9 of 9 in each of three runs.
+  - The six fixtures new in `NativeMatchFrameworkGameTests`: a human's duel, a stopped duel, a stopped build battle, a stopped manhunt, a draw and a call-off, the world's mode.
+  - The held-title check new in the duel fixture.
+- **Native, the other classes that use matches, once:** 34 of 34. They are `NativeAggressionGameTests`, `NativeBuildBattleGameTests`, `NativeManhuntGameTests`, `NativeRaidGameTests`, `NativeStorageGameTests`, `NativeVoiceGameTests` and `NativeChatAskGameTests`. The duel benchmark classes are outside the suite and were not run.
+- **Controls:** five, each failing as expected ([M-00](evidence/M-00.md)). The world-mode fixture's first version passed its control and was rewritten.
+- **Two found on the way:**
+  - The build-battle stop fixture's first version expected a stopped battle's plot to stay closed. Once a battle ends its plots are ordinary ground, by design. It now checks the creative mode, the inventory and the build.
+  - A fixture step that asserted after a stop was tried again from its start and saw the match ended. Such steps now record what they see and check it in the next step.
+- **Live, on ordinary clients** (tooling in `tools/ordinary-client/`):
+  - **The setup.** A dev server with `online-mode=false` and `pvp=true`; unmodified vanilla 1.21.1 clients on Xvfb with Mesa; the operator over RCON. Players were placed with `/tp` for the camera.
+  - **On `6effd66`, before the changes.** Mira (human) joined a duel against Bram (AI) by command, started it and fell. The death screen covered her result, so she never saw it. This was fixed fixture first (M-00b).
+  - **On this build.** Duel 1: Mira clicked [Join] herself; the bar, sidebar, action bar, titles and particles showed; she fell, and on respawning saw "Defeat". Owen looked on.
+  - Duel 2: Bram against Cass (AI), 60 seconds, a draw; the onlooker Owen saw "Draw".
+  - In the Co-op Survival world a speedrun and a manhunt were refused.
+  - [Screenshots and log](evidence/artifacts/M-00-2026-11-05/).
+- **Sounds, on a vanilla client.** The client's OpenAL wrote its output to a file (the "Wave File Writer" device, set by `ALSOFT_CONF`). Only the four match sounds' files were fetched.
+  - Duel 3, Bram against Mira, 60 seconds. Pings at the countdown's three seconds (about 400 Hz), one about 720 Hz at the start, and the draw's bass (about 90 Hz), each within half a second of the server's log line.
+  - The subtitle "Note Block plays" showed with each count ([cues](evidence/artifacts/M-00-2026-11-05/audio-cues.txt), [subtitle](evidence/artifacts/M-00-2026-11-05/09-countdown-subtitle-note-block.png)).
+  - Duel 3 ended in a draw: Bram, hungry and hurt, kept off. After the end a scripted click meant for a respawn button landed on Bram as a punch and felled him. A human's strike outside a match is the server's vanilla PvP. D7 restricts AI players' strikes only.
+- **The K panel, on a dev client with the mod** (`runClient`, an operator). It showed the match line and the world's mode, and one click changed the mode. The first look found the new button and the edits button too narrow, and the match line clipped. Both were moved before the screenshots; the change is client-side only and was compiled by that run.
+- **Not run:** the full native suite. This task's protocol runs it once, before its last block.
+
 ## E-40, rung a, iteration 4, and the closing checks — 4 November 2026 (`claude/e40-ladder-6-1104`)
 
 - **The evaluation, `e40a4-c237a6e` (F-25c4be on main):** ten seeds, earned, nothing else on the cores.

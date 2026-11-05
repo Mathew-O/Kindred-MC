@@ -142,6 +142,10 @@ public final class NativeMatchGameTests implements FabricGameTest {
                     // Over: a strike is refused again, once Bram is back on its feet.
                     var bram = player(f, players[1]);
                     context.assertTrue(bram != null && bram.isAlive() && settled(f, ids[0]), "Bram back, Ada settled: " + f.runtime.nativeStatusLine(ids[0]));
+                    // Bram was dead as the result came: its "Defeat" is held until it is on its feet, since the death
+                    // screen would cover a title (found on an ordinary client, M-00b).
+                    var sent = f.runtime.presenter().sent(players[1]);
+                    context.assertTrue(!sent.isEmpty() && sent.getLast().equals(new MatchPresenter.Sent("Defeat", true)), "Bram sent " + sent);
                     context.assertTrue(!f.runtime.nativeStatusLine(ids[0]).contains(REFUSED), "No refusal yet: " + f.runtime.nativeStatusLine(ids[0]));
                     health[1] = bram.getHealth();
                     context.assertTrue(f.runtime.nativeFight(f.source, ids[0], players[1], 0) == 1, "Fight requested after the match");

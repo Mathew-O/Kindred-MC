@@ -231,7 +231,17 @@ public final class PlayerCommands {
                                     UUID first = resolveMatchPlayer(context, "first", runtime), second = resolveMatchPlayer(context, "second", runtime);
                                     if (first == null || second == null) return 0;
                                     return runtime.proposeDuel(context.getSource(), first, second);
-                                }))))
+                                })
+                                // Its own time, thirty to 1800 seconds, then a draw.
+                                .then(CommandManager.argument("seconds", IntegerArgumentType.integer(30, 1800))
+                                        .executes(context -> {
+                                            PlayerRuntime runtime = KindredMod.runtime();
+                                            if (runtime == null) return unavailable(context.getSource());
+                                            UUID first = resolveMatchPlayer(context, "first", runtime), second = resolveMatchPlayer(context, "second", runtime);
+                                            if (first == null || second == null) return 0;
+                                            return runtime.proposeDuel(context.getSource(), first, second, java.util.Set.of(),
+                                                    IntegerArgumentType.getInteger(context, "seconds") * 20);
+                                        })))))
                 // A race from a fresh start to the dragon (M-03a): the runners' names, one to eight of them.
                 .then(CommandManager.literal("speedrun").then(CommandManager.argument("runners", StringArgumentType.greedyString())
                         .suggests((context, builder) -> suggestPlayers(context,
@@ -589,6 +599,41 @@ public final class PlayerCommands {
                         runtime.patchSet(context.getSource(), id, BlockPosArgumentType.getBlockPos(context, "from"),
                                 BlockPosArgumentType.getBlockPos(context, "to"), IdentifierArgumentType.getIdentifier(context, "block").toString())))))));
         var mode = CommandManager.literal("mode");
+        // The world's game mode (M-00): /aiplayer mode world shows it and its rules, /aiplayer mode world <mode> chooses it
+        // (operators); /aiplayer mode rules [mode or match] shows any mode's or match's rules.
+        mode.then(CommandManager.literal("world").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.showWorldMode(context.getSource(), null);
+                })
+                .then(CommandManager.argument("world", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            for (var each : dev.kindred.core.match.GameModes.WorldMode.values()) if (each.playable) builder.suggest(each.key());
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            var chosen = dev.kindred.core.match.GameModes.parse(StringArgumentType.getString(context, "world"));
+                            if (chosen.isEmpty()) {
+                                context.getSource().sendError(Text.literal("Unknown world mode. Use coop, speedrun, manhunt or builder."));
+                                return 0;
+                            }
+                            return runtime.setWorldMode(context.getSource(), chosen.get());
+                        })));
+        mode.then(CommandManager.literal("rules").executes(context -> {
+                    PlayerRuntime runtime = KindredMod.runtime();
+                    return runtime == null ? unavailable(context.getSource()) : runtime.showWorldMode(context.getSource(), null);
+                })
+                .then(CommandManager.argument("which", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            for (String each : new String[]{"coop", "speedrun", "manhunt", "builder", "factions", "duel", "build"}) builder.suggest(each);
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            PlayerRuntime runtime = KindredMod.runtime();
+                            return runtime == null ? unavailable(context.getSource())
+                                    : runtime.showWorldMode(context.getSource(), StringArgumentType.getString(context, "which"));
+                        })));
         mode.then(withOptionalId(CommandManager.literal("companion"), (runtime, context, id) -> runtime.mode(context.getSource(), id, true)));
         mode.then(withOptionalId(CommandManager.literal("together"), (runtime, context, id) -> runtime.mode(context.getSource(), id, true)));
         mode.then(withOptionalId(CommandManager.literal("independent"), (runtime, context, id) -> runtime.mode(context.getSource(), id, false)));

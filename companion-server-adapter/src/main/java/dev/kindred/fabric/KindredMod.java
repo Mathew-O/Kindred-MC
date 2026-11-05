@@ -161,6 +161,11 @@ public final class KindredMod implements ModInitializer {
                 server.execute(() -> { if (runtime != null) runtime.playerLeft(left); });
             }
         });
+        // A player joining is told the world's mode and its rules (M-00).
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            var joined = handler.player;
+            server.execute(() -> { if (runtime != null && !joined.isDisconnected()) runtime.playerJoined(joined); });
+        });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             if (eval != null) eval.stopping(server);
             if (runtime != null) runtime.stop();

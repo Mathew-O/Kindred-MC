@@ -1,0 +1,10 @@
+Vanilla 1.21.1 client (Mira), OpenAL Soft "Wave File Writer" device (ALSOFT_CONF, drivers=wave), sound engine started 02:41:58.
+Recorded file: mira-audio.wav, 133.0 s, float32, sha256 a713913f19590e3c6f440fbd28d3748fc7e1d3709a52fa0b4ee4088a0a102337 (not committed).
+Converted to 8 kHz mono; windows of 0.1 s with RMS > 200 between 30 s and 100 s, and the pitch by zero crossings:
+  32.5 s (02:42:30.5)  rms 3069  ~442 Hz   countdown "3": note block pling, pitch 1
+  33.4 s (02:42:31.4)  rms 2767  ~405 Hz   countdown "2"
+  34.4 s (02:42:32.4)  rms 2767  ~405 Hz   countdown "1"
+  35.4 s (02:42:33.4)  rms 2583  ~718 Hz   "Fight!": note block pling, pitch 2
+  95.4 s (02:43:33.4)  rms 3685  ~88 Hz    "Draw": note block bass
+Server log: 02:42:30 "Duel Bram against Mira: starting in three seconds"; 02:42:33 "fight!"; 02:43:33 "Time ran out: a draw".
+Subtitles on screen at the countdown: "Note Block plays" (09-countdown-subtitle-note-block.png).
