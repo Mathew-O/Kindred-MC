@@ -16,6 +16,33 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 7 (cut short) and batch 10: the first bucket on the cast route (F-25c4bm) — 5 November 2026 (`claude/e40-ladder-10-1105`)
+
+- **The evaluation, `e40a7-88ccf2d` (batch 9):** cut short when its container restarted, after 2 of its 10 seeds.
+  - 8675309: team furthest diamond, 7 stuck spells, 19 deaths. 20261030: iron pickaxe, 5 stuck spells, 6 deaths.
+  - Too few seeds to compare; not run again. The next evaluation measures batches 9 and 10 together.
+  - [Summary](evidence/eval/e40a7-88ccf2d/summary.md), [deaths](evidence/eval/e40a7-88ccf2d/deaths.md),
+    [E-40](evidence/E-40.md).
+- **The planner test** (F-25c4bm, [evidence](evidence/F-25c4bm.md)), `PortalRunPlannerTest`:
+  - On `88ccf2d`: the new test fails (the first bucket made only once all the route's iron was in); the class's other
+    41 pass.
+  - With the fix: 42 of 42.
+- **The bucket fixture** (F-25c4bm), staged: a pool three blocks off, three iron ingots, the chestplate worn, no bucket.
+  - On `88ccf2d`: fails 3 of 3, branch mining for the rest of its iron with no bucket made.
+  - With the fix: passes 3 of 3, a bucket of water in hand. The class's other fixture (F-25c4bl) passes in all six runs.
+- **Eating with a mob on it, not kept.**
+  - Echo's death on 8675309 in iteration 7: its fight broken off badly hurt, it began to eat with the zombie a step away.
+  - Its replay (`echo-4428`) lived 3 of 3 on `88ccf2d`, the eating unchanged. With a check that held eating back while a
+    mob that was after it was within five blocks and in sight, it died in 2 of 3.
+  - Neither the check nor the replay is kept. The suite's replays, `echo-50149` and `echo-73670`, passed in both runs.
+- **Iteration 7's deaths played again:** 22 replays, three runs each, on batch 10's code. 10 died again in 2 or 3 of
+  3: six backing off or taking cover, two in lava or on magma, two in the water. Two fixes tried, neither kept yet
+  ([E-40](evidence/E-40.md)):
+  - Swimming out of lava or off magma to a place a few blocks off: Kindred's replay starts it in the middle of a lava
+    pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
+  - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
+    after, that one walking back into the water for food.
+
 ## E-40, rung a, iteration 6 and batch 9: surplus thrown back (F-25c4bi), a drop asked for under attack (F-25c4bk), a bucket with no slot free (F-25c4bl) — 5 November 2026 (`claude/e40-ladder-9-1105`)
 
 - **The evaluation, `e40a6-cb4a545` (batch 8 with F-25c4bh), worlds kept:** ten seeds, earned, nothing else on

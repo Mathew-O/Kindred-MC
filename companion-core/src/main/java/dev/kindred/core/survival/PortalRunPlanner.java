@@ -381,8 +381,17 @@ public final class PortalRunPlanner {
         // carrying twelve to sixteen iron that waited for the rest before any of it was made into gear (F-25c4x).
         boolean chestFirst = !shieldFirst && !pickaxeFirst && caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4
                 && ironHave >= CHESTPLATE_IRON;
+        // Where the frame is cast, then a first bucket from the next three iron, before the rest of the iron is looked for:
+        // with a bucket in hand, water passed close by on the way is taken while it is close. Made with the rest, the
+        // bucket came deep below by the lava with no water in reach, and the player dug a staircase to the surface for it
+        // and back down: in E-40's iteration 6 (`e40a6-cb4a545`), filling that bucket took a tenth of the players' time
+        // on the ten seeds, and up to a fifth on a seed (F-25c4bm). Not before the chestplate where there are caves.
+        boolean bucketFirst = !shieldFirst && !pickaxeFirst && !chestFirst && frame == WorldFacts.Method.CAST_OBSIDIAN
+                && s.emptyBuckets() + s.waterBuckets() + s.lavaBuckets() == 0 && ironHave >= 3
+                && !(caves && s.chestArmorTier() < 3 && s.pickaxeTier() < 4);
         if (shieldFirst && s.ironIngots() >= 1) return craftAtTable(s, facts, "shield", SHIELD_PLANKS, 0, Stage.IRON);
         if (chestFirst && s.ironIngots() >= CHESTPLATE_IRON) return craftAtTable(s, facts, "iron_chestplate", 0, 0, Stage.IRON);
+        if (bucketFirst && s.ironIngots() >= 3) return craftAtTable(s, facts, "bucket", 0, 0, Stage.IRON);
         // Wood for another table, should the carried one be lost below, taken while trees are in sight.
         if (below && s.woodUnits() < tableWood + (s.shields() == 0 ? SHIELD_PLANKS : 0) && treesNear) {
             return new Step(Action.GATHER_LOGS, "", 1, Stage.STONE, "Gather a log for a spare crafting table");
@@ -397,7 +406,7 @@ public final class PortalRunPlanner {
             return new Step(Action.GATHER_LOGS, "", (woodPacked - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for fuel to smelt with below");
         }
         // Iron its furnace close by is smelting is waited for, not walked away from (F-28).
-        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst && !chestFirst && !ironSmelting(s)) {
+        if (ironHave < ironWanted && !(shieldFirst && s.rawIron() > 0) && !pickaxeFirst && !chestFirst && !bucketFirst && !ironSmelting(s)) {
             return new Step(Action.MINE_IRON, "", ironWanted - ironHave, Stage.IRON, "Mine iron ore (" + ironHave + "/" + ironWanted + ")");
         }
         if (s.rawIron() > 0) {
