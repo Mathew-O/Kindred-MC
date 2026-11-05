@@ -30,7 +30,7 @@ The world-design work by another agent is on `codex/world-design-foundation` and
 
 Building is a survival skill on the runtime that exists. It is re-planned from the world at every step, so it is dynamic.
 
-1. **Blueprint** (`dev.kindred.core.construction`, pure). A bounded list of blocks with relative positions and exact states (`minecraft:oak_stairs[facing=north,half=bottom]`), with attribution kept (D8). It turns by quarter turns, carrying direction-valued properties along. Sources: vanilla structure `.nbt` and Sponge `.schem` (M-05; `.litematic` later), the user's schematic database, and local generators.
+1. **Blueprint** (`dev.kindred.core.construction`, pure). A bounded list of blocks with relative positions and exact states (`minecraft:oak_stairs[facing=north,half=bottom]`), with attribution kept (D8). It turns by quarter turns, carrying direction-valued properties along. Sources: vanilla structure `.nbt`, Sponge `.schem` and Litematica `.litematic` (M-05), the user's schematic database, and local generators.
 2. **What the world holds.** An immutable snapshot the adapter takes on the server thread, for the build's box and a margin. For each cell: air, the target state already, something replaceable, something else solid, fluid, or protected (another's claim or a container). Unknown cells are not built against.
 3. **The next step.** The construction planner, pure, given the blueprint where it is placed, the snapshot and where the player is, returns the next step, re-planned every pass:
    - The remaining blocks are those whose cell does not hold the target state.
@@ -62,6 +62,6 @@ Simulating whole builds and running the fixture again and again showed what a de
 | --- | --- | --- |
 | Blueprint, snapshot cells, the next-step planner, the bill of materials, rotation | E-08a | Pure tests: order, support, stance and reach, placement contexts for stairs, slabs and logs, scaffold when out of reach, never sealing itself in, rotation of states |
 | Placement with an exact look, the build runner, `/aiplayer build` | E-08b | A native fixture building a small house of several block kinds, stairs included, from owned blocks, every block verified in its state, restart-safe |
-| Schematic import (`.nbt`, `.schem`) with attribution | M-05 | Parser tests; a fixture building an imported structure |
+| Schematic import (`.nbt`, `.schem`, `.litematic`) with attribution | M-05 | Parser tests; a fixture building an imported structure |
 | Materials through the needs queue | E-08c | A fixture where what it can is built first and the shortfall is gathered and crafted in one trip |
 | Bases in three stages | M-01b | Each stage built in game (done); the stage chosen and improved by the player in Co-op Survival |

@@ -251,4 +251,25 @@ class MatchRegistryTest {
         assertEquals("Time ran out: a draw", ended.result());
         assertFalse(registry.mayAttack(a, b), "no leave to strike once it is over");
     }
+
+    @Test
+    void aManhuntsHeadStartHoldsEveryStrikeBackUntilItIsOver() {
+        var registry = new MatchRegistry();
+        UUID runner = UUID.randomUUID(), hunter = UUID.randomUUID();
+        assertFalse(registry.proposeManhunt(List.of(runner), List.of(hunter), 20 * 121).accepted(), "over two minutes refused");
+        var hunt = registry.proposeManhunt(List.of(runner), List.of(hunter), 200).match().orElseThrow();
+        assertEquals(200, registry.headStart(hunt.id()));
+        registry.join(hunt.id(), runner);
+        registry.join(hunt.id(), hunter);
+        registry.start(hunt.id(), 0);
+        var running = registry.tick(MatchRegistry.COUNTDOWN_TICKS).getFirst();
+        assertTrue(registry.heldBack(running, MatchRegistry.COUNTDOWN_TICKS + 199));
+        assertFalse(registry.mayAttack(hunter, runner), "no strike in the head start");
+        assertFalse(registry.mayAttack(runner, hunter), "nor back");
+        registry.tick(MatchRegistry.COUNTDOWN_TICKS + 200);
+        assertFalse(registry.heldBack(running, MatchRegistry.COUNTDOWN_TICKS + 200));
+        assertTrue(registry.mayAttack(hunter, runner), "once it is over");
+        var none = new MatchRegistry().proposeManhunt(List.of(runner), List.of(hunter)).match().orElseThrow();
+        assertEquals(0, new MatchRegistry().headStart(none.id()), "none by default");
+    }
 }

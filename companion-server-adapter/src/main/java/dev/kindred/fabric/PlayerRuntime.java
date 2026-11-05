@@ -277,6 +277,8 @@ final class PlayerRuntime {
     private boolean bases;
     /** The world's game mode (M-00), from mode.properties; null where none was chosen, as before modes existed. */
     private dev.kindred.core.match.GameModes.WorldMode worldMode;
+    /** The last save of mode.properties: each save waits on the one before, so the last mode chosen is the one kept. */
+    private CompletableFuture<Void> modeSaved = CompletableFuture.completedFuture(null);
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
     /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
@@ -328,6 +330,11 @@ final class PlayerRuntime {
     private final Map<UUID, dev.kindred.core.survival.SurvivalGoal> raceGoal = new HashMap<>();
     /** Each build battle's round: its theme, plots and votes, by match (M-04a). */
     private final Map<UUID, dev.kindred.core.match.BuildBattle> battles = new HashMap<>();
+    /** Each build battle's generated arena (M-04), and the build each vote last showed. */
+    private final Map<UUID, dev.kindred.core.match.BuildArena> arenas = new HashMap<>();
+    private final Map<UUID, UUID> showingNow = new HashMap<>();
+    /** Designs for each round's theme from the server's schematic library (M-05), read off the game thread as it is proposed. */
+    private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
     /** Build battles whose building has begun, by match. */
@@ -2426,6 +2433,8 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        if (!heldHunts.isEmpty()) releaseHunts(tick);
+        if (!toAdventure.isEmpty()) settleVoters();
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
@@ -3383,6 +3392,8 @@ final class PlayerRuntime {
         if (duel != null) return duel;
         var hunt = huntCandidates(entry, body);
         if (hunt != null) return hunt;
+        var vote = voteCandidates(entry, body);
+        if (vote != null) return vote;
         var evade = evadeCandidates(entry, body);
         if (evade != null) return evade;
         var raid = raidCandidates(entry, body);
@@ -6925,7 +6936,12 @@ final class PlayerRuntime {
         }
         if (entry.nativeState != null && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED
                 || state == SkillRunner.State.CANCELLED)) {
-            if (state == SkillRunner.State.BLOCKED && "native_goto".equals(entry.skillId)) entry.walksFailed++;
+            if (state == SkillRunner.State.BLOCKED && "native_goto".equals(entry.skillId)) {
+                entry.walksFailed++;
+                entry.walkFailedAt = server.getTicks();
+            }
+            if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
+                    && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""),
                     entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
@@ -7949,10 +7965,10 @@ final class PlayerRuntime {
             if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
             var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
             if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
-                    || other.snapshot().stopLatched() || matches.running(mate.getUuid()).isPresent()) continue;
+                    || other.snapshot().stopLatched() || matches.active(mate.getUuid()).isPresent()) continue;
             team.add(other);
         }
-        if (team.size() < 2 || matches.running(player.getUuid()).isPresent()) {
+        if (team.size() < 2 || matches.active(player.getUuid()).isPresent()) {
             entry.campaign.team(dev.kindred.core.survival.PortalRunPlanner.Team.ALONE);
             entry.runPart = null;
             return;
@@ -8020,8 +8036,8 @@ final class PlayerRuntime {
     /**
      * A find shared out with the team as it comes (E-40a): when it holds more of a material than at its last reckoning,
      * what it holds unpromised is shared by {@link ShareOut} between it and its teammates (the other native players in its
-     * world within {@link #TEAM_RANGE}, as all play together in co-op; none while it or they are in a match, whose own rules
-     * hand out items), and if anyone else is better for some of it, the share-out
+     * world within {@link #TEAM_RANGE}, as all play together in co-op; none while it or they are in a match that has not
+     * ended, its lobby and countdown included, whose own rules hand out items), and if anyone else is better for some of it, the share-out
      * is saved as a project of hand-overs ({@link HandOvers}), each held by it with its material reserved, and it tells
      * its team what it found and who gets what. A first sight of what it holds is no find. Its hand-overs let go by a
      * stop or a lapsed hold are taken up again.
@@ -8042,14 +8058,16 @@ final class PlayerRuntime {
             if (before == null || held != before) teamCoordinator.stockLedger().registerStock(key, held);
             if (before == null || held <= before || entry.sharing.contains(material)) continue;
             int free = held - teamCoordinator.stockLedger().reservedCount(key);
-            if (free <= 0 || matches.running(player.getUuid()).isPresent()) continue;
+            // Not while it is in a match that has not ended, its lobby and countdown included: the players in it are
+            // about to be opponents, and a promise made now would be kept to an opponent once it runs (M-02b).
+            if (free <= 0 || matches.active(player.getUuid()).isPresent()) continue;
             var members = new ArrayList<ShareOut.Member>();
             members.add(member(self, entry.data.displayName(), player));
             for (Entry other : entries.values()) {
                 if (other == entry) continue;
                 var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
                 if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || mate.squaredDistanceTo(player) > TEAM_RANGE * TEAM_RANGE
-                        || other.snapshot().stopLatched() || matches.running(mate.getUuid()).isPresent()) continue;
+                        || other.snapshot().stopLatched() || matches.active(mate.getUuid()).isPresent()) continue;
                 members.add(member(other.data.id(), other.data.displayName(), mate));
             }
             var grants = members.size() < 2 ? List.<ShareOut.Grant>of() : ShareOut.share(members, material, free);
@@ -13215,7 +13233,8 @@ final class PlayerRuntime {
         }
         Path file = metadataDirectory.resolve("mode.properties");
         String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
-        CompletableFuture.runAsync(() -> {
+        // In order: two saves left to run side by side could finish the older last and keep it.
+        modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
                 Files.writeString(file, content, StandardCharsets.UTF_8);
@@ -13406,6 +13425,14 @@ final class PlayerRuntime {
      * it fair game (D7).
      */
     int proposeManhunt(ServerCommandSource source, List<UUID> runners, List<UUID> hunters) {
+        return proposeManhunt(source, runners, hunters, 0);
+    }
+
+    /**
+     * As the command, with the runners' head start ({@code headStartTicks}, zero for none): from the start, the hunters
+     * are held where they stand and nobody may strike until it is over, the same for human and AI hunters.
+     */
+    int proposeManhunt(ServerCommandSource source, List<UUID> runners, List<UUID> hunters, int headStartTicks) {
         requireThread();
         if (!modeAllows(source, dev.kindred.core.match.MatchRegistry.Mode.MANHUNT)) return 0;
         if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no manhunt can be played.");
@@ -13422,7 +13449,7 @@ final class PlayerRuntime {
             }
             if (!online.getInventory().isEmpty()) return reject(source, playerName(player) + " is not at a fresh start: it carries items.");
         }
-        var result = matches.proposeManhunt(runners, hunters);
+        var result = matches.proposeManhunt(runners, hunters, headStartTicks);
         if (!result.accepted()) return reject(source, result.reason());
         var match = enter(result.match().orElseThrow());
         feedback(source, "Manhunt " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
@@ -13479,8 +13506,37 @@ final class PlayerRuntime {
                 for (int y = 1; y <= 16; y++) if (!world.getBlockState(floor.up(y)).isAir()) world.setBlockState(floor.up(y), Blocks.AIR.getDefaultState());
             }
         }
+        // The arena round them (M-04): a lobby pad, a raised walkway in front of the plots with a marked spot before each
+        // for the vote, and room for the podium. Builder only, where blocks are free.
+        var arena = dev.kindred.core.match.BuildArena.around(plots);
+        for (var block : arena.blocks().entrySet()) {
+            var at = new BlockPos(block.getKey().x(), block.getKey().y(), block.getKey().z());
+            world.setBlockState(at, Registries.BLOCK.get(net.minecraft.util.Identifier.of(block.getValue())).getDefaultState());
+        }
         var match = enter(result.match().orElseThrow());
-        battles.put(match.id(), new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots));
+        arenas.put(match.id(), arena);
+        var round = new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots);
+        battles.put(match.id(), round);
+        // Reference designs for the theme: schematics the operator put in the library whose names name it and that fit a
+        // plot, each kept with its credit (D8). Read off the game thread; an AI builder uses one if it is ready by the start.
+        UUID roundId = match.id();
+        schematics.names().thenCompose(names -> {
+            var reads = names.stream().map(name -> schematics.load(name).thenApply(loaded ->
+                    dev.kindred.core.match.BuildBattle.fitsTheme(name, loaded.blueprint(), round.theme()) ? loaded.blueprint() : null)
+                    .exceptionally(failure -> null)).toList();
+            return CompletableFuture.allOf(reads.toArray(CompletableFuture[]::new))
+                    .thenApply(done -> reads.stream().map(CompletableFuture::join).filter(java.util.Objects::nonNull).toList());
+        }).whenComplete((designs, failure) -> handBack(() -> {
+            if (failure == null && designs != null && !designs.isEmpty() && battles.containsKey(roundId)) libraryDesigns.put(roundId, designs);
+        }));
+        var pad = arena.lobby();
+        for (UUID builder : match.invited()) {
+            var player = server.getPlayerManager().getPlayer(builder);
+            if (player != null && entryForPlayer(builder) == null) {
+                player.sendMessage(Text.literal("The arena's lobby is at " + pad.x() + " " + pad.y() + " " + pad.z()
+                        + "; onlookers watch from the walkway in front of the plots."), false);
+            }
+        }
         feedback(source, "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match) + ", "
                 + buildTicks / 20 + " seconds to build; " + match.joined().size() + " of " + match.invited().size() + " joined.");
         return 1;
@@ -13506,7 +13562,19 @@ final class PlayerRuntime {
             Entry entry = entryForPlayer(builder);
             var plot = battle.plot(builder).orElse(null);
             if (entry == null || plot == null) continue;
-            var design = dev.kindred.core.match.BuildBattle.design(battle.theme(), new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits()));
+            var random = new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits());
+            // A reference design from the library for the theme where there is one (M-05), credited; else its own design.
+            var library = libraryDesigns.getOrDefault(match.id(), List.of());
+            var design = library.isEmpty() ? dev.kindred.core.match.BuildBattle.design(battle.theme(), random) : library.get(random.nextInt(library.size()));
+            if (!library.isEmpty()) {
+                String credit = "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + ": " + playerName(builder) + " builds '"
+                        + design.name() + "' from the schematic library, " + SchematicLibrary.credit(design);
+                KindredMod.LOGGER.info(credit);
+                for (UUID invited : match.invited()) {
+                    var other = server.getPlayerManager().getPlayer(invited);
+                    if (other != null && entryForPlayer(invited) == null) other.sendMessage(Text.literal(credit), false);
+                }
+            }
             var site = plot.site(design);
             stockFor(player, design);
             startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
@@ -13552,31 +13620,20 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null && entry.nativeBody != null) entry.nativeBody.allowCreative(false);
-            player.getInventory().clear();
-            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
-            if (entry != null) {
-                for (var plot : battle.plots()) {
-                    if (plot.builder().equals(builder)) continue;
-                    int score = dev.kindred.core.match.BuildBattle.judge(plotBlocks(player.getServerWorld(), plot), battle.theme());
-                    battle.vote(builder, plot.builder(), score);
-                    KindredMod.LOGGER.info("Build battle {}: {} gives {}'s build {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
-                            playerName(plot.builder()), score);
-                }
+            if (entry != null && entry.nativeBody != null) {
+                // Its hands are emptied and its game mode changed only once what it was doing has settled: an action
+                // caught half done by the change, cut short to make way for it, or with its block taken from its hand,
+                // leaves an outcome only reconciliation can settle, and the body is taken out (found live, three times).
+                // With its build stopped, nothing new begins meanwhile.
+                toAdventure.add(entry.data.id());
                 continue;
             }
-            for (var plot : battle.plots()) {
-                if (plot.builder().equals(builder)) continue;
-                String name = playerName(plot.builder());
-                var line = Text.literal("Vote on " + name + "'s build: ");
-                for (int score = 1; score <= 5; score++) {
-                    String vote = "/aiplayer match vote " + name + " " + score;
-                    line.append(Text.literal("[" + score + "] ").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
-                            .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, vote))));
-                }
-                player.sendMessage(line, false);
-            }
+            player.getInventory().clear();
+            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
         }
+        // The builds are then shown one at a time, each for its share of the vote (pollBuildBattles): every voter walks
+        // to the marked spot in front of it and votes on what it sees from there.
+        showingNow.remove(match.id());
     }
 
     /** A builder's vote on another's build, one to five, while the round is voted on. */
@@ -13585,6 +13642,10 @@ final class PlayerRuntime {
         if (!(source.getEntity() instanceof ServerPlayerEntity voter)) return reject(source, "Only a builder votes, for itself.");
         var match = matches.active(voter.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER).orElse(null);
         if (match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) return reject(source, "No build battle of yours is being voted on.");
+        // One build at a time, the same for everyone: the one being shown.
+        if (!builder.equals(dev.kindred.core.match.MatchRegistry.showing(match, server.getTicks()).orElse(null))) {
+            return reject(source, "That build is not the one being voted on now.");
+        }
         var battle = battles.get(match.id());
         var refused = battle == null ? java.util.Optional.of("No such round") : battle.vote(voter.getUuid(), builder, score);
         if (refused.isPresent()) return reject(source, refused.get() + ".");
@@ -13598,6 +13659,7 @@ final class PlayerRuntime {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.BUILDER || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) continue;
             var battle = battles.get(match.id());
             if (battle == null) continue;
+            showBuild(match, battle);
             boolean all = match.joined().stream().filter(match::playing).allMatch(battle::votedAll);
             if (!all && server.getTicks() < match.endsAt()) continue;
             var winners = battle.winners();
@@ -13619,7 +13681,10 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null && entry.nativeBody != null) entry.nativeBody.allowCreative(false);
+            if (entry != null && entry.nativeBody != null) {
+                entry.nativeBody.allowCreative(false);
+                entry.nativeBody.allowAdventure(false);
+            }
             player.getInventory().clear();
             player.changeGameMode(mode);
         }
@@ -13638,14 +13703,77 @@ final class PlayerRuntime {
                 }
             });
         }
+        // The podium (M-04): the best three by their mean vote, first in the middle, each named on a sign atop its step.
+        var arena = arenas.remove(match.id());
+        showingNow.remove(match.id());
+        if (arena != null && !battle.scores().isEmpty()) {
+            var ranked = battle.scores().entrySet().stream().sorted(Map.Entry.<UUID, Double>comparingByValue().reversed()).limit(3).toList();
+            for (var block : arena.podiumBlocks(ranked.size()).entrySet()) {
+                var at = new BlockPos(block.getKey().x(), block.getKey().y(), block.getKey().z());
+                world.setBlockState(at, Registries.BLOCK.get(net.minecraft.util.Identifier.of(block.getValue())).getDefaultState());
+            }
+            var names = new ArrayList<String>();
+            String[] places = {"1st", "2nd", "3rd"};
+            for (int i = 0; i < ranked.size(); i++) {
+                var top = arena.podium().get(i);
+                var at = new BlockPos(top.x(), top.y(), top.z());
+                // Facing west, back along the walkway, to whoever comes along it.
+                world.setBlockState(at, Blocks.OAK_SIGN.getDefaultState().with(net.minecraft.block.SignBlock.ROTATION, 4));
+                String name = playerName(ranked.get(i).getKey());
+                names.add(name);
+                if (world.getBlockEntity(at) instanceof net.minecraft.block.entity.SignBlockEntity sign) {
+                    sign.setText(new net.minecraft.block.entity.SignText()
+                            .withMessage(0, Text.literal(places[i]))
+                            .withMessage(1, Text.literal(name))
+                            .withMessage(2, Text.literal(String.format(java.util.Locale.ROOT, "%.1f of 5", ranked.get(i).getValue()))), true);
+                }
+            }
+            podiums.put(match.id(), List.copyOf(names));
+            KindredMod.LOGGER.info("Build battle {}: the podium {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), names);
+        }
         battles.remove(match.id());
+        libraryDesigns.remove(match.id());
         buildsBegun.remove(match.id());
+    }
+
+    /** The names on each finished round's podium, first first, for a fixture. */
+    private final Map<UUID, List<String>> podiums = new HashMap<>();
+
+    List<String> podiumForTest(UUID matchId) {
+        requireThread();
+        return podiums.getOrDefault(matchId, List.of());
+    }
+
+    /** A round's arena, for a fixture. */
+    dev.kindred.core.match.BuildArena arenaForTest(UUID matchId) {
+        requireThread();
+        return arenas.get(matchId);
     }
 
     /**
      * Whether {@code player} may break or place at {@code pos} with a build battle on (M-04a): while it builds, a builder
      * only on its own plot; nobody on another's plot, in the battle or not. Anywhere else, as ever.
      */
+    /**
+     * Whether {@code player} may place a block at {@code target} against {@code clicked} (M-04): the target must be its to
+     * edit, and so must the block clicked, unless that is the floor of its own plot in a running build battle, which a
+     * builder builds on but does not change.
+     */
+    boolean mayPlace(ServerPlayerEntity player, BlockPos clicked, BlockPos target) {
+        if (!mayEditAt(player, target)) return false;
+        if (mayEditAt(player, clicked)) return true;
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.BUILDER || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING
+                    || !match.playing(player.getUuid())) continue;
+            var plot = battles.containsKey(match.id()) ? battles.get(match.id()).plot(player.getUuid()).orElse(null) : null;
+            if (plot == null) continue;
+            var o = plot.origin();
+            if (clicked.getY() == o.y() && clicked.getX() >= o.x() && clicked.getX() < o.x() + dev.kindred.core.match.BuildBattle.PLOT
+                    && clicked.getZ() >= o.z() && clicked.getZ() < o.z() + dev.kindred.core.match.BuildBattle.PLOT) return true;
+        }
+        return false;
+    }
+
     boolean mayEditAt(ServerPlayerEntity player, BlockPos pos) {
         if (!running) return true;
         var at = new dev.kindred.core.construction.Pos(pos.getX(), pos.getY(), pos.getZ());
@@ -13694,12 +13822,79 @@ final class PlayerRuntime {
             // The one item the hunt hands out, announced before it is, the same for every hunter (D6).
             String rule = "Rule: every hunter holds a tracking compass. It points at the nearest runner in the hunter's world, or where a "
                     + "runner last left it; it vanishes when its hunter dies and is given again, and every one is taken back when the hunt ends.";
+            int head = matches.headStart(match.id());
+            if (head > 0) {
+                // The runners' head start (M-02b): every hunter held where it stands, human or AI alike, and nobody strikes.
+                rule += " The runners have a head start of " + head / 20 + " seconds: until it is over, every hunter is held where it stands and nobody may strike.";
+                heldHunts.put(match.id(), match.countdownEnds() + head);
+                for (UUID hunter : match.joined()) if (match.hunter(hunter)) hold(server.getPlayerManager().getPlayer(hunter), true);
+            }
             for (UUID invited : match.invited()) {
                 var player = server.getPlayerManager().getPlayer(invited);
                 if (player != null) player.sendMessage(Text.literal(rule).formatted(net.minecraft.util.Formatting.GOLD), false);
             }
             pollHunts();
         }
+    }
+
+    /** Manhunts in their runners' head start: when each ends, by tick. */
+    private final Map<UUID, Long> heldHunts = new HashMap<>();
+    private static final net.minecraft.util.Identifier HELD = net.minecraft.util.Identifier.of("kindred", "head_start");
+
+    /** A hunter held where it stands for the head start, or let go: no walking, no jumping (M-02b). Not saved. */
+    private static void hold(ServerPlayerEntity player, boolean held) {
+        if (player == null) return;
+        for (var attribute : List.of(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED,
+                net.minecraft.entity.attribute.EntityAttributes.GENERIC_JUMP_STRENGTH)) {
+            var instance = player.getAttributeInstance(attribute);
+            if (instance == null) continue;
+            instance.removeModifier(HELD);
+            if (held) instance.addTemporaryModifier(new net.minecraft.entity.attribute.EntityAttributeModifier(HELD, -1.0,
+                    net.minecraft.entity.attribute.EntityAttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+    }
+
+    /** Each tick: a head start that is over lets its hunters go, and says so; an ended hunt's hunters let go at once. */
+    private void releaseHunts(long tick) {
+        for (var it = heldHunts.entrySet().iterator(); it.hasNext(); ) {
+            var held = it.next();
+            var match = matches.get(held.getKey()).orElse(null);
+            boolean over = match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING;
+            if (!over && tick < held.getValue()) continue;
+            it.remove();
+            if (match == null) continue;
+            for (UUID hunter : match.invited()) if (match.hunter(hunter)) hold(server.getPlayerManager().getPlayer(hunter), false);
+            if (over) continue;
+            KindredMod.LOGGER.info("Manhunt {}: the head start is over", dev.kindred.core.match.MatchRegistry.shortId(match.id()));
+            for (UUID invited : match.invited()) {
+                var player = server.getPlayerManager().getPlayer(invited);
+                if (player != null) player.sendMessage(Text.literal("The head start is over: the hunters are free.").formatted(net.minecraft.util.Formatting.GOLD), false);
+                Entry entry = entryForPlayer(invited);
+                if (entry != null) {
+                    entry.cachedRoutineCandidates = List.of();
+                    entry.routineRefreshPending = true;
+                }
+            }
+        }
+    }
+
+    /** Whether a hunter is held by its manhunt's head start now, for a fixture. */
+    boolean heldForTest(UUID player) {
+        requireThread();
+        return matches.running(player).filter(m -> m.hunter(player) && matches.heldBack(m, server.getTicks())).isPresent();
+    }
+
+    /**
+     * Whether a strike by {@code attacker} at {@code target}, both players, is refused by their match's rules: both in the
+     * same match that has not ended, and the match does not let them strike one another now (its lobby, countdown or
+     * head start, the same side, or a mode with no striking). The same for humans and AI players. Outside matches the
+     * server's own rules stand.
+     */
+    boolean matchForbidsStrike(UUID attacker, UUID target) {
+        requireThread();
+        var match = matches.active(attacker).orElse(null);
+        if (match == null || !match.invited().contains(target) || match.out().contains(target)) return false;
+        return !matches.mayAttack(attacker, target);
     }
 
     /** An AI runner out of its race (it ended, or the runner dropped out): the race's goal ends and its own pace is back. */
@@ -13799,6 +13994,8 @@ final class PlayerRuntime {
         var player = body.entity();
         var match = matches.running(player.getUuid()).filter(m -> m.hunter(player.getUuid())).orElse(null);
         if (match == null) return null;
+        // The runners' head start: held where it stands, it does nothing, as a held human hunter can do nothing.
+        if (matches.heldBack(match, server.getTicks())) return List.of();
         UUID taskId = UUID.nameUUIDFromBytes(("hunt:" + match.id() + ":" + player.getUuid()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         ServerPlayerEntity prey = null;
         for (UUID runner : match.runners()) {
@@ -13806,6 +14003,18 @@ final class PlayerRuntime {
             if (target == null || !target.isAlive() || target.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(target) > 24 * 24
                     || !player.canSee(target)) continue;
             if (prey == null || player.squaredDistanceTo(target) < player.squaredDistanceTo(prey)) prey = target;
+        }
+        long now = server.getTicks();
+        if (prey != null) {
+            entry.preySeen = prey.getBlockPos().toImmutable();
+            entry.preySeenAt = now;
+        }
+        if (now - entry.fightStalledAt < STALLED_FIGHT && entry.preySeen != null && now - entry.preySeenAt < STALLED_FIGHT) {
+            // Its last fight could not close in (a runner up a tower, across a gap): it makes a way to where it last saw
+            // the runner as a player does, with its own blocks, digging and stairs, rather than start the same fight
+            // again (M-02a).
+            var way = wayTo(entry, body, entry.preySeen);
+            if (way != null) return way;
         }
         if (prey != null) {
             var fight = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
@@ -13821,36 +14030,142 @@ final class PlayerRuntime {
         // hand, before the needle is followed on.
         var wear = equipCandidate(entry, body, dev.kindred.core.TaskPreferences.Priority.PROJECT, 92.0);
         if (wear.isPresent()) return List.of(wear.get());
+        var better = betterArmour(entry, body);
+        if (better != null) return better;
         var gear = hunterArmour(entry, body);
         if (gear != null) return gear;
         var bearing = HuntCompass.bearing(player, match.id());
         if (bearing.isEmpty()) return null;
         BlockPos toward = HuntCompass.along(player.getBlockPos(), bearing.get(), 16);
+        // A walk along the needle that has just failed: it makes a way along it instead, and with no way to make, it gets
+        // on with its goal's work for now (a hunter in a cave walked at rock over nine thousand times in a live hunt).
+        if (now - entry.walkFailedAt < 100) {
+            var way = wayTo(entry, body, toward);
+            return way;
+        }
         var follow = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(follow, "native_goto", Map.of("x", String.valueOf(toward.getX()), "y", String.valueOf(toward.getY()),
                 "z", String.valueOf(toward.getZ()), "range", "3", "partial", "true", "sprint", "true")));
     }
 
-    /** Iron armour a hunter makes, best protection for its iron first: the piece, its ingots. */
-    private static final List<Map.Entry<net.minecraft.item.Item, Integer>> HUNTER_ARMOUR = List.of(
-            Map.entry(Items.IRON_CHESTPLATE, 8), Map.entry(Items.IRON_LEGGINGS, 7), Map.entry(Items.IRON_HELMET, 5), Map.entry(Items.IRON_BOOTS, 4));
+    /**
+     * Armour it carries that guards better than what it wears in that slot, swapped on as a player swaps it with the
+     * number key over the armour slot (M-02b): readied to the hotbar first if it is further in. Null when it carries none.
+     */
+    private List<NativeTaskCandidate> betterArmour(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (!(stack.getItem() instanceof net.minecraft.item.ArmorItem piece) || stack.getCount() != 1) continue;
+            var worn = player.getEquippedStack(player.getPreferredEquipmentSlot(stack));
+            if (worn.isEmpty() || worn.getItem() instanceof net.minecraft.item.ArmorItem on && on.getProtection() >= piece.getProtection()) continue;
+            // Gold worn in the Nether stays on: it keeps piglins neutral (E-07e).
+            if (FollowUps.golden(worn) && player.getServerWorld().getRegistryKey() == net.minecraft.world.World.NETHER) continue;
+            UUID id = UUID.nameUUIDFromBytes(("wear:" + entry.data.id() + ":" + slot).getBytes(StandardCharsets.UTF_8));
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 92.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            if (slot >= 9) {
+                int hotbar = 8;
+                for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+                return List.of(new NativeTaskCandidate(candidate, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(hotbar))));
+            }
+            if (body.wearDestination(slot).isEmpty()) continue;
+            return List.of(new NativeTaskCandidate(candidate, "native_equip", Map.of("slot", String.valueOf(slot), "swap", "true")));
+        }
+        return null;
+    }
+
+    /** How long after a fight that could not close in a hunter makes its own way to the runner instead. */
+    private static final int STALLED_FIGHT = 20 * 30;
 
     /**
-     * The next piece of iron armour a kitted hunter can make from the iron ingots it holds, at a crafting table, or
-     * null when it has the iron for none it lacks. A slot already holding iron or better is not made again.
+     * A way made to {@code at}: where it is two or more blocks up, a walk to its foot and a pillar of its own filler
+     * blocks up beside it; otherwise the run's own route builder (bridges, stairs and pillars of its own blocks, digging
+     * through), to within two blocks of it. Null when there is none, and the fight is tried again.
+     */
+    private List<NativeTaskCandidate> wayTo(Entry entry, NativePlayerBody body, BlockPos at) {
+        if (!worldEditsEnabled()) return null;
+        var player = body.entity();
+        BlockPos feet = player.getBlockPos();
+        double dx = at.getX() + 0.5 - player.getX(), dz = at.getZ() + 0.5 - player.getZ();
+        int rise = at.getY() - feet.getY();
+        if (rise >= 2) {
+            UUID climbId = UUID.nameUUIDFromBytes(("climb:" + entry.data.id() + ":" + feet.asLong()).getBytes(StandardCharsets.UTF_8));
+            var climb = new dev.kindred.core.TaskPreferences.Candidate(climbId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
+                    dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            if (dx * dx + dz * dz > 2.5 * 2.5) {
+                // To the foot of where it is up: as near below it as it can walk.
+                return List.of(new NativeTaskCandidate(climb, "native_goto", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                        "z", String.valueOf(at.getZ()), "range", "2", "partial", "true", "sprint", "true")));
+            }
+            // At its foot: up a pillar of its own filler blocks, as a player climbs to someone on a ledge.
+            var world = player.getServerWorld();
+            if (player.isOnGround() && world.getBlockState(feet.up(2)).getCollisionShape(world, feet.up(2)).isEmpty()) {
+                var inventory = player.getInventory();
+                for (int slot = 0; slot < 36; slot++) {
+                    var stack = inventory.getStack(slot);
+                    if (stack.isEmpty() || !dev.kindred.core.match.PursuitBlock.FILLERS.contains(Registries.ITEM.getId(stack.getItem()).toString())) continue;
+                    if (slot >= 9) {
+                        int hotbar = 8;
+                        for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+                        return List.of(new NativeTaskCandidate(climb, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(hotbar))));
+                    }
+                    return List.of(new NativeTaskCandidate(climb, "native_pillar", Map.of("x", String.valueOf(feet.getX()), "y", String.valueOf(feet.getY()),
+                            "z", String.valueOf(feet.getZ()), "slot", String.valueOf(slot))));
+                }
+            }
+        }
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        var task = entry.campaign.buildRoute(body, at, p -> p.getSquaredDistance(at) <= 4, true, "Make a way to the runner");
+        if (task.isEmpty()) return null;
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("way:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.campaignTasks.clear();
+        entry.campaignTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /** A piece of a hunter's gear: the item, what it is made of, and how many of that. */
+    private record GearPiece(net.minecraft.item.Item item, net.minecraft.item.Item material, int count) { }
+
+    /**
+     * The gear a hunter makes as the hunt goes on, best first (M-02b): a diamond sword, then diamond armour, from the
+     * diamonds it holds; then iron armour, best protection for its iron first. Nothing is made that it already has as
+     * good or better.
+     */
+    private static final List<GearPiece> HUNTER_GEAR = List.of(
+            new GearPiece(Items.DIAMOND_SWORD, Items.DIAMOND, 2),
+            new GearPiece(Items.DIAMOND_CHESTPLATE, Items.DIAMOND, 8), new GearPiece(Items.DIAMOND_LEGGINGS, Items.DIAMOND, 7),
+            new GearPiece(Items.DIAMOND_HELMET, Items.DIAMOND, 5), new GearPiece(Items.DIAMOND_BOOTS, Items.DIAMOND, 4),
+            new GearPiece(Items.IRON_CHESTPLATE, Items.IRON_INGOT, 8), new GearPiece(Items.IRON_LEGGINGS, Items.IRON_INGOT, 7),
+            new GearPiece(Items.IRON_HELMET, Items.IRON_INGOT, 5), new GearPiece(Items.IRON_BOOTS, Items.IRON_INGOT, 4));
+
+    /**
+     * The next piece of gear a kitted hunter can make from the diamonds or iron ingots it holds, at a crafting table, or
+     * null when it has the makings of none it lacks. A slot already holding as good or better is not made again, and a
+     * diamond sword only where it has none. Three diamonds are kept back while it has no diamond pickaxe.
      */
     private List<NativeTaskCandidate> hunterArmour(Entry entry, NativePlayerBody body) {
         var player = body.entity();
-        int iron = player.getInventory().count(Items.IRON_INGOT);
-        for (var piece : HUNTER_ARMOUR) {
-            var slot = player.getPreferredEquipmentSlot(new ItemStack(piece.getKey()));
-            var worn = player.getEquippedStack(slot);
-            boolean covered = worn.getItem() instanceof net.minecraft.item.ArmorItem armour
-                    && armour.getProtection() >= ((net.minecraft.item.ArmorItem) piece.getKey()).getProtection();
-            if (covered || player.getInventory().count(piece.getKey()) > 0 || iron < piece.getValue()) continue;
+        var inventory = player.getInventory();
+        // Three diamonds kept for a diamond pickaxe while it has none: its goal's obsidian needs one.
+        boolean pickaxe = inventory.count(Items.DIAMOND_PICKAXE) > 0 || inventory.count(Items.NETHERITE_PICKAXE) > 0;
+        for (var piece : HUNTER_GEAR) {
+            int kept = piece.material() == Items.DIAMOND && !pickaxe ? 3 : 0;
+            if (inventory.count(piece.material()) < piece.count() + kept || inventory.count(piece.item()) > 0) continue;
+            if (piece.item() instanceof net.minecraft.item.ArmorItem made) {
+                var worn = player.getEquippedStack(player.getPreferredEquipmentSlot(new ItemStack(made)));
+                if (worn.getItem() instanceof net.minecraft.item.ArmorItem armour && armour.getProtection() >= made.getProtection()) continue;
+            } else if (inventory.count(Items.NETHERITE_SWORD) > 0) {
+                continue;
+            }
             if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
-            var task = entry.campaign.craftAtTable(body, net.minecraft.registry.Registries.ITEM.getId(piece.getKey()).getPath());
+            var task = entry.campaign.craftAtTable(body, net.minecraft.registry.Registries.ITEM.getId(piece.item()).getPath());
             if (task.isEmpty()) return null;
             var t = task.get();
             UUID id = UUID.nameUUIDFromBytes(("gear:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
@@ -13878,6 +14193,8 @@ final class PlayerRuntime {
      * home it still keeps its hunters from.
      */
     private static final double EVADE = 20, CAUGHT = 3.2, HOME_KEPT = 160;
+    /** How much further than {@link #EVADE} a runner already moving off keeps going before it counts itself clear. */
+    private static final double CLEAR_MARGIN = 8;
 
     /**
      * The home a chased player keeps its pursuers from (M-02c): its first base in this world, else the bed its spawn
@@ -13909,10 +14226,13 @@ final class PlayerRuntime {
                 .filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT && m.runners().contains(player.getUuid())).orElse(null);
         if (match == null) return null;
         ServerPlayerEntity hunter = null;
+        // Once moving off, it keeps going until well clear, not just past the edge where it started: its goal would walk
+        // it straight back toward a hunter it has only just left (found in the head start fixture, M-02b).
+        double reach = evadingTo.containsKey(player.getUuid()) ? EVADE + CLEAR_MARGIN : EVADE;
         for (UUID other : match.joined()) {
             if (!match.hunter(other) || !match.playing(other)) continue;
             var seen = server.getPlayerManager().getPlayer(other);
-            if (seen == null || !seen.isAlive() || seen.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(seen) > EVADE * EVADE
+            if (seen == null || !seen.isAlive() || seen.getServerWorld() != player.getServerWorld() || player.squaredDistanceTo(seen) > reach * reach
                     || !player.canSee(seen)) continue;
             if (hunter == null || player.squaredDistanceTo(seen) < player.squaredDistanceTo(hunter)) hunter = seen;
         }
@@ -13923,11 +14243,16 @@ final class PlayerRuntime {
         UUID taskId = UUID.nameUUIDFromBytes(("evade:" + match.id() + ":" + player.getUuid()).getBytes(StandardCharsets.UTF_8));
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-        if (player.distanceTo(hunter) <= CAUGHT) {
-            // Caught: no getting away from a hunter at arm's length, so it fights.
+        if (player.distanceTo(hunter) <= CAUGHT && matches.mayAttack(player.getUuid(), hunter.getUuid())) {
+            // Caught: no getting away from a hunter at arm's length, so it fights. Not while the match lets nobody strike
+            // (the runners' head start): the hunter is held, so it runs (found in a live hunt, M-02b).
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, hunter), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", hunter.getUuid().toString(), "slot", String.valueOf(slot))));
         }
+        // Blocking pursuit (M-02b): going through a way one block wide with the hunter coming along it, the gap behind
+        // is shut with two of its own filler blocks before it runs on.
+        var shut = shutBehind(body, hunter, candidate);
+        if (shut != null) return shut;
         BlockPos target = awayFrom(entry, player, hunter);
         var last = evadingTo.get(player.getUuid());
         if (last == null || last.getSquaredDistance(target) > 16) {
@@ -13938,6 +14263,66 @@ final class PlayerRuntime {
         }
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
                 "z", String.valueOf(target.getZ()), "range", "3", "partial", "true", "sprint", "true")));
+    }
+
+    /** How many cells each runner has chosen to shut behind it, for its log (M-02b). */
+    private final Map<UUID, Integer> shutWays = new HashMap<>();
+    /** The cell each runner last chose to shut, so a choice made again each look is logged and counted once. */
+    private final Map<UUID, BlockPos> shutting = new HashMap<>();
+
+    int shutWays(UUID player) {
+        requireThread();
+        return shutWays.getOrDefault(player, 0);
+    }
+
+    /**
+     * The next block a fleeing player puts into the one-wide gap behind it, toward {@code threat} (M-02b), as
+     * {@link dev.kindred.core.match.PursuitBlock} picks the gap: a filler block of its own from its hotbar, readied there
+     * first if it is further in. Null when the way behind is not one wide, the threat is not coming along it, it has no
+     * filler, or the world's edit policy does not let it place there.
+     */
+    private List<NativeTaskCandidate> shutBehind(NativePlayerBody body, ServerPlayerEntity threat, dev.kindred.core.TaskPreferences.Candidate candidate) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (!player.isOnGround() || !worldEditsEnabled()) return null;
+        BlockPos feet = player.getBlockPos();
+        var ground = new dev.kindred.core.match.PursuitBlock.Ground() {
+            @Override public boolean open(dev.kindred.core.construction.Pos cell) {
+                BlockPos at = new BlockPos(cell.x(), cell.y(), cell.z());
+                var state = world.getBlockState(at);
+                return state.getCollisionShape(world, at).isEmpty() && state.getFluidState().isEmpty();
+            }
+            @Override public boolean solid(dev.kindred.core.construction.Pos cell) {
+                BlockPos at = new BlockPos(cell.x(), cell.y(), cell.z());
+                return world.getBlockState(at).isSolidBlock(world, at);
+            }
+        };
+        var cells = dev.kindred.core.match.PursuitBlock.behind(new dev.kindred.core.construction.Pos(feet.getX(), feet.getY(), feet.getZ()),
+                threat.getX() - player.getX(), threat.getZ() - player.getZ(), ground);
+        if (cells.isEmpty()) return null;
+        // The gap's first open cell: the lower one, then the one above it.
+        var cell = cells.stream().filter(ground::open).findFirst().orElse(null);
+        if (cell == null) return null;
+        BlockPos at = new BlockPos(cell.x(), cell.y(), cell.z());
+        if (!mayEditAt(player, at)) return null;
+        int slot = -1;
+        var inventory = player.getInventory();
+        for (int s = 0; s < 36 && slot < 0; s++) {
+            var stack = inventory.getStack(s);
+            if (!stack.isEmpty() && dev.kindred.core.match.PursuitBlock.FILLERS.contains(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString())) slot = s;
+        }
+        if (slot < 0) return null;
+        if (slot >= 9) {
+            int hotbar = 8;
+            for (int h = 0; h < 9; h++) if (inventory.getStack(h).isEmpty()) { hotbar = h; break; }
+            return List.of(new NativeTaskCandidate(candidate, "native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(hotbar))));
+        }
+        if (!at.equals(shutting.put(player.getUuid(), at.toImmutable()))) {
+            shutWays.merge(player.getUuid(), 1, Integer::sum);
+            KindredMod.LOGGER.info("{} shuts the way behind it from {}: a block at {}", player.getName().getString(), threat.getName().getString(), at.toShortString());
+        }
+        return List.of(new NativeTaskCandidate(candidate, "native_place", Map.of("x", String.valueOf(at.getX()), "y", String.valueOf(at.getY()),
+                "z", String.valueOf(at.getZ()), "slot", String.valueOf(slot))));
     }
 
     /**
@@ -13977,6 +14362,129 @@ final class PlayerRuntime {
             }
         }
         return null;
+    }
+
+    /**
+     * The build being voted on (M-04): when it changes, everyone in the round is told whose it is and where to stand, and
+     * each human voter is offered its scores; an AI voter standing on its marked spot with the build in sight scores what
+     * it sees there. A build is voted on only while it is shown.
+     */
+    private void showBuild(dev.kindred.core.match.MatchRegistry.Match match, dev.kindred.core.match.BuildBattle battle) {
+        var arena = arenas.get(match.id());
+        var showing = dev.kindred.core.match.MatchRegistry.showing(match, server.getTicks()).orElse(null);
+        if (arena == null || showing == null) return;
+        var spot = arena.spots().get(showing);
+        if (!showing.equals(showingNow.put(match.id(), showing))) {
+            String name = playerName(showing);
+            KindredMod.LOGGER.info("Build battle {}: showing {}'s build", dev.kindred.core.match.MatchRegistry.shortId(match.id()), name);
+            for (UUID voter : match.invited()) {
+                var player = server.getPlayerManager().getPlayer(voter);
+                if (player == null) continue;
+                presenter.show(voter, new dev.kindred.core.match.MatchPresentation.Title(name + "'s build",
+                        voter.equals(showing) ? "Everyone else votes on it" : "Stand on the gold mark and vote", dev.kindred.core.match.MatchPresentation.Cue.COUNT));
+                if (voter.equals(showing) || entryForPlayer(voter) != null) continue;
+                var line = Text.literal("Vote on " + name + "'s build (stand on the gold mark at " + spot.x() + " " + spot.y() + " " + spot.z() + "): ");
+                for (int score = 1; score <= 5; score++) {
+                    String vote = "/aiplayer match vote " + name + " " + score;
+                    line.append(Text.literal("[" + score + "] ").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
+                            .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, vote))));
+                }
+                player.sendMessage(line, false);
+            }
+        }
+        var plot = battle.plot(showing).orElse(null);
+        if (plot == null) return;
+        for (UUID voter : match.joined()) {
+            if (voter.equals(showing) || !match.playing(voter) || battle.voted(voter, showing)) continue;
+            Entry entry = entryForPlayer(voter);
+            var player = server.getPlayerManager().getPlayer(voter);
+            if (entry == null || player == null) continue;
+            if (!atSpot(player, spot) || !seesPlot(player, plot)) continue;
+            int score = dev.kindred.core.match.BuildBattle.judge(plotBlocks(player.getServerWorld(), plot), battle.theme());
+            battle.vote(voter, showing, score);
+            toured.computeIfAbsent(match.id(), id -> new ArrayList<>()).add(new TourVote(voter, showing, player.getBlockPos().toImmutable(), score));
+            KindredMod.LOGGER.info("Build battle {}: {} gives {}'s build {}, seen from its spot", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                    playerName(voter), playerName(showing), score);
+        }
+    }
+
+    /** An AI voter's vote in a round's tour: who, on whose build, where it stood, the score. For fixtures. */
+    record TourVote(UUID voter, UUID builder, BlockPos stood, int score) { }
+    private final Map<UUID, List<TourVote>> toured = new HashMap<>();
+
+    List<TourVote> tourVotesForTest(UUID matchId) {
+        requireThread();
+        return List.copyOf(toured.getOrDefault(matchId, List.of()));
+    }
+
+    /** AI voters waiting for their last action to settle before they go into adventure for the vote (M-04). */
+    private final Set<UUID> toAdventure = new java.util.LinkedHashSet<>();
+
+    /**
+     * Each tick: an AI voter whose last action has settled goes into adventure for the vote, walking only. One whose round
+     * has moved on is let go.
+     */
+    private void settleVoters() {
+        for (var it = toAdventure.iterator(); it.hasNext(); ) {
+            Entry entry = entries.get(it.next());
+            var player = entry == null || entry.nativeBody == null ? null : entry.nativeBody.entity();
+            var match = player == null ? null : matches.active(player.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER)
+                    .orElse(null);
+            if (match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) {
+                it.remove();
+                continue;
+            }
+            if (entry.runner != null && runnerBusy(entry) || entry.nativeActionPending || !entry.nativeActionFlush.isDone()
+                    || !entry.activityFlush.isDone()) continue;
+            it.remove();
+            entry.nativeBody.allowCreative(false);
+            entry.nativeBody.allowAdventure(true);
+            player.getInventory().clear();
+            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+        }
+    }
+
+    /** Standing on (or by) a viewing spot. */
+    private static boolean atSpot(ServerPlayerEntity player, dev.kindred.core.construction.Pos spot) {
+        double dx = player.getX() - (spot.x() + 0.5), dz = player.getZ() - (spot.z() + 0.5);
+        return dx * dx + dz * dz <= 2.5 * 2.5 && Math.abs(player.getY() - spot.y()) <= 1.5;
+    }
+
+    /** Whether a player sees into a plot from where it stands: its line of sight to the plot's middle ends on the plot. */
+    private static boolean seesPlot(ServerPlayerEntity player, dev.kindred.core.match.BuildBattle.Plot plot) {
+        var o = plot.origin();
+        var middle = new Vec3d(o.x() + dev.kindred.core.match.BuildBattle.PLOT / 2.0, o.y() + 1.5, o.z() + dev.kindred.core.match.BuildBattle.PLOT / 2.0);
+        var hit = player.getServerWorld().raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), middle,
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        if (hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS) return true;
+        var at = hit.getBlockPos();
+        return plot.contains(new dev.kindred.core.construction.Pos(at.getX(), at.getY(), at.getZ())) || at.getY() == o.y()
+                && at.getX() >= o.x() && at.getX() < o.x() + dev.kindred.core.match.BuildBattle.PLOT
+                && at.getZ() >= o.z() && at.getZ() < o.z() + dev.kindred.core.match.BuildBattle.PLOT;
+    }
+
+    /**
+     * An AI voter in a build battle's vote (M-04): to the marked spot in front of the build being shown. Null outside a
+     * vote; none when it is there, or the build shown is its own.
+     */
+    private List<NativeTaskCandidate> voteCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var match = matches.active(player.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER
+                && m.state() == dev.kindred.core.match.MatchRegistry.State.VOTING).orElse(null);
+        if (match == null) return null;
+        var arena = arenas.get(match.id());
+        var showing = dev.kindred.core.match.MatchRegistry.showing(match, server.getTicks()).orElse(null);
+        if (arena == null || showing == null) return List.of();
+        var spot = arena.spots().get(showing);
+        // Its own build shown: it stands back by the spot all the same, as a builder does.
+        if (atSpot(player, spot)) return List.of();
+        UUID taskId = UUID.nameUUIDFromBytes(("vote:" + match.id() + ":" + player.getUuid() + ":" + showing).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 97.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(spot.x()), "y", String.valueOf(spot.y()),
+                "z", String.valueOf(spot.z()), "range", "1", "partial", "true", "sprint", "true")));
     }
 
     /** Once a second: each running race's runners checked for the splits vanilla has given them since. */
@@ -14187,6 +14695,11 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
         private int walksFailed;
+        /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
+        private long fightStalledAt = Long.MIN_VALUE / 2;
+        /** When a walk last failed, and where and when a hunter last saw a runner (M-02a). */
+        private long walkFailedAt = Long.MIN_VALUE / 2, preySeenAt = Long.MIN_VALUE / 2;
+        private BlockPos preySeen;
         /** The shore its way out of deep water makes for, and those it could not reach, until when each is passed over. */
         private BlockPos waterEscapeShore;
         private final Map<Long, Long> unreachedShores = new HashMap<>();
