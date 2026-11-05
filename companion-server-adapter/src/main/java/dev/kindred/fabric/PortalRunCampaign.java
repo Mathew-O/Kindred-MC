@@ -1631,7 +1631,10 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": out of the boat";
             return Optional.of(new Task("native_boat", Map.of("mode", "land"), "Out of the boat and take it back"));
         }
-        Optional<Task> room = makeRoom(player);
+        // Not while a mob attacks: the drop is refused until it has fought back, and asked for again and again it kept the
+        // plan from the fight. On 404 in E-40's iteration 6 (`e40a6-cb4a545`) Echo's drop of surplus was refused 17 times
+        // running while a zombie killed it, and Kindred died so too (F-25c4bk).
+        Optional<Task> room = threats(player).isEmpty() && creeperAfter(player) == null ? makeRoom(player) : Optional.empty();
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
@@ -2124,11 +2127,22 @@ final class PortalRunCampaign {
             Items.FEATHER, Items.SMOOTH_BASALT, Items.WHEAT_SEEDS);
 
     /**
+     * Surplus dropped, by its item: where and when, and how many it held after (F-25c4bi). In a shelter a block wide the
+     * toss falls back at its feet and is picked up again once its pickup delay is over.
+     */
+    private final Map<Item, long[]> droppedSurplus = new HashMap<>();
+
+    /**
      * A full inventory cannot take crafted tools or a diamond; drop surplus where the player stands, as a person
-     * would. Items dropped stay in the world.
+     * would. Items dropped stay in the world. A drop that came straight back, picked up again where it fell, is not
+     * thrown again from about there for a minute: in a sealed night shelter on 20261030 in E-40's iteration 6
+     * (`e40a6-cb4a545`) Sol threw the same stack of cobbled deepslate at the wall and picked it up again 607 times,
+     * nine stuck spells, where it had only to wait for daylight (F-25c4bi).
      */
     private Optional<Task> makeRoom(ServerPlayerEntity player) {
         var inventory = player.getInventory();
+        BlockPos feet = player.getBlockPos();
+        droppedSurplus.values().removeIf(d -> lastTick - d[0] > 1200);
         int free = 0, stoneTotal = 0, gravelTotal = 0;
         for (int s = 0; s < 36; s++) {
             ItemStack stack = inventory.getStack(s);
@@ -2145,9 +2159,16 @@ final class PortalRunCampaign {
             int surplus = JUNK.contains(stack.getItem()) && !wanted.contains(stack.getItem()) ? stack.getCount()
                     : stoneLike(stack) ? Math.min(stack.getCount(), stoneTotal - 64)
                     : stack.isOf(Items.GRAVEL) ? Math.min(stack.getCount(), gravelTotal - 8) : 0;
+            long[] dropped = droppedSurplus.get(stack.getItem());
+            // It came back; or it is not yet known whether it will: thrown a moment ago, it lies at its feet until its
+            // pickup delay is over, and another stack of it thrown meanwhile came back too (F-25c4bi's first runs).
+            if (dropped != null && BlockPos.fromLong(dropped[1]).getSquaredDistance(feet) <= 3 * 3
+                    && (ItemMoves.count(inventory, stack.getItem()) > dropped[2] || lastTick - dropped[0] < 100)) surplus = 0;
             if (surplus > bestCount) { bestCount = surplus; bestSlot = s; }
         }
         if (bestSlot < 0) return Optional.empty();
+        Item item = inventory.getStack(bestSlot).getItem();
+        droppedSurplus.put(item, new long[] {lastTick, feet.asLong(), ItemMoves.count(inventory, item) - bestCount});
         return Optional.of(new Task("native_discard", Map.of("slot", String.valueOf(bestSlot), "count", String.valueOf(bestCount)),
                 "Drop surplus " + Registries.ITEM.getId(inventory.getStack(bestSlot).getItem()).getPath().replace('_', ' ')));
     }

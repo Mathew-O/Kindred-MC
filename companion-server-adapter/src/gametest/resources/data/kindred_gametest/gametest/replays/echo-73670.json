@@ -1,0 +1,342 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 73670,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    41,
+    34,
+    -119
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.494937199392375,
+    8.0,
+    16.990900664248485
+  ],
+  "yaw": 551.6373,
+  "pitch": 18.159489,
+  "health": 13.925001,
+  "food": 5,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:jungle_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 14
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:moss_carpet",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:amethyst_block",
+        "count": 23
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 9
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:amethyst_shard",
+        "count": 2
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 5
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 5
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 4
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:jungle_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 1670,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: inventory full - Drop surplus raw copper",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[11:48:10] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:10] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:10] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]",
+    "[11:48:11] [Server thread/INFO]: Echo native_discard COMPLETED [Drop surplus cobblestone]",
+    "[11:48:12] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[11:48:12] [Server thread/INFO]: Echo died at 57, 42, -103: Echo was slain by Zombie (tick 73670, day, under cover, hunger 4, armour 6, holding stone_sword, a shield; doing \"Back off from zombie the way it came\" in \"Iron: inventory full - Drop surplus raw copper\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}
