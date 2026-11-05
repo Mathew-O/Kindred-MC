@@ -80,6 +80,17 @@ final class PlayerMemoryStore implements AutoCloseable {
         }
     }
 
+    /**
+     * The ranch the player chose for itself by its base (M-01a): its pen's north-west post, the kind it keeps there, and
+     * whether the ranch has run its course. A file from before has none.
+     */
+    record Pen(String dimension, int x, int y, int z, String kind, boolean complete) {
+        /** The same pen, its ranch run. */
+        Pen finished() {
+            return new Pen(dimension, x, y, z, kind, true);
+        }
+    }
+
     /** The player's bases in one world, oldest first, and the place the first was sited by. Game thread only. */
     static final class Bases {
         String player = "";
@@ -89,6 +100,8 @@ final class PlayerMemoryStore implements AutoCloseable {
         List<Base> built = new ArrayList<>();
         /** Its trading hall (E-45d), or none. */
         Hall hall;
+        /** Its own ranch (M-01a), or none. */
+        Pen ranch;
     }
 
     /**
