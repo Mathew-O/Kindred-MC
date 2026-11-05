@@ -16,6 +16,26 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, rung a, batch 8: the portal lit from out of reach (F-25c4bh), 505's stone search — 5 November 2026 (`claude/e40-ladder-8-1105`)
+
+- **The lighting fixture** (F-25c4bh, [evidence](evidence/F-25c4bh.md)), staged, on the cast route:
+  - With `ignite` as on `5a48c43`: fails 3 of 3. Refused as out of reach 19, 21 and 19 times, then the watchdog took
+    it off its field ("dig toward elsewhere", "climb away", "jump down from the ledge"), and it died below it.
+  - With the fix: passes 3 of 3, never refused, the portal lit from the frame's stand.
+  - Its first form, with the mined route's kit (obsidian and a diamond pickaxe), passed on `5a48c43`: that route makes
+    its flint and steel before it builds the frame.
+- **505's stone search, not reproduced.** Sol in iteration 5, 29 spells on the side of a cavern in an aquifer's thin
+  wall: "Explore north for stone", "Tunnel for stone: advance" and "Dig for stone: step down", a block each way, over
+  11,000 times.
+  - A fixture from the seed's fresh terrain (x 4 to 30, y 26 to 58, z -58 to -34, read offline), Sol's 17 dug cells
+    opened and the player where it went to and fro: it had its 18 cobblestone in under 1,000 ticks on the current code.
+  - Again with the aquifer's water let in through the dug cells first: the same, 977 ticks.
+  - The run's own ground had changed in ways its console does not record. Neither the fixture nor a fix is kept.
+  - `tools/eval/run.py --keep-world` now keeps each run's region files (`world-kept/`, diagnosis only), so the next such
+    place can be staged from its own ground.
+- **The trip-down class** (`NativeTripDownGameTests`): 6 of 6 in each of two runs on this branch.
+- **Build:** see the PR's CI; the local `bash ./gradlew build` count goes in this batch's handoff.
+
 ## E-40, rung a, batch 7: 303's aquifer ledge (F-25c4bf), the sea bed (F-25c4bg), the flooded stair (F-25c4ay) — 5 November 2026 (`claude/e40-ladder-7-1105`)
 
 - **The evaluation, `e40a5-5a48c43` (both fixes, on `6effd66`):** ten seeds, earned, nothing else on the cores.

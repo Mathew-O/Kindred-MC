@@ -4765,6 +4765,15 @@ final class PortalRunCampaign {
             return anywhere < 0 ? Optional.empty() : Optional.of(swapToHotbar(body, anywhere, "Portal: ready flint and steel"));
         }
         BlockPos base = portalSite.at(1, 0);
+        // Out of reach of the frame's opening, as after a walk away for flint: back to the frame's stand first. On 505 in
+        // E-40's iteration 4 (`e40a4-c237a6e`) Sol cast its frame, walked off to gravel for flint, made its flint and steel
+        // there, and tried to light the portal from where it stood, 192 times refused as out of reach (F-25c4bh). Not a
+        // "Portal" walk: one of those that fails gives up the site, and this frame is already standing.
+        var world = body.entity().getServerWorld();
+        BlockPos opening = world.getBlockState(base).isOf(Blocks.OBSIDIAN) ? base.up() : base;
+        if (body.entity().getEyePos().squaredDistanceTo(Vec3d.ofCenter(opening)) > 4.5 * 4.5) {
+            return Optional.of(go(portalSite.stand(), 0.5, false, "Back to its portal frame to light it"));
+        }
         return Optional.of(new Task("native_ignite_portal", coords(base, Map.of("slot", String.valueOf(slot))), "Portal: light it"));
     }
 
