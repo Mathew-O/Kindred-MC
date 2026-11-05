@@ -111,14 +111,20 @@ public final class MatchRegistry {
     public static final int COUNTDOWN_TICKS = 60;
     /** A duel's time: five minutes, then a draw. */
     public static final int DUEL_TICKS = Mode.DUEL.ticks;
-    /** A build battle's vote: thirty seconds. */
+    /** A build battle's vote with two builders: thirty seconds. */
     public static final int VOTE_TICKS = 600;
+    /** How long each build is shown for the vote, one after another in plot order (M-04): fifteen seconds. */
+    public static final int SHOW_TICKS = 300;
     /** Ended matches remembered for their results. */
     static final int ENDED_KEPT = 16;
 
     private final Map<UUID, Match> matches = new LinkedHashMap<>();
     /** A match's own time where it was given one (a build battle's build time), instead of its mode's. */
     private final Map<UUID, Integer> limits = new LinkedHashMap<>();
+    /** A manhunt's head start for its runners, in ticks from its start, where it was given one. */
+    private final Map<UUID, Integer> headStarts = new LinkedHashMap<>();
+    /** The clock's last tick, for the head start. */
+    private long now;
 
     /** A match proposed between its players, none of them joined yet: two for a duel, one to eight runners for a speedrun. */
     public Result propose(Mode mode, List<UUID> invited) {
@@ -128,6 +134,21 @@ public final class MatchRegistry {
 
     /** A manhunt proposed: its runners, and the hunters after them, two to eight players in all. */
     public Result proposeManhunt(List<UUID> runners, List<UUID> hunters) {
+        return proposeManhunt(runners, hunters, 0);
+    }
+
+    /**
+     * A manhunt proposed with the runners' head start: {@code headStartTicks} from the start in which the hunters are held
+     * and nobody may strike, zero to two minutes.
+     */
+    public Result proposeManhunt(List<UUID> runners, List<UUID> hunters, int headStartTicks) {
+        if (headStartTicks < 0 || headStartTicks > 20 * 120) return Result.refused("A head start is from none to two minutes");
+        var result = proposeHunt(runners, hunters);
+        if (headStartTicks > 0) result.match().ifPresent(match -> headStarts.put(match.id(), headStartTicks));
+        return result;
+    }
+
+    private Result proposeHunt(List<UUID> runners, List<UUID> hunters) {
         if (runners.isEmpty() || hunters.isEmpty()) return Result.refused("A manhunt has at least one runner and one hunter");
         var invited = new ArrayList<UUID>(runners);
         invited.addAll(hunters);
@@ -192,6 +213,7 @@ public final class MatchRegistry {
 
     /** The clock: a countdown that is over starts the fight; a fight whose time is up is a draw. The matches that changed. */
     public List<Match> tick(long tick) {
+        now = tick;
         var changed = new ArrayList<Match>();
         for (var entry : matches.entrySet()) {
             Match match = entry.getValue();
@@ -200,7 +222,7 @@ public final class MatchRegistry {
                 match = match.running(limit > 0 ? tick + limit : Long.MAX_VALUE);
             } else if (match.state() == State.RUNNING && limit > 0 && tick >= match.endsAt() && match.mode() == Mode.BUILDER) {
                 // The build's time is up: on to the vote, which the players' votes decide (decide).
-                match = match.voting(tick + VOTE_TICKS);
+                match = match.voting(tick + voteTicks(match));
             } else if (match.state() == State.RUNNING && limit > 0 && tick >= match.endsAt()) {
                 match = match.ended(null, Set.of(), "Time ran out: a draw");
             } else {
@@ -319,10 +341,13 @@ public final class MatchRegistry {
         }
     }
 
-    /** Only players still in the same running duel, or a runner and a hunter of the same manhunt, may attack one another. */
+    /**
+     * Only players still in the same running duel, or a runner and a hunter of the same manhunt past its runners' head
+     * start, may attack one another.
+     */
     public boolean mayAttack(UUID attacker, UUID target) {
         if (attacker == null || target == null || attacker.equals(target)) return false;
-        return running(attacker).filter(match -> match.mode().pvp && match.playing(target)
+        return running(attacker).filter(match -> match.mode().pvp && match.playing(target) && !heldBack(match, now)
                 && (match.mode() != Mode.MANHUNT || match.runners().contains(attacker) != match.runners().contains(target))).isPresent();
     }
 
@@ -336,6 +361,15 @@ public final class MatchRegistry {
         if (player == null || owner == null || player.equals(owner)) return false;
         return running(player).filter(match -> match.mode().pvp && match.participant(owner)
                 && (match.mode() != Mode.MANHUNT || match.runners().contains(player) != match.runners().contains(owner))).isPresent();
+    }
+
+    /** A manhunt's head start in ticks, zero for none. */
+    public int headStart(UUID matchId) { return headStarts.getOrDefault(matchId, 0); }
+
+    /** Whether a running manhunt is still in its runners' head start at {@code tick}: its hunters held, nobody striking. */
+    public boolean heldBack(Match match, long tick) {
+        int head = headStarts.getOrDefault(match.id(), 0);
+        return head > 0 && match.state() == State.RUNNING && tick < match.countdownEnds() + head;
     }
 
     /** The running match {@code player} is still in. */
@@ -380,6 +414,20 @@ public final class MatchRegistry {
         Match ended = match.ended(winner, winners, how);
         matches.put(match.id(), ended);
         return ended;
+    }
+
+    /** A build battle's whole vote: each build shown in turn for {@link #SHOW_TICKS}. */
+    public static int voteTicks(Match match) { return Math.max(1, match.invited().size()) * SHOW_TICKS; }
+
+    /**
+     * The builder whose build is being voted on at {@code tick}, in plot order (the order the builders were invited), or
+     * empty outside the vote.
+     */
+    public static Optional<UUID> showing(Match match, long tick) {
+        if (match.state() != State.VOTING || match.invited().isEmpty()) return Optional.empty();
+        long start = match.endsAt() - voteTicks(match);
+        int index = (int) Math.max(0, Math.min(match.invited().size() - 1, (tick - start) / SHOW_TICKS));
+        return Optional.of(match.invited().get(index));
     }
 
     /** A match's own time limit in ticks, or its mode's. */

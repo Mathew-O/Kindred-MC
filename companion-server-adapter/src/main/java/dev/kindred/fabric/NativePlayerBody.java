@@ -130,6 +130,7 @@ final class NativePlayerBody implements BodyAdapter {
     /** What this player can know of others' health from the hits it saw land (E-41a); never the server's number. */
     private final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
     private boolean creativeAllowed;
+    private boolean adventureAllowed;
     /**
      * Whether this player may attack another player (M-00a, D7): only a joined participant of a running match it is in.
      * The runtime sets it; until then every player target is refused.
@@ -2480,6 +2481,8 @@ final class NativePlayerBody implements BodyAdapter {
 
     private boolean execute(ActionLease lease, Intent intent, BlockPos target, Runnable action) {
         requireThread();
+        // In adventure (a build battle's vote) it may only walk: a place or a break begun in creative does not finish.
+        if (player.interactionManager.getGameMode() == GameMode.ADVENTURE && intent != Intent.MOVE) return false;
         return current(lease) && gate.permits(lease, intent, target)
                 && arbiter.executeIfCurrent(lease, action);
     }
@@ -2488,8 +2491,14 @@ final class NativePlayerBody implements BodyAdapter {
         var mode = player.interactionManager.getGameMode();
         return lease != null && Objects.equals(controls, lease) && arbiter != null
                 && arbiter.isCurrent(lease) && player.isAlive() && !player.isRemoved()
-                && (mode == GameMode.SURVIVAL || mode == GameMode.CREATIVE && creativeAllowed);
+                && (mode == GameMode.SURVIVAL || mode == GameMode.CREATIVE && creativeAllowed || mode == GameMode.ADVENTURE && adventureAllowed);
     }
+
+    /**
+     * Whether the body may act in adventure mode: only while the runtime has it vote in a build battle (M-04), and then
+     * only to walk the arena to each build ({@link #execute} refuses anything else in adventure).
+     */
+    void allowAdventure(boolean allowed) { requireThread(); adventureAllowed = allowed; }
 
     /**
      * Whether the body may act in creative: only while the runtime has it build in a build battle (M-04a), the one mode

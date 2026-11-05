@@ -16,6 +16,63 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## M-02 and M-04: manhunts and build battles, 2026-11-05
+
+Branches `claude/modes-1105-2` (M-02) and `claude/modes-1105-3` (M-04, on top of it), from M-00's merge `cdec035`. M-04 and M-04a closed; M-02a, M-02b and M-02c stay open. See [M-04](evidence/M-04.md), [M-02a](evidence/M-02a.md) and [M-02b](evidence/M-02b.md).
+
+CI's full native suite on `f2791ea` (PR #22): 546 of 550.
+- **`aHumanJoinsADuelOnlyForItselfAndIsStruckOnlyOnceItRuns` (M-00's), a fixture fault, now fixed.** Another test's AI player (Echo) stood about 30 blocks off, in no match, so it was an onlooker, as it should be. The fixture required Owen to be the only onlooker. That check retried while the duel went on, Ada killed Mira, and the forfeit it waited for never came.
+  - Reproduced by staging a bystander (Pip) in range: the old check failed exactly as in CI (Ada's four hits, Mira slain).
+  - The check now requires Owen and Pip among the onlookers, and neither duellist.
+- **Found while checking it: the world mode's save could keep an older mode.** `theWorldsModeSetsThePaceAndWhichMatchesMayBePlayed` failed 1 of 3 runs alone, reading `mode=manhunt` after Builder was chosen. Each choice was saved on its own background task, so two quick choices could finish out of order. The saves now run in order.
+  - `NativeMatchFrameworkGameTests` alone after both fixes: five runs, 7 of 7 each.
+- **The other three failures** are in code this PR does not change: the portal campaign's tree in water, the Nether portal restart, and the voice model's line in time.
+
+- **Build:** `bash ./gradlew build` green, 944 JUnit tests, none failing, 6 skipped. New: `PursuitBlockTest` (4), `BuildArenaTest` (1), and cases in `MatchRegistryTest` and `MatchPresentationTest`.
+- **Native, each new or changed fixture alone 3 of 3:**
+  - In `NativeManhuntGameTests` (8 cases):
+    - blocking pursuit;
+    - the head start (with its runner beside the hunter);
+    - diamond gear;
+    - a way up to a runner on a tower.
+  - In `NativeBuildBattleGameTests` (3 cases):
+    - the arena, the tour and the podium;
+    - library designs;
+    - a human builder's own floor.
+  - In `NativeMatchFrameworkGameTests` (7 cases): a player in its own match is no onlooker of another.
+- **The affected classes together:** 54 of 54 in one run: `NativeManhuntGameTests`, `NativeMatchGameTests`, `NativeMatchFrameworkGameTests`, `NativeBuildBattleGameTests`, `NativeAggressionGameTests`, `NativeRaidGameTests`, `NativeStorageGameTests`, `NativeVoiceGameTests`, `NativeChatAskGameTests` and `NativeBuildGameTests`.
+- **Controls**, each failing as expected:
+  - blocking pursuit taken out;
+  - the head start taken out;
+  - both of the hunter's fallbacks taken out;
+  - voting from anywhere;
+  - the library ignored;
+  - the old use rule;
+  - the onlookers' rule (in M-00b's fixture).
+- **Found by fixtures before their fixes:**
+  - The share-out promised a hunter's diamonds to the runner it was about to hunt, during the countdown.
+  - A diamond chestplate was made but never worn over iron.
+  - The pursuit block stopped at the lower half of the gap.
+  - A runner walked back toward its hunter after counting itself clear at 20 blocks (seen as a flaky head-start fixture).
+- **Found live, on ordinary clients and dev servers** (tooling in `tools/ordinary-client/`), each fixed and checked again in play:
+  - a runner fighting the held hunter through the whole head start;
+  - a hunter's stalled fight restarted every 15 seconds (50 times);
+  - a hunter walking at rock along the needle 9,435 times;
+  - a runner's sidebar showing another hunt;
+  - a human's every block on its own plot refused;
+  - an AI voter blocked for reconciliation as its game mode changed, three different ways;
+  - **a server crash** on a tied round's result for an onlooker.
+- **Live hunts** (random seeds), each in [M-02a](evidence/M-02a.md):
+  - With a human, to a result: hunt 4 (the runner fell to a zombie) and hunt 6 (felled by the AI hunter, on the fixes).
+  - AI against AI, from a fresh start:
+    - hunt 1 invalid (classes recompiled under the server);
+    - hunt 2 a result decided by the head-start bug;
+    - hunts 3 and 5 stopped: the needle loop, since fixed, then E-40's open water loop F-25c4ay.
+- **Live build battles** (flat world, monsters off), in [M-04](evidence/M-04.md):
+  - Mira (human) against Cass (AI), to the podium, on `9f2185a`.
+  - Cass against Hal (AI) with Mira looking on, a tie, the podium, on `2c67362`.
+- **Not run:** the full native suite. This task's protocol runs it before its last block.
+
 ## M-00: the game-mode and match framework, 2026-11-05
 
 Branch `claude/modes-1105`, on top of `6effd66`. It closes M-00, M-00a and M-00b; see [M-00](evidence/M-00.md).

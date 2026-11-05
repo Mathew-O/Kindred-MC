@@ -1,0 +1,25 @@
+live-server-build3.log:[05:44:22] [Server thread/INFO] (Minecraft) Mira joined the game
+live-server-build3.log:[05:44:35] [Server thread/INFO] (Kindred) Build battle Mira, Cass: starting in three seconds
+live-server-build3.log:[05:44:38] [Server thread/INFO] (Kindred) Build battle Mira, Cass: build!
+live-server-build3.log:[05:44:38] [Server thread/INFO] (Kindred) Build battle dad50ae1: Cass builds cottage of spruce at Pos[x=24, y=-60, z=7]
+live-server-build3.log:[05:44:40] [Server thread/INFO] (Minecraft) [Rcon: Teleported Mira to 9.500000, -60.000000, 9.500000]
+live-server-build3.log:[05:46:38] [Server thread/INFO] (Kindred) Build battle Mira, Cass: time is up; vote on each build, one to five (/aiplayer match vote <player> <score>)
+live-server-build3.log:[05:46:39] [Server thread/INFO] (Kindred) Build battle dad50ae1: showing Mira's build
+live-server-build3.log:[05:46:42] [Server thread/INFO] (Kindred) Build battle dad50ae1: Cass gives Mira's build 1, seen from its spot
+live-server-build3.log:[05:46:54] [Server thread/INFO] (Kindred) Build battle dad50ae1: showing Cass's build
+live-server-build3.log:[05:47:00] [Server thread/INFO] (Kindred) Build battle Mira, Cass: Cass wins (the best mean vote)
+live-server-build3.log:[05:47:00] [Server thread/INFO] (Kindred) Build battle dad50ae1: the podium [Cass, Mira]
+live-server-build3.log:[05:47:19] [Server thread/INFO] (Minecraft) [Rcon: Teleported Mira to 31.500000, -59.000000, 19.500000]
+live-server.log:[06:15:09] [Server thread/INFO] (Minecraft) Mira joined the game
+live-server.log:[06:15:11] [Server thread/INFO] (Minecraft) [Rcon: Teleported Mira to 18.500000, -59.000000, 19.500000]
+live-server.log:[06:15:16] [Server thread/INFO] (Kindred) Build battle Cass, Hal: starting in three seconds
+live-server.log:[06:15:19] [Server thread/INFO] (Kindred) Build battle Cass, Hal: build!
+live-server.log:[06:15:19] [Server thread/INFO] (Kindred) Build battle 08d526d7: Hal builds tower 7x10 at Pos[x=24, y=-60, z=6]
+live-server.log:[06:15:19] [Server thread/INFO] (Kindred) Build battle 08d526d7: Cass builds tower 5x9 at Pos[x=7, y=-60, z=7]
+live-server.log:[06:16:49] [Server thread/INFO] (Kindred) Build battle Cass, Hal: time is up; vote on each build, one to five (/aiplayer match vote <player> <score>)
+live-server.log:[06:16:49] [Server thread/INFO] (Kindred) Build battle 08d526d7: showing Cass's build
+live-server.log:[06:16:53] [Server thread/INFO] (Kindred) Build battle 08d526d7: Hal gives Cass's build 3, seen from its spot
+live-server.log:[06:17:04] [Server thread/INFO] (Kindred) Build battle 08d526d7: showing Hal's build
+live-server.log:[06:17:07] [Server thread/INFO] (Kindred) Build battle 08d526d7: Cass gives Hal's build 3, seen from its spot
+live-server.log:[06:17:07] [Server thread/INFO] (Kindred) Build battle Cass, Hal: the best mean vote
+live-server.log:[06:17:07] [Server thread/INFO] (Kindred) Build battle 08d526d7: the podium [Cass, Hal]

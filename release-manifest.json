@@ -274,7 +274,9 @@
       "selection": "/aiplayer mode world <mode> (operators) or the K panel; kept in the world's kindred/mode.properties; none chosen keeps every match allowed",
       "playstyle": "mapped from the mode (coop and manhunt OPTIMAL_SURVIVAL, speedrun SPEEDRUN_ANY_PERCENT, builder IDLE_OBSERVING), not beside it",
       "presentation": "boss bar, per-viewer sidebar, action bar, titles with sounds, particles and onlookers, all vanilla; a fallen player's result held until it respawns",
-      "evidence": ["docs/evidence/M-00.md", "docs/evidence/M-00a.md", "docs/evidence/M-00b.md"],
+      "builder": "a generated arena (lobby pad, walkway, podium), the vote as a tour of the builds, AI designs from the operator's schematic library when one names the theme (credited), else Kindred's own (M-04)",
+      "manhunt": "an optional announced head start with every hunter held alike; a strike between players of an unfinished match refused unless its rules allow it, the same for humans and AI players (M-02b)",
+      "evidence": ["docs/evidence/M-00.md", "docs/evidence/M-00a.md", "docs/evidence/M-00b.md", "docs/evidence/M-02a.md", "docs/evidence/M-02b.md", "docs/evidence/M-04.md"],
       "qualified": false
     },
     "playerMelee": {

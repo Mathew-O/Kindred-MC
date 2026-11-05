@@ -45,7 +45,7 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
     public void aHumanJoinsADuelOnlyForItselfAndIsStruckOnlyOnceItRuns(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1800);
         UUID[] id = new UUID[1], ada = new UUID[1], match = new UUID[1];
-        ServerPlayerEntity[] people = new ServerPlayerEntity[2];
+        ServerPlayerEntity[] people = new ServerPlayerEntity[3];
         float[] health = new float[1];
         long[] at = {0};
         var server = context.getWorld().getServer();
@@ -77,6 +77,9 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                     // Staged: two people stand in for humans at ordinary clients; no runtime entry is theirs.
                     people[0] = MockPlayers.survival(context, "Mira", new BlockPos(5, 2, 3));
                     people[1] = MockPlayers.survival(context, "Owen", new BlockPos(4, 2, 10));
+                    // Staged: a bystander in no match within sight, as another test's player stood beside this one in CI
+                    // (suite of 2026-11-05 on f2791ea): an onlooker as much as Owen.
+                    people[2] = MockPlayers.survival(context, "Pip", new BlockPos(6, 2, 10));
                     server.setPvpEnabled(true);
                     // Before any match, a strike at the human is refused.
                     context.assertTrue(f.runtime.nativeFight(f.source, id[0], people[0].getUuid(), 0) == 1, "Fight requested before any match");
@@ -115,7 +118,10 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                     var lines = presenter.sidebarLines(people[0].getUuid());
                     context.assertTrue(lines.size() == 3 && lines.get(0).startsWith("Time left: ") && lines.contains("Ada") && lines.contains("Mira"),
                             "Mira's sidebar: " + lines);
-                    context.assertTrue(presenter.onlookers(match[0]).equals(List.of(people[1].getUuid())), "Owen watching: " + presenter.onlookers(match[0]));
+                    // Everyone near in no match looks on, Owen and the bystander alike; neither player in it does.
+                    var onlookers = presenter.onlookers(match[0]);
+                    context.assertTrue(onlookers.containsAll(List.of(people[1].getUuid(), people[2].getUuid()))
+                            && !onlookers.contains(ada[0]) && !onlookers.contains(people[0].getUuid()), "Owen and Pip watching: " + onlookers);
                     context.assertTrue(presenter.sidebarLines(people[1].getUuid()).equals(lines), "Owen's sidebar: " + presenter.sidebarLines(people[1].getUuid()));
                     context.assertTrue(presenter.barPlayers(match[0]).containsAll(List.of(ada[0], people[0].getUuid(), people[1].getUuid())),
                             "The bar to all three: " + presenter.barPlayers(match[0]));
@@ -144,6 +150,70 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                             "Particles: Ada " + presenter.bursts(ada[0]) + ", Mira " + presenter.bursts(people[0].getUuid()));
                     context.assertTrue(presenter.sidebarLines(people[0].getUuid()).isEmpty() && presenter.sidebarLines(people[1].getUuid()).isEmpty(), "The sidebars taken down");
                     for (var person : people) server.getPlayerManager().remove(person);
+                    server.setPvpEnabled(pvp);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A player in a match of its own is not an onlooker of another nearby: its sidebar is its own match's, and the other's
+     * result is not shown to it (found on an ordinary client in a live manhunt, where a runner's sidebar showed the
+     * other hunt beside it).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "matchTwo", tickLimit = 1600)
+    public void aPlayerInItsOwnMatchSeesItsOwnSidebarNotANearbyMatchs(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1400);
+        UUID[] ids = new UUID[3], players = new UUID[3], match = new UUID[2];
+        ServerPlayerEntity[] mira = new ServerPlayerEntity[1];
+        var server = context.getWorld().getServer();
+        boolean pvp = server.isPvpEnabled();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Ada allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bram"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 2, "Bram allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Cy"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 3 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "All three established");
+                    for (var status : statuses) {
+                        String name = player(f, status.nativeId()).getName().getString();
+                        int i = name.equals("Ada") ? 0 : name.equals("Bram") ? 1 : 2;
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    for (UUID id : ids) f.runtime.meleeStyle(id, "idle");
+                    server.setPvpEnabled(true);
+                    // Staged: a person stands in for a human at an ordinary client, beside the first duel.
+                    mira[0] = MockPlayers.survival(context, "Mira", new BlockPos(3, 2, 5));
+                    context.assertTrue(f.runtime.proposeDuel(f.source, players[0], players[1]) == 1, "Ada and Bram's duel proposed first");
+                    match[0] = f.runtime.matches().getFirst().id();
+                    context.assertTrue(f.runtime.startMatch(f.source, match[0]) == 1, "Started");
+                    context.assertTrue(f.runtime.proposeDuel(f.source, players[2], mira[0].getUuid()) == 1, "Cy and Mira's duel proposed");
+                    match[1] = f.runtime.matches().getLast().id();
+                    context.assertTrue(f.runtime.joinMatch(mira[0].getCommandSource(), match[1]) == 1, "Mira joined her own");
+                    context.assertTrue(f.runtime.startMatch(mira[0].getCommandSource(), match[1]) == 1, "Mira started her own");
+                })
+                .createAndAdd(() -> {
+                    var presenter = f.runtime.presenter();
+                    var lines = presenter.sidebarLines(mira[0].getUuid());
+                    context.assertTrue(f.runtime.matches().stream().allMatch(m -> m.state() == MatchRegistry.State.RUNNING), "Both running");
+                    context.assertTrue(lines.contains("Cy") && lines.contains("Mira"), "Mira's sidebar is her own duel's: " + lines);
+                    context.assertTrue(!presenter.onlookers(match[0]).contains(mira[0].getUuid()), "Mira is no onlooker of the other: " + presenter.onlookers(match[0]));
+                    f.runtime.stopMatch(f.source, match[0]);
+                    f.runtime.stopMatch(f.source, match[1]);
+                })
+                .createAndAdd(() -> {
+                    var shown = f.runtime.presenter().shown(mira[0].getUuid());
+                    context.assertTrue(!shown.isEmpty() && shown.getLast().equals("Stopped") && !shown.contains("Ada wins") && shown.stream().filter("Stopped"::equals).count() == 1,
+                            "Mira shown her own result only: " + shown);
+                    server.getPlayerManager().remove(mira[0]);
                     server.setPvpEnabled(pvp);
                     f.runtime.stop();
                 })
