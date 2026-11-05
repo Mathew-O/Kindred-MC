@@ -14013,8 +14013,9 @@ final class PlayerRuntime {
         UUID taskId = UUID.nameUUIDFromBytes(("evade:" + match.id() + ":" + player.getUuid()).getBytes(StandardCharsets.UTF_8));
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 98.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-        if (player.distanceTo(hunter) <= CAUGHT) {
-            // Caught: no getting away from a hunter at arm's length, so it fights.
+        if (player.distanceTo(hunter) <= CAUGHT && matches.mayAttack(player.getUuid(), hunter.getUuid())) {
+            // Caught: no getting away from a hunter at arm's length, so it fights. Not while the match lets nobody strike
+            // (the runners' head start): the hunter is held, so it runs (found in a live hunt, M-02b).
             int slot = Weapons.choose(player, NativePlayerBody.believedHealth(player, hunter), true).map(Weapons.Held::slot).orElse(-1);
             return List.of(new NativeTaskCandidate(candidate, "native_fight", Map.of("target", hunter.getUuid().toString(), "slot", String.valueOf(slot))));
         }

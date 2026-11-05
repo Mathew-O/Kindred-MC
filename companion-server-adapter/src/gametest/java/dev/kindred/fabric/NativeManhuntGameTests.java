@@ -332,8 +332,8 @@ public final class NativeManhuntGameTests implements FabricGameTest {
 
     /**
      * The runners' head start (M-02b): an AI hunter and a human hunter (a stand-in, joined by its own command) are held
-     * where they stand for the head start, the same way, and nobody may strike, while the AI runner six blocks off moves
-     * away; once it is over both are let go and the AI hunter goes after the runner. Without it the AI hunter fights the
+     * where they stand for the head start, the same way, and nobody may strike, while the AI runner, starting beside
+     * them, moves away; once it is over both are let go and the AI hunter goes after the runner. Without it the AI hunter fights the
      * runner in sight at once.
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "manhuntHeadStart", tickLimit = 1600)
@@ -373,8 +373,10 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var hal = player(f, players[0]);
                     var rue = player(f, players[1]);
+                    // Side by side, as players start a hunt: Rue within a hunter's reach of Hal (found in a live hunt, where
+                    // a runner that close tried to fight the held hunter through the whole head start).
                     hal.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 2, o.getZ() + 4.5, 0, 0);
-                    rue.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 2, o.getZ() + 10.5, 180, 0);
+                    rue.refreshPositionAndAngles(o.getX() + 5.5, o.getY() + 2, o.getZ() + 6.5, 180, 0);
                     hal.getInventory().clear();
                     rue.getInventory().clear();
                     // Staged: a person stands in for a human hunter at an ordinary client.
