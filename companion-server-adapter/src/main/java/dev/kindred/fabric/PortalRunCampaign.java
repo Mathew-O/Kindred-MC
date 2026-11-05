@@ -177,6 +177,9 @@ final class PortalRunCampaign {
     private long retraceStalledUntil;
     /** Where it sealed its night shelter, by the tick it did: the way out in the morning when no other goes (F-25c4at). */
     private final Map<Long, Long> ownSeals = new HashMap<>();
+    /** Pillars beside the water refused where it stood, by the cell, and until when they count (F-25c4bf). */
+    private final Map<Long, Integer> pillarMisses = new HashMap<>();
+    private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
     private EditPolicy.ServerPolicy policy = EditPolicy.ServerPolicy.deferredD4();
 
     /** Lava source L to convert, the air cell W to pour water into, and the stand cell S beyond it. */
@@ -672,6 +675,14 @@ final class PortalRunCampaign {
             if (atlas != null && atlasWorld != null) atlas.shelter(place(atlasWorld, lastFeet), "seal");
         }
         if (task != null && !completed && task.label().startsWith(LEAD_LABEL)) leadFailedUntil = tick + 1200;
+        // A pillar beside the water refused where it stood (F-25c4bf).
+        if (task != null && !completed && "native_pillar".equals(task.skill()) && task.label().endsWith(": pillar up beside the water")
+                && position(task.args()) != null) {
+            long cell = position(task.args()).asLong();
+            if (pillarMissesUntil.getOrDefault(cell, Long.MIN_VALUE) < tick) pillarMisses.remove(cell);
+            pillarMisses.merge(cell, 1, Integer::sum);
+            pillarMissesUntil.put(cell, tick + 1200);
+        }
         if (task != null && completed && task.label().contains(": open its shelter at ") && position(task.args()) != null) {
             ownSeals.remove(position(task.args()).asLong());
         }
@@ -3308,6 +3319,8 @@ final class PortalRunCampaign {
         // The block over its head refused, for sand or gravel resting on it or a liquid beside it: then so is every way up
         // from here (F-25c4bd).
         boolean headRoomRefused = false;
+        // The ways whose step up was refused for a liquid beside the landing, not for the block over its head (F-25c4bf).
+        var besideWater = new java.util.ArrayList<Direction>();
         for (int turn = 0; turn < 4; turn++) {
             BlockPos step = feet.offset(digDirection);
             BlockPos landing = step.up();
@@ -3316,8 +3329,10 @@ final class PortalRunCampaign {
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
                 if (refused || passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) {
-                    waterOver |= world.getFluidState(cell.up()).isIn(FluidTags.WATER);
+                    // Over the sand or gravel resting on it, if any: a lake's bed over the ceiling (F-25c4bg).
+                    waterOver |= world.getFluidState(columnTop(world, cell)).isIn(FluidTags.WATER);
                     headRoomRefused |= cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell);
+                    if (!cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell)) besideWater.add(digDirection);
                     refused = true;
                     break;
                 }
@@ -3348,6 +3363,7 @@ final class PortalRunCampaign {
                         if (breakableNow(body, over)) return Optional.of(clearAt(over, label + ": clear " + over.toShortString()));
                         if (handClearable(body, over)) return Optional.of(clearAt(over, label + ": clear " + over.toShortString() + " by hand"));
                     }
+                    waterOver |= world.getFluidState(columnTop(world, over)).isIn(FluidTags.WATER);
                     refused = true;
                 } else if (settling(over)) {
                     return Optional.of(new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle"));
@@ -3384,6 +3400,12 @@ final class PortalRunCampaign {
         if (!swimming && player.isOnGround()) {
             Optional<Task> hole = intoTheHoleOverhead(body, feet, label);
             if (hole.isPresent()) return hole;
+        }
+        // Every step up beside the water, and a step up clear of it a few blocks higher by the same wall: up there on blocks
+        // of its own, as a player gets back up off a ledge under a lake's wall (F-25c4bf).
+        if (!besideWater.isEmpty() && !swimming && player.isOnGround()) {
+            Optional<Task> pillar = pillarBesideTheWater(body, feet, besideWater, label);
+            if (pillar.isPresent()) return pillar;
         }
         // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
         // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square). Swimming,
@@ -3493,6 +3515,43 @@ final class PortalRunCampaign {
             BlockPos next = feet.offset(side);
             if (pocket(world, next) && !blocked(next) && holeOver(world, next) && wayBlockSlot(player.getInventory()) >= 0) {
                 return Optional.of(go(next, 0.4, false, label + ": under the hole beside it"));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Up on blocks of its own beside a wall it may not climb for the water behind it, to the height where a step up onto
+     * the wall is clear of the water: one to three blocks up, open over its head all the way. On 303 in E-40's iteration 4
+     * (`e40a4-c237a6e`) Kindred swam the top of an aquifer's lake, came onto the stone wall between the lake and a cave, and
+     * went down the cave's side onto a ledge. Every step back up was beside the lake's water. From then to the end of the
+     * run, 27 stuck spells, it stepped aside from a cell it had dug into the wall and walked "to the wall" back into it,
+     * 1,466 times each (F-25c4bf).
+     */
+    private Optional<Task> pillarBesideTheWater(NativePlayerBody body, BlockPos feet, List<Direction> ways, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        for (int h = 1; h <= 3; h++) {
+            // Room over its head to rise h blocks and step up from there.
+            if (!passable(world, feet.up(h + 1)) || !passable(world, feet.up(h + 2))) return Optional.empty();
+            for (Direction way : ways) {
+                BlockPos step = feet.up(h).offset(way);
+                BlockPos landing = step.up();
+                if (passable(world, step) || blocked(landing)) continue;
+                boolean clear = true;
+                for (BlockPos cell : List.of(landing, landing.up())) {
+                    if (!passable(world, cell) && (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell))) clear = false;
+                }
+                if (!clear) continue;
+                int slot = wayBlockSlot(player.getInventory());
+                if (slot < 0) return Optional.empty();
+                if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+                // Refused twice here within a minute: not from here again for now, not asked for again at once. In a
+                // fixture of 303's ledge one cell by a wall refused 151 jumps in a row.
+                int misses = pillarMissesUntil.getOrDefault(feet.asLong(), Long.MIN_VALUE) >= lastTick ? pillarMisses.getOrDefault(feet.asLong(), 0) : 0;
+                if (misses >= 2) return Optional.empty();
+                digDirection = way;
+                return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up beside the water"));
             }
         }
         return Optional.empty();
@@ -3777,13 +3836,38 @@ final class PortalRunCampaign {
         return true;
     }
 
-    /** Lava on any side, or water above or beside, which would pour into the opening. */
+    /**
+     * Lava on any side, or water above or beside, which would pour into the opening; or a liquid held up by sand or
+     * gravel resting on it, which comes down after the column once the block under it is dug (F-25c4bg).
+     */
     private static boolean liquidNear(ServerWorld world, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             var fluid = world.getFluidState(pos.offset(direction));
             if (fluid.isIn(FluidTags.LAVA) || direction != Direction.DOWN && fluid.isIn(FluidTags.WATER)) return true;
         }
-        return world.getFluidState(pos).isIn(FluidTags.LAVA);
+        return world.getFluidState(pos).isIn(FluidTags.LAVA) || liquidOverColumn(world, pos);
+    }
+
+    /**
+     * Sand or gravel resting on the block, up to 16 high, with a liquid over the column or beside any of it: a lake's bed.
+     * In E-40's iteration 4 (`e40a4-c237a6e`) climbs dug out the block under such a column, the sand came down and the
+     * lake after it: Sol on 101 and 404, Kindred on 202, 404 and 606, 59 stuck spells in the water (F-25c4bg).
+     */
+    private static boolean liquidOverColumn(ServerWorld world, BlockPos pos) {
+        BlockPos above = pos.up();
+        for (int i = 0; i < 16 && world.getBlockState(above).getBlock() instanceof net.minecraft.block.FallingBlock; i++, above = above.up()) {
+            for (Direction direction : Direction.values()) {
+                if (direction != Direction.DOWN && !world.getFluidState(above.offset(direction)).isEmpty()) return true;
+            }
+        }
+        return false;
+    }
+
+    /** The first cell over it that is not sand or gravel resting on it: itself over a column, else the cell over it. */
+    private static BlockPos columnTop(ServerWorld world, BlockPos pos) {
+        BlockPos above = pos.up();
+        for (int i = 0; i < 16 && world.getBlockState(above).getBlock() instanceof net.minecraft.block.FallingBlock; i++) above = above.up();
+        return above;
     }
 
     // ------------------------------------------------------------------ crafting and smelting
@@ -4681,6 +4765,15 @@ final class PortalRunCampaign {
             return anywhere < 0 ? Optional.empty() : Optional.of(swapToHotbar(body, anywhere, "Portal: ready flint and steel"));
         }
         BlockPos base = portalSite.at(1, 0);
+        // Out of reach of the frame's opening, as after a walk away for flint: back to the frame's stand first. On 505 in
+        // E-40's iteration 4 (`e40a4-c237a6e`) Sol cast its frame, walked off to gravel for flint, made its flint and steel
+        // there, and tried to light the portal from where it stood, 192 times refused as out of reach (F-25c4bh). Not a
+        // "Portal" walk: one of those that fails gives up the site, and this frame is already standing.
+        var world = body.entity().getServerWorld();
+        BlockPos opening = world.getBlockState(base).isOf(Blocks.OBSIDIAN) ? base.up() : base;
+        if (body.entity().getEyePos().squaredDistanceTo(Vec3d.ofCenter(opening)) > 4.5 * 4.5) {
+            return Optional.of(go(portalSite.stand(), 0.5, false, "Back to its portal frame to light it"));
+        }
         return Optional.of(new Task("native_ignite_portal", coords(base, Map.of("slot", String.valueOf(slot))), "Portal: light it"));
     }
 

@@ -62,6 +62,7 @@
       "dev.kindred.fabric.NativeAtlasGameTests",
       "dev.kindred.fabric.NativeBranchMineGameTests",
       "dev.kindred.fabric.NativeTripDownGameTests",
+      "dev.kindred.fabric.NativePortalLightGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",

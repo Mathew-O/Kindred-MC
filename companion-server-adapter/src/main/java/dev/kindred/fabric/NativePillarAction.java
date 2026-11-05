@@ -37,6 +37,8 @@ import java.util.function.Supplier;
 final class NativePillarAction extends NativeRecordedAction {
     /** Ticks to rise a block on a jump and land again; past this the step has failed. */
     private static final int JUMP_TICKS = 16;
+    /** Longest it spends stepping to the middle of its cell before the jump (F-25c4bf). */
+    private static final int CENTRE_TICKS = 20;
 
     private final NativePlayerBody body;
     private final Supplier<ActionLease> lease;
@@ -58,6 +60,7 @@ final class NativePillarAction extends NativeRecordedAction {
     private String dimensionKey;
     private long setupRevision;
     private int jumpTicks = -1;
+    private int centreTicks;
     /** Ticks spent waiting to land before the step begins: one planned mid-jump starts as the feet touch down. */
     private int groundWait;
     /** Longest it waits to land before a step planned mid-jump. */
@@ -167,6 +170,19 @@ final class NativePillarAction extends NativeRecordedAction {
             ActionLease current = lease.get();
             if (!placed) {
                 if (!validAuthorityAndPreconditions()) return settle(false, "Pillar authority or preconditions changed mid-jump");
+                // To the middle of its cell first, and still: off it, the head meets a block over the cell beside it and
+                // the jump does not rise. In a fixture of 303's aquifer ledge one cell by a wall refused 151 jumps so (F-25c4bf).
+                if (jumpTicks == 0 && centreTicks < CENTRE_TICKS) {
+                    double dx = cell.getX() + 0.5 - player.getX(), dz = cell.getZ() + 0.5 - player.getZ();
+                    double off = Math.max(Math.abs(dx), Math.abs(dz));
+                    if (off > 0.1 || player.getVelocity().horizontalLength() > 0.02) {
+                        centreTicks++;
+                        float yaw = off > 0.1 ? (float) Math.toDegrees(Math.atan2(-dx, dz)) : player.getYaw();
+                        float forward = off > 0.1 ? (float) Math.min(1.0, Math.max(0.2, off * 2)) : 0f;
+                        if (!body.move(current, forward, 0, false, false, yaw)) return settle(false, "Movement authority denied");
+                        return waiting();
+                    }
+                }
                 // Centred over the cell: hold still and jump on the first tick only.
                 if (!body.move(current, 0, 0, jumpTicks == 0, false, player.getYaw())) return settle(false, "Movement authority denied");
                 if (player.getY() >= cell.getY() + 1.0 + 1e-3) {
