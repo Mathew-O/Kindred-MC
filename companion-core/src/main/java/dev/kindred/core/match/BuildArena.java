@@ -93,12 +93,13 @@ public final class BuildArena {
             spots.put(plot.builder(), spot);
             blocks.put(new Pos(spot.x(), floor + 1, spot.z()), "minecraft:gold_block");
         }
-        // The podium at the east end: first in the middle, second to the west, third to the east, facing the walkway.
-        int podiumX = eastX - 3, podiumZ = walkZ + 1;
+        // The podium across the walkway's east end, facing anyone coming along it: first in the middle, second on the
+        // plots' side, third on the railing's.
+        int podiumX = eastX - 2;
         var podium = new ArrayList<Pos>();
-        podium.add(new Pos(podiumX, floor + 2 + 3, podiumZ));
-        podium.add(new Pos(podiumX - 1, floor + 2 + 2, podiumZ));
-        podium.add(new Pos(podiumX + 1, floor + 2 + 1, podiumZ));
+        podium.add(new Pos(podiumX, floor + 2 + 3, walkZ + 1));
+        podium.add(new Pos(podiumX, floor + 2 + 2, walkZ));
+        podium.add(new Pos(podiumX, floor + 2 + 1, walkZ + 2));
         for (Pos step : podium) for (int y = step.y(); y <= step.y() + 2; y++) blocks.put(new Pos(step.x(), y, step.z()), "minecraft:air");
         return new BuildArena(blocks, spots, lobby, podium);
     }

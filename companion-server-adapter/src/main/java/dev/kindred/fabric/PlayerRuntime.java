@@ -13681,7 +13681,8 @@ final class PlayerRuntime {
             for (int i = 0; i < ranked.size(); i++) {
                 var top = arena.podium().get(i);
                 var at = new BlockPos(top.x(), top.y(), top.z());
-                world.setBlockState(at, Blocks.OAK_SIGN.getDefaultState());
+                // Facing west, back along the walkway, to whoever comes along it.
+                world.setBlockState(at, Blocks.OAK_SIGN.getDefaultState().with(net.minecraft.block.SignBlock.ROTATION, 4));
                 String name = playerName(ranked.get(i).getKey());
                 names.add(name);
                 if (world.getBlockEntity(at) instanceof net.minecraft.block.entity.SignBlockEntity sign) {
