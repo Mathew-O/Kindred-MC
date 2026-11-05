@@ -282,6 +282,10 @@ final class PlayerRuntime {
      * in pace.properties so it does not go back when that human logs off; null until a human has made a start.
      */
     private dev.kindred.core.match.GroupPace.Step groupStep;
+    /** The last save of mode.properties: each save waits on the one before, so the last mode chosen is the one kept. */
+    private CompletableFuture<Void> modeSaved = CompletableFuture.completedFuture(null);
+    /** The last save of pace.properties (M-01e), each waiting on the one before, as the mode's saves do. */
+    private CompletableFuture<Void> paceSaved = CompletableFuture.completedFuture(null);
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
     /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
@@ -13240,7 +13244,7 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("Group pace: someone has {}", groupStep.deed);
         Path file = metadataDirectory.resolve("pace.properties");
         String content = "# Kindred group pace (M-01e): the furthest step any human in this world has reached.\nfurthest=" + groupStep.name() + "\n";
-        CompletableFuture.runAsync(() -> {
+        paceSaved = paceSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
                 Files.writeString(file, content, StandardCharsets.UTF_8);
@@ -13275,7 +13279,8 @@ final class PlayerRuntime {
         }
         Path file = metadataDirectory.resolve("mode.properties");
         String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
-        CompletableFuture.runAsync(() -> {
+        // In order: two saves left to run side by side could finish the older last and keep it.
+        modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
                 Files.writeString(file, content, StandardCharsets.UTF_8);

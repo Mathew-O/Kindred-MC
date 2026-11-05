@@ -34,6 +34,14 @@ Branch `claude/modes-1105-4`, on M-04's branch. M-05 closed. See [M-05](evidence
 
 Branches `claude/modes-1105-2` (M-02) and `claude/modes-1105-3` (M-04, on top of it), from M-00's merge `cdec035`. M-04 and M-04a closed; M-02a, M-02b and M-02c stay open. See [M-04](evidence/M-04.md), [M-02a](evidence/M-02a.md) and [M-02b](evidence/M-02b.md).
 
+CI's full native suite on `f2791ea` (PR #22): 546 of 550.
+- **`aHumanJoinsADuelOnlyForItselfAndIsStruckOnlyOnceItRuns` (M-00's), a fixture fault, now fixed.** Another test's AI player (Echo) stood about 30 blocks off, in no match, so it was an onlooker, as it should be. The fixture required Owen to be the only onlooker. That check retried while the duel went on, Ada killed Mira, and the forfeit it waited for never came.
+  - Reproduced by staging a bystander (Pip) in range: the old check failed exactly as in CI (Ada's four hits, Mira slain).
+  - The check now requires Owen and Pip among the onlookers, and neither duellist.
+- **Found while checking it: the world mode's save could keep an older mode.** `theWorldsModeSetsThePaceAndWhichMatchesMayBePlayed` failed 1 of 3 runs alone, reading `mode=manhunt` after Builder was chosen. Each choice was saved on its own background task, so two quick choices could finish out of order. The saves now run in order.
+  - `NativeMatchFrameworkGameTests` alone after both fixes: five runs, 7 of 7 each.
+- **The other three failures** are in code this PR does not change: the portal campaign's tree in water, the Nether portal restart, and the voice model's line in time.
+
 - **Build:** `bash ./gradlew build` green, 944 JUnit tests, none failing, 6 skipped. New: `PursuitBlockTest` (4), `BuildArenaTest` (1), and cases in `MatchRegistryTest` and `MatchPresentationTest`.
 - **Native, each new or changed fixture alone 3 of 3:**
   - In `NativeManhuntGameTests` (8 cases):
