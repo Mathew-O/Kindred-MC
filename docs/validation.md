@@ -2665,3 +2665,6 @@ After the block's first merge from main, CI on PR #25 found:
   of 7.
 - **[F-22c15](evidence/F-22c15.md):** the hideout's to and fro between two placements. 1 of 4 copies failed before the
   fix and 8 of 8 passed after. The build fixture classes passed 32 of 32. Main's `1c5ac61` was merged first (`a701f72`).
+- **[F-22c16](evidence/F-22c16.md):** the base cabin, stopped with its player shut indoors by a scaffold on the door's
+  step. `ConstructionPlannerTest.noScaffoldGoesUpOnADoorsStep` fails without the rule and passes with it.
+  `:companion-core:test` passed. The build classes, the bunker's among them, passed 33 of 33.

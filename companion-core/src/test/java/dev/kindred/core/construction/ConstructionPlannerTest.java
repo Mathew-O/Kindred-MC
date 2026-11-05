@@ -177,6 +177,28 @@ class ConstructionPlannerTest {
     }
 
     @Test
+    void noScaffoldGoesUpOnADoorsStep() {
+        // A wall seven high with a door in it, and a block to go on its top over the door; stood on the door's step, out of
+        // reach of it. The column nearest is the step itself, and one there would shut the door (F-22c16).
+        var cells = BuildTestSites.flat();
+        var blocks = new ArrayList<Blueprint.Block>();
+        String lower = "minecraft:oak_door[facing=north,half=lower,hinge=left,open=false]";
+        String upper = "minecraft:oak_door[facing=north,half=upper,hinge=left,open=false]";
+        for (int x = -3; x <= 3; x++) for (int y = 1; y <= 6; y++) {
+            String spec = x == 0 && y == 1 ? lower : x == 0 && y == 2 ? upper : "minecraft:cobblestone";
+            blocks.add(block(x, y, 0, spec));
+            cells.put(new Pos(x, y, 0), BuildTestSites.solid(spec));
+        }
+        blocks.add(block(0, 7, 0, "minecraft:cobblestone"));
+        var step = next(blocks, cells, new Pos(0, 1, -1));
+        assertEquals(ConstructionPlanner.Kind.SCAFFOLD, step.kind(), step.reason());
+        assertNotEquals(new Pos(0, 1, -1), step.stance(), "not on the door's step outside");
+        assertNotEquals(new Pos(0, 1, 1), step.stance(), "nor on its step inside");
+        assertTrue(ConstructionPlanner.doorStep(new Pos(0, 1, -1), Blueprint.byPosition(blocks)));
+        assertFalse(ConstructionPlanner.doorStep(new Pos(1, 1, -1), Blueprint.byPosition(blocks)));
+    }
+
+    @Test
     void theScaffoldComesDownWhenTheBuildIsDone() {
         var cells = BuildTestSites.flat();
         var blocks = List.of(block(0, 1, 0, "minecraft:cobblestone"));

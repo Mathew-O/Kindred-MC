@@ -338,6 +338,23 @@ public final class ConstructionPlanner {
     }
 
     /**
+     * Whether {@code ground} is a door's step: beside a door's lower half, level with it or a block below it. A column
+     * there shuts the door, and a player indoors while it stands has no way out to take it down. A cabin's column on
+     * its doorstep, for the roof over the door, had its player sleep indoors through the night halfway through taking
+     * its scaffolding down. Every walk out then found no route, and the build stopped eight steps on (CI on PR #25,
+     * `b3f1590`) (F-22c16).
+     */
+    static boolean doorStep(Pos ground, Map<Pos, BlockSpec> wanted) {
+        for (var e : wanted.entrySet()) {
+            Pos door = e.getKey();
+            if (!e.getValue().block().endsWith("_door") || "upper".equals(e.getValue().property("half"))) continue;
+            int dy = door.y() - ground.y();
+            if ((dy == 0 || dy == 1) && Math.abs(door.x() - ground.x()) + Math.abs(door.z() - ground.z()) == 1) return true;
+        }
+        return false;
+    }
+
+    /**
      * A scaffold column to stand on for {@code b}: from ground near the target, outside the build if it can be, just
      * high enough that from its top the block can be placed as wanted (in reach, in sight, looking the way its state
      * needs); nearest the player and lowest first.
@@ -357,6 +374,7 @@ public final class ConstructionPlanner {
                 if (site.cell(at).map(c -> !c.passable()).orElse(true)) break;
             }
             if (ground == null || !walk.contains(ground)) continue;
+            if (doorStep(ground, wanted)) continue;
             for (int height = Math.max(1, target.y() - 3 - ground.y()); height <= Math.min(MAX_SCAFFOLD, target.y() - ground.y()); height++) {
                 boolean free = true;
                 var raised = new HashMap<Pos, Cell>();
