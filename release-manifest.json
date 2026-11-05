@@ -219,7 +219,7 @@
       "implemented": "in progress",
       "evidence": "docs/evidence/E-08b.md",
       "moreEvidence": ["docs/evidence/E-08a.md", "docs/evidence/M-05.md", "docs/building-plan.md"],
-      "command": "/aiplayer build hut|<schematic> <x y z> [turns] [player]; schematics from config/kindred/schematics with their license; builds from owned blocks only, under the world edits switch",
+      "command": "/aiplayer build hut|<schematic> <x y z> [turns] [player]; schematics (.nbt, .schem, .litematic; M-05 complete 2026-11-05) from config/kindred/schematics with their license; builds from owned blocks only, under the world edits switch",
       "liveQualified": false
     },
     "worldMemory": {

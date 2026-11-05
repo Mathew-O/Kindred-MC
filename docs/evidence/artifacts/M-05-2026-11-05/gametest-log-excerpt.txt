@@ -1,0 +1,24 @@
+# run 1 (NativeBuildGameTests alone)
+[06:47:21] [Server thread/INFO] (Minecraft) Reading kiosk-litematic-11ab from ./config/kindred/schematics...
+[06:47:21] [Server thread/INFO] (Minecraft) Joiner: building kiosk-litematic-11ab (by Kindred fixture, under CC0-1.0, from written as a Litematica schematic in the fixture) at 8018014, -58, 7500161.
+[06:47:25] [Server thread/INFO] (Kindred) Joiner build: kiosk-litematic-11ab: built, 24/24 blocks
+[06:47:25] [Server thread/INFO] (Kindred) <Joiner> kiosk-litematic-11ab: built, 24/24 blocks. (at 8018014, -58, 7500161)
+[06:47:25] [Server thread/INFO] (Kindred) Joiner: built kiosk-litematic-11ab turned a quarter at 8018014, -58, 7500161
+[06:47:25] [Server thread/INFO] (Kindred) Joiner: built kiosk-litematic-11ab turned a quarter at 8018014, -58, 7500161
+[06:47:29] [Server thread/INFO] (Kindred) Joiner: built kiosk-148c turned a quarter at 8018027, -58, 7500161
+# run 2 (NativeBuildGameTests alone)
+[06:48:14] [Server thread/INFO] (Minecraft) Reading kiosk-litematic-f75 from ./config/kindred/schematics...
+[06:48:14] [Server thread/INFO] (Minecraft) Joiner: building kiosk-litematic-f75 (by Kindred fixture, under CC0-1.0, from written as a Litematica schematic in the fixture) at -7580221, -58, 14016820.
+[06:48:19] [Server thread/INFO] (Kindred) Joiner build: kiosk-litematic-f75: built, 24/24 blocks
+[06:48:19] [Server thread/INFO] (Kindred) <Joiner> kiosk-litematic-f75: built, 24/24 blocks. (at -7580221, -58, 14016820)
+[06:48:19] [Server thread/INFO] (Kindred) Joiner: built kiosk-litematic-f75 turned a quarter at -7580221, -58, 14016820
+[06:48:19] [Server thread/INFO] (Kindred) Joiner: built kiosk-litematic-f75 turned a quarter at -7580221, -58, 14016820
+[06:48:23] [Server thread/INFO] (Kindred) Joiner: built kiosk-1283 turned a quarter at -7580208, -58, 14016820
+# run 3 (NativeBuildGameTests alone)
+[06:49:12] [Server thread/INFO] (Minecraft) Reading kiosk-litematic-1190 from ./config/kindred/schematics...
+[06:49:12] [Server thread/INFO] (Minecraft) Joiner: building kiosk-litematic-1190 (by Kindred fixture, under CC0-1.0, from written as a Litematica schematic in the fixture) at -7934413, -58, -4080041.
+[06:49:16] [Server thread/INFO] (Kindred) Joiner build: kiosk-litematic-1190: built, 24/24 blocks
+[06:49:16] [Server thread/INFO] (Kindred) <Joiner> kiosk-litematic-1190: built, 24/24 blocks. (at -7934413, -58, -4080041)
+[06:49:16] [Server thread/INFO] (Kindred) Joiner: built kiosk-litematic-1190 turned a quarter at -7934413, -58, -4080041
+[06:49:16] [Server thread/INFO] (Kindred) Joiner: built kiosk-litematic-1190 turned a quarter at -7934413, -58, -4080041
+[06:49:20] [Server thread/INFO] (Kindred) Joiner: built kiosk-14a1 turned a quarter at -7934400, -58, -4080041
