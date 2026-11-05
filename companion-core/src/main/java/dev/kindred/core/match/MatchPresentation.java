@@ -95,6 +95,67 @@ public final class MatchPresentation {
         };
     }
 
+    /** A sidebar: its title and its lines, top first. */
+    public record Sidebar(String title, java.util.List<String> lines) { }
+
+    /** The most lines a sidebar shows: vanilla's own limit. */
+    public static final int SIDEBAR_LINES = 15;
+
+    /**
+     * The sidebar a match shows its players and onlookers: where it stands (players joined, the countdown, the time,
+     * the vote), then each player and how it stands in it; a manhunt's runners and hunters under their own headings.
+     * {@code standing} adds a word for a player where there is one to add (a racer's splits), or returns "".
+     */
+    public static Sidebar sidebar(MatchRegistry.Match match, long tick, Function<UUID, String> names, Function<UUID, String> standing) {
+        var lines = new java.util.ArrayList<String>();
+        lines.add(switch (match.state()) {
+            case LOBBY -> "Joined: " + match.joined().size() + " of " + match.invited().size();
+            case COUNTDOWN -> "Starting in " + seconds(match.countdownEnds() - tick);
+            case RUNNING -> match.endsAt() == Long.MAX_VALUE || match.endsAt() < 0
+                    ? "Time: " + clock(Math.max(0, tick - match.countdownEnds()))
+                    : "Time left: " + clock(Math.max(0, match.endsAt() - tick));
+            case VOTING -> "Voting: " + clock(Math.max(0, match.endsAt() - tick));
+            case ENDED -> "Over";
+        });
+        if (match.mode() == MatchRegistry.Mode.MANHUNT) {
+            lines.add("Runners");
+            for (UUID player : match.invited()) if (match.runners().contains(player)) lines.add(" " + line(match, player, names, standing));
+            lines.add("Hunters");
+            for (UUID player : match.invited()) if (!match.runners().contains(player)) lines.add(" " + line(match, player, names, standing));
+        } else {
+            for (UUID player : match.invited()) lines.add(line(match, player, names, standing));
+        }
+        return new Sidebar(match.mode().label(), java.util.List.copyOf(lines.subList(0, Math.min(lines.size(), SIDEBAR_LINES))));
+    }
+
+    /** One player's line: its name and how it stands. */
+    private static String line(MatchRegistry.Match match, UUID player, Function<UUID, String> names, Function<UUID, String> standing) {
+        String name = names.apply(player);
+        if (match.state() == MatchRegistry.State.LOBBY) return name + (match.joined().contains(player) ? ": joined" : ": invited");
+        if (match.state() == MatchRegistry.State.ENDED && match.won(player)) return name + ": won";
+        if (match.out().contains(player)) return name + ": out";
+        String more = standing == null ? "" : standing.apply(player);
+        return more == null || more.isEmpty() ? name : name + ": " + more;
+    }
+
+    /**
+     * What a player in a running match sees over its hotbar: its own part in it and the clock. Nothing for an onlooker
+     * or outside the fight and the vote.
+     */
+    public static Optional<String> actionBar(MatchRegistry.Match match, UUID viewer, long tick, Function<UUID, String> names) {
+        if (!match.playing(viewer)) return Optional.empty();
+        boolean timed = match.endsAt() != Long.MAX_VALUE && match.endsAt() >= 0;
+        String time = timed ? clock(Math.max(0, match.endsAt() - tick)) + " left" : clock(Math.max(0, tick - match.countdownEnds()));
+        if (match.state() == MatchRegistry.State.VOTING) return Optional.of("Vote on each build: /aiplayer match vote <player> <1 to 5> - " + clock(Math.max(0, match.endsAt() - tick)));
+        if (match.state() != MatchRegistry.State.RUNNING) return Optional.empty();
+        return Optional.of(switch (match.mode()) {
+            case DUEL -> "Duel against " + names.apply(MatchRegistry.other(match, viewer)) + " - " + time;
+            case SPEEDRUN -> "Speedrun to the dragon - " + time;
+            case MANHUNT -> match.runners().contains(viewer) ? "Runner: free the End - " + time : "Hunter: follow your compass - " + time;
+            case BUILDER -> "Build on your plot - " + time;
+        });
+    }
+
     /** A split reached, as every runner in the race is told it: who, where, and the time. */
     public static String split(SpeedrunSplits.Reached reached, Function<UUID, String> names) {
         return names.apply(reached.runner()) + ": " + reached.split().label() + " at " + SpeedrunSplits.time(reached.ticks());

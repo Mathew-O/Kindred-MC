@@ -35,4 +35,23 @@ final class MockPlayers {
         server.getPlayerManager().onPlayerConnect(connection, player, data);
         return player;
     }
+
+    /**
+     * A person in survival named {@code name}, logged in to the test world's server at {@code pos} (relative to the
+     * test): a stand-in for a human at an ordinary client, with no runtime entry, so to Kindred it is a human player.
+     * It takes damage as any survival player does. The test removes it when done.
+     */
+    static ServerPlayerEntity survival(TestContext context, String name, net.minecraft.util.math.BlockPos pos) {
+        var world = context.getWorld();
+        var server = world.getServer();
+        var data = ConnectedClientData.createDefault(new GameProfile(UUID.randomUUID(), name), false);
+        var player = new ServerPlayerEntity(server, world, data.gameProfile(), data.syncedOptions());
+        var connection = new ClientConnection(NetworkSide.SERVERBOUND);
+        new EmbeddedChannel(connection);
+        server.getPlayerManager().onPlayerConnect(connection, player, data);
+        player.changeGameMode(net.minecraft.world.GameMode.SURVIVAL);
+        var at = context.getAbsolutePos(pos);
+        player.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+        return player;
+    }
 }

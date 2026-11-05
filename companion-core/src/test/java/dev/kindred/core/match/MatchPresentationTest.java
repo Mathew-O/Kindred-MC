@@ -113,4 +113,50 @@ class MatchPresentationTest {
         assertEquals("Defeat", MatchPresentation.result(hunted, ada, names).title());
         assertEquals("The hunters win", MatchPresentation.result(hunted, UUID.randomUUID(), names).title(), "an onlooker");
     }
+
+    @Test
+    void theSidebarShowsWhereTheMatchStandsAndEachPlayer() {
+        var registry = new MatchRegistry();
+        var lobby = registry.propose(MatchRegistry.Mode.DUEL, List.of(ada, bram)).match().orElseThrow();
+        lobby = registry.join(lobby.id(), ada).match().orElseThrow();
+        var sidebar = MatchPresentation.sidebar(lobby, 0, names, player -> "");
+        assertEquals("Duel", sidebar.title());
+        assertEquals(List.of("Joined: 1 of 2", "Ada: joined", "Bram: invited"), sidebar.lines());
+        registry.join(lobby.id(), bram);
+        var counting = registry.start(lobby.id(), 100).match().orElseThrow();
+        assertEquals(List.of("Starting in 3", "Ada", "Bram"), MatchPresentation.sidebar(counting, 100, names, player -> "").lines());
+        var running = registry.tick(160).getFirst();
+        assertEquals("Time left: 4:59", MatchPresentation.sidebar(running, 180, names, player -> "").lines().getFirst());
+        var ended = registry.fallen(bram).orElseThrow();
+        assertEquals(List.of("Over", "Ada: won", "Bram"), MatchPresentation.sidebar(ended, 200, names, player -> "").lines());
+    }
+
+    @Test
+    void aManhuntsSidebarListsItsSidesAndARaceItsSplits() {
+        var registry = new MatchRegistry();
+        var hunt = registry.proposeManhunt(List.of(ada), List.of(bram, cy)).match().orElseThrow();
+        for (UUID player : List.of(ada, bram, cy)) registry.join(hunt.id(), player);
+        registry.start(hunt.id(), 0);
+        var running = registry.tick(60).getFirst();
+        var lines = MatchPresentation.sidebar(running, 60 + 20 * 65, names, player -> player.equals(ada) ? "2 splits" : "").lines();
+        assertEquals(List.of("Time: 1:05", "Runners", " Ada: 2 splits", "Hunters", " Bram", " Cy"), lines);
+    }
+
+    @Test
+    void theActionBarShowsEachPlayerItsOwnPartAndNothingToAnOnlooker() {
+        var registry = new MatchRegistry();
+        var duel = started(registry, 0);
+        assertTrue(MatchPresentation.actionBar(duel, ada, 10, names).isEmpty(), "nothing in the countdown");
+        var running = registry.tick(60).getFirst();
+        assertEquals("Duel against Bram - 4:59 left", MatchPresentation.actionBar(running, ada, 80, names).orElseThrow());
+        assertTrue(MatchPresentation.actionBar(running, cy, 80, names).isEmpty(), "an onlooker has no part");
+        var hunts = new MatchRegistry();
+        var hunt = hunts.proposeManhunt(List.of(ada), List.of(bram)).match().orElseThrow();
+        hunts.join(hunt.id(), ada);
+        hunts.join(hunt.id(), bram);
+        hunts.start(hunt.id(), 0);
+        var on = hunts.tick(60).getFirst();
+        assertEquals("Runner: free the End - 0:01", MatchPresentation.actionBar(on, ada, 80, names).orElseThrow());
+        assertEquals("Hunter: follow your compass - 0:01", MatchPresentation.actionBar(on, bram, 80, names).orElseThrow());
+    }
 }
