@@ -468,7 +468,11 @@ final class BuildRunner {
                 issuedFrom = from;
                 return Optional.of(breakTask(target, feet, "The break it walked over to"));
             }
-            if (there && ++breakWalks <= 8) {
+            // Counted as each walk there ends (below), not as it is asked for: the runtime asks again and again while a
+            // walk is under way, and counted so, eight asks dropped the break before the walk arrived. Planned again from
+            // there, the block under its feet came first, broken from the spot it had just left, and it walked between
+            // the two to the end of a hideout's ticks (a full local suite, 5 November) (F-22c10).
+            if (there && breakWalks <= 8) {
                 return Optional.of(player.isOnGround() ? go(from, "To break " + target + " from " + feet + ", to stand at " + from)
                         : new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1", "landed", "true"), "Landing to break " + target));
             }
@@ -878,6 +882,7 @@ final class BuildRunner {
         // A walk to a spot to place from is counted when it ends, not when it is asked for: the runtime may ask for the
         // next step more than once before it sets out, and a count kept there passed a dozen in two walks, in the farm
         // ward's first course, and gave up every spot round a block it could reach.
+        if ("native_goto".equals(task.skill()) && task.label().startsWith("To break ")) breakWalks++;
         if ("native_goto".equals(task.skill()) && task.label().startsWith("To ") && task.label().contains(" to place ")) {
             Pos to = new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
             stanceWalks = to.equals(lastStance) ? stanceWalks + 1 : 1;

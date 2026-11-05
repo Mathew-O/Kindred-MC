@@ -171,6 +171,10 @@ public final class NativeVoiceGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voice", tickLimit = 1200)
     public void theOwnerAsksWhatItIsDoingAndHearsTheModelsLineInTime(TestContext context) {
+        // A line's typing delay is timed by the clock, the gather it must find still running by ticks: at a live server's
+        // pace, as the delay is meant. On the unpaced test server the three logs could be gathered before the line came
+        // (CI run 380, and a full local suite on 5 November: "The same gather goes on") (F-22c11).
+        GameTestPacing.live(context);
         var t = new Talk(context, true);
         var f = t.f;
         BlockPos base = context.getAbsolutePos(new BlockPos(6, 2, 6));

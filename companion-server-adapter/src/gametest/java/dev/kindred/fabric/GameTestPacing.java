@@ -3,8 +3,12 @@ package dev.kindred.fabric;
 import dev.kindred.persistence.SqliteCompanionStore;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.test.TestContext;
 import net.minecraft.test.TestServer;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -26,7 +30,18 @@ public final class GameTestPacing implements ModInitializer {
     private static final long LIVE_TICK_NANOS = 50_000_000L;
     /** How often a tick held for the stores looks again. */
     private static final long POLL_NANOS = 100_000L;
+    /** The tests that asked for a live server's pace, while they run. */
+    private static final Set<TestContext> LIVE = Collections.synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
     private long started;
+
+    /**
+     * The server kept at a live server's pace, 50 ms a tick, from now until {@code context}'s test ends: for a test that
+     * weighs something timed by the clock (a line's typing delay) against work counted in ticks. The tests of its batch
+     * run at that pace too (F-22c11).
+     */
+    static void live(TestContext context) {
+        if (LIVE.add(context)) FixtureGround.whenDone(context, () -> LIVE.remove(context));
+    }
 
     @Override
     public void onInitialize() {
@@ -35,8 +50,8 @@ public final class GameTestPacing implements ModInitializer {
         });
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (!(server instanceof TestServer)) return;
-            long remaining;
-            while ((remaining = started + MIN_TICK_NANOS - System.nanoTime()) > 0 && !Thread.currentThread().isInterrupted()) {
+            long remaining, least = LIVE.isEmpty() ? MIN_TICK_NANOS : LIVE_TICK_NANOS;
+            while ((remaining = started + least - System.nanoTime()) > 0 && !Thread.currentThread().isInterrupted()) {
                 LockSupport.parkNanos(remaining);
             }
             while (SqliteCompanionStore.workInFlight() > 0 && System.nanoTime() - started < LIVE_TICK_NANOS
