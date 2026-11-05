@@ -2482,7 +2482,7 @@ bash ./gradlew --no-daemon :companion-server-adapter:runGametest   # build/gamet
 | Full native suite | `edefa00` (before F-22c9, the merge, F-22c10 and F-22c11) | 537 of 539: the hideout (a loop, F-22c10) and the voice fixture (F-22c11) |
 | Full native suite | `c52d2e8` (merged with `cdec035`) | 542 of 545: the hideout and the farm ward stopped at their first steps (a regression in the first version of F-22c10), and the seed cabin's "Down the scaffold: Nothing solid to break" (F-22c9) |
 | Full native suite, run 1 | `7cfddd5` | **545 of 545**, 53 minutes |
-| Full native suite, run 2 | `7cfddd5` | see the PR |
+| Full native suite, run 2 | `7cfddd5` (code; `c807487` adds docs only) | **545 of 545**, 50 minutes |
 
 The CI record before this block: 13 runs (378 to 393) had results; 1 was green. The Nether portal restart failed in 7.
 Per-fixture before and after results are in each evidence file: [F-22c1](evidence/F-22c1.md) to
