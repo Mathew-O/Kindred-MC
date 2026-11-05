@@ -2426,6 +2426,7 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
         if (!heldHunts.isEmpty()) releaseHunts(tick);
+        if (!toAdventure.isEmpty()) settleVoters();
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
@@ -13514,7 +13515,6 @@ final class PlayerRuntime {
             if (player == null) continue;
             modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
             Entry builderEntry = entryForPlayer(builder);
-            if (builderEntry != null) interruptSkill(builderEntry, "A build battle begins");
             if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
             player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
             presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
@@ -13580,19 +13580,15 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            // Whatever it was doing is stopped now, before its game mode changes under it: a break caught half done by
-            // adventure mode left an outcome only reconciliation could settle, and the body was taken out (found live).
-            if (entry != null) interruptSkill(entry, "The build's time is up");
-            if (entry != null && entry.nativeBody != null) {
-                entry.nativeBody.allowCreative(false);
-                entry.nativeBody.allowAdventure(true);
-            }
             player.getInventory().clear();
-            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
-            if (entry != null) {
-                entry.cachedRoutineCandidates = List.of();
-                entry.routineRefreshPending = true;
+            if (entry != null && entry.nativeBody != null) {
+                // Its game mode changes only once what it was doing has settled: an action caught half done by the change
+                // (or cut short to make way for it) leaves an outcome only reconciliation can settle, and the body is
+                // taken out (found live, twice). With its build stopped and nothing in hand, nothing new begins meanwhile.
+                toAdventure.add(entry.data.id());
+                continue;
             }
+            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
         }
         // The builds are then shown one at a time, each for its share of the vote (pollBuildBattles): every voter walks
         // to the marked spot in front of it and votes on what it sees from there.
@@ -13644,7 +13640,6 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null) interruptSkill(entry, "The build battle is over");
             if (entry != null && entry.nativeBody != null) {
                 entry.nativeBody.allowCreative(false);
                 entry.nativeBody.allowAdventure(false);
@@ -14381,19 +14376,33 @@ final class PlayerRuntime {
         return List.copyOf(toured.getOrDefault(matchId, List.of()));
     }
 
+    /** AI voters waiting for their last action to settle before they go into adventure for the vote (M-04). */
+    private final Set<UUID> toAdventure = new java.util.LinkedHashSet<>();
+
     /**
-     * Its current skill stopped now, as a stop stops it: authority revoked first, then the runner settled, so nothing
-     * it was doing finishes after its game mode changes (M-04).
+     * Each tick: an AI voter whose last action has settled goes into adventure for the vote, walking only. One whose round
+     * has moved on is let go.
      */
-    private void interruptSkill(Entry entry, String reason) {
-        if (entry.nativeBody != null && entry.nativeBody.connected()) entry.nativeBody.stopInputs();
-        if (entry.runner != null && runnerBusy(entry)) {
-            entry.runner.lease().ifPresent(entry.arbiter::cancel);
-            entry.runner.abort(reason);
-            observeRunner(entry);
+    private void settleVoters() {
+        for (var it = toAdventure.iterator(); it.hasNext(); ) {
+            Entry entry = entries.get(it.next());
+            var player = entry == null || entry.nativeBody == null ? null : entry.nativeBody.entity();
+            var match = player == null ? null : matches.active(player.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER)
+                    .orElse(null);
+            if (match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) {
+                it.remove();
+                continue;
+            }
+            if (entry.runner != null && runnerBusy(entry) || entry.nativeActionPending || !entry.nativeActionFlush.isDone()
+                    || !entry.activityFlush.isDone()) continue;
+            it.remove();
+            entry.nativeBody.allowCreative(false);
+            entry.nativeBody.allowAdventure(true);
+            player.getInventory().clear();
+            player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
         }
-        entry.cachedRoutineCandidates = List.of();
-        entry.routineRefreshPending = true;
     }
 
     /** Standing on (or by) a viewing spot. */
