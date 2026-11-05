@@ -85,6 +85,8 @@ final class BuildRunner {
     private int goneInARow;
     /** The last two blocks it set out to place, to see it walk to and fro between them. */
     private Pos lastPlaceTo, placeToBefore;
+    /** The placement it last set out for, to make from the spot it walked to for it when the plan goes to and fro (F-22c10). */
+    private ConstructionPlanner.Step lastPlaceStep;
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
     private Pos lastStance;
     private int stanceWalks;
@@ -623,6 +625,20 @@ final class BuildRunner {
                         PROP + step.target()));
             }
             case PLACE -> {
+                // Planned again for the block it set out for two walks ago, another between, and standing in the spot it
+                // walked to for the one between: that one is placed from here. Committed to the block planned again, it
+                // was never "at" that block's spot on arriving, and it walked between the two, 1,104 walks each way, a
+                // farm ward 195 of 480 placed at the end of its ticks (CI, PR #25) (F-22c10).
+                var between = lastPlaceStep;
+                if (step.target().equals(placeToBefore) && between != null && player.isOnGround()
+                        && standing(player).equals(between.stance())
+                        && !site.cell(between.target()).map(c -> c.state() != null && c.state().sameAs(between.spec())).orElse(false)) {
+                    lastPlaceTo = placeToBefore = null;
+                    lastPlaceStep = null;
+                    lastStance = null;
+                    stanceWalks = 0;
+                    yield placeTask(player, between);
+                }
                 // Walked to the same spot three times over, its feet in that spot's own block but never standing just
                 // there (on a stair it had just placed, the walk called it there and the runner did not, 7040 times, in
                 // the hall): placed from where it stands, the placement aimed from its own eyes. Short of the block, it
@@ -647,22 +663,28 @@ final class BuildRunner {
                         if (step.target().equals(placeToBefore)) placeStep = step;
                         placeToBefore = lastPlaceTo;
                         lastPlaceTo = step.target();
+                        lastPlaceStep = step;
                     }
                     yield Optional.of(go(step.stance(), "To " + step.stance() + " to place " + shortName(step.spec()) + " at " + step.target() + " from " + feet));
                 }
                 lastStance = null;
                 stanceWalks = 0;
-                Item item = Registries.ITEM.get(Identifier.of(step.item()));
-                int slot = slotOf(player, item);
-                if (slot < 0) yield Optional.of(wait("No " + shortName(step.spec()) + " in hand"));
-                if (slot >= 9) yield Optional.of(swap(player, slot, "Ready " + shortName(step.spec())));
-                yield Optional.of(new PortalRunCampaign.Task("native_place", Map.of("x", str(step.target().x()), "y", str(step.target().y()),
-                        "z", str(step.target().z()), "side", step.face().id(), "slot", str(slot),
-                        "yaw", String.format(Locale.ROOT, "%.3f", step.yaw()), "pitch", String.format(Locale.ROOT, "%.3f", step.pitch()),
-                        "hit", String.format(Locale.ROOT, "%.4f,%.4f,%.4f", step.hit()[0], step.hit()[1], step.hit()[2])),
-                        "Place " + shortName(step.spec()) + " at " + step.target()));
+                yield placeTask(player, step);
             }
         };
+    }
+
+    /** The placement of {@code step} from where it stands: its block readied in hand first. */
+    private Optional<PortalRunCampaign.Task> placeTask(ServerPlayerEntity player, ConstructionPlanner.Step step) {
+        Item item = Registries.ITEM.get(Identifier.of(step.item()));
+        int slot = slotOf(player, item);
+        if (slot < 0) return Optional.of(wait("No " + shortName(step.spec()) + " in hand"));
+        if (slot >= 9) return Optional.of(swap(player, slot, "Ready " + shortName(step.spec())));
+        return Optional.of(new PortalRunCampaign.Task("native_place", Map.of("x", str(step.target().x()), "y", str(step.target().y()),
+                "z", str(step.target().z()), "side", step.face().id(), "slot", str(slot),
+                "yaw", String.format(Locale.ROOT, "%.3f", step.yaw()), "pitch", String.format(Locale.ROOT, "%.3f", step.pitch()),
+                "hit", String.format(Locale.ROOT, "%.4f,%.4f,%.4f", step.hit()[0], step.hit()[1], step.hit()[2])),
+                "Place " + shortName(step.spec()) + " at " + step.target()));
     }
 
     /** The build's needs this pass, as a task, or empty to go on building. */
