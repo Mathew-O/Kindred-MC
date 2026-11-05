@@ -2464,3 +2464,26 @@ New acceptance test coverage under `NativeTeamGameTests` covers:
 - Full evidence record: `docs/evidence/E-11.md`.
 
 
+
+## CI fully green, block 1: the native suite's flaky fixtures (F-22c1 to F-22c11) — 5 November 2026
+
+Run in a Linux container (4 cores, 15 GB) with JDK 21 (Temurin), Minecraft 1.21.1, Fabric Loader 0.19.5 and Fabric API
+0.116.17+1.21.1. Nothing else ran on the cores during the full suites.
+
+```bash
+bash ./gradlew --no-daemon build
+bash ./gradlew --no-daemon :companion-server-adapter:runGametest   # build/gametest/world removed first
+```
+
+| Check | Build | Result |
+| --- | --- | --- |
+| JUnit | `7cfddd5` (`c52d2e8` for the count) | 931 tests, 0 failures, 6 skipped |
+| Full native suite, before the fixes | `6effd66` plus F-22c1 and F-22c2 | 537 of 538; the librarian brought across a lake failed |
+| Full native suite | `edefa00` (before F-22c9, the merge, F-22c10 and F-22c11) | 537 of 539: the hideout (a loop, F-22c10) and the voice fixture (F-22c11) |
+| Full native suite | `c52d2e8` (merged with `cdec035`) | 542 of 545: the hideout and the farm ward stopped at their first steps (a regression in the first version of F-22c10), and the seed cabin's "Down the scaffold: Nothing solid to break" (F-22c9) |
+| Full native suite, run 1 | `7cfddd5` | **545 of 545**, 53 minutes |
+| Full native suite, run 2 | `7cfddd5` | see the PR |
+
+The CI record before this block: 13 runs (378 to 393) had results; 1 was green. The Nether portal restart failed in 7.
+Per-fixture before and after results are in each evidence file: [F-22c1](evidence/F-22c1.md) to
+[F-22c11](evidence/F-22c11.md). The slow-store experiment is in [F-22c5](evidence/F-22c5.md).
