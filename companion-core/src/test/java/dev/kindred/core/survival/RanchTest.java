@@ -122,6 +122,14 @@ class RanchTest {
         told.next(new Ranch.Observation(new Pos(3, 64, 9), false, false, 8, List.of(), 0));
         assertEquals(new Pos(28, 64, 4), assertInstanceOf(Ranch.Step.Go.class, told.next(seen(3, 1, true, 8, 20, cow(DAISY, 3, 3)))).target());
 
+        // One still in sight but far off, beyond the gate's reach and its own: walked toward, the food in hand.
+        var far = ranch();
+        far.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        far.next(seen(3, 7, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        var toward = assertInstanceOf(Ranch.Step.Go.class, far.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3), cow(BESS, 40, 40))));
+        assertEquals(new Pos(40, 64, 40), toward.target(), "toward the one it can see far off");
+        assertTrue(toward.holdFood());
+
         // Not there either: it leaves, saying so, as before.
         var gone = ranch();
         gone.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 20, 20)));

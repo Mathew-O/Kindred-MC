@@ -135,6 +135,8 @@ public final class Ranch {
     private int searched;
     /** Spots it looks in for strays before it gives them up; and how near it an animal is fetched though far from the gate. */
     private static final int SEARCHES = 3, NEAR = 16;
+    /** How far from the gate it goes looking for a stray: twice the range it fetches from, and no farther. */
+    private static final int SEARCH = 2 * RANGE;
     private int youngBefore = -1;
     private String outcome = "";
     private boolean bred;
@@ -354,9 +356,15 @@ public final class Ranch {
         if (lead.isEmpty() && searched < SEARCHES) {
             // Out of sight now: to where it was last seen, the food in hand, as a player goes to look for a stray. A spot it
             // has reached and found empty is crossed off.
+            // One in sight but far off, beyond the gate's reach and its own: walked toward, the food in hand.
+            var far = seen.animals().stream().filter(a -> a.kind() == kind && wanted.test(a) && !inside(a.at()) && !givenUp.contains(a.id())
+                            && a.at().distanceSquared(gate()) <= (long) SEARCH * SEARCH)
+                    .min(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet())));
+            if (far.isPresent()) return new Step.Go(far.get().at(), 2, true, 0, "Look for the other " + kind.noun() + ": toward the one in sight far off");
             var visible = new HashSet<UUID>();
             for (var a : seen.animals()) visible.add(a.id());
-            var stray = lastSeen.entrySet().stream().filter(e -> !visible.contains(e.getKey()) && !givenUp.contains(e.getKey()))
+            var stray = lastSeen.entrySet().stream().filter(e -> !visible.contains(e.getKey()) && !givenUp.contains(e.getKey())
+                            && e.getValue().distanceSquared(gate()) <= (long) SEARCH * SEARCH)
                     .min(Comparator.comparingLong(e -> e.getValue().distanceSquared(seen.feet())));
             if (stray.isPresent()) {
                 if (stray.get().getValue().distanceSquared(seen.feet()) <= 9) {
