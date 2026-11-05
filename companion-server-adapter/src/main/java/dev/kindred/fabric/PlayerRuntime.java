@@ -8907,6 +8907,8 @@ final class PlayerRuntime {
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
+        /** Drops whose walk to their own cell failed, tried once more from anywhere within reach (F-22c12). */
+        final Set<BlockPos> reachTried = new HashSet<>();
         long since;
         String failure;
         final Set<UUID> taskIds = new HashSet<>();
@@ -9657,8 +9659,11 @@ final class PlayerRuntime {
                     for (var at : b.bridged) box = box.union(new net.minecraft.util.math.Box(at));
                     for (var at : b.opened.keySet()) box = box.union(new net.minecraft.util.math.Box(at));
                     // One it could not walk to (in a cell shut since, say) left where it lies, not counted against the bring.
+                    // Its walk to the drop's own cell failed: once more to anywhere within reach of it, as a player picks
+                    // up what lies a block off, then let be. On CI a rail broken out of the way came down a block up, by
+                    // the hall's wall, the walk to its cell found no route, and the rail was left: 62 of 63 back (F-22c12).
                     if (b.failed > 0 && b.lastPickup != null) {
-                        b.unreached.add(b.lastPickup);
+                        if (!b.reachTried.add(b.lastPickup)) b.unreached.add(b.lastPickup);
                         b.failed = 0;
                     }
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box.expand(4, 2, 4),
@@ -9671,7 +9676,7 @@ final class PlayerRuntime {
                         b.lastPickup = drop;
                         KindredMod.LOGGER.info("{} bringing: picking up what it took up ({}), at {}", entry.data.displayName(), item.getStack(), drop.toShortString());
                         return List.of(new NativeTaskCandidate(bringTask(entry, "pick up:" + drop.asLong()), "native_goto", Map.of("x", String.valueOf(drop.getX()),
-                                "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()), "range", "0.5", "partial", "true")));
+                                "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()), "range", b.reachTried.contains(drop) ? "1.2" : "0.5", "partial", "true")));
                     }
                     b.phase = Bring.Phase.DOOR_BACK;
                     return bringCandidates(entry, body);
