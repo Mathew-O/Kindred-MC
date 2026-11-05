@@ -110,6 +110,18 @@ class RanchTest {
         assertEquals(new Pos(30, 64, 28), fetch.target());
         assertTrue(fetch.holdFood());
 
+        // One that wandered off while the pen was still going up is looked for where it was last seen then.
+        var early = ranch();
+        early.next(new Ranch.Observation(new Pos(3, 64, 9), false, false, 8, List.of(cow(DAISY, 15, 10), cow(BESS, 25, 25)), 0));
+        early.next(seen(3, 9, false, 8, 10, cow(DAISY, 15, 10)));
+        var lookEarly = assertInstanceOf(Ranch.Step.Go.class, early.next(seen(3, 1, true, 8, 20, cow(DAISY, 3, 3))));
+        assertEquals(new Pos(25, 64, 25), lookEarly.target(), "where it saw Bess as it built");
+        // And one only seen as the ranch was chosen, before it began.
+        var told = ranch();
+        told.remember(BESS, new Pos(28, 64, 4));
+        told.next(new Ranch.Observation(new Pos(3, 64, 9), false, false, 8, List.of(), 0));
+        assertEquals(new Pos(28, 64, 4), assertInstanceOf(Ranch.Step.Go.class, told.next(seen(3, 1, true, 8, 20, cow(DAISY, 3, 3)))).target());
+
         // Not there either: it leaves, saying so, as before.
         var gone = ranch();
         gone.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 20, 20)));

@@ -204,8 +204,15 @@ public final class Ranch {
 
     public boolean bred() { return bred; }
 
+    /** An animal of its kind it saw before the ranch began (as it chose to keep them), to look for there if it strays. */
+    public void remember(UUID id, Pos at) {
+        lastSeen.put(id, at);
+    }
+
     public Step next(Observation seen) {
         if (phase == Phase.DONE) return new Step.Done(outcome, bred);
+        // Where it sees each grown one of its kind outside the pen, from the first: one may wander off while it builds.
+        for (var a : seen.animals()) if (a.kind() == kind && a.adult() && !inside(a.at())) lastSeen.put(a.id(), a.at());
         if (!seen.built()) {
             phase = Phase.BUILD;
             return new Step.Build();

@@ -4798,6 +4798,15 @@ final class PlayerRuntime {
         }
         var kind = dev.kindred.core.survival.Ranch.Kind.valueOf(pen.kind());
         entry.ranch = new RanchRunner(new BlockPos(pen.x(), pen.y(), pen.z()), kind, wood);
+        // The ones it saw as it chose to keep them, to look for where it saw them should they stray meanwhile.
+        var player = body.entity();
+        for (var animal : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.AnimalEntity.class,
+                player.getBoundingBox().expand(RANCH_LOOK), a -> !a.isBaby() && player.canSee(a))) {
+            if (Registries.ENTITY_TYPE.getId(animal.getType()).toString().equals(kind.entity)) {
+                BlockPos at = animal.getBlockPos();
+                entry.ranch.ranch.remember(animal.getUuid(), new dev.kindred.core.construction.Pos(at.getX(), at.getY(), at.getZ()));
+            }
+        }
         entry.ownRanch = pen;
         entry.ranchNote = why;
         entry.goalProgress = "Ranch: starting";
