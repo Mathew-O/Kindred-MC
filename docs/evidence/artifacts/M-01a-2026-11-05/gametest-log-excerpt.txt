@@ -1,0 +1,12 @@
+# Own ranch, NativeOwnRanchGameTests with NativeRanchGameTests and NativeCompoundGameTests alone, on ea62d08: 3 runs, 9 of 9 each
+[16:23:03] [Server thread/INFO] (Kindred) Drover ranch: A pair of cows close by and the food to breed them: a ranch: cows at 10840477, -53, 7995343
+[16:23:11] [Server thread/INFO] (Kindred) Own ranch: COW at 10840477, -53, 7995343; 23 fences; 2 cows and 1 calves penned
+[16:34:58] [Server thread/INFO] (Kindred) Drover ranch: A pair of cows close by and the food to breed them: a ranch: cows at -2546124, -53, 6005224
+[16:35:05] [Server thread/INFO] (Kindred) Own ranch: COW at -2546124, -53, 6005224; 23 fences; 2 cows and 1 calves penned
+[16:46:27] [Server thread/INFO] (Kindred) Drover ranch: A pair of cows close by and the food to breed them: a ranch: cows at -767744, -53, -14385359
+[16:46:35] [Server thread/INFO] (Kindred) Own ranch: COW at -767744, -53, -14385359; 23 fences; 2 cows and 1 calves penned
+# Before the stray fixes (90eaccf): 1 of 3 passed; the second cow 43 blocks off, out of reach
+# Control (the ranch decision off): fails
+failure message="(-12603670, -60, -2854369) A cow ranch of its own begun: Optional.empty /  / Iron tools first: a house takes over two hundred stone
+# Crash found on 02c8b64 (3 of 3 runs): the base decision's caller asked the build runner with no build
+Caused by: java.lang.NullPointerException: Cannot invoke "dev.kindred.fabric.BuildRunner.next(dev.kindred.fabric.NativePlayerBody, dev.kindred.fabric.BuildRunner$Supply)" because "build" is null
