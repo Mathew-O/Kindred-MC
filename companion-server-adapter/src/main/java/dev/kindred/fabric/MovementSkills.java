@@ -106,6 +106,34 @@ final class MovementSkills {
     }
 
     /** Counts only ticks actually driven under the lease: paused, stopped and unloaded time is not waiting. */
+    /**
+     * A wait for the body to land, over once it is on the ground or in water, a second or so at most. A build waits so
+     * after stepping off its scaffold or into the hole it digs; a whole second each time, some 170 times a hideout, was
+     * over a tenth of the ticks its fixture allows (F-22c8).
+     */
+    static final class Landing implements SkillBody {
+        private final NativePlayerBody body;
+        private final int seconds;
+        private int elapsedTicks;
+
+        Landing(NativePlayerBody body, int seconds) {
+            this.body = body;
+            this.seconds = seconds;
+        }
+
+        @Override
+        public Step tick(Map<String, String> arguments, Optional<Checkpoint> resumeFrom, boolean freshStart) {
+            elapsedTicks++;
+            Map<String, String> progress = Map.of("elapsedTicks", String.valueOf(elapsedTicks), "requestedTicks", String.valueOf(seconds * 20));
+            var player = body.entity();
+            boolean landed = player != null && (player.isOnGround() || player.isTouchingWater());
+            return landed || elapsedTicks >= seconds * 20 ? Step.completed(progress) : Step.running(progress, true);
+        }
+
+        @Override public void halt() { }
+        @Override public boolean settled() { return true; }
+    }
+
     static final class Wait implements SkillBody {
         private final int seconds;
         private int elapsedTicks;

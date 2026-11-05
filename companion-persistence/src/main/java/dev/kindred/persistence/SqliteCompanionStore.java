@@ -75,6 +75,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SqliteCompanionStore {
     private static final int QUEUE_CAPACITY = 256;
+    /** Every store's work queued or running, for diagnostics and the GameTest server's pacing (F-22c5). */
+    private static final java.util.concurrent.atomic.AtomicInteger IN_FLIGHT = new java.util.concurrent.atomic.AtomicInteger();
     private final ThreadPoolExecutor writer;
     private final Semaphore queueSlots = new Semaphore(QUEUE_CAPACITY);
     private final int maxCompanions;
@@ -1812,18 +1814,30 @@ public final class SqliteCompanionStore {
         if (closing) return CompletableFuture.failedFuture(new IllegalStateException("Metadata store is closing"));
         if (!queueSlots.tryAcquire()) return CompletableFuture.failedFuture(new RejectedExecutionException("Metadata queue is full"));
         CompletableFuture<T> future = new CompletableFuture<>();
+        IN_FLIGHT.incrementAndGet();
         try {
             writer.execute(() -> {
                 try { future.complete(work.run()); }
                 catch (Throwable failure) { future.completeExceptionally(failure); }
-                finally { queueSlots.release(); }
+                finally {
+                    queueSlots.release();
+                    IN_FLIGHT.decrementAndGet();
+                }
             });
         } catch (RejectedExecutionException failure) {
             queueSlots.release();
+            IN_FLIGHT.decrementAndGet();
             future.completeExceptionally(failure);
         }
         return future;
     }
+
+    /**
+     * How much work every open store in this process has queued or running: reads and writes alike. Zero when all of it
+     * is done. For diagnostics, and so the GameTest server can give a durable write the tick a live server's would have
+     * (F-22c5).
+     */
+    public static int workInFlight() { return IN_FLIGHT.get(); }
 
     private void releaseResources() throws Exception {
         Exception failure = null;

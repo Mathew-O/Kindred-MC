@@ -50,6 +50,8 @@ public final class ActivityPermit {
     public UUID playerId() { return playerId; }
     public UUID reservationId() { return reservation.id(); }
     public long sequence() { return sequence; }
+    /** The wall-clock end of the slice this permit was booked for: no later than the deadline it was reserved to. */
+    public Instant bookedUntil() { return reservation.expiresAt(); }
     public Duration maximumActiveTime() { return Duration.ofNanos(availableNanos); }
 
     /**

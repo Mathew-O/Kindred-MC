@@ -1887,7 +1887,7 @@ final class PlayerRuntime {
             java.time.Instant deadline = open.map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(budget.period().endExclusive());
             try {
                 entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
-                        store::saveBudget, this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
+                        budgetWriter(), this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
                 entry.activity.request(deadline).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -1985,8 +1985,13 @@ final class PlayerRuntime {
             entry.periodHold = null;
             return false;
         }
+        java.time.Instant end = session.snapshot().period().endExclusive();
         if (entry.periodHold == null) {
-            if (now.isBefore(session.snapshot().period().endExclusive())) return false;
+            // Its slice booked to the period's end lapses short of it by the monotonic clock (the renewal's write
+            // latency, or a renewal gaining too little not made): it ran to the period's end all the same. Before,
+            // only a lapse at or after the end was held, and a slice that lapsed 0.3 s short stopped the wait (F-22c2).
+            boolean toTheEnd = !now.isBefore(end) || session.bookedUntil().filter(booked -> !booked.isBefore(end)).isPresent();
+            if (!toTheEnd) return false;
             entry.periodHold = new PeriodHold(now);
         }
         PeriodHold hold = entry.periodHold;
@@ -1996,7 +2001,8 @@ final class PlayerRuntime {
         }
         // One budget writer at a time: the old period's settlement is acknowledged before the next period is opened,
         // which would otherwise close the old period under it.
-        if (!hold.requested && session.phase() == PaidActivitySession.Phase.IDLE) requestNextPeriod(entry, hold);
+        // The next period is asked for once it has begun: asked for sooner, the old period's last moments would be booked.
+        if (!hold.requested && session.phase() == PaidActivitySession.Phase.IDLE && !now.isBefore(end)) requestNextPeriod(entry, hold);
         return true;
     }
 
@@ -2018,7 +2024,7 @@ final class PlayerRuntime {
             entry.activityLimit = prepared.limit();
             try {
                 var next = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
-                        store::saveBudget, this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
+                        budgetWriter(), this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
                 entry.activity = next; // Closed with the entry on shutdown, as a dispatched session is.
                 next.request(open.orElseThrow().endExclusive()).whenComplete((paid, error) -> {
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -9074,11 +9080,15 @@ final class PlayerRuntime {
         Vec3d rollAt;
         long rollSince;
         boolean rollMoved = true;
+        /** When the cart was first seen at rest on its cell's floor, this stop; -1 while it is not (F-22c19). */
+        long floorSince = -1;
         /** Gone back along the line to push the stopped cart on again: kept to until the push is given. */
         boolean repush;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
+        /** Drops whose walk to their own cell failed, tried once more from anywhere within reach (F-22c12). */
+        final Set<BlockPos> reachTried = new HashSet<>();
         long since;
         String failure;
         final Set<UUID> taskIds = new HashSet<>();
@@ -9252,6 +9262,11 @@ final class PlayerRuntime {
                 // The villager then sits on that block's middle, and the line is laid again from there.
                 var villagerBox = villager.getBoundingBox();
                 BlockPos ground = null;
+                // Of the spots, one it can see the top of first: the far side of the villager, its first choice, can lie
+                // behind the villager's lectern from where it stands. Its look met the lectern six times running, the
+                // librarian was never held in a boat, and it wandered off every line laid to it (CI on PR #25, 78f081b)
+                // (F-22c18). With none in sight, the farthest as before.
+                boolean groundSeen = false;
                 for (var d : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
                     var beside = villager.getBlockPos().offset(d);
                     if (!world.getBlockState(beside.down()).isSideSolidFullSquare(world, beside.down(), net.minecraft.util.math.Direction.UP)
@@ -9261,7 +9276,13 @@ final class PlayerRuntime {
                     // Nor where it would stand in a block either side (a wall by the villager): wider than a block, it overhangs.
                     if (boatBox.intersects(villagerBox) || !boatBox.expand(0.2, 0, 0.2).intersects(villagerBox) || boatBox.intersects(player.getBoundingBox())
                             || !world.isSpaceEmpty(boatBox)) continue;
-                    if (ground == null || player.getBlockPos().getSquaredDistance(beside) > player.getBlockPos().getSquaredDistance(ground.up())) ground = beside.down();
+                    // In sight of its eyes, or its look meets something else on the way (F-22c18).
+                    boolean seen = seesTop(player, beside.down(), beside.getX() + 0.5, beside.getZ() + 0.5);
+                    if (ground == null || seen && !groundSeen
+                            || seen == groundSeen && player.getBlockPos().getSquaredDistance(beside) > player.getBlockPos().getSquaredDistance(ground.up())) {
+                        ground = beside.down();
+                        groundSeen = seen;
+                    }
                 }
                 // None of those fits (it stands off its block's middle, at its job site say): just clear of it along a side,
                 // a tenth of a block between their boxes, the boat's middle put down on whatever block that falls on.
@@ -9275,9 +9296,12 @@ final class PlayerRuntime {
                         var boatBox = new net.minecraft.util.math.Box(c.x - 0.6875, feet.getY(), c.z - 0.6875, c.x + 0.6875, feet.getY() + 0.5625, c.z + 0.6875);
                         if (boatBox.intersects(villagerBox) || !boatBox.expand(0.2, 0, 0.2).intersects(villagerBox) || boatBox.intersects(player.getBoundingBox())
                                 || !world.isSpaceEmpty(boatBox)) continue;
-                        if (aim == null || player.getPos().squaredDistanceTo(c) > player.getPos().squaredDistanceTo(aim)) {
+                        boolean seen = seesTop(player, feet.down(), c.x, c.z);
+                        if (aim == null || seen && !groundSeen
+                                || seen == groundSeen && player.getPos().squaredDistanceTo(c) > player.getPos().squaredDistanceTo(aim)) {
                             aim = new Vec3d(c.x, feet.getY(), c.z);
                             ground = feet.down();
+                            groundSeen = seen;
                         }
                     }
                 }
@@ -9546,6 +9570,15 @@ final class PlayerRuntime {
                 // Still: no speed, or none it got a quarter of a block by in the last two seconds.
                 boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
+                // At rest on its floor for a second, not a moment: a cart that runs out of way at the top of the climb into
+                // its cell stops there a tick before it rolls back. Taken for one come to rest, the cell was shut with the
+                // librarian rolled back down the line in it, and the cart was walked to in the cell without end (CI on PR
+                // #25, bbe5ae8) (F-22c19).
+                if (cart.getBlockPos().equals(b.floor) && still) {
+                    if (b.floorSince < 0) b.floorSince = now;
+                } else b.floorSince = -1;
+                boolean settled = b.floorSince >= 0 && now - b.floorSince >= 20;
+                if (cart.getBlockPos().equals(b.floor) && still && !settled) return List.of(waitTask(task, "For the cart to come to rest"));
                 if (cart.getBlockPos().equals(b.floor) && still && !inFront) {
                     b.phase = Bring.Phase.LINTEL;
                     return bringCandidates(entry, body);
@@ -9574,6 +9607,11 @@ final class PlayerRuntime {
                 // Stopped short: pushed on again from behind it, along the line (from behind the line's start, at its first rail).
                 // The walk back to it is kept to, not given up for the wait above at the next look.
                 int at = b.rails.indexOf(cart.getBlockPos());
+                // Rolled back off the line's start and stopped against the player standing behind it, as it is meant to
+                // be met: its middle a little into the player's own cell, off the rails. It is at the line's start, to be
+                // pushed on again from there. Taken for a cart stopped off the line, the bring gave up with the librarian
+                // aboard, three blocks short of its first climb (CI on PR #25, b3f1590 and main's f4bce7a) (F-22c14).
+                if (at < 0 && cart.getBlockPos().equals(b.push)) at = 0;
                 if (at < 0 || b.pushes >= 8) {
                     KindredMod.LOGGER.info("{} bringing: the cart stopped at {} ({}), rail {} of {}, {} pushes; the line from {} to {}", entry.data.displayName(),
                             cart.getPos(), world.getBlockState(cart.getBlockPos()), at, b.rails.size(), b.pushes, b.rails.getFirst().toShortString(),
@@ -9829,8 +9867,11 @@ final class PlayerRuntime {
                     for (var at : b.bridged) box = box.union(new net.minecraft.util.math.Box(at));
                     for (var at : b.opened.keySet()) box = box.union(new net.minecraft.util.math.Box(at));
                     // One it could not walk to (in a cell shut since, say) left where it lies, not counted against the bring.
+                    // Its walk to the drop's own cell failed: once more to anywhere within reach of it, as a player picks
+                    // up what lies a block off, then let be. On CI a rail broken out of the way came down a block up, by
+                    // the hall's wall, the walk to its cell found no route, and the rail was left: 62 of 63 back (F-22c12).
                     if (b.failed > 0 && b.lastPickup != null) {
-                        b.unreached.add(b.lastPickup);
+                        if (!b.reachTried.add(b.lastPickup)) b.unreached.add(b.lastPickup);
                         b.failed = 0;
                     }
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box.expand(4, 2, 4),
@@ -9843,7 +9884,7 @@ final class PlayerRuntime {
                         b.lastPickup = drop;
                         KindredMod.LOGGER.info("{} bringing: picking up what it took up ({}), at {}", entry.data.displayName(), item.getStack(), drop.toShortString());
                         return List.of(new NativeTaskCandidate(bringTask(entry, "pick up:" + drop.asLong()), "native_goto", Map.of("x", String.valueOf(drop.getX()),
-                                "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()), "range", "0.5", "partial", "true")));
+                                "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()), "range", b.reachTried.contains(drop) ? "1.2" : "0.5", "partial", "true")));
                     }
                     b.phase = Bring.Phase.DOOR_BACK;
                     return bringCandidates(entry, body);
@@ -10302,6 +10343,11 @@ final class PlayerRuntime {
         BlockPos lectern;
         /** Where it stood to begin with, clear of the lectern, to step back to. */
         BlockPos stand;
+        /**
+         * Every spot it has asked for a lectern to be put down at: a placement in flight keeps the spot it was given,
+         * while the spot it is looking at may have moved on, and been asked for again, before it lands (F-22c4).
+         */
+        final Set<BlockPos> placedAt = new java.util.LinkedHashSet<>();
         Phase phase = Phase.PLACE;
         int tries, failed, nudges;
         long since;
@@ -10352,6 +10398,15 @@ final class PlayerRuntime {
             KindredMod.LOGGER.info("{} reroll: a lectern for the villager {} at {}", entry.data.displayName(), r.villager, spot.toShortString());
         }
         var villager = world.getEntity(r.villager) instanceof net.minecraft.entity.passive.VillagerEntity v && v.isAlive() ? v : null;
+        // Its lectern standing at a spot it asked for one at, the spot it looks at moved on meanwhile: that is its lectern. The
+        // candidates are looked at again while a placement waits on its acknowledgement; with the villager on the spot
+        // then, the spot moved to another side, the placement put the lectern down on the first, and with none held and
+        // none standing where it looked it let the villager be, neither kept nor given up (CI, run 388) (F-22c4).
+        if (!world.getBlockState(r.lectern).isOf(net.minecraft.block.Blocks.LECTERN)) {
+            for (BlockPos spot : r.placedAt) {
+                if (world.getBlockState(spot).isOf(net.minecraft.block.Blocks.LECTERN)) r.lectern = spot;
+            }
+        }
         boolean standing = world.getBlockState(r.lectern).isOf(net.minecraft.block.Blocks.LECTERN);
         if (villager == null && !standing) {
             entry.reroll = null;
@@ -10413,6 +10468,7 @@ final class PlayerRuntime {
                 var args = new HashMap<>(at);
                 args.put("slot", String.valueOf(slot));
                 args.put("side", "up");
+                r.placedAt.add(r.lectern);
                 return List.of(new NativeTaskCandidate(task, "native_place", Map.copyOf(args)));
             }
             case TAKE_JOB -> {
@@ -10529,6 +10585,15 @@ final class PlayerRuntime {
                     "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
         }
         return null;
+    }
+
+    /** Whether the player's look at the top of {@code block}, at ({@code x}, {@code z}), meets that block first (F-22c18). */
+    private static boolean seesTop(ServerPlayerEntity player, BlockPos block, double x, double z) {
+        var eye = player.getEyePos();
+        var to = new Vec3d(x, block.getY() + 0.999, z);
+        var hit = player.getServerWorld().raycast(new net.minecraft.world.RaycastContext(eye, to,
+                net.minecraft.world.RaycastContext.ShapeType.OUTLINE, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        return hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS || hit.getBlockPos().equals(block);
     }
 
     private static NativeTaskCandidate goNear(dev.kindred.core.TaskPreferences.Candidate task, BlockPos at) {
@@ -13152,6 +13217,22 @@ final class PlayerRuntime {
                                   StartupLedgerSnapshot ledgerSnapshot,
                                   Map<UUID, OperatingMode> modes) { }
     private record SpawnLocation(double x, double y, double z, float yaw) { }
+
+    /** The store's budget writes for a new session, each after the test seam's delay when one is set (F-22c2). */
+    private PaidActivitySession.Writer budgetWriter() {
+        SqliteCompanionStore writes = store;
+        return (next, expectedSequence) -> {
+            java.time.Duration delay = budgetWriteDelay;
+            if (delay.isZero()) return writes.saveBudget(next, expectedSequence);
+            var later = CompletableFuture.delayedExecutor(delay.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+            return CompletableFuture.supplyAsync(() -> null, later).thenCompose(ignored -> writes.saveBudget(next, expectedSequence));
+        };
+    }
+
+    private volatile java.time.Duration budgetWriteDelay = java.time.Duration.ZERO;
+
+    /** Test seam: every activity budget write held this long before it goes to the store, as on a slow disk (F-22c2). */
+    void delayBudgetWritesForTest(java.time.Duration delay) { budgetWriteDelay = delay; }
 
     /** Test seam: keep autonomous selection from replacing the state a fixture is inspecting. */
     void holdAutonomyForTest(UUID id, int ticks) {

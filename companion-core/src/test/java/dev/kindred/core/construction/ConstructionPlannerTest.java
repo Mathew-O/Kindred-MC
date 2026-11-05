@@ -48,6 +48,37 @@ class ConstructionPlannerTest {
         assertEquals(new Pos(0, 1, 0), step.stance(), "from where it stands, when that reaches");
     }
 
+    /**
+     * The last two blocks of a room's floor to dig out, side by side, the player on one: the other is broken from where
+     * it stands, then the one under it from beside. Each nearest first, the block underfoot came first, broken from on
+     * the other, the only spot beside it: there the other was underfoot and came first, broken from on the first, and it
+     * walked from one to the other without end, a hideout's last two blocks left (F-22c8).
+     */
+    @Test
+    void theLastTwoBlocksOfAFloorSideBySideAreBrokenNotWalkedBetween() {
+        var cells = BuildTestSites.flat();
+        var clear = new ArrayList<Pos>();
+        for (int x = -10; x <= 10; x++) for (int z = -10; z <= 10; z++) cells.put(new Pos(x, 1, z), BuildTestSites.STONE);
+        for (int x = 0; x <= 3; x++) for (int z = 0; z <= 2; z++) {
+            clear.add(new Pos(x, 1, z));
+            cells.put(new Pos(x, 1, z), Cell.AIR);
+        }
+        Pos a = new Pos(1, 1, 1), b = new Pos(2, 1, 1);
+        cells.put(a, BuildTestSites.STONE);
+        cells.put(b, BuildTestSites.STONE);
+        Pos onA = a.up();
+        var first = ConstructionPlanner.next(List.of(), clear, new BuildSite(cells), onA, ALL, Set.of());
+        assertEquals(ConstructionPlanner.Kind.BREAK, first.kind());
+        assertEquals(b, first.target(), "the one it can break from where it stands");
+        assertEquals(onA, first.stance(), "from where it stands");
+        cells.put(b, Cell.AIR);
+        var second = ConstructionPlanner.next(List.of(), clear, new BuildSite(cells), onA, ALL, Set.of());
+        assertEquals(ConstructionPlanner.Kind.BREAK, second.kind());
+        assertEquals(a, second.target(), "then the one under it");
+        assertNotEquals(onA, second.stance(), "from beside it");
+        assertNotEquals(b.up(), second.stance(), "not from over the block now gone");
+    }
+
     @Test
     void aSpotWhereTheServerRefusedTheStepIsNotTriedAgain() {
         var blocks = List.of(block(3, 1, 0, "minecraft:cobblestone"));
@@ -143,6 +174,28 @@ class ConstructionPlannerTest {
         var up = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), stance.add(0, step.height(), 0), ALL, Set.of());
         assertEquals(ConstructionPlanner.Kind.PLACE, up.kind(), up.reason());
         assertEquals(new Pos(0, 9, 0), up.target());
+    }
+
+    @Test
+    void noScaffoldGoesUpOnADoorsStep() {
+        // A wall seven high with a door in it, and a block to go on its top over the door; stood on the door's step, out of
+        // reach of it. The column nearest is the step itself, and one there would shut the door (F-22c16).
+        var cells = BuildTestSites.flat();
+        var blocks = new ArrayList<Blueprint.Block>();
+        String lower = "minecraft:oak_door[facing=north,half=lower,hinge=left,open=false]";
+        String upper = "minecraft:oak_door[facing=north,half=upper,hinge=left,open=false]";
+        for (int x = -3; x <= 3; x++) for (int y = 1; y <= 6; y++) {
+            String spec = x == 0 && y == 1 ? lower : x == 0 && y == 2 ? upper : "minecraft:cobblestone";
+            blocks.add(block(x, y, 0, spec));
+            cells.put(new Pos(x, y, 0), BuildTestSites.solid(spec));
+        }
+        blocks.add(block(0, 7, 0, "minecraft:cobblestone"));
+        var step = next(blocks, cells, new Pos(0, 1, -1));
+        assertEquals(ConstructionPlanner.Kind.SCAFFOLD, step.kind(), step.reason());
+        assertNotEquals(new Pos(0, 1, -1), step.stance(), "not on the door's step outside");
+        assertNotEquals(new Pos(0, 1, 1), step.stance(), "nor on its step inside");
+        assertTrue(ConstructionPlanner.doorStep(new Pos(0, 1, -1), Blueprint.byPosition(blocks)));
+        assertFalse(ConstructionPlanner.doorStep(new Pos(1, 1, -1), Blueprint.byPosition(blocks)));
     }
 
     @Test

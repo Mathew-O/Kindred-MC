@@ -1005,12 +1005,16 @@ final class PortalRunCampaign {
      * into deep water is turned up for air or ashore at once wherever it is bound (but on the way to the End), so no
      * crossing is lost by it.
      */
-    private void wetDip(Task walk, long tick) {
+    private void wetDip(net.minecraft.world.World world, Task walk, long tick) {
         if (walk == null || !"native_goto".equals(walk.skill()) || surfacing(walk) || climbingOut(walk)) return;
         var named = NAMED_PLACE.matcher(walk.label());
         BlockPos at = named.find() ? new BlockPos(Integer.parseInt(named.group(1)), Integer.parseInt(named.group(2)), Integer.parseInt(named.group(3)))
                 : position(walk.args());
         if (at == null) return;
+        // A swim out to a drop in the water is meant to end in the water: not a dip. Counted, the walk to a stump in a pool
+        // and two swims to its log afloat set the stump's cell aside, and with it the log floating there, and the tree-in-water
+        // fixture went ashore without it (CI on PR #25, both runs on b3f1590) (F-22c13).
+        if (walk.label().startsWith("Pick up ") && world.getFluidState(at).isIn(net.minecraft.registry.tag.FluidTags.WATER)) return;
         if (wetDips.size() > 256) wetDips.clear();
         if (wetDips.merge(at.asLong(), 1, Integer::sum) < 3) return;
         wetDips.remove(at.asLong());
@@ -1601,8 +1605,9 @@ final class PortalRunCampaign {
         // it swims, with breath to spare, it cuts there, treading water (F-25c4as).
         Optional<Task> air = surface(body);
         if (air.isPresent()) {
-            wetDip(lastGiven, tick);
+            // A walk that took it into the water to a log it cuts from there went where it meant to: not a dip (F-22c13).
             Optional<Task> chop = chopFromTheWater(body);
+            if (chop.isEmpty()) wetDip(body.entity().getServerWorld(), lastGiven, tick);
             if (chop.isPresent()) {
                 progress = stageLabel(stage) + ": " + chop.get().label() + " from the water";
                 return chop;
