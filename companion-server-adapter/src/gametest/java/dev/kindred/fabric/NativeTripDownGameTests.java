@@ -412,4 +412,77 @@ public final class NativeTripDownGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Climbing toward the surface under a lake whose bed is sand: it does not dig out the block the sand rests on, which
+     * would let the sand down and the sea after it (101's sea bed, F-25c4bg). On 101 in E-40's iteration 4
+     * (`e40a4-c237a6e`) Sol, with stone tools and no wood, climbed a stair toward the surface for logs. At -281, 42, -51 it
+     * dug out the block over its next step because sand rested on it (F-25c4ao), the sand came down, and the lake came
+     * down after it. It stood in the water to the end of the run, 9 stuck spells, 807 walks "to the wall" refused. Staged:
+     * the block of 101's terrain round its stair from a fresh world on the seed (read offline, diagnosis only); every cell
+     * Sol had dug there opened (from its console) but the two it dug as the water came; the region from Y=32 to the sea's
+     * top at 62 and four over it; the sea round it, wider than a fixture holds, stood for by the region's sides walled in
+     * stone all the way up, so that no dry ground is in reach of its search, as none was, and the water on the floor made
+     * stone so that it does not spill out; daylight held; the player where Sol stood, with a stone
+     * pickaxe, cobblestone and bread, no wood. Passes once it is three or more above where it stood, on dry ground, never
+     * having stood in the water for more than a minute.
+     */
+    @GameTest(templateName = "kindred_gametest:lake-bed-101", skyAccess = true, batchId = "lakeBed101", tickLimit = 6000)
+    public void climbingUpUnderALakeWhoseBedIsSandItDoesNotLetTheSandAndTheLakeDown(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5900);
+        // The structure is placed one above the test's origin: the file's 11, 10, 11 (-281, 42, -51 in the world) is here 11, 11, 11.
+        BlockPos o = context.getAbsolutePos(new BlockPos(11, 11, 11));
+        long[] start = {0};
+        int[] wet = {0, 0};
+        String[] last = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "LakeBed"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(6000);
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 24));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o) && !f.player().isTouchingWater(),
+                        "In its stair, dry: at " + f.player().getBlockPos().subtract(o).toShortString()))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    start[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(6000);
+                    var bots = f.runtime.panelBots(Actor.console());
+                    context.assertTrue(!bots.isEmpty() && f.player() != null && f.player().isAlive(), "Its panel and body");
+                    last[0] = bots.getFirst().goalProgress();
+                    var player = f.player();
+                    // Ticks in the water, in a row and at most.
+                    wet[0] = player.isTouchingWater() ? wet[0] + 1 : 0;
+                    wet[1] = Math.max(wet[1], wet[0]);
+                    context.assertTrue(wet[1] <= 1200, "In the water for a minute at " + player.getBlockPos().subtract(o).toShortString()
+                            + ", " + (context.getTick() - start[0]) + " ticks on; " + last[0]);
+                    boolean up = player.isOnGround() && !player.isTouchingWater() && player.getBlockPos().getY() >= o.getY() + 3;
+                    context.assertTrue(up, "Not yet up at " + player.getBlockPos().subtract(o).toShortString() + ", "
+                            + (context.getTick() - start[0]) + " ticks on, longest in the water " + wet[1] + "; " + last[0]);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isAlive(), "Alive");
+                    KindredMod.LOGGER.info("Lake bed 101: up {} ticks on at {}, longest in the water {} ticks; {}", context.getTick() - start[0],
+                            player.getBlockPos().subtract(o).toShortString(), wet[1], last[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

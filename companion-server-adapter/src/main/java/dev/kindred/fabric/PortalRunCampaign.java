@@ -3329,7 +3329,8 @@ final class PortalRunCampaign {
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
                 if (refused || passable(world, cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) {
-                    waterOver |= world.getFluidState(cell.up()).isIn(FluidTags.WATER);
+                    // Over the sand or gravel resting on it, if any: a lake's bed over the ceiling (F-25c4bg).
+                    waterOver |= world.getFluidState(columnTop(world, cell)).isIn(FluidTags.WATER);
                     headRoomRefused |= cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell);
                     if (!cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell)) besideWater.add(digDirection);
                     refused = true;
@@ -3362,6 +3363,7 @@ final class PortalRunCampaign {
                         if (breakableNow(body, over)) return Optional.of(clearAt(over, label + ": clear " + over.toShortString()));
                         if (handClearable(body, over)) return Optional.of(clearAt(over, label + ": clear " + over.toShortString() + " by hand"));
                     }
+                    waterOver |= world.getFluidState(columnTop(world, over)).isIn(FluidTags.WATER);
                     refused = true;
                 } else if (settling(over)) {
                     return Optional.of(new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle"));
@@ -3834,13 +3836,38 @@ final class PortalRunCampaign {
         return true;
     }
 
-    /** Lava on any side, or water above or beside, which would pour into the opening. */
+    /**
+     * Lava on any side, or water above or beside, which would pour into the opening; or a liquid held up by sand or
+     * gravel resting on it, which comes down after the column once the block under it is dug (F-25c4bg).
+     */
     private static boolean liquidNear(ServerWorld world, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             var fluid = world.getFluidState(pos.offset(direction));
             if (fluid.isIn(FluidTags.LAVA) || direction != Direction.DOWN && fluid.isIn(FluidTags.WATER)) return true;
         }
-        return world.getFluidState(pos).isIn(FluidTags.LAVA);
+        return world.getFluidState(pos).isIn(FluidTags.LAVA) || liquidOverColumn(world, pos);
+    }
+
+    /**
+     * Sand or gravel resting on the block, up to 16 high, with a liquid over the column or beside any of it: a lake's bed.
+     * In E-40's iteration 4 (`e40a4-c237a6e`) climbs dug out the block under such a column, the sand came down and the
+     * lake after it: Sol on 101 and 404, Kindred on 202, 404 and 606, 59 stuck spells in the water (F-25c4bg).
+     */
+    private static boolean liquidOverColumn(ServerWorld world, BlockPos pos) {
+        BlockPos above = pos.up();
+        for (int i = 0; i < 16 && world.getBlockState(above).getBlock() instanceof net.minecraft.block.FallingBlock; i++, above = above.up()) {
+            for (Direction direction : Direction.values()) {
+                if (direction != Direction.DOWN && !world.getFluidState(above.offset(direction)).isEmpty()) return true;
+            }
+        }
+        return false;
+    }
+
+    /** The first cell over it that is not sand or gravel resting on it: itself over a column, else the cell over it. */
+    private static BlockPos columnTop(ServerWorld world, BlockPos pos) {
+        BlockPos above = pos.up();
+        for (int i = 0; i < 16 && world.getBlockState(above).getBlock() instanceof net.minecraft.block.FallingBlock; i++) above = above.up();
+        return above;
     }
 
     // ------------------------------------------------------------------ crafting and smelting
