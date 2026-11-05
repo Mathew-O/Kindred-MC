@@ -2749,3 +2749,9 @@ After the block's first merge from main, CI on PR #25 found:
   - **[F-22c19](evidence/F-22c19.md):** the made-rails bring took a cart's pause at the top of its climb for home.
   - Not reproduced locally: 8 of 8 passed before the fix, on a 25 ms store. After it, 8 of 8, and
     `NativeBringGameTests` 7 of 7.
+- PR #25 merged as `fc38c94`. CI on its head `cb61d0b`: both runs green, native 565 of 565.
+- Main's next CI (run 42114774287): 564 of 565.
+  - **[F-22c20](evidence/F-22c20.md):** the life-first second-night cabin, its player stood on its own column over a
+    scaffold block it could not reach, waiting.
+  - Not reproduced locally: 4 of 4 before the fix and 4 of 4 after. The build classes and `NativeLifeFirstGameTests`
+    passed 37 of 37.
