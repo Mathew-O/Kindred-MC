@@ -2668,3 +2668,8 @@ After the block's first merge from main, CI on PR #25 found:
 - **[F-22c16](evidence/F-22c16.md):** the base cabin, stopped with its player shut indoors by a scaffold on the door's
   step. `ConstructionPlannerTest.noScaffoldGoesUpOnADoorsStep` fails without the rule and passes with it.
   `:companion-core:test` passed. The build classes, the bunker's among them, passed 33 of 33.
+- CI on `b2fe399` (run 42065936843): 560 of 561.
+  - **[F-22c17](evidence/F-22c17.md):** the one failure, the hours fixture asking while the stopped break was still
+    being settled.
+  - On a 25 ms store, 6 of 6 copies failed before the fixture fix and 6 of 6 passed after.
+  - `NativeAccountingGameTests` passed 7 of 7.

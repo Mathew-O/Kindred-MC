@@ -226,6 +226,11 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    // Asked while the stopped break's slice was still being settled to the store, the request is turned
+                    // away until it is ("activity settlement must finish first"), as all new work is; asked again then,
+                    // it meets the hours. Asked once only, on CI's slower disk the settlement was still being written
+                    // the tick after the player went idle, in CI on PR #25 and in 6 of 6 copies on a 25 ms store (F-22c17).
+                    if (activity.work().contains("activity settlement must finish first")) f.runtime.nativeBreak(f.source, f.id, obsidian);
                     context.assertTrue(activity.work().startsWith("Outside its activity hours"), "Refused outside its hours: " + activity.work());
                     f.runtime.stop();
                 })
