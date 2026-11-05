@@ -43,6 +43,14 @@
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01e: Co-op Survival at the group's pace, 2026-11-05
+
+Branch `claude/modes-1105-5`, on M-05's branch. M-01e closed. See [M-01e](evidence/M-01e.md).
+- JUnit: `GroupPaceTest` 4 of 4 (the trip rule added on `044eeab`).
+- Native, trips: `NativeCoopPaceGameTests` alone, three runs, 2 of 2 each. Control (the trip hold off): fails, through to the Nether before the human.
+- Native: `NativeCoopPaceGameTests` alone. Before the fix (`50d8dea`) it failed 3 of 3: the house was begun before the poll had seen the human's step. After it (`92a36fe`) it passed 3 of 3. Control (the hold off): fails.
+- Staged in the fixture: the cabin set and recorded as the player's own, iron tools, the clock, the human's advancements granted as though earned.
+
 ## E-40, rung a, iteration 6 and batch 9: surplus thrown back (F-25c4bi), a drop asked for under attack (F-25c4bk), a bucket with no slot free (F-25c4bl) — 5 November 2026 (`claude/e40-ladder-9-1105`)
 
 - **The evaluation, `e40a6-cb4a545` (batch 8 with F-25c4bh), worlds kept:** ten seeds, earned, nothing else on

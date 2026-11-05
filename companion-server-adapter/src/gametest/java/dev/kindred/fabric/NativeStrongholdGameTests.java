@@ -27,7 +27,7 @@ import net.minecraft.world.World;
  */
 public final class NativeStrongholdGameTests implements FabricGameTest {
     /** Stocked for the trip: the food, blocks, spare pickaxe and sword the plan asks for before going through. */
-    private static void stockedForTheNether(net.minecraft.server.network.ServerPlayerEntity player) {
+    static void stockedForTheNether(net.minecraft.server.network.ServerPlayerEntity player) {
         var inventory = player.getInventory();
         inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
         inventory.setStack(1, new ItemStack(Items.STONE_PICKAXE));
