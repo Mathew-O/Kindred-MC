@@ -2622,3 +2622,9 @@ bash ./gradlew --no-daemon :companion-server-adapter:runGametest   # build/gamet
 The CI record before this block: 13 runs (378 to 393) had results; 1 was green. The Nether portal restart failed in 7.
 Per-fixture before and after results are in each evidence file: [F-22c1](evidence/F-22c1.md) to
 [F-22c11](evidence/F-22c11.md). The slow-store experiment is in [F-22c5](evidence/F-22c5.md).
+
+After the block's first merge from main, CI on PR #25 found:
+- **[F-22c12](evidence/F-22c12.md):** the lake bring left a rail.
+- **[F-22c13](evidence/F-22c13.md):** the tree in water went ashore without its log, failing both runs on `b3f1590`.
+  On a 25 ms store, 5 of 52 copies failed before the fix and 36 of 36 passed after.
+  `NativeAtlasGameTests` passed 4 of 4.
