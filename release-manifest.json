@@ -10,7 +10,7 @@
     "D4": "Autonomous block edits are off by default; a missing edits.properties means off. With them off an AI player still keeps itself alive without changing a block: it eats, steps out of fire, lava and deep water and away from a creeper, and defends itself from a mob that is on it. An operator may record the roaming-edit policy with /aiplayer edits on: survival breaking and placing where the player itself may edit, never containers or block entities other than its own empty furnace, never spawn-protected blocks, never a lava-releasing break.",
     "D5": "Unattended progression requires qualified player mechanics, activity admission and recovery.",
     "D6": "A game mode may hand out an item only by an announced rule identical for human and AI participants (Manhunt tracking compass). No other exception to earned progress in survival modes. Implemented for manhunts (M-02a): the rule announced at the start, one compass to every hunter, cursed to vanish on death, taken back when the hunt ends; native fixtures between AI players.",
-    "D7": "AI players attack humans only inside a match the human joined; otherwise player attacks stay refused. Enforced for every strike at a player by duel matches (M-00a: a human joins only for itself, an AI player is entered by its administrator, and only with the server's PvP on), in native fixtures between AI players; a human-joined duel is not yet qualified in play.",
+    "D7": "AI players attack humans only inside a match the human joined; otherwise player attacks stay refused. Enforced for every strike at a player by duel matches (M-00a: a human joins only for itself, an AI player is entered by its administrator, and only with the server's PvP on), in native fixtures between AI players and with a stand-in human, and in play on an ordinary vanilla client (2026-11-05, M-00): a human joined a duel only by its own click, was struck only once it ran, and the leave to strike ends in the stop's own tick.",
     "D8": "Schematics are bundled when their licenses allow or supplied by users as files or single links, with license and attribution kept; no bulk scraping. Not implemented."
   },
   "minecraft": "1.21.1",
@@ -267,6 +267,14 @@
       "opponentHealth": "believed from the hits the player saw land (dev.kindred.core.tactics.HealthBeliefs); the Dragon's from its boss bar",
       "playerEquivalentObservation": false,
       "evidence": "docs/evidence/E-41a.md",
+      "qualified": false
+    },
+    "gameModes": {
+      "implementation": "dev.kindred.core.match.GameModes: the world's mode (coop, speedrun, manhunt, builder; factions declared, not playable) and the declared rules of every mode and match, announced before play",
+      "selection": "/aiplayer mode world <mode> (operators) or the K panel; kept in the world's kindred/mode.properties; none chosen keeps every match allowed",
+      "playstyle": "mapped from the mode (coop and manhunt OPTIMAL_SURVIVAL, speedrun SPEEDRUN_ANY_PERCENT, builder IDLE_OBSERVING), not beside it",
+      "presentation": "boss bar, per-viewer sidebar, action bar, titles with sounds, particles and onlookers, all vanilla; a fallen player's result held until it respawns",
+      "evidence": ["docs/evidence/M-00.md", "docs/evidence/M-00a.md", "docs/evidence/M-00b.md"],
       "qualified": false
     },
     "playerMelee": {

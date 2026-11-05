@@ -134,6 +134,14 @@ public final class MatchRegistry {
         return propose(Mode.MANHUNT, invited, Set.copyOf(runners));
     }
 
+    /** A duel proposed between two players with its own time, from thirty seconds to half an hour, then a draw. */
+    public Result proposeDuel(List<UUID> invited, int ticks) {
+        if (ticks < 20 * 30 || ticks > 20 * 60 * 30) return Result.refused("A duel lasts from thirty seconds to half an hour");
+        var result = propose(Mode.DUEL, invited);
+        result.match().ifPresent(match -> limits.put(match.id(), ticks));
+        return result;
+    }
+
     /** A build battle proposed between its builders, with {@code buildTicks} to build in. */
     public Result proposeBuild(List<UUID> builders, int buildTicks) {
         if (buildTicks < 20 * 30 || buildTicks > 20 * 60 * 30) return Result.refused("A build takes from thirty seconds to half an hour");

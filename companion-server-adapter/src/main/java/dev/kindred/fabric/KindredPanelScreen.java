@@ -175,6 +175,13 @@ final class KindredPanelScreen extends Screen {
                 .dimensions(editsX, rowC, detailX + detailWidth - closeWidth - gap - editsX, 20).build();
         edits.active = operator;
         addDrawableChild(edits);
+        // The world's game mode (M-00), at the foot of the roster: an operator steps it on to the next.
+        String worldKey = str(state, "worldMode");
+        var world = ButtonWidget.builder(Text.literal("World: " + (worldKey.isEmpty() ? "none" : worldKey)),
+                b -> act("worldmode", "", nextWorldMode(worldKey)))
+                .dimensions(left + 6, rowC, rosterButtonX + rosterButtonWidth - left - 6, 20).build();
+        world.active = operator;
+        addDrawableChild(world);
         addDrawableChild(ButtonWidget.builder(Text.literal("Close"), b -> close())
                 .dimensions(detailX + detailWidth - closeWidth, rowC, closeWidth, 20).build());
     }
@@ -190,7 +197,9 @@ final class KindredPanelScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         // Background (blur, panel frame) and widgets first; text and heads draw on top of them.
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, TEXT);
+        // The title, and beside it the match the viewer is in, as its bar reads (M-00).
+        String match = str(state, "match");
+        context.drawCenteredTextWithShadow(textRenderer, match.isEmpty() ? title : Text.literal(title.getString() + "  -  " + match), width / 2, 10, TEXT);
         context.drawTextWithShadow(textRenderer, Text.literal("Roster"), left + 6, top + 6, MUTED);
         context.fill(detailX - 6, top + 4, detailX - 5, bottom - 4, BORDER);
 
@@ -340,5 +349,12 @@ final class KindredPanelScreen extends Screen {
 
     private static boolean bool(JsonObject object, String key) {
         return object != null && object.has(key) && object.get(key).getAsBoolean();
+    }
+
+    /** The world mode after {@code current}, in the order they are offered. */
+    private static String nextWorldMode(String current) {
+        String[] order = {"coop", "speedrun", "manhunt", "builder"};
+        for (int i = 0; i < order.length; i++) if (order[i].equals(current)) return order[(i + 1) % order.length];
+        return order[0];
     }
 }

@@ -275,6 +275,8 @@ final class PlayerRuntime {
     private boolean dragonFight;
     /** The operator's leave for AI players to choose, site and build their own bases (M-01c); off by default. */
     private boolean bases;
+    /** The world's game mode (M-00), from mode.properties; null where none was chosen, as before modes existed. */
+    private dev.kindred.core.match.GameModes.WorldMode worldMode;
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
     /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
@@ -556,6 +558,20 @@ final class PlayerRuntime {
         }
     }
 
+    /** The world's game mode from mode.properties; none (null) when absent, unreadable or not a mode. */
+    private static dev.kindred.core.match.GameModes.WorldMode readWorldMode(Path directory) {
+        try {
+            java.nio.file.Path file = directory.resolve("mode.properties");
+            if (!java.nio.file.Files.exists(file)) return null;
+            java.util.Properties properties = new java.util.Properties();
+            try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            return dev.kindred.core.match.GameModes.parse(properties.getProperty("mode", "")).filter(m -> m.playable).orElse(null);
+        } catch (Exception failure) {
+            KindredMod.LOGGER.error("Kindred world mode could not be read; no mode is set", failure);
+            return null;
+        }
+    }
+
     private static EditPolicy.ServerPolicy readEdits(Path directory) {
         try {
             java.nio.file.Path file = directory.resolve("edits.properties");
@@ -582,7 +598,7 @@ final class PlayerRuntime {
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
-        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases")))
+        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
                         .thenCompose(database -> database.list().thenCompose(records -> {
                             Set<UUID> logicalIds = records.stream().map(r -> r.companion().id()).collect(java.util.stream.Collectors.toSet());
@@ -592,7 +608,7 @@ final class PlayerRuntime {
                                                     database.nativePlayers().thenCompose(nativePlayers ->
                                                             startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
                                                                     database.modes(logicalIds).thenApply(modes ->
-                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), database, records,
+                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), inputs.worldMode(), database, records,
                                                                                     profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes)
                                                                     )
                                                             )
@@ -674,6 +690,7 @@ final class PlayerRuntime {
                     edits = loaded.edits();
                     dragonFight = loaded.dragonFight();
                     bases = loaded.bases();
+                    worldMode = loaded.worldMode();
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
                     talk.load(store); // E-19a: people's own preferences; nothing unasked and no jokes until they are read.
@@ -836,7 +853,9 @@ final class PlayerRuntime {
                 return reject(source, "Connect a reconciled native body before resuming.");
             }
             if (entry.runtimeSettings.playstyleProfile().isIdleObserving()) {
-                entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(PlaystyleProfile.OPTIMAL_SURVIVAL);
+                // The world's mode says the pace (M-00); with none chosen, a careful survival as before.
+                entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(
+                        dev.kindred.core.match.GameModes.playstyle(worldMode, PlaystyleProfile.OPTIMAL_SURVIVAL));
             }
             entry.cachedRoutineCandidates = List.of();
             attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -2413,7 +2432,7 @@ final class PlayerRuntime {
         if (tick % 20 == 13) pollHunts();
         if (tick % 20 == 17) pollBuildBattles();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
-        presenter.tick(matches.list(), tick, this::playerName, this::raceProgress);
+        presenter.tick(matches.list(), tick, this::playerName, this::raceProgress, this::standing);
 
         var batch = new ArrayList<dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot>();
         // Home after the credits: out of every world, a body gets no tick of its own to ask with (E-39d).
@@ -12949,8 +12968,10 @@ final class PlayerRuntime {
         } catch (IOException failure) { throw new CompletionException(failure); }
     }
 
-    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases) { }
-    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
+    private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases,
+                             dev.kindred.core.match.GameModes.WorldMode worldMode) { }
+    private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases,
+                                  dev.kindred.core.match.GameModes.WorldMode worldMode, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
                                   java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
                                   java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
                                   StartupLedgerSnapshot ledgerSnapshot,
@@ -13164,6 +13185,104 @@ final class PlayerRuntime {
         }
     }
 
+    /** The match {@code player} is in, as its bar reads now, or "" when it is in none. */
+    String matchLine(UUID player) {
+        requireThread();
+        return matches.active(player).map(match -> dev.kindred.core.match.MatchPresentation.bar(match, server.getTicks(), this::playerName,
+                raceProgress(match.id())).text()).orElse("");
+    }
+
+    /** The world's game mode (M-00), or null where none was chosen. */
+    dev.kindred.core.match.GameModes.WorldMode worldMode() { return worldMode; }
+
+    /**
+     * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
+     * online with its rules, and each AI player's playstyle follows it (the profile it maps onto, not a second setting
+     * beside it). From then on only its matches, and duels, may be proposed. A match already proposed or running plays
+     * on under its own rules. Factions is declared but not playable yet.
+     */
+    int setWorldMode(ServerCommandSource source, dev.kindred.core.match.GameModes.WorldMode mode) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may choose the world's mode.");
+        if (!mode.playable) return reject(source, mode.label + " is not playable yet.");
+        worldMode = mode;
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null) continue;
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(mode.playstyle);
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+        }
+        Path file = metadataDirectory.resolve("mode.properties");
+        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> handBack(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred world mode could not be saved", failure);
+                reject(source, "The mode applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        feedback(source, "This world now plays " + mode.label + "; AI players play at " + mode.playstyle + ".");
+        for (var player : server.getPlayerManager().getPlayerList()) {
+            if (entryForPlayer(player.getUuid()) == null) tellRules(player, dev.kindred.core.match.GameModes.rules(mode));
+        }
+        KindredMod.LOGGER.info("World mode: {}", mode.label);
+        return 1;
+    }
+
+    /** The world's mode and its rules, or a match mode's, told to whoever asks. */
+    int showWorldMode(ServerCommandSource source, String which) {
+        requireThread();
+        dev.kindred.core.match.GameModes.Rules rules;
+        if (which == null) {
+            if (worldMode == null) {
+                feedback(source, "No world mode is chosen: every match may be proposed. Choose one with /aiplayer mode world coop|speedrun|manhunt|builder.");
+                return 1;
+            }
+            rules = dev.kindred.core.match.GameModes.rules(worldMode);
+        } else {
+            var mode = dev.kindred.core.match.GameModes.parse(which);
+            if (mode.isPresent()) {
+                rules = dev.kindred.core.match.GameModes.rules(mode.get());
+            } else {
+                var match = java.util.Arrays.stream(dev.kindred.core.match.MatchRegistry.Mode.values())
+                        .filter(m -> m.name().equalsIgnoreCase(which) || m == dev.kindred.core.match.MatchRegistry.Mode.BUILDER && which.equalsIgnoreCase("build")).findFirst();
+                if (match.isEmpty()) return reject(source, "No such mode: coop, speedrun, manhunt, builder, factions, or a match: duel, speedrun, manhunt, build.");
+                rules = dev.kindred.core.match.GameModes.rules(match.get());
+            }
+        }
+        feedback(source, rules.title() + (which == null ? " (this world's mode)" : "") + ":");
+        for (String line : rules.lines()) feedback(source, " " + line);
+        return 1;
+    }
+
+    /** A player told a mode's rules in chat: the announcement every rule rests on (D6). */
+    private void tellRules(ServerPlayerEntity player, dev.kindred.core.match.GameModes.Rules rules) {
+        player.sendMessage(Text.literal(rules.title() + " rules:").formatted(net.minecraft.util.Formatting.GOLD), false);
+        for (String line : rules.lines()) player.sendMessage(Text.literal(" " + line).formatted(net.minecraft.util.Formatting.GRAY), false);
+    }
+
+    /** A player joining the server is told the world's mode and its rules, where one is chosen. */
+    void playerJoined(ServerPlayerEntity player) {
+        requireThread();
+        if (!ready || worldMode == null || entryForPlayer(player.getUuid()) != null) return;
+        player.sendMessage(Text.literal("This world plays " + worldMode.label + ".").formatted(net.minecraft.util.Formatting.GOLD), false);
+        tellRules(player, dev.kindred.core.match.GameModes.rules(worldMode));
+    }
+
+    /** Whether a match of {@code mode} may be proposed in this world; refused with the reason if not. */
+    private boolean modeAllows(ServerCommandSource source, dev.kindred.core.match.MatchRegistry.Mode mode) {
+        if (dev.kindred.core.match.GameModes.allows(worldMode, mode)) return true;
+        reject(source, dev.kindred.core.match.GameModes.refusal(worldMode, mode));
+        return false;
+    }
+
     /**
      * A duel proposed between two players (M-00a). An AI player is entered by whoever administers it; a human must join
      * it itself (/aiplayer match join), so no human is ever entered into a fight by anyone else (D7).
@@ -13174,7 +13293,13 @@ final class PlayerRuntime {
 
     /** As the command, with the AI players that said yes for themselves when asked in chat ({@code chose}, E-52). */
     int proposeDuel(ServerCommandSource source, UUID first, UUID second, Set<UUID> chose) {
+        return proposeDuel(source, first, second, chose, 0);
+    }
+
+    /** As the command, with the duel's own time in ticks ({@code ticks}, zero for its mode's five minutes). */
+    int proposeDuel(ServerCommandSource source, UUID first, UUID second, Set<UUID> chose, int ticks) {
         requireThread();
+        if (!modeAllows(source, dev.kindred.core.match.MatchRegistry.Mode.DUEL)) return 0;
         // The server's own rule comes first: with PvP off, no player can hurt another, in a match or not.
         if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no duel can be fought.");
         var invited = List.of(first, second);
@@ -13185,7 +13310,7 @@ final class PlayerRuntime {
                 return reject(source, "Administrative access to " + entry.data.displayName() + " denied.");
             }
         }
-        var result = matches.propose(dev.kindred.core.match.MatchRegistry.Mode.DUEL, invited);
+        var result = ticks > 0 ? matches.proposeDuel(invited, ticks) : matches.propose(dev.kindred.core.match.MatchRegistry.Mode.DUEL, invited);
         if (!result.accepted()) return reject(source, result.reason());
         var match = enter(result.match().orElseThrow());
         feedback(source, match.mode().label() + " " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match)
@@ -13215,6 +13340,8 @@ final class PlayerRuntime {
                 case BUILDER -> "a build battle against " + others + "; you build in creative on your own plot, then everyone votes";
             };
             String join = "/aiplayer match join " + dev.kindred.core.match.MatchRegistry.shortId(match.id());
+            // The match's rules, announced before anyone joins (D6, D7).
+            tellRules(human, dev.kindred.core.match.GameModes.rules(match.mode()));
             human.sendMessage(Text.literal("You are invited to " + what + ". To play in it: ").append(Text.literal("[Join]")
                     .styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
                             .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, join))
@@ -13247,6 +13374,7 @@ final class PlayerRuntime {
     /** As the command, with the AI players that said yes for themselves when asked in chat ({@code chose}, E-52). */
     int proposeSpeedrun(ServerCommandSource source, List<UUID> runners, Set<UUID> chose) {
         requireThread();
+        if (!modeAllows(source, dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN)) return 0;
         for (UUID runner : runners) {
             Entry entry = entryForPlayer(runner);
             var player = server.getPlayerManager().getPlayer(runner);
@@ -13279,6 +13407,7 @@ final class PlayerRuntime {
      */
     int proposeManhunt(ServerCommandSource source, List<UUID> runners, List<UUID> hunters) {
         requireThread();
+        if (!modeAllows(source, dev.kindred.core.match.MatchRegistry.Mode.MANHUNT)) return 0;
         if (!server.isPvpEnabled()) return reject(source, "PvP is off on this server (pvp=false in server.properties); no manhunt can be played.");
         var everyone = new ArrayList<UUID>(runners);
         everyone.addAll(hunters);
@@ -13309,6 +13438,7 @@ final class PlayerRuntime {
      */
     int proposeBuildBattle(ServerCommandSource source, List<UUID> builders, int buildTicks, dev.kindred.core.match.BuildBattle.Theme theme) {
         requireThread();
+        if (!modeAllows(source, dev.kindred.core.match.MatchRegistry.Mode.BUILDER)) return 0;
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator lays out a build battle's plots.");
         for (UUID builder : builders) {
             Entry entry = entryForPlayer(builder);
@@ -13892,6 +14022,14 @@ final class PlayerRuntime {
         return splits == null ? List.of() : splits.of(runner);
     }
 
+    /** A player's word on its match's sidebar: a racer's splits so far. */
+    private String standing(dev.kindred.core.match.MatchRegistry.Match match, UUID player) {
+        if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN && !(match.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT
+                && match.runners().contains(player))) return "";
+        int splits = raceSplits(match.id(), player).size();
+        return splits == 0 ? "" : splits + (splits == 1 ? " split" : " splits");
+    }
+
     /** The player running the command joins a match it was invited to. Only a player can join, and only for itself. */
     int joinMatch(ServerCommandSource source, UUID matchId) {
         requireThread();
@@ -13959,6 +14097,12 @@ final class PlayerRuntime {
     java.util.Optional<dev.kindred.core.match.MatchRegistry.Match> findMatch(String raw) {
         requireThread();
         return matches.find(raw);
+    }
+
+    /** Whether the match rule lets {@code attacker} strike {@code target} now, for a fixture. */
+    boolean mayAttackForTest(UUID attacker, UUID target) {
+        requireThread();
+        return matches.mayAttack(attacker, target);
     }
 
     MatchPresenter presenter() {

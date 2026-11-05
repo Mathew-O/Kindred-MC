@@ -74,6 +74,8 @@ final class KindredPanelService {
                 }
             }
             case "edits" -> runtime.setWorldEdits(source, Boolean.parseBoolean(argument));
+            case "worldmode" -> dev.kindred.core.match.GameModes.parse(argument).ifPresentOrElse(mode -> runtime.setWorldMode(source, mode),
+                    () -> feedback.append("Unknown world mode."));
             case "skin" -> {
                 if (id != null) runtime.setSkin(source, id, argument);
             }
@@ -101,6 +103,11 @@ final class KindredPanelService {
             root.addProperty("ready", true);
             root.addProperty("operator", operator);
             root.addProperty("worldEdits", runtime.worldEditsEnabled());
+            // The world's mode (M-00), and the match the viewer is in, as its bar reads.
+            var worldMode = runtime.worldMode();
+            root.addProperty("worldMode", worldMode == null ? "" : worldMode.key());
+            root.addProperty("worldModeLabel", worldMode == null ? "No mode" : worldMode.label);
+            root.addProperty("match", runtime.matchLine(player.getUuid()));
             root.addProperty("skinsFolder", "config/kindred/skins");
             JsonArray roster = new JsonArray();
             for (var preset : CanonicalRoster.TRIO) {
