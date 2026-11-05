@@ -103,7 +103,12 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
                     KindredMod.LOGGER.info("Own ranch: {} at {}, {}, {}; {} fences; {} cows and {} calves penned", pen.kind(), pen.x(), pen.y(), pen.z(),
                             fences, adults, calves);
-                    context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf: " + adults + " and " + calves);
+                    var where = new StringBuilder();
+                    for (var cow : world.getEntitiesByClass(CowEntity.class, new Box(post).expand(48), c -> true)) {
+                        where.append(cow.getUuid().equals(cows[0]) || cow.getUuid().equals(cows[1]) ? "pair " : "other ").append(cow.getBlockPos().subtract(post).toShortString())
+                                .append(cow.isBaby() ? " young" : "").append(cow.isInLove() ? " in love" : "").append("; ");
+                    }
+                    context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf: " + adults + " and " + calves + "; cows from the pen's post: " + where);
                     context.assertTrue(f.player().getInventory().count(Items.WHEAT) == 6, "Two wheat fed: " + f.player().getInventory().count(Items.WHEAT));
                 })
                 // Ten seconds on, no second ranch begun.

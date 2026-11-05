@@ -130,6 +130,11 @@ public final class Ranch {
     /** How many times it has gone back to the animals it gave up on. */
     private int retried, refetched;
     private static final int RETRIES = 2;
+    /** Where it last saw each animal it might bring in, outside the pen; and how many such spots it has looked in. */
+    private final java.util.Map<UUID, Pos> lastSeen = new java.util.HashMap<>();
+    private int searched;
+    /** Spots it looks in for strays before it gives them up; and how near it an animal is fetched though far from the gate. */
+    private static final int SEARCHES = 3, NEAR = 16;
     private int youngBefore = -1;
     private String outcome = "";
     private boolean bred;
@@ -320,9 +325,14 @@ public final class Ranch {
     }
 
     private Step fetch(Observation seen, boolean in, int adultsIn, java.util.function.Predicate<Animal> wanted) {
+        // Where it last saw each it might bring in: one that wanders off while it works is looked for there.
+        for (var a : seen.animals()) {
+            if (a.kind() == kind && wanted.test(a) && !inside(a.at())) lastSeen.put(a.id(), a.at());
+            else lastSeen.remove(a.id());
+        }
         var candidates = seen.animals().stream()
                 .filter(a -> a.kind() == kind && wanted.test(a) && !inside(a.at()) && !givenUp.contains(a.id())
-                        && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE)
+                        && (a.at().distanceSquared(gate()) <= (long) RANGE * RANGE || a.at().distanceSquared(seen.feet()) <= (long) NEAR * NEAR))
                 .sorted(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet())))
                 .toList();
         var lead = candidates.stream().filter(a -> a.id().equals(leading)).findFirst().or(() -> candidates.stream().findFirst());
@@ -333,6 +343,22 @@ public final class Ranch {
             retried++;
             givenUp.clear();
             return new Step.Wait(true, "Try the " + kind.noun() + "s again");
+        }
+        if (lead.isEmpty() && searched < SEARCHES) {
+            // Out of sight now: to where it was last seen, the food in hand, as a player goes to look for a stray. A spot it
+            // has reached and found empty is crossed off.
+            var visible = new HashSet<UUID>();
+            for (var a : seen.animals()) visible.add(a.id());
+            var stray = lastSeen.entrySet().stream().filter(e -> !visible.contains(e.getKey()) && !givenUp.contains(e.getKey()))
+                    .min(Comparator.comparingLong(e -> e.getValue().distanceSquared(seen.feet())));
+            if (stray.isPresent()) {
+                if (stray.get().getValue().distanceSquared(seen.feet()) <= 9) {
+                    lastSeen.remove(stray.get().getKey());
+                    searched++;
+                    return new Step.Wait(true, "Not where it was");
+                }
+                return new Step.Go(stray.get().getValue(), 2, true, 0, "Look for the other " + kind.noun() + " where it was last seen");
+            }
         }
         if (lead.isEmpty()) {
             return leave(seen, adultsIn == 1 ? "Only one " + kind.noun() + " in the pen; no other in sight" : "No " + kind.noun() + "s in sight to bring in");
