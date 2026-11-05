@@ -1,0 +1,34 @@
+[02:14:14] [Server thread/INFO] (Minecraft) Mira joined the game
+[02:14:41] [Server thread/INFO] (Minecraft) Owen joined the game
+[02:15:13] [Server thread/INFO] (Minecraft) Owen joined the game
+[02:15:19] [Server thread/INFO] (Kindred) World mode: Co-op Survival
+[02:15:26] [Server thread/INFO] (Minecraft) Bram joined the game
+[02:15:51] [Server thread/INFO] (Minecraft) [Rcon: Teleported Mira to 0.500000, -60.000000, 0.500000]
+[02:15:51] [Server thread/INFO] (Minecraft) [Rcon: Teleported Bram to 0.500000, -60.000000, 4.500000]
+[02:15:51] [Server thread/INFO] (Minecraft) [Rcon: Teleported Owen to 6.500000, -60.000000, 2.500000]
+[02:16:19] [Server thread/INFO] (Kindred) Duel Bram against Mira: starting in three seconds
+[02:16:22] [Server thread/INFO] (Kindred) Duel Bram against Mira: fight!
+[02:16:39] [Server thread/INFO] (Minecraft) Mira was slain by Bram
+[02:16:39] [Server thread/INFO] (Kindred) Duel Bram against Mira: Bram wins (fell)
+[02:17:13] [Server thread/INFO] (Minecraft) Cass joined the game
+[02:17:19] [Server thread/INFO] (Minecraft) [Rcon: Teleported Cass to 3.500000, -60.000000, 4.500000]
+[02:17:19] [Server thread/INFO] (Minecraft) [Rcon: Teleported Bram to 0.500000, -60.000000, 4.500000]
+[02:17:19] [Server thread/INFO] (Minecraft) [Rcon: Teleported Mira to 1.500000, -60.000000, -1.500000]
+[02:17:19] [Server thread/INFO] (Minecraft) [Rcon: Teleported Owen to 6.500000, -60.000000, 2.500000]
+[02:17:25] [Server thread/INFO] (Kindred) Duel Bram against Cass: starting in three seconds
+[02:17:28] [Server thread/INFO] (Kindred) Duel Bram against Cass: fight!
+[02:18:28] [Server thread/INFO] (Kindred) Duel Bram against Cass: Time ran out: a draw
+[02:42:03] [Server thread/INFO] (Minecraft) Mira joined the game
+[02:42:20] [Server thread/INFO] (Minecraft) Bram joined the game
+[02:42:24] [Server thread/INFO] (Minecraft) [Rcon: Teleported Mira to 0.500000, -60.000000, 0.500000]
+[02:42:24] [Server thread/INFO] (Minecraft) [Rcon: Teleported Bram to 0.500000, -60.000000, 4.500000]
+[02:42:30] [Server thread/INFO] (Kindred) Duel Bram against Mira: starting in three seconds
+[02:42:33] [Server thread/INFO] (Kindred) Duel Bram against Mira: fight!
+[02:43:33] [Server thread/INFO] (Kindred) Duel Bram against Mira: Time ran out: a draw
+[02:43:36] [Server thread/INFO] (Kindred) Bram died at 0, -60, 1: Bram was slain by Mira (tick 2130, night, under the sky, hunger 6, armour 0, holding nothing, no shield; doing "native_goto" in "Starting"; stance PRESS_ON, focus NONE, habits [])
+[02:43:36] [Server thread/INFO] (Minecraft) Bram was slain by Mira
+[02:55:27] [Server thread/INFO] (Minecraft) Kit joined the game
+[02:57:45] [Server thread/INFO] (Minecraft) Kit left the game
+[02:57:45] [Server thread/INFO] (Kindred) Duel Bram against 923db89d: A player left before the start
+[02:57:47] [Server thread/INFO] (Minecraft) Kit joined the game
+[02:58:18] [Server thread/INFO] (Kindred) World mode: Speedrun

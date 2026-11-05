@@ -35,7 +35,9 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer storage at <x y z> [bot]   make the container there the player's own storage (stops it until resumed)
 /aiplayer ranch <cow|sheep|pig|chicken> <x y z> [bot]  build a pen there from its own wood, lead a pair in with their food and breed them
 /aiplayer ranch stop [bot]           stop the ranch; what is built stays
-/aiplayer match duel <first> <second>  propose a duel between two players (AI players or humans online)
+/aiplayer mode world [coop|speedrun|manhunt|builder]  show the world's game mode and its rules, or choose it (operators)
+/aiplayer mode rules [mode or match] the rules of a mode (coop, speedrun, manhunt, builder, factions) or match (duel, build)
+/aiplayer match duel <first> <second> [seconds]  propose a duel between two players (AI players or humans online); 30-1800 s, five minutes by default
 /aiplayer match speedrun <runner...> propose a speedrun race to the dragon for one to eight runners
 /aiplayer match manhunt <runners> vs <hunters>  propose a manhunt: runners make for the dragon, hunters hunt them
 /aiplayer match build <builders> [for <seconds>] [theme <name>]  propose a build battle (operators; plots laid where you stand)
@@ -185,15 +187,31 @@ It says what it left out. A schematic may be up to 96 blocks a side and 32,768 b
 
 The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, and the player says when the hut is built. A build an operator set it to, by generator or schematic, is kept in the world's `kindred/memory/<player>.work.json`, with the scaffold it has up, and so is a farm ward's field. After a restart the player takes it up again from what stands as it reconnects; a player that was stopped stays stopped until resumed. A ranch is not kept yet. Not yet: stone gathered for a build, smelted blocks such as glass, Litematica `.litematic` files. See [the building plan](building-plan.md), [E-08b](evidence/E-08b.md), [E-08c](evidence/E-08c.md) and [M-01b](evidence/M-01b.md).
 
-**Duels (M-00a; in development).** Players fight one another only inside a match they joined (D7), and only on a server that allows PvP at all (`pvp=true` in `server.properties`; with it off, no duel is proposed or started). `/aiplayer match duel <first> <second>` proposes a duel between two players, AI players or humans online:
+**The world's game mode (M-00).** `/aiplayer mode world <coop|speedrun|manhunt|builder>` chooses what the world is played as; operators only, or the world button on the K panel.
+- It is kept in the world's `kindred/mode.properties`. With no mode chosen, as in a world from before modes, every match may be proposed and each AI player keeps its own playstyle.
+- Choosing one sets every AI player's playstyle to the mode's: Co-op Survival and Manhunt careful survival (`OPTIMAL`), Speedrun `SPEEDRUN`, Builder looking on (`IDLE`, since it plays only build battles). A player you resume from looking on takes the mode's playstyle. `/aiplayer mode <profile> <player>` still sets one player's own.
+- A world plays its own mode's matches, and duels, which both players opt into. Proposing another kind is refused with the reason.
+- Everyone online is told the mode and its rules when it is chosen, and so is each person who joins: play, building, fighting, items, deaths and winning. `/aiplayer mode rules <mode or match>` shows any mode's or match's rules.
+- Each person invited to a match is told that match's rules before its [Join].
+- Factions is not playable yet (M-06).
+
+**Duels (M-00a).** Players fight one another only inside a match they joined (D7), and only on a server that allows PvP at all (`pvp=true` in `server.properties`; with it off, no duel is proposed or started). `/aiplayer match duel <first> <second>` proposes a duel between two players, AI players or humans online:
 - An AI player is entered by whoever may administer it; proposing needs that access for each AI player in it.
 - A human is only invited: the invitation has a **[Join]** to click, which runs `/aiplayer match join <match>` as that human. It is in the match only after joining itself, and nobody can enter a human into a fight.
 - Once everyone has joined, an operator or a player in it starts it with `/aiplayer match start <match>`. Three seconds of countdown follow, in which nobody may strike, then the fight.
 - The AI players in it fight with what they carry (the weapon that deals the most, with the timing and critical hits of their other fights), walking over first when the opponent is far.
-- It ends when one player falls (the other wins), when one forfeits (`/aiplayer match stop <match>` from a player in it, or leaving the game, an AI player's body taken out included), after five minutes (a draw), or when an operator stops it. A player leaving before the start calls it off. The leave to strike ends with it at once, mid-swing included. Matches are not kept across a restart; a restart ends them all.
+- It ends when one player falls (the other wins), when one forfeits (`/aiplayer match stop <match>` from a player in it, or leaving the game, an AI player's body taken out included), when its time runs out (five minutes, or the seconds given when it was proposed; a draw), or when an operator stops it. A player leaving before the start calls it off. The leave to strike ends with it at once, mid-swing included. Matches are not kept across a restart; a restart ends them all.
 - The fight takes the same damage, wear and deaths as any other: nothing is restored afterwards, and the fallen player respawns and drops its items as in any death.
 
-Each player in it sees the match as a minigame server shows one, on an ordinary client with no mod: a boss bar with the players and the clock, titles with a sound for each second of the countdown, for the fight's start and for its own result (Victory, Defeat, Draw, Stopped or Called off), and the match's state in chat. A match goes by the first eight characters of its id (any start of four or more that no other match shares will do); `/aiplayer match list` shows them. See [M-00a](evidence/M-00a.md).
+Each player in it sees the match as a minigame server shows one, on an ordinary client with no mod:
+- a boss bar with the players and the clock;
+- a sidebar with where the match stands and each player's standing (joined, out, won, a racer's splits);
+- its own part over its hotbar ("Duel against Bram - 1:59 left");
+- titles with a sound for each second of the countdown, for the start and for its own result (Victory, Defeat, Draw, Stopped or Called off);
+- fireworks round each player at the start and a totem's burst round each winner;
+- the match's state in chat.
+
+A player who falls sees its result once it respawns, since the death screen covers titles. Anyone within 48 blocks of a player in the match looks on: they get the bar, the sidebar and who won. The sidebar is the match's own, sent to each viewer alone. While it is up it takes the place of any sidebar the server shows; once it comes down, that sidebar shows again only when the server next sends it. A match goes by the first eight characters of its id (any start of four or more that no other match shares will do); `/aiplayer match list` shows them. See [M-00a](evidence/M-00a.md).
 
 **Speedrun races (M-03a; in development).** `/aiplayer match speedrun <runner> [runner...]` proposes a race to the Ender Dragon for one to eight runners, AI players or humans online. It is joined and started like a duel (`join`, `start`), with the same three-second countdown.
 - **A fresh start.** Every runner must start with nothing: an empty inventory, and none of the race's split advancements. A runner that carries anything, or has reached a split already in this world, is refused with the reason. So a race wants a new world, which is yours to make, with a random seed for a fair run.

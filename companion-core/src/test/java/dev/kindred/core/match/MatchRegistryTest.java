@@ -232,4 +232,23 @@ class MatchRegistryTest {
         assertEquals(bram, won.winner(), "only those in it win");
         assertTrue(won.won(bram) && !won.won(ada) && !won.won(cy));
     }
+
+    @Test
+    void aDuelWithItsOwnTimeIsADrawWhenThatTimeRunsOut() {
+        var registry = new MatchRegistry();
+        UUID a = UUID.randomUUID(), b = UUID.randomUUID();
+        assertFalse(registry.proposeDuel(List.of(a, b), 20 * 29).accepted(), "under thirty seconds refused");
+        assertFalse(registry.proposeDuel(List.of(a, b), 20 * 60 * 31).accepted(), "over half an hour refused");
+        var duel = registry.proposeDuel(List.of(a, b), 20 * 30).match().orElseThrow();
+        assertEquals(20 * 30, registry.limit(duel.id()));
+        registry.join(duel.id(), a);
+        registry.join(duel.id(), b);
+        registry.start(duel.id(), 0);
+        registry.tick(MatchRegistry.COUNTDOWN_TICKS);
+        assertTrue(registry.tick(MatchRegistry.COUNTDOWN_TICKS + 20 * 30 - 1).isEmpty(), "still running a tick before");
+        var ended = registry.tick(MatchRegistry.COUNTDOWN_TICKS + 20 * 30).getFirst();
+        assertEquals(MatchRegistry.State.ENDED, ended.state());
+        assertEquals("Time ran out: a draw", ended.result());
+        assertFalse(registry.mayAttack(a, b), "no leave to strike once it is over");
+    }
 }
