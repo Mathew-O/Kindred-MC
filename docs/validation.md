@@ -67,6 +67,13 @@
     - the hoglin with lava at the player's back.
   - Each failed on earlier builds without these changes; see the PR's comments.
 
+## M-05: Litematica schematics, 2026-11-05
+
+Branch `claude/modes-1105-4`, on M-04's branch. M-05 closed. See [M-05](evidence/M-05.md).
+- JUnit: `SchematicsTest` 7 of 7, three new for Litematica. Control: a decoder that ignores an index's second long fails the spanning test.
+- Native: `NativeBuildGameTests` alone, three runs, 5 of 5 each, with the new `aLitematicaSchematicIsReadAndBuiltTurnedAQuarter`.
+- Nothing staged beyond the kiosk fixture's own setup (its blocks given, the player placed, a flat floor laid), as before.
+
 ## M-02 and M-04: manhunts and build battles, 2026-11-05
 
 Branches `claude/modes-1105-2` (M-02) and `claude/modes-1105-3` (M-04, on top of it), from M-00's merge `cdec035`. M-04 and M-04a closed; M-02a, M-02b and M-02c stay open. See [M-04](evidence/M-04.md), [M-02a](evidence/M-02a.md) and [M-02b](evidence/M-02b.md).

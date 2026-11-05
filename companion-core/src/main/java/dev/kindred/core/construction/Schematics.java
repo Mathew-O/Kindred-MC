@@ -14,7 +14,8 @@ import java.util.TreeSet;
  * player can get are left out; and who made the plan and its terms of use are kept with it.
  *
  * Technical: Schematics read into blueprints (M-05): vanilla structure files ({@code .nbt}, as a structure
- * block saves them) and Sponge schematics ({@code .schem}, versions 2 and 3, as WorldEdit saves them).
+ * block saves them), Sponge schematics ({@code .schem}, versions 2 and 3, as WorldEdit saves them) and Litematica
+ * schematics ({@code .litematic}, versions 4 to 7, every region of one).
  * Positions are kept relative to the file's own corner; air is space to keep clear; structure void is neither
  * a block nor space. What a block entity held (a chest's items, a sign's words) is never read: a build places
  * blocks, and nothing comes from nowhere. Who made it and the terms it is used under go with it (D8). Pure.
@@ -46,17 +47,18 @@ public final class Schematics {
     private Schematics() { }
 
     /**
-     * Reads {@code data}, a {@code .nbt} or {@code .schem} file, into a blueprint called {@code name}. The creator is
+     * Reads {@code data}, a {@code .nbt}, {@code .schem} or {@code .litematic} file, into a blueprint called {@code name}. The creator is
      * the file's own (a Sponge schematic's author, a structure's) unless {@code creator} names one.
      */
     public static Read read(byte[] data, String name, String source, String creator, String license) {
         var root = Nbt.read(data);
+        if (root.get("Regions") instanceof Map<?, ?>) return litematic(root, name, source, creator, license);
         if (root.containsKey("palette") || root.containsKey("palettes")) return structure(root, name, source, creator, license);
         var sponge = root.get("Schematic") instanceof Map<?, ?> ? Nbt.compound(root, "Schematic") : root;
         if (sponge.containsKey("Version") && (sponge.containsKey("BlockData") || sponge.containsKey("Blocks"))) {
             return sponge(sponge, name, source, creator, license);
         }
-        throw new IllegalArgumentException("Neither a structure file nor a Sponge schematic");
+        throw new IllegalArgumentException("Neither a structure file, a Sponge schematic nor a Litematica schematic");
     }
 
     private static Read structure(Map<String, Object> root, String name, String source, String creator, String license) {
@@ -147,6 +149,91 @@ public final class Schematics {
         String title = Nbt.string(metadata, "Name");
         return new Read(new Blueprint(name.isBlank() ? title : name, source, creator.isBlank() ? author : creator, license, blocks, clear),
                 Nbt.integer(schematic, "DataVersion", 0), notes);
+    }
+
+    /**
+     * A Litematica schematic: one or more regions, each with its corner, its size (negative along an axis it was
+     * selected backwards on), its own palette, and its blocks as palette indices packed into longs, each index as wide
+     * as the palette needs (two bits at least), x fastest, then z, then y, an index running over from one long into
+     * the next where it does not fit. Positions are kept relative to the corner of all the regions together.
+     */
+    private static Read litematic(Map<String, Object> root, String name, String source, String creator, String license) {
+        var notes = new ArrayList<String>();
+        int version = Nbt.integer(root, "Version", 0);
+        if (version < 4 || version > 7) throw new IllegalArgumentException("Litematica schematic version " + version + " is not read (4 to 7 are)");
+        var regions = Nbt.compound(root, "Regions");
+        if (regions.isEmpty()) throw new IllegalArgumentException("A Litematica schematic with no regions");
+        record Region(String name, Map<String, Object> tag, int x, int y, int z, int sx, int sy, int sz) { }
+        var list = new ArrayList<Region>();
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (var entry : regions.entrySet()) {
+            @SuppressWarnings("unchecked")
+            var region = (Map<String, Object>) entry.getValue();
+            var position = Nbt.compound(region, "Position");
+            var size = Nbt.compound(region, "Size");
+            int px = Nbt.integer(position, "x", 0), py = Nbt.integer(position, "y", 0), pz = Nbt.integer(position, "z", 0);
+            int sx = Nbt.integer(size, "x", 0), sy = Nbt.integer(size, "y", 0), sz = Nbt.integer(size, "z", 0);
+            if (sx == 0 || sy == 0 || sz == 0) throw new IllegalArgumentException("Region " + entry.getKey() + " has no size");
+            // A negative size runs back from the region's position: its corner is at the far end.
+            int cx = sx < 0 ? px + sx + 1 : px, cy = sy < 0 ? py + sy + 1 : py, cz = sz < 0 ? pz + sz + 1 : pz;
+            sx = Math.abs(sx); sy = Math.abs(sy); sz = Math.abs(sz);
+            if (sx > Blueprint.MAX_SPAN || sy > Blueprint.MAX_SPAN || sz > Blueprint.MAX_SPAN) {
+                throw new IllegalArgumentException("Wider than " + Blueprint.MAX_SPAN + " blocks: " + sx + "x" + sy + "x" + sz);
+            }
+            list.add(new Region(entry.getKey(), region, cx, cy, cz, sx, sy, sz));
+            minX = Math.min(minX, cx); minY = Math.min(minY, cy); minZ = Math.min(minZ, cz);
+            maxX = Math.max(maxX, cx + sx - 1); maxY = Math.max(maxY, cy + sy - 1); maxZ = Math.max(maxZ, cz + sz - 1);
+        }
+        if (maxX - minX + 1 > Blueprint.MAX_SPAN || maxY - minY + 1 > Blueprint.MAX_SPAN || maxZ - minZ + 1 > Blueprint.MAX_SPAN) {
+            throw new IllegalArgumentException("Its regions together are wider than " + Blueprint.MAX_SPAN + " blocks");
+        }
+        var blocks = new ArrayList<Blueprint.Block>();
+        var clear = new ArrayList<Pos>();
+        var skipped = new TreeSet<String>();
+        int blockEntities = 0, entities = 0;
+        for (Region region : list) {
+            var palette = Nbt.list(region.tag(), "BlockStatePalette");
+            if (palette.isEmpty()) throw new IllegalArgumentException("Region " + region.name() + " has no palette");
+            var states = new ArrayList<BlockSpec>(palette.size());
+            for (Object entry : palette) {
+                @SuppressWarnings("unchecked")
+                var state = (Map<String, Object>) entry;
+                var properties = new TreeMap<String, String>();
+                Nbt.compound(state, "Properties").forEach((k, v) -> properties.put(k, String.valueOf(v)));
+                states.add(new BlockSpec(Nbt.string(state, "Name"), properties));
+            }
+            if (!(region.tag().get("BlockStates") instanceof long[] packed)) {
+                throw new IllegalArgumentException("Region " + region.name() + " has no block states");
+            }
+            int bits = Math.max(2, 32 - Integer.numberOfLeadingZeros(states.size() - 1));
+            long cells = (long) region.sx() * region.sy() * region.sz();
+            if ((long) packed.length * 64 < cells * bits) {
+                throw new IllegalArgumentException("Region " + region.name() + " holds " + (long) packed.length * 64 / bits + " of " + cells + " cells");
+            }
+            long mask = (1L << bits) - 1;
+            for (int i = 0; i < cells; i++) {
+                long first = (long) i * bits;
+                int start = (int) (first >>> 6), end = (int) ((first + bits - 1) >>> 6), offset = (int) (first & 63);
+                long value = start == end ? packed[start] >>> offset & mask
+                        : (packed[start] >>> offset | packed[end] << (64 - offset)) & mask;
+                if (value >= states.size()) throw new IllegalArgumentException("A block not in the palette: " + value);
+                int y = (int) (i / (region.sx() * region.sz())), rest = (int) (i % (region.sx() * region.sz()));
+                int z = rest / region.sx(), x = rest % region.sx();
+                add(states.get((int) value), new Pos(region.x() + x - minX, region.y() + y - minY, region.z() + z - minZ), blocks, clear, skipped);
+            }
+            blockEntities += Nbt.list(region.tag(), "TileEntities").size();
+            entities += Nbt.list(region.tag(), "Entities").size();
+        }
+        if (list.size() > 1) notes.add(list.size() + " regions read together");
+        if (blockEntities > 0) notes.add(blockEntities + " block entities placed empty: their contents are not copied");
+        if (entities > 0) notes.add(entities + " entities left out");
+        skipped.forEach(id -> notes.add("Left out: " + id));
+        var metadata = Nbt.compound(root, "Metadata");
+        String author = Nbt.string(metadata, "Author");
+        String title = Nbt.string(metadata, "Name");
+        return new Read(new Blueprint(name.isBlank() ? title : name, source, creator.isBlank() ? author : creator, license, blocks, clear),
+                Nbt.integer(root, "MinecraftDataVersion", 0), notes);
     }
 
     private static void add(BlockSpec state, Pos at, List<Blueprint.Block> blocks, List<Pos> clear, Set<String> skipped) {
