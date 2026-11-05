@@ -16,6 +16,13 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## M-01e: Co-op Survival at the group's pace, 2026-11-05
+
+Branch `claude/modes-1105-5`, on M-05's branch. M-01e opened, still in progress. See [M-01e](evidence/M-01e.md).
+- JUnit: `GroupPaceTest` 3 of 3.
+- Native: `NativeCoopPaceGameTests` alone. Before the fix (`50d8dea`) it failed 3 of 3: the house was begun before the poll had seen the human's step. After it (`92a36fe`) it passed 3 of 3. Control (the hold off): fails.
+- Staged in the fixture: the cabin set and recorded as the player's own, iron tools, the clock, the human's advancements granted as though earned.
+
 ## M-05: Litematica schematics, 2026-11-05
 
 Branch `claude/modes-1105-4`, on M-04's branch. M-05 closed. See [M-05](evidence/M-05.md).

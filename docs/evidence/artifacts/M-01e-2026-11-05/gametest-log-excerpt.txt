@@ -1,0 +1,22 @@
+# Before the fix (92a36fe's parent, 50d8dea): 3 of 3 failed
+failure message="(8127943, -60, 9861280) Begun before the group smelted iron:  / Optional[Base[stage=house, dimension=minecraft:overworld, x=8127983, y=-53, z=9861331, complete=false, seed=null, wood=oak, variant=0, turns=0]]
+failure message="(-5332599, -60, -3445503) Begun before the group smelted iron: oak house: 0/553 placed - Out of the ground for logs / Optional[Base[stage=house, dimension=minecraft:overworld, x=-5332559, y=-53, z=-3445452, complete=false, seed=null, wood=oak, variant=0, turns=0]]
+failure message="(-9805373, -60, 11076156) Begun before the group smelted iron: oak house: 0/553 placed - Looking for logs for the rest of the build / Optional[Base[stage=house, dimension=minecraft:overworld, x=-9805333, y=-53, z=11076207, complete=false, seed=null, wood=oak, variant=0, turns=0]]
+# Control (the hold off): failed
+failure message="(2015434, -60, -3835272) Begun before the group smelted iron: oak house: 0/553 placed - Looking for logs for the rest of the build / Optional[Base[stage=house, dimension=minecraft:overworld, x=2015474, y=-53, z=-3835221, complete=false, seed=null, wood=oak, variant=0, turns=0]]
+# After the fix (92a36fe): 3 of 3 passed
+[07:14:08] [Server thread/INFO] (Kindred) Group pace: someone has mined stone
+[07:14:08] [Server thread/INFO] (Kindred) Group pace: someone has mined stone
+[07:14:09] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
+[07:14:09] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
+[07:14:10] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - All the cobblestone the rest of the build takes, in one go (258)
+[07:14:36] [Server thread/INFO] (Kindred) Group pace: someone has mined stone
+[07:14:36] [Server thread/INFO] (Kindred) Group pace: someone has mined stone
+[07:14:37] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
+[07:14:37] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
+[07:14:38] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - Looking for logs for the rest of the build
+[07:15:06] [Server thread/INFO] (Kindred) Group pace: someone has mined stone
+[07:15:06] [Server thread/INFO] (Kindred) Group pace: someone has mined stone
+[07:15:07] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
+[07:15:07] [Server thread/INFO] (Kindred) Group pace: someone has smelted iron
+[07:15:08] [Server thread/INFO] (Kindred) Coop pace: held (smelted iron), then a house begun: oak house: 0/553 placed - All the cobblestone the rest of the build takes, in one go (258)
