@@ -143,7 +143,7 @@ def environment(scenario):
     return env
 
 
-def finish(folder, process, started):
+def finish(folder, process, started, keep_world=False):
     """Keeps the log and the result beside the run, and removes the world and the server's own files."""
     logs = folder / "logs"
     for name in ("latest.log", "eval-result.json"):
@@ -155,6 +155,12 @@ def finish(folder, process, started):
         shutil.copytree(replays, folder / "replays", dirs_exist_ok=True)
     # The jar it ran, kept with the seed: a seed run again on another jar is said so in its build's summary.
     jars = sorted(p.name for p in (folder / "mods").glob("*.jar") if not p.name.startswith("fabric-api")) if (folder / "mods").is_dir() else []
+    # With --keep-world, the world's blocks as the run left them, for reproducing a stuck place from its own ground
+    # (diagnosis only: nothing the players see is read from it).
+    if keep_world and (folder / "world").is_dir():
+        for part in ("region", "DIM-1/region", "DIM1/region"):
+            if (folder / "world" / part).is_dir():
+                shutil.copytree(folder / "world" / part, folder / "world-kept" / part, dirs_exist_ok=True)
     for name in ("world", "libraries", ".fabric", "mods", "logs", "versions", "config", "kindred"):
         path = folder / name
         if path.is_dir():
@@ -180,6 +186,7 @@ def main():
     parser.add_argument("--memory", default="3G", help="each server's heap")
     parser.add_argument("--timeout", type=int, default=6 * 3600, help="seconds a server may run before it is stopped")
     parser.add_argument("--out", default=str(ROOT / "run/eval"), help="where the runs go")
+    parser.add_argument("--keep-world", action="store_true", help="keep each run's region files (world-kept/) for diagnosis")
     args = parser.parse_args()
 
     out = Path(args.out).resolve()
@@ -223,7 +230,7 @@ def main():
             if process.poll() is None:
                 continue
             console.close()
-            ok, ticks = finish(folder, process, started)
+            ok, ticks = finish(folder, process, started, args.keep_world)
             print("seed %s ended: exit %s, result %s, ticks run %s, %d s" % (seed, process.returncode, "kept" if ok else "MISSING", ticks,
                                                                              time.time() - started), flush=True)
             running.remove(item)
