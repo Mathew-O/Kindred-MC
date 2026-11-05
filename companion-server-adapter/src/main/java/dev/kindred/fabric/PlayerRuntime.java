@@ -13514,6 +13514,7 @@ final class PlayerRuntime {
             if (player == null) continue;
             modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
             Entry builderEntry = entryForPlayer(builder);
+            if (builderEntry != null) interruptSkill(builderEntry, "A build battle begins");
             if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
             player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
             presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
@@ -13579,6 +13580,9 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
+            // Whatever it was doing is stopped now, before its game mode changes under it: a break caught half done by
+            // adventure mode left an outcome only reconciliation could settle, and the body was taken out (found live).
+            if (entry != null) interruptSkill(entry, "The build's time is up");
             if (entry != null && entry.nativeBody != null) {
                 entry.nativeBody.allowCreative(false);
                 entry.nativeBody.allowAdventure(true);
@@ -13640,6 +13644,7 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
+            if (entry != null) interruptSkill(entry, "The build battle is over");
             if (entry != null && entry.nativeBody != null) {
                 entry.nativeBody.allowCreative(false);
                 entry.nativeBody.allowAdventure(false);
@@ -14373,6 +14378,21 @@ final class PlayerRuntime {
     List<TourVote> tourVotesForTest(UUID matchId) {
         requireThread();
         return List.copyOf(toured.getOrDefault(matchId, List.of()));
+    }
+
+    /**
+     * Its current skill stopped now, as a stop stops it: authority revoked first, then the runner settled, so nothing
+     * it was doing finishes after its game mode changes (M-04).
+     */
+    private void interruptSkill(Entry entry, String reason) {
+        if (entry.nativeBody != null && entry.nativeBody.connected()) entry.nativeBody.stopInputs();
+        if (entry.runner != null && runnerBusy(entry)) {
+            entry.runner.lease().ifPresent(entry.arbiter::cancel);
+            entry.runner.abort(reason);
+            observeRunner(entry);
+        }
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
     }
 
     /** Standing on (or by) a viewing spot. */
