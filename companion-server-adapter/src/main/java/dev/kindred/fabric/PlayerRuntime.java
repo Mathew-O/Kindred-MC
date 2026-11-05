@@ -277,6 +277,8 @@ final class PlayerRuntime {
     private boolean bases;
     /** The world's game mode (M-00), from mode.properties; null where none was chosen, as before modes existed. */
     private dev.kindred.core.match.GameModes.WorldMode worldMode;
+    /** The last save of mode.properties: each save waits on the one before, so the last mode chosen is the one kept. */
+    private CompletableFuture<Void> modeSaved = CompletableFuture.completedFuture(null);
     /** Whether AI players may tame pets of their own (E-37): an operator's choice, off by default. */
     private boolean pets;
     /** Each player's base designs (E-30): one another player's near copy is refused, so that two bases are not one design. */
@@ -13194,7 +13196,8 @@ final class PlayerRuntime {
         }
         Path file = metadataDirectory.resolve("mode.properties");
         String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
-        CompletableFuture.runAsync(() -> {
+        // In order: two saves left to run side by side could finish the older last and keep it.
+        modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
                 Files.createDirectories(metadataDirectory);
                 Files.writeString(file, content, StandardCharsets.UTF_8);

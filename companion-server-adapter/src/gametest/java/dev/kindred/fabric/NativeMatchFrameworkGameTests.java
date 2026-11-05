@@ -45,7 +45,7 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
     public void aHumanJoinsADuelOnlyForItselfAndIsStruckOnlyOnceItRuns(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1800);
         UUID[] id = new UUID[1], ada = new UUID[1], match = new UUID[1];
-        ServerPlayerEntity[] people = new ServerPlayerEntity[2];
+        ServerPlayerEntity[] people = new ServerPlayerEntity[3];
         float[] health = new float[1];
         long[] at = {0};
         var server = context.getWorld().getServer();
@@ -77,6 +77,9 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                     // Staged: two people stand in for humans at ordinary clients; no runtime entry is theirs.
                     people[0] = MockPlayers.survival(context, "Mira", new BlockPos(5, 2, 3));
                     people[1] = MockPlayers.survival(context, "Owen", new BlockPos(4, 2, 10));
+                    // Staged: a bystander in no match within sight, as another test's player stood beside this one in CI
+                    // (suite of 2026-11-05 on f2791ea): an onlooker as much as Owen.
+                    people[2] = MockPlayers.survival(context, "Pip", new BlockPos(6, 2, 10));
                     server.setPvpEnabled(true);
                     // Before any match, a strike at the human is refused.
                     context.assertTrue(f.runtime.nativeFight(f.source, id[0], people[0].getUuid(), 0) == 1, "Fight requested before any match");
@@ -115,7 +118,10 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                     var lines = presenter.sidebarLines(people[0].getUuid());
                     context.assertTrue(lines.size() == 3 && lines.get(0).startsWith("Time left: ") && lines.contains("Ada") && lines.contains("Mira"),
                             "Mira's sidebar: " + lines);
-                    context.assertTrue(presenter.onlookers(match[0]).equals(List.of(people[1].getUuid())), "Owen watching: " + presenter.onlookers(match[0]));
+                    // Everyone near in no match looks on, Owen and the bystander alike; neither player in it does.
+                    var onlookers = presenter.onlookers(match[0]);
+                    context.assertTrue(onlookers.containsAll(List.of(people[1].getUuid(), people[2].getUuid()))
+                            && !onlookers.contains(ada[0]) && !onlookers.contains(people[0].getUuid()), "Owen and Pip watching: " + onlookers);
                     context.assertTrue(presenter.sidebarLines(people[1].getUuid()).equals(lines), "Owen's sidebar: " + presenter.sidebarLines(people[1].getUuid()));
                     context.assertTrue(presenter.barPlayers(match[0]).containsAll(List.of(ada[0], people[0].getUuid(), people[1].getUuid())),
                             "The bar to all three: " + presenter.barPlayers(match[0]));
