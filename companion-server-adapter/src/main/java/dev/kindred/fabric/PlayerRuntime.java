@@ -13712,6 +13712,26 @@ final class PlayerRuntime {
      * Whether {@code player} may break or place at {@code pos} with a build battle on (M-04a): while it builds, a builder
      * only on its own plot; nobody on another's plot, in the battle or not. Anywhere else, as ever.
      */
+    /**
+     * Whether {@code player} may place a block at {@code target} against {@code clicked} (M-04): the target must be its to
+     * edit, and so must the block clicked, unless that is the floor of its own plot in a running build battle, which a
+     * builder builds on but does not change.
+     */
+    boolean mayPlace(ServerPlayerEntity player, BlockPos clicked, BlockPos target) {
+        if (!mayEditAt(player, target)) return false;
+        if (mayEditAt(player, clicked)) return true;
+        for (var match : matches.list()) {
+            if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.BUILDER || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING
+                    || !match.playing(player.getUuid())) continue;
+            var plot = battles.containsKey(match.id()) ? battles.get(match.id()).plot(player.getUuid()).orElse(null) : null;
+            if (plot == null) continue;
+            var o = plot.origin();
+            if (clicked.getY() == o.y() && clicked.getX() >= o.x() && clicked.getX() < o.x() + dev.kindred.core.match.BuildBattle.PLOT
+                    && clicked.getZ() >= o.z() && clicked.getZ() < o.z() + dev.kindred.core.match.BuildBattle.PLOT) return true;
+        }
+        return false;
+    }
+
     boolean mayEditAt(ServerPlayerEntity player, BlockPos pos) {
         if (!running) return true;
         var at = new dev.kindred.core.construction.Pos(pos.getX(), pos.getY(), pos.getZ());

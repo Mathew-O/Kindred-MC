@@ -149,7 +149,7 @@ public final class KindredMod implements ModInitializer {
         net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
             if (!(player instanceof net.minecraft.server.network.ServerPlayerEntity builder) || runtime == null) return net.minecraft.util.ActionResult.PASS;
             boolean placing = !player.getStackInHand(hand).isEmpty() && player.getStackInHand(hand).getItem() instanceof net.minecraft.item.BlockItem;
-            return !placing || runtime.mayEditAt(builder, hit.getBlockPos().offset(hit.getSide())) && runtime.mayEditAt(builder, hit.getBlockPos())
+            return !placing || runtime.mayPlace(builder, hit.getBlockPos(), hit.getBlockPos().offset(hit.getSide()))
                     ? net.minecraft.util.ActionResult.PASS : net.minecraft.util.ActionResult.FAIL;
         });
         // Leaving the game forfeits a duel, or calls it off before its start (M-00a).

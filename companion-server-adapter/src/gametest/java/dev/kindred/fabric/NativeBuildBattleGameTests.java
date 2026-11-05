@@ -154,8 +154,9 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                     }
                     // The podium: the best first, named on a sign atop a gold step.
                     var names = f.runtime.podiumForTest(match[0]);
-                    String first = player(f, battle.winners().iterator().next()).getName().getString();
-                    context.assertTrue(names.size() == 2 && names.getFirst().equals(first), "The podium: " + names);
+                    // First on the podium is a winner (in a tie, either of them).
+                    var winnerNames = battle.winners().stream().map(p -> player(f, p).getName().getString()).toList();
+                    context.assertTrue(names.size() == 2 && winnerNames.contains(names.getFirst()), "The podium: " + names + ", winners " + winnerNames);
                     var top = new BlockPos(podium[0].x(), podium[0].y(), podium[0].z());
                     context.assertTrue(world.getBlockState(top.down()).isOf(Blocks.GOLD_BLOCK) && world.getBlockState(top).isOf(Blocks.OAK_SIGN), "The first step and its sign");
                     f.runtime.stop();
@@ -273,6 +274,60 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A human builder may build on its own plot's floor (M-04): placing a block against the floor, the target on its plot,
+     * is allowed, while the same against another's floor, or outside the plots onto another's, is not. Found on an
+     * ordinary client: a human's every block on its own plot was refused, as the floor it clicked was "not on a plot".
+     * Staged: a person stands in for a human at an ordinary client.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildBattleHuman", tickLimit = 1600)
+    public void aHumanBuilderMayPlaceOnItsOwnPlotsFloorOnly(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1400);
+        UUID[] id = new UUID[1], wren = new UUID[1], match = new UUID[1];
+        ServerPlayerEntity[] mira = new ServerPlayerEntity[1];
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    for (int x = -10; x <= 40; x++) for (int z = -4; z <= 26; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    f.runtime.createNative(f.source, "Wren");
+                })
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED && statuses.getFirst().connected(), "Wren established");
+                    id[0] = statuses.getFirst().id();
+                    wren[0] = statuses.getFirst().nativeId();
+                })
+                .createAndAdd(() -> {
+                    player(f, wren[0]).getInventory().clear();
+                    mira[0] = MockPlayers.survival(context, "Mira", new BlockPos(1, 2, 1));
+                    var operator = f.source.withPosition(net.minecraft.util.math.Vec3d.of(o.add(0, 2, 0)));
+                    context.assertTrue(f.runtime.proposeBuildBattle(operator, java.util.List.of(mira[0].getUuid(), wren[0]), 20 * 60, BuildBattle.Theme.COTTAGE) == 1, "Proposed");
+                    match[0] = f.runtime.matches().getFirst().id();
+                    context.assertTrue(f.runtime.joinMatch(mira[0].getCommandSource(), match[0]) == 1, "Mira joined");
+                    context.assertTrue(f.runtime.startMatch(mira[0].getCommandSource(), match[0]) == 1, "Started");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().state() == MatchRegistry.State.RUNNING, "Building");
+                    // Mira's plot is the first, its floor at y 1 from x 2 and z 2; Wren's the next, eighteen east.
+                    BlockPos floor = o.add(8, 1, 8), above = floor.up();
+                    BlockPos othersFloor = o.add(8 + BuildBattle.PLOT + BuildBattle.GAP, 1, 8);
+                    context.assertTrue(f.runtime.mayPlace(mira[0], floor, above), "On her own plot's floor");
+                    context.assertTrue(!f.runtime.mayPlace(mira[0], othersFloor, othersFloor.up()), "Not on Wren's");
+                    context.assertTrue(!f.runtime.mayPlace(mira[0], o.add(18, 1, 8), o.add(18, 2, 8)), "Not in the gap between the plots");
+                    server(context).getPlayerManager().remove(mira[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    private static net.minecraft.server.MinecraftServer server(TestContext context) { return context.getWorld().getServer(); }
 
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID id) {
         return f.source.getServer().getPlayerManager().getPlayer(id);
