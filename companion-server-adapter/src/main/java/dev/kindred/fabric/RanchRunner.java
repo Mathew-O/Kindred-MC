@@ -197,7 +197,13 @@ final class RanchRunner {
     Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {
         var animals = new ArrayList<Ranch.Animal>();
         Box around = new Box(origin).expand(Ranch.RANGE + 8, 6, Ranch.RANGE + 8);
-        for (AnimalEntity animal : world.getEntitiesByClass(AnimalEntity.class, around, AnimalEntity::isAlive)) {
+        // Round the pen, and round the player wherever it is: out looking for a stray, it sees what is about it there.
+        var found = new java.util.LinkedHashMap<java.util.UUID, AnimalEntity>();
+        for (AnimalEntity animal : world.getEntitiesByClass(AnimalEntity.class, around, AnimalEntity::isAlive)) found.put(animal.getUuid(), animal);
+        for (AnimalEntity animal : world.getEntitiesByClass(AnimalEntity.class, player.getBoundingBox().expand(24, 6, 24), AnimalEntity::isAlive)) {
+            found.put(animal.getUuid(), animal);
+        }
+        for (AnimalEntity animal : found.values()) {
             var kind = Ranch.Kind.of(Registries.ENTITY_TYPE.getId(animal.getType()).toString());
             if (kind.isEmpty()) continue;
             BlockPos at = cell(animal.getBlockPos(), animal.getX(), animal.getZ(), world);
