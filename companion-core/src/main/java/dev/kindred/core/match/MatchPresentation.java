@@ -65,6 +65,10 @@ public final class MatchPresentation {
         if (match.mode() == MatchRegistry.Mode.MANHUNT) {
             return new Title(match.winners().stream().anyMatch(match.runners()::contains) ? "The runners win" : "The hunters win", subtitle(match, names), Cue.WIN);
         }
+        // An onlooker: who won, every one of them where it is a tie (a build battle's vote can tie; then there is no one winner).
+        if (match.winner() == null) {
+            return new Title(match.winners().stream().map(names).collect(Collectors.joining(" and ")) + " tie", how, Cue.WIN);
+        }
         return new Title(names.apply(match.winner()) + " wins", how, Cue.WIN);
     }
 
