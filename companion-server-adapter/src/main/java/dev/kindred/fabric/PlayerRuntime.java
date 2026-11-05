@@ -3537,7 +3537,8 @@ final class PlayerRuntime {
         // With the operator's leave, a player with no goal of its own looks to its base (M-01c): the next stage, sited
         // and then built as any build is.
         if (baseDecision(entry, body)) {
-            candidates.addAll(buildCandidates(entry, body));
+            // A base begun is a build; a ranch of its own begun is a ranch (M-01a).
+            candidates.addAll(entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
             return candidates;
         }
 
