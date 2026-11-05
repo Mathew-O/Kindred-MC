@@ -43,6 +43,15 @@
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01a: a ranch of its own, 2026-11-05
+
+Branch `claude/modes-1105-6`, from M-01e's. M-01a stays open. See [M-01a](evidence/M-01a.md#a-ranch-of-its-own-2026-11-05-claudemodes-1105-6).
+- JUnit: `RanchChoiceTest` 2 of 2; `RanchTest` 16 of 16. The stray test fails before each of the three changes it covers.
+- Native: `NativeOwnRanchGameTests` with `NativeRanchGameTests` and `NativeCompoundGameTests` alone, three runs on `ea62d08`, 9 of 9 each.
+  - Before the stray fixes: the own-ranch fixture passed 1 of 3, then 2 of 3. A cow wandered out of the ranch's reach while the pen went up.
+  - On `02c8b64`, 3 of 3 runs crashed the server: the base decision's caller asked the build runner for a ranch's step. Fixed on `26c2f62`.
+  - Control (the decision off): fails.
+
 ## M-01e: Co-op Survival at the group's pace, 2026-11-05
 
 Branch `claude/modes-1105-5`, on M-05's branch. M-01e closed. See [M-01e](evidence/M-01e.md).
