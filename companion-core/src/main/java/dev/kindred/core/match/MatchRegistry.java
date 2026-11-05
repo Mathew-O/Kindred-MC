@@ -111,8 +111,10 @@ public final class MatchRegistry {
     public static final int COUNTDOWN_TICKS = 60;
     /** A duel's time: five minutes, then a draw. */
     public static final int DUEL_TICKS = Mode.DUEL.ticks;
-    /** A build battle's vote: thirty seconds. */
+    /** A build battle's vote with two builders: thirty seconds. */
     public static final int VOTE_TICKS = 600;
+    /** How long each build is shown for the vote, one after another in plot order (M-04): fifteen seconds. */
+    public static final int SHOW_TICKS = 300;
     /** Ended matches remembered for their results. */
     static final int ENDED_KEPT = 16;
 
@@ -220,7 +222,7 @@ public final class MatchRegistry {
                 match = match.running(limit > 0 ? tick + limit : Long.MAX_VALUE);
             } else if (match.state() == State.RUNNING && limit > 0 && tick >= match.endsAt() && match.mode() == Mode.BUILDER) {
                 // The build's time is up: on to the vote, which the players' votes decide (decide).
-                match = match.voting(tick + VOTE_TICKS);
+                match = match.voting(tick + voteTicks(match));
             } else if (match.state() == State.RUNNING && limit > 0 && tick >= match.endsAt()) {
                 match = match.ended(null, Set.of(), "Time ran out: a draw");
             } else {
@@ -412,6 +414,20 @@ public final class MatchRegistry {
         Match ended = match.ended(winner, winners, how);
         matches.put(match.id(), ended);
         return ended;
+    }
+
+    /** A build battle's whole vote: each build shown in turn for {@link #SHOW_TICKS}. */
+    public static int voteTicks(Match match) { return Math.max(1, match.invited().size()) * SHOW_TICKS; }
+
+    /**
+     * The builder whose build is being voted on at {@code tick}, in plot order (the order the builders were invited), or
+     * empty outside the vote.
+     */
+    public static Optional<UUID> showing(Match match, long tick) {
+        if (match.state() != State.VOTING || match.invited().isEmpty()) return Optional.empty();
+        long start = match.endsAt() - voteTicks(match);
+        int index = (int) Math.max(0, Math.min(match.invited().size() - 1, (tick - start) / SHOW_TICKS));
+        return Optional.of(match.invited().get(index));
     }
 
     /** A match's own time limit in ticks, or its mode's. */

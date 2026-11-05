@@ -89,8 +89,14 @@ public final class MatchPresentation {
                 long left = Math.max(0, match.endsAt() - tick), total = Math.max(1, match.endsAt() - match.countdownEnds());
                 yield new Bar(mode + ": " + who + " - " + clock(left), Math.clamp(left / (float) total, 0f, 1f));
             }
-            case VOTING -> new Bar(mode + ": " + who + " - vote on the builds: " + clock(Math.max(0, match.endsAt() - tick)),
-                    Math.clamp((match.endsAt() - tick) / (float) MatchRegistry.VOTE_TICKS, 0f, 1f));
+            case VOTING -> {
+                // One build at a time: whose is up, and how long it has left.
+                long start = match.endsAt() - MatchRegistry.voteTicks(match);
+                long left = MatchRegistry.SHOW_TICKS - Math.floorMod(tick - start, MatchRegistry.SHOW_TICKS);
+                String showing = MatchRegistry.showing(match, tick).map(names).orElse("");
+                yield new Bar(mode + ": vote on " + showing + "'s build - " + clock(left),
+                        Math.clamp((match.endsAt() - tick) / (float) MatchRegistry.voteTicks(match), 0f, 1f));
+            }
             case ENDED -> new Bar(mode + ": " + who + " - over", 0f);
         };
     }

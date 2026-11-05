@@ -328,6 +328,11 @@ final class PlayerRuntime {
     private final Map<UUID, dev.kindred.core.survival.SurvivalGoal> raceGoal = new HashMap<>();
     /** Each build battle's round: its theme, plots and votes, by match (M-04a). */
     private final Map<UUID, dev.kindred.core.match.BuildBattle> battles = new HashMap<>();
+    /** Each build battle's generated arena (M-04), and the build each vote last showed. */
+    private final Map<UUID, dev.kindred.core.match.BuildArena> arenas = new HashMap<>();
+    private final Map<UUID, UUID> showingNow = new HashMap<>();
+    /** Designs for each round's theme from the server's schematic library (M-05), read off the game thread as it is proposed. */
+    private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
     /** Build battles whose building has begun, by match. */
@@ -3378,6 +3383,8 @@ final class PlayerRuntime {
         if (duel != null) return duel;
         var hunt = huntCandidates(entry, body);
         if (hunt != null) return hunt;
+        var vote = voteCandidates(entry, body);
+        if (vote != null) return vote;
         var evade = evadeCandidates(entry, body);
         if (evade != null) return evade;
         var raid = raidCandidates(entry, body);
@@ -13458,8 +13465,37 @@ final class PlayerRuntime {
                 for (int y = 1; y <= 16; y++) if (!world.getBlockState(floor.up(y)).isAir()) world.setBlockState(floor.up(y), Blocks.AIR.getDefaultState());
             }
         }
+        // The arena round them (M-04): a lobby pad, a raised walkway in front of the plots with a marked spot before each
+        // for the vote, and room for the podium. Builder only, where blocks are free.
+        var arena = dev.kindred.core.match.BuildArena.around(plots);
+        for (var block : arena.blocks().entrySet()) {
+            var at = new BlockPos(block.getKey().x(), block.getKey().y(), block.getKey().z());
+            world.setBlockState(at, Registries.BLOCK.get(net.minecraft.util.Identifier.of(block.getValue())).getDefaultState());
+        }
         var match = enter(result.match().orElseThrow());
-        battles.put(match.id(), new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots));
+        arenas.put(match.id(), arena);
+        var round = new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots);
+        battles.put(match.id(), round);
+        // Reference designs for the theme: schematics the operator put in the library whose names name it and that fit a
+        // plot, each kept with its credit (D8). Read off the game thread; an AI builder uses one if it is ready by the start.
+        UUID roundId = match.id();
+        schematics.names().thenCompose(names -> {
+            var reads = names.stream().map(name -> schematics.load(name).thenApply(loaded ->
+                    dev.kindred.core.match.BuildBattle.fitsTheme(name, loaded.blueprint(), round.theme()) ? loaded.blueprint() : null)
+                    .exceptionally(failure -> null)).toList();
+            return CompletableFuture.allOf(reads.toArray(CompletableFuture[]::new))
+                    .thenApply(done -> reads.stream().map(CompletableFuture::join).filter(java.util.Objects::nonNull).toList());
+        }).whenComplete((designs, failure) -> handBack(() -> {
+            if (failure == null && designs != null && !designs.isEmpty() && battles.containsKey(roundId)) libraryDesigns.put(roundId, designs);
+        }));
+        var pad = arena.lobby();
+        for (UUID builder : match.invited()) {
+            var player = server.getPlayerManager().getPlayer(builder);
+            if (player != null && entryForPlayer(builder) == null) {
+                player.sendMessage(Text.literal("The arena's lobby is at " + pad.x() + " " + pad.y() + " " + pad.z()
+                        + "; onlookers watch from the walkway in front of the plots."), false);
+            }
+        }
         feedback(source, "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + " proposed: " + who(match) + ", "
                 + buildTicks / 20 + " seconds to build; " + match.joined().size() + " of " + match.invited().size() + " joined.");
         return 1;
@@ -13485,7 +13521,19 @@ final class PlayerRuntime {
             Entry entry = entryForPlayer(builder);
             var plot = battle.plot(builder).orElse(null);
             if (entry == null || plot == null) continue;
-            var design = dev.kindred.core.match.BuildBattle.design(battle.theme(), new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits()));
+            var random = new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits());
+            // A reference design from the library for the theme where there is one (M-05), credited; else its own design.
+            var library = libraryDesigns.getOrDefault(match.id(), List.of());
+            var design = library.isEmpty() ? dev.kindred.core.match.BuildBattle.design(battle.theme(), random) : library.get(random.nextInt(library.size()));
+            if (!library.isEmpty()) {
+                String credit = "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + ": " + playerName(builder) + " builds '"
+                        + design.name() + "' from the schematic library, " + SchematicLibrary.credit(design);
+                KindredMod.LOGGER.info(credit);
+                for (UUID invited : match.invited()) {
+                    var other = server.getPlayerManager().getPlayer(invited);
+                    if (other != null && entryForPlayer(invited) == null) other.sendMessage(Text.literal(credit), false);
+                }
+            }
             var site = plot.site(design);
             stockFor(player, design);
             startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
@@ -13531,31 +13579,20 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null && entry.nativeBody != null) entry.nativeBody.allowCreative(false);
+            if (entry != null && entry.nativeBody != null) {
+                entry.nativeBody.allowCreative(false);
+                entry.nativeBody.allowAdventure(true);
+            }
             player.getInventory().clear();
             player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
             if (entry != null) {
-                for (var plot : battle.plots()) {
-                    if (plot.builder().equals(builder)) continue;
-                    int score = dev.kindred.core.match.BuildBattle.judge(plotBlocks(player.getServerWorld(), plot), battle.theme());
-                    battle.vote(builder, plot.builder(), score);
-                    KindredMod.LOGGER.info("Build battle {}: {} gives {}'s build {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
-                            playerName(plot.builder()), score);
-                }
-                continue;
-            }
-            for (var plot : battle.plots()) {
-                if (plot.builder().equals(builder)) continue;
-                String name = playerName(plot.builder());
-                var line = Text.literal("Vote on " + name + "'s build: ");
-                for (int score = 1; score <= 5; score++) {
-                    String vote = "/aiplayer match vote " + name + " " + score;
-                    line.append(Text.literal("[" + score + "] ").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
-                            .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, vote))));
-                }
-                player.sendMessage(line, false);
+                entry.cachedRoutineCandidates = List.of();
+                entry.routineRefreshPending = true;
             }
         }
+        // The builds are then shown one at a time, each for its share of the vote (pollBuildBattles): every voter walks
+        // to the marked spot in front of it and votes on what it sees from there.
+        showingNow.remove(match.id());
     }
 
     /** A builder's vote on another's build, one to five, while the round is voted on. */
@@ -13564,6 +13601,10 @@ final class PlayerRuntime {
         if (!(source.getEntity() instanceof ServerPlayerEntity voter)) return reject(source, "Only a builder votes, for itself.");
         var match = matches.active(voter.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER).orElse(null);
         if (match == null || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) return reject(source, "No build battle of yours is being voted on.");
+        // One build at a time, the same for everyone: the one being shown.
+        if (!builder.equals(dev.kindred.core.match.MatchRegistry.showing(match, server.getTicks()).orElse(null))) {
+            return reject(source, "That build is not the one being voted on now.");
+        }
         var battle = battles.get(match.id());
         var refused = battle == null ? java.util.Optional.of("No such round") : battle.vote(voter.getUuid(), builder, score);
         if (refused.isPresent()) return reject(source, refused.get() + ".");
@@ -13577,6 +13618,7 @@ final class PlayerRuntime {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.BUILDER || match.state() != dev.kindred.core.match.MatchRegistry.State.VOTING) continue;
             var battle = battles.get(match.id());
             if (battle == null) continue;
+            showBuild(match, battle);
             boolean all = match.joined().stream().filter(match::playing).allMatch(battle::votedAll);
             if (!all && server.getTicks() < match.endsAt()) continue;
             var winners = battle.winners();
@@ -13598,7 +13640,10 @@ final class PlayerRuntime {
             if (player == null) continue;
             Entry entry = entryForPlayer(builder);
             if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null && entry.nativeBody != null) entry.nativeBody.allowCreative(false);
+            if (entry != null && entry.nativeBody != null) {
+                entry.nativeBody.allowCreative(false);
+                entry.nativeBody.allowAdventure(false);
+            }
             player.getInventory().clear();
             player.changeGameMode(mode);
         }
@@ -13617,8 +13662,50 @@ final class PlayerRuntime {
                 }
             });
         }
+        // The podium (M-04): the best three by their mean vote, first in the middle, each named on a sign atop its step.
+        var arena = arenas.remove(match.id());
+        showingNow.remove(match.id());
+        if (arena != null && !battle.scores().isEmpty()) {
+            var ranked = battle.scores().entrySet().stream().sorted(Map.Entry.<UUID, Double>comparingByValue().reversed()).limit(3).toList();
+            for (var block : arena.podiumBlocks(ranked.size()).entrySet()) {
+                var at = new BlockPos(block.getKey().x(), block.getKey().y(), block.getKey().z());
+                world.setBlockState(at, Registries.BLOCK.get(net.minecraft.util.Identifier.of(block.getValue())).getDefaultState());
+            }
+            var names = new ArrayList<String>();
+            String[] places = {"1st", "2nd", "3rd"};
+            for (int i = 0; i < ranked.size(); i++) {
+                var top = arena.podium().get(i);
+                var at = new BlockPos(top.x(), top.y(), top.z());
+                world.setBlockState(at, Blocks.OAK_SIGN.getDefaultState());
+                String name = playerName(ranked.get(i).getKey());
+                names.add(name);
+                if (world.getBlockEntity(at) instanceof net.minecraft.block.entity.SignBlockEntity sign) {
+                    sign.setText(new net.minecraft.block.entity.SignText()
+                            .withMessage(0, Text.literal(places[i]))
+                            .withMessage(1, Text.literal(name))
+                            .withMessage(2, Text.literal(String.format(java.util.Locale.ROOT, "%.1f of 5", ranked.get(i).getValue()))), true);
+                }
+            }
+            podiums.put(match.id(), List.copyOf(names));
+            KindredMod.LOGGER.info("Build battle {}: the podium {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), names);
+        }
         battles.remove(match.id());
+        libraryDesigns.remove(match.id());
         buildsBegun.remove(match.id());
+    }
+
+    /** The names on each finished round's podium, first first, for a fixture. */
+    private final Map<UUID, List<String>> podiums = new HashMap<>();
+
+    List<String> podiumForTest(UUID matchId) {
+        requireThread();
+        return podiums.getOrDefault(matchId, List.of());
+    }
+
+    /** A round's arena, for a fixture. */
+    dev.kindred.core.match.BuildArena arenaForTest(UUID matchId) {
+        requireThread();
+        return arenas.get(matchId);
     }
 
     /**
@@ -14213,6 +14300,100 @@ final class PlayerRuntime {
             }
         }
         return null;
+    }
+
+    /**
+     * The build being voted on (M-04): when it changes, everyone in the round is told whose it is and where to stand, and
+     * each human voter is offered its scores; an AI voter standing on its marked spot with the build in sight scores what
+     * it sees there. A build is voted on only while it is shown.
+     */
+    private void showBuild(dev.kindred.core.match.MatchRegistry.Match match, dev.kindred.core.match.BuildBattle battle) {
+        var arena = arenas.get(match.id());
+        var showing = dev.kindred.core.match.MatchRegistry.showing(match, server.getTicks()).orElse(null);
+        if (arena == null || showing == null) return;
+        var spot = arena.spots().get(showing);
+        if (!showing.equals(showingNow.put(match.id(), showing))) {
+            String name = playerName(showing);
+            KindredMod.LOGGER.info("Build battle {}: showing {}'s build", dev.kindred.core.match.MatchRegistry.shortId(match.id()), name);
+            for (UUID voter : match.invited()) {
+                var player = server.getPlayerManager().getPlayer(voter);
+                if (player == null) continue;
+                presenter.show(voter, new dev.kindred.core.match.MatchPresentation.Title(name + "'s build",
+                        voter.equals(showing) ? "Everyone else votes on it" : "Stand on the gold mark and vote", dev.kindred.core.match.MatchPresentation.Cue.COUNT));
+                if (voter.equals(showing) || entryForPlayer(voter) != null) continue;
+                var line = Text.literal("Vote on " + name + "'s build (stand on the gold mark at " + spot.x() + " " + spot.y() + " " + spot.z() + "): ");
+                for (int score = 1; score <= 5; score++) {
+                    String vote = "/aiplayer match vote " + name + " " + score;
+                    line.append(Text.literal("[" + score + "] ").styled(style -> style.withColor(net.minecraft.util.Formatting.GREEN)
+                            .withClickEvent(new net.minecraft.text.ClickEvent(net.minecraft.text.ClickEvent.Action.RUN_COMMAND, vote))));
+                }
+                player.sendMessage(line, false);
+            }
+        }
+        var plot = battle.plot(showing).orElse(null);
+        if (plot == null) return;
+        for (UUID voter : match.joined()) {
+            if (voter.equals(showing) || !match.playing(voter) || battle.voted(voter, showing)) continue;
+            Entry entry = entryForPlayer(voter);
+            var player = server.getPlayerManager().getPlayer(voter);
+            if (entry == null || player == null) continue;
+            if (!atSpot(player, spot) || !seesPlot(player, plot)) continue;
+            int score = dev.kindred.core.match.BuildBattle.judge(plotBlocks(player.getServerWorld(), plot), battle.theme());
+            battle.vote(voter, showing, score);
+            toured.computeIfAbsent(match.id(), id -> new ArrayList<>()).add(new TourVote(voter, showing, player.getBlockPos().toImmutable(), score));
+            KindredMod.LOGGER.info("Build battle {}: {} gives {}'s build {}, seen from its spot", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                    playerName(voter), playerName(showing), score);
+        }
+    }
+
+    /** An AI voter's vote in a round's tour: who, on whose build, where it stood, the score. For fixtures. */
+    record TourVote(UUID voter, UUID builder, BlockPos stood, int score) { }
+    private final Map<UUID, List<TourVote>> toured = new HashMap<>();
+
+    List<TourVote> tourVotesForTest(UUID matchId) {
+        requireThread();
+        return List.copyOf(toured.getOrDefault(matchId, List.of()));
+    }
+
+    /** Standing on (or by) a viewing spot. */
+    private static boolean atSpot(ServerPlayerEntity player, dev.kindred.core.construction.Pos spot) {
+        double dx = player.getX() - (spot.x() + 0.5), dz = player.getZ() - (spot.z() + 0.5);
+        return dx * dx + dz * dz <= 2.5 * 2.5 && Math.abs(player.getY() - spot.y()) <= 1.5;
+    }
+
+    /** Whether a player sees into a plot from where it stands: its line of sight to the plot's middle ends on the plot. */
+    private static boolean seesPlot(ServerPlayerEntity player, dev.kindred.core.match.BuildBattle.Plot plot) {
+        var o = plot.origin();
+        var middle = new Vec3d(o.x() + dev.kindred.core.match.BuildBattle.PLOT / 2.0, o.y() + 1.5, o.z() + dev.kindred.core.match.BuildBattle.PLOT / 2.0);
+        var hit = player.getServerWorld().raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), middle,
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        if (hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS) return true;
+        var at = hit.getBlockPos();
+        return plot.contains(new dev.kindred.core.construction.Pos(at.getX(), at.getY(), at.getZ())) || at.getY() == o.y()
+                && at.getX() >= o.x() && at.getX() < o.x() + dev.kindred.core.match.BuildBattle.PLOT
+                && at.getZ() >= o.z() && at.getZ() < o.z() + dev.kindred.core.match.BuildBattle.PLOT;
+    }
+
+    /**
+     * An AI voter in a build battle's vote (M-04): to the marked spot in front of the build being shown. Null outside a
+     * vote; none when it is there, or the build shown is its own.
+     */
+    private List<NativeTaskCandidate> voteCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var match = matches.active(player.getUuid()).filter(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.BUILDER
+                && m.state() == dev.kindred.core.match.MatchRegistry.State.VOTING).orElse(null);
+        if (match == null) return null;
+        var arena = arenas.get(match.id());
+        var showing = dev.kindred.core.match.MatchRegistry.showing(match, server.getTicks()).orElse(null);
+        if (arena == null || showing == null) return List.of();
+        var spot = arena.spots().get(showing);
+        // Its own build shown: it stands back by the spot all the same, as a builder does.
+        if (atSpot(player, spot)) return List.of();
+        UUID taskId = UUID.nameUUIDFromBytes(("vote:" + match.id() + ":" + player.getUuid() + ":" + showing).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 97.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(spot.x()), "y", String.valueOf(spot.y()),
+                "z", String.valueOf(spot.z()), "range", "1", "partial", "true", "sprint", "true")));
     }
 
     /** Once a second: each running race's runners checked for the splits vanilla has given them since. */
