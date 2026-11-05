@@ -9150,6 +9150,11 @@ final class PlayerRuntime {
                 // The villager then sits on that block's middle, and the line is laid again from there.
                 var villagerBox = villager.getBoundingBox();
                 BlockPos ground = null;
+                // Of the spots, one it can see the top of first: the far side of the villager, its first choice, can lie
+                // behind the villager's lectern from where it stands. Its look met the lectern six times running, the
+                // librarian was never held in a boat, and it wandered off every line laid to it (CI on PR #25, 78f081b)
+                // (F-22c18). With none in sight, the farthest as before.
+                boolean groundSeen = false;
                 for (var d : net.minecraft.util.math.Direction.Type.HORIZONTAL) {
                     var beside = villager.getBlockPos().offset(d);
                     if (!world.getBlockState(beside.down()).isSideSolidFullSquare(world, beside.down(), net.minecraft.util.math.Direction.UP)
@@ -9159,7 +9164,13 @@ final class PlayerRuntime {
                     // Nor where it would stand in a block either side (a wall by the villager): wider than a block, it overhangs.
                     if (boatBox.intersects(villagerBox) || !boatBox.expand(0.2, 0, 0.2).intersects(villagerBox) || boatBox.intersects(player.getBoundingBox())
                             || !world.isSpaceEmpty(boatBox)) continue;
-                    if (ground == null || player.getBlockPos().getSquaredDistance(beside) > player.getBlockPos().getSquaredDistance(ground.up())) ground = beside.down();
+                    // In sight of its eyes, or its look meets something else on the way (F-22c18).
+                    boolean seen = seesTop(player, beside.down(), beside.getX() + 0.5, beside.getZ() + 0.5);
+                    if (ground == null || seen && !groundSeen
+                            || seen == groundSeen && player.getBlockPos().getSquaredDistance(beside) > player.getBlockPos().getSquaredDistance(ground.up())) {
+                        ground = beside.down();
+                        groundSeen = seen;
+                    }
                 }
                 // None of those fits (it stands off its block's middle, at its job site say): just clear of it along a side,
                 // a tenth of a block between their boxes, the boat's middle put down on whatever block that falls on.
@@ -9173,9 +9184,12 @@ final class PlayerRuntime {
                         var boatBox = new net.minecraft.util.math.Box(c.x - 0.6875, feet.getY(), c.z - 0.6875, c.x + 0.6875, feet.getY() + 0.5625, c.z + 0.6875);
                         if (boatBox.intersects(villagerBox) || !boatBox.expand(0.2, 0, 0.2).intersects(villagerBox) || boatBox.intersects(player.getBoundingBox())
                                 || !world.isSpaceEmpty(boatBox)) continue;
-                        if (aim == null || player.getPos().squaredDistanceTo(c) > player.getPos().squaredDistanceTo(aim)) {
+                        boolean seen = seesTop(player, feet.down(), c.x, c.z);
+                        if (aim == null || seen && !groundSeen
+                                || seen == groundSeen && player.getPos().squaredDistanceTo(c) > player.getPos().squaredDistanceTo(aim)) {
                             aim = new Vec3d(c.x, feet.getY(), c.z);
                             ground = feet.down();
+                            groundSeen = seen;
                         }
                     }
                 }
@@ -10450,6 +10464,15 @@ final class PlayerRuntime {
                     "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
         }
         return null;
+    }
+
+    /** Whether the player's look at the top of {@code block}, at ({@code x}, {@code z}), meets that block first (F-22c18). */
+    private static boolean seesTop(ServerPlayerEntity player, BlockPos block, double x, double z) {
+        var eye = player.getEyePos();
+        var to = new Vec3d(x, block.getY() + 0.999, z);
+        var hit = player.getServerWorld().raycast(new net.minecraft.world.RaycastContext(eye, to,
+                net.minecraft.world.RaycastContext.ShapeType.OUTLINE, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        return hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS || hit.getBlockPos().equals(block);
     }
 
     private static NativeTaskCandidate goNear(dev.kindred.core.TaskPreferences.Candidate task, BlockPos at) {

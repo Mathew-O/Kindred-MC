@@ -2681,3 +2681,6 @@ After the block's first merge from main, CI on PR #25 found:
     being settled.
   - On a 25 ms store, 6 of 6 copies failed before the fixture fix and 6 of 6 passed after.
   - `NativeAccountingGameTests` passed 7 of 7.
+- CI on `78f081b`: one run green; the other 562 of 563.
+  - **[F-22c18](evidence/F-22c18.md):** the strolling librarian's boat, aimed six times at a spot behind its lectern.
+  - Not reproduced locally: 6 of 6 passed before the fix. After it, 6 of 6 and `NativeBringGameTests` 7 of 7.
