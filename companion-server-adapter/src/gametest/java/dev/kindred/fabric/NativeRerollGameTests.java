@@ -35,8 +35,56 @@ public final class NativeRerollGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "reroll", tickLimit = 7000)
     public void aJoblessVillagersLecternIsRerolledUntilItsOffersAreWorthKeeping(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 6900);
+        reroll(context, false);
+    }
+
+    /**
+     * Its first lectern's placement held on its acknowledgement while something stands on the spot, the spot clear again
+     * before it goes ahead: the lectern goes down where it was placed, and the reroll goes on to its own end (F-22c4).
+     * The candidates are looked at again while a placement waits; with the spot taken then, the spot moved to another
+     * side, the lectern went down on the first, and with none held and none where it looked, the player let the villager
+     * be, neither kept nor given up ("Ended by its own rule: null", CI run 388, where it had waited on a slow write).
+     * Staged as the other, with an armor stand set on the spot for 40 ticks while its placement's admission is held.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rerollHeldPlace", tickLimit = 7000)
+    public void aLecternPutDownWhereItsSpotWasTakenMeanwhileIsTheOneItRerolls(TestContext context) {
+        reroll(context, true);
+    }
+
+    private static void reroll(TestContext context, boolean holdFirstPlace) {
+        var held = new java.util.concurrent.CompletableFuture<Void>();
+        BlockPos[] heldAt = new BlockPos[1];
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> !holdFirstPlace ? writer : new dev.kindred.core.ActionAdmission.Writer() {
+            @Override public java.util.concurrent.CompletableFuture<ActionRecord> prepare(ActionRecord intent) {
+                var pos = java.util.regex.Pattern.compile("block=minecraft:lectern; pos=(-?\\d+), (-?\\d+), (-?\\d+)").matcher(intent.preconditions());
+                if (!"native_place".equals(intent.kind()) || heldAt[0] != null || !pos.find()) return writer.prepare(intent);
+                heldAt[0] = new BlockPos(Integer.parseInt(pos.group(1)), Integer.parseInt(pos.group(2)), Integer.parseInt(pos.group(3)));
+                return held.thenCompose(ignored -> writer.prepare(intent));
+            }
+            @Override public java.util.concurrent.CompletableFuture<ActionRecord> transition(ActionRecord next, long expectedRevision) {
+                return writer.transition(next, expectedRevision);
+            }
+        }, true, 6900);
         VillagerEntity[] villager = new VillagerEntity[1];
+        net.minecraft.entity.decoration.ArmorStandEntity[] stand = new net.minecraft.entity.decoration.ArmorStandEntity[1];
+        long[] standSince = {-1};
+        if (holdFirstPlace) {
+            // The spot taken while the placement waits, and clear again before it goes ahead.
+            FixtureGround.whenDone(context, () -> held.complete(null));
+            context.runAtEveryTick(() -> {
+                if (heldAt[0] == null || held.isDone()) return;
+                var world = context.getWorld();
+                if (stand[0] == null) {
+                    stand[0] = new net.minecraft.entity.decoration.ArmorStandEntity(world, heldAt[0].getX() + 0.5, heldAt[0].getY(), heldAt[0].getZ() + 0.5);
+                    stand[0].setNoGravity(true);
+                    world.spawnEntity(stand[0]);
+                    standSince[0] = world.getTime();
+                } else if (world.getTime() - standSince[0] >= 40) {
+                    stand[0].discard();
+                    held.complete(null);
+                }
+            });
+        }
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))

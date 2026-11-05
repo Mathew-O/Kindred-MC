@@ -85,7 +85,10 @@ public final class ReplayGameTests implements FabricGameTest {
         Path directory = server.getSavePath(WorldSavePath.ROOT).resolve("kindred-replay-" + UUID.randomUUID());
         // Made where it can stand, the nearest such cell, then set where it died: one that died falling, swimming or
         // knocked back died where no player can be made ("Make room on solid ground").
-        ServerCommandSource source = server.getCommandSource().withWorld(world).withPosition(standNear(world, start));
+        // Where it is made, chosen once its ground has settled (below).
+        ServerCommandSource[] made = new ServerCommandSource[1];
+        Vec3d[] settling = new Vec3d[1];
+        int[] settled = {0};
         var runtime = new PlayerRuntime(server, directory, NativePlayerSaves::read, writer -> writer);
         try {
             Files.createDirectories(directory);
@@ -105,10 +108,24 @@ public final class ReplayGameTests implements FabricGameTest {
         boolean stuck = "stuck".equals(state.get("kind").getAsString());
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(runtime.isReady(), "Ready"))
-                .createAndAdd(() -> runtime.createNative(source, name))
+                // Its ground settled before a cell to make it in is chosen: a structure just placed settles for some
+                // ticks, its gravel falling and its water spreading. The cell chosen at once was checked again by the
+                // runtime as the player was made a few ticks on, no longer one to be made in by then, and the third
+                // run of echo-50149 was never made ("Creation area is no longer available", CI run 387) (F-22c6).
+                .createAndAdd(() -> {
+                    var box = new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
+                    boolean falling = !world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, box, e -> true).isEmpty();
+                    Vec3d cell = standNear(world, start);
+                    settled[0] = !falling && cell.equals(settling[0]) ? settled[0] + 1 : 0;
+                    settling[0] = cell;
+                    context.assertTrue(settled[0] >= 40, "Its ground settled: " + (falling ? "gravel falling" : "the cell to make it in " + cell + " for " + settled[0] + " ticks"));
+                    made[0] = server.getCommandSource().withWorld(world).withPosition(cell);
+                })
+                .createAndAdd(() -> runtime.createNative(made[0], name))
                 .createAndAdd(() -> {
                     var statuses = runtime.nativeStatuses(Actor.console());
-                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED && statuses.getFirst().connected(), "Established");
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED && statuses.getFirst().connected(),
+                            "Established: " + statuses + "; made from " + made[0].getPosition() + ", " + creationCells(world, made[0].getPosition()));
                     id[0] = statuses.getFirst().id();
                     id[1] = statuses.getFirst().nativeId();
                 })
@@ -122,7 +139,7 @@ public final class ReplayGameTests implements FabricGameTest {
                         @Override public void ended(String p, String skill, String result, String label) { if ("COMPLETED".equals(result)) completed[0]++; }
                     });
                     var goal = SurvivalGoal.valueOf(state.get("goal").getAsString());
-                    if (goal != SurvivalGoal.NONE) context.assertTrue(runtime.startGoal(source, id[0], goal) == 1, "Its goal, " + goal + ", accepted");
+                    if (goal != SurvivalGoal.NONE) context.assertTrue(runtime.startGoal(made[0], id[0], goal) == 1, "Its goal, " + goal + ", accepted");
                     from[0] = body.getPos();
                     began[0] = context.getTick();
                 })
@@ -151,6 +168,21 @@ public final class ReplayGameTests implements FabricGameTest {
      * runtime tries. A player that drowned in a flooded cave may have none in the scene at all: then it is made on the test
      * world's ground beside the scene, and moved.
      */
+    /** What stands in each cell a player may be made in beside {@code from}, as the runtime checks them, for a failure's words. */
+    private static String creationCells(net.minecraft.server.world.ServerWorld world, Vec3d from) {
+        var cells = new ArrayList<String>();
+        for (int[] offset : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+            BlockPos cell = BlockPos.ofFloored(Math.floor(from.x) + offset[0] + 0.5, from.y, Math.floor(from.z) + offset[1] + 0.5);
+            var bounds = new net.minecraft.util.math.Box(cell.getX() + .2, from.y, cell.getZ() + .2, cell.getX() + .8, from.y + 1.8, cell.getZ() + .8);
+            cells.add(cell.toShortString() + " " + world.getBlockState(cell).getBlock().getTranslationKey().replace("block.minecraft.", "")
+                    + (world.getFluidState(cell).isEmpty() ? "" : " fluid " + world.getFluidState(cell).getLevel())
+                    + " on " + world.getBlockState(cell.down()).getBlock().getTranslationKey().replace("block.minecraft.", "")
+                    + (world.isSpaceEmpty(null, bounds) ? "" : " not empty")
+                    + world.getOtherEntities(null, bounds).stream().map(e -> " " + e.getType().getUntranslatedName()).reduce("", String::concat));
+        }
+        return "cells " + cells;
+    }
+
     private static Vec3d standNear(net.minecraft.server.world.ServerWorld world, Vec3d at) {
         for (BlockPos cell : BlockPos.iterateOutwards(BlockPos.ofFloored(at), DeathReplays.WIDTH / 2 + 4, DeathReplays.HEIGHT, DeathReplays.WIDTH / 2 + 4)) {
             var bounds = new net.minecraft.util.math.Box(cell.getX() + .2, cell.getY(), cell.getZ() + .2, cell.getX() + .8, cell.getY() + 1.8, cell.getZ() + .8);

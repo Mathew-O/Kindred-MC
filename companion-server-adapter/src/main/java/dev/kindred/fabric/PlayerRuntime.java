@@ -1837,7 +1837,7 @@ final class PlayerRuntime {
             java.time.Instant deadline = open.map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(budget.period().endExclusive());
             try {
                 entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
-                        store::saveBudget, this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
+                        budgetWriter(), this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
                 entry.activity.request(deadline).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -1935,8 +1935,13 @@ final class PlayerRuntime {
             entry.periodHold = null;
             return false;
         }
+        java.time.Instant end = session.snapshot().period().endExclusive();
         if (entry.periodHold == null) {
-            if (now.isBefore(session.snapshot().period().endExclusive())) return false;
+            // Its slice booked to the period's end lapses short of it by the monotonic clock (the renewal's write
+            // latency, or a renewal gaining too little not made): it ran to the period's end all the same. Before,
+            // only a lapse at or after the end was held, and a slice that lapsed 0.3 s short stopped the wait (F-22c2).
+            boolean toTheEnd = !now.isBefore(end) || session.bookedUntil().filter(booked -> !booked.isBefore(end)).isPresent();
+            if (!toTheEnd) return false;
             entry.periodHold = new PeriodHold(now);
         }
         PeriodHold hold = entry.periodHold;
@@ -1946,7 +1951,8 @@ final class PlayerRuntime {
         }
         // One budget writer at a time: the old period's settlement is acknowledged before the next period is opened,
         // which would otherwise close the old period under it.
-        if (!hold.requested && session.phase() == PaidActivitySession.Phase.IDLE) requestNextPeriod(entry, hold);
+        // The next period is asked for once it has begun: asked for sooner, the old period's last moments would be booked.
+        if (!hold.requested && session.phase() == PaidActivitySession.Phase.IDLE && !now.isBefore(end)) requestNextPeriod(entry, hold);
         return true;
     }
 
@@ -1968,7 +1974,7 @@ final class PlayerRuntime {
             entry.activityLimit = prepared.limit();
             try {
                 var next = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
-                        store::saveBudget, this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
+                        budgetWriter(), this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
                 entry.activity = next; // Closed with the entry on shutdown, as a dispatched session is.
                 next.request(open.orElseThrow().endExclusive()).whenComplete((paid, error) -> {
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -10087,6 +10093,11 @@ final class PlayerRuntime {
         BlockPos lectern;
         /** Where it stood to begin with, clear of the lectern, to step back to. */
         BlockPos stand;
+        /**
+         * Every spot it has asked for a lectern to be put down at: a placement in flight keeps the spot it was given,
+         * while the spot it is looking at may have moved on, and been asked for again, before it lands (F-22c4).
+         */
+        final Set<BlockPos> placedAt = new java.util.LinkedHashSet<>();
         Phase phase = Phase.PLACE;
         int tries, failed, nudges;
         long since;
@@ -10137,6 +10148,15 @@ final class PlayerRuntime {
             KindredMod.LOGGER.info("{} reroll: a lectern for the villager {} at {}", entry.data.displayName(), r.villager, spot.toShortString());
         }
         var villager = world.getEntity(r.villager) instanceof net.minecraft.entity.passive.VillagerEntity v && v.isAlive() ? v : null;
+        // Its lectern standing at a spot it asked for one at, the spot it looks at moved on meanwhile: that is its lectern. The
+        // candidates are looked at again while a placement waits on its acknowledgement; with the villager on the spot
+        // then, the spot moved to another side, the placement put the lectern down on the first, and with none held and
+        // none standing where it looked it let the villager be, neither kept nor given up (CI, run 388) (F-22c4).
+        if (!world.getBlockState(r.lectern).isOf(net.minecraft.block.Blocks.LECTERN)) {
+            for (BlockPos spot : r.placedAt) {
+                if (world.getBlockState(spot).isOf(net.minecraft.block.Blocks.LECTERN)) r.lectern = spot;
+            }
+        }
         boolean standing = world.getBlockState(r.lectern).isOf(net.minecraft.block.Blocks.LECTERN);
         if (villager == null && !standing) {
             entry.reroll = null;
@@ -10198,6 +10218,7 @@ final class PlayerRuntime {
                 var args = new HashMap<>(at);
                 args.put("slot", String.valueOf(slot));
                 args.put("side", "up");
+                r.placedAt.add(r.lectern);
                 return List.of(new NativeTaskCandidate(task, "native_place", Map.copyOf(args)));
             }
             case TAKE_JOB -> {
@@ -12935,6 +12956,22 @@ final class PlayerRuntime {
                                   StartupLedgerSnapshot ledgerSnapshot,
                                   Map<UUID, OperatingMode> modes) { }
     private record SpawnLocation(double x, double y, double z, float yaw) { }
+
+    /** The store's budget writes for a new session, each after the test seam's delay when one is set (F-22c2). */
+    private PaidActivitySession.Writer budgetWriter() {
+        SqliteCompanionStore writes = store;
+        return (next, expectedSequence) -> {
+            java.time.Duration delay = budgetWriteDelay;
+            if (delay.isZero()) return writes.saveBudget(next, expectedSequence);
+            var later = CompletableFuture.delayedExecutor(delay.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+            return CompletableFuture.supplyAsync(() -> null, later).thenCompose(ignored -> writes.saveBudget(next, expectedSequence));
+        };
+    }
+
+    private volatile java.time.Duration budgetWriteDelay = java.time.Duration.ZERO;
+
+    /** Test seam: every activity budget write held this long before it goes to the store, as on a slow disk (F-22c2). */
+    void delayBudgetWritesForTest(java.time.Duration delay) { budgetWriteDelay = delay; }
 
     /** Test seam: keep autonomous selection from replacing the state a fixture is inspecting. */
     void holdAutonomyForTest(UUID id, int ticks) {

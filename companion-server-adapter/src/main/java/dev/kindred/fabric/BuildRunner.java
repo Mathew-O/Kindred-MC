@@ -77,6 +77,8 @@ final class BuildRunner {
     private int breakWalks;
     /** A placement it walked over to make, to be made there, as it was planned when it set out. */
     private ConstructionPlanner.Step placeStep;
+    /** The cells it has asked a pillar step of its scaffold for, until it sees whether a block went down there (F-22c9). */
+    private final Set<Pos> pillarsAsked = new HashSet<>();
     /** The last two blocks it set out to place, to see it walk to and fro between them. */
     private Pos lastPlaceTo, placeToBefore;
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
@@ -414,6 +416,16 @@ final class BuildRunner {
         if (player.isOnGround()) airWaits = 0;
         var site = snapshot(world);
         Pos feet = standing(player, site);
+        // A block a pillar step of its scaffold put down is its scaffold, however the step ended. Counted only when the
+        // step ended completed, a block it put down before it was stopped or planned again was nobody's: stood on top
+        // of it, its scaffold's one known block under it was "out of reach to take down", and a house cabin was left
+        // with its scaffold standing (CI run 392) (F-22c9).
+        for (var asked = pillarsAsked.iterator(); asked.hasNext(); ) {
+            Pos cell = asked.next();
+            boolean solid = site.cell(cell).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false);
+            if (solid && blocks.stream().noneMatch(b -> b.at().equals(cell))) scaffold.add(cell);
+            if (solid || feet.y() > cell.y() + 1 || feet.x() != cell.x() || feet.z() != cell.z()) asked.remove();
+        }
         // Scaffolding it no longer finds standing (broken by another, or a pillar step that did not land) is forgotten.
         scaffold.removeIf(p -> site.cell(p).map(c -> c.kind() != BuildSite.Kind.SOLID).orElse(false));
         var wanted = blocks.stream().filter(b -> !givenUp.contains(b.at())).toList();
@@ -422,12 +434,13 @@ final class BuildRunner {
         if (column != null) {
             Pos cell = pos(player.getBlockPos());
             boolean onColumn = cell.x() == column.x() && cell.z() == column.z() && cell.y() < columnTop;
-            if (onColumn && !player.isOnGround()) return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Landing on the scaffold"));
+            if (onColumn && !player.isOnGround()) return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1", "landed", "true"), "Landing on the scaffold"));
             if (onColumn) {
                 int slot = scaffoldSlot(player, wanted, site);
                 if (slot < 0) return Optional.of(wait("No blocks to spare for a scaffold"));
                 if (slot >= 9) return Optional.of(swap(player, slot, "Ready a block for the scaffold"));
                 progress = blueprint.name() + ": up the scaffold to " + columnTop;
+                pillarsAsked.add(cell);
                 return Optional.of(new PortalRunCampaign.Task("native_pillar", Map.of("x", str(cell.x()), "y", str(cell.y()), "z", str(cell.z()),
                         "slot", str(slot)), UP_THE_SCAFFOLD));
             }
@@ -456,8 +469,8 @@ final class BuildRunner {
                 return Optional.of(breakTask(target, feet, "The break it walked over to"));
             }
             if (there && ++breakWalks <= 8) {
-                return Optional.of(player.isOnGround() ? go(from, "To break " + target + " from " + feet)
-                        : new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Landing to break " + target));
+                return Optional.of(player.isOnGround() ? go(from, "To break " + target + " from " + feet + ", to stand at " + from)
+                        : new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1", "landed", "true"), "Landing to break " + target));
             }
             breakTarget = breakStance = null;
         }
@@ -495,7 +508,7 @@ final class BuildRunner {
         // and stubs so left round a cell walled it in (#82: a seed cabin's roof and a spruce cabin's, in CI suites).
         if (down && !player.isOnGround() && ++airWaits <= 5) {
             progress = blueprint.name() + ": landing on its scaffold";
-            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Landing on its scaffold"));
+            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1", "landed", "true"), "Landing on its scaffold"));
         }
         if (down && player.isOnGround()) {
             return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
@@ -539,7 +552,7 @@ final class BuildRunner {
             // In the air (just down off its scaffold), it lands first: every route looked for from mid-fall was "no
             // walkable route", and eight in a row within a second stopped a cabin short of its roof (a seed fixture,
             // and the nine by seven cabin in full run 19).
-            case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(wait("Landing first"))
+            case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(landing("Landing first"))
                     // Walks round failing from up on a block that is none of the build's (a scaffold's foot it lost count
                     // of, a pillar's): off it, the block underfoot dug out, as a player steps off a stray block (#82).
                     : overFailed >= 2 && player.isOnGround() && offPlan(feet.down(), world) ? Optional.of(new PortalRunCampaign.Task("native_break",
@@ -556,7 +569,7 @@ final class BuildRunner {
                 // walk, eight in a row found "no walkable route" and stopped a cabin with all its blocks placed (#82; suite
                 // run 49, and runs 22 and 48 before it).
                 if (scaffold.contains(step.target()) && step.target().x() == feet.x() && step.target().z() == feet.z() && step.target().y() < feet.y()) {
-                    if (!player.isOnGround()) yield Optional.of(wait("Landing first"));
+                    if (!player.isOnGround()) yield Optional.of(landing("Landing first"));
                     yield Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
                             "collect", "true", "underfoot", "true"), "Down the scaffold"));
                 }
@@ -564,7 +577,7 @@ final class BuildRunner {
                     breakTarget = step.target();
                     breakStance = step.stance();
                     breakWalks = 0;
-                    yield Optional.of(go(step.stance(), "To break " + step.target() + " from " + feet));
+                    yield Optional.of(go(step.stance(), "To break " + step.target() + " from " + feet + ", to stand at " + step.stance()));
                 }
                 yield Optional.of(breakTask(step.target(), feet, step.reason()));
             }
@@ -876,7 +889,10 @@ final class BuildRunner {
         } else if (!"native_wait".equals(task.skill())) {
             failures++;
             pause = true;
-            lastFailure = task.label() + (reason.isEmpty() ? "" : ": " + reason);
+            // With the cell it was at, which a label such as "Down the scaffold" does not name (F-22c1's diagnostics).
+            lastFailure = task.label() + (task.args().containsKey("x") && !task.label().contains(" at ")
+                    ? " at " + task.args().get("x") + ", " + task.args().get("y") + ", " + task.args().get("z") : "")
+                    + (reason.isEmpty() ? "" : ": " + reason);
         }
         boolean placing = "native_place".equals(task.skill()), breaking = "native_break".equals(task.skill());
         boolean pillar = "native_pillar".equals(task.skill());
@@ -1065,6 +1081,12 @@ final class BuildRunner {
     private PortalRunCampaign.Task near(Pos target, String reason) {
         progress = blueprint.name() + ": " + reason;
         return new PortalRunCampaign.Task("native_goto", Map.of("x", str(target.x()), "y", str(target.y()), "z", str(target.z()), "range", "2.5"), reason);
+    }
+
+    /** A wait for the body to land, over once it has (F-22c8). */
+    private PortalRunCampaign.Task landing(String reason) {
+        progress = blueprint.name() + ": " + reason;
+        return new PortalRunCampaign.Task("native_wait", Map.of("seconds", "2", "landed", "true"), "Wait: " + reason);
     }
 
     private PortalRunCampaign.Task wait(String reason) {

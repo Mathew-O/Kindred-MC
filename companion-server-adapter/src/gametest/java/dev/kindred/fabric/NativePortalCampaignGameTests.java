@@ -5184,6 +5184,11 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     BlockPos p = f.player().getBlockPos().toImmutable();
                     at[0] = p;
                     FixtureGround.keep(context, p.add(-52, -1, -52), p.add(52, 5, 52));
+                    // Its whole plain simulated, as a server with a simulation distance keeps it: the test server ticks
+                    // only the structure's chunks and the one the player stands in, so a cow struck down over a chunk's
+                    // edge from it left its beef unticked there, never to be picked up (CI, run 378: "Hunt cow", the
+                    // attack completed from 11814317 against the cow at 11814320, then nothing to the end) (F-22c3).
+                    FixtureGround.simulated(context, p.add(-52, -1, -52), p.add(52, 5, 52));
                     for (int x = -52; x <= 52; x++) for (int z = -52; z <= 52; z++) {
                         world.setBlockState(p.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 5; y++) world.setBlockState(p.add(x, y, z), Blocks.AIR.getDefaultState());

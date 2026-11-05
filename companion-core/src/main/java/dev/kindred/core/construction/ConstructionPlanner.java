@@ -164,6 +164,16 @@ public final class ConstructionPlanner {
         Set<Pos> walk = walkable(site, feet, scaffold);
         walk.retainAll(returnable(site, walk, feet, scaffold, box));
         walk.removeAll(shunned);
+        // Of the top layer, one it can break from where it stands first. The nearest first, the last two blocks of a
+        // hideout's floor, side by side, the player on one: the one underfoot came first, broken from on the other, the
+        // only spot beside it, and there the other was underfoot; it walked between them without end (F-22c8).
+        int top = inTheWay.isEmpty() ? 0 : inTheWay.getFirst().y();
+        for (Pos p : inTheWay) {
+            if (p.y() != top) break;
+            if (site.cell(p).get().kind() == BuildSite.Kind.PROTECTED) continue;
+            Optional<Pos> stance = stanceToBreak(site, p, feet, wanted, box, walk);
+            if (stance.isPresent() && stance.get().equals(feet)) return Step.breaking(p, feet, "In the way of the build");
+        }
         for (Pos p : inTheWay) {
             if (site.cell(p).get().kind() == BuildSite.Kind.PROTECTED) return Step.blocked("In the way and not the build's to break: " + p);
             Optional<Pos> stance = stanceToBreak(site, p, feet, wanted, box, walk);
