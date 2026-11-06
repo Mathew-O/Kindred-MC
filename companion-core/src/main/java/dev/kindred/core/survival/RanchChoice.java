@@ -19,6 +19,13 @@ public final class RanchChoice {
     /** The food a ranch sets out with: two to breed the pair, the rest only held up to lead them. */
     public static final int FOOD = 2;
 
+    /**
+     * The food it earns when it has none: the pair's two and two more to lead with, so that one that slips out as it
+     * leaves can still be led back in (the chickens' fixture: seeds for the pair alone, none left to bring back a chick
+     * that got out).
+     */
+    public static final int EARN = FOOD + 2;
+
     /** The kinds in the order a player keeps them. */
     private static final Ranch.Kind[] ORDER = {Ranch.Kind.COW, Ranch.Kind.SHEEP, Ranch.Kind.PIG, Ranch.Kind.CHICKEN};
 
