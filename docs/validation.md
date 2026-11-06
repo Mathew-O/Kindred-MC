@@ -68,6 +68,14 @@
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01a: the chickens' seeds earned from grass, 2026-11-06
+
+Branch `claude/modes-1106-7`, from main. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchChoiceTest` 3 of 3; the new test would not compile before.
+- Native: `NativeOwnRanchGameTests` with `NativeRanchGameTests` alone. Three runs on `7f0dccd`, then five on `4093138`, 4 of 4 each but one.
+  - The one failure: the operator-started cow ranch, once in eight, "Only one cow in the pen; no other in sight". Not reproduced in the next five; its message now reports where the cows were.
+  - Control (the seeds not earned): fails, no ranch begun. Its first run crashed the test server on the fixture's own failure message, now guarded.
+
 ## M-01a: a ranch of its own, 2026-11-05
 
 Branch `claude/modes-1105-6`, from M-01e's. M-01a stays open. See [M-01a](evidence/M-01a.md#a-ranch-of-its-own-2026-11-05-claudemodes-1105-6).
