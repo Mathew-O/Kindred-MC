@@ -272,6 +272,12 @@ final class BuildRunner {
      * Whether the block at {@code at} is one of its own it can dig out from under itself: a scaffold block of the kinds it
      * scaffolds with, above the build's floor, and none the plan places there.
      */
+    /** Whether a blocked step's target is its own scaffold straight under {@code feet}, in the same column (F-22c20). */
+    private boolean under(ConstructionPlanner.Step step, Pos feet) {
+        Pos t = step.target();
+        return t != null && scaffold.contains(t) && t.x() == feet.x() && t.z() == feet.z() && t.y() < feet.y();
+    }
+
     private boolean offPlan(Pos at, ServerWorld world) {
         if (at.y() < siteFloor()) return false;
         var item = world.getBlockState(blockPos(at)).getBlock().asItem();
@@ -567,7 +573,11 @@ final class BuildRunner {
             case BLOCKED -> !player.isOnGround() && ++airWaits <= 5 ? Optional.of(landing("Landing first"))
                     // Walks round failing from up on a block that is none of the build's (a scaffold's foot it lost count
                     // of, a pillar's): off it, the block underfoot dug out, as a player steps off a stray block (#82).
-                    : overFailed >= 2 && player.isOnGround() && offPlan(feet.down(), world) ? Optional.of(new PortalRunCampaign.Task("native_break",
+                    // Or straight away when what it cannot reach is its own scaffold right under it, in the column it stands
+                    // on, with an untracked block between: no walk round is asked for there, so none fails, and a cabin's
+                    // player stood on such a column waiting for 42 seconds, 197 times, till night took it to bed and the
+                    // roof ran into a third night (main's CI on fc38c94) (F-22c20).
+                    : (overFailed >= 2 || under(step, feet)) && player.isOnGround() && offPlan(feet.down(), world) ? Optional.of(new PortalRunCampaign.Task("native_break",
                             Map.of("x", str(feet.down().x()), "y", str(feet.down().y()), "z", str(feet.down().z()), "collect", "true", "underfoot", "true"),
                             "Off what it stands on"))
                     : step.target() != null && flat(feet, step.target()) > 9 && !up(feet)
