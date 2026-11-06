@@ -3241,13 +3241,15 @@ final class PortalRunCampaign {
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
         // Stranded, no walk back: a pillar if boxed in (quicker than a stair by hand), else the stair.
+        boolean underWater = underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24;
+        // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
+        // back under the lake each time its climb had dug a step out from under it (F-25c4bu).
+        if (!pickaxe && underWater) return climb(body, label).or(() -> retrace(body, label));
         if (!pickaxe) return stranded() ? pillarOut(body, label).or(() -> climb(body, label))
                 : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         // Under water, out from under it first: the way it came went under the same water (F-25c4ah).
-        if (underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24) {
-            return climb(body, label).or(() -> retrace(body, label));
-        }
+        if (underWater) return climb(body, label).or(() -> retrace(body, label));
         int surface = player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ());
         int depth = Math.max(1, surface - player.getBlockY());
         // A step of the way back costs about a third of a staircase step (three blocks dug per block climbed).
@@ -3447,7 +3449,20 @@ final class PortalRunCampaign {
             underWaterTick = lastTick;
             if (underWaterHeading == null) underWaterHeading = digDirection;
             digDirection = underWaterHeading;
-            Optional<Task> out = tunnel(body, label + ": out from under the water");
+            // Along its own level, never a step down: stepped back down into the part below that it had climbed out of, it
+            // climbed up again at the next step, and back down. And with no pickaxe, dug by hand, as the climb is: dug only
+            // with a tool, the way on was nothing it could dig. In E-40's iteration 9 (`e40a9-dd9b037`) on 8675309 Kindred,
+            // its pickaxe broken under a lake, stepped up and back down for 10 stuck spells (F-25c4bu).
+            int floor = tunnelFloor;
+            tunnelFloor = feet.getY();
+            tunnelByHand = true;
+            Optional<Task> out;
+            try {
+                out = tunnel(body, label + ": out from under the water");
+            } finally {
+                tunnelByHand = false;
+                tunnelFloor = floor;
+            }
             underWaterHeading = digDirection;
             if (out.isPresent()) return out;
         }
@@ -3808,6 +3823,9 @@ final class PortalRunCampaign {
      * under it and no other liquid round it is opened, from where it stands, which shows the lava, as a player's next
      * block would. The lava stays where it is: lava never rises, and the cell is never walked onto (F-25c4ac).
      */
+    /** Whether the tunnel being dug may be dug by hand, with no pickaxe held (F-25c4bu). */
+    private boolean tunnelByHand;
+
     Optional<Task> tunnel(NativePlayerBody body, String label, boolean revealLava) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -3834,6 +3852,8 @@ final class PortalRunCampaign {
                 }
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                // Its pickaxe gone, out from under the water by hand, as its climb goes up by hand (F-25c4bu).
+                if (tunnelByHand && handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
                 refused = true;
                 break;
             }

@@ -16,7 +16,7 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
-## E-40, iteration 9 and batch 12: food of last resort, the shelter astride two cells (F-25c4bs, F-25c4bt) — 6 November 2026 (`claude/e40-ladder-12-1105`)
+## E-40, iteration 9 and batch 12: food of last resort, the shelter astride two cells, out from under a lake by hand (F-25c4bs, F-25c4bt, F-25c4bu) — 6 November 2026 (`claude/e40-ladder-12-1105`)
 
 - **The evaluation, `e40a9-dd9b037` (batch 11):** all ten seeds, 144,000 ticks each, earned. The container restarted
   with 606 and 707 under way; those two were run again from the start on the same build.
@@ -35,8 +35,13 @@
   below ground, astride the two cells of a pocket whose first opens into a corridor.
   - On `ec27caa`: fails 3 of 3, waiting for daylight with the corridor's mouth open.
   - With the fix: passes 3 of 3.
-- **Not kept:** a corridor under a lake with a step up into a part right under the lake's floor, for 8675309's climb.
-  It got out from under the lake and filled its bucket in all three runs on `ec27caa`.
+- **The under-the-lake fixture** (F-25c4bu, [evidence](evidence/F-25c4bu.md)), `NativeUnderLakeKeptGameTests`, staged
+  from 8675309's kept ground: no pickaxe, where Kindred stood under the lake.
+  - On `ec27caa`: fails 3 of 3, stepping up and back down (up to 396 steps up), never out.
+  - With the fix: passes 3 of 3, out about 7,040 ticks on with 3 steps up.
+  - A corridor staged by hand for the same place got out on `ec27caa` in all three runs and is not kept.
+  - The other climbs under water with the fix, run alone once: F-25c4ah's corridor under a lake and all seven of
+    `NativeTripDownGameTests` (101's lake bed, 303's aquifer ledge, the sand and seal climbs, the lava island) pass.
 - **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
 
 ## E-40, iteration 8 and batch 11: a break the world changed, a bucket filled afloat, a tree not walked back to (F-25c4bp, F-25c4bq, F-25c4br) — 5 November 2026 (`claude/e40-ladder-11-1105`)
