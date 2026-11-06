@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.block.Blocks;
 import net.minecraft.command.argument.BlockArgumentParser;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -115,6 +116,95 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.assertTrue(context.getWorld().getTime() - doneAt[0] >= 200, "Ten seconds on");
                     context.assertTrue(f.runtime.ranchStatus(f.id).isEmpty(), "Not begun twice: " + f.runtime.ranchStatus(f.id).orElse(""));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its food earned in play (M-01a): a pair of chickens in sight and no seeds at all, grass about. It breaks the grass
+     * for seeds, as players do, then keeps the chickens: the pen built, the pair led in and bred with the seeds it
+     * earned. Staged as the cow fixture is, with no seeds given and grass set about the field.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchSeeds", tickLimit = 12000)
+    public void withNoSeedsItEarnsThemFromTheGrassThenKeepsAPairOfChickens(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 11500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
+        BlockPos home = o.add(16, 7, 16);
+        BlockPos cabinAt = home.add(-3, 0, -3);
+        boolean[] seeding = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Henwife"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    world.setTimeOfDay(1000);
+                    var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
+                        try {
+                            world.setBlockState(BuildRunner.blockPos(b.at()),
+                                    BlockArgumentParser.block(Registries.BLOCK.getReadOnlyWrapper(), b.spec().toString(), false).blockState());
+                        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    }
+                    // Staged: tufts of grass about the field east and south of the cabin, as grass grows on a plain.
+                    for (int x = 6; x <= 14; x++) for (int z = -6; z <= 10; z++) {
+                        if ((x + z) % 2 != 0) continue;
+                        BlockPos at = home.add(x, 0, z);
+                        if (world.getBlockState(at.down()).isOf(Blocks.GRASS_BLOCK) && world.getBlockState(at).isAir()) {
+                            world.setBlockState(at, Blocks.SHORT_GRASS.getDefaultState());
+                        }
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    // Stone tools, fourteen logs and no seeds at all.
+                    ItemStack[] held = {new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_LOG, 14),
+                            new ItemStack(Items.BREAD, 16)};
+                    for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = home.add(8, 0, 0);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
+                    context.spawnEntity(EntityType.CHICKEN, rel);
+                    context.spawnEntity(EntityType.CHICKEN, rel.add(1, 0, 2));
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
+                        new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
+                .createAndAdd(() -> {
+                    if (f.runtime.ranchNote(f.id).contains("seeds first")) seeding[0] = true;
+                    var pen = f.runtime.ownRanch(f.id);
+                    context.assertTrue(pen.isPresent() && pen.get().kind().equals("CHICKEN"),
+                            "A chicken ranch of its own begun: " + pen + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)
+                                    + " / seeds " + f.player().getInventory().count(Items.WHEAT_SEEDS));
+                    context.assertTrue(seeding[0], "Seeds earned first, from the grass: " + f.runtime.ranchNote(f.id));
+                })
+                .createAndAdd(() -> {
+                    var pen = f.runtime.ownRanch(f.id).orElseThrow();
+                    context.assertTrue(pen.complete() && f.runtime.ranchStatus(f.id).isEmpty(), "Ranch run: " + f.runtime.ranchStatus(f.id).orElse(""));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var pen = f.runtime.ownRanch(f.id).orElseThrow();
+                    BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+                    var penned = world.getEntitiesByClass(ChickenEntity.class, new Box(post).expand(8),
+                            c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
+                    long adults = penned.stream().filter(c -> !c.isBaby()).count(), chicks = penned.stream().filter(ChickenEntity::isBaby).count();
+                    KindredMod.LOGGER.info("Own ranch with earned seeds: {} chickens and {} chicks penned; {} seeds left", adults, chicks,
+                            f.player().getInventory().count(Items.WHEAT_SEEDS));
+                    // Bred with two seeds, and it was given none: the seeds were earned.
+                    context.assertTrue(adults == 2 && chicks == 1, "The pair penned and a chick: " + adults + " and " + chicks);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
