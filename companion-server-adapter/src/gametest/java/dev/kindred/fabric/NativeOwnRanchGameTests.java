@@ -187,7 +187,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     var pen = f.runtime.ownRanch(f.id);
                     context.assertTrue(pen.isPresent() && pen.get().kind().equals("CHICKEN"),
                             "A chicken ranch of its own begun: " + pen + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)
-                                    + " / seeds " + f.player().getInventory().count(Items.WHEAT_SEEDS));
+                                    + " / seeds " + (f.player() == null ? "-" : f.player().getInventory().count(Items.WHEAT_SEEDS)));
                     context.assertTrue(seeding[0], "Seeds earned first, from the grass: " + f.runtime.ranchNote(f.id));
                 })
                 .createAndAdd(() -> {
