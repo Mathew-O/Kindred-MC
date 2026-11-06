@@ -16,6 +16,22 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, batch 13: a tunnel under gravel still coming down (F-25c4bv) — 6 November 2026 (`claude/e40-ladder-13-1106`)
+
+- **The gravel fixture** (F-25c4bv, [evidence](evidence/F-25c4bv.md)), `NativeGravelTunnelGameTests`, staged: a branch
+  mine for iron through stone with gravel over the head-level cells two to four blocks out, all round.
+  - On `d585600`: fails 3 of 3, buried two blocks in at full health.
+  - With the fix: passes 3 of 3, never in a wall.
+  - Run alone with the fix, the tunnel's other fixtures pass: both of `NativeBranchMineGameTests`, all seven of
+    `NativeTripDownGameTests`, `NativeUnderLakeKeptGameTests` (11 of 11 with the gravel fixture).
+- **The suffocations' own replays** (four from `e40a9-dd9b037`, one from `e40a8-aed3e82`), staged in turn, three runs
+  each: the same before and after. Three die again in 3 of 3, buried before the replay begins at 1.0 to 3.0 health; two
+  live in 3 of 3. None is kept.
+- **Iteration 9's death replays on batch 12 with F-25c4bv** (44 of its 48; one over 1 MB, three not captured): 23 die
+  again in 2 or 3 of 3: to zombies 10 (one a zombie villager), skeletons 8, the two buried suffocations, a witch, a cave
+  spider and a polar bear. Not kept; the start of the deaths' work.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
 ## E-40, iteration 9 and batch 12: food of last resort, the shelter astride two cells, out from under a lake by hand (F-25c4bs, F-25c4bt, F-25c4bu) — 6 November 2026 (`claude/e40-ladder-12-1105`)
 
 - **The evaluation, `e40a9-dd9b037` (batch 11):** all ten seeds, 144,000 ticks each, earned. The container restarted

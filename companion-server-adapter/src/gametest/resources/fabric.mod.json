@@ -69,6 +69,7 @@
       "dev.kindred.fabric.NativeLastResortFoodGameTests",
       "dev.kindred.fabric.NativeShelterSealGameTests",
       "dev.kindred.fabric.NativeUnderLakeKeptGameTests",
+      "dev.kindred.fabric.NativeGravelTunnelGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",

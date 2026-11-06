@@ -3860,11 +3860,13 @@ final class PortalRunCampaign {
             // Walking dug ground again is fine on the way to rock it can dig; pacing a dead-end corridor is not.
             if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && world.getFluidState(ahead).isEmpty() && !blocked(ahead)
                     && (!tunnelled.contains(ahead.asLong()) || diggableFaceAhead(body, ahead))) {
+                if (comingDown(world, ahead)) return Optional.of(settle(label));
                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
             }
             // Never a step down into water: wading back out to here and stepping in again would go round for ever.
             if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down()) && ahead.getY() > tunnelFloor
                     && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
+                if (comingDown(world, ahead.down())) return Optional.of(settle(label));
                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
             }
             // A pit it dug itself over a drop (a staircase step that broke through a cave's ceiling): fill it and go on. Toward
@@ -3877,6 +3879,26 @@ final class PortalRunCampaign {
             digDirection = digDirection.rotateYClockwise();
         }
         return Optional.empty();
+    }
+
+    /**
+     * Sand or gravel coming down into the cell a player would stand in, or onto its head there: falling now, or resting
+     * over the open head cell, which it falls into within two ticks of being left with nothing under it. A tunnel that
+     * cleared the head-level cell under such a column saw the cell open while what rested over it was still in the air,
+     * walked in and was buried. In E-40's iteration 9 (`e40a9-dd9b037`) three players branch mining at Y=-54, through
+     * pockets of gravel in the deepslate, suffocated so, digging out of the wall as the next block came down onto them:
+     * Kindred on 20261030, Sol on 606 and Sol on 8675309; Echo on 8675309 the same at Y=19 (F-25c4bv).
+     */
+    private static boolean comingDown(ServerWorld world, BlockPos cell) {
+        if (!world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, new Box(cell).stretch(0, 8, 0), e -> true).isEmpty()) return true;
+        BlockPos head = cell.up();
+        return passable(world, head) && world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock
+                && net.minecraft.block.FallingBlock.canFallThrough(world.getBlockState(head));
+    }
+
+    /** A moment's wait while what falls ahead comes to rest, before stepping under it (F-25c4bv). */
+    private static Task settle(String label) {
+        return new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle");
     }
 
     /**
