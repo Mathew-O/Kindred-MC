@@ -66,6 +66,8 @@
       "dev.kindred.fabric.NativeBucketGameTests",
       "dev.kindred.fabric.NativeBreakOutcomeGameTests",
       "dev.kindred.fabric.NativeTreeSightGameTests",
+      "dev.kindred.fabric.NativeLastResortFoodGameTests",
+      "dev.kindred.fabric.NativeShelterSealGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",

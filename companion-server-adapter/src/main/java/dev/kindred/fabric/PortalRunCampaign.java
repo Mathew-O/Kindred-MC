@@ -5136,8 +5136,23 @@ final class PortalRunCampaign {
      */
     private Optional<Task> seal(NativePlayerBody body) {
         var player = body.entity();
-        var open = openings(player.getServerWorld(), player.getBlockPos());
-        if (open.isEmpty() || open.size() > 4) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        // The shelter is every cell its body stands in: across the line between two, both. Sealed from the edge of one
+        // cell, the other was an opening its own body filled, each block put there refused as obstructed, and the cell it
+        // stood in changed as it moved: in E-40's iteration 9 (`e40a9-dd9b037`) on 404 Sol sealed the two cells of its
+        // pocket by turns for 14 stuck spells (F-25c4bt). Their openings are sealed instead, neither of the cells themselves.
+        var box = player.getBoundingBox();
+        var occupied = new java.util.ArrayList<BlockPos>();
+        for (BlockPos cell : BlockPos.iterate(BlockPos.ofFloored(box.minX, feet.getY(), box.minZ),
+                BlockPos.ofFloored(box.maxX - 1.0E-6, feet.getY(), box.maxZ - 1.0E-6))) {
+            if (cell.equals(feet) || passable(world, cell) && passable(world, cell.up())) occupied.add(cell.toImmutable());
+        }
+        var open = new java.util.LinkedHashSet<BlockPos>();
+        for (BlockPos cell : occupied) {
+            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down())) open.add(gap);
+        }
+        if (open.isEmpty() || open.size() > 2 + 2 * occupied.size()) return Optional.empty();
         for (BlockPos cell : open) {
             Optional<Task> place = placeBlock(body, cell, "Seal the shelter at " + cell.toShortString());
             if (place.isPresent()) return place;
