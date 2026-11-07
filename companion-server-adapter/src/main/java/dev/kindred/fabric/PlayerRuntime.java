@@ -9245,15 +9245,27 @@ final class PlayerRuntime {
                         boat -> boat.isAlive() && !boat.hasPassengers());
                 if (!near.isEmpty() && b.boatId == null) b.boatId = near.getFirst().getUuid();
                 if (!near.isEmpty() && near.getFirst().age < 10) return List.of(waitTask(bringTask(entry, "boat down:" + b.boatTries), "For the boat to take the " + b.noun + " up"));
-                // A boat put down that did not take it up (it had stepped on): broken, picked up, and put down again.
-                if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive() && b.boatTries < 6) {
+                // A boat put down that did not take it up (it had stepped on): broken, picked up, and put down again. After the
+                // last try too, before the line is laid to it as it stands: left lying by it, the villager strolled into the
+                // boat later, and the cart took the boat up with it in it, riding high under the hall's doorway and lintel,
+                // which had not been opened for a boat (the strolling fixture, hurt by its ride, in a full suite on 7 November).
+                if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive()) {
                     if (!player.canInteractWithEntity(empty, 0)) return List.of(goNear(bringTask(entry, "to the boat:" + b.boatTries), empty.getBlockPos()));
                     b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString()));
                     return List.of(b.boatStep);
                 }
                 var boatLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                         item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS));
-                if (boatSlot(player) < 0 && !boatLying.isEmpty() && b.boatTries < 6) return List.of(standAt(bringTask(entry, "boat item:" + b.boatTries), boatLying.getFirst().getBlockPos()));
+                if (boatSlot(player) < 0 && !boatLying.isEmpty()) {
+                    // A boat broken by the water's edge may lie on the water, where no walk ends: picked up from the dry
+                    // ground beside it, as a player reaches for an item a step off. Walked to its own block, the walk had
+                    // no route three times over and the bring gave up, the librarian still to row across (the lake
+                    // fixture, alone, on 7 November; in PR #32's CI the same).
+                    BlockPos lying = boatLying.getFirst().getBlockPos();
+                    BlockPos stand = world.getFluidState(lying).isEmpty() && world.getFluidState(lying.down()).isEmpty() ? lying
+                            : new NativeNavigator(world).nearestDryStand(lying, 2, 1).orElse(lying);
+                    return List.of(standAt(bringTask(entry, "boat item:" + b.boatTries), stand));
+                }
                 int boatSlot = boatSlot(player);
                 if (boatSlot < 0 || b.boatTries >= 6 || !opensOverhead(player, b)) {
                     // No boat to hand, or it would not take the villager up: brought as the cart comes instead.

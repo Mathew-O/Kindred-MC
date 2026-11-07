@@ -16,6 +16,24 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## CI green block 2, part 1: the bring's cart and boats (F-22c21, F-22c22, F-22c23) — 7 November 2026 (`claude/e40-ladder-13-1106`)
+
+The bring fixtures failed in 3 of the last 6 failing CI runs and in the local full suite on batch 14. Three causes, each
+from a log:
+
+- **F-22c21** ([evidence](evidence/F-22c21.md)): a push ended as soon as the cart moved, whichever way. The wandered
+  bring's loaded cart rolled back from the climb into its cell, and each later push "ended" at the speed it rolled back
+  at (CI on `5b130a6`). `NativeCartGameTests.aCartRollingBackTowardThePlayerIsPushedOnNotTakenForOneRollingAway`,
+  staged: on `744c636` fails 3 of 3; with the fix passes 3 of 3.
+- **F-22c22** ([evidence](evidence/F-22c22.md)): after its sixth try to hold the strolling librarian in a boat, the bring
+  left that boat lying; the librarian climbed in later and rode home high under the hall's doorway and lintel, hurt (the
+  local full suite). Not reproduced on demand.
+- **F-22c23** ([evidence](evidence/F-22c23.md)): a boat broken by the lake's edge was walked to on its own block, on the
+  water, with no route three times over, and the bring gave up (alone, 1 of 3 runs; PR #32's CI the same). Not
+  reproduced on demand.
+- **With all three:** `NativeBringGameTests`, `NativeTradingHallGameTests` and `NativeCartGameTests` alone, four runs:
+  52 of 52. With the first two (F-22c21, F-22c22): 32 of 33 in three runs, the one failure F-22c23's.
+
 ## E-40, batch 14: dug in for the night, it stays in (F-25c4bx); rung c's first probe — 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The night shelter fixture** (F-25c4bx, [evidence](evidence/F-25c4bx.md)), `NativeNightShelterGameTests`, staged:
