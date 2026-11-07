@@ -1004,6 +1004,11 @@ final class PortalRunCampaign {
 
     /** How often a walk toward each place has been cut short in deep water, by the place it names (F-25c4az). */
     private final Map<Long, Integer> wetDips = new HashMap<>();
+    /** Walks on into the caves that ended in deep water near {@code caveDipAt}, and the caves near {@code cavesHeldAt} left alone until {@code cavesHeldUntil} (F-25c4cf). */
+    private BlockPos caveDipAt, cavesHeldAt;
+    private int caveDips;
+    private long caveDipTick, cavesHeldUntil;
+    static final String CAVE_WALK = "Explore the cave toward ";
 
     private static final java.util.regex.Pattern NAMED_PLACE = java.util.regex.Pattern.compile(" at (-?\\d+), (-?\\d+), (-?\\d+)$");
 
@@ -1017,6 +1022,24 @@ final class PortalRunCampaign {
      */
     private void wetDip(net.minecraft.world.World world, Task walk, long tick) {
         if (walk == null || !"native_goto".equals(walk.skill()) || surfacing(walk) || climbingOut(walk)) return;
+        // Walks on into the caves that end in deep water, wherever each was bound: two from about here within a minute and
+        // the caves round here are left alone for two minutes. Each such walk is to another cave floor, so counted by
+        // where they were bound they never added up: on 606 in E-40's iteration 11 Kindred walked on into the cave toward
+        // lava through a flowing channel two deep, and out of it again, for minutes (F-25c4cf).
+        if (walk.label().startsWith(CAVE_WALK)) {
+            if (caveDipAt != null && caveDipAt.isWithinDistance(lastFeet, 8) && tick - caveDipTick <= 1200) caveDips++;
+            else {
+                caveDipAt = lastFeet;
+                caveDips = 1;
+            }
+            caveDipTick = tick;
+            if (caveDips >= 2) {
+                cavesHeldUntil = tick + 2400;
+                cavesHeldAt = lastFeet;
+                caveDips = 0;
+                event("its walks into the caves from about " + lastFeet.toShortString() + " end in deep water; the caves round here left for now");
+            }
+        }
         var named = NAMED_PLACE.matcher(walk.label());
         BlockPos at = named.find() ? new BlockPos(Integer.parseInt(named.group(1)), Integer.parseInt(named.group(2)), Integer.parseInt(named.group(3)))
                 : position(walk.args());
@@ -1949,7 +1972,7 @@ final class PortalRunCampaign {
      */
     private Optional<Task> surface(NativePlayerBody body) {
         var player = body.entity();
-        if (!PlayerRuntime.inDeepWater(player)) return Optional.empty();
+        if (!PlayerRuntime.inDeepWater(player) && !wadingTwoDeep(player)) return Optional.empty();
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
         // staged End run was turned back to the shore on every pass across a bay).
         if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && endGoal()
@@ -1998,7 +2021,12 @@ final class PortalRunCampaign {
         }
         // Not dry ground a walk out has failed to get to: in a stream down a hillside the current carried Echo past it each
         // time, and it set out for the same spot 173 times in the live pair on a4df9b4, Sol 375 times on 458d192 (F-25c4aa).
-        var dry = navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p));
+        // Dry ground clear of the water first, no water round it at its feet or head: a stand at the edge of moving water
+        // leaves the body over the water, and the current carries it back in. On 606 in E-40's iteration 11
+        // (`e40a11-744c636`) Kindred, walked to the stand beside a flowing channel two deep, was carried back in each time
+        // and sent out again 3,789 times, its dig toward lava stopped "In deep water" 1,782 times (F-25c4cf).
+        var dry = navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
+                .or(() -> navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p)));
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
@@ -2107,6 +2135,27 @@ final class PortalRunCampaign {
      */
     static boolean surfacing(Task task) {
         return task != null && (task.label().startsWith("Get out of the water") || "native_boat".equals(task.skill()));
+    }
+
+    /**
+     * Standing on the bottom in water up to its head, its eyes over a current's low surface: not afloat, but in the water
+     * all the same. Bobbing there between the bottom and afloat, it was given work on the bottom and sent ashore afloat by
+     * turns: on 606 in E-40's iteration 11 Kindred, in a flowing channel two deep, took walks on into the cave from its
+     * bottom and was sent out of the water at the next bob, again and again (F-25c4cf).
+     */
+    static boolean wadingTwoDeep(net.minecraft.server.network.ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        return player.isTouchingWater() && world.getFluidState(feet).isIn(net.minecraft.registry.tag.FluidTags.WATER)
+                && world.getFluidState(feet.up()).isIn(net.minecraft.registry.tag.FluidTags.WATER);
+    }
+
+    /** Water in any of the eight cells round {@code feet}, at its feet or its head: where a body standing there can touch it. */
+    static boolean waterRound(net.minecraft.world.World world, BlockPos feet) {
+        for (int dy = 0; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+            if ((dx != 0 || dz != 0) && world.getFluidState(feet.add(dx, dy, dz)).isIn(net.minecraft.registry.tag.FluidTags.WATER)) return true;
+        }
+        return false;
     }
 
     /** A step of a climb: the cells cleared for a staircase step up, or the step itself. */
@@ -2663,7 +2712,7 @@ final class PortalRunCampaign {
         if (!shield && !quietAround(world, lastFeet)) return Optional.empty();
         // Not hurt, either: players heal before going into a cave, not after. Nor while advised to play safe.
         if (body.entity().getHealth() < 14 || stance() == StrategyAdvice.Stance.PLAY_SAFE || habits.contains(PlanPreferences.Habit.NO_CAVES)
-                || stranded()) {
+                || stranded() || lastTick < cavesHeldUntil && cavesHeldAt != null && cavesHeldAt.isWithinDistance(lastFeet, 24)) {
             return Optional.empty();
         }
         BlockPos feet = lastFeet;
@@ -2679,7 +2728,7 @@ final class PortalRunCampaign {
                                 && Math.hypot(pos.getX() - anchor.getX(), pos.getZ() - anchor.getZ()) <= EXPLORE_RADIUS
                                 && Math.abs(pos.getY() - targetY) < gapNow + 8)
                 // A full route only: a cave floor seen below a ledge is reached by digging down, not by standing at the edge.
-                .map(pos -> go(pos, 0.8, false, "Explore the cave toward " + what));
+                .map(pos -> go(pos, 0.8, false, CAVE_WALK + what));
     }
 
     /** Arrived somewhere new: look around (one full knowledge sweep) before deciding there is nothing but digging. */

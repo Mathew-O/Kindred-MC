@@ -67,6 +67,20 @@ from a log:
   - With it, `NativePortalCampaignGameTests`, `NativeNightShelterGameTests`, `NativeShelterSealGameTests`,
     `NativeTripDownGameTests`, `NativeFloodedShaftGameTests`, `NativeUnderLakeKeptGameTests`, `NativeTeamPortalGameTests`
     and the new class: 108 of 108.
+- **The water edge fixture** (F-25c4cf, [evidence](evidence/F-25c4cf.md)), `NativeWaterEdgeGameTests`, staged from
+  606's kept world (iteration 11, read offline, diagnosis only): a flowing channel two deep at a cave's edge, the cast
+  route's kit, wanting lava.
+  - On `8c2814a`: fails 3 of 3, sent out of the water a seventh time after 235 to 286 ticks (39 to 192 times by the
+    time limit), its dig stopped "In deep water" 18 to 172 times.
+  - With the fix: passes 3 of 3, sent out 3 times, no dig stopped, then digging and branch mining for lava.
+  - Parts of the fix alone: dry ground clear of the water only, one run, fails (23 times); without the caves left
+    alone, 3 of 3 pass at the limit (6 times each).
+  - With it, the goal's fixtures with water and the night's, alone and while the evaluation ran:
+    `NativePortalCampaignGameTests`, `NativeTripDownGameTests`, `NativeUnderLakeKeptGameTests`,
+    `NativeFloodedShaftGameTests`, `NativeWaterFightGameTests`, `NativeBranchMineGameTests`, `NativeFallGameTests`,
+    `NativeTeamPortalGameTests`, `NativePortalLightGameTests`, `NativeAtlasGameTests`, `NativeLessonsGameTests`,
+    `NativeFollowUpGameTests`, `NativeBoatGameTests`, `NativeBucketGameTests`, batch 15's four classes, batch 16's three
+    and the new one: 139 of 139.
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
 - **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
