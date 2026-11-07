@@ -16,7 +16,7 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
-## E-40, batch 13: a tunnel under gravel still coming down (F-25c4bv) — 6 November 2026 (`claude/e40-ladder-13-1106`)
+## E-40, batch 13: a tunnel under gravel still coming down, the dragon goal evaluated (F-25c4bv, F-26b) — 6 and 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The gravel fixture** (F-25c4bv, [evidence](evidence/F-25c4bv.md)), `NativeGravelTunnelGameTests`, staged: a branch
   mine for iron through stone with gravel over the head-level cells two to four blocks out, all round.
@@ -30,6 +30,12 @@
 - **Iteration 9's death replays on batch 12 with F-25c4bv** (44 of its 48; one over 1 MB, three not captured): 23 die
   again in 2 or 3 of 3: to zombies 10 (one a zombie villager), skeletons 8, the two buried suffocations, a witch, a cave
   spider and a polar bear. Not kept; the start of the deaths' work.
+- **F-26b** ([evidence](evidence/F-26b.md)): a `goal=dragon` run on seed 303, 6,000 ticks, on `eed2dc5`: the dragon
+  fight turned on, the goal set for all three players. Not kept.
+- **Tried and not kept:** a hurt player fighting one foe behind its shield. Eight death replays with a shield, three
+  runs each: 15 of 24 died again on the old code, 12 and 14 of 24 with it; the combat fixtures (`NativeCombatGameTests`,
+  `NativeDefensivePrerequisitesGameTests`, `NativeEdgeFightGameTests`, `NativeMeleeMechanicsGameTests`, `DuelGameTests`)
+  passed 19 of 19 with it. Reverted.
 - **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
 
 ## E-40, iteration 9 and batch 12: food of last resort, the shelter astride two cells, out from under a lake by hand (F-25c4bs, F-25c4bt, F-25c4bu) — 6 November 2026 (`claude/e40-ladder-12-1105`)
