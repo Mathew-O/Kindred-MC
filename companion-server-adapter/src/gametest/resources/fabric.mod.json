@@ -74,6 +74,7 @@
       "dev.kindred.fabric.NativeFrameReturnGameTests",
       "dev.kindred.fabric.NativeSnowSiteGameTests",
       "dev.kindred.fabric.NativeSpireGameTests",
+      "dev.kindred.fabric.NativeWaterFightGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",

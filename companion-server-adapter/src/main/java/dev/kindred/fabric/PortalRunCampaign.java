@@ -5881,10 +5881,14 @@ final class PortalRunCampaign {
         // cut short each time it left Kindred swimming there for the rest of the live run on 03faab9 (F-25c4t). So does a
         // block it gathers from the water, as the log of a tree standing in a lake: in the live pair on 00e98f5 Echo, the
         // only tree it knew of so, began the log each time it bobbed up and gave it up each time it sank (F-25c4as). So
-        // does a bucket it fills from the water (F-25c4bq).
+        // does a bucket it fills from the water (F-25c4bq). So does a fight: the goal gives one out in the water only when it
+        // has no way out of the water to give first, and stopped, it was given out again at once. On 404 in E-40's iteration
+        // 11 (`e40a11-744c636`) Sol, in an aquifer's pool with a creeper after it, had 2,097 of its 2,101 strikes stopped so,
+        // and every other step stopped for the mob attacking it, through eight stuck spells (F-25c4cb).
         if (running != null && !surfacing(running) && PlayerRuntime.inDeepWater(player)
                 && (player.getAir() < player.getMaxAir() * 2 / 3
-                        || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running) && !fillingBucket(running))) {
+                        || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running) && !fillingBucket(running)
+                                && !"native_fight".equals(running.skill()))) {
             return "In deep water; up for air first";
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
