@@ -50,6 +50,20 @@ from a log:
   had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
   bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
 
+## E-40, batch 16: a fight from the water, trees a teammate found (F-25c4cb, F-25c4cc) — 7 November 2026 (`claude/e40-ladder-16-1107`)
+
+- **The water fight fixture** (F-25c4cb, [evidence](evidence/F-25c4cb.md)), `NativeWaterFightGameTests`, staged: a pool
+  walled in obsidian, a drowned after the player.
+  - On `f2d93b7`: fails 3 of 3, its strikes stopped "up for air first" 20 or 21 times while the drowned killed it.
+  - With the fix: passes 3 of 3, the drowned killed after 181 to 194 ticks, no strike stopped.
+- **The told trees fixture** (F-25c4cc, [evidence](evidence/F-25c4cc.md)), `NativeToldTreesGameTests`, staged: two
+  players 300 blocks apart along a desert strip, oaks by one.
+  - On `31f53c5`: fails 3 of 3, the player with no wood exploring out to about 176 blocks and back.
+  - With the fix: passes 3 of 3, told of the trees and holding logs it cut there after 1,184 to 1,722 ticks.
+- **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
+  `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
+
 ## E-40, batch 15: back to its frame, snow in the frame's cells, off a spire (F-25c4by, F-25c4bz, F-25c4ca) — 7 November 2026 (`claude/e40-ladder-15-1107`)
 
 From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit portal, and the largest stuck block.
