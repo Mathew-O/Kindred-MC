@@ -1451,6 +1451,12 @@ final class PortalRunCampaign {
         relocateWalk = null;
     }
 
+    /** A frame standing at {@code site} taken as its own portal's, as if it had built it there (fixtures only). */
+    void portalSiteForTest(PortalSite site) {
+        portalSite = site;
+        portalAdopted = false;
+    }
+
     /** A move elsewhere toward {@code target}, begun now as the watchdog begins one (fixtures only). */
     void relocateForTest(BlockPos target) {
         stuckSpells++;
@@ -2130,8 +2136,16 @@ final class PortalRunCampaign {
         // Not down among mobs without a shield: a player listens before dropping into a cave (live run 52 jumped in
         // beside a creeper).
         BlockPos landing = best;
+        // Stranded there through two spells of no progress, fit and armed, it goes down among mobs it can face rather
+        // than wait for ever, though never with a creeper by the landing. On 505 in E-40's iteration 11 (`e40a11-744c636`)
+        // Sol, its stair down for lava left on a single block over a spire in a cave 40 deep, every way off it a drop of 16
+        // blocks or more, its water bucket at hand, waited there "for a feasible step" for the last 61 minutes of the run,
+        // 21 stuck spells (F-25c4ca).
+        boolean stranded = stuckLevel >= 2 && player.getHealth() >= 14 && armed(player);
+        Vec3d landed = Vec3d.ofBottomCenter(landing);
         if (!shielded(player) && !world.getEntitiesByClass(HostileEntity.class, new Box(landing).expand(12, 6, 12),
-                mob -> mob.isAlive() && !(mob instanceof EndermanEntity)).isEmpty()) return Optional.empty();
+                mob -> mob.isAlive() && !(mob instanceof EndermanEntity)
+                        && (!stranded || mob instanceof CreeperEntity && mob.squaredDistanceTo(landed) < 8 * 8)).isEmpty()) return Optional.empty();
         return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
                 "drop", String.valueOf(Math.min(deepest, bestDrop)))), bestDrop > 12 ? "Jump down from the ledge and break the fall with water" : "Jump down from the ledge"));
     }
@@ -2784,6 +2798,23 @@ final class PortalRunCampaign {
         if (eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
         if (RoamingEdits.breakDenial(player, pos, policy, guarded) != null) return false;
         return NativeBreakAction.bestTool(body, player.getServerWorld().getBlockState(pos)) != -2;
+    }
+
+    /**
+     * A block this player could clear right now from where it stands, keeping nothing: one it could break, or one a bare
+     * hand brushes away at once, a layer of snow or a plant. Snow needs a shovel to drop anything, so no tool it carries
+     * harvests it and {@link #breakableNow} refuses it; a player clears it by hand all the same. In E-40's iteration 11
+     * (`e40a11-744c636`) Sol on 707 gave its cast frame's site up for a layer of snow in one of its cells, chose it again
+     * and gave it up again, until the night, and never cast its frame (F-25c4bz).
+     */
+    private boolean clearableNow(NativePlayerBody body, BlockPos pos) {
+        if (breakableNow(body, pos)) return true;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockState state = world.getBlockState(pos);
+        if (!state.isReplaceable() || !state.getFluidState().isEmpty() || state.getHardness(world, pos) > 0.2f) return false;
+        if (eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null;
     }
 
     /**
@@ -4636,7 +4667,7 @@ final class PortalRunCampaign {
             for (BlockPos open : at[1] == 4 ? List.of(cell, cell.up(), site.front(at[0], 5)) : List.of(cell, cell.up())) {
                 if (world.getBlockState(open).isAir()) continue;
                 if (!world.getFluidState(open).isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
-                if (breakableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));
+                if (clearableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));
                 // Out of reach from where it stands, back from the lava say: nearer the frame first, and only a block it
                 // cannot dig from there gives the site up. In the live pair on 458d192 Echo, back from the lava with the
                 // bucket for its seventh frame block, gave up the frame with six cast, the deepslate over the next out of
@@ -4684,7 +4715,7 @@ final class PortalRunCampaign {
      */
     private Optional<Task> clearOrApproach(NativePlayerBody body, PortalSite site, BlockPos cell, String label) {
         var player = body.entity();
-        if (breakableNow(body, cell)) {
+        if (clearableNow(body, cell)) {
             clearTriedFrom.clear();
             return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
         }
@@ -4890,7 +4921,16 @@ final class PortalRunCampaign {
         var world = body.entity().getServerWorld();
         BlockPos opening = world.getBlockState(base).isOf(Blocks.OBSIDIAN) ? base.up() : base;
         if (body.entity().getEyePos().squaredDistanceTo(Vec3d.ofCenter(opening)) > 4.5 * 4.5) {
-            return Optional.of(go(portalSite.stand(), 0.5, false, "Back to its portal frame to light it"));
+            // No walk back there from here, as from a pocket the gravel it dug for flint lifted it into: it digs its way
+            // back, a staircase to the stand's level and a tunnel along it, as it digs toward lava it cannot walk to. On
+            // 404 in E-40's iteration 11 (`e40a11-744c636`) Kindred, three blocks over the tunnel it came along, was
+            // refused the walk back 189 times and never lit its frame (F-25c4by).
+            BlockPos stand = portalSite.stand();
+            if (blocked(stand) || unreachable(stand)) {
+                Optional<Task> back = digToward(body, stand.down(), "Back to its portal frame: dig the way");
+                if (back.isPresent()) return back;
+            }
+            return Optional.of(go(stand, 0.5, false, "Back to its portal frame to light it"));
         }
         return Optional.of(new Task("native_ignite_portal", coords(base, Map.of("slot", String.valueOf(slot))), "Portal: light it"));
     }

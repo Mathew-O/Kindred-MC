@@ -50,6 +50,26 @@ from a log:
   had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
   bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
 
+## E-40, batch 15: back to its frame, snow in the frame's cells, off a spire (F-25c4by, F-25c4bz, F-25c4ca) — 7 November 2026 (`claude/e40-ladder-15-1107`)
+
+From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit portal, and the largest stuck block.
+
+- **The frame return fixture** (F-25c4by, [evidence](evidence/F-25c4by.md)), `NativeFrameReturnGameTests`, staged: its
+  frame deep in stone taken as its own, the player in a pocket three blocks over the tunnel it came along.
+  - On `42d682c` with the fixture's hook only: fails 3 of 3, the walk back refused, then climbing and waiting.
+  - With the fix: passes 3 of 3, the portal lit after 138 to 140 ticks.
+- **The snow site fixture** (F-25c4bz, [evidence](evidence/F-25c4bz.md)), `NativeSnowSiteGameTests`, staged: a cast on a
+  field under a layer of snow, no shovel.
+  - Without the fix: fails 3 of 3, the frame site given up 8,839 to 10,282 times until the time ran out (3 more runs
+    before the fixture's time-out message was reworded, the same: given up thousands of times, no frame).
+  - With the fix: passes 3 of 3, the portal lit after 775 to 777 ticks, no site given up.
+- **The spire fixture** (F-25c4ca, [evidence](evidence/F-25c4ca.md)), `NativeSpireGameTests`, staged: a spire in a lit
+  cave 27 high, a zombie (its AI off) on the floor below, the water bucket at hand.
+  - Without the fix: fails 3 of 3, "waiting for a feasible step" through nine spells.
+  - With the fix: passes 3 of 3, off the spire after 840 to 843 ticks, its fall broken with water.
+  - With no mob below it did not reproduce (off at once, 3 of 3, before the fix too); that form is not kept.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
 ## E-40, batch 14: dug in for the night, it stays in (F-25c4bx); rung c's first probe — 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The night shelter fixture** (F-25c4bx, [evidence](evidence/F-25c4bx.md)), `NativeNightShelterGameTests`, staged:
