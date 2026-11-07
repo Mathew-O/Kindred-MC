@@ -50,7 +50,7 @@ from a log:
   had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
   bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
 
-## E-40, batch 16: a fight from the water, trees a teammate found (F-25c4cb, F-25c4cc) — 7 November 2026 (`claude/e40-ladder-16-1107`)
+## E-40, batch 16: a fight from the water, trees a teammate found, the night's walks (F-25c4cb, F-25c4cc, F-25c4cd) — 7 November 2026 (`claude/e40-ladder-16-1107`)
 
 - **The water fight fixture** (F-25c4cb, [evidence](evidence/F-25c4cb.md)), `NativeWaterFightGameTests`, staged: a pool
   walled in obsidian, a drowned after the player.
@@ -60,6 +60,13 @@ from a log:
   players 300 blocks apart along a desert strip, oaks by one.
   - On `31f53c5`: fails 3 of 3, the player with no wood exploring out to about 176 blocks and back.
   - With the fix: passes 3 of 3, told of the trees and holding logs it cut there after 1,184 to 1,722 ticks.
+- **The night walk fixture** (F-25c4cd, [evidence](evidence/F-25c4cd.md)), `NativeNightWalkGameTests`, staged: night on
+  open stone, iron ore seen on the surface ten blocks off.
+  - On `a86796a`: fails 3 of 3, out from its shelter under the sky and dug in again 14 to 17 times.
+  - With the fix: passes 3 of 3, its sticks made in the shelter, daylight waited for, then on to the iron.
+  - With it, `NativePortalCampaignGameTests`, `NativeNightShelterGameTests`, `NativeShelterSealGameTests`,
+    `NativeTripDownGameTests`, `NativeFloodedShaftGameTests`, `NativeUnderLakeKeptGameTests`, `NativeTeamPortalGameTests`
+    and the new class: 108 of 108.
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
 - **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).

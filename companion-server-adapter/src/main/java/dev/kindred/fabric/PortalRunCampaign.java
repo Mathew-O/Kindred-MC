@@ -1041,6 +1041,19 @@ final class PortalRunCampaign {
         }
         if (lastActive && tick > lastTick) stuckClock += tick - lastTick;
         Optional<Task> planned = plan(body, policy, tick);
+        // Dug in for the night, a walk that would take it back out under the sky is daylight work, as the night's own
+        // steps already leave the surface's: it waits in its shelter, its way in sealed, and nothing moves it out before
+        // morning, the watchdog's move elsewhere included. On 606 in E-40's iteration 11 (`e40a11-744c636`) Kindred, dug
+        // in, was sent out by its cast's next steps (a cave open to the sky, coal in view) and dug in again, and on 707
+        // Echo was stepped out by the watchdog's move and back in by the dig-in: 56 of the watchdog's lines (F-25c4cd).
+        var dweller = body.entity();
+        boolean nightIn = night(dweller.getServerWorld()) && nightShelterAt != null && sheltered(dweller) && inNightShelter(dweller);
+        // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
+        if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
+                && outUnderTheSky(dweller.getServerWorld(), planned.get())) {
+            planned = daylightBelow(body);
+            progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
+        }
         // New ground restarts the clock; only material progress ends a move elsewhere and the run of attempts.
         boolean newGround = seenCells.size() < 100_000
                 && seenCells.add(BlockPos.asLong(lastFeet.getX() >> 3, lastFeet.getY() >> 3, lastFeet.getZ() >> 3));
@@ -1069,6 +1082,11 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         boolean active = planned.isEmpty() || !passive(planned.get());
+        if (nightIn) {
+            if (relocate != null) endRelocating();
+            stuckClock = 0;
+            active = false;
+        }
         // On the way to the End the leg keeps its own headway (its headings turn when they stop gaining ground): the
         // portal's watchdog counts only the portal's materials, which never change out there.
         if (endGoal() && stronghold.active(body.entity())) {
@@ -4366,6 +4384,14 @@ final class PortalRunCampaign {
     private Optional<Task> daylightBelow(NativePlayerBody body) {
         Optional<Task> seal = body.entity().isOnGround() ? seal(body) : Optional.empty();
         return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
+    }
+
+    /** A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight (F-25c4cd). */
+    private static boolean outUnderTheSky(ServerWorld world, Task task) {
+        if (!"native_goto".equals(task.skill())) return false;
+        BlockPos to = position(task.args());
+        if (to == null || !world.isChunkLoaded(to)) return false;
+        return world.isSkyVisible(to.up()) || to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, to.getX(), to.getZ()) - 1;
     }
 
     /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */
