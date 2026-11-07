@@ -2912,12 +2912,19 @@ final class PlayerRuntime {
         // Y=8 with a mob on it, began to eat a dozen times in its last two seconds, each cancelled for the threat, and never
         // swam up (F-25c4af).
         boolean outOfBreath = inDeepWater(player) && player.getAir() < player.getMaxAir() / 2;
+        // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
+        // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
+        // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
+        // hunger holding four rotten flesh, Echo on 404 at four health and six hunger holding a raw chicken (F-25c4bs).
+        boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
+        java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
+                || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
         if ((canEatVanilla || needsHealth) && !outOfBreath) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {
                 var stack = player.getInventory().getStack(slot);
-                if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
+                if (eligible.test(stack)) {
                     double score = foodQualityScore(stack, needsHealth);
                     if (score > bestFoodScore) {
                         bestFoodScore = score;
@@ -2930,7 +2937,7 @@ final class PlayerRuntime {
                 double bestInvScore = Double.NEGATIVE_INFINITY;
                 for (int slot = 9; slot < 36; slot++) {
                     var stack = player.getInventory().getStack(slot);
-                    if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
+                    if (eligible.test(stack)) {
                         double score = foodQualityScore(stack, needsHealth);
                         if (score > bestInvScore) {
                             bestInvScore = score;
@@ -2941,7 +2948,7 @@ final class PlayerRuntime {
                 if (invFoodSlot != -1) {
                     int slot = invFoodSlot;
                     var stack = player.getInventory().getStack(slot);
-                    if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
+                    if (eligible.test(stack)) {
                         int targetH = -1;
                         for (int h = 0; h < 9; h++) {
                             if (player.getInventory().getStack(h).isEmpty()) {
@@ -7081,9 +7088,12 @@ final class PlayerRuntime {
                 }
                 KindredMod.LOGGER.info("{} bringing: the boat step ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
             }
-            // A boat not put down (the villager stepped where it was to go) is another try at holding it, not a step gone wrong.
+            // A boat not put down (the villager stepped where it was to go) is another try at holding it, not a step gone wrong;
+            // counted apart from the boats put down, as nothing was spent. Counted with them, a librarian that shuffled at its
+            // lectern used four of its six tries on boats never put down, and was let go (the strolling fixture, a local full
+            // suite and CI on 26d1cb2).
             if (state == SkillRunner.State.BLOCKED && "native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
-                entry.bring.boatTries++;
+                entry.bring.boatRefusals++;
             } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
@@ -9051,6 +9061,8 @@ final class PlayerRuntime {
         /** The boat that holds a villager that strolls (its AI on) while the line is laid, and the boats put down for it. */
         UUID boatId;
         int boatTries;
+        /** Boats it went to put down that were not put down (the villager moved into the spot): the boat still in hand. */
+        int boatRefusals;
         /** The boat step it is at while holding the villager, kept to while it runs (its boat spent, it is not "no boat"). */
         NativeTaskCandidate boatStep;
         /**
@@ -9238,20 +9250,32 @@ final class PlayerRuntime {
                         boat -> boat.isAlive() && !boat.hasPassengers());
                 if (!near.isEmpty() && b.boatId == null) b.boatId = near.getFirst().getUuid();
                 if (!near.isEmpty() && near.getFirst().age < 10) return List.of(waitTask(bringTask(entry, "boat down:" + b.boatTries), "For the boat to take the " + b.noun + " up"));
-                // A boat put down that did not take it up (it had stepped on): broken, picked up, and put down again.
-                if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive() && b.boatTries < 6) {
+                // A boat put down that did not take it up (it had stepped on): broken, picked up, and put down again. After the
+                // last try too, before the line is laid to it as it stands: left lying by it, the villager strolled into the
+                // boat later, and the cart took the boat up with it in it, riding high under the hall's doorway and lintel,
+                // which had not been opened for a boat (the strolling fixture, hurt by its ride, in a full suite on 7 November).
+                if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive()) {
                     if (!player.canInteractWithEntity(empty, 0)) return List.of(goNear(bringTask(entry, "to the boat:" + b.boatTries), empty.getBlockPos()));
                     b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString()));
                     return List.of(b.boatStep);
                 }
                 var boatLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                         item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS));
-                if (boatSlot(player) < 0 && !boatLying.isEmpty() && b.boatTries < 6) return List.of(standAt(bringTask(entry, "boat item:" + b.boatTries), boatLying.getFirst().getBlockPos()));
+                if (boatSlot(player) < 0 && !boatLying.isEmpty()) {
+                    // A boat broken by the water's edge may lie on the water, where no walk ends: picked up from the dry
+                    // ground beside it, as a player reaches for an item a step off. Walked to its own block, the walk had
+                    // no route three times over and the bring gave up, the librarian still to row across (the lake
+                    // fixture, alone, on 7 November; in PR #32's CI the same).
+                    BlockPos lying = boatLying.getFirst().getBlockPos();
+                    BlockPos stand = world.getFluidState(lying).isEmpty() && world.getFluidState(lying.down()).isEmpty() ? lying
+                            : new NativeNavigator(world).nearestDryStand(lying, 2, 1).orElse(lying);
+                    return List.of(standAt(bringTask(entry, "boat item:" + b.boatTries), stand));
+                }
                 int boatSlot = boatSlot(player);
-                if (boatSlot < 0 || b.boatTries >= 6 || !opensOverhead(player, b)) {
+                if (boatSlot < 0 || b.boatTries >= 6 || b.boatRefusals >= 12 || !opensOverhead(player, b)) {
                     // No boat to hand, or it would not take the villager up: brought as the cart comes instead.
-                    KindredMod.LOGGER.info("{} bringing: the {} not held ({} boats put down, {}); laying the line to it as it stands", entry.data.displayName(), b.noun,
-                            b.boatTries, boatSlot < 0 ? "no boat" : opensOverhead(player, b) ? "it took none" : "no tool to make room over the line in the hall");
+                    KindredMod.LOGGER.info("{} bringing: the {} not held ({} boats put down, {} not put down, {}); laying the line to it as it stands", entry.data.displayName(), b.noun,
+                            b.boatTries, b.boatRefusals, boatSlot < 0 ? "no boat" : opensOverhead(player, b) ? "it took none" : "no tool to make room over the line in the hall");
                     b.phase = Bring.Phase.BRIDGE;
                     return bringCandidates(entry, body);
                 }
@@ -15587,6 +15611,16 @@ final class PlayerRuntime {
         var food = stack.get(DataComponentTypes.FOOD);
         if (food == null) return 0.0;
         return food.saturation() * (injured ? 3.0f : 1.5f) + food.nutrition();
+    }
+
+    /** Whether any food it would eat in the ordinary way is held, in its hotbar or its pack. */
+    private static boolean holdsEligibleFood(ServerPlayerEntity player, boolean canEatVanilla, boolean needsHealth,
+                                             java.util.function.Predicate<ItemStack> worth) {
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = player.getInventory().getStack(slot);
+            if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) return true;
+        }
+        return false;
     }
 
     private static boolean isEligibleFood(ItemStack stack, boolean canEatVanilla, boolean needsHealth) {

@@ -104,4 +104,74 @@ public final class NativeCartGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A cart rolling back down its line toward the player, as one does that ran out of way short of its cell: the push
+     * goes on until the cart rolls away from the player, not ended at once for a cart that is moving. Taken for one
+     * rolling on, each push of a bring's loaded cart that had rolled back ended before it began, at the speed it was
+     * rolling back at, and after eight the bring gave up with the librarian short of its cell (the wandered bring
+     * fixture in CI on 5b130a6: pushes ended at 0.14 to 0.20, the cart past the line's start each time). Staged: level
+     * rails, a cart with a villager in it (its AI off), as a bring's is loaded, rolling back toward Hal at a quarter of a
+     * block a tick from seven blocks off.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "cartPushBack", tickLimit = 1200)
+    public void aCartRollingBackTowardThePlayerIsPushedOnNotTakenForOneRollingAway(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1100);
+        MinecartEntity[] cart = new MinecartEntity[1];
+        BlockPos[] o = new BlockPos[1];
+        String[] ended = {null};
+        VillagerEntity[] rider = new VillagerEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    o[0] = context.getAbsolutePos(BlockPos.ORIGIN);
+                    FixtureGround.simulated(context, o[0].add(-2, 0, -2), o[0].add(12, 0, 22));
+                    for (int x = -2; x <= 12; x++) for (int z = -2; z <= 22; z++) {
+                        world.setBlockState(o[0].add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 6; y++) world.setBlockState(o[0].add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (int z = 2; z <= 20; z++) world.setBlockState(o[0].add(5, 2, z), Blocks.RAIL.getDefaultState());
+                    var hal = f.player();
+                    hal.getInventory().clear();
+                    hal.refreshPositionAndAngles(o[0].getX() + 5.5, o[0].getY() + 2, o[0].getZ() + 4.5, 0, 0);
+                    var minecart = EntityType.MINECART.create(world);
+                    minecart.refreshPositionAndAngles(o[0].getX() + 5.5, o[0].getY() + 2, o[0].getZ() + 11.5, 0, 0);
+                    world.spawnEntity(minecart);
+                    cart[0] = minecart;
+                    var v = EntityType.VILLAGER.create(world);
+                    v.refreshPositionAndAngles(minecart.getX(), minecart.getY(), minecart.getZ(), 0, 0);
+                    v.setAiDisabled(true);
+                    world.spawnEntity(v);
+                    v.startRiding(minecart, true);
+                    rider[0] = v;
+                })
+                .createAndAdd(() -> context.assertTrue(rider[0].getVehicle() == cart[0], "The villager in the cart"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Hal playing"))
+                .createAndAdd(() -> {
+                    // Rolling back toward Hal, south, as the push begins.
+                    cart[0].setVelocity(0, 0, -0.25);
+                    context.assertTrue(f.runtime.nativePush(f.source, f.id, cart[0].getUuid(), 10) == 1, "Push");
+                })
+                .createAndAdd(() -> {
+                    var result = f.runtime.nativeLastResult(f.id);
+                    if (ended[0] == null && "rolling".equals(result.get("ended"))) {
+                        var v = cart[0].getVelocity();
+                        var away = cart[0].getPos().subtract(f.player().getPos());
+                        ended[0] = String.format(java.util.Locale.ROOT, "%s, moving %.2f %.2f, at %s", v.x * away.x + v.z * away.z > 0 ? "away" : "toward Hal",
+                                v.x, v.z, cart[0].getPos().subtract(o[0].getX(), o[0].getY(), o[0].getZ()));
+                        KindredMod.LOGGER.info("Cart pushed back: the push ended with the cart {}", ended[0]);
+                    }
+                    context.assertTrue(ended[0] != null, "The push ended: " + result);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(ended[0].startsWith("away"), "The cart rolling away from Hal as the push ended: " + ended[0]);
+                    rider[0].discard();
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

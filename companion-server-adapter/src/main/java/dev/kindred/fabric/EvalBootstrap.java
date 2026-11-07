@@ -96,6 +96,13 @@ final class EvalBootstrap implements RunObserver {
                 KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}, rescue {}, advice {}", scenario.edits() ? "on" : "off",
                         scenario.lessons() ? "on" : "off", scenario.atlas() ? "on" : "off", scenario.rescue() ? "on" : "off", scenario.advice() ? "on" : "off");
                 runtime.setWorldEdits(server.getCommandSource(), scenario.edits());
+                // The dragon goal is refused while the server's dragon fight is off: an operator who sets it turns the fight
+                // on first (/aiplayer dragonfight on), and so does a run with that goal. Off for any other goal, as a fresh
+                // server has it.
+                if (scenario.goal() == EvalScenario.Goal.DRAGON) {
+                    KindredMod.LOGGER.info("Evaluation run: the dragon fight on, for the dragon goal");
+                    runtime.setDragonFight(server.getCommandSource(), true);
+                }
                 runtime.lessons(scenario.lessons());
                 runtime.atlas(scenario.atlas());
                 runtime.rescue(scenario.rescue());
@@ -136,7 +143,11 @@ final class EvalBootstrap implements RunObserver {
                     for (var status : here) {
                         if (scenario.starters().stream().noneMatch(n -> n.equalsIgnoreCase(status.name()))) continue;
                         KindredMod.LOGGER.info("Evaluation run: goal {} for {}", goal, status.name());
-                        runtime.startGoal(server.getCommandSource(), status.id(), goal);
+                        // A goal the runtime refuses is said in the run's record: a run with none set measures nothing.
+                        if (runtime.startGoal(server.getCommandSource(), status.id(), goal) != 1) {
+                            KindredMod.LOGGER.warn("Evaluation run: goal {} refused for {}", goal, status.name());
+                            note += (note.isEmpty() ? "" : "; ") + "goal " + goal + " refused for " + status.name();
+                        }
                     }
                 }
                 // The voice speaks through the strategist: either asked for with none configured is said, and the run goes on.

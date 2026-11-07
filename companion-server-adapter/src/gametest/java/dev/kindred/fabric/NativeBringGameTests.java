@@ -265,8 +265,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                         KindredMod.LOGGER.info("Bring: the librarian moved off the line, to {}", at.subtract(origin[0]).toShortString());
                     }
                     if (context.getWorld().getTime() % 100 == 0) {
-                        KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
-                                librarian[0].getVehicle());
+                        KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}, health {}{}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
+                                librarian[0].getVehicle(), librarian[0].getHealth(),
+                                librarian[0].getRecentDamageSource() == null ? "" : ", hurt by " + librarian[0].getRecentDamageSource().getName());
                     }
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
