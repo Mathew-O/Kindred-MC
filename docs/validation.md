@@ -16,6 +16,38 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 9 and batch 12: food of last resort, the shelter astride two cells, out from under a lake by hand (F-25c4bs, F-25c4bt, F-25c4bu) — 6 November 2026 (`claude/e40-ladder-12-1105`)
+
+- **The evaluation, `e40a9-dd9b037` (batch 11):** all ten seeds, 144,000 ticks each, earned. The container restarted
+  with 606 and 707 under way; those two were run again from the start on the same build.
+  - Stuck spells 10.0 [3 to 26]; deaths 2.5 a game hour [0 to 7.5]; a portal lit on 6 of 10, obsidian on 7 of 10, the
+    iron pickaxe on 10 of 10; stuck time under a tenth on 2 of 10; no player stopped for reconciliation.
+  - Against iteration 8 and the starting build `f25c4ax-84b331c`: every range overlaps. The starting build's column is
+    taken from iteration 8's comparison, its run folder not kept.
+  - [Summary](evidence/eval/e40a9-dd9b037/summary.md), [deaths](evidence/eval/e40a9-dd9b037/deaths.md),
+    [against iteration 8](evidence/eval/compare-e40a9.md), [against the start](evidence/eval/compare-e40a9-base.md),
+    [E-40](evidence/E-40.md).
+- **The food fixtures** (F-25c4bs, [evidence](evidence/F-25c4bs.md)), `NativeLastResortFoodGameTests`, staged: hurt
+  (8 of 20), hunger 14.
+  - Nothing but rotten flesh: on `ec27caa` fails 3 of 3, none eaten; with the fix passes 3 of 3.
+  - Bread beside the flesh: the bread eaten, the flesh kept, in all six runs.
+- **The shelter fixture** (F-25c4bt, [evidence](evidence/F-25c4bt.md)), `NativeShelterSealGameTests`, staged: night,
+  below ground, astride the two cells of a pocket whose first opens into a corridor.
+  - On `ec27caa`: fails 3 of 3, waiting for daylight with the corridor's mouth open.
+  - With the fix: passes 3 of 3.
+- **The under-the-lake fixture** (F-25c4bu, [evidence](evidence/F-25c4bu.md)), `NativeUnderLakeKeptGameTests`, staged
+  from 8675309's kept ground: no pickaxe, where Kindred stood under the lake.
+  - On `ec27caa`: fails 3 of 3, stepping up and back down (up to 396 steps up), never out.
+  - With the fix: passes 3 of 3, out about 7,040 ticks on with 3 steps up.
+  - A corridor staged by hand for the same place got out on `ec27caa` in all three runs and is not kept.
+  - The other climbs under water with the fix, run alone once: F-25c4ah's corridor under a lake and all seven of
+    `NativeTripDownGameTests` (101's lake bed, 303's aquifer ledge, the sand and seal climbs, the lava island) pass.
+  - Corrected 2026-11-07 after PR #32's CI: F-25c4at's fixture (sealed in for the night under a pool, no pickaxe)
+    failed 3 of 3 alone on `d585600`, the climb by hand taken before its own seal. With its own seal first: passes 3 of
+    3, the under-lake fixture 3 of 3 beside it. PR #32's other CI failures (the first night's cabin, the hoglin at the
+    lava's edge, the compound's farm ward) passed 3 of 3 alone on `d585600`.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
 ## E-40, iteration 8 and batch 11: a break the world changed, a bucket filled afloat, a tree not walked back to (F-25c4bp, F-25c4bq, F-25c4br) — 5 November 2026 (`claude/e40-ladder-11-1105`)
 
 - **The evaluation, `e40a8-aed3e82` (batches 9 and 10):** all ten seeds, 144,000 ticks each, earned.

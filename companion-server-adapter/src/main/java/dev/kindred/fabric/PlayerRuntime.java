@@ -2912,12 +2912,19 @@ final class PlayerRuntime {
         // Y=8 with a mob on it, began to eat a dozen times in its last two seconds, each cancelled for the threat, and never
         // swam up (F-25c4af).
         boolean outOfBreath = inDeepWater(player) && player.getAir() < player.getMaxAir() / 2;
+        // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
+        // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
+        // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
+        // hunger holding four rotten flesh, Echo on 404 at four health and six hunger holding a raw chicken (F-25c4bs).
+        boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
+        java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
+                || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
         if ((canEatVanilla || needsHealth) && !outOfBreath) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {
                 var stack = player.getInventory().getStack(slot);
-                if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
+                if (eligible.test(stack)) {
                     double score = foodQualityScore(stack, needsHealth);
                     if (score > bestFoodScore) {
                         bestFoodScore = score;
@@ -2930,7 +2937,7 @@ final class PlayerRuntime {
                 double bestInvScore = Double.NEGATIVE_INFINITY;
                 for (int slot = 9; slot < 36; slot++) {
                     var stack = player.getInventory().getStack(slot);
-                    if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
+                    if (eligible.test(stack)) {
                         double score = foodQualityScore(stack, needsHealth);
                         if (score > bestInvScore) {
                             bestInvScore = score;
@@ -2941,7 +2948,7 @@ final class PlayerRuntime {
                 if (invFoodSlot != -1) {
                     int slot = invFoodSlot;
                     var stack = player.getInventory().getStack(slot);
-                    if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) {
+                    if (eligible.test(stack)) {
                         int targetH = -1;
                         for (int h = 0; h < 9; h++) {
                             if (player.getInventory().getStack(h).isEmpty()) {
@@ -15587,6 +15594,16 @@ final class PlayerRuntime {
         var food = stack.get(DataComponentTypes.FOOD);
         if (food == null) return 0.0;
         return food.saturation() * (injured ? 3.0f : 1.5f) + food.nutrition();
+    }
+
+    /** Whether any food it would eat in the ordinary way is held, in its hotbar or its pack. */
+    private static boolean holdsEligibleFood(ServerPlayerEntity player, boolean canEatVanilla, boolean needsHealth,
+                                             java.util.function.Predicate<ItemStack> worth) {
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = player.getInventory().getStack(slot);
+            if (isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)) return true;
+        }
+        return false;
     }
 
     private static boolean isEligibleFood(ItemStack stack, boolean canEatVanilla, boolean needsHealth) {

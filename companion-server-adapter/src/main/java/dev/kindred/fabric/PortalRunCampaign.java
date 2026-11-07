@@ -3241,13 +3241,17 @@ final class PortalRunCampaign {
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
         // Stranded, no walk back: a pillar if boxed in (quicker than a stair by hand), else the stair.
+        boolean underWater = underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24;
+        // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
+        // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
+        // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
+        // along under the pool by hand and never opened its seal (that fixture, 3 of 3 on `d585600`).
+        if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label));
         if (!pickaxe) return stranded() ? pillarOut(body, label).or(() -> climb(body, label))
                 : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         // Under water, out from under it first: the way it came went under the same water (F-25c4ah).
-        if (underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24) {
-            return climb(body, label).or(() -> retrace(body, label));
-        }
+        if (underWater) return climb(body, label).or(() -> retrace(body, label));
         int surface = player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ());
         int depth = Math.max(1, surface - player.getBlockY());
         // A step of the way back costs about a third of a staircase step (three blocks dug per block climbed).
@@ -3447,7 +3451,20 @@ final class PortalRunCampaign {
             underWaterTick = lastTick;
             if (underWaterHeading == null) underWaterHeading = digDirection;
             digDirection = underWaterHeading;
-            Optional<Task> out = tunnel(body, label + ": out from under the water");
+            // Along its own level, never a step down: stepped back down into the part below that it had climbed out of, it
+            // climbed up again at the next step, and back down. And with no pickaxe, dug by hand, as the climb is: dug only
+            // with a tool, the way on was nothing it could dig. In E-40's iteration 9 (`e40a9-dd9b037`) on 8675309 Kindred,
+            // its pickaxe broken under a lake, stepped up and back down for 10 stuck spells (F-25c4bu).
+            int floor = tunnelFloor;
+            tunnelFloor = feet.getY();
+            tunnelByHand = true;
+            Optional<Task> out;
+            try {
+                out = tunnel(body, label + ": out from under the water");
+            } finally {
+                tunnelByHand = false;
+                tunnelFloor = floor;
+            }
             underWaterHeading = digDirection;
             if (out.isPresent()) return out;
         }
@@ -3808,6 +3825,9 @@ final class PortalRunCampaign {
      * under it and no other liquid round it is opened, from where it stands, which shows the lava, as a player's next
      * block would. The lava stays where it is: lava never rises, and the cell is never walked onto (F-25c4ac).
      */
+    /** Whether the tunnel being dug may be dug by hand, with no pickaxe held (F-25c4bu). */
+    private boolean tunnelByHand;
+
     Optional<Task> tunnel(NativePlayerBody body, String label, boolean revealLava) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -3834,6 +3854,8 @@ final class PortalRunCampaign {
                 }
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
+                // Its pickaxe gone, out from under the water by hand, as its climb goes up by hand (F-25c4bu).
+                if (tunnelByHand && handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
                 refused = true;
                 break;
             }
@@ -5136,8 +5158,23 @@ final class PortalRunCampaign {
      */
     private Optional<Task> seal(NativePlayerBody body) {
         var player = body.entity();
-        var open = openings(player.getServerWorld(), player.getBlockPos());
-        if (open.isEmpty() || open.size() > 4) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        // The shelter is every cell its body stands in: across the line between two, both. Sealed from the edge of one
+        // cell, the other was an opening its own body filled, each block put there refused as obstructed, and the cell it
+        // stood in changed as it moved: in E-40's iteration 9 (`e40a9-dd9b037`) on 404 Sol sealed the two cells of its
+        // pocket by turns for 14 stuck spells (F-25c4bt). Their openings are sealed instead, neither of the cells themselves.
+        var box = player.getBoundingBox();
+        var occupied = new java.util.ArrayList<BlockPos>();
+        for (BlockPos cell : BlockPos.iterate(BlockPos.ofFloored(box.minX, feet.getY(), box.minZ),
+                BlockPos.ofFloored(box.maxX - 1.0E-6, feet.getY(), box.maxZ - 1.0E-6))) {
+            if (cell.equals(feet) || passable(world, cell) && passable(world, cell.up())) occupied.add(cell.toImmutable());
+        }
+        var open = new java.util.LinkedHashSet<BlockPos>();
+        for (BlockPos cell : occupied) {
+            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down())) open.add(gap);
+        }
+        if (open.isEmpty() || open.size() > 2 + 2 * occupied.size()) return Optional.empty();
         for (BlockPos cell : open) {
             Optional<Task> place = placeBlock(body, cell, "Seal the shelter at " + cell.toShortString());
             if (place.isPresent()) return place;
