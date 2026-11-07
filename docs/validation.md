@@ -18,6 +18,13 @@
 
 ## E-40, batch 13: a tunnel under gravel still coming down, the dragon goal evaluated (F-25c4bv, F-26b) — 6 and 7 November 2026 (`claude/e40-ladder-13-1106`)
 
+- **The evaluation, `e40a10-eed2dc5` (batches 12 and 13):** all ten seeds, 144,000 ticks each, earned. Stuck spells 7.5
+  [3 to 19]; deaths 1.0 a game hour [0 to 4]; the iron pickaxe on 10 of 10, all within the first hour; obsidian on 8 of
+  10; a portal lit on 5 of 10; stuck time under a tenth on 1 of 10. Against iteration 9 every range overlaps; against the
+  starting build the first stone tools come sooner, the ranges apart; the rest overlap.
+  [Summary](evidence/eval/e40a10-eed2dc5/summary.md), [deaths](evidence/eval/e40a10-eed2dc5/deaths.md),
+  [against iteration 9](evidence/eval/compare-e40a10.md), [against the start](evidence/eval/compare-e40a10-base.md).
+
 - **The gravel fixture** (F-25c4bv, [evidence](evidence/F-25c4bv.md)), `NativeGravelTunnelGameTests`, staged: a branch
   mine for iron through stone with gravel over the head-level cells two to four blocks out, all round.
   - On `d585600`: fails 3 of 3, buried two blocks in at full health.
