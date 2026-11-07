@@ -3285,15 +3285,18 @@ final class PortalRunCampaign {
         for (int slot = 0; slot < inventory.size() && !pickaxe; slot++) pickaxe = inventory.getStack(slot).isIn(ItemTags.PICKAXES);
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
-        // Stranded, no walk back: a pillar if boxed in (quicker than a stair by hand), else the stair.
         boolean underWater = underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24;
         // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
         // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
         // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
         // along under the pool by hand and never opened its seal (that fixture, 3 of 3 on `d585600`).
         if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label));
-        if (!pickaxe) return stranded() ? pillarOut(body, label).or(() -> climb(body, label))
-                : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
+        // With no pickaxe: a pillar if boxed in, then the way it came, then a stair by hand, stranded or not. The walks
+        // that stranded it may have gone toward places it could not reach, not out of where it stands: the top of a
+        // fixture's wall read as a cave floor, three walks there were refused, and stranded by them it punched a stair up
+        // by hand beside the staircase it had walked down (PR #35's build on CI; F-25c4ce). A walk back that is refused
+        // is not asked for again from there for half a minute (F-25c4at), so a player shut in still comes to its stair.
+        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         // Under water, out from under it first: the way it came went under the same water (F-25c4ah).
         if (underWater) return climb(body, label).or(() -> retrace(body, label));
