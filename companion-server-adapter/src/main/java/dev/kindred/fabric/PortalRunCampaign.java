@@ -600,6 +600,16 @@ final class PortalRunCampaign {
         if (task != null && task.equals(rescueTask)) rescueTaskFinished(completed, why, tick);
         if (task != null) stronghold.taskFinished(task, completed, tick);
         if (task != null && task.equals(relocateWalk)) relocateWalk = null; // Ended, however: the next look judges it.
+        // Logs cut at trees it has not told its team of: told once, for a teammate short of wood to walk to (F-25c4cc). Logs
+        // cut where it was told of trees: it got there.
+        if (task != null && completed && "native_break".equals(task.skill()) && task.label().startsWith("Mine logs at") && position(task.args()) != null) {
+            BlockPos cut = position(task.args()).toImmutable();
+            if (treesTold.stream().noneMatch(told -> told.isWithinDistance(cut, TREES_APART))) {
+                if (treesTold.size() < 64) treesTold.add(cut);
+                treesFound = cut;
+            }
+            if (toldTrees != null && toldTrees.isWithinDistance(cut, TREES_APART)) toldTrees = null;
+        }
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
         // has failed for a minute, it is stranded no longer.
@@ -2460,7 +2470,7 @@ final class PortalRunCampaign {
                             .or(() -> home == null || home.getSquaredDistance(lastFeet) <= 4 * 4 ? Optional.empty()
                                     : Optional.of(go(home.getSquaredDistance(lastFeet) > LAVA_LEG * LAVA_LEG ? legToward(lastFeet, home, LAVA_LEG) : home,
                                             3, true, "Head back up toward home")))
-                            : treesInView(body).or(() -> explore(body, "logs")));
+                            : treesInView(body).or(() -> toldTrees(body)).or(() -> explore(body, "logs")));
             // Stone is everywhere below: take what is close, otherwise dig for it rather than walk to a far cave wall.
             // Over a sky island there is no stone below to dig for: only what is in sight, or the generator's.
             case GATHER_STONE -> mineGenerator(body).or(() -> generatorPlan != null ? buildGenerator(body) : Optional.<Task>empty())
@@ -3054,6 +3064,58 @@ final class PortalRunCampaign {
     private BlockPos treeSeen;
     /** Trees given up, by four-block column, after a minute's walking did not get to them. */
     private final Set<Long> treesGivenUp = new HashSet<>();
+    /** Trees as far apart as this are told of apart: a stand of trees is told of once (F-25c4cc). */
+    static final int TREES_APART = 48;
+    /** Where it has cut logs and told its team of trees, and the trees cut at not yet told of (F-25c4cc). */
+    private final List<BlockPos> treesTold = new java.util.ArrayList<>();
+    private BlockPos treesFound;
+    /** Trees a teammate told it it found and cut at, walked to when it needs logs and sees none (F-25c4cc). */
+    private BlockPos toldTrees;
+    private String toldTreesBy;
+    private long toldTreesSince;
+    private double toldTreesBest;
+
+    /** Trees it has cut logs at and not yet told its team of, taken once by the runtime, which tells them (F-25c4cc). */
+    Optional<BlockPos> takeTreesFound() {
+        BlockPos found = treesFound;
+        treesFound = null;
+        return Optional.ofNullable(found);
+    }
+
+    /** A teammate's word of trees it found and cut logs at: the nearer of those it is told of is kept (F-25c4cc). */
+    void toldOfTrees(BlockPos at, String by, long tick) {
+        if (at == null || treesGivenUp.contains(BlockPos.asLong(at.getX() >> 2, 0, at.getZ() >> 2))) return;
+        if (toldTrees != null && (toldTrees.isWithinDistance(at, TREES_APART)
+                || lastFeet != null && toldTrees.getSquaredDistance(lastFeet) <= at.getSquaredDistance(lastFeet))) return;
+        toldTrees = at.toImmutable();
+        toldTreesBy = by;
+        toldTreesSince = tick;
+        toldTreesBest = Double.MAX_VALUE;
+    }
+
+    /**
+     * Short of logs with no tree in view, to the trees a teammate told it of, a leg at a time, as a player goes where a
+     * friend says the trees are: no farther on its own than its explore round home goes, where in a desert there may be
+     * none. Given up once it comes within its sweep of them and the gather finds no log there, or after two minutes with no
+     * ground gained. In E-40's iteration 12 (`e40a12-66a7c0a`) on the desert seed 31102026 Echo cut its first logs 150
+     * blocks from spawn in the first minute; Kindred looked for trees all run and never made a table (F-25c4cc).
+     */
+    private Optional<Task> toldTrees(NativePlayerBody body) {
+        if (toldTrees == null || body.entity().getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        double off = Math.hypot(toldTrees.getX() - lastFeet.getX(), toldTrees.getZ() - lastFeet.getZ());
+        if (off < toldTreesBest - 2) {
+            toldTreesBest = off;
+            toldTreesSince = lastTick;
+        }
+        if (off <= WorldKnowledge.HORIZONTAL_RADIUS / 2.0 || lastTick - toldTreesSince > 2400) {
+            treesGivenUp.add(BlockPos.asLong(toldTrees.getX() >> 2, 0, toldTrees.getZ() >> 2));
+            toldTrees = null;
+            return Optional.empty();
+        }
+        BlockPos to = off > 40 ? legToward(lastFeet, toldTrees, 40) : toldTrees;
+        Task walk = go(to, 3, true, "Walk to the trees " + toldTreesBy + " found at " + toldTrees.toShortString());
+        return setAside(walk) ? Optional.empty() : Optional.of(walk);
+    }
 
     /**
      * Trees seen on the skyline from open ground, beyond its sweep's reach, walked toward a leg at a time, as a player in a

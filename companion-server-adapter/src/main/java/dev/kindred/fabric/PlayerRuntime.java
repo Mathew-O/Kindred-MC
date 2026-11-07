@@ -4284,6 +4284,7 @@ final class PlayerRuntime {
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
         divideTheRun(entry, body);
+        entry.campaign.takeTreesFound().ifPresent(at -> tellOfTrees(entry, body, at));
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
         // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
@@ -8189,6 +8190,26 @@ final class PlayerRuntime {
             KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
         }
         entry.runPart = steered ? part : null;
+    }
+
+    /**
+     * Trees a player has cut its logs at, told to its teammates in the same world (F-25c4cc): where to go for wood when
+     * they have none in view. Its own players in co-op, with a goal, none in a match; told once a stand of trees, and said
+     * aloud, its place to whoever may control it. A teammate takes the nearer of the trees it is told of.
+     */
+    private void tellOfTrees(Entry entry, NativePlayerBody body, net.minecraft.util.math.BlockPos at) {
+        var player = body.entity();
+        if (matches.active(player.getUuid()).isPresent()) return;
+        int told = 0;
+        for (Entry other : entries.values()) {
+            if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
+            var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
+            if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || other.snapshot().stopLatched()
+                    || matches.active(mate.getUuid()).isPresent()) continue;
+            other.campaign.toldOfTrees(at, entry.data.displayName(), server.getTicks());
+            told++;
+        }
+        if (told > 0) say(entry, "Trees here, if anyone needs wood.", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
     }
 
     /** A player's personality as its profile holds it now, for fixtures (C13). */
