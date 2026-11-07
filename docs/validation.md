@@ -16,6 +16,18 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 11 (`e40a11-744c636`, batch 14) — 7 November 2026 (`claude/e40-ladder-13-1106`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on batch 14's head before the CI fixes (`744c636`).
+  A portal lit on 7 of 10 (iteration 10: 5); obsidian on 8 of 10; the iron pickaxe on 10 of 10, all within the first
+  hour; stuck time under a tenth on 2 of 10; deaths 0.5 a game hour [0 to 2]; stuck spells 10.5 [2 to 31]. Against
+  iteration 10 and the starting build every range overlaps: no difference worth noting.
+  [Summary](evidence/eval/e40a11-744c636/summary.md), [deaths](evidence/eval/e40a11-744c636/deaths.md),
+  [against iteration 10](evidence/eval/compare-e40a11.md), [against the start](evidence/eval/compare-e40a11-base.md),
+  [E-40](evidence/E-40.md).
+- **PR #34's CI on `26d1cb2`** (batches 12 to 14 with the bring's three CI fixes): the pull request's build passed in
+  full (run 42397273193); the push build (run 42397269342) failed the strolling bring, 574 of 575 (F-22c24, below).
+
 ## CI green block 2, part 1: the bring's cart and boats (F-22c21, F-22c22, F-22c23) — 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 The bring fixtures failed in 3 of the last 6 failing CI runs and in the local full suite on batch 14. Three causes, each
@@ -33,6 +45,10 @@ from a log:
   reproduced on demand.
 - **With all three:** `NativeBringGameTests`, `NativeTradingHallGameTests` and `NativeCartGameTests` alone, four runs:
   52 of 52. With the first two (F-22c21, F-22c22): 32 of 33 in three runs, the one failure F-22c23's.
+- **F-22c24** ([evidence](evidence/F-22c24.md)): PR #34's push build on `26d1cb2` failed the strolling bring ("The
+  librarian kept wandering off the line") while its pull request build passed. Its six tries at holding the librarian
+  had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
+  bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
 
 ## E-40, batch 14: dug in for the night, it stays in (F-25c4bx); rung c's first probe — 7 November 2026 (`claude/e40-ladder-13-1106`)
 

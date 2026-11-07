@@ -7088,9 +7088,12 @@ final class PlayerRuntime {
                 }
                 KindredMod.LOGGER.info("{} bringing: the boat step ended {} ({})", entry.data.displayName(), state, entry.runner.lastProgress());
             }
-            // A boat not put down (the villager stepped where it was to go) is another try at holding it, not a step gone wrong.
+            // A boat not put down (the villager stepped where it was to go) is another try at holding it, not a step gone wrong;
+            // counted apart from the boats put down, as nothing was spent. Counted with them, a librarian that shuffled at its
+            // lectern used four of its six tries on boats never put down, and was let go (the strolling fixture, a local full
+            // suite and CI on 26d1cb2).
             if (state == SkillRunner.State.BLOCKED && "native_boat".equals(entry.skillId) && entry.bring.phase == Bring.Phase.HOLD) {
-                entry.bring.boatTries++;
+                entry.bring.boatRefusals++;
             } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
@@ -9058,6 +9061,8 @@ final class PlayerRuntime {
         /** The boat that holds a villager that strolls (its AI on) while the line is laid, and the boats put down for it. */
         UUID boatId;
         int boatTries;
+        /** Boats it went to put down that were not put down (the villager moved into the spot): the boat still in hand. */
+        int boatRefusals;
         /** The boat step it is at while holding the villager, kept to while it runs (its boat spent, it is not "no boat"). */
         NativeTaskCandidate boatStep;
         /**
@@ -9267,10 +9272,10 @@ final class PlayerRuntime {
                     return List.of(standAt(bringTask(entry, "boat item:" + b.boatTries), stand));
                 }
                 int boatSlot = boatSlot(player);
-                if (boatSlot < 0 || b.boatTries >= 6 || !opensOverhead(player, b)) {
+                if (boatSlot < 0 || b.boatTries >= 6 || b.boatRefusals >= 12 || !opensOverhead(player, b)) {
                     // No boat to hand, or it would not take the villager up: brought as the cart comes instead.
-                    KindredMod.LOGGER.info("{} bringing: the {} not held ({} boats put down, {}); laying the line to it as it stands", entry.data.displayName(), b.noun,
-                            b.boatTries, boatSlot < 0 ? "no boat" : opensOverhead(player, b) ? "it took none" : "no tool to make room over the line in the hall");
+                    KindredMod.LOGGER.info("{} bringing: the {} not held ({} boats put down, {} not put down, {}); laying the line to it as it stands", entry.data.displayName(), b.noun,
+                            b.boatTries, b.boatRefusals, boatSlot < 0 ? "no boat" : opensOverhead(player, b) ? "it took none" : "no tool to make room over the line in the hall");
                     b.phase = Bring.Phase.BRIDGE;
                     return bringCandidates(entry, body);
                 }
