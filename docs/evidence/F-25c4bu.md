@@ -35,12 +35,18 @@ Changed modules/files:
 - gametest: `NativeUnderLakeKeptGameTests` (new class, one fixture) and its structure `under-lake-8675309.snbt`,
   staged from the run's own kept ground (`run.py --keep-world`).
 
+Corrected 2026-11-07: with the climb out from under the water first, a player sealed into its night shelter under a
+pool, with no pickaxe, dug along under the pool by hand in the morning and never opened its own seal. F-25c4at's fixture
+(`sealedInForTheNightUnderAPoolItOpensItsOwnSealInTheMorning`) failed in PR #32's CI and 3 of 3 alone on `d585600`.
+Under water with no pickaxe, its own seal now comes first, as before; then the climb by hand; then the way back.
+
 ## Acceptance evidence
 
 | Criterion | Check | Result |
 | --- | --- | --- |
 | No pickaxe, under 8675309's lake where Kindred stood: three or more above where it stood, on dry ground, no water over its head | `NativeUnderLakeKeptGameTests.itsPickaxeGoneUnderALakeItDigsOutByHandAndClimbs`. Staged: the block of the run's kept world round it (read offline, diagnosis only), 29 by 17 by 21, the corridor Kindred had dug in it, the lake's water on the region's sides and floor made stone; daylight held; cobblestone and bread, no pickaxe, no wood | On `ec27caa`: fails 3 of 3, each time stepping up and back down until the test ended (up to 396 steps up), never out from under the lake. With the fix: passes 3 of 3, out about 7,040 ticks on with 3 steps up. |
 | The other climbs under water: F-25c4ah's corridor under a lake, 303's aquifer ledge, 101's lake bed | Those fixtures, run alone with the fix | All pass with the fix, run alone once: F-25c4ah's fixture and the seven of `NativeTripDownGameTests` |
+| Sealed in for the night under a pool, no pickaxe: it opens its own seal in the morning (F-25c4at) | `NativePortalCampaignGameTests.sealedInForTheNightUnderAPoolItOpensItsOwnSealInTheMorning`, run alone | On `d585600` (the fix as first made): fails 3 of 3, digging along under the pool by hand. With the seal first: passes 3 of 3; the under-lake fixture passes 3 of 3 beside it |
 
 Environment: Linux x64 cloud container, OpenJDK 21, the manifest's versions. Staged, as the fixture says.
 

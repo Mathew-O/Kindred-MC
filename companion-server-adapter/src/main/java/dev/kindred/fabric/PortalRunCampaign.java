@@ -3243,8 +3243,10 @@ final class PortalRunCampaign {
         // Stranded, no walk back: a pillar if boxed in (quicker than a stair by hand), else the stair.
         boolean underWater = underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24;
         // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
-        // back under the lake each time its climb had dug a step out from under it (F-25c4bu).
-        if (!pickaxe && underWater) return climb(body, label).or(() -> retrace(body, label));
+        // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
+        // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
+        // along under the pool by hand and never opened its seal (that fixture, 3 of 3 on `d585600`).
+        if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label));
         if (!pickaxe) return stranded() ? pillarOut(body, label).or(() -> climb(body, label))
                 : pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
