@@ -16,6 +16,25 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, batch 14: dug in for the night, it stays in (F-25c4bx); rung c's first probe — 7 November 2026 (`claude/e40-ladder-13-1106`)
+
+- **The night shelter fixture** (F-25c4bx, [evidence](evidence/F-25c4bx.md)), `NativeNightShelterGameTests`, staged:
+  night on open ground by its lit portal, the End goal's next step food for the Nether trip and none carried.
+  - On `eae8161`: fails 3 of 3, out of its shelter and dug in again 41 or 42 times in the night.
+  - With the fix: passes 3 of 3, sealed in until morning, then out toward its portal.
+  - First run without sky access, under the test server's barriers, where the ground's top was the barriers'; the one
+    run of a first form of the fix (depth alone) fell back to the climb once. The runs above are on the fixture as
+    committed, open to the sky.
+- **Rung c's first probe, `e40c1-eed2dc5`** (batches 12 and 13): four seeds on the dragon goal, 288,000 ticks each,
+  earned. The Nether on 1 of 4, a portal lit on 3 of 4, obsidian on 4 of 4; deaths 1.62 a game hour [1.25 to 2.0].
+  Too few seeds to compare. [Summary](evidence/eval/e40c1-eed2dc5/summary.md),
+  [deaths](evidence/eval/e40c1-eed2dc5/deaths.md), [E-40](evidence/E-40.md).
+- **Full native suite** with F-25c4bx (on `eae8161` with the fix): 573 of 574 in 47.7 minutes. The one failure,
+  `NativeBringGameTests.aLibrarianThatStrollsIsHeldInABoatWhileTheLineIsLaid` ("Hal still in play"), is in the bring
+  fixtures that also failed in 3 of the last 6 failing CI runs (the librarian off the line twice, across a lake once);
+  F-25c4bx does not reach the bring's code. Open under the CI work.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
 ## E-40, batch 13: a tunnel under gravel still coming down, the dragon goal evaluated (F-25c4bv, F-26b) — 6 and 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The evaluation, `e40a10-eed2dc5` (batches 12 and 13):** all ten seeds, 144,000 ticks each, earned. Stuck spells 7.5
