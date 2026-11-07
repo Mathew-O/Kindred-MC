@@ -68,6 +68,9 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
   - Without the fix: fails 3 of 3, "waiting for a feasible step" through nine spells.
   - With the fix: passes 3 of 3, off the spire after 840 to 843 ticks, its fall broken with water.
   - With no mob below it did not reproduce (off at once, 3 of 3, before the fix too); that form is not kept.
+- **The affected native fixtures** on `66a7c0a`, alone and while the evaluation ran: `NativePortalCampaignGameTests`,
+  `NativePortalLightGameTests`, `NativeTeamPortalGameTests`, `NativeFallGameTests`, `NativeEdgeFightGameTests`,
+  `NativeBranchMineGameTests` and the three new classes, 109 of 109.
 - **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
 
 ## E-40, batch 14: dug in for the night, it stays in (F-25c4bx); rung c's first probe — 7 November 2026 (`claude/e40-ladder-13-1106`)
