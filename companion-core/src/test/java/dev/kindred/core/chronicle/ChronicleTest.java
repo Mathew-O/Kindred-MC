@@ -127,4 +127,43 @@ class ChronicleTest {
         var oldOnly = List.of("at 10s: before the summary");
         assertEquals(1, Chronicle.reportHistory(List.of(yesterday), oldOnly, 0, 1, 4).size());
     }
+
+    @Test
+    void aBusyDayIsCondensedBoundedAndStillShrinksTheReport() {
+        // As F-33c's engine run measured: some 1,900 events a player a game day, nearly all journal lines.
+        var events = new ArrayList<Event>();
+        String[] types = {"skill", "goal", "move", "craft", "stance"};
+        long id = 1000;
+        for (int i = 0; i < 1_900; i++) {
+            String type = types[i % types.length];
+            events.add(new Event(++id, i * 10L, "journal", WREN, type, type + ": step " + i + " of the run, a long detail line about what it did there"));
+        }
+        events.add(new Event(++id, 19_000, "death", WREN, "Wren", "Wren died: lava"));
+        events.add(new Event(++id, 20_000, "capture", WREN, "oak", "capture oak 12 -4"));
+        var lines = Chronicle.condense(events);
+        assertTrue(lines.size() <= Chronicle.MAX_LINES, "lines: " + lines.size());
+        assertEquals(7, lines.size(), "the death, the capture, and one line a kind of journal");
+        assertTrue(lines.stream().anyMatch(e -> e.text().equals("Wren died: lava")));
+        assertTrue(lines.stream().anyMatch(e -> e.text().startsWith("skill 380 times, first step 0 of the run")), lines.toString());
+        var ids = new java.util.HashSet<Long>();
+        for (var e : events) ids.add(e.id());
+        assertTrue(lines.stream().allMatch(e -> ids.contains(e.id())), "every line a real event's id");
+        for (int i = 1; i < lines.size(); i++) assertTrue(lines.get(i - 1).id() < lines.get(i).id(), "in the Record's order");
+
+        var page = Chronicle.plainOf(Tier.PLAYER_DAY, WREN.toString(), 0, Chronicle.DAY, lines);
+        assertTrue(page.text().length() <= Chronicle.PLAIN_CHARS, page.text().length() + "");
+        assertTrue(Chronicle.check(page, ids, new Facts(Map.of("Wren", 1), Map.of(), Map.of())).none());
+        var data = Chronicle.pageData(page, id);
+        assertTrue(dev.kindred.core.record.EventData.encode(data).length() < dev.kindred.core.record.WorldEvent.MAX_DATA, "fits the Record");
+        new dev.kindred.core.record.WorldEvent(0, 1, 0, "", Chronicle.PAGE, WREN, WREN.toString(), "", data, dev.kindred.core.record.WorldEvent.HowKnown.RECORDED);
+
+        // The report: yesterday's page in at most REPORT_CHARS, then the last four events, against the sixteen events.
+        var sixteen = new ArrayList<String>();
+        for (int i = 0; i < 16; i++) sixteen.add("at " + (1300 + i * 40) + "s: died: Zombie at 118 40 -30 (2 deaths so far), stage changed: Iron: Smelt iron");
+        var before = String.join("\n", Chronicle.reportHistory(List.of(), sixteen, 0, 1, 4)).length();
+        var after = String.join("\n", Chronicle.reportHistory(List.of(page), sixteen, 0, 1, 4)).length();
+        assertTrue(after < before, after + " against " + before);
+        System.out.println("F-33 busy day: " + events.size() + " events, " + lines.size() + " lines, page " + page.text().length()
+                + " chars, history " + after + " chars against " + before + " with 16 events");
+    }
 }

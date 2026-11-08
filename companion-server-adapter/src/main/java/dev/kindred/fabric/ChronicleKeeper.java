@@ -125,14 +125,17 @@ final class ChronicleKeeper {
         return done;
     }
 
-    private CompletableFuture<Void> page(Player player, long from, long until, List<Chronicle.Event> events, long batchEnd) {
-        var plain = Chronicle.plainOf(Chronicle.Tier.PLAYER_DAY, player.id().toString(), from, until, events);
-        var ids = new HashSet<Long>();
+    private CompletableFuture<Void> page(Player player, long from, long until, List<Chronicle.Event> all, long batchEnd) {
+        var events = all;
+        // What is worth telling, at most Chronicle.MAX_LINES lines, each a real event's id (F-33c's run: ~1,900 events a day).
         int deaths = 0;
+        var ids = new HashSet<Long>();
         for (var e : events) {
             ids.add(e.id());
             if ("death".equals(e.kind())) deaths++;
         }
+        events = Chronicle.condense(events);
+        var plain = Chronicle.plainOf(Chronicle.Tier.PLAYER_DAY, player.id().toString(), from, until, events);
         var facts = new Chronicle.Facts(Map.of(player.name(), deaths), Map.of(), Map.of());
         var bridge = host.bridge();
         if (bridge == null || !bridge.writesPages()) {

@@ -115,12 +115,52 @@ public final class Chronicle {
         return Optional.of(new Event(e.id(), Math.max(0, e.tick()), e.kind(), e.actor(), e.subject(), text));
     }
 
+    /** At most this many lines a day is told from; a plain page at most this many characters; a report quotes at most this much of a page. */
+    public static final int MAX_LINES = 40, PLAIN_CHARS = 600, REPORT_CHARS = 360;
+
+    /**
+     * A day's events condensed to what is worth telling (measured: a player logs some 1,900 events a game day, most of
+     * them journal lines): every death, claim, release, capture and match its own line, the first {@code MAX_LINES} of
+     * them; each kind of journal line one line saying how many and its first and last, numbered by its first event. Every
+     * line keeps a real event's id, so a page citing them cites the Record; in the order of those ids.
+     */
+    public static List<Event> condense(List<Event> events) {
+        var notable = new ArrayList<Event>();
+        var journals = new LinkedHashMap<String, List<Event>>();
+        for (Event e : events) {
+            if ("journal".equals(e.kind())) journals.computeIfAbsent(e.subject(), k -> new ArrayList<>()).add(e);
+            else if (notable.size() < MAX_LINES) notable.add(e);
+        }
+        var groups = new ArrayList<>(journals.entrySet());
+        groups.sort(Comparator.comparingInt((Map.Entry<String, List<Event>> g) -> -g.getValue().size()));
+        var out = new ArrayList<>(notable);
+        for (var g : groups) {
+            if (out.size() >= MAX_LINES) break;
+            var list = g.getValue();
+            var first = list.getFirst();
+            String text = list.size() == 1 ? first.text()
+                    : g.getKey() + " " + list.size() + " times, first " + after(first.text()) + ", last " + after(list.getLast().text());
+            if (text.length() > 200) text = text.substring(0, 199) + "…";
+            out.add(new Event(first.id(), first.tick(), first.kind(), first.actor(), first.subject(), text));
+        }
+        out.sort(Comparator.comparingLong(Event::id));
+        return List.copyOf(out);
+    }
+
+    /** A journal line's words after its type ("goal: built a table" → "built a table"). */
+    private static String after(String text) {
+        int colon = text.indexOf(": ");
+        String rest = colon < 0 ? text : text.substring(colon + 2);
+        return rest.length() > 70 ? rest.substring(0, 69) + "…" : rest;
+    }
+
     /** The plain list of exactly these events (a batch read from the Record since the last page), for a span. */
     public static Summary plainOf(Tier tier, String scope, long from, long until, List<Event> events) {
         var shifted = new ArrayList<Event>();
         for (Event e : events) shifted.add(new Event(e.id(), from, e.kind(), e.actor(), e.subject(), e.text()));
         var page = plain(tier, scope, from, shifted);
-        return new Summary(tier, scope, from, Math.max(from + 1, until), page.text(), page.cites(), false);
+        String text = page.text().length() <= PLAIN_CHARS ? page.text() : page.text().substring(0, PLAIN_CHARS - 1) + "…";
+        return new Summary(tier, scope, from, Math.max(from + 1, until), text, page.cites(), false);
     }
 
     /** A page as a World Record event's data: its span, the last event it read, its words, its citations, and who wrote it. */
@@ -319,7 +359,10 @@ public final class Chronicle {
         var recent = playerDays.stream().filter(s -> s.tier() == Tier.PLAYER_DAY).sorted(Comparator.comparingLong(Summary::from)).toList();
         recent = recent.subList(Math.max(0, recent.size() - days), recent.size());
         if (recent.isEmpty()) return List.copyOf(events);
-        for (Summary s : recent) out.add("Day " + (s.from() / DAY + 1) + ": " + s.text());
+        for (Summary s : recent) {
+            String text = s.text().length() <= REPORT_CHARS ? s.text() : s.text().substring(0, REPORT_CHARS - 1) + "…";
+            out.add("Day " + (s.from() / DAY + 1) + ": " + text);
+        }
         long after = recent.getLast().until();
         var later = new ArrayList<String>();
         for (String e : events) {
