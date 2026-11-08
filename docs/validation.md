@@ -43,6 +43,23 @@ green. Neither fixture is in code the batch changes.
   block up on either side did not hold it (3 of 3 passed), so the wait's bound is not yet made: no fixture reproduces it.
 - Both jobs re-run once.
 
+## E-40, batch 19: a cobweb in the climb's way (F-25c4cm) — 8 November 2026 (`claude/e40-ladder-19-1108`)
+
+- **The fixtures** (F-25c4cm, [evidence](evidence/F-25c4cm.md)): `NativeCobwebHeadRoomGameTests.aCobwebOverItsHeadIsClearedAndItClimbs`
+  and `withNoSwordItClearsTheCobwebByHandAndClimbs`, on ground cut from 8675309's kept world in iteration 14 (a
+  mineshaft's corridor, a cobweb over the player's head), staged as they say. On `433589d`, without the fix: each fails 3
+  of 3, "Not up out of the corridor after 1,200 ticks", with 530 to 532 walks "to the wall" refused a run, as Sol's 1,141
+  in the run. With the fix: each passes 3 of 3, two up after 123 to 125 ticks with the sword and 517 by hand, no walk
+  refused. A first staging with three raw iron did not reproduce (3 of 3 passed without the fix: it mined the iron in
+  sight and climbed from another cell) and is not kept.
+- **The classes that climb, tunnel and dig out** (`NativeCobwebHeadRoomGameTests`, `NativePortalCampaignGameTests`,
+  `NativeTripDownGameTests`, `NativeBranchMineGameTests`, `NativeStairGameTests`, `NativeStrandedReturnGameTests`,
+  `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests`, `NativeNightShelterGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`, `NativeFallingColumnGameTests`,
+  `NativeGravelTunnelGameTests`, `ReplayGameTests`, `NativeAtlasGameTests`, `NativeSurvivalGameTests`,
+  `NativeMovementGameTests`, `NativeWaterEdgeGameTests`): with the fix, 147 of 147.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
+
 ## E-40, batch 18: out from under a falling column, and the walk to a drop under one (F-25c4ck, F-25c4cl) — 8 November 2026 (`claude/e40-ladder-18-1108`)
 
 - **The fixture** (F-25c4ck, [evidence](evidence/F-25c4ck.md)): `NativeFallingColumnGameTests.buriedUnderAColumnOfGravelItStepsOutFromUnderIt`,
