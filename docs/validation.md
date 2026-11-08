@@ -3261,3 +3261,21 @@ After the block's first merge from main, CI on PR #25 found:
   followed.
 - Main's CI green three runs running: `c451f94` (run 42414280759), `eb680aa` (42444314816) and `15e3ee9`
   (42455260820). The block's definition of done is met.
+- **[F-22c26](evidence/F-22c26.md):** the test server's view and simulation distances set to a live server's 10; it
+  kept 0.
+  - The new fixture, sand two chunks from a player, failed 0 of 3 before and passed 3 of 3 after.
+  - Two full local suites with it, 49.5 and 53.7 minutes: 587 of 588 and 586 of 588.
+  - Both failed the paid-slice break, whose single park per tick ended early (4.45 s and 4.43 s, and 4.37 s over 203
+    ticks with its class alone). It parks until its 50 ms are up now: 21 of 21 in three runs of its class.
+  - The second also failed the life-first hunt once (31 food against 32, open, product); its class passed 12 of 12 in
+    three runs.
+  - Neighbouring grounds: bring, ranch and pasture passed in both suites, and players' deaths were the same as in two
+    suites without the change.
+- **[F-22c27](evidence/F-22c27.md):** led off from the herd, the hunt goes back to where it saw game before it explores
+  (product; PR #42's run 42498227499 and main's run 42455310230 failed the life-first hunt at 31 food against 32).
+  - The new fixture, moved once to the field's north edge after its first kill, failed 3 of 6 before and passed 3 of 3
+    after.
+  - Its third class run chased off the field's south edge, a drop of three, and found no walkable route back up. The way
+    back now uses the route builder, which may dig, stair and pillar: a second fixture, moved to the foot of that edge,
+    failed 0 of 3 with the walk-only version and passed 3 of 3 after ("stairs up 3"), the first 3 of 3 again.
+  - The ten classes that place huntable animals, three runs: 136 of 136 each.
