@@ -15192,18 +15192,21 @@ final class PlayerRuntime {
      * event and in the log, and never settled or replayed (M-06g).
      */
     private void reportOpenSales(SqliteCompanionStore database) {
-        database.allWorldEvents(Set.of(MarketDesk.INTENT, MarketDesk.CANCEL, dev.kindred.core.market.MarketLedger.SALE, "market.uncertain"))
+        database.allWorldEvents(Set.of(MarketDesk.INTENT, MarketDesk.CANCEL, MarketDesk.RECEIVED, dev.kindred.core.market.MarketLedger.SALE,
+                        dev.kindred.core.market.MarketLedger.BUY, "market.uncertain"))
                 .whenComplete((events, failure) -> handBack(() -> {
                     if (failure != null || !running) return;
                     var open = new java.util.LinkedHashMap<String, dev.kindred.core.record.WorldEvent>();
                     for (var e : events) {
                         if (e.kind().equals(MarketDesk.INTENT)) open.put(e.subject(), e);
+                        else if (e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) && !e.get("purchase", "").isEmpty()) open.put(e.get("purchase", ""), e);
                         else if (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE)) open.remove(e.get("intent", ""));
                         else open.remove(e.subject());
                     }
                     for (var e : open.values()) {
-                        KindredMod.LOGGER.error("Sale {} by {} is ambiguous (intent written, neither sale nor cancel): reconcile its items and coins by hand", e.subject(), e.actor());
-                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), e.subject(), "",
+                        String id = e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) ? e.get("purchase", "") : e.subject();
+                        KindredMod.LOGGER.error("Market {} {} by {} is unfinished: reconcile its items and coins by hand", e.kind(), id, e.actor());
+                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), id, "",
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
