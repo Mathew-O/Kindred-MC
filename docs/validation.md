@@ -16,6 +16,20 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 13 (`e40a13-fe2ba3b`, batch 16 up to F-25c4cg) — 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `fe2ba3b` (batch 16 with iteration 12 filed, before
+  F-25c4ch and F-25c4ci). A restart of the machine stopped it after six seeds; the other four were run again from their
+  start into the same folder.
+  - The iron pickaxe on 10 of 10, all within the first hour (median 21.3 min, the last at 35.7).
+  - A portal lit on 4 of 10 (iteration 12: 6); obsidian on 7 of 10; stuck time under a tenth on 2 of 10 (iteration 12:
+    4).
+  - Deaths 1.0 a game hour [0 to 3.5] (26, against 29). Stuck spells 10.5 [2 to 27] (111, against 92).
+  - Against iteration 12 and the starting build every range overlaps: no difference worth noting.
+  - [Summary](evidence/eval/e40a13-fe2ba3b/summary.md), [deaths](evidence/eval/e40a13-fe2ba3b/deaths.md),
+    [against iteration 12](evidence/eval/compare-e40a13.md), [against the start](evidence/eval/compare-e40a13-base.md),
+    [E-40](evidence/E-40.md).
+
 ## E-40, iteration 11 (`e40a11-744c636`, batch 14) — 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on batch 14's head before the CI fixes (`744c636`).
@@ -50,7 +64,7 @@ from a log:
   had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
   bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
 
-## E-40, batch 16: a fight from the water, trees a teammate found, the night's walks (F-25c4cb, F-25c4cc, F-25c4cd) — 7 November 2026 (`claude/e40-ladder-16-1107`)
+## E-40, batch 16: a fight from the water, trees a teammate found, the night's walks (F-25c4cb to F-25c4ci) — 7 and 8 November 2026 (`claude/e40-ladder-16-1107`)
 
 - **The water fight fixture** (F-25c4cb, [evidence](evidence/F-25c4cb.md)), `NativeWaterFightGameTests`, staged: a pool
   walled in obsidian, a drowned after the player.
@@ -104,6 +118,20 @@ from a log:
     staircase is not on that path. Alone on the same build it passed 3 of 3, and no flint dropped in those runs; gravel
     drops flint one time in ten. Open: the walk to a drop does not wait for what is falling, as the tunnel does since
     F-25c4bv.
+- **The corners in hand fixture** (F-25c4ci, [evidence](evidence/F-25c4ci.md)), `NativeCornersInHandGameTests`,
+  staged: the frame's four corners set and its site taken as the player's own; four logs and food, no pickaxe, table or
+  cobblestone. From iteration 13 (Kindred on 8675309).
+  - On `0a62732`: fails 3 of 3, "cannot make stone_pickaxe at the table in reach: not the makings", then waiting.
+  - With the fix: passes 3 of 3, a wooden pickaxe after 39 to 42 ticks.
+  - `PortalRunPlannerTest` (one new case): 43 of 43.
+  - With it, the classes that build, cast and light frames (`NativePortalCampaignGameTests`, `NativeFrameReturnGameTests`,
+    `NativePortalLightGameTests`, `NativeTeamPortalGameTests`, `NativeSnowSiteGameTests`, `NativeCraftGameTests`,
+    `NativeTeamShareGameTests` and the new class), while the evaluation ran: 116 of 117.
+  - The one failure, `goalMakesObsidianFromLavaWithPouredWaterAndRecoversTheWater`, "The water was taken back into the
+    bucket": that fixture sets no frame site, so nothing the fix counts changes there. Alone on the same build it passed 5
+    of 5. It is an intermittent open before this batch: it failed PR #35's pull-request build on `1ab35bd` too, and an
+    earlier entry below has it diagnosed, not fixed.
+  - **Build:** `bash ./gradlew build` successful with it; JUnit 959 tests, 0 failures, 6 skipped (companion-core 786).
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
 - **Full native suite** on `fe2bbe3` (the batch's head, F-25c4ch included), while iteration 13 ran beside it: 585 of

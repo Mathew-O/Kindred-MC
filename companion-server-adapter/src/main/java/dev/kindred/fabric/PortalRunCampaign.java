@@ -2422,15 +2422,19 @@ final class PortalRunCampaign {
         // Obsidian already set into the frame still counts toward the ten. The site is in the Overworld: from another
         // dimension the same coordinates are somewhere else entirely.
         boolean siteHere = portalSite != null && player.getServerWorld().getRegistryKey() == net.minecraft.world.World.OVERWORLD;
+        int cornersPlaced = 0;
         if (siteHere) {
             obsidian += frameObsidian(player.getServerWorld(), portalSite);
-            cobble += frameCorners(player.getServerWorld(), portalSite); // Placed corners count toward the four too.
+            // Placed corners count toward the four too, but apart from the cobblestone carried: they make no tool. Counted
+            // in with it, a player back from a death with its frame begun set out to make a stone pickaxe from them, and
+            // its table refused it (F-25c4ci: Kindred on 8675309, 52 times).
+            cornersPlaced = frameCorners(player.getServerWorld(), portalSite);
         }
         boolean framed = siteHere && portalComplete(player.getServerWorld(), portalSite);
         boolean lit = siteHere && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, lavaBuckets,
                 water, fns, tables, furnaces, saplings, food, pick, pickaxes, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
-                player.getHungerManager().getFoodLevel(), framed, lit, rawMeat, furnaceCooking);
+                player.getHungerManager().getFoodLevel(), framed, lit, rawMeat, furnaceCooking, cornersPlaced);
     }
 
     /** Raw meat and fish a furnace cooks into food that fills more than twice as much. */

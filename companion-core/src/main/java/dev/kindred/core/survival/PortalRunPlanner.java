@@ -294,7 +294,8 @@ public final class PortalRunPlanner {
         WorldFacts.Method frame = frameMethod(s, facts);
         // Wood: a crafting table and a wooden pickaxe, with logs to spare for sticks and fuel.
         if (s.pickaxeTier() <= 0) {
-            // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone.
+            // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone. In hand: the corners
+            // set in its frame make no pickaxe (F-25c4ci).
             if (s.cobble() >= 3) return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.WOOD);
             boolean haveTable = s.tableNearby() || s.craftingTables() > 0;
             int woodWanted = haveTable ? 6 : 12;
@@ -342,8 +343,8 @@ public final class PortalRunPlanner {
         // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast. Not while no
         // more stone can be had (a limited world's few stone blocks used up, no generator yet): iron for the buckets
         // that build one comes first.
-        if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4) && stoneAvailable(s, facts)) {
-            return stone(s, facts, COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
+        if (s.cornerBlocks() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4) && stoneAvailable(s, facts)) {
+            return stone(s, facts, COBBLE_TARGET - s.cornerBlocks(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
         }
 
         // A spare pickaxe, made while it is cheap: one wearing out halfway up a climb never leaves the player with none.
@@ -474,7 +475,7 @@ public final class PortalRunPlanner {
         }
 
         if (!s.portalFramed()) {
-            if (s.cobble() < PORTAL_CORNERS) return stone(s, facts, PORTAL_CORNERS - s.cobble(), Stage.PORTAL, "Mine corner blocks for the frame");
+            if (s.cornerBlocks() < PORTAL_CORNERS) return stone(s, facts, PORTAL_CORNERS - s.cornerBlocks(), Stage.PORTAL, "Mine corner blocks for the frame");
             return Step.of(Action.BUILD_PORTAL, Stage.PORTAL, "Build the obsidian portal frame");
         }
         return Step.of(Action.IGNITE_PORTAL, Stage.PORTAL, "Light the portal with flint and steel");

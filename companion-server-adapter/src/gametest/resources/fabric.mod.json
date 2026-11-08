@@ -80,6 +80,7 @@
       "dev.kindred.fabric.NativeWaterEdgeGameTests",
       "dev.kindred.fabric.NativeWaterExitGameTests",
       "dev.kindred.fabric.NativeDigFillGameTests",
+      "dev.kindred.fabric.NativeCornersInHandGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
