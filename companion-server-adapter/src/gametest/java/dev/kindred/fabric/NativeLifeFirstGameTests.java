@@ -142,7 +142,7 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
 
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-food", tickLimit = 30000)
     public void hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase(TestContext context) {
-        hungry(context, 0, false);
+        hungry(context, 0, null);
     }
 
     /**
@@ -154,7 +154,19 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-led", tickLimit = 30000)
     public void ledOffFromTheHerdItGoesBackToWhereItSawItAndHuntsFirst(TestContext context) {
-        hungry(context, 0, true);
+        hungry(context, 0, new BlockPos(16, 7, -8));
+    }
+
+    /**
+     * The same, moved after its first kill to the foot of the field's south edge, three blocks below the field, where
+     * the edge hides the herd (F-22c27): as when a chase runs off the edge. It gets back up, by digging or by steps of its
+     * own, to where it last saw them, hunts its food to last, then builds its base. Before, its walk back found no
+     * walkable route up the drop; it explored below and began its base short (31 of 32, in a run of the fixture above).
+     * Fixture staging: the player moved to the foot of the edge, once.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-below", tickLimit = 30000)
+    public void offTheFieldsEdgeItGetsBackUpToWhereItSawTheHerd(TestContext context) {
+        hungry(context, 0, new BlockPos(16, 4, 46));
     }
 
     /**
@@ -163,14 +175,14 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "life-store", tickLimit = 30000)
     public void hungryWithBreadInItsStorageItTakesThatNotACowThenBuildsItsBase(TestContext context) {
-        hungry(context, 20, false);
+        hungry(context, 20, null);
     }
 
     /**
-     * The hungry fixture, with {@code stored} loaves in a storage of its own (none: no storage); {@code ledOff}, moved
-     * from the herd after its first kill.
+     * The hungry fixture, with {@code stored} loaves in a storage of its own (none: no storage), moved after its
+     * first kill to {@code ledTo} off its origin (none: not moved).
      */
-    private static void hungry(TestContext context, int stored, boolean ledOff) {
+    private static void hungry(TestContext context, int stored, BlockPos ledTo) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 29500);
         var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
         BlockPos o = NativeBaseGameTests.origin(context);
@@ -227,11 +239,11 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
                     if (stored > 0) f.runtime.nativeLifecycle(f.source, "resume", f.id);
                 })
                 .createAndAdd(() -> {
-                    if (!ledOff) return;
+                    if (ledTo == null) return;
                     if (f.runtime.lifeNote(f.id).startsWith("Hungry")) noted[0] = true;
                     var player = body(context, f);
                     context.assertTrue(player.getStatHandler().getStat(net.minecraft.stat.Stats.KILLED, EntityType.COW) >= 1, "Its first kill");
-                    BlockPos edge = o.add(16, 7, -8);
+                    BlockPos edge = o.add(ledTo);
                     player.refreshPositionAndAngles(edge.getX() + 0.5, edge.getY(), edge.getZ() + 0.5, 0, 0);
                 })
                 .createAndAdd(() -> {

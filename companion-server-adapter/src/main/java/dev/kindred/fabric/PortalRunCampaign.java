@@ -1761,7 +1761,7 @@ final class PortalRunCampaign {
             if (!below) hungryUpAt = feet.toImmutable();
             else if (hungryUpAt != null && feet.getY() >= hungryUpAt.getY() - 3 && feet.getSquaredDistance(hungryUpAt) <= 32 * 32) below = false;
             Optional<Task> food = below ? wayUp(body, "Climb toward the surface for food")
-                    : hunt(player).or(() -> fish(body)).or(() -> groundBelow(player) ? explore(body, "animals") : Optional.empty());
+                    : hunt(body).or(() -> fish(body)).or(() -> groundBelow(player) ? explore(body, "animals") : Optional.empty());
             if (food.isPresent()) {
                 progress = stageLabel(stage) + ": hurt and out of food - " + food.get().label();
                 return food;
@@ -2524,7 +2524,7 @@ final class PortalRunCampaign {
             case COLLECT_SMELTED -> nearestWorkstation(player, Blocks.FURNACE, 16).flatMap(f -> atWorkstation(player, f,
                     new Task("native_smelt", coords(f, Map.of("action", "extract")), "Take smelted iron")));
             // Out of food with no animal in sight, it fishes if it can (E-05); stocking up, it hunts only.
-            case HUNT -> hunt(player).or(() -> s.edibleFood() == 0 ? fish(body) : Optional.empty());
+            case HUNT -> hunt(body).or(() -> s.edibleFood() == 0 ? fish(body) : Optional.empty());
             // Advised food first and none in sight: fish at water close by with its rod (E-05); else out to the surface by
             // day, then walk out and look. Not over the void: an island's animals are the ones on it. Not at night, when
             // the route's own steps leave it for daylight: for the End goal's food at its gate, it went up out of the
@@ -6496,11 +6496,11 @@ final class PortalRunCampaign {
      * animals {@code spare} names (those it is penning).
      */
     Optional<Task> huntFood(NativePlayerBody body, java.util.function.Predicate<PassiveEntity> spare) {
-        return hunt(body.entity(), spare);
+        return hunt(body, spare);
     }
 
-    private Optional<Task> hunt(ServerPlayerEntity player) {
-        return hunt(player, animal -> false);
+    private Optional<Task> hunt(NativePlayerBody body) {
+        return hunt(body, animal -> false);
     }
 
     /** Where it last saw an animal it could hunt, and when (F-22c27). */
@@ -6515,20 +6515,31 @@ final class PortalRunCampaign {
     /**
      * No game in sight: back to where it last saw some, the nearest such place first, before it walks out to look. Led
      * off from the herd (a cow that fled drew its chase out of the 24 blocks it looks about it), it explored and found
-     * no way off the field, and began its base short of food (F-22c27). Each place is walked to once: a walk that
-     * cannot get there, or finds the game gone, moves on to the next, and a minute on it is forgotten.
+     * no way off the field, and began its base short of food (F-22c27). Chasing off the field's edge, a drop of three,
+     * it could not walk back up: the way back may dig, stair and pillar, as a player gets back up a ledge. A place is
+     * forgotten once it stands there, once no way there is found, or a minute on.
      */
-    private Optional<Task> backToGame(ServerPlayerEntity player, long now) {
+    private Optional<Task> backToGame(NativePlayerBody body, long now) {
+        var player = body.entity();
         BlockPos feet = player.getBlockPos();
         gameSeen.values().removeIf(seen -> now - seen.tick() > GAME_MEMORY || seen.at().getSquaredDistance(feet) <= 4 * 4);
-        var back = gameSeen.entrySet().stream().min(java.util.Comparator.comparingDouble(e -> e.getValue().at().getSquaredDistance(feet)));
-        if (back.isEmpty()) return Optional.empty();
-        BlockPos at = back.get().getValue().at();
-        gameSeen.remove(back.get().getKey());
-        return Optional.of(go(at, 2.0, false, "To where it last saw game at " + at.toShortString()));
+        // Mid-jump a way is planned on landing: nothing is forgotten meanwhile.
+        if (!gameSeen.isEmpty() && !player.isOnGround() && !player.isTouchingWater()) {
+            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Land, then back to where it saw game"));
+        }
+        while (!gameSeen.isEmpty()) {
+            var back = gameSeen.entrySet().stream().min(java.util.Comparator.comparingDouble(e -> e.getValue().at().getSquaredDistance(feet))).orElseThrow();
+            BlockPos at = back.getValue().at();
+            Optional<Task> way = buildRoute(body, at, cell -> cell.getSquaredDistance(at) <= 2 * 2, false,
+                    "To where it last saw game at " + at.toShortString());
+            if (way.isPresent()) return way;
+            gameSeen.remove(back.getKey());
+        }
+        return Optional.empty();
     }
 
-    private Optional<Task> hunt(ServerPlayerEntity player, java.util.function.Predicate<PassiveEntity> spare) {
+    private Optional<Task> hunt(NativePlayerBody body, java.util.function.Predicate<PassiveEntity> spare) {
+        var player = body.entity();
         var world = player.getServerWorld();
         Box area = player.getBoundingBox().expand(24, 8, 24);
         var drops = world.getEntitiesByClass(ItemEntity.class, area.contract(16, 4, 16),
@@ -6544,7 +6555,7 @@ final class PortalRunCampaign {
                 || animal instanceof ChickenEntity || animal instanceof RabbitEntity) && player.canSee(animal));
         long now = world.getTime();
         for (PassiveEntity animal : animals) gameSeen.put(animal.getUuid(), new GameSighting(animal.getBlockPos().toImmutable(), now));
-        if (animals.isEmpty()) return backToGame(player, now);
+        if (animals.isEmpty()) return backToGame(body, now);
         PassiveEntity nearest = animals.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
         if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) {
             return Optional.of(strike(player, nearest, "Hunt " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath()));
