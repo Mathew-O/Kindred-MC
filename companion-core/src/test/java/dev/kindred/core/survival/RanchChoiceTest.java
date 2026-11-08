@@ -63,4 +63,31 @@ class RanchChoiceTest {
         // Pigs' carrots and potatoes are found, not grown from what it has: not earned.
         assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.PIG, 2), Map.of(), true).earn().isEmpty());
     }
+
+    @Test
+    void aKindAlreadyKeptIsNotKeptTwiceSoTheNextKindGetsAPenOfItsOwn() {
+        var cows = java.util.Set.of(Ranch.Kind.COW);
+        var next = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.SHEEP, 2), Map.of(Ranch.Kind.COW, 4, Ranch.Kind.SHEEP, 4), false, cows);
+        assertEquals(Optional.of(Ranch.Kind.SHEEP), next.kind(), "the sheep get a pen of their own");
+        var earn = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.CHICKEN, 2), Map.of(Ranch.Kind.COW, 4), true, cows);
+        assertTrue(earn.kind().isEmpty());
+        assertEquals(Optional.of(Ranch.Kind.CHICKEN), earn.earn(), "the chickens' seeds earned, not the cows' wheat again");
+        var none = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 4), Map.of(Ranch.Kind.COW, 4), true, cows);
+        assertTrue(none.kind().isEmpty() && none.earn().isEmpty(), "only cows about, and cows are kept: nothing");
+        assertTrue(none.why().startsWith("No pair"), none.why());
+    }
+
+    @Test
+    void aPenRunOnceIsBredAgainAfterTheWaitUpToAHerd() {
+        long wait = RanchChoice.AGAIN;
+        var again = RanchChoice.again(Ranch.Kind.COW, 2, 1, 4, wait);
+        assertTrue(again.breed(), again.why());
+        assertTrue(again.why().contains("cows"), again.why());
+        assertFalse(RanchChoice.again(Ranch.Kind.COW, 2, 1, 4, wait - 1).breed(), "not before the breeding wait");
+        assertFalse(RanchChoice.again(Ranch.Kind.COW, 2, 1, RanchChoice.FOOD - 1, wait).breed(), "not without the food for two");
+        assertFalse(RanchChoice.again(Ranch.Kind.COW, 1, 2, 4, wait).breed(), "not with fewer than two grown");
+        var herd = RanchChoice.again(Ranch.Kind.SHEEP, 4, RanchChoice.HERD - 4, 4, wait);
+        assertFalse(herd.breed(), "a herd is enough");
+        assertTrue(herd.why().contains("sheep") && !herd.why().contains("sheeps"), herd.why());
+    }
 }
