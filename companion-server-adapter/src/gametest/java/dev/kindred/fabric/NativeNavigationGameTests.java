@@ -247,9 +247,7 @@ public final class NativeNavigationGameTests implements FabricGameTest {
         BlockPos obsidian = context.getAbsolutePos(new BlockPos(5, 2, 3));
         long[] started = new long[1];
         long[] lastTick = new long[1];
-        // Ticks held to 50 ms, and whether a park found the server thread interrupted (it returns at once then).
         long[] held = new long[1];
-        boolean[] interrupted = new boolean[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Slicer"))
@@ -263,10 +261,11 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.nativeBreak(f.source, f.id, obsidian) == 1, "Obsidian break requested");
                 })
                 .createAndAdd(() -> {
-                    // No faster than a live server: each tick takes at least 50 ms of wall-clock time.
-                    long wait = 50_000_000L - (System.nanoTime() - lastTick[0]);
-                    if (Thread.currentThread().isInterrupted()) interrupted[0] = true;
-                    if (wait > 0) java.util.concurrent.locks.LockSupport.parkNanos(wait);
+                    // No faster than a live server: each tick takes at least 50 ms of wall-clock time. A park can end
+                    // early: the server's executor wakes its thread for each task handed to it, as chunks loading
+                    // around a player do. So it parks again until the 50 ms are up (F-22c26).
+                    long until = lastTick[0] + 50_000_000L;
+                    for (long left; (left = until - System.nanoTime()) > 0; ) java.util.concurrent.locks.LockSupport.parkNanos(left);
                     held[0]++;
                     lastTick[0] = System.nanoTime();
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
@@ -276,7 +275,7 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     double seconds = (System.nanoTime() - started[0]) / 1e9;
                     context.assertTrue(seconds > 6, "It ran past one five-second slice: " + seconds + " s over "
-                            + held[0] + " ticks held to 50 ms" + (interrupted[0] ? ", the server thread interrupted" : ""));
+                            + held[0] + " ticks held to 50 ms");
                     context.assertTrue(context.getWorld().getBlockState(obsidian).isAir(), "The obsidian was broken");
                     context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 1, "Its own obsidian was picked up");
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
