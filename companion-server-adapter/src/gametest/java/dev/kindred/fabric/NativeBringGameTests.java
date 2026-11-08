@@ -76,6 +76,18 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the one before it, with the loaded cart's first roll home slowed once on its way north, so that it runs out of way short
+     * of the climb into the hall and rolls back: Hal, after it along the line, meets it near where it lost its way and
+     * pushes it on from there, and brings the librarian home. In CI on PR #36 (`abc4fbf`) the cart lost its way there
+     * and rolled back to the line's start, where Hal waited for it; every push from there was as short, and Hal gave up
+     * with the librarian aboard (F-22c25). Staged: the cart's speed cut to three tenths once, four or more blocks along.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringSlowed", tickLimit = 14000)
+    public void aLoadedCartThatLosesItsWayIsSentOnFromNearWhereItRolledBack(TestContext context) {
+        scene(context, false, true, false, false, false, false, true);
+    }
+
+    /**
      * As the first, with a river three wide right across the field between the librarian and the hall: Hal bridges it
      * with dirt from the bank it is on, lays the line over the bridge, brings the librarian home, and takes the bridge
      * back after its rails, the river running as it did.
@@ -143,8 +155,14 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake) {
+        scene(context, make, wander, river, mine, strolling, lake, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
+        boolean[] damped = {false};
         var hall = TradingHall.of(3, "oak", "cobblestone");
         BlockPos[] origin = new BlockPos[1];
         VillagerEntity[] librarian = new VillagerEntity[1];
@@ -263,6 +281,14 @@ public final class NativeBringGameTests implements FabricGameTest {
                         librarian[0].refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 180, 0);
                         moved[0] = true;
                         KindredMod.LOGGER.info("Bring: the librarian moved off the line, to {}", at.subtract(origin[0]).toShortString());
+                    }
+                    // Staged: the loaded cart's first roll home slowed once, so that it runs out of way short of the climb
+                    // into the hall and rolls back, as it did in CI.
+                    if (slowed && moved[0] && !damped[0] && librarian[0].getRootVehicle() instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity cart
+                            && cart.getVelocity().horizontalLength() > 0.1 && cart.getZ() - origin[0].getZ() < 18) {
+                        cart.setVelocity(cart.getVelocity().multiply(0.3));
+                        damped[0] = true;
+                        KindredMod.LOGGER.info("Bring: the loaded cart slowed at {}", cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                     }
                     if (context.getWorld().getTime() % 100 == 0) {
                         KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}, health {}{}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),

@@ -16,6 +16,35 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## PR #36's pull-request build: the loaded cart met where it rolled back (F-22c25) — 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+PR #36's pull-request build on `abc4fbf` (run 42444424547) failed one native fixture, 585 of 586:
+`NativeBringGameTests.aLibrarianOffTheLineIsBroughtHomeFromWhereItStands`, "[ROLL]". Its push build passed, and so did
+main's on the same bring code. Alone, five runs passed.
+- **From the job's log:** the loaded cart lost its way short of the climb into the hall and rolled back past the line's
+  start, where the player waited for it. The player's push on it was refused, and it ran off the line's open end.
+- **The slowed cart fixture** (F-22c25, [evidence](evidence/F-22c25.md)), staged: that scene with the loaded cart
+  slowed once on its way north, as it ran out of way in CI.
+  - On `abc4fbf`: fails 3 of 3, pushed eight times from the line's start, rolling back each time.
+  - With the fix: passes 3 of 3, brought home. A first form, following up the climb too, passed 2 of 3.
+  - With it, `NativeBringGameTests`, `NativeTradingHallGameTests`, `NativeCartGameTests` and `NativeRerollGameTests`:
+    16 of 16.
+  - **Build:** `bash ./gradlew build` successful; JUnit 959 tests, 0 failures, 6 skipped (unchanged).
+
+## E-40, iteration 13 (`e40a13-fe2ba3b`, batch 16 up to F-25c4cg) — 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `fe2ba3b` (batch 16 with iteration 12 filed, before
+  F-25c4ch and F-25c4ci). A restart of the machine stopped it after six seeds; the other four were run again from their
+  start into the same folder.
+  - The iron pickaxe on 10 of 10, all within the first hour (median 21.3 min, the last at 35.7).
+  - A portal lit on 4 of 10 (iteration 12: 6); obsidian on 7 of 10; stuck time under a tenth on 2 of 10 (iteration 12:
+    4).
+  - Deaths 1.0 a game hour [0 to 3.5] (26, against 29). Stuck spells 10.5 [2 to 27] (111, against 92).
+  - Against iteration 12 and the starting build every range overlaps: no difference worth noting.
+  - [Summary](evidence/eval/e40a13-fe2ba3b/summary.md), [deaths](evidence/eval/e40a13-fe2ba3b/deaths.md),
+    [against iteration 12](evidence/eval/compare-e40a13.md), [against the start](evidence/eval/compare-e40a13-base.md),
+    [E-40](evidence/E-40.md).
+
 ## E-40, iteration 11 (`e40a11-744c636`, batch 14) — 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on batch 14's head before the CI fixes (`744c636`).
@@ -49,6 +78,94 @@ from a log:
   librarian kept wandering off the line") while its pull request build passed. Its six tries at holding the librarian
   had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
   bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
+
+## E-40, batch 16: a fight from the water, trees a teammate found, the night's walks (F-25c4cb to F-25c4ci) — 7 and 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+- **The water fight fixture** (F-25c4cb, [evidence](evidence/F-25c4cb.md)), `NativeWaterFightGameTests`, staged: a pool
+  walled in obsidian, a drowned after the player.
+  - On `f2d93b7`: fails 3 of 3, its strikes stopped "up for air first" 20 or 21 times while the drowned killed it.
+  - With the fix: passes 3 of 3, the drowned killed after 181 to 194 ticks, no strike stopped.
+- **The told trees fixture** (F-25c4cc, [evidence](evidence/F-25c4cc.md)), `NativeToldTreesGameTests`, staged: two
+  players 300 blocks apart along a desert strip, oaks by one.
+  - On `31f53c5`: fails 3 of 3, the player with no wood exploring out to about 176 blocks and back.
+  - With the fix: passes 3 of 3, told of the trees and holding logs it cut there after 1,184 to 1,722 ticks.
+- **The night walk fixture** (F-25c4cd, [evidence](evidence/F-25c4cd.md)), `NativeNightWalkGameTests`, staged: night on
+  open stone, iron ore seen on the surface ten blocks off.
+  - On `a86796a`: fails 3 of 3, out from its shelter under the sky and dug in again 14 to 17 times.
+  - With the fix: passes 3 of 3, its sticks made in the shelter, daylight waited for, then on to the iron.
+  - With it, `NativePortalCampaignGameTests`, `NativeNightShelterGameTests`, `NativeShelterSealGameTests`,
+    `NativeTripDownGameTests`, `NativeFloodedShaftGameTests`, `NativeUnderLakeKeptGameTests`, `NativeTeamPortalGameTests`
+    and the new class: 108 of 108.
+- **The water edge fixture** (F-25c4cf, [evidence](evidence/F-25c4cf.md)), `NativeWaterEdgeGameTests`, staged from
+  606's kept world (iteration 11, read offline, diagnosis only): a flowing channel two deep at a cave's edge, the cast
+  route's kit, wanting lava.
+  - On `8c2814a`: fails 3 of 3, sent out of the water a seventh time after 235 to 286 ticks (39 to 192 times by the
+    time limit), its dig stopped "In deep water" 18 to 172 times.
+  - With the fix: passes 3 of 3, sent out 3 times, no dig stopped, then digging and branch mining for lava.
+  - Parts of the fix alone: dry ground clear of the water only, one run, fails (23 times); without the caves left
+    alone, 3 of 3 pass at the limit (6 times each).
+  - With it, the goal's fixtures with water and the night's, alone and while the evaluation ran:
+    `NativePortalCampaignGameTests`, `NativeTripDownGameTests`, `NativeUnderLakeKeptGameTests`,
+    `NativeFloodedShaftGameTests`, `NativeWaterFightGameTests`, `NativeBranchMineGameTests`, `NativeFallGameTests`,
+    `NativeTeamPortalGameTests`, `NativePortalLightGameTests`, `NativeAtlasGameTests`, `NativeLessonsGameTests`,
+    `NativeFollowUpGameTests`, `NativeBoatGameTests`, `NativeBucketGameTests`, batch 15's four classes, batch 16's three
+    and the new one: 139 of 139.
+- **The water exit fixture** (F-25c4cg, [evidence](evidence/F-25c4cg.md)), `NativeWaterExitGameTests`, staged: a
+  pool two deep, a drowned after the player swimming in it, the shore two or three blocks off.
+  - On `ef60cf6`: fails 2 of 3, still in the water after 200 ticks; the third out after 198 ticks with 5 health. Its
+    walk out stopped for the drowned 55 to 61 times in each run.
+  - With the fix: passes 3 of 3, out after 115 to 124 ticks with 19 or more health, its walk out stopped once.
+  - With it, alone and while the evaluation ran: `NativePortalCampaignGameTests`, `NativeTripDownGameTests`,
+    `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterFightGameTests`, `NativeEdgeFightGameTests`,
+    `NativeFallGameTests`, `NativeBoatGameTests`, `NativeBucketGameTests`, `NativeFollowUpGameTests`,
+    `NativeNightShelterGameTests`, `NativeSpireGameTests`, `NativeWaterEdgeGameTests` and the new class: 126 of 126.
+- **The dig fill fixture** (F-25c4ch, [evidence](evidence/F-25c4ch.md)), `NativeDigFillGameTests`, staged: the one
+  way down for the cast's lava onto ground set aside, as a step down there that did not go sets it aside.
+  - On `fe2ba3b`: fails 3 of 3, the step dug out 110 or 111 times in about 150 ticks, filled again each time.
+  - With the fix: passes 3 of 3, the step not dug, no fill; it tunnels on and digs down another way.
+  - With it, the classes that dig down (`NativePortalCampaignGameTests`, `NativeTripDownGameTests`,
+    `NativeBranchMineGameTests`, `NativeNightShelterGameTests`, `NativeShelterSealGameTests`, `NativeStrongholdGameTests`,
+    `NativeGravelTunnelGameTests`, `NativeEndGameTests`, `NativeBuildNeedsGameTests`, `NativeFloodedShaftGameTests`,
+    `NativeUnderLakeKeptGameTests`, `NativeTeamPortalGameTests`, `NativePortalLightGameTests` and batch 15's and 16's
+    classes), alone and while the evaluation ran: 130 of 131.
+  - The one failure, `NativeGravelTunnelGameTests.tunnellingUnderGravelItWaitsForWhatFallsBeforeItStepsIn`, was "Buried
+    in its tunnel": a walk to pick up flint from the gravel it broke went into a cell gravel was still falling into. The
+    staircase is not on that path. Alone on the same build it passed 3 of 3, and no flint dropped in those runs; gravel
+    drops flint one time in ten. Open: the walk to a drop does not wait for what is falling, as the tunnel does since
+    F-25c4bv.
+- **The corners in hand fixture** (F-25c4ci, [evidence](evidence/F-25c4ci.md)), `NativeCornersInHandGameTests`,
+  staged: the frame's four corners set and its site taken as the player's own; four logs and food, no pickaxe, table or
+  cobblestone. From iteration 13 (Kindred on 8675309).
+  - On `0a62732`: fails 3 of 3, "cannot make stone_pickaxe at the table in reach: not the makings", then waiting.
+  - With the fix: passes 3 of 3, a wooden pickaxe after 39 to 42 ticks.
+  - `PortalRunPlannerTest` (one new case): 43 of 43.
+  - With it, the classes that build, cast and light frames (`NativePortalCampaignGameTests`, `NativeFrameReturnGameTests`,
+    `NativePortalLightGameTests`, `NativeTeamPortalGameTests`, `NativeSnowSiteGameTests`, `NativeCraftGameTests`,
+    `NativeTeamShareGameTests` and the new class), while the evaluation ran: 116 of 117.
+  - The one failure, `goalMakesObsidianFromLavaWithPouredWaterAndRecoversTheWater`, "The water was taken back into the
+    bucket": that fixture sets no frame site, so nothing the fix counts changes there. Alone on the same build it passed 5
+    of 5. It is an intermittent open before this batch: it failed PR #35's pull-request build on `1ab35bd` too, and an
+    earlier entry below has it diagnosed, not fixed.
+  - **Build:** `bash ./gradlew build` successful with it; JUnit 959 tests, 0 failures, 6 skipped (companion-core 786).
+- **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
+  `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
+- **Full native suite** on `fe2bbe3` (the batch's head, F-25c4ch included), while iteration 13 ran beside it: 585 of
+  585 in 51 minutes.
+- **Build:** `bash ./gradlew build` successful on the batch's head; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
+## E-40, iteration 12 (`e40a12-66a7c0a`, batch 15) — 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on batch 15's head before its CI fix (`66a7c0a`). A
+  restart of the machine stopped the first run after four seeds; the other six were run again from their start into the
+  same folder.
+  - A portal lit on 6 of 10 (iteration 11: 7), now on 404 and 707, the seeds the batch was made for; obsidian on 7 of 10.
+  - The iron pickaxe on 9 of 10, all within the first hour (not on the desert seed). Stuck time under a tenth on 4 of
+    10 (iteration 11: 2).
+  - Deaths 0.75 a game hour [0 to 5.5] (29, against 15). Stuck spells 4.5 [0 to 32] (92, against 137).
+  - Against iteration 11 every range overlaps: no difference worth noting. Against the starting build, the first stone
+    tools are worth noting.
+  - [Summary](evidence/eval/e40a12-66a7c0a/summary.md), [deaths](evidence/eval/e40a12-66a7c0a/deaths.md),
+    [against iteration 11](evidence/eval/compare-e40a12.md), [against the start](evidence/eval/compare-e40a12-base.md),
+    [E-40](evidence/E-40.md).
 
 ## E-40, batch 15's pull-request build: stranded by walks elsewhere, the way back first (F-25c4ce); the axe fixture's staging (E-41a) — 7 and 8 November 2026 (`claude/e40-ladder-15-1107`)
 

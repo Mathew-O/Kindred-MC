@@ -4284,6 +4284,7 @@ final class PlayerRuntime {
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
         divideTheRun(entry, body);
+        entry.campaign.takeTreesFound().ifPresent(at -> tellOfTrees(entry, body, at));
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
         // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
@@ -8191,6 +8192,26 @@ final class PlayerRuntime {
         entry.runPart = steered ? part : null;
     }
 
+    /**
+     * Trees a player has cut its logs at, told to its teammates in the same world (F-25c4cc): where to go for wood when
+     * they have none in view. Its own players in co-op, with a goal, none in a match; told once a stand of trees, and said
+     * aloud, its place to whoever may control it. A teammate takes the nearer of the trees it is told of.
+     */
+    private void tellOfTrees(Entry entry, NativePlayerBody body, net.minecraft.util.math.BlockPos at) {
+        var player = body.entity();
+        if (matches.active(player.getUuid()).isPresent()) return;
+        int told = 0;
+        for (Entry other : entries.values()) {
+            if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
+            var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
+            if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || other.snapshot().stopLatched()
+                    || matches.active(mate.getUuid()).isPresent()) continue;
+            other.campaign.toldOfTrees(at, entry.data.displayName(), server.getTicks());
+            told++;
+        }
+        if (told > 0) say(entry, "Trees here, if anyone needs wood.", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
+    }
+
     /** A player's personality as its profile holds it now, for fixtures (C13). */
     Personality personalityForFixtures(UUID id) {
         Entry entry = entries.get(id);
@@ -9096,6 +9117,8 @@ final class PlayerRuntime {
         long floorSince = -1;
         /** Gone back along the line to push the stopped cart on again: kept to until the push is given. */
         boolean repush;
+        /** The furthest rail along the line the rolling cart has got to, since it was taken up (F-22c25). */
+        int rollBest = -1;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -9517,6 +9540,7 @@ final class PlayerRuntime {
                 if (villager.getRootVehicle() == cart) {
                     b.phase = Bring.Phase.ROLL;
                     b.since = now;
+                    b.rollBest = -1;
                     return bringCandidates(entry, body);
                 }
                 if (cart.getVelocity().horizontalLength() > 0.01) return List.of(waitTask(task, "For the cart"));
@@ -9615,15 +9639,29 @@ final class PlayerRuntime {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "nudge:" + b.pushes), "native_push", Map.of("target", cart.getUuid().toString(),
                             "seconds", "5", "x", String.valueOf(b.slot.getX()), "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()))));
                 }
-                // While it rolls, back behind the line's start, as a player keeps a cart from running off its end: one that
-                // runs out of way short of the cell and rolls back meets the player there and is sent on again.
-                boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) <= 0.25;
+                // While it rolls, after it along the line, two rails behind the furthest it has got to, as a player keeps
+                // a cart from running back off the line's start: one that runs out of way short of the cell and rolls back
+                // meets the player there, near where it lost its way, and is sent on again from there. Waited for behind
+                // the line's start instead, it rolled all the way back there and was pushed from there again, as short
+                // each time: the line's turn and the climb into the hall took the way from every push (CI on PR #36,
+                // abc4fbf) (F-22c25). Only along the rails level with the line's start: up the climb into the hall there is
+                // no room to stand, and waiting there to get in, it let the cart roll back past it to the start again.
+                int along = b.rails.indexOf(cart.getBlockPos());
+                if (along > b.rollBest) b.rollBest = along;
+                BlockPos after = b.push;
+                for (int i = Math.min(b.rollBest - 2, b.rails.size() - 1); i >= 1; i--) {
+                    if (b.rails.get(i).getY() == b.push.getY()) {
+                        after = b.rails.get(i);
+                        break;
+                    }
+                }
+                boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(after)) <= 0.25;
                 if (!still) {
                     b.since = now;
                     b.repush = false;
-                    if (!behind && !cart.getBlockPos().equals(b.push)) {
-                        KindredMod.LOGGER.info("{} bringing: back behind the line's start at {} while the cart rolls", entry.data.displayName(), b.push.toShortString());
-                        return List.of(standAt(bringTask(entry, "back behind:" + b.pushes), b.push));
+                    if (!behind && !cart.getBlockPos().equals(after)) {
+                        KindredMod.LOGGER.info("{} bringing: after the cart along the line, to {} while it rolls", entry.data.displayName(), after.toShortString());
+                        return List.of(standAt(bringTask(entry, "after it:" + b.pushes + ":" + b.rollBest), after));
                     }
                     return List.of(waitTask(task, "For the cart to roll in"));
                 }

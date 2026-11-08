@@ -31,12 +31,14 @@ class PortalRunPlannerTest {
 
         /** Raw meat carried, and raw meat cooking in the furnace. */
         int rawMeat, meatCooking;
+        /** Corner blocks already set in its frame. */
+        int corners;
 
         PortalRunSnapshot snapshot() {
             return new PortalRunSnapshot(logs, planks, sticks, cobble, coal + charcoalOut, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
                     flint, gravel, obsidian, buckets, lava, water, fns, tables, furnaces, saplings, food, pick, Math.max(pickaxes, pick >= 2 ? 1 : 0), sword, chest, shields,
                     tableNearby, furnaceNearby, furnaceInput + charcoalIn + meatCooking > 0, furnaceOutput + charcoalOut, foodLevel, framed, lit,
-                    rawMeat, meatCooking > 0);
+                    rawMeat, meatCooking > 0, corners);
         }
 
         /** What a player on the sky island sees: its tree while it stands, leaves, its saplings and generator, the ore islands. */
@@ -214,6 +216,38 @@ class PortalRunPlannerTest {
         step = PortalRunPlanner.plan(sim.snapshot()).getLast();
         assertEquals(Action.CRAFT, step.action());
         assertEquals("stone_pickaxe", step.item(), "no detour through logs and a wooden pickaxe");
+    }
+
+    @Test
+    void theCornersSetInItsFrameMakeNoPickaxeButCountTowardTheFour() {
+        // Back from a death with its frame begun (F-25c4ci): four corners set, no cobblestone carried, logs and a table.
+        Sim sim = new Sim();
+        sim.logs = 3;
+        sim.tableNearby = true;
+        sim.corners = 4;
+        var step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.CRAFT, step.action());
+        assertEquals("planks", step.item(), "toward a wooden pickaxe, not a stone one from the corners: " + step);
+        for (int i = 0; i < 6 && !(step.action() == Action.CRAFT && step.item().endsWith("_pickaxe")); i++) {
+            sim.apply(step);
+            step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        }
+        assertEquals("wooden_pickaxe", step.item(), "the pickaxe it makes: " + step);
+        // The same corners still stand for the frame's four: walked from nothing to the frame, with its corners set
+        // and none carried, the frame is built and no corner block mined again.
+        Sim frame = new Sim();
+        for (int i = 0; i < 400; i++) {
+            var next = PortalRunPlanner.plan(frame.snapshot()).stream().filter(c -> c.action() != Action.HUNT).findFirst().orElseThrow();
+            if (next.action() == Action.BUILD_PORTAL) break;
+            frame.apply(next);
+        }
+        frame.cobble = 0;
+        frame.corners = 4;
+        var build = PortalRunPlanner.plan(frame.snapshot()).stream().filter(c -> c.action() != Action.HUNT).findFirst().orElseThrow();
+        assertEquals(Action.BUILD_PORTAL, build.action(), "its corners set, the frame is built: " + build);
+        frame.corners = 0;
+        var mine = PortalRunPlanner.plan(frame.snapshot()).stream().filter(c -> c.action() != Action.HUNT).findFirst().orElseThrow();
+        assertTrue(mine.why().contains("corner"), "with none set nor carried, corner blocks are mined: " + mine);
     }
 
     @Test
