@@ -93,6 +93,21 @@ from a log:
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
 - **Build:** `bash ./gradlew build` successful on the batch's head; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
+## E-40, iteration 12 (`e40a12-66a7c0a`, batch 15) — 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on batch 15's head before its CI fix (`66a7c0a`). A
+  restart of the machine stopped the first run after four seeds; the other six were run again from their start into the
+  same folder.
+  - A portal lit on 6 of 10 (iteration 11: 7), now on 404 and 707, the seeds the batch was made for; obsidian on 7 of 10.
+  - The iron pickaxe on 9 of 10, all within the first hour (not on the desert seed). Stuck time under a tenth on 4 of
+    10 (iteration 11: 2).
+  - Deaths 0.75 a game hour [0 to 5.5] (29, against 15). Stuck spells 4.5 [0 to 32] (92, against 137).
+  - Against iteration 11 every range overlaps: no difference worth noting. Against the starting build, the first stone
+    tools are worth noting.
+  - [Summary](evidence/eval/e40a12-66a7c0a/summary.md), [deaths](evidence/eval/e40a12-66a7c0a/deaths.md),
+    [against iteration 11](evidence/eval/compare-e40a12.md), [against the start](evidence/eval/compare-e40a12-base.md),
+    [E-40](evidence/E-40.md).
+
 ## E-40, batch 15's pull-request build: stranded by walks elsewhere, the way back first (F-25c4ce) — 7 November 2026 (`claude/e40-ladder-15-1107`)
 
 PR #35's builds on `f2d93b7`: the push build passed the full suite. The pull-request build failed one native fixture in
