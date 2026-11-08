@@ -259,6 +259,10 @@ final class PlayerRuntime {
     private final InitiativeLane initiative;
     /** Conversations between AI players (E-51). */
     private final PeerTalk peerTalk;
+    /** F-34b: the Wire, the one way typed messages travel between players. */
+    private final KindredWire wire;
+    /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
+    private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
     private final GiftWatch gifts;
     /** Short trips together to somewhere it has seen (E-27a). */
@@ -523,6 +527,8 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+                PlayerRuntime::now);
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -13198,6 +13204,31 @@ final class PlayerRuntime {
     }
 
     /** The AI player a body belongs to, either body; null for a person or anything else. */
+    /** The Wire (F-34): send typed messages on named channels; read what an AI player was told. Server thread only. */
+    KindredWire wire() { return wire; }
+
+    /** Sets how a player's faction is known (M-06i, the Factions mode's ledger): an id, or empty for none. */
+    void setFactionOf(java.util.function.Function<UUID, String> factionOf) {
+        this.factionOf = factionOf == null ? id -> "" : factionOf;
+    }
+
+    /**
+     * Who belongs where, for the Wire: AI players out of any match share the world's team, as teammates do in co-op;
+     * a manhunt's players its hunters' or runners' side; another match's players each a side of their own; the faction
+     * as the Factions mode says.
+     */
+    private final class WireMemberships implements KindredWire.Memberships {
+        @Override public UUID aiPlayerOf(ServerPlayerEntity body) { return PlayerRuntime.this.aiPlayerOf(body); }
+
+        @Override public KindredWire.Belongs of(UUID id, ServerPlayerEntity body) {
+            return KindredWire.belongs(PlayerRuntime.this.aiPlayerOf(body) != null, matches.running(body.getUuid()), body.getUuid(), factionOf.apply(id));
+        }
+
+        @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+
+        @Override public dev.kindred.core.match.GameModes.WorldMode mode() { return worldMode; }
+    }
+
     private UUID aiPlayerOf(net.minecraft.entity.Entity entity) {
         if (entity instanceof CompanionEntity companion) return companion.companionId();
         if (!(entity instanceof ServerPlayerEntity player)) return null;
