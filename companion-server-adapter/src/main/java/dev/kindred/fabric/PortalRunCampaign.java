@@ -3342,6 +3342,15 @@ final class PortalRunCampaign {
                     // fallback carries it off sideways to dig down elsewhere (live runs 52 and 56 dug back down into
                     // the cave under spawn they had died in).
                     || dangerBelow(step) || !allowed.test(step.down());
+            // Nor a step it would not then take, its landing set aside or by liquid, checked as below once the step is
+            // open: dug anyway, the step stood open over a drop, its tunnel filled it as a pit, and the staircase dug it
+            // out again. On 505 in E-40's iteration 12 (`e40a12-66a7c0a`) Kindred did so hundreds of times, then waited
+            // "for a feasible step" through 29 stuck spells (F-25c4ch).
+            if (!refused) {
+                BlockPos landing = step;
+                while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
+                if (liquidNear(world, landing) || blocked(landing)) refused = true;
+            }
             for (BlockPos cell : clear) {
                 if (!allowed.test(cell)) refused = true;
                 if (refused) break;

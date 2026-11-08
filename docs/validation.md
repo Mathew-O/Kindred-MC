@@ -90,6 +90,20 @@ from a log:
     `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterFightGameTests`, `NativeEdgeFightGameTests`,
     `NativeFallGameTests`, `NativeBoatGameTests`, `NativeBucketGameTests`, `NativeFollowUpGameTests`,
     `NativeNightShelterGameTests`, `NativeSpireGameTests`, `NativeWaterEdgeGameTests` and the new class: 126 of 126.
+- **The dig fill fixture** (F-25c4ch, [evidence](evidence/F-25c4ch.md)), `NativeDigFillGameTests`, staged: the one
+  way down for the cast's lava onto ground set aside, as a step down there that did not go sets it aside.
+  - On `fe2ba3b`: fails 3 of 3, the step dug out 110 or 111 times in about 150 ticks, filled again each time.
+  - With the fix: passes 3 of 3, the step not dug, no fill; it tunnels on and digs down another way.
+  - With it, the classes that dig down (`NativePortalCampaignGameTests`, `NativeTripDownGameTests`,
+    `NativeBranchMineGameTests`, `NativeNightShelterGameTests`, `NativeShelterSealGameTests`, `NativeStrongholdGameTests`,
+    `NativeGravelTunnelGameTests`, `NativeEndGameTests`, `NativeBuildNeedsGameTests`, `NativeFloodedShaftGameTests`,
+    `NativeUnderLakeKeptGameTests`, `NativeTeamPortalGameTests`, `NativePortalLightGameTests` and batch 15's and 16's
+    classes), alone and while the evaluation ran: 130 of 131.
+  - The one failure, `NativeGravelTunnelGameTests.tunnellingUnderGravelItWaitsForWhatFallsBeforeItStepsIn`, was "Buried
+    in its tunnel": a walk to pick up flint from the gravel it broke went into a cell gravel was still falling into. The
+    staircase is not on that path. Alone on the same build it passed 3 of 3, and no flint dropped in those runs; gravel
+    drops flint one time in ten. Open: the walk to a drop does not wait for what is falling, as the tunnel does since
+    F-25c4bv.
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
 - **Build:** `bash ./gradlew build` successful on the batch's head; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).

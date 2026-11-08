@@ -79,6 +79,7 @@
       "dev.kindred.fabric.NativeNightWalkGameTests",
       "dev.kindred.fabric.NativeWaterEdgeGameTests",
       "dev.kindred.fabric.NativeWaterExitGameTests",
+      "dev.kindred.fabric.NativeDigFillGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
