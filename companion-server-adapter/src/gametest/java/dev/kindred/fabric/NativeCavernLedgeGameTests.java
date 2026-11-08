@@ -13,15 +13,6 @@ import net.minecraft.util.math.Vec3d;
 
 /** On 505, a ledge high in a cavern's wall with an aquifer behind it: off it, not to and fro on it (F-25c4cp). */
 public final class NativeCavernLedgeGameTests implements FabricGameTest {
-    /** Echo's way in, as offsets from where it stood: each place its goal lines put it at, from the stair's top on. */
-    private static final int[][] WAY_IN = {
-            {-6, 10, 4}, {-6, 10, 5}, {-5, 10, 5}, {-5, 9, 5}, {-5, 6, 6}, {-5, 1, 10}, {-6, 0, 10}, {-5, -1, 10}, {-5, 0, 9},
-            {-4, -1, 9}, {-4, -2, 8}, {-4, -1, 7}, {-4, 0, 6}, {-3, 0, 6}, {-3, -1, 6}, {-3, -2, 5}, {-3, -1, 5}, {-3, -1, 6},
-            {-3, -2, 6}, {-3, -1, 6}, {-3, -2, 6}, {-3, -1, 5}, {-3, 0, 5}, {-3, 0, 4}, {-2, -1, 4}, {-2, -1, 3}, {-2, -2, 3},
-            {-2, -3, 4}, {-2, -2, 4}, {-2, -2, 3}, {-2, -1, 3}, {-2, -2, 2}, {-2, -1, 2}, {-2, -1, 3}, {-2, 0, 3}, {-2, -1, 4},
-            {-3, 0, 4}, {-3, 1, 4}, {-3, 1, 3}, {-2, 0, 3}, {-2, 0, 2}, {-2, 0, 1}, {-1, 0, 1}, {-1, -2, 1}, {-1, -1, 1},
-            {-1, -1, 0}, {0, 0, 0}};
-
     /**
      * Digging down for iron into a cavern's wall, with the cavern open below and an aquifer behind the wall: it gets off
      * the ledge it came down onto, by some way it can take, rather than stepping down and back up on it. In E-40's
@@ -31,9 +22,9 @@ public final class NativeCavernLedgeGameTests implements FabricGameTest {
      * climbed back the one step; each walk to the cave's floor was "No walkable route". Staged: the block of the run's kept
      * world round it (read offline, diagnosis only), 29 by 34 by 27, the liquid on the block's faces made stone; daylight
      * held; the player where Echo stood, 18, 47, -48, with what the goal's iron stage has, a stone pickaxe, sticks, planks
-     * and a crafting table, with cobblestone, torches and bread; the way it came, as its trail, the 47 places its goal
-     * lines put it at on its way in from the stair's top at 12, 57, -44 (from its console). Passes once it stands on ground
-     * eight or more from where it stood, within 3,000 ticks, alive.
+     * and a crafting table, with cobblestone, torches and bread; the cavern lit with light blocks, so that nothing spawns in
+     * it; its watchdog giving a spot up after 400 ticks, so that three spells pass within the test. Passes once it stands on
+     * ground eight or more from where it stood, within 3,000 ticks, alive.
      */
     @GameTest(templateName = "kindred_gametest:ledge-505", skyAccess = true, batchId = "cavernLedge505", tickLimit = 3600)
     public void onACavernsLedgeWithAnAquiferBehindItItGetsOffTheLedge(TestContext context) {
@@ -71,13 +62,15 @@ public final class NativeCavernLedgeGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "On the ledge: at "
                         + f.player().getBlockPos().subtract(o).toShortString()))
                 .createAndAdd(() -> {
+                    // The cavern below and beside the ledge lit, nothing in it to spawn a mob: light blocks in its open cells.
+                    var world = context.getWorld();
+                    for (int dx = -8; dx <= 12; dx += 4) for (int dy = -16; dy <= 0; dy += 4) for (int dz = -4; dz <= 16; dz += 4) {
+                        BlockPos at = o.add(dx, dy, dz);
+                        if (world.getBlockState(at).isAir()) world.setBlockState(at, net.minecraft.block.Blocks.LIGHT.getDefaultState());
+                    }
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    f.runtime.stuckTicksForFixtures(f.id, 400);
                     start[0] = context.getTick();
-                })
-                .createAndAdd(() -> {
-                    var way = new java.util.ArrayList<BlockPos>();
-                    for (int[] step : WAY_IN) way.add(o.add(step[0], step[1], step[2]));
-                    f.runtime.campaignForTest(f.id).trailForTest(way);
                 })
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(6000);

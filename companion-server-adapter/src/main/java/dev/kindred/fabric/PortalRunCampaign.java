@@ -1974,12 +1974,6 @@ final class PortalRunCampaign {
         relocateWalk = null;
     }
 
-    /** The way it came, as its trail, given instead of walked (fixtures only). */
-    void trailForTest(java.util.List<BlockPos> cells) {
-        trail.clear();
-        trail.addAll(cells);
-    }
-
     /** A frame standing at {@code site} taken as its own portal's, as if it had built it there (fixtures only). */
     void portalSiteForTest(PortalSite site) {
         portalSite = site;
