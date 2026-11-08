@@ -3139,3 +3139,13 @@ After the block's first merge from main, CI on PR #25 found:
   followed.
 - Main's CI green three runs running: `c451f94` (run 42414280759), `eb680aa` (42444314816) and `15e3ee9`
   (42455260820). The block's definition of done is met.
+- **[F-22c26](evidence/F-22c26.md):** the test server's view and simulation distances set to a live server's 10; it
+  kept 0.
+  - The new fixture, sand two chunks from a player, failed 0 of 3 before and passed 3 of 3 after.
+  - Two full local suites with it, 49.5 and 53.7 minutes: 587 of 588 and 586 of 588.
+  - Both failed the paid-slice break, whose single park per tick ended early (4.45 s and 4.43 s, and 4.37 s over 203
+    ticks with its class alone). It parks until its 50 ms are up now: 21 of 21 in three runs of its class.
+  - The second also failed the life-first hunt once (31 food against 32, open, product); its class passed 12 of 12 in
+    three runs.
+  - Neighbouring grounds: bring, ranch and pasture passed in both suites, and players' deaths were the same as in two
+    suites without the change.
