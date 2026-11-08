@@ -529,6 +529,7 @@ final class PlayerRuntime {
         webs = new KnowledgeWebs(server::getTicks);
         wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
                 PlayerRuntime::now);
+        wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -758,7 +759,7 @@ final class PlayerRuntime {
                     matches.restore(ledgers.matches().values());
                     flushMatches();
                     // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
-                    store.allWorldEvents(dev.kindred.core.knowledge.RecordFeed.KINDS).whenComplete((events, unread) -> server.execute(() -> {
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
                         if (unread == null && events != null) webs.rebuild(events);
                         else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
                     }));

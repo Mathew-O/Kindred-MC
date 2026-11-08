@@ -79,6 +79,13 @@ final class KindredWire {
     private final Map<UUID, ArrayDeque<Delivery.Told>> inboxes = new HashMap<>();
     private final Map<UUID, String> names = new HashMap<>();
     private long sent, refused, toldCount, spoken;
+    /** Where a delivery to AI players is kept in the World Record (F-32b), or nowhere. */
+    private java.util.function.Consumer<dev.kindred.core.record.WorldEvent> recorder = e -> { };
+
+    /** Keeps each delivery to AI players in the World Record through {@code record}, so what they were told survives a restart. */
+    void recordTo(java.util.function.Consumer<dev.kindred.core.record.WorldEvent> record) {
+        recorder = record == null ? e -> { } : record;
+    }
 
     KindredWire(MinecraftServer server, Wire wire, Wording wording, Memberships memberships, Knowledge knowledge, Speaker speaker, LongSupplier now) {
         this.server = server;
@@ -135,6 +142,13 @@ final class KindredWire {
             while (inbox.size() > INBOX) inbox.removeFirst();
             knowledge.told(t, byId.get(t.receiver()), senderIsPerson);
             toldCount++;
+        }
+        if (!d.told().isEmpty()) {
+            var first = byId.get(d.told().getFirst().receiver());
+            var data = dev.kindred.core.knowledge.WebFeed.record(message, first, senderIsPerson, d.told().stream().map(Delivery.Told::receiver).toList());
+            recorder.accept(new dev.kindred.core.record.WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.knowledge.WebFeed.MESSAGE,
+                    message.from(), message.scope().channel().id() + ":" + message.scope().key(), "", data,
+                    senderIsPerson ? dev.kindred.core.record.WorldEvent.HowKnown.CLAIMED : dev.kindred.core.record.WorldEvent.HowKnown.TOLD));
         }
         Map<UUID, ServerPlayerEntity> bodies = new HashMap<>();
         for (ServerPlayerEntity body : server.getPlayerManager().getPlayerList()) bodies.put(body.getUuid(), body);

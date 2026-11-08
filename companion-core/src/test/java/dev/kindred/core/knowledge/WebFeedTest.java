@@ -85,4 +85,39 @@ class WebFeedTest {
         assertEquals(1, webWren.about(KnowledgeWeb.Viewer.of(mat), "person:" + mat.id(), null, 60).size(), "Mat may hear his own");
         assertTrue(webWren.about(KnowledgeWeb.Viewer.of(wren), "person:" + mat.id(), null, 50 + KnowledgeWeb.DAY).isEmpty(), "a claim lapses");
     }
+
+    @Test
+    void aDeliveryKeptInTheRecordRebuildsTheSameKnowledge() {
+        var wren = ai("", "oak");
+        var ash = ai("", "oak");
+        var wire = new Wire(Wire.Config.defaults());
+        var facts = new LinkedHashMap<String, Fact>();
+        facts.put("needs", Fact.of("iron", Visibility.FACTION));
+        facts.put("runner_at", Fact.of("1, 2, 3", Visibility.SELF));
+        facts.put("note", Fact.of("not kept", Visibility.PUBLIC));
+        var d = wire.send(Message.of("faction.need", wren.id(), Scope.faction("oak"), facts, List.of(41L)), GameModes.WorldMode.FACTIONS, List.of(wren, ash), 0);
+        var live = new KnowledgeWeb(ash.id());
+        WebFeed.told(live, d.told().getFirst(), ash, false, 100);
+        var data = WebFeed.record(d.message(), ash, false, List.of(ash.id()));
+        var event = new dev.kindred.core.record.WorldEvent(77, 100, 0, "", WebFeed.MESSAGE, wren.id(), "faction:oak", "", data,
+                dev.kindred.core.record.WorldEvent.HowKnown.TOLD);
+        var webs = new java.util.HashMap<UUID, KnowledgeWeb>();
+        assertEquals(2, WebFeed.replay(id -> webs.computeIfAbsent(id, KnowledgeWeb::new), event));
+        var rebuilt = webs.get(ash.id());
+        var asAsh = KnowledgeWeb.Viewer.of(ash);
+        for (var r : live.query(asAsh, 150, x -> true)) {
+            var again = rebuilt.about(asAsh, r.subject(), r.verb(), 150);
+            assertEquals(1, again.size(), r.toString());
+            var x = again.getFirst();
+            assertEquals(r.object(), x.object());
+            assertEquals(r.visibility(), x.visibility());
+            assertEquals(r.group(), x.group());
+            assertEquals(r.provenance(), x.provenance());
+            assertEquals(r.until(), x.until());
+        }
+        assertEquals(live.size(), rebuilt.size());
+        assertNull(webs.get(wren.id()), "the sender is not a receiver");
+        assertEquals(0, WebFeed.replay(id -> new KnowledgeWeb(id), new dev.kindred.core.record.WorldEvent(78, 1, 0, "", "death", null, "x", "", java.util.Map.of(),
+                dev.kindred.core.record.WorldEvent.HowKnown.RECORDED)));
+    }
 }

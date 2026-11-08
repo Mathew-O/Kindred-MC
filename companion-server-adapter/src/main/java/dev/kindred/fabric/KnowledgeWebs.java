@@ -42,7 +42,18 @@ final class KnowledgeWebs implements KindredWire.Knowledge {
     /** The world's web rebuilt from the Record's events (read off the server thread), replacing what it held. */
     void rebuild(java.util.List<dev.kindred.core.record.WorldEvent> events) {
         world = dev.kindred.core.knowledge.RecordFeed.replay(events);
+        webs.clear(); // What each was told, again, from the deliveries the Record kept.
+        for (var e : events) dev.kindred.core.knowledge.WebFeed.replay(this::of, e);
         rebuilt = true;
+    }
+
+    /** The kinds the webs are rebuilt from: the world's, and the deliveries. */
+    static final java.util.Set<String> KINDS = union();
+
+    private static java.util.Set<String> union() {
+        var all = new java.util.HashSet<>(dev.kindred.core.knowledge.RecordFeed.KINDS);
+        all.add(dev.kindred.core.knowledge.WebFeed.MESSAGE);
+        return java.util.Set.copyOf(all);
     }
 
     /** An event the Record has just written, into the world's web. */
