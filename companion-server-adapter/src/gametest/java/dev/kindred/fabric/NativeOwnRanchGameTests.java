@@ -110,7 +110,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                                 .append(cow.isBaby() ? " young" : "").append(cow.isInLove() ? " in love" : "").append("; ");
                     }
                     context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf: " + adults + " and " + calves + "; cows from the pen's post: " + where);
-                    context.assertTrue(f.player().getInventory().count(Items.WHEAT) == 6, "Two wheat fed: " + f.player().getInventory().count(Items.WHEAT));
+                    context.assertTrue(held(f, Items.WHEAT) == 6, "Two wheat fed: " + held(f, Items.WHEAT));
                 })
                 // Ten seconds on, no second ranch begun.
                 .createAndAdd(() -> {
@@ -202,7 +202,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                             c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), chicks = penned.stream().filter(ChickenEntity::isBaby).count();
                     KindredMod.LOGGER.info("Own ranch with earned seeds: {} chickens and {} chicks penned; {} seeds left", adults, chicks,
-                            f.player().getInventory().count(Items.WHEAT_SEEDS));
+                            held(f, Items.WHEAT_SEEDS));
                     // Bred with two seeds, and it was given none: the seeds were earned.
                     context.assertTrue(adults == 2 && chicks == 1, "The pair penned and a chick: " + adults + " and " + chicks);
                     f.runtime.stop();
@@ -210,5 +210,135 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * The cows' wheat grown (M-01a): a pair of cows in sight and no wheat, seeds or hoe; grass about and logs held. It
+     * sites a wheat plot by its cabin, makes a wooden hoe, tills, breaks grass for seeds, sows, and leaves the plot to
+     * grow; ripe, it harvests it and sows again, then keeps the cows, bred with the wheat it grew. Staged as the cow
+     * fixture is, with no wheat or seeds given, grass set about the field, and the wheat ripened by the fixture once
+     * sown, as days passing ripen it.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchWheat", tickLimit = 16000)
+    public void withNoWheatItGrowsItThenKeepsAPairOfCows(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 15500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
+        BlockPos home = o.add(16, 7, 16);
+        BlockPos cabinAt = home.add(-3, 0, -3);
+        boolean[] ripened = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Granger"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    world.setTimeOfDay(1000);
+                    var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
+                        try {
+                            world.setBlockState(BuildRunner.blockPos(b.at()),
+                                    BlockArgumentParser.block(Registries.BLOCK.getReadOnlyWrapper(), b.spec().toString(), false).blockState());
+                        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    }
+                    // Staged: tufts of grass about the field east and south of the cabin.
+                    for (int x = 6; x <= 14; x++) for (int z = -6; z <= 10; z++) {
+                        if ((x + z) % 2 != 0) continue;
+                        BlockPos at = home.add(x, 0, z);
+                        if (world.getBlockState(at.down()).isOf(Blocks.GRASS_BLOCK) && world.getBlockState(at).isAir()) {
+                            world.setBlockState(at, Blocks.SHORT_GRASS.getDefaultState());
+                        }
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    // Stone tools, eighteen logs (a hoe, a table, the pen); no wheat, seeds or hoe.
+                    ItemStack[] held = {new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_LOG, 18),
+                            new ItemStack(Items.BREAD, 16)};
+                    for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = home.add(8, 0, 0);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
+                    context.spawnEntity(EntityType.COW, rel);
+                    context.spawnEntity(EntityType.COW, rel.add(1, 0, 2));
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
+                        new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
+                // Its plot sited, tilled and sown with seeds it broke from the grass, with a hoe it made.
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var plot = f.runtime.plot(f.id);
+                    int sown = 0;
+                    if (plot.isPresent()) {
+                        BlockPos corner = new BlockPos(plot.get().x(), plot.get().y(), plot.get().z());
+                        for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) {
+                            BlockPos at = corner.add(dx, 0, dz);
+                            if (world.getBlockState(at).isOf(Blocks.FARMLAND) && world.getBlockState(at.up()).isOf(Blocks.WHEAT)) sown++;
+                        }
+                    }
+                    context.assertTrue(sown == 4, "Its plot sown: " + plot + ", " + sown + " of 4 / " + f.runtime.ranchNote(f.id) + " / "
+                            + (f.player() == null ? "-" : "hoe " + f.player().getInventory().count(Items.WOODEN_HOE) + ", seeds " + f.player().getInventory().count(Items.WHEAT_SEEDS)
+                            + ", planks " + f.player().getInventory().count(Items.OAK_PLANKS) + ", sticks " + f.player().getInventory().count(Items.STICK)
+                            + ", tables held " + f.player().getInventory().count(Items.CRAFTING_TABLE) + ", tables about " + tablesAbout(world, f.player().getBlockPos())
+                            + " at " + f.player().getBlockPos().toShortString()));
+                    context.assertTrue(f.runtime.ownRanch(f.id).isEmpty(), "No ranch before the wheat: " + f.runtime.ownRanch(f.id));
+                })
+                .createAndAdd(() -> {
+                    // Staged: days pass, and the wheat ripens.
+                    var world = context.getWorld();
+                    var plot = f.runtime.plot(f.id).orElseThrow();
+                    BlockPos corner = new BlockPos(plot.x(), plot.y(), plot.z());
+                    for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) {
+                        BlockPos crop = corner.add(dx, 1, dz);
+                        if (world.getBlockState(crop).isOf(Blocks.WHEAT)) world.setBlockState(crop, ((net.minecraft.block.CropBlock) Blocks.WHEAT).withAge(7));
+                    }
+                    ripened[0] = true;
+                })
+                .createAndAdd(() -> {
+                    var pen = f.runtime.ownRanch(f.id);
+                    context.assertTrue(pen.isPresent() && pen.get().kind().equals("COW") && pen.get().complete(),
+                            "A cow ranch of its own, run, after the harvest: " + pen + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.ranchStatus(f.id).orElse(""));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var pen = f.runtime.ownRanch(f.id).orElseThrow();
+                    BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+                    var penned = world.getEntitiesByClass(CowEntity.class, new Box(post).expand(8),
+                            c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
+                    long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
+                    var plot = f.runtime.plot(f.id).orElseThrow();
+                    BlockPos corner = new BlockPos(plot.x(), plot.y(), plot.z());
+                    int resown = 0;
+                    for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) if (world.getBlockState(corner.add(dx, 1, dz)).isOf(Blocks.WHEAT)) resown++;
+                    KindredMod.LOGGER.info("Own ranch with grown wheat: {} cows and {} calves penned; plot sown again {} of 4", adults, calves, resown);
+                    context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf, fed wheat it grew: " + adults + " and " + calves);
+                    context.assertTrue(resown == 4, "The plot sown again after the harvest: " + resown);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    private static String tablesAbout(net.minecraft.server.world.ServerWorld world, BlockPos feet) {
+        var found = new StringBuilder();
+        for (BlockPos pos : BlockPos.iterate(feet.add(-8, -3, -8), feet.add(8, 3, 8))) {
+            if (world.getBlockState(pos).isOf(Blocks.CRAFTING_TABLE)) found.append(pos.subtract(feet).toShortString()).append(' ');
+        }
+        return found.length() == 0 ? "none" : found.toString().trim();
+    }
+
+    /** How many of {@code item} the fixture's player holds; -1 once it is gone (its runtime stopped). */
+    private static int held(NativePaidSkillsGameTests.Fixture f, net.minecraft.item.Item item) {
+        return f.player() == null ? -1 : f.player().getInventory().count(item);
     }
 }

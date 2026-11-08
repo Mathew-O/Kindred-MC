@@ -949,6 +949,14 @@ final class PortalRunCampaign {
         return until != null && until > lastTick;
     }
 
+    /**
+     * A spot another plan's placement here failed at (a ranch's or a wheat plot's table), set aside until {@code until},
+     * as its own failed route edits are: the next table goes elsewhere (M-01a: one spot refused 1,890 times).
+     */
+    void setAside(BlockPos pos, long until) {
+        blockedUntil.merge(pos.asLong(), until, Math::max);
+    }
+
     private static BlockPos position(Map<String, String> args) {
         try {
             if (!args.containsKey("x")) return null;
