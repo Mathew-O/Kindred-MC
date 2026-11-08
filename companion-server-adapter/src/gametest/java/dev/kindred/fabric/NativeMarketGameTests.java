@@ -157,6 +157,64 @@ public final class NativeMarketGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The two-phase save (M-06g): the seller's file is written off the server thread and is already without the sold
+     * ingots when the coins are paid; a second request while the first is under way is held; once it is settled the
+     * hold is gone, and a purchase's items are in the file by the time its receipt is written.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "marketSaveFirst", tickLimit = 600)
+    public void theSellersFileIsWrittenBeforeTheCoinsAndFurtherTradesWait(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 580);
+        var server = context.getWorld().getServer();
+        ServerPlayerEntity[] cleo = new ServerPlayerEntity[1];
+        List<String> replies = new ArrayList<>();
+        List<String> held = new ArrayList<>();
+        String[] bought = new String[1];
+        FixtureGround.whenDone(context, () -> { if (cleo[0] != null && server.getPlayerManager().getPlayer(cleo[0].getUuid()) != null) server.getPlayerManager().remove(cleo[0]); });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
+                    cleo[0] = MockPlayers.survival(context, "Cleo", new BlockPos(2, 2, 2));
+                    f.runtime.factionsTickForTest();
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 50_000, "500 coins to start");
+                    cleo[0].getInventory().setStack(0, new ItemStack(Items.IRON_INGOT, 16));
+                    cleo[0].getInventory().setStack(1, new ItemStack(Items.COBBLESTONE, 32));
+                    f.runtime.market().sell(cleo[0], List.of(0), "minecraft:overworld", replies::add);
+                    f.runtime.market().sell(cleo[0], List.of(1), "minecraft:overworld", held::add);
+                    String buy = f.runtime.market().buy(cleo[0], "minecraft:cobblestone", 1, "minecraft:overworld", held::add);
+                    context.assertTrue(held.equals(List.of(MarketDesk.HELD)) && MarketDesk.HELD.equals(buy), "Both further trades held: " + held + ", " + buy);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(replies.size() == 1 && replies.getFirst().startsWith("Sold for "), "Settled: " + replies);
+                    var saved = playerFile(server, cleo[0]);
+                    context.assertTrue(!saved.contains("minecraft:iron_ingot") && saved.contains("minecraft:cobblestone"),
+                            "The file written without the ingots, the cobblestone still in it");
+                    context.assertTrue(!f.runtime.market().holds().held(cleo[0].getUuid()), "The hold released");
+                    bought[0] = f.runtime.market().buy(cleo[0], "minecraft:iron_ingot", 2, "minecraft:overworld", replies::add);
+                    context.assertTrue(bought[0] == null, "The purchase taken: " + bought[0]);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(replies.size() == 2 && replies.get(1).startsWith("Bought 2 minecraft:iron_ingot"), "Bought: " + replies);
+                    context.assertTrue(f.runtime.recordWritten(), "Written");
+                    context.assertTrue(playerFile(server, cleo[0]).contains("minecraft:iron_ingot"), "The bought ingots in the file");
+                    context.assertTrue(cleo[0].getInventory().count(Items.IRON_INGOT) == 2, "Two ingots held");
+                })
+                .completeIfSuccessful();
+    }
+
+    /** The player's file as it is on disk, as text. */
+    private static String playerFile(net.minecraft.server.MinecraftServer server, ServerPlayerEntity player) {
+        var file = server.getSavePath(net.minecraft.util.WorldSavePath.PLAYERDATA).resolve(player.getUuidAsString() + ".dat");
+        try {
+            return net.minecraft.nbt.NbtIo.readCompressed(file, net.minecraft.nbt.NbtSizeTracker.ofUnlimitedBytes()).toString();
+        } catch (java.io.IOException unreadable) {
+            throw new net.minecraft.test.GameTestException("The player's file unreadable: " + unreadable);
+        }
+    }
+
     private static List<Integer> allSlots(ServerPlayerEntity player) {
         var slots = new ArrayList<Integer>();
         for (int i = 0; i < player.getInventory().main.size(); i++) slots.add(i);

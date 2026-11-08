@@ -31,16 +31,19 @@ import net.minecraft.server.network.ServerPlayerEntity;
  *
  * Technical: The adapter's side of M-06g, on the runtime's thread. A sale is three steps: a {@code market.intent} is
  * written; once it is, the player and the stacks are checked again (gone, changed or offline: a {@code market.cancel},
- * nothing moved), the items are taken in that same tick and the player saved at once (vanilla's own player save), and
- * only then the {@code market.sale} with the seller's {@code coins} is written as one transaction; if that write fails
- * the items are given back, since nothing was paid. A purchase writes its coins and {@code market.buy} first, then hands
- * the items over, saves the player and writes {@code market.received}. So a crash can lose a sale's items or a
- * purchase's, never duplicate them: an intent or a purchase the Record holds unfinished is reported for an operator
- * ({@code market.uncertain}), never replayed. The save is file IO on the server thread for one explicit request, as a
- * native body's own save is.
+ * nothing moved), the items are taken in that same tick and the player's state snapshotted for its file, which is
+ * written off the server thread ({@link PlayerSaves}); only once the file is in place is the {@code market.sale} with
+ * the seller's {@code coins} written, as one transaction. If that write fails the items are given back, since nothing
+ * was paid. A purchase writes its coins and {@code market.buy} first, then hands the items over, saves the player the
+ * same way and writes {@code market.received}. While a trade is between its first write and its last, the player's
+ * further market and auction requests are held ({@link Holds}). A save that fails is a {@code market.uncertain} with
+ * the items' contents, for an operator, nothing paid and nothing given back blindly; a crash in between leaves an intent
+ * or a purchase the Record holds unfinished, reported the same way at the next start. So a crash can lose a sale's
+ * items or a purchase's, never duplicate them, and nothing is ever replayed.
  */
 final class MarketDesk {
-    static final String INTENT = "market.intent", CANCEL = "market.cancel", RECEIVED = "market.received";
+    static final String INTENT = "market.intent", CANCEL = "market.cancel", RECEIVED = "market.received", UNCERTAIN = "market.uncertain";
+    static final String HELD = "Your last trade is still being saved; try again in a moment";
     /** Data components the market reads or knowingly ignores; any other changed component makes a stack pending. */
     private static final Set<ComponentType<?>> KNOWN = Set.of(DataComponentTypes.DAMAGE, DataComponentTypes.ENCHANTMENTS,
             DataComponentTypes.STORED_ENCHANTMENTS, DataComponentTypes.POTION_CONTENTS, DataComponentTypes.CONTAINER,
@@ -55,8 +58,21 @@ final class MarketDesk {
     private final MinecraftServer server;
     private final Supplier<Ledgers> ledgers;
     private final Recorder recorder;
+    private final Holds holds = new Holds();
     private Pricing pricing;
     private int nextIntent;
+
+    /**
+     * Players with a trade between its first write and its last (M-06g, M-06h): their market and auction requests wait.
+     * On the runtime's thread.
+     */
+    static final class Holds {
+        private final Set<UUID> held = new java.util.HashSet<>();
+        boolean held(UUID player) { return held.contains(player); }
+        /** False when the player is already held. */
+        boolean hold(UUID player) { return held.add(player); }
+        void release(UUID player) { held.remove(player); }
+    }
 
     /** Writes events, then runs one of its callbacks on the runtime's thread. */
     interface Recorder {
@@ -76,6 +92,8 @@ final class MarketDesk {
     }
 
     MarketBook book() { return ledgers.get().market(); }
+
+    Holds holds() { return holds; }
 
     /** The server's recipes as the market sees them: crafting, cooking, stonecutting and smithing upgrades. */
     static List<Recipe> recipes(MinecraftServer server) {
@@ -192,6 +210,7 @@ final class MarketDesk {
             return;
         }
         UUID seller = player.getUuid();
+        if (!holds.hold(seller)) { done.accept(HELD); return; }
         String intent = seller.toString().substring(0, 8) + "-" + System.currentTimeMillis() + "-" + (nextIntent++);
         var snapshot = new LinkedHashMap<Integer, ItemStack>();
         for (int slot : slots) {
@@ -204,8 +223,8 @@ final class MarketDesk {
         data.put("cents", String.valueOf(estimate.cents()));
         data.put("items", String.join(",", estimate.quotes().keySet()));
         recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), world, INTENT, seller, intent, "", data)),
-                () -> settle(seller, intent, snapshot, world, done),
-                failure -> done.accept("The market could not take the sale; nothing moved"));
+                () -> settle(seller, intent, snapshot, world, released(seller, done)),
+                failure -> released(seller, done).accept("The market could not take the sale; nothing moved"));
     }
 
     private void settle(UUID seller, String intent, Map<Integer, ItemStack> snapshot, String world, Consumer<String> done) {
@@ -233,34 +252,75 @@ final class MarketDesk {
             if (estimate.refused().containsKey(slot)) continue;
             taken.put(slot, player.getInventory().removeStack(slot));
         }
-        // The items gone from the player's own save before any coin is written: a crash now loses them (reported), never
-        // leaves them both sold and still held.
-        save(player);
-        var events = new ArrayList<WorldEvent>();
-        var coins = ledgers.get().coins();
-        for (var quote : estimate.quotes().values()) {
-            var sale = Market.sell(quote, coins, seller, intent, at);
-            events.addAll(sale);
-            coins = Coins.INSTANCE.apply(coins, sale.get(1));
-        }
+        // The items gone from the player's own file before any coin is written: a crash now loses them (reported), never
+        // leaves them both sold and still held. The file is written off the server thread; the coins wait for it.
         long cents = estimate.cents();
-        recorder.record(events, () -> done.accept("Sold for " + Coins.show(cents) + " coins"), failure -> {
-            // Nothing was paid: the stacks go back where they were.
-            var back = server.getPlayerManager().getPlayer(seller);
-            for (var e : taken.entrySet()) {
-                if (back != null && back.getInventory().getStack(e.getKey()).isEmpty()) back.getInventory().setStack(e.getKey(), e.getValue());
-                else if (back != null) back.getInventory().offerOrDrop(e.getValue());
-                else KindredMod.LOGGER.error("Sale {} failed and its seller left: {} x{} to return by an operator", intent, e.getValue().getItem(), e.getValue().getCount());
+        whenSaved(player, () -> {
+            var events = new ArrayList<WorldEvent>();
+            var coins = ledgers.get().coins();
+            var paid = new Factions.At(server.getTicks(), System.currentTimeMillis(), world);
+            for (var quote : estimate.quotes().values()) {
+                var sale = Market.sell(quote, coins, seller, intent, paid);
+                events.addAll(sale);
+                coins = Coins.INSTANCE.apply(coins, sale.get(1));
             }
-            cancel(seller, intent, "the sale could not be written", new Factions.At(server.getTicks(), System.currentTimeMillis(), world));
-            done.accept("The sale could not be written; the items are back");
+            recorder.record(events, () -> done.accept("Sold for " + Coins.show(cents) + " coins"), failure -> {
+                // Nothing was paid: the stacks go back where they were, and the file is written again with them.
+                var back = server.getPlayerManager().getPlayer(seller);
+                for (var e : taken.entrySet()) {
+                    if (back != null && back.getInventory().getStack(e.getKey()).isEmpty()) back.getInventory().setStack(e.getKey(), e.getValue());
+                    else if (back != null) back.getInventory().offerOrDrop(e.getValue());
+                    else KindredMod.LOGGER.error("Sale {} failed and its seller left: {} x{} to return by an operator", intent, e.getValue().getItem(), e.getValue().getCount());
+                }
+                if (back != null) save(back);
+                cancel(seller, intent, "the sale could not be written", new Factions.At(server.getTicks(), System.currentTimeMillis(), world));
+                done.accept("The sale could not be written; the items are back");
+            });
+        }, failure -> {
+            uncertain(seller, intent, world, "the seller's file could not be written", taken.values(), cents);
+            done.accept("The sale could not be saved; nothing was paid and an operator is told");
         });
     }
 
-    /** The player's own file written now, as vanilla writes it at a logout. */
+    /**
+     * The player's state snapshotted now and its file written off the server thread; then {@code saved}, or
+     * {@code failed} with the file still its earlier state, back on the server thread.
+     */
+    void whenSaved(ServerPlayerEntity player, Runnable saved, Consumer<Throwable> failed) {
+        PlayerSaves.save(player).whenComplete((ignored, failure) -> server.execute(() -> {
+            if (failure == null) saved.run();
+            else failed.accept(failure);
+        }));
+    }
+
+    /** The player's file written now, in the background, ordered after any trade's save of it. */
     static void save(ServerPlayerEntity player) {
         if (player.isRemoved() || player.getServer().getPlayerManager().getPlayer(player.getUuid()) != player) return;
-        ((dev.kindred.fabric.mixin.PlayerManagerSaveInvoker) player.getServer().getPlayerManager()).kindred$saveNativePlayer(player);
+        PlayerSaves.save(player).whenComplete((ignored, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("The file of {} could not be written after a trade was undone", player.getUuid(), failure);
+        });
+    }
+
+    /** A trade whose items cannot be shown to be in the player's file: reported for an operator with the items' contents. */
+    void uncertain(UUID who, String id, String world, String why, java.util.Collection<ItemStack> items, long cents) {
+        var data = new LinkedHashMap<String, String>();
+        data.put("why", why);
+        data.put("cents", String.valueOf(cents));
+        var contents = new ArrayList<String>();
+        for (var item : items) contents.add(item.encode(server.getRegistryManager()).toString());
+        data.put("items", String.join("\n", contents));
+        KindredMod.LOGGER.error("Market {} by {} is uncertain ({}): reconcile its items and coins by hand: {}", id, who, why, contents);
+        var at = new Factions.At(server.getTicks(), System.currentTimeMillis(), world);
+        recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), world, UNCERTAIN, who, id, "", data)), () -> { },
+                failure -> KindredMod.LOGGER.error("Market {} uncertain, and that not written", id, failure));
+    }
+
+    /** {@code done}, with the player's hold released first. */
+    private Consumer<String> released(UUID player, Consumer<String> done) {
+        return text -> {
+            holds.release(player);
+            done.accept(text);
+        };
     }
 
     private void cancel(UUID seller, String intent, String why, Factions.At at) {
@@ -277,6 +337,8 @@ final class MarketDesk {
         var events = Market.buy(quote, ledgers.get().coins(), player.getUuid(), at);
         if (events.isEmpty()) return "Costs " + Coins.show(quote.cents()) + " coins; you have " + Coins.show(ledgers.get().coins().of(player.getUuid()));
         UUID buyer = player.getUuid();
+        if (!holds.hold(buyer)) return HELD;
+        Consumer<String> finish = released(buyer, done);
         String purchase = buyer.toString().substring(0, 8) + "-" + System.currentTimeMillis() + "-" + (nextIntent++);
         var written = new ArrayList<WorldEvent>();
         for (var e : events.get()) {
@@ -289,21 +351,30 @@ final class MarketDesk {
             var now = server.getPlayerManager().getPlayer(buyer);
             if (now == null) {
                 KindredMod.LOGGER.error("Purchase {} paid by {} who left: {} x{} owed", purchase, buyer, item, count);
-                done.accept("Paid, but the buyer left: an operator hands over the items");
+                finish.accept("Paid, but the buyer left: an operator hands over the items");
                 return;
             }
+            var handed = new ArrayList<ItemStack>();
             int left = count;
             while (left > 0) {
                 int n = Math.min(left, itemType.getMaxCount());
+                handed.add(new ItemStack(itemType, n));
                 now.getInventory().offerOrDrop(new ItemStack(itemType, n));
                 left -= n;
             }
-            save(now);
-            var at2 = new Factions.At(server.getTicks(), System.currentTimeMillis(), world);
-            recorder.record(List.of(WorldEvent.recorded(at2.tick(), at2.realTimeMs(), world, RECEIVED, buyer, purchase, "", Map.of())), () -> { },
-                    failure -> KindredMod.LOGGER.error("Purchase {} handed over; its receipt not written", purchase, failure));
-            done.accept("Bought " + count + " " + MarketTable.id(item) + " for " + Coins.show(quote.cents()) + " coins");
-        }, failure -> done.accept("The purchase could not be written; nothing moved"));
+            whenSaved(now, () -> {
+                var at2 = new Factions.At(server.getTicks(), System.currentTimeMillis(), world);
+                recorder.record(List.of(WorldEvent.recorded(at2.tick(), at2.realTimeMs(), world, RECEIVED, buyer, purchase, "", Map.of())),
+                        () -> finish.accept("Bought " + count + " " + MarketTable.id(item) + " for " + Coins.show(quote.cents()) + " coins"),
+                        failure -> {
+                            KindredMod.LOGGER.error("Purchase {} handed over; its receipt not written", purchase, failure);
+                            finish.accept("Bought " + count + " " + MarketTable.id(item) + "; its receipt could not be written, an operator is told");
+                        });
+            }, failure -> {
+                uncertain(buyer, purchase, world, "the buyer's file could not be written", handed, quote.cents());
+                finish.accept("Bought, but your file could not be saved; an operator is told");
+            });
+        }, failure -> finish.accept("The purchase could not be written; nothing moved"));
         return null;
     }
 

@@ -28,11 +28,13 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * players.
  *
  * Technical: The adapter's side of M-06h, on the runtime's thread. An item in escrow is the listed stack serialised into
- * the {@code auction.list} event; it is taken from the hand, the player saved, then the listing written (a failed write
- * gives it back). Closes are found once a second from the ledger itself (the rules read the ledgers with unwritten
- * events folded in, so a close is never asked twice); a restart rebuilds them. A delivery writes
- * {@code auction.delivering} first, then the stack is handed over, the player saved and {@code auction.delivered}
- * written: a crash in between is reported for an operator, never handed over twice.
+ * the {@code auction.list} event; it is taken from the hand, the player's file written off the server thread
+ * ({@link PlayerSaves}), and only then the listing written (a failed listing write gives it back; a failed save is a
+ * {@code market.uncertain} for an operator). Closes are found once a second from the ledger itself (the rules read the
+ * ledgers with unwritten events folded in, so a close is never asked twice); a restart rebuilds them. A delivery writes
+ * {@code auction.delivering} first, then the stack is handed over, the player's file written the same way and
+ * {@code auction.delivered} written: a crash in between is reported for an operator, never handed over twice. A player
+ * with a trade under way is held ({@link MarketDesk.Holds}) from every request that moves items or coins.
  */
 final class AuctionHouse {
     private final MinecraftServer server;
@@ -40,17 +42,21 @@ final class AuctionHouse {
     private final MarketDesk.Recorder recorder;
     private final Supplier<FactionSettings> settings;
     private final Supplier<dev.kindred.core.market.Pricing> pricing;
+    private final MarketDesk desk;
+    private final MarketDesk.Holds holds;
     private final Set<String> delivering = new HashSet<>();
     private long clockOffset;
     private int next;
 
     AuctionHouse(MinecraftServer server, Supplier<Ledgers> ledgers, MarketDesk.Recorder recorder, Supplier<FactionSettings> settings,
-                 Supplier<dev.kindred.core.market.Pricing> pricing) {
+                 MarketDesk desk) {
         this.server = server;
         this.ledgers = ledgers;
         this.recorder = recorder;
         this.settings = settings;
-        this.pricing = pricing;
+        this.desk = desk;
+        this.pricing = desk::pricing;
+        this.holds = desk.holds();
     }
 
     AuctionBook book() { return ledgers.get().auctions(); }
@@ -75,23 +81,29 @@ final class AuctionHouse {
         String item = hand.encode(server.getRegistryManager()).toString();
         var decision = Auctions.list(book(), ledgers.get().coins(), settings.get(), seller.getUuid(), id, key.key(), item, hand.getCount(), start, buyNow, hours, at(world));
         if (!decision.accepted()) { done.accept(decision.reason()); return; }
+        UUID who = seller.getUuid();
+        if (!holds.hold(who)) { done.accept(MarketDesk.HELD); return; }
+        Consumer<String> finish = text -> { holds.release(who); done.accept(text); };
         int slot = seller.getInventory().selectedSlot;
         var taken = seller.getInventory().removeStack(slot);
-        MarketDesk.save(seller);
         var events = withSignal(decision.events(), world);
-        UUID who = seller.getUuid();
-        recorder.record(events, () -> done.accept(decision.reason() + " (" + id + ")"), failure -> {
+        // The item gone from the seller's file before the listing holds it in escrow.
+        desk.whenSaved(seller, () -> recorder.record(events, () -> finish.accept(decision.reason() + " (" + id + ")"), failure -> {
             var back = server.getPlayerManager().getPlayer(who);
             if (back != null) {
                 back.getInventory().offerOrDrop(taken);
                 MarketDesk.save(back);
             } else KindredMod.LOGGER.error("Listing {} not written and its seller left: {} to return by an operator", id, taken);
-            done.accept("The listing could not be written; the item is back");
+            finish.accept("The listing could not be written; the item is back");
+        }), failure -> {
+            desk.uncertain(who, id, world, "the seller's file could not be written for a listing", List.of(taken), 0);
+            finish.accept("The listing could not be saved; an operator is told");
         });
     }
 
     /** A bid, or a buy-now with {@code amount} the buy-now price. */
     String bid(ServerPlayerEntity bidder, String id, long amount, String world, Consumer<String> done) {
+        if (holds.held(bidder.getUuid())) return MarketDesk.HELD;
         var decision = Auctions.bid(book(), ledgers.get().coins(), settings.get(), bidder.getUuid(), id, amount, at(world));
         if (!decision.accepted()) return decision.reason();
         recorder.record(withSignal(decision.events(), world), () -> done.accept(decision.reason()), failure -> done.accept("The bid could not be written"));
@@ -99,6 +111,7 @@ final class AuctionHouse {
     }
 
     String cancel(ServerPlayerEntity seller, String id, String world, Consumer<String> done) {
+        if (holds.held(seller.getUuid())) return MarketDesk.HELD;
         var decision = Auctions.cancel(book(), seller.getUuid(), id, at(world));
         if (!decision.accepted()) return decision.reason();
         recorder.record(decision.events(), () -> done.accept(decision.reason()), failure -> done.accept("Not written"));
@@ -106,6 +119,7 @@ final class AuctionHouse {
     }
 
     String order(ServerPlayerEntity buyer, String item, int count, long each, String world, Consumer<String> done) {
+        if (holds.held(buyer.getUuid())) return MarketDesk.HELD;
         String key = dev.kindred.core.market.MarketTable.id(item);
         String id = "o" + Long.toString(now(), 36) + (next++);
         var decision = Auctions.order(ledgers.get().coins(), buyer.getUuid(), id, key, count, each, at(world));
@@ -115,6 +129,7 @@ final class AuctionHouse {
     }
 
     String cancelOrder(ServerPlayerEntity buyer, String id, String world, Consumer<String> done) {
+        if (holds.held(buyer.getUuid())) return MarketDesk.HELD;
         var decision = Auctions.cancelOrder(book(), ledgers.get().coins(), buyer.getUuid(), id, at(world));
         if (!decision.accepted()) return decision.reason();
         recorder.record(decision.events(), () -> done.accept(decision.reason()), failure -> done.accept("Not written"));
@@ -130,18 +145,22 @@ final class AuctionHouse {
         for (var delivery : book().owed().values()) {
             if (delivering.contains(delivery.id())) continue;
             var player = server.getPlayerManager().getPlayer(delivery.to());
-            if (player == null) continue;
+            if (player == null || !holds.hold(delivery.to())) continue;
             delivering.add(delivery.id());
             var at = at("");
             recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), "", Auctions.DELIVERING, delivery.to(), delivery.id(), "", Map.of())),
                     () -> handOver(delivery),
-                    failure -> delivering.remove(delivery.id()));
+                    failure -> {
+                        delivering.remove(delivery.id());
+                        holds.release(delivery.to());
+                    });
         }
     }
 
     private void handOver(AuctionBook.Delivery delivery) {
         var player = server.getPlayerManager().getPlayer(delivery.to());
         if (player == null) {
+            holds.release(delivery.to());
             KindredMod.LOGGER.error("Delivery {} begun and its player left: hand over by an operator", delivery.id());
             return;
         }
@@ -152,14 +171,26 @@ final class AuctionHouse {
             stack = Optional.empty();
         }
         if (stack.isEmpty()) {
+            holds.release(delivery.to());
             KindredMod.LOGGER.error("Delivery {} holds an unreadable item: reconcile by hand", delivery.id());
             return;
         }
+        var handed = stack.get().copy();
         player.getInventory().offerOrDrop(stack.get());
-        MarketDesk.save(player);
-        var at = at("");
-        recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), "", Auctions.DELIVERED, delivery.to(), delivery.id(), "", Map.of("why", delivery.why()))),
-                () -> delivering.remove(delivery.id()), failure -> KindredMod.LOGGER.error("Delivery {} handed over; its receipt not written", delivery.id(), failure));
+        desk.whenSaved(player, () -> {
+            var at = at("");
+            recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), "", Auctions.DELIVERED, delivery.to(), delivery.id(), "", Map.of("why", delivery.why()))),
+                    () -> {
+                        delivering.remove(delivery.id());
+                        holds.release(delivery.to());
+                    }, failure -> {
+                        holds.release(delivery.to());
+                        KindredMod.LOGGER.error("Delivery {} handed over; its receipt not written", delivery.id(), failure);
+                    });
+        }, failure -> {
+            holds.release(delivery.to());
+            desk.uncertain(delivery.to(), delivery.id(), "", "the receiver's file could not be written for a delivery", List.of(handed), 0);
+        });
     }
 
     /** A decision's events with the market's demand signal added where a trade closed and the filter counts it. */
