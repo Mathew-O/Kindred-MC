@@ -5622,6 +5622,20 @@ final class PortalRunCampaign {
             }
             return Optional.of(go(stand, 0.5, false, "Back to its portal frame to light it"));
         }
+        // Something in the opening, as gravel that came down into it while it dug for flint beside the frame: a portal
+        // will not light there, so the opening is cleared first, as the site's clearing would (the stand, then the row in
+        // front). On 31102026 in E-40's iteration 15 (`e40a15-dbf4e5c`) Kindred's finished frame had two gravel in its
+        // opening's bottom row; every try to light it was refused as obstructed, and it walked back to the frame 604
+        // times with no portal lit (F-25c4co). Not a "Portal" walk, for the same reason as the walk back. A liquid there is
+        // left: it is not dug, and water from the cast drains.
+        for (int up = 1; up <= 3; up++) {
+            for (int across = 1; across <= 2; across++) {
+                BlockPos cell = portalSite.at(across, up);
+                BlockState state = world.getBlockState(cell);
+                if (state.isAir() || state.isIn(BlockTags.FIRE) || state.isOf(Blocks.NETHER_PORTAL) || !world.getFluidState(cell).isEmpty()) continue;
+                return clearOrApproach(body, portalSite, cell, "Light");
+            }
+        }
         return Optional.of(new Task("native_ignite_portal", coords(base, Map.of("slot", String.valueOf(slot))), "Portal: light it"));
     }
 

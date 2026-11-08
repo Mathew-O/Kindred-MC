@@ -273,4 +273,14 @@ class FactionsAndPowerTest {
     private WorldEvent online(UUID player, int seconds) { return PowerRules.online(powers, player, seconds, S, id++, now); }
 
     private Factions.At at() { return new Factions.At(id++, now, "w"); }
+
+    @org.junit.jupiter.api.Test
+    void anAccountsFirstSightIsTheEarliestWrittenWhateverTheOrder() {
+        UUID p = UUID.randomUUID();
+        var later = PowerLedger.INSTANCE.apply(PowerBook.EMPTY, PowerRules.seen(p, 1, 5_000));
+        var both = PowerLedger.INSTANCE.apply(later, PowerRules.seen(p, 1, 1_000));
+        org.junit.jupiter.api.Assertions.assertEquals(1_000L, both.firstSeen().get(p), "an earlier sight written after a later one");
+        var again = PowerLedger.INSTANCE.apply(both, PowerRules.seen(p, 1, 9_000));
+        org.junit.jupiter.api.Assertions.assertEquals(1_000L, again.firstSeen().get(p), "a later sight never moves it");
+    }
 }
