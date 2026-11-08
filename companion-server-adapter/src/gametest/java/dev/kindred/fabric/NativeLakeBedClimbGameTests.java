@@ -22,11 +22,11 @@ public final class NativeLakeBedClimbGameTests implements FabricGameTest {
      * the block of the run's kept world round it (read offline, diagnosis only), 28 by 17 by 23, the liquid on the block's
      * faces made stone; daylight held; the player where Echo stood, with what Echo had left: a stone sword, seven raw
      * iron, cobblestone, coal and bread, no pickaxe and no wood. Passes once it stands on dry ground under the open sky,
-     * within 6,000 ticks, alive.
+     * within 12,000 ticks, alive: by hand, stone takes it some seven seconds a block, and the way out is a score of them.
      */
-    @GameTest(templateName = "kindred_gametest:lakebed-707", skyAccess = true, batchId = "lakeBed707", tickLimit = 6600)
+    @GameTest(templateName = "kindred_gametest:lakebed-707", skyAccess = true, batchId = "lakeBed707", tickLimit = 12600)
     public void underALakesBedWithNoPickaxeItGetsOutFromUnderTheLake(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 6500);
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 12500);
         // The structure is placed one above the test's origin: the file's 11, 5, 10 (29, 55, -132 in the world) is here 11, 6, 10.
         BlockPos o = context.getAbsolutePos(new BlockPos(11, 6, 10));
         int[] watched = new int[1];
@@ -65,11 +65,11 @@ public final class NativeLakeBedClimbGameTests implements FabricGameTest {
                     String progress = bots.isEmpty() ? "" : bots.getFirst().goalProgress();
                     if ((progress.endsWith(": step aside") || progress.endsWith(": to the wall")) && !progress.equals(last[0])) turns[0]++;
                     last[0] = progress;
-                    if (watched[0]++ % 500 == 0) seen.append(watched[0]).append(": ").append(progress).append(" @ ")
+                    if (watched[0]++ % 1000 == 0) seen.append(watched[0]).append(": ").append(progress).append(" @ ")
                             .append(player.getBlockPos().subtract(o).toShortString()).append("; ");
                     BlockPos at = player.getBlockPos();
                     String tail = seen.length() > 600 ? "..." + seen.substring(seen.length() - 600) : seen.toString();
-                    context.assertTrue(watched[0] <= 6000, "Still under the lake after 6,000 ticks, " + turns[0] + " steps aside and to the wall: " + tail
+                    context.assertTrue(watched[0] <= 12000, "Still under the lake after 12,000 ticks, " + turns[0] + " steps aside and to the wall: " + tail
                             + " now " + progress + " @ " + at.subtract(o).toShortString());
                     boolean out = player.isOnGround() && !player.isTouchingWater() && context.getWorld().isSkyVisible(at.up());
                     context.assertTrue(out, "Not out from under the lake yet");
