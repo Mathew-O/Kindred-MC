@@ -113,6 +113,19 @@ final class NativeNavigator {
     /** Whether a closed wooden door counts as a way through: for a walk that opens the doors on its way (M-01b). */
     private boolean doors;
 
+    /** The deepest drop a route may take, below {@link #maxDrop}'s floor of {@link #MAX_SAFE_DROP}; none by default. */
+    private int fallCap = Integer.MAX_VALUE;
+
+    /**
+     * The same navigator, its routes taking no drop deeper than {@code blocks}, nor into water deeper: one it can step
+     * back up from, when that is wanted (M-01a: leading an animal, which must follow it back up).
+     */
+    NativeNavigator fallingAtMost(int blocks) {
+        if (blocks < 0) throw new IllegalArgumentException("A fall is 0 blocks or more");
+        fallCap = blocks;
+        return this;
+    }
+
     /** The same navigator, now counting closed wooden doors as a way through. */
     NativeNavigator throughDoors() {
         doors = true;
@@ -217,7 +230,7 @@ final class NativeNavigator {
             }
             // Drop: walk off an edge onto ground (or water) a few blocks below.
             if (clear(flat)) {
-                int limit = inWater ? 1 : Math.max(MAX_WATER_DROP, maxDrop);
+                int limit = Math.min(fallCap, inWater ? 1 : Math.max(MAX_WATER_DROP, maxDrop));
                 for (int k = 1; k <= limit; k++) {
                     BlockPos landing = flat.down(k);
                     if (!loaded(landing)) break;
