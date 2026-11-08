@@ -106,6 +106,8 @@ from a log:
     F-25c4bv.
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
+- **Full native suite** on `fe2bbe3` (the batch's head, F-25c4ch included), while iteration 13 ran beside it: 585 of
+  585 in 51 minutes.
 - **Build:** `bash ./gradlew build` successful on the batch's head; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
 ## E-40, iteration 12 (`e40a12-66a7c0a`, batch 15) — 8 November 2026 (`claude/e40-ladder-16-1107`)
 
