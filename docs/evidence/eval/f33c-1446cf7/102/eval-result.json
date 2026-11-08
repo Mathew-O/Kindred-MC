@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 102,
+  "ticks": 72000,
+  "ticksRun": 72000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 480, "stone_tools": 2340, "iron_ingot": 6940, "iron_pickaxe": 14960, "obsidian": 36891},
+      "deaths": [
+        {"tick": 62196, "cause": "Kindred drowned", "x": 24, "y": 61, "z": 30, "light": 2, "timeOfDay": 14358, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Get out of the water: up for air"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 13500, "line": "rescue asked: spell 1 round 1, 1210 ticks after its last progress"}, {"tick": 13640, "line": "rescue: dig up 1, pillar 2, walk west 2 -> failed: 'pillar 2' did not go (No head room to jump up a block)"}, {"tick": 13640, "line": "rescue asked: spell 1 round 2, 1364 ticks after its last progress"}, {"tick": 13780, "line": "rescue: dig up 1, walk north 1 -> failed: 'walk north 1' went 0, then a block at head height, diorite"}, {"tick": 13780, "line": "rescue asked: spell 1 round 3, 1502 ticks after its last progress"}, {"tick": 14100, "line": "rescue spell 1: out after 3 rounds"}, {"tick": 14160, "line": "rescue: dig up 2, pillar 2, walk north 2 -> failed: 'walk north 2' went 0, then a two-high wall of stone"}, {"tick": 14160, "line": "rescue recipe kept: dig up 2, pillar 2 (weight 1)"}],
+      "rescuesNotListed": 0,
+      "tokens": 36916
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 560, "stone_tools": 3020, "iron_ingot": 6500, "iron_pickaxe": 14680, "obsidian": 58027, "portal_lit": 59012},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 13580, "line": "rescue asked: spell 1 round 1, 1205 ticks after its last progress"}, {"tick": 13720, "line": "rescue: dig up 2, pillar 2, walk west 3 -> failed: 'walk west 3' went 0, then a drop of 3"}, {"tick": 13720, "line": "rescue asked: spell 1 round 2, 1343 ticks after its last progress"}, {"tick": 14020, "line": "rescue spell 1: out after 2 rounds"}, {"tick": 14060, "line": "rescue: dig north 2, walk north 1, tunnel east 4 -> failed: 'walk north 1' went 0, then a drop of 4 or more"}, {"tick": 14060, "line": "rescue recipe kept: dig north 2 (weight 1)"}],
+      "rescuesNotListed": 0,
+      "tokens": 26189
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 620, "stone_tools": 2580, "iron_ingot": 8020},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 38640, "x": -9, "y": 19, "z": 24, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 14940, "line": "rescue asked: spell 1 round 1, 1312 ticks after its last progress"}, {"tick": 15080, "line": "rescue: dig up 2, pillar 2, walk east 2 -> failed: 'dig up 2' did not go (Nothing solid to break)"}, {"tick": 15080, "line": "rescue asked: spell 1 round 2, 1444 ticks after its last progress"}, {"tick": 15200, "line": "rescue: walk north 1, dig up 2, walk north 2, pillar 3 -> failed: 'walk north 1' went 0, then a block at head height, granite"}, {"tick": 15200, "line": "rescue asked: spell 1 round 3, 1562 ticks after its last progress"}, {"tick": 15600, "line": "rescue: pillar 3, walk west 1, look north -> failed: 'pillar 3' did not go (The player is no longer where the pillar was planned)"}, {"tick": 15600, "line": "rescue spell 1: not out after 3 rounds"}],
+      "rescuesNotListed": 0,
+      "tokens": 37027
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 103,
+  "ticks": 72000,
+  "ticksRun": 72000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1140, "stone_tools": 2360, "iron_ingot": 6000, "iron_pickaxe": 22460},
+      "deaths": [
+        {"tick": 33607, "cause": "Kindred was doomed to fall by Skeleton", "x": 63, "y": -31, "z": -35, "light": 0, "timeOfDay": 9769, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Fight skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 50860, "x": 47, "y": 22, "z": -18, "attempt": 1}, {"tick": 56260, "x": 25, "y": 44, "z": -22, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 13620, "line": "rescue asked: spell 1 round 1, 1202 ticks after its last progress"}, {"tick": 13760, "line": "rescue: dig west 1, walk west 1, dig up 1, walk south 1 -> failed: 'walk south 1' went 0, then a two-high wall of stone"}, {"tick": 13760, "line": "rescue asked: spell 1 round 2, 1346 ticks after its last progress"}, {"tick": 13940, "line": "rescue: dig up 2, walk east 2 -> unstuck"}, {"tick": 14220, "line": "rescue spell 1: out after 2 rounds"}, {"tick": 14220, "line": "rescue recipe kept: dig up 2, walk east 2 (weight 1)"}, {"tick": 15980, "line": "rescue recipe: spell 2, dig up 2, walk east 2 (weight 1)"}, {"tick": 16100, "line": "rescue: dig up 2, walk east 2 -> unstuck"}],
+      "rescuesNotListed": 0,
+      "tokens": 25823
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 6740, "stone_tools": 8160, "iron_ingot": 11400, "iron_pickaxe": 29400, "obsidian": 62489},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 14140, "line": "rescue asked: spell 1 round 1, 1202 ticks after its last progress"}, {"tick": 14300, "line": "rescue: tunnel east 3, pillar 2 -> failed: 'pillar 2' did not go (No head room to jump up a block)"}, {"tick": 14300, "line": "rescue asked: spell 1 round 2, 1355 ticks after its last progress"}, {"tick": 14480, "line": "rescue: dig up 2, pillar 2 -> unstuck"}, {"tick": 14880, "line": "rescue asked: spell 1 round 3, 1937 ticks after its last progress"}, {"tick": 15100, "line": "rescue: dig up 2, pillar 2 -> unstuck"}, {"tick": 15500, "line": "rescue spell 1: not out after 3 rounds"}, {"tick": 54540, "line": "rescue recipe: spell 7, dig up 2, walk east 2 (weight 1)"}, {"tick": 54660, "line": "rescue: dig up 2, walk east 2 -> unstuck"}],
+      "rescuesNotListed": 0,
+      "tokens": 28855
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 520, "stone_tools": 2820, "iron_ingot": 41400, "iron_pickaxe": 42600},
+      "deaths": [
+        {"tick": 11817, "cause": "Echo was slain by Zombie", "x": 5, "y": -29, "z": -64, "light": 0, "timeOfDay": 11979, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Take cover from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 7300, "line": "rescue asked: spell 1 round 1, 1201 ticks after its last progress"}, {"tick": 7460, "line": "rescue: dig up 2, walk north 1, stairs up north 2 -> failed: 'walk north 1' went 0, then a step of dripstone_block with no room to jump (dripstone_block overhead)"}, {"tick": 7460, "line": "rescue asked: spell 1 round 2, 1363 ticks after its last progress"}, {"tick": 7740, "line": "rescue: dig up 2, walk south 2 -> failed: 'walk south 2' went 1, then it made no headway"}, {"tick": 7740, "line": "rescue asked: spell 1 round 3, 1631 ticks after its last progress"}, {"tick": 8040, "line": "rescue: dig up 2, dig south 1, walk south 1, dig up 2, tunnel east 3 -> failed: 'walk south 1' went 0, then it made no headway"}, {"tick": 8040, "line": "rescue spell 1: not out after 3 rounds"}],
+      "rescuesNotListed": 0,
+      "tokens": 43852
+    }
+  }
+}

@@ -1,0 +1,641 @@
+{
+ "build": "f33c-1446cf7",
+ "jar": "kindred-mc-0.1.0-SNAPSHOT.jar",
+ "otherJars": {},
+ "seeds": [
+  "101",
+  "102",
+  "103"
+ ],
+ "missing": [],
+ "short": {},
+ "kinds": [
+  "earned"
+ ],
+ "scenarios": [
+  "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on"
+ ],
+ "team": {
+  "teamFurthestIndex": {
+   "median": 5,
+   "min": 3,
+   "max": 6,
+   "n": 3
+  },
+  "teamDeathsPerHour": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 2.0,
+   "n": 3
+  },
+  "stuckSpells": {
+   "median": 2,
+   "min": 1,
+   "max": 2,
+   "n": 3
+  },
+  "stuckMinutes": {
+   "median": 6,
+   "min": 3,
+   "max": 6,
+   "n": 3
+  },
+  "rescues": {
+   "median": 8,
+   "min": 3,
+   "max": 10,
+   "n": 3
+  },
+  "rescuesUnstuck": {
+   "median": 2,
+   "min": 0,
+   "max": 5,
+   "n": 3
+  },
+  "rescueAsks": {
+   "median": 8,
+   "min": 3,
+   "max": 8,
+   "n": 3
+  },
+  "rescueSpells": {
+   "median": 3,
+   "min": 1,
+   "max": 3,
+   "n": 3
+  },
+  "rescueSpellsOut": {
+   "median": 1,
+   "min": 0,
+   "max": 2,
+   "n": 3
+  },
+  "rescueRounds": {
+   "median": 8,
+   "min": 3,
+   "max": 8,
+   "n": 3
+  },
+  "recipesTried": {
+   "median": 0,
+   "min": 0,
+   "max": 2,
+   "n": 3
+  },
+  "spellsOutByRecipe": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 3
+  },
+  "askSeconds": {
+   "median": 60.1,
+   "min": 60.0,
+   "max": 60.5,
+   "n": 3
+  },
+  "askSecondsPooled": {
+   "median": 60.1,
+   "min": 60.0,
+   "max": 65.6,
+   "n": 7
+  },
+  "tokens": {
+   "median": 98530,
+   "min": 98427,
+   "max": 100132,
+   "n": 3
+  },
+  "linesPerMinute": {
+   "median": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "n": 3
+  },
+  "talkLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 3
+  },
+  "unaskedLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 3
+  },
+  "silentMeetings": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 3
+  },
+  "minutesTo_wooden_tool": {
+   "median": 0.4,
+   "min": 0.4,
+   "max": 0.7,
+   "n": 3,
+   "reached": 3
+  },
+  "reached_wooden_tool": 3,
+  "minutesTo_stone_tools": {
+   "median": 1.9,
+   "min": 1.0,
+   "max": 2.0,
+   "n": 3,
+   "reached": 3
+  },
+  "reached_stone_tools": 3,
+  "minutesTo_iron_ingot": {
+   "median": 5.0,
+   "min": 4.0,
+   "max": 5.4,
+   "n": 3,
+   "reached": 3
+  },
+  "reached_iron_ingot": 3,
+  "minutesTo_iron_pickaxe": {
+   "median": 13.8,
+   "min": 12.2,
+   "max": 18.7,
+   "n": 3,
+   "reached": 3
+  },
+  "reached_iron_pickaxe": 3,
+  "minutesTo_diamond": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_diamond": 0,
+  "minutesTo_obsidian": {
+   "median": 52.1,
+   "min": 30.7,
+   "max": null,
+   "n": 3,
+   "reached": 2
+  },
+  "reached_obsidian": 2,
+  "minutesTo_portal_lit": {
+   "median": null,
+   "min": 49.2,
+   "max": null,
+   "n": 3,
+   "reached": 1
+  },
+  "reached_portal_lit": 1,
+  "minutesTo_nether_entered": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_nether_entered": 0,
+  "minutesTo_blaze_rods": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_blaze_rods": 0,
+  "minutesTo_eyes": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_eyes": 0,
+  "minutesTo_stronghold": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_stronghold": 0,
+  "minutesTo_end": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_end": 0,
+  "minutesTo_dragon": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 3,
+   "reached": 0
+  },
+  "reached_dragon": 0
+ },
+ "deathCauses": {
+  "drowning": 2,
+  "skeleton": 1,
+  "zombie": 1
+ },
+ "perSeed": {
+  "101": {
+   "complete": true,
+   "ticksRun": 72000,
+   "hours": 1.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "teamFurthest": "iron_pickaxe",
+   "teamFurthestIndex": 3,
+   "teamDeathsPerHour": 1.0,
+   "players": {
+    "Kindred": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 1.5,
+      "stone_tools": 1.9,
+      "iron_ingot": 4.0,
+      "iron_pickaxe": 18.9
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 2,
+     "stuckMinutes": 6,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 20828,
+     "metrics": {
+      "done": 2362,
+      "blocked": 65,
+      "cutShort": 2,
+      "worstRepeat": 26,
+      "resumedPct": 100,
+      "changesPerMin": 0.5,
+      "stuck": 3,
+      "recoveredPct": 67,
+      "walksInVain": 52
+     }
+    },
+    "Sol": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 0.7,
+      "stone_tools": 1.0,
+      "iron_ingot": 8.0,
+      "iron_pickaxe": 13.8
+     },
+     "deaths": 1,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "drowning": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 35132,
+     "metrics": {
+      "done": 2789,
+      "blocked": 76,
+      "cutShort": 7,
+      "worstRepeat": 1,
+      "resumedPct": 100,
+      "changesPerMin": 1.25,
+      "stuck": 4,
+      "recoveredPct": 100,
+      "walksInVain": 68
+     }
+    },
+    "Echo": {
+     "furthest": "iron_ingot",
+     "furthestIndex": 2,
+     "minutesTo": {
+      "wooden_tool": 4.2,
+      "stone_tools": 4.8,
+      "iron_ingot": 12.8
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 3,
+     "rescuesUnstuck": 2,
+     "rescueAsks": 3,
+     "askSeconds": [
+      60.0
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 3,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 42467,
+     "metrics": {
+      "done": 2701,
+      "blocked": 36,
+      "cutShort": 1,
+      "worstRepeat": 2,
+      "resumedPct": 100,
+      "changesPerMin": 0.91,
+      "stuck": 4,
+      "recoveredPct": 75,
+      "walksInVain": 25
+     }
+    }
+   }
+  },
+  "102": {
+   "complete": true,
+   "ticksRun": 72000,
+   "hours": 1.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "teamFurthest": "portal_lit",
+   "teamFurthestIndex": 6,
+   "teamDeathsPerHour": 1.0,
+   "players": {
+    "Kindred": {
+     "furthest": "obsidian",
+     "furthestIndex": 5,
+     "minutesTo": {
+      "wooden_tool": 0.4,
+      "stone_tools": 1.9,
+      "iron_ingot": 5.8,
+      "iron_pickaxe": 12.5,
+      "obsidian": 30.7
+     },
+     "deaths": 1,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "drowning": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 3,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 3,
+     "askSeconds": [
+      60.5
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 1,
+     "rescueRounds": 3,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 36916,
+     "metrics": {
+      "done": 2393,
+      "blocked": 98,
+      "cutShort": 1,
+      "worstRepeat": 3,
+      "resumedPct": 100,
+      "changesPerMin": 0.42,
+      "stuck": 3,
+      "recoveredPct": 100,
+      "walksInVain": 79
+     }
+    },
+    "Sol": {
+     "furthest": "portal_lit",
+     "furthestIndex": 6,
+     "minutesTo": {
+      "wooden_tool": 0.5,
+      "stone_tools": 2.5,
+      "iron_ingot": 5.4,
+      "iron_pickaxe": 12.2,
+      "obsidian": 48.4,
+      "portal_lit": 49.2
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 2,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 2,
+     "askSeconds": [
+      60.2
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 1,
+     "rescueRounds": 2,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 26189,
+     "metrics": {
+      "done": 2337,
+      "blocked": 23,
+      "cutShort": 4,
+      "worstRepeat": 0,
+      "resumedPct": 100,
+      "changesPerMin": 0.34,
+      "stuck": 1,
+      "recoveredPct": 100,
+      "walksInVain": 11
+     }
+    },
+    "Echo": {
+     "furthest": "iron_ingot",
+     "furthestIndex": 2,
+     "minutesTo": {
+      "wooden_tool": 0.5,
+      "stone_tools": 2.1,
+      "iron_ingot": 6.7
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 1,
+     "stuckMinutes": 3,
+     "rescues": 3,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 3,
+     "askSeconds": [
+      65.6
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 3,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 37027,
+     "metrics": {
+      "done": 3299,
+      "blocked": 71,
+      "cutShort": 24,
+      "worstRepeat": 3,
+      "resumedPct": 100,
+      "changesPerMin": 0.17,
+      "stuck": 2,
+      "recoveredPct": 100,
+      "walksInVain": 60
+     }
+    }
+   }
+  },
+  "103": {
+   "complete": true,
+   "ticksRun": 72000,
+   "hours": 1.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "teamFurthest": "obsidian",
+   "teamFurthestIndex": 5,
+   "teamDeathsPerHour": 2.0,
+   "players": {
+    "Kindred": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 0.9,
+      "stone_tools": 2.0,
+      "iron_ingot": 5.0,
+      "iron_pickaxe": 18.7
+     },
+     "deaths": 1,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "skeleton": 1
+     },
+     "stuckSpells": 2,
+     "stuckMinutes": 6,
+     "rescues": 3,
+     "rescuesUnstuck": 2,
+     "rescueAsks": 2,
+     "askSeconds": [
+      60.1
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 1,
+     "rescueRounds": 2,
+     "recipesTried": 1,
+     "spellsOutByRecipe": 0,
+     "tokens": 25823,
+     "metrics": {
+      "done": 2084,
+      "blocked": 53,
+      "cutShort": 6,
+      "worstRepeat": 1,
+      "resumedPct": 100,
+      "changesPerMin": 0.16,
+      "stuck": 3,
+      "recoveredPct": 100,
+      "walksInVain": 41
+     }
+    },
+    "Sol": {
+     "furthest": "obsidian",
+     "furthestIndex": 5,
+     "minutesTo": {
+      "wooden_tool": 5.6,
+      "stone_tools": 6.8,
+      "iron_ingot": 9.5,
+      "iron_pickaxe": 24.5,
+      "obsidian": 52.1
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 4,
+     "rescuesUnstuck": 3,
+     "rescueAsks": 3,
+     "askSeconds": [
+      60.1
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 3,
+     "recipesTried": 1,
+     "spellsOutByRecipe": 0,
+     "tokens": 28855,
+     "metrics": {
+      "done": 3480,
+      "blocked": 37,
+      "cutShort": 6,
+      "worstRepeat": 5,
+      "resumedPct": 100,
+      "changesPerMin": 0.32,
+      "stuck": 1,
+      "recoveredPct": 100,
+      "walksInVain": 23
+     }
+    },
+    "Echo": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 0.4,
+      "stone_tools": 2.4,
+      "iron_ingot": 34.5,
+      "iron_pickaxe": 35.5
+     },
+     "deaths": 1,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "zombie": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 3,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 3,
+     "askSeconds": [
+      60.0
+     ],
+     "rescueSpells": 1,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 3,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 43852,
+     "metrics": {
+      "done": 2822,
+      "blocked": 81,
+      "cutShort": 11,
+      "worstRepeat": 1,
+      "resumedPct": 100,
+      "changesPerMin": 0.4,
+      "stuck": 2,
+      "recoveredPct": 100,
+      "walksInVain": 63
+     }
+    }
+   }
+  }
+ }
+}

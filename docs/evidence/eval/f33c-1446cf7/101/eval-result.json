@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 72000,
+  "ticksRun": 72000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1820, "stone_tools": 2340, "iron_ingot": 4840, "iron_pickaxe": 22700},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 54480, "x": -256, "y": -39, "z": -200, "attempt": 1}, {"tick": 58080, "x": -256, "y": -39, "z": -200, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 20828
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 840, "stone_tools": 1220, "iron_ingot": 9620, "iron_pickaxe": 16620},
+      "deaths": [
+        {"tick": 31476, "cause": "Sol drowned", "x": -269, "y": 61, "z": -96, "light": 13, "timeOfDay": 7638, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 35132
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 5080, "stone_tools": 5700, "iron_ingot": 15360},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 10740, "line": "rescue asked: spell 1 round 1, 1201 ticks after its last progress"}, {"tick": 10940, "line": "rescue: tunnel east 6 -> unstuck"}, {"tick": 11340, "line": "rescue asked: spell 1 round 2, 1794 ticks after its last progress"}, {"tick": 11540, "line": "rescue: walk west 6, dig up 1 -> unstuck"}, {"tick": 11940, "line": "rescue asked: spell 1 round 3, 2393 ticks after its last progress"}, {"tick": 12260, "line": "rescue: tunnel north 3, dig up 2 -> failed: 'tunnel north 3' went 0, then it made no headway"}, {"tick": 12260, "line": "rescue spell 1: not out after 3 rounds"}],
+      "rescuesNotListed": 0,
+      "tokens": 42467
+    }
+  }
+}
