@@ -421,6 +421,33 @@ deepslate and ores need a pickaxe.
 
 The evaluation's summary counts the rounds asked, the spells ended and how many got out.
 
+**Recipes (F-29d).** When a spell gets out by the strategist's plan, the server keeps a *recipe*: the steps of that plan
+that ran, as far as each went, with the kind of scene it was learned in. The scene is told coarsely, from what the player
+sees, never where it is:
+
+- the sides it is walled in on within two blocks;
+- the room overhead (up to four);
+- what is under its feet;
+- water or lava above, below or beside;
+- whether a wall it cannot break hems it in;
+- dark or not;
+- a ledge within a pillar's reach;
+- standing in a shaft one wide;
+- whether it carries blocks, and its pickaxe's tier.
+
+The next time any player on the server is stuck a minute in the same kind of scene, the heaviest matching recipe is tried
+first, parsed and checked as every plan is, with no model call (`rescue recipe: spell N, <steps> (weight W)`). If it gets
+the player out it gains weight (`rescue spell N: out by its recipe`). If it does not, the strategist's first round is
+asked as before, told what the recipe did; two failures in a row retire the recipe.
+
+The recipes live in `<world>/kindred/rescue-recipes.json`, at most 500, shared by every player on the server and written
+off the server thread when they change. You may read, edit or delete the file while the server is stopped; an entry whose
+steps are not of the vocabulary is left out when it is read. A server with no file starts from the starter set shipped in
+the mod (`data/kindred/rescue-recipes.json`), each recipe in it reviewed and committed with the replay that proves it.
+None is shipped yet: the set is grown from evaluation runs (F-29d, open), and until then a server starts empty.
+Recipes are tried only with rescues on. `tools/eval/run.py` keeps each run's file beside its result, as candidates for
+the starter set.
+
 Core reads the reply and refuses the whole of it for one step that is not in that list or outside its bounds. A plan
 is also refused, with nothing moved, when:
 

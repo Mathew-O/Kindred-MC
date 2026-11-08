@@ -28,7 +28,9 @@ METRICS = re.compile(r"^\s+(\S+): (\d+) tasks done, (\d+) blocked, (\d+) cut sho
 # F-29b wrote "rescue asked: spell N, T ticks ..."; since F-29c a round's number follows the spell's, and only a spell's
 # first round counts toward the time from its start to its ask.
 ASKED = re.compile(r"rescue asked: spell \d+(?: round (\d+))?, (\d+) ticks after its last progress")
-SPELL = re.compile(r"rescue spell \d+: (out|not out) after (\d+) rounds?")
+SPELL = re.compile(r"rescue spell \d+: (out|not out) (?:after (\d+) rounds?|by its recipe)")
+RECIPE = re.compile(r"rescue recipe: spell \d+, ")
+KEPT = re.compile(r"rescue recipe kept: ")
 
 def cause_of(message):
     """A death's cause as a kind: the mob that did it, or what killed it."""
@@ -177,7 +179,9 @@ def score(build_dir, use_metrics=True):
             asked = [ASKED.match(r["line"]) for r in lines if ASKED.match(r["line"])]
             asks = [int(m.group(2)) for m in asked if (m.group(1) or "1") == "1"]
             spells = [SPELL.match(r["line"]) for r in lines if SPELL.match(r["line"])]
-            rescues = [r for r in lines if not r["line"].startswith("rescue asked") and not r["line"].startswith("rescue spell")]
+            recipes = [r for r in lines if RECIPE.match(r["line"])]
+            rescues = [r for r in lines if not r["line"].startswith("rescue asked") and not r["line"].startswith("rescue spell")
+                       and not r["line"].startswith("rescue recipe")]
             players[name] = {"furthest": STAGES[furthest] if furthest >= 0 else "none", "furthestIndex": furthest,
                              "minutesTo": {s: round(p["stages"][s] / 1200, 1) for s in reached},
                              "deaths": deaths, "deathsPerHour": round(deaths / hours, 2), "causes": causes,
@@ -185,7 +189,9 @@ def score(build_dir, use_metrics=True):
                              "rescues": len(rescues), "rescuesUnstuck": sum(1 for r in rescues if r["line"].endswith("-> unstuck")),
                              "rescueAsks": len(asked), "askSeconds": [round(t / 20, 1) for t in asks],
                              "rescueSpells": len(spells), "rescueSpellsOut": sum(1 for m in spells if m.group(1) == "out"),
-                             "rescueRounds": sum(int(m.group(2)) for m in spells),
+                             "rescueRounds": sum(int(m.group(2) or 0) for m in spells),
+                             "recipesTried": len(recipes),
+                             "spellsOutByRecipe": sum(1 for r in lines if r["line"].endswith(": out by its recipe")),
                              "tokens": p.get("tokens", 0),
                              "metrics": metrics.get(str(log_of(folder)), {}).get(name)}
         chatter = chatter_of(log_of(folder))
@@ -205,6 +211,8 @@ def score(build_dir, use_metrics=True):
         "rescueSpells": spread([sum(p.get("rescueSpells", 0) for p in s["players"].values()) for s in per_seed.values()]),
         "rescueSpellsOut": spread([sum(p.get("rescueSpellsOut", 0) for p in s["players"].values()) for s in per_seed.values()]),
         "rescueRounds": spread([sum(p.get("rescueRounds", 0) for p in s["players"].values()) for s in per_seed.values()]),
+        "recipesTried": spread([sum(p.get("recipesTried", 0) for p in s["players"].values()) for s in per_seed.values()]),
+        "spellsOutByRecipe": spread([sum(p.get("spellsOutByRecipe", 0) for p in s["players"].values()) for s in per_seed.values()]),
         # Each seed's median game seconds from a spell's last progress to its ask, and every ask's, pooled.
         "askSeconds": spread([statistics.median(a) if a else None
                               for a in ([x for p in s["players"].values() for x in p.get("askSeconds", [])] for s in per_seed.values())]),
@@ -268,6 +276,9 @@ def markdown(summary):
         if "rescueSpells" in t:
             lines.append("| Rescue spells ended, the team (of them, out; rounds in them) | %s (%s; %s) |"
                          % (fmt(t["rescueSpells"]), fmt(t["rescueSpellsOut"]), fmt(t["rescueRounds"])))
+        if "recipesTried" in t:
+            lines.append("| Rescue recipes tried first, the team (spells out by a recipe) | %s (%s) |"
+                         % (fmt(t["recipesTried"]), fmt(t["spellsOutByRecipe"])))
         lines.append("| Game seconds from a spell's last progress to its ask: each seed's median / every ask | %s / %s |"
                      % (fmt(t["askSeconds"]), fmt(t["askSecondsPooled"])))
     lines.append("| Model tokens, the team | %s |" % fmt(t["tokens"]))

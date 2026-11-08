@@ -1141,7 +1141,10 @@ final class PortalRunCampaign {
         boolean byHand = relocate != null && planned.isPresent() && planned.get().label().endsWith(" by hand");
         if (active || byHand) {
             // A rescue is wanted after a minute with no progress, its own move elsewhere begun alongside it (F-29b).
-            if (rescueOn && rescueSpell == 0 && rescuePlan == null && quietClock > RESCUE_AFTER_TICKS) openRescueSpell(groundBelow(body.entity()));
+            if (rescueOn && rescueSpell == 0 && rescuePlan == null && quietClock > RESCUE_AFTER_TICKS) {
+                openRescueSpell(groundBelow(body.entity()));
+                tryRecipe(body.entity());
+            }
             // The watchdog's spell is still three minutes: a move begun early for a rescue is counted as one only then.
             if (relocate != null && relocateEarly && stuckClock > stuckTicks) countSpell();
             else if (relocate == null && stuckClock > stuckTicks) startRelocating(groundBelow(body.entity()));
@@ -1262,8 +1265,35 @@ final class PortalRunCampaign {
      * if none is under way, the first try the adviser is told of. The move is not a watchdog's spell until three minutes
      * have passed with no progress, as every spell is.
      */
+    /**
+     * A recipe learned in this kind of scene is tried first, at no token cost, before any round is asked of the model
+     * (F-29d): parsed and checked against the skills installed like any plan. The model is asked only if it fails.
+     */
+    private void tryRecipe(ServerPlayerEntity player) {
+        spellSignature = signature(player);
+        recipeTried = null;
+        recipeRunning = false;
+        if (recipes == null) return;
+        var recipe = recipes.match(spellSignature);
+        if (recipe.isEmpty()) return;
+        var parsed = dev.kindred.core.rescue.RescuePlan.parse(recipe.get().steps(), "A recipe learned here before.");
+        if (parsed.plan().isEmpty()) return;
+        for (var step : parsed.plan().get().steps())
+            for (String skill : dev.kindred.core.rescue.RescuePlan.uses(step.verb())) if (!rescueInstalled.contains(skill)) return;
+        recipeTried = recipe.get();
+        recipeRunning = true;
+        rescueRoundWanted = 0;
+        note("rescue recipe: spell " + rescueSpell + ", " + parsed.plan().get().text() + " (weight " + recipeTried.weight() + ")");
+        KindredMod.LOGGER.info("{} rescue recipe tried first: {} for {}", rescueName, parsed.plan().get().text(), spellSignature.key());
+        rescue(parsed.plan().get(), rescueSpell, rescueName);
+    }
+
     private void openRescueSpell(boolean elsewhere) {
         rescueSpell = ++rescueSpells;
+        recipeTried = null;
+        recipeRunning = false;
+        learnWhenDone = false;
+        ranSteps.clear();
         spellRound = 0;
         rescueRoundWanted = 1;
         watchUntil = 0;
@@ -1308,6 +1338,15 @@ final class PortalRunCampaign {
     /** What each round's steps came to, this spell, and the round being carried out's (F-29c). */
     private final List<String> spellLog = new java.util.ArrayList<>();
     private final List<String> roundOutcomes = new java.util.ArrayList<>();
+    /** The server's rescue recipes and the skills installed for a plan (F-29d); none until the runtime gives them. */
+    private dev.kindred.core.rescue.RescueRecipes recipes;
+    private java.util.Set<String> rescueInstalled = java.util.Set.of();
+    /** The spell's scene at its start, the recipe being tried first, and the steps of the last plan that ran, as far as each went. */
+    private dev.kindred.core.rescue.RescueSignature spellSignature;
+    private dev.kindred.core.rescue.RescueRecipes.Recipe recipeTried;
+    private boolean recipeRunning;
+    private final List<String> ranSteps = new java.util.ArrayList<>();
+    private boolean learnWhenDone;
     /** A look the last round asked for: the next report shows the blocks four that way (F-29c). */
     private dev.kindred.core.rescue.RescuePlan.Way lookWay;
     /** The step's actions given out, the feet at the step's start, and before an executor's one-block move. */
@@ -1359,6 +1398,19 @@ final class PortalRunCampaign {
 
     /** Whether rescues are on for this player: the bridge says so each look (F-29b). */
     void rescueOn(boolean on) { rescueOn = on; }
+
+    /** The server's rescue recipes, shared by every player, and the skills a plan may use (F-29d). */
+    void recipes(dev.kindred.core.rescue.RescueRecipes book, java.util.Set<String> installed) {
+        recipes = book;
+        rescueInstalled = installed == null ? java.util.Set.of() : installed;
+    }
+
+    /** The scene's signature as the player sees it now (F-29d). */
+    dev.kindred.core.rescue.RescueSignature signature(ServerPlayerEntity player) {
+        int tier = lastSnapshot == null ? 0 : lastSnapshot.pickaxeTier();
+        return dev.kindred.core.rescue.RescueSignature.of(slice(player), player.getServerWorld().getLightLevel(player.getBlockPos()),
+                heldBlock(player) >= 0, tier);
+    }
 
     /** A line among the rescues' that is no plan: an ask (F-29b). */
     private void note(String line) {
@@ -1525,6 +1577,8 @@ final class PortalRunCampaign {
      * first step that does not go, or stops short, ends the plan, and the round's outcome is kept for the next.
      */
     void rescue(dev.kindred.core.rescue.RescuePlan plan, int spell, String name) {
+        // Each plan's steps that ran are its own: what a recipe keeps is the last plan's (F-29d).
+        ranSteps.clear();
         rescuePlan = plan;
         rescueName = name;
         rescueStep = 0;
@@ -1739,6 +1793,10 @@ final class PortalRunCampaign {
             if (what.equals("done")) what = "went " + rescueDone;
         }
         roundOutcomes.add(step.text() + ": " + what);
+        // What ran, as far as it went, for a recipe (F-29d).
+        boolean executor = switch (step.verb()) { case WALK, TUNNEL, STAIRS, BRIDGE -> true; default -> false; };
+        if (executor && rescueDone > 0) ranSteps.add(new dev.kindred.core.rescue.RescuePlan.Step(step.verb(), step.way(), rescueDone, step.rise()).text());
+        else if (!executor && what.equals("done") && step.verb() != dev.kindred.core.rescue.RescuePlan.Verb.LOOK) ranSteps.add(step.text());
     }
 
     private void rescueTaskFinished(boolean completed, String why, long tick) {
@@ -1776,6 +1834,17 @@ final class PortalRunCampaign {
         rescueDone++;
     }
 
+    /** The last plan's steps that ran kept as a recipe for the spell's scene, if it got the player out (F-29d). */
+    private void learn() {
+        if (!learnWhenDone) return;
+        learnWhenDone = false;
+        if (recipes == null || spellSignature == null || ranSteps.isEmpty()
+                || dev.kindred.core.rescue.RescuePlan.parse(List.copyOf(ranSteps), "").plan().isEmpty()) return;
+        var learned = recipes.learned(spellSignature, List.copyOf(ranSteps), "server");
+        note("rescue recipe kept: " + String.join(", ", ranSteps) + " (weight " + learned.weight() + ")");
+        KindredMod.LOGGER.info("{} rescue recipe kept: {} for {} (weight {})", rescueName, String.join(", ", ranSteps), spellSignature.key(), learned.weight());
+    }
+
     private void endRescue(String outcome, long tick) {
         String line = "rescue: " + rescuePlan.text() + " -> " + outcome;
         if (rescues.size() >= 50) rescues.removeFirst();
@@ -1786,6 +1855,7 @@ final class PortalRunCampaign {
         for (int i = roundOutcomes.size(); i < rescuePlan.steps().size(); i++) roundOutcomes.add(rescuePlan.steps().get(i).text() + ": not reached");
         rescuePlan = null;
         rescueTask = null;
+        learn();
         // Out: the watchdog's run of spells ends with it (F-29).
         if (outcome.equals("unstuck")) {
             stuckClock = 0;
@@ -1811,6 +1881,12 @@ final class PortalRunCampaign {
      * last the spell has failed and the local rules go on as before. {@code summary} is added to the spell's log.
      */
     private void roundEnded(String summary, boolean refused) {
+        // The recipe tried first did not get it out: a failure counted, and the model's first round asked (F-29d).
+        if (recipeRunning) {
+            recipeRunning = false;
+            if (recipes != null && recipeTried != null) recipes.failed(recipeTried);
+            if (summary != null) summary = summary.replaceFirst("^round 0", "a recipe tried first");
+        }
         if (summary != null) spellLog.add(summary);
         if (rescueSpell == 0 || spellOut) return;
         if (spellRound < RESCUE_ROUNDS) rescueRoundWanted = spellRound + 1;
@@ -1819,9 +1895,26 @@ final class PortalRunCampaign {
 
     /** The rescue spell over, out or not: its line, for the log and the evaluation (F-29c). */
     private void spellEnded(boolean out) {
-        if (spellRound == 0) return;
+        if (spellRound == 0 && !recipeRunning) return;
+        if (recipeRunning && spellRound == 0) {
+            // Out by its recipe, with no model asked: it gains weight (F-29d).
+            recipeRunning = false;
+            if (out && recipes != null && recipeTried != null) recipes.worked(recipeTried);
+            note("rescue spell " + rescueSpell + ": " + (out ? "out" : "not out") + " by its recipe");
+            KindredMod.LOGGER.info("{} rescue spell {}: {} by its recipe", rescueName, rescueSpell, out ? "out" : "not out");
+            spellOut = true;
+            rescueRoundWanted = 0;
+            watchUntil = 0;
+            return;
+        }
         note("rescue spell " + rescueSpell + ": " + (out ? "out" : "not out") + " after " + spellRound + (spellRound == 1 ? " round" : " rounds"));
         KindredMod.LOGGER.info("{} rescue spell {}: {} after {} rounds", rescueName, rescueSpell, out ? "out" : "not out", spellRound);
+        // Out by the model's plan: what ran of it is kept as a recipe for this kind of scene (F-29d), once the plan has
+        // ended, so a spell out part-way through its walk keeps the whole of what ran.
+        if (out) {
+            learnWhenDone = true;
+            if (rescuePlan == null) learn();
+        }
         spellOut = true;
         rescueRoundWanted = 0;
         watchUntil = 0;

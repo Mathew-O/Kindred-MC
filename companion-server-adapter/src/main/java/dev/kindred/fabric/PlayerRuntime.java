@@ -227,6 +227,9 @@ final class PlayerRuntime {
     static final double SHUN_CAP = 2.0, SHUN_PER_DANGER = 0.5;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
+    /** The rescue recipes every player on this server shares (F-29d), and their file. */
+    private final RescueRecipeStore recipeStore;
+    private final dev.kindred.core.rescue.RescueRecipes rescueBook;
     /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
     private RunObserver runObserver = RunObserver.NONE;
     /** Its players' deaths kept as replays (F-27), when the mod turns it on; none by default. */
@@ -479,6 +482,8 @@ final class PlayerRuntime {
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
         this.memories = new PlayerMemoryStore(metadataDirectory);
+        this.recipeStore = new RescueRecipeStore(metadataDirectory);
+        this.rescueBook = recipeStore.load();
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
@@ -4281,6 +4286,7 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        entry.campaign.recipes(rescueBook, rescueSkills);
         entry.campaign.customs(customs);
         entry.campaign.pursue(entry.goal);
         entry.campaign.dragonAllowed(dragonFight);
@@ -4302,6 +4308,7 @@ final class PlayerRuntime {
         body.setPortalTravelAuthorized(mayTravel && trip && tripHeld.isEmpty());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         memory.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry));
+        recipeStore.saveIfChanged(rescueBook);
         entry.goalProgress = tripHeld.orElse(entry.campaign.progress());
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
@@ -12898,6 +12905,9 @@ final class PlayerRuntime {
         entry.campaign.stuckTicksForTest(ticks);
     }
 
+    /** The server's rescue recipes, for fixtures (F-29d). */
+    dev.kindred.core.rescue.RescueRecipes recipesForFixtures() { return rescueBook; }
+
     /** A player's goal, for fixtures (F-29b). */
     PortalRunCampaign campaignForFixtures(UUID id) {
         Entry entry = entries.get(id);
@@ -13163,6 +13173,8 @@ final class PlayerRuntime {
             if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
         }
         memories.close();
+        recipeStore.saveIfChanged(rescueBook);
+        recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
                 .toArray(CompletableFuture[]::new)).handle((ignored, failure) -> null);

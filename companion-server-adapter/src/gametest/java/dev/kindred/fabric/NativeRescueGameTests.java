@@ -120,9 +120,12 @@ public final class NativeRescueGameTests implements FabricGameTest {
         context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
     }
 
-    /** The last rescue carried out or refused; since F-29b an ask is a line of its own among them, left out here. */
+    /**
+     * The last rescue carried out or refused. Since F-29b an ask is a line of its own among them, and since F-29c and
+     * F-29d a spell's end and a recipe's: only the plans' lines ({@code rescue: ...}) are looked at here.
+     */
     private static String rescued(NativePaidSkillsGameTests.Fixture f) {
-        var lines = f.runtime.rescuesForFixtures(f.id).stream().filter(line -> !line.startsWith("rescue asked")).toList();
+        var lines = f.runtime.rescuesForFixtures(f.id).stream().filter(line -> line.startsWith("rescue: ")).toList();
         return lines.isEmpty() ? "" : lines.getLast();
     }
 
