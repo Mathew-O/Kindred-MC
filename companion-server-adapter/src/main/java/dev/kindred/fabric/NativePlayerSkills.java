@@ -166,6 +166,11 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_gate" -> new SkillDescriptor(id, Set.of("x", "y", "z", "open"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            // A horse mounted, ridden toward a spot or got off (M-01a); and a tamed one saddled with a saddle it found.
+            case "native_ride" -> new SkillDescriptor(id, Set.of("op"), Set.of("target", "slot", "x", "z", "range", "seconds"), Set.of("move"), Set.of(),
+                    Duration.ofSeconds(120), Duration.ofSeconds(10), 0);
+            case "native_saddle" -> new SkillDescriptor(id, Set.of("target", "slot"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             // Items taken out of the player's own assigned storage for a build (E-08c).
             case "native_take" -> new SkillDescriptor(id, Set.of("item", "count"), Set.of(), Set.of("container"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.CONTAINER), Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
@@ -228,6 +233,13 @@ final class NativePlayerSkills {
                     Double.parseDouble(arguments.getOrDefault("range", "3")), Integer.parseInt(arguments.getOrDefault("seconds", "30")),
                     Boolean.parseBoolean(arguments.getOrDefault("land", "false")));
         }
+        if (id.equals("native_ride")) {
+            var op = NativeRideSkill.Op.valueOf(arguments.get("op").toUpperCase(java.util.Locale.ROOT));
+            return new NativeRideSkill(body, lease, op, arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null,
+                    Integer.parseInt(arguments.getOrDefault("slot", "-1")), Double.parseDouble(arguments.getOrDefault("x", "0")),
+                    Double.parseDouble(arguments.getOrDefault("z", "0")), Double.parseDouble(arguments.getOrDefault("range", "2")),
+                    Integer.parseInt(arguments.getOrDefault("seconds", "30")));
+        }
         if (id.equals("native_gate")) {
             return new Gate(body, lease, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
                     Integer.parseInt(arguments.get("z"))), Boolean.parseBoolean(arguments.get("open")));
@@ -283,6 +295,7 @@ final class NativePlayerSkills {
                 || (task instanceof NativeGoToSkill go && (intent == NativePlayerBody.Intent.MOVE || intent == NativePlayerBody.Intent.DOOR
                     || intent == NativePlayerBody.Intent.SELECT_SLOT && go.holds()))
                 || (task instanceof Gate && intent == NativePlayerBody.Intent.GATE)
+                || (task instanceof NativeRideSkill ride && (ride.moves() ? intent == NativePlayerBody.Intent.MOVE : intent == NativePlayerBody.Intent.RIDE))
                 || ((task instanceof NativeRowSkill || task instanceof NativePushSkill) && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeFishSkill && intent == NativePlayerBody.Intent.FISH)
