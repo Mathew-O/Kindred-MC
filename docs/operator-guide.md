@@ -732,7 +732,7 @@ In a faction world:
   alliance both to declare it.
 - Players may strike each other only as enemy factions' members, never in a safe zone, never a player in no faction.
 - A death costs the victim 2 power only when its killer is in an enemy faction, outside a safe zone, not the same
-  killer within 20 minutes, and neither account first seen in the last hour. Online time restores 1 power an hour,
+  killer within 20 minutes, and the killer's account not first seen in the last hour. Online time restores 1 power an hour,
   kept to the second across logouts and restarts (written every five minutes, at a logout and at a stop).
 - Every change is an event in the World Record (F-31); factions and power are rebuilt from it at startup.
 

@@ -150,10 +150,10 @@ class FactionsAndPowerTest {
         record(PowerRules.seen(fresh, 0, now - 59 * 60_000));
         var created = Factions.create(factions, fresh, "Green", "GRN", FactionColour.GREEN, UUID.randomUUID(), at());
         write(created);
-        assertFalse(PowerRules.qualifies(factions, powers, S, fresh, red, Zone.WILDERNESS, now).counts(), "a victim seen 59 minutes ago");
+        assertTrue(PowerRules.qualifies(factions, powers, S, fresh, red, Zone.WILDERNESS, now).counts(), "a victim seen 59 minutes ago still loses power");
         assertFalse(PowerRules.qualifies(factions, powers, S, blue, fresh, Zone.WILDERNESS, now).counts(), "a killer seen 59 minutes ago");
         now += 60_000;
-        assertTrue(PowerRules.qualifies(factions, powers, S, fresh, red, Zone.WILDERNESS, now).counts(), "an hour on");
+        assertTrue(PowerRules.qualifies(factions, powers, S, blue, fresh, Zone.WILDERNESS, now).counts(), "an hour on");
     }
 
     // --- Factions: founding, joining, ranks ---

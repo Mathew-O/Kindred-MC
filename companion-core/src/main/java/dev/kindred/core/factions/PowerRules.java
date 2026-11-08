@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * In plain terms: the rules of power: who may fight whom in a faction world, which deaths cost the victim two power
- * (a kill by an enemy faction's member outside a safe zone, not the same pair twice in twenty minutes, not by or of an
+ * (a kill by an enemy faction's member outside a safe zone, not the same pair twice in twenty minutes, not by an
  * account new in the last hour), a faction's power as its members' sum, its claim capacity (the lesser of its power and
  * 80), and how many of its chunks are exposed when its claims exceed its power.
  *
@@ -42,10 +42,12 @@ public final class PowerRules {
         if (victimFaction.id().equals(killerFaction.id())) return new Qualification(false, "by a faction-mate");
         var relation = factions.relation(victimFaction.id(), killerFaction.id());
         if (relation != Faction.Relation.ENEMY) return new Qualification(false, "by " + (relation == Faction.Relation.ALLY ? "an ally" : "a faction in truce"));
+        // A kill by an account first seen in the last hour counts nothing (the design: "a death to ... an account that
+        // joined the server in the last hour"); the victim's own age does not matter.
         long newer = settings.newAccountSeconds() * 1000L;
-        Long victimSeen = powers.firstSeen().get(victim), killerSeen = powers.firstSeen().get(killer);
-        if (victimSeen == null || nowMs - victimSeen < newer || killerSeen == null || nowMs - killerSeen < newer) {
-            return new Qualification(false, "an account new in the last " + settings.newAccountSeconds() / 60 + " minutes");
+        Long killerSeen = powers.firstSeen().get(killer);
+        if (killerSeen == null || nowMs - killerSeen < newer) {
+            return new Qualification(false, "a killer whose account is new in the last " + settings.newAccountSeconds() / 60 + " minutes");
         }
         Long last = powers.lastCounted().get(PowerBook.pair(killer, victim));
         if (last != null && nowMs - last < settings.pairCooldownSeconds() * 1000L) {
