@@ -19,13 +19,15 @@ public final class NativeTripWoodGameTests implements FabricGameTest {
      * of the ten players who later climbed from deep down for logs for sticks had packed at most five steps of the trip's
      * wood. On 101 Sol cut the one tree it had walked to, made its wooden pickaxe at its foot, and dug down from there for
      * stone with the next trees it had seen forty to sixty blocks off; at Y=19 its third stone pickaxe wore out with no
-     * sticks for a fourth. Staged: a stone plot, flat and open, with four trunks of five forty blocks off; the wooden
-     * pickaxe, a table beside it and three planks, as though made from the tree cut. Passes once its first cobblestone is
-     * in hand with the trip's wood, 28 planks' worth or more, as the sibling fixture with trees beside it asks.
+     * sticks for a fourth. Staged: a stone plot, flat and open, with four trunks of five forty blocks off, which the
+     * campaign is told it saw, as Sol had seen its trees before; the wooden pickaxe, a table beside it and three planks,
+     * as though made from the tree cut. Passes once its first cobblestone is in hand with the trip's wood, 28 planks'
+     * worth or more, as the sibling fixture with trees beside it asks.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "tripWoodFar", tickLimit = 3000)
     public void itsOwnTreeCutTheNextFortyBlocksOffItTakesTheTripsWoodBeforeItsFirstStone(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        int[][] trunks = {{40, 3}, {42, -4}, {45, 2}, {38, -2}};
         int[] woodAtFirstStone = {-1};
         int[] watched = {0};
         StringBuilder seen = new StringBuilder();
@@ -43,7 +45,7 @@ public final class NativeTripWoodGameTests implements FabricGameTest {
                         for (int y = 0; y <= 7; y++) world.setBlockState(p.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
                     // Four trunks of five forty blocks off, as many as the sibling fixture has beside the player.
-                    for (int[] t : new int[][] {{40, 3}, {42, -4}, {45, 2}, {38, -2}}) {
+                    for (int[] t : trunks) {
                         for (int y = 0; y <= 4; y++) world.setBlockState(p.add(t[0], y, t[1]), Blocks.OAK_LOG.getDefaultState());
                     }
                     world.setBlockState(p.add(1, 0, 0), Blocks.CRAFTING_TABLE.getDefaultState());
@@ -53,6 +55,11 @@ public final class NativeTripWoodGameTests implements FabricGameTest {
                     inventory.setStack(1, new ItemStack(Items.OAK_PLANKS, 3));
                     inventory.setStack(2, new ItemStack(Items.BREAD, 8));
                     world.setTimeOfDay(1000);
+                    // Its first sweep of the world it is in, then the trees it saw earlier, as Sol had seen its trees on its
+                    // way to the one it cut: a first sweep starts from nothing known and reaches the skyline only later.
+                    var knowledge = f.runtime.campaignForTest(f.id).knowledge();
+                    knowledge.scan(f.player());
+                    for (int[] t : trunks) knowledge.remember(WorldKnowledge.Kind.LOG, p.add(t[0], 0, t[1]));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
