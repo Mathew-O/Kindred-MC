@@ -1021,44 +1021,51 @@ final class NativePlayerBody implements BodyAdapter {
         long lastSectionKey = Long.MIN_VALUE;
         boolean lastSectionMayContain = false;
 
-        for (int dy = -ry; dy <= ry; dy++) {
-            int y = center.getY() + dy;
+        // Nearest first: the scan budget is shared by the tick, and a sweep from the bottom layer up spent it on far
+        // cells before reaching the table beside its feet, which it then placed again and again (M-01a's wheat fixture:
+        // twelve tables set down round it, none found).
+        for (int[] offset : offsets(r, ry)) {
+            int y = center.getY() + offset[1];
             if (y < world.getBottomY() || y >= world.getTopY()) {
                 continue;
             }
-            int sectionCoordY = y >> 4;
-            for (int dx = -r; dx <= r; dx++) {
-                int x = center.getX() + dx;
-                int chunkX = x >> 4;
-                for (int dz = -r; dz <= r; dz++) {
-                    int z = center.getZ() + dz;
-                    double distSq = eyePos.squaredDistanceTo(x + 0.5, y + 0.5, z + 0.5);
-                    if (distSq > bestDistSq) {
-                        continue;
-                    }
+            int x = center.getX() + offset[0], z = center.getZ() + offset[2];
+            double distSq = eyePos.squaredDistanceTo(x + 0.5, y + 0.5, z + 0.5);
+            if (distSq > bestDistSq) {
+                continue;
+            }
+            int sectionCoordY = y >> 4, chunkX = x >> 4, chunkZ = z >> 4;
+            long sectionKey = packSectionKey(chunkX, sectionCoordY, chunkZ);
+            if (sectionKey != lastSectionKey) {
+                lastSectionKey = sectionKey;
+                lastSectionMayContain = sectionMayContain(world, chunkX, chunkZ, sectionCoordY, matcher);
+            }
+            if (!lastSectionMayContain) {
+                continue;
+            }
 
-                    int chunkZ = z >> 4;
-                    long sectionKey = packSectionKey(chunkX, sectionCoordY, chunkZ);
-                    if (sectionKey != lastSectionKey) {
-                        lastSectionKey = sectionKey;
-                        lastSectionMayContain = sectionMayContain(world, chunkX, chunkZ, sectionCoordY, matcher);
-                    }
-                    if (!lastSectionMayContain) {
-                        continue;
-                    }
-
-                    if (!blockScanBudget.tryConsumeScan()) {
-                        return Optional.ofNullable(best);
-                    }
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (matcher.test(world.getBlockState(pos))) {
-                        bestDistSq = distSq;
-                        best = pos.toImmutable();
-                    }
-                }
+            if (!blockScanBudget.tryConsumeScan()) {
+                return Optional.ofNullable(best);
+            }
+            BlockPos pos = new BlockPos(x, y, z);
+            if (matcher.test(world.getBlockState(pos))) {
+                bestDistSq = distSq;
+                best = pos.toImmutable();
             }
         }
         return Optional.ofNullable(best);
+    }
+
+    /** The offsets within {@code r} across and {@code ry} up and down, nearest first; cached by size. */
+    private static final java.util.Map<Long, java.util.List<int[]>> OFFSETS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static java.util.List<int[]> offsets(int r, int ry) {
+        return OFFSETS.computeIfAbsent(((long) r << 32) | ry, key -> {
+            var list = new java.util.ArrayList<int[]>();
+            for (int dy = -ry; dy <= ry; dy++) for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) list.add(new int[] {dx, dy, dz});
+            list.sort(java.util.Comparator.comparingInt(o -> o[0] * o[0] + o[1] * o[1] + o[2] * o[2]));
+            return java.util.List.copyOf(list);
+        });
     }
 
     private static long packSectionKey(int chunkX, int sectionCoordY, int chunkZ) {

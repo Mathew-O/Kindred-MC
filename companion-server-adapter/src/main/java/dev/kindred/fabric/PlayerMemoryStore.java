@@ -91,6 +91,9 @@ final class PlayerMemoryStore implements AutoCloseable {
         }
     }
 
+    /** The wheat plot by its base (M-01a): its north-west soil cell, two cells a side. A file from before has none. */
+    record Plot(String dimension, int x, int y, int z) { }
+
     /** The player's bases in one world, oldest first, and the place the first was sited by. Game thread only. */
     static final class Bases {
         String player = "";
@@ -102,6 +105,8 @@ final class PlayerMemoryStore implements AutoCloseable {
         Hall hall;
         /** Its own ranch (M-01a), or none. */
         Pen ranch;
+        /** Its wheat plot (M-01a), or none. */
+        Plot plot;
     }
 
     /**

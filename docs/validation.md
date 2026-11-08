@@ -78,6 +78,23 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 19: a cobweb in the climb's way (F-25c4cm) — 8 November 2026 (`claude/e40-ladder-19-1108`)
+
+- **The fixtures** (F-25c4cm, [evidence](evidence/F-25c4cm.md)): `NativeCobwebHeadRoomGameTests.aCobwebOverItsHeadIsClearedAndItClimbs`
+  and `withNoSwordItClearsTheCobwebByHandAndClimbs`, on ground cut from 8675309's kept world in iteration 14 (a
+  mineshaft's corridor, a cobweb over the player's head), staged as they say. On `433589d`, without the fix: each fails 3
+  of 3, "Not up out of the corridor after 1,200 ticks", with 530 to 532 walks "to the wall" refused a run, as Sol's 1,141
+  in the run. With the fix: each passes 3 of 3, two up after 123 to 125 ticks with the sword and 517 by hand, no walk
+  refused. A first staging with three raw iron did not reproduce (3 of 3 passed without the fix: it mined the iron in
+  sight and climbed from another cell) and is not kept.
+- **The classes that climb, tunnel and dig out** (`NativeCobwebHeadRoomGameTests`, `NativePortalCampaignGameTests`,
+  `NativeTripDownGameTests`, `NativeBranchMineGameTests`, `NativeStairGameTests`, `NativeStrandedReturnGameTests`,
+  `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests`, `NativeNightShelterGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`, `NativeFallingColumnGameTests`,
+  `NativeGravelTunnelGameTests`, `ReplayGameTests`, `NativeAtlasGameTests`, `NativeSurvivalGameTests`,
+  `NativeMovementGameTests`, `NativeWaterEdgeGameTests`): with the fix, 147 of 147.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
+
 ## E-40, batch 18: out from under a falling column, and the walk to a drop under one (F-25c4ck, F-25c4cl) — 8 November 2026 (`claude/e40-ladder-18-1108`)
 
 - **The fixture** (F-25c4ck, [evidence](evidence/F-25c4ck.md)): `NativeFallingColumnGameTests.buriedUnderAColumnOfGravelItStepsOutFromUnderIt`,
@@ -458,6 +475,14 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01a: wheat grown for cows and sheep, 2026-11-08
+
+Branch `claude/modes-1106-8`, from M-01a's seeds branch, main merged in. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `WheatPlotTest` 2 of 2 (new); `RanchChoiceTest` 4 of 4, the wheat test failing before.
+- Native: `NativeOwnRanchGameTests` with `NativeRanchGameTests` and `NativeCompoundGameTests` alone, three runs on `26301ef`, 11 of 11 each.
+  - Control (the wheat not grown): fails, no plot.
+  - On the way: the hoe never made (the shared-budget scan, now nearest first), tills refused out of reach (now walked to), and on `1efb6ff` one run in three with a refused table spot and the cows out of sight at the harvest (both fixed).
 
 ## M-01a: the chickens' seeds earned from grass, 2026-11-06
 
@@ -3154,3 +3179,7 @@ After the block's first merge from main, CI on PR #25 found:
     scaffold block it could not reach, waiting.
   - Not reproduced locally: 4 of 4 before the fix and 4 of 4 after. The build classes and `NativeLifeFirstGameTests`
     passed 37 of 37.
+- PR #31 merged as `e0368f9`. Main's CI on it (run 42138874868) was red; F-22c21 to F-22c25, from the E-40 branches,
+  followed.
+- Main's CI green three runs running: `c451f94` (run 42414280759), `eb680aa` (42444314816) and `15e3ee9`
+  (42455260820). The block's definition of done is met.

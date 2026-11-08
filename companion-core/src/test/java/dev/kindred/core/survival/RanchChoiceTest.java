@@ -50,4 +50,17 @@ class RanchChoiceTest {
         assertTrue(RanchChoice.next(false, Map.of(Ranch.Kind.CHICKEN, 2), Map.of(), true).earn().isEmpty());
         assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.CHICKEN, 1), Map.of(), true).earn().isEmpty());
     }
+
+    @Test
+    void withAPairOfCowsOrSheepAndNoWheatItGrowsTheWheat() {
+        var cows = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2), Map.of(), false);
+        assertTrue(cows.kind().isEmpty());
+        assertEquals(Optional.of(Ranch.Kind.COW), cows.earn(), "the cows' wheat grown");
+        assertTrue(cows.why().contains("2 wheat first, grown from seeds"), cows.why());
+        assertEquals(Optional.of(Ranch.Kind.SHEEP), RanchChoice.next(true, Map.of(Ranch.Kind.SHEEP, 3), Map.of(), true).earn());
+        // Chickens with grass in sight are the quicker to feed: their seeds first.
+        assertEquals(Optional.of(Ranch.Kind.CHICKEN), RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.CHICKEN, 2), Map.of(), true).earn());
+        // Pigs' carrots and potatoes are found, not grown from what it has: not earned.
+        assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.PIG, 2), Map.of(), true).earn().isEmpty());
+    }
 }
