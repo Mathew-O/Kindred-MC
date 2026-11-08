@@ -125,6 +125,57 @@ public final class MatchRegistry {
     private final Map<UUID, Integer> headStarts = new LinkedHashMap<>();
     /** The clock's last tick, for the head start. */
     private long now;
+    /** Matches changed since the last {@link #drainChanges}, in the order they changed, for the World Record (F-31). */
+    private final LinkedHashSet<UUID> changed = new LinkedHashSet<>();
+
+    /**
+     * A match as the World Record keeps it (F-31): the match, its own time where it was given one (-1 for its mode's),
+     * and a manhunt's head start (zero for none).
+     */
+    public record Stored(Match match, int limit, int headStart) {
+        public Stored {
+            java.util.Objects.requireNonNull(match);
+            if (limit < -1 || headStart < 0) throw new IllegalArgumentException("Invalid stored match");
+        }
+    }
+
+    private void put(UUID id, Match match) {
+        matches.put(id, match);
+        changed.add(id);
+    }
+
+    /** A match as the Record keeps it, if it is still remembered. */
+    public Optional<Stored> stored(UUID matchId) {
+        Match match = matches.get(matchId);
+        return match == null ? Optional.empty() : Optional.of(new Stored(match, limits.getOrDefault(matchId, -1), headStarts.getOrDefault(matchId, 0)));
+    }
+
+    /** Every match changed since the last call, as the Record keeps it, in the order they changed; the list is then cleared. */
+    public List<Stored> drainChanges() {
+        var out = new ArrayList<Stored>();
+        for (UUID id : changed) stored(id).ifPresent(out::add);
+        changed.clear();
+        return out;
+    }
+
+    /**
+     * The matches the World Record kept, put back after a restart (F-31). Only into an empty registry. A match the restart
+     * cut short is ended as stopped, as {@link #stopAll} would have ended it, so no leave to strike survives a restart;
+     * that ending is itself a change for the Record. The most recent ended matches are kept as {@link #prune} keeps them.
+     * How many were put back.
+     */
+    public int restore(java.util.Collection<Stored> kept) {
+        if (!matches.isEmpty()) throw new IllegalStateException("Matches are restored only into an empty registry");
+        for (Stored stored : kept) {
+            Match match = stored.match();
+            if (stored.limit() >= 0) limits.put(match.id(), stored.limit());
+            if (stored.headStart() > 0) headStarts.put(match.id(), stored.headStart());
+            if (match.state() != State.ENDED) put(match.id(), match.ended(null, Set.of(), "Stopped: the server restarted"));
+            else matches.put(match.id(), match);
+        }
+        prune();
+        return matches.size();
+    }
 
     /** A match proposed between its players, none of them joined yet: two for a duel, one to eight runners for a speedrun. */
     public Result propose(Mode mode, List<UUID> invited) {
@@ -182,7 +233,7 @@ public final class MatchRegistry {
             if (active(player).isPresent()) return Result.refused("A player invited is already in a match");
         }
         var match = new Match(UUID.randomUUID(), mode, invited, runners, Set.of(), Set.of(), State.LOBBY, -1, -1, null, Set.of(), "");
-        matches.put(match.id(), match);
+        put(match.id(), match);
         prune();
         return Result.ok(match, "Proposed; each player must join");
     }
@@ -196,7 +247,7 @@ public final class MatchRegistry {
         var joined = new LinkedHashSet<>(match.joined());
         joined.add(player);
         match = match.with(joined);
-        matches.put(matchId, match);
+        put(matchId, match);
         return Result.ok(match, "Joined");
     }
 
@@ -207,7 +258,7 @@ public final class MatchRegistry {
         if (match.state() != State.LOBBY) return Result.refused("The match has already started or ended");
         if (!match.joined().containsAll(match.invited())) return Result.refused("Not every invited player has joined");
         match = match.counting(tick + COUNTDOWN_TICKS);
-        matches.put(matchId, match);
+        put(matchId, match);
         return Result.ok(match, "Counting down");
     }
 
@@ -229,6 +280,7 @@ public final class MatchRegistry {
                 continue;
             }
             entry.setValue(match);
+            this.changed.add(match.id());
             changed.add(match);
         }
         return changed;
@@ -262,7 +314,7 @@ public final class MatchRegistry {
             var joined = new LinkedHashSet<>(match.joined());
             joined.remove(player);
             match = match.with(joined);
-            matches.put(matchId, match);
+            put(matchId, match);
             return Result.ok(match, "Left");
         }
         if (match.state() == State.ENDED) return Result.refused("The match has ended");
@@ -300,7 +352,7 @@ public final class MatchRegistry {
         } else if (still.isEmpty()) {
             return end(left, null, Set.of(), "Every runner " + how);
         }
-        matches.put(left.id(), left);
+        put(left.id(), left);
         return left;
     }
 
@@ -330,14 +382,17 @@ public final class MatchRegistry {
         if (match == null) return Result.refused("No such match");
         if (match.state() == State.ENDED) return Result.refused("The match has ended");
         match = match.ended(null, Set.of(), "Stopped");
-        matches.put(matchId, match);
+        put(matchId, match);
         return Result.ok(match, "Stopped");
     }
 
     /** Every match stopped, as when the server stops. */
     public void stopAll() {
         for (var entry : matches.entrySet()) {
-            if (entry.getValue().state() != State.ENDED) entry.setValue(entry.getValue().ended(null, Set.of(), "Stopped"));
+            if (entry.getValue().state() != State.ENDED) {
+                entry.setValue(entry.getValue().ended(null, Set.of(), "Stopped"));
+                changed.add(entry.getKey());
+            }
         }
     }
 
@@ -412,7 +467,7 @@ public final class MatchRegistry {
 
     private Match end(Match match, UUID winner, Set<UUID> winners, String how) {
         Match ended = match.ended(winner, winners, how);
-        matches.put(match.id(), ended);
+        put(match.id(), ended);
         return ended;
     }
 

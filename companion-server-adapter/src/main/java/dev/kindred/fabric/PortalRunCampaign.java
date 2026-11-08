@@ -5368,14 +5368,12 @@ final class PortalRunCampaign {
                     Optional<Task> closer = stepCloser(body, site, at[0], open);
                     if (closer.isPresent()) return closer;
                 }
-                // Out of sight from here as well as out of reach: from the stand first (F-25c4aj).
-                if (!player.getBlockPos().equals(site.stand())) {
-                    return Optional.of(go(site.stand(), 0.3, false, "Cast: stand in front of the frame site"));
-                }
-                KindredMod.LOGGER.info("{} gives up the frame site at {}: cannot open {} ({})", player.getName().getString(),
-                        site.origin().toShortString(), open.toShortString(), world.getBlockState(open));
-                portalSite = null;
-                return Optional.empty();
+                // Out of sight from here: from the stand first (F-25c4aj), then from the row in front, as the site's clearing
+                // goes, before the frame is given up. Given up from its stand, with six of its ten obsidian cast: in E-40's
+                // iteration 14 (`e40a14-80b7150`) on 31102026 Echo's next side cell needed the top corner over it open, the
+                // corner's deepslate out of sight from the stand under the rock over it; it tried sites overlapping its own
+                // obsidian after, and no portal was lit on the seed (F-25c4cn).
+                return clearOrApproach(body, site, open, "Cast");
             }
             // The mould: a block behind the cell and behind the one above, faces the pours can be aimed at from the front.
             for (BlockPos back : List.of(cell.offset(site.toward()), cell.up().offset(site.toward()))) {
@@ -5623,6 +5621,20 @@ final class PortalRunCampaign {
                 if (back.isPresent()) return back;
             }
             return Optional.of(go(stand, 0.5, false, "Back to its portal frame to light it"));
+        }
+        // Something in the opening, as gravel that came down into it while it dug for flint beside the frame: a portal
+        // will not light there, so the opening is cleared first, as the site's clearing would (the stand, then the row in
+        // front). On 31102026 in E-40's iteration 15 (`e40a15-dbf4e5c`) Kindred's finished frame had two gravel in its
+        // opening's bottom row; every try to light it was refused as obstructed, and it walked back to the frame 604
+        // times with no portal lit (F-25c4co). Not a "Portal" walk, for the same reason as the walk back. A liquid there is
+        // left: it is not dug, and water from the cast drains.
+        for (int up = 1; up <= 3; up++) {
+            for (int across = 1; across <= 2; across++) {
+                BlockPos cell = portalSite.at(across, up);
+                BlockState state = world.getBlockState(cell);
+                if (state.isAir() || state.isIn(BlockTags.FIRE) || state.isOf(Blocks.NETHER_PORTAL) || !world.getFluidState(cell).isEmpty()) continue;
+                return clearOrApproach(body, portalSite, cell, "Light");
+            }
         }
         return Optional.of(new Task("native_ignite_portal", coords(base, Map.of("slot", String.valueOf(slot))), "Portal: light it"));
     }

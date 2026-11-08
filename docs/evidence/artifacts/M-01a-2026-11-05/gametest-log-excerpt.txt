@@ -69,6 +69,10 @@ failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
 [18:10:07] [Server thread/INFO] (Kindred) Horse ridden 25.6 blocks in 61 ticks
 # Control (the horse's server-side movement off): fails 3 of 3
 (4857024, -60, -10105877) Ridden across the field: 14.0 from the field's edge, 0.0 ridden
+# Ranch flakes root-caused (2026-11-08, 5c4acc7, claude/modes-1108-13): NativeRanchGameTests + NativeOwnRanchGameTests alone
+Before, on 165066c (with #52): 8 runs, 4 failed: sheep given up behind the far fence (2); a chicken 3 down off the field; the plot resown 3 of 4 then the cows bred again
+[18:53:12] [Server thread/INFO] (Kindred) Ranch leaving at 11409125, -53, 10935079: leaving the pen; standing at Pos[x=11409128, y=-53, z=10935082], it saw [cow at 11409126,-53,10935083, cow at 11409127,-53,10935083, cow (young) at 11409126,-53,10935083]
+After: 5 runs on e90abe0, 4 clean (the fifth: the new sunken fixture's penned cow grazed into the patch, fixed); 3 runs on 5c4acc7, 8 of 8 each
 # A horse of its own (2026-11-08, 165066c, claude/modes-1108-12): NativeHorseGameTests.withItsCabinStanding..., 3 runs
 [18:18:46] [Server thread/INFO] (Kindred) Own horse: abceee7c-82db-4862-a035-14ae33fd9bbf, tame true, saddled true; A horse of its own, tamed and saddled
 [18:19:57] [Server thread/INFO] (Kindred) Own horse: 6c710622-7a21-46b0-8433-47b9f33c8244, tame true, saddled true; A horse of its own, tamed and saddled

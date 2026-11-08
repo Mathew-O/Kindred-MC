@@ -191,7 +191,8 @@ final class RoamingEdits {
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getWorldBorder().contains(pos)) return "Outside the loaded world";
         if (!world.canPlayerModifyAt(player, pos)) return "Protected area (spawn protection)";
-        return null;
+        // A faction's land and the safe zones (M-06d), at admission; the same check stands again at dispatch.
+        return TerritoryGuard.denial(player, pos);
     }
 
     /** A lectern with no book on it: breaking it loses nothing, as a player rerolling a librarian breaks it (E-45c). */
