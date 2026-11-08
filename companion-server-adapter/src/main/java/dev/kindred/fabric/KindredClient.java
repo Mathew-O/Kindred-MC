@@ -33,6 +33,7 @@ public final class KindredClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         EntityRendererRegistry.register(KindredMod.COMPANION, CompanionRenderer::new);
+        KindredHud.register(); // The Factions panel (M-06l).
         openPanel = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.kindred.panel", InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_K, "key.categories.kindred"));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

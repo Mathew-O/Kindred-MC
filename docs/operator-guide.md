@@ -764,6 +764,10 @@ In a faction world:
   `/faction capture` for 100 coins, within its own capacity; never a new faction's first 48 hours, never within 30
   minutes of the faction's last loss, never the same chunk twice in an hour. A captured chunk is the new owner's with
   its chests and their contents; until then it is protected like any claim.
+- The panel (M-06l): with Kindred's client mod, a panel on the right shows your faction, power, coins, the land you
+  stand in, the standings, your faction's notices and the market's movers; H cycles full, compact and hidden. On an
+  ordinary client the same essentials are in a sidebar, and crossing into other land is said once on the action bar.
+  Nobody is sent another faction's private numbers.
 
 ## Development native bodies
 Explicit development native bodies are available:
