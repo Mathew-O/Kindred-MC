@@ -49,6 +49,8 @@ final class RanchRunner {
     private final Blueprint shut;
     private final BlockPos at;
     private BuildRunner shutting;
+    /** Whether the last task it gave was a walk of the ranch's own, its refusal to be told to the ranch. */
+    private boolean ranchWalk;
     private boolean opened;
     private int openFailures;
     private String ranched;
@@ -134,6 +136,7 @@ final class RanchRunner {
         var player = body.entity();
         var world = player.getServerWorld();
         var seen = observe(player, world);
+        ranchWalk = false;
         String before = ranch.phase();
         var step = ranch.next(seen);
         // What it saw as it gave up fetching, as well as at the end: the ranch fixture once left with cows at the gate
@@ -152,6 +155,10 @@ final class RanchRunner {
                 var args = new java.util.HashMap<String, String>(Map.of("x", str(go.target().x()), "y", str(go.target().y()), "z", str(go.target().z()),
                         "range", String.valueOf(go.range()), "hold", str(slot)));
                 if (go.leg() > 0) args.put("leg", str(go.leg()));
+                // With the food in hand, leading or looking for an animal: no drop it cannot step back up, nor the animal
+                // follow it back up (the wheat fixture: after a cow past the field's edge, down three and no way back).
+                if (go.holdFood()) args.put("fall", "1");
+                ranchWalk = true;
                 yield Optional.of(new PortalRunCampaign.Task("native_goto", Map.copyOf(args), go.why()));
             }
             case Ranch.Step.Gate gate -> Optional.of(new PortalRunCampaign.Task("native_gate", Map.of("x", str(ranch.gate().x()), "y", str(ranch.gate().y()),
@@ -188,6 +195,13 @@ final class RanchRunner {
 
     /** A task the build runner gave, when it finished; the pen's own build hears of it. */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
+        // A walk of the ranch's own refused: the one it went for given up, or the spot crossed off, not asked for again.
+        // Told before the pen's build, whose runner is never marked done once the pen stands.
+        if (ranchWalk && task.skill().equals("native_goto")) {
+            ranchWalk = false;
+            if (!completed) ranch.refused();
+            return;
+        }
         if (shutting != null && !shutting.done()) shutting.finished(task, completed, reason, world);
         else if (!doorway.isEmpty() && !opened && (task.label().equals("Open the doorway") || task.label().equals("To the doorway"))) {
             if (!completed) openFailures++;
