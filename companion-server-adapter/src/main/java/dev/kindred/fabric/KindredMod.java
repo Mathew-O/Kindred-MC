@@ -66,7 +66,10 @@ public final class KindredMod implements ModInitializer {
         KindredSkinPayloads.register();
         KindredSkins.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
-                PlayerCommands.register(dispatcher));
+{
+            PlayerCommands.register(dispatcher);
+            FactionCommands.register(dispatcher); // Factions mode (M-06c).
+        });
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, position, state, blockEntity) ->
                 NativePlayerBody.allowBreak(world, player, position, state));
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register((world, player, position, state, blockEntity) ->
@@ -139,9 +142,10 @@ public final class KindredMod implements ModInitializer {
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
             if (entity instanceof CompanionEntity companion && runtime != null) runtime.unloaded(companion);
         });
-        // A player's fall ends a duel it was in (M-00a); a native player's own death is handled by its runtime as well.
+        // A player's fall ends a duel it was in (M-00a) and is written to the World Record (F-31); a native player's own death is
+        // handled by its runtime as well.
         net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-            if (entity instanceof net.minecraft.server.network.ServerPlayerEntity fallen && runtime != null) runtime.playerFell(fallen.getUuid());
+            if (entity instanceof net.minecraft.server.network.ServerPlayerEntity fallen && runtime != null) runtime.playerDied(fallen, source);
         });
         // A build battle's plots are their builders' alone while it runs (M-04a).
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) ->

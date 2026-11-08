@@ -330,6 +330,20 @@ final class PlayerRuntime {
     private final Set<ProjectId> storedProjects = new HashSet<>();
     /** Matches, and who may attack whom in them (M-00a, D7). */
     private final dev.kindred.core.match.MatchRegistry matches = new dev.kindred.core.match.MatchRegistry();
+    /**
+     * The exact facts kept from the World Record (F-31), rebuilt from it at startup and advanced as each event is written;
+     * owner-thread only. {@link #recordFlush} is the last write to it, waited for at shutdown.
+     */
+    private dev.kindred.core.record.Ledgers ledgers = dev.kindred.core.record.Ledgers.EMPTY;
+    private CompletableFuture<?> recordFlush = CompletableFuture.completedFuture(null);
+    /** The last event the ledgers have folded in. */
+    private long ledgersThrough;
+    /** Events asked to be written and not yet written, in order: the rules read the ledgers with these folded in. */
+    private final java.util.ArrayDeque<dev.kindred.core.record.WorldEvent> unwritten = new java.util.ArrayDeque<>();
+    /** Factions mode's rules at the game's events (M-06c onward). */
+    private final FactionsService factions;
+    /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
+    private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
     private final MatchPresenter presenter;
     /** Each race's splits, by match (M-03a). */
@@ -478,6 +492,7 @@ final class PlayerRuntime {
         LIVE.add(this);
         this.presenter = new MatchPresenter(server);
         this.metadataDirectory = metadataDirectory;
+        this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
@@ -631,6 +646,11 @@ final class PlayerRuntime {
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
+        // Factions mode's settings (M-06c), seeded with the rulebook's defaults where the file does not exist yet.
+        Path factionFile = server.getRunDirectory().resolve("config").resolve("kindred").resolve("factions.properties");
+        CompletableFuture.supplyAsync(() -> FactionsService.readSettings(factionFile)).whenComplete((read, failure) -> handBack(() -> {
+            if (read != null && startupGeneration == currentStartupGen && !factionsForTest) factions.settings(read);
+        }));
         CompletableFuture.supplyAsync(() -> readPace(directory)).whenComplete((step, failure) -> handBack(() -> {
             if (step != null && startupGeneration == currentStartupGen) groupStep = dev.kindred.core.match.GroupPace.further(Optional.ofNullable(groupStep), Optional.of(step)).orElse(null);
         }));
@@ -643,9 +663,11 @@ final class PlayerRuntime {
                                             database.workSetups().thenCompose(setups ->
                                                     database.nativePlayers().thenCompose(nativePlayers ->
                                                             startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
-                                                                    database.modes(logicalIds).thenApply(modes ->
+                                                                    database.modes(logicalIds).thenCompose(modes ->
+                                                                            database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds()).thenApply(record ->
                                                                             new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), inputs.worldMode(), database, records,
-                                                                                    profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes)
+                                                                                    profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes,
+                                                                                    dev.kindred.core.record.Ledgers.replay(record), record.isEmpty() ? 0 : record.getLast().id()))
                                                                     )
                                                             )
                                                     )
@@ -721,6 +743,11 @@ final class PlayerRuntime {
                     worldId = loaded.worldId();
                     claims.invalidateOtherEpochs(worldId);
                     store = loaded.store();
+                    // The ledgers from the World Record alone (F-31); the matches it kept put back, any cut short stopped.
+                    ledgers = loaded.ledgers();
+                    ledgersThrough = loaded.ledgersThrough();
+                    matches.restore(ledgers.matches().values());
+                    flushMatches();
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -1020,7 +1047,7 @@ final class PlayerRuntime {
             }
             NativePlayerBody body = new NativePlayerBody(world, entry.snapshot(), position,
                     (lease, intent, target) -> nativeMutationAllowed(entry, lease, intent, target));
-            body.pvp((attacker, target) -> server.isPvpEnabled() && matches.mayAttack(attacker, target));
+            body.pvp((attacker, target) -> server.isPvpEnabled() && (matches.mayAttack(attacker, target) || factionsMayAttack(attacker, target)));
             entry.arbiter = new ActionArbiter(entry.snapshot(), body);
             body.bind(entry.arbiter);
             if (!fresh) body.verifySave(state.orElseThrow(), entry.nativeState.saveReceipt());
@@ -2462,6 +2489,9 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        flushMatches();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
+        if (tick % 20 == 11 && factionsWorld()) factions.tick(server.getPlayerManager().getPlayerList());
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
@@ -6060,6 +6090,7 @@ final class PlayerRuntime {
     private void onNativeDeath(Entry entry, NativePlayerBody body) {
         if (entry.nativeBody != body || entry.awaitingRespawn) return;
         var player = body.entity();
+        recordDeath(player, body.deathSource() != null ? body.deathSource() : player.getRecentDamageSource());
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
@@ -13335,8 +13366,10 @@ final class PlayerRuntime {
             closeNativeAction(entry);
             ++entry.generation;
         }
+        if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         running = false;
         matches.stopAll();
+        flushMatches();
         presenter.clear();
         memory.close(); // The strategist's bridge, when there is one.
         peerRadio.saveAll(); // What each knows of the others (E-50).
@@ -13348,7 +13381,7 @@ final class PlayerRuntime {
         recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
-                .toArray(CompletableFuture[]::new)).handle((ignored, failure) -> null);
+                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
         shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
                 loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
                 .thenCompose(future -> future));
@@ -13512,7 +13545,7 @@ final class PlayerRuntime {
                                   java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
                                   java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
                                   StartupLedgerSnapshot ledgerSnapshot,
-                                  Map<UUID, OperatingMode> modes) { }
+                                  Map<UUID, OperatingMode> modes, dev.kindred.core.record.Ledgers ledgers, long ledgersThrough) { }
     private record SpawnLocation(double x, double y, double z, float yaw) { }
 
     /** The store's budget writes for a new session, each after the test seam's delay when one is set (F-22c2). */
@@ -14448,6 +14481,9 @@ final class PlayerRuntime {
      */
     boolean matchForbidsStrike(UUID attacker, UUID target) {
         requireThread();
+        // A faction world is a match every faction member joined (M-06c, D7): a strike between players stands only where
+        // a match or the faction rules allow it, for people and AI players alike.
+        if (factionsWorld()) return !matches.mayAttack(attacker, target) && !factions.mayAttack(attacker, target);
         var match = matches.active(attacker).orElse(null);
         if (match == null || !match.invited().contains(target) || match.out().contains(target)) return false;
         return !matches.mayAttack(attacker, target);
@@ -15136,6 +15172,200 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * A player died, a person or an AI player alike: the death written to the World Record (F-31) with where, how and
+     * by whom, then {@link #playerFell}.
+     */
+    void playerDied(net.minecraft.server.network.ServerPlayerEntity player, net.minecraft.entity.damage.DamageSource source) {
+        requireThread();
+        // This runtime's own AI players are recorded by their own death hook (onNativeDeath), once.
+        if (entryForPlayer(player.getUuid()) == null) recordDeath(player, source);
+        playerFell(player.getUuid());
+    }
+
+    /** A death written to the World Record (F-31): who, where, the cause, and the killer when a player. */
+    private void recordDeath(net.minecraft.server.network.ServerPlayerEntity player, net.minecraft.entity.damage.DamageSource source) {
+        UUID killer = source != null && source.getAttacker() instanceof net.minecraft.server.network.ServerPlayerEntity attacker && attacker != player ? attacker.getUuid() : null;
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("cause", source == null ? "unknown" : source.getName());
+        data.put("killer", killer == null ? "" : killer.toString());
+        BlockPos at = player.getBlockPos();
+        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), player.getServerWorld().getRegistryKey().getValue().toString(),
+                dev.kindred.core.record.DeathLedger.DEATH, player.getUuid(), player.getGameProfile().getName(), at.getX() + "," + at.getY() + "," + at.getZ(), data));
+        // In a faction world, the power it costs when it qualifies (M-06c), the same for people and AI players.
+        if (factionsWorld()) {
+            String why = factions.died(player, killer);
+            KindredMod.LOGGER.info("{} died in a faction world: {}", player.getGameProfile().getName(), why);
+        }
+    }
+
+    /** Once a game day, at night: the ledgers checked against the Record (F-31). */
+    static final int LEDGER_CHECK_TICKS = 24_000;
+
+    /**
+     * The agreement check (F-31): every ledger kept here, and the action ledger's own table, against the same rebuilt from
+     * the World Record alone up to the last event the ledgers have folded in, read and folded off the server thread. Each check
+     * is itself an event ({@code ledger_check}); a disagreement is logged as an error for an operator, never repaired.
+     */
+    CompletableFuture<Boolean> checkLedgers() {
+        requireThread();
+        SqliteCompanionStore database = store;
+        if (database == null) return CompletableFuture.completedFuture(false);
+        // The ledgers as they stand against the Record up to the last event they have folded in.
+        dev.kindred.core.record.Ledgers kept = ledgers;
+        long through = ledgersThrough;
+        var result = new CompletableFuture<Boolean>();
+        database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds())
+                .thenCombine(database.checkActionLedger(), (events, actions) -> {
+                    var upTo = events.stream().filter(event -> event.id() <= through).toList();
+                    var checks = new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo));
+                    checks.add(actions);
+                    return checks;
+                }).whenComplete((checks, failure) -> handBack(() -> {
+                    if (failure != null) {
+                        KindredMod.LOGGER.error("World Record check could not run", failure);
+                        result.complete(false);
+                        return;
+                    }
+                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees);
+                    var data = new java.util.LinkedHashMap<String, String>();
+                    for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
+                    for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
+                            check.ledger(), check.kept(), check.fromRecord());
+                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
+                            agree ? "agrees" : "differs", "", data));
+                    result.complete(agree);
+                }));
+        return result;
+    }
+
+    /** Each match changed since the last flush written to the World Record as it now stands (F-31). */
+    private void flushMatches() {
+        var changed = matches.drainChanges();
+        if (changed.isEmpty()) return;
+        long tick = server.getTicks(), now = System.currentTimeMillis();
+        record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
+    }
+
+    /** One event written to the World Record (F-31). */
+    void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
+
+    /**
+     * Events written to the World Record through the ordered writer, all or none, never blocking the tick; once written,
+     * the ledgers advance by them on this thread. Without an open store (not yet ready) nothing durable can be written,
+     * and that is logged.
+     */
+    void record(List<dev.kindred.core.record.WorldEvent> drafts) {
+        requireThread();
+        if (drafts.isEmpty()) return;
+        SqliteCompanionStore database = store;
+        if (database == null) {
+            KindredMod.LOGGER.error("World Record not open; {} event(s) not written: {}", drafts.size(), drafts.getFirst().kind());
+            return;
+        }
+        var write = database.record(drafts);
+        recordFlush = write;
+        unwritten.addAll(drafts);
+        write.whenComplete((written, failure) -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("World Record write failed for {} event(s): {}", drafts.size(), drafts.getFirst().kind(), failure);
+                handBack(() -> { for (int i = 0; i < drafts.size(); i++) unwritten.pollFirst(); });
+                return;
+            }
+            handBack(() -> {
+                for (int i = 0; i < drafts.size(); i++) unwritten.pollFirst();
+                for (var event : written) {
+                    ledgers = ledgers.apply(event);
+                    ledgersThrough = Math.max(ledgersThrough, event.id());
+                }
+            });
+        });
+    }
+
+    /** The ledgers as the World Record now gives them (F-31). */
+    dev.kindred.core.record.Ledgers ledgers() {
+        requireThread();
+        return ledgers;
+    }
+
+    /** The ledgers with every event asked for and not yet written folded in: what the rules decide from. */
+    dev.kindred.core.record.Ledgers projected() {
+        requireThread();
+        var state = ledgers;
+        for (var event : unwritten) state = state.apply(event);
+        return state;
+    }
+
+    /** Whether this world plays Factions (M-06). */
+    boolean factionsWorld() {
+        return worldMode == dev.kindred.core.match.GameModes.WorldMode.FACTIONS || factionsForTest;
+    }
+
+    /** Factions mode's part of the server (M-06c). */
+    FactionsService factions() {
+        requireThread();
+        return factions;
+    }
+
+    /** A fixture's faction world under {@code settings}, the mode not yet being playable for operators. */
+    void factionsWorldForTest(dev.kindred.core.factions.FactionSettings settings) {
+        requireThread();
+        factionsForTest = true;
+        factions.settings(settings);
+    }
+
+    /** A fixture's accounts recorded as first seen long ago, so the new-account rule is not what it tests. */
+    void factionsSeenLongAgoForTest(List<UUID> players) {
+        requireThread();
+        for (UUID player : players) record(dev.kindred.core.factions.PowerRules.seen(player, server.getTicks(), 0));
+    }
+
+    /** Whether {@code attacker} may strike {@code target} by the faction rules, in a faction world. */
+    boolean factionsMayAttack(UUID attacker, UUID target) {
+        requireThread();
+        return factionsWorld() && factions.mayAttack(attacker, target);
+    }
+
+    /**
+     * {@code who}'s faction request (M-06c), a person's or an AI player's alike, answered to {@code source}. Only in a
+     * faction world.
+     */
+    FactionsService.Reply faction(ServerCommandSource source, UUID who, String verb, List<String> args) {
+        requireThread();
+        FactionsService.Reply reply;
+        if (!ready || !running) reply = FactionsService.Reply.refused("Kindred is loading saved records.");
+        else if (!factionsWorld()) reply = FactionsService.Reply.refused("This world does not play Factions.");
+        else {
+            var player = server.getPlayerManager().getPlayer(who);
+            String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : source.getWorld().getRegistryKey().getValue().toString();
+            BlockPos pos = player != null ? player.getBlockPos() : BlockPos.ofFloored(source.getPosition());
+            reply = factions.request(who, verb.toLowerCase(java.util.Locale.ROOT), args, world, pos, this::playerByName, this::factionName);
+        }
+        for (String line : reply.lines()) {
+            if (reply.accepted()) feedback(source, line); else reject(source, line);
+        }
+        return reply;
+    }
+
+    /** An online player's id by name, a person or an AI player. */
+    private UUID playerByName(String name) {
+        if (name == null || name.isBlank()) return null;
+        var player = server.getPlayerManager().getPlayer(name.trim());
+        return player == null ? null : player.getUuid();
+    }
+
+    /** A player's name for a faction reply: online, or the start of its id. */
+    private String factionName(UUID player) {
+        var online = server.getPlayerManager().getPlayer(player);
+        return online != null ? online.getName().getString() : player.toString().substring(0, 8);
+    }
+
+    /** Whether every write to the World Record asked for so far is done. */
+    boolean recordWritten() {
+        requireThread();
+        return recordFlush.isDone();
+    }
+
     /** A player fell: a running duel it was in ends, the other the winner. */
     void playerFell(UUID playerId) {
         requireThread();
@@ -15154,6 +15384,7 @@ final class PlayerRuntime {
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
     void playerLeft(UUID playerId) {
         requireThread();
+        if (factionsWorld()) factions.disconnected(playerId);
         matches.departed(playerId).ifPresent(this::announce);
     }
 
