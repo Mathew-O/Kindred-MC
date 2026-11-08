@@ -82,7 +82,7 @@ public final class RanchChoice {
         for (Ranch.Kind kind : ORDER) {
             if (seen.getOrDefault(kind, 0) < 2) continue;
             if (food.getOrDefault(kind, 0) >= FOOD) {
-                return new Decision(Optional.of(kind), "A pair of " + kind.noun() + "s close by and the food to breed them: a ranch");
+                return new Decision(Optional.of(kind), "A pair of " + kind.plural() + " close by and the food to breed them: a ranch");
             }
             if (wantingFood == null) wantingFood = kind;
         }
@@ -92,12 +92,12 @@ public final class RanchChoice {
         // Cows' and sheep's wheat is grown from seeds, in a plot by its base (WheatPlot): earned so.
         for (Ranch.Kind kind : ORDER) {
             if ((kind == Ranch.Kind.COW || kind == Ranch.Kind.SHEEP) && seen.getOrDefault(kind, 0) >= 2) {
-                return new Decision(Optional.empty(), "A pair of " + kind.noun() + "s close by; " + FOOD + " wheat first, grown from seeds",
+                return new Decision(Optional.empty(), "A pair of " + kind.plural() + " close by; " + FOOD + " wheat first, grown from seeds",
                         Optional.of(kind));
             }
         }
         if (wantingFood != null) {
-            return new Decision(Optional.empty(), "A pair of " + wantingFood.noun() + "s close by; " + FOOD + " " + foodName(wantingFood)
+            return new Decision(Optional.empty(), "A pair of " + wantingFood.plural() + " close by; " + FOOD + " " + foodName(wantingFood)
                     + " first to breed them");
         }
         return new Decision(Optional.empty(), "No pair of animals seen near home to keep");

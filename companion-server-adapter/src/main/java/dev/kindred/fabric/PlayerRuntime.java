@@ -4845,7 +4845,7 @@ final class PlayerRuntime {
             return false;
         }
         if (RanchRunner.woodOf(player) == null) {
-            entry.ranchNote = "A pair of " + choice.kind().get().noun() + "s to keep, and no wood for a pen's fences";
+            entry.ranchNote = "A pair of " + choice.kind().get().plural() + " to keep, and no wood for a pen's fences";
             return false;
         }
         var before = footprint(last);
@@ -4968,7 +4968,7 @@ final class PlayerRuntime {
         entry.goalProgress = "Ranch: starting";
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
-        KindredMod.LOGGER.info("{} ranch: {}: {}s at {}, {}, {}", entry.data.displayName(), why, kind.noun(), pen.x(), pen.y(), pen.z());
+        KindredMod.LOGGER.info("{} ranch: {}: {} at {}, {}, {}", entry.data.displayName(), why, kind.plural(), pen.x(), pen.y(), pen.z());
         return true;
     }
 
@@ -5611,7 +5611,7 @@ final class PlayerRuntime {
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
         if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
-        feedback(source, entry.data.displayName() + ": a ranch for " + kind.noun() + "s, a " + wood + " pen at " + origin.toShortString() + ".");
+        feedback(source, entry.data.displayName() + ": a ranch for " + kind.plural() + ", a " + wood + " pen at " + origin.toShortString() + ".");
         return 1;
     }
 
@@ -5644,7 +5644,7 @@ final class PlayerRuntime {
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
         if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
-        feedback(source, entry.data.displayName() + ": " + kind.noun() + "s brought into the pasture ward's pen at " + origin.toShortString()
+        feedback(source, entry.data.displayName() + ": " + kind.plural() + " brought into the pasture ward's pen at " + origin.toShortString()
                 + " by its doorway.");
         return 1;
     }

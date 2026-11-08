@@ -341,7 +341,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
         BlockPos home = o.add(16, 7, 16);
         BlockPos cabinAt = home.add(-3, 0, -3);
-        BlockPos cowPen = o.add(2, 7, 26);
+        BlockPos cowPen = o.add(22, 7, 27);
         java.util.UUID[] sheep = new java.util.UUID[2];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
