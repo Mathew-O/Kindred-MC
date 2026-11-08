@@ -76,7 +76,9 @@ public final class NativeMarketGameTests implements FabricGameTest {
                         store.allWorldEvents(Set.of(MarketDesk.INTENT, MarketDesk.CANCEL, MarketLedger.SALE, "coins")).thenCompose(events -> store.closeAsync().thenApply(i -> events))))
                 .createAndAdd(() -> {
                     context.assertTrue(read[0].isDone() && !read[0].isCompletedExceptionally(), "Record read");
-                    var kinds = read[0].join().stream().map(WorldEvent::kind).toList();
+                    // Cleo's own events: other tests' players on the same server get their starting coins in the same Record.
+                    var hers = read[0].join().stream().filter(e -> cleo[0].getUuid().equals(e.actor())).toList();
+                    var kinds = hers.stream().map(WorldEvent::kind).toList();
                     context.assertTrue(kinds.equals(List.of("coins", MarketDesk.INTENT, MarketLedger.SALE, "coins", MarketLedger.SALE, "coins")),
                             "The start, the intent, then each kind's sale with its coins: " + kinds);
                     var sales = read[0].join().stream().filter(e -> e.kind().equals(MarketLedger.SALE)).toList();
