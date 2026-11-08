@@ -148,7 +148,7 @@ Give a native player its storage with `/aiplayer storage at <x y z> [player]`, l
 - **A two-floor house** (9×11, 553 blocks): a storage wall, a workshop, and a staircase up to a bedroom.
 - **A manor** (13×15, 972 blocks): a storage hall, a workshop, an enchanting room ringed by bookshelves, bedrooms and a library.
 
-Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them. **Its own base (M-01c; in development).** With `/aiplayer bases on` (operators only; AI world edits must be on too), a player that is playing builds its own base as it goes. With its first base standing and nothing more to build yet, it also keeps animals of its own (M-01a): the first kind it has seen a pair of near it and holds the food to breed (cows, then sheep, pigs, then chickens), in a pen of its own wood on flat ground by its base. It says why it waits when it does ("A pair of cows close by; 2 wheat first"). With a pair of chickens in sight and no seeds, it breaks the grass about it for seeds first (only grass it can see), then keeps the chickens; wheat for cows and sheep it does not earn yet. It is kept with its bases (as `ranch`): taken up again after a restart, never begun twice, and ended for good by `/aiplayer ranch stop`. One that strays while it works it goes to look for, where it last saw it.
+Doors and beds now have a placement rule: each is placed by its first half, and the other half comes with it. Players walking about open a closed wooden door in their way with a click, as a player does, and shut it again behind them. **Its own base (M-01c; in development).** With `/aiplayer bases on` (operators only; AI world edits must be on too), a player that is playing builds its own base as it goes. With its first base standing and nothing more to build yet, it also keeps animals of its own (M-01a): the first kind it has seen a pair of near it and holds the food to breed (cows, then sheep, pigs, then chickens), in a pen of its own wood on flat ground by its base. It says why it waits when it does ("A pair of cows close by; 2 wheat first"). With a pair of chickens in sight and no seeds, it breaks the grass about it for seeds first (only grass it can see), then keeps the chickens. With a pair of cows or sheep and no wheat, it grows the wheat: a small plot by its base (two by two, kept with its bases), a wooden hoe made from its own wood, seeds from the grass, tilled and sown; it gets on with other things while the wheat grows, harvests and sows again when it is ripe, then keeps the animals. It remembers the animals it saw about its base for five minutes. It is kept with its bases (as `ranch`): taken up again after a restart, never begun twice, and ended for good by `/aiplayer ranch stop`. One that strays while it works it goes to look for, where it last saw it.
 - **When.** It does this when it has no goal, build or ranch of its own and is not stopped. A new player only looks on until it is set to play, with `/aiplayer mode optimal` or the K panel.
 - **Which stage.** It moves its base on a stage when it is ready:
   - a cabin once it has stone tools;
@@ -344,35 +344,109 @@ says `atlas=off`).
 
 ### Rescue plans (F-29)
 
-With the strategist on, a player that is stuck and whose own move elsewhere has had its turn (its watchdog's second
-spell in a row of three minutes with no progress) asks the strategist for a way out. It asks once for each such spell,
-at most once every five minutes, within the same rates and daily budgets as advice. It sends a report of about 800
-tokens:
+With the strategist on, a player that has made no progress on its goal for a minute of game time (F-29b; before, its
+watchdog's second spell in a row of three minutes) asks the strategist for a way out. Time spent sheltering, waiting for
+daylight, resting or fighting is not counted. Its own move elsewhere is begun at the same moment, if none is under way,
+and the strategist is told of it; it stops while a plan runs. The watchdog's stuck spells are still counted at three
+minutes with no progress, whether or not a move begun early is under way, so stuck minutes mean what they meant. It asks
+once for each such spell, at most once every five minutes, within the same rates and daily budgets as advice. It sends a
+report of about a thousand tokens:
 
 - where it is, and its health and food;
-- the light at its feet;
-- the blocks round it, nine by nine and five high, each kind a letter;
+- the light at its feet, whether the sky is open over it, the time of day, and the hostile mobs it can see;
+- the blocks round it, nine by nine and five high, each kind a letter, as it sees them: a block its sight does not
+  reach from where it stands is `?`, whatever is there;
+- where it can walk each way and what stops it (a two-high wall, a step with no room to jump, a drop of so many, water,
+  lava, what it cannot see), how many blocks are clear over its head, and what is under its feet, all worked out from
+  those blocks alone and never from the route planner;
+- what its best pickaxe lets it break, and the blocks within reach it cannot;
+- what it can place: full blocks, torches, ladders, water buckets and boats; and what it carries;
 - the last five things refused or failed, with why;
-- what it carries;
 - what the goal wants next;
 - its stance and habits;
-- what its own tries did.
+- what its own tries are doing: its move elsewhere and which way, so the plan does not send it the same way.
+
+The log says `rescue asked: spell N, T ticks after its last progress` as it asks; the evaluation's summary gives each
+seed's median of T in game seconds.
 
 The reply is one to six steps, each in one of these forms and nothing else:
 
 ```text
-walk <north|south|east|west> <1-8>       walked to the block that many away, round what is in the way, at about its height
+walk <north|south|east|west> <1-8>       a block at a time, up or down one at most; stops at the first thing in the way
+tunnel <north|south|east|west> <1-6>     a passage two high broken a block at a time and walked, with its own tool
+stairs <up|down> <north|south|east|west> <1-6>  a staircase, a block up or down for each block along; never straight down
+bridge <north|south|east|west> <1-6>     a block of its own put under each step where there is no ground
 dig <north|south|east|west|up|down> <1-4> the blocks in the way: a passage two high sideways; over its head, or under its feet
 pillar <1-6>                             up that many, a block of its own from the hotbar under its feet each jump
 place <north|south|east|west>            a block of its own from the hotbar beside its feet
+torch                                    a torch from its hotbar on the floor beside its feet
+look <north|south|east|west|up|down>     no action: the next round's report shows the blocks four that way, as far as it sees them
 wait <1-4>                               seconds
 eat                                      food from its hotbar
 retreat <north|south|east|west> <1-3>    back off without turning
 ```
 
-The strategist is told what each step does as it is carried out: a dig does not move the player (it climbs a shaft dug
-up with `pillar`, and drops into a hole dug down); a walk climbs one block at a time at most; it breaks only what a tool
-it carries can harvest, so stone, deepslate and ores need a pickaxe.
+Since F-29c the walk, the tunnel, the staircase and the bridge are local executors. Each works a block at a time from the
+blocks round the player as it sees them, never from the route planner. Each of their breaks, placements and one-block
+moves is an ordinary recorded task under the edits policy, the arbiter and the claims: `native_break` (its drops left on
+the ground), `native_place`, `native_walk` on the level and `native_traverse` up or down a block. They stop, and say
+where, at:
+
+- a two-high wall, a step with no room to jump, or a drop of more than one;
+- a block the player's tools cannot break;
+- water or lava it can see that a break would let in;
+- water, lava, a drop or what it cannot see under a staircase down;
+- lava under a bridge's next block.
+
+The step's line says how far it went: `rescue: walk north 4 -> failed: 'walk north 4' went 2, then a two-high wall of
+stone`. Every break also has the server's own guard against releasing lava or water, and a step that guard refuses ends
+the plan the same way. A `look` is one second spent looking that way; one look a plan.
+
+The strategist is told what each step does as it is carried out. A dig does not move the player: it climbs a shaft dug
+up with `pillar`, and drops into a hole dug down. It breaks only what a tool it carries can harvest, so stone,
+deepslate and ores need a pickaxe.
+
+**Rounds (F-29c).** A stuck spell may have up to three rounds, each its own plan, parsed and checked as every plan is.
+- **After a plan stops at a step, or after a look,** the next round is asked at once. Its report adds "the rounds
+  before", each step with how it went, so the plan does not repeat a step that failed.
+- **After a plan carried out to its end,** the goal has twenty seconds of game time to make progress (a new stage, a new
+  best in what it needs, or new ground). If it does not, the next round is asked.
+- **Progress after a plan has run** ends the spell as out (`rescue spell N: out after R rounds`). Three rounds without
+  it end the spell as not out (`rescue spell N: not out after 3 rounds`), and the player's own ways go on.
+- **A reply turned down** spends its round.
+- **No reply at all** ends the spell's conversation.
+- **Asks:** the five minutes between one player's asks apply to a spell's first round only. Each round goes through the
+  same rates and daily budgets as every ask. The log says `rescue asked: spell N round R, T ticks after its last
+  progress`.
+
+The evaluation's summary counts the rounds asked, the spells ended and how many got out.
+
+**Recipes (F-29d).** When a spell gets out by the strategist's plan, the server keeps a *recipe*: the steps of that plan
+that ran, as far as each went, with the kind of scene it was learned in. The scene is told coarsely, from what the player
+sees, never where it is:
+
+- the sides it is walled in on within two blocks;
+- the room overhead (up to four);
+- what is under its feet;
+- water or lava above, below or beside;
+- whether a wall it cannot break hems it in;
+- dark or not;
+- a ledge within a pillar's reach;
+- standing in a shaft one wide;
+- whether it carries blocks, and its pickaxe's tier.
+
+The next time any player on the server is stuck a minute in the same kind of scene, the heaviest matching recipe is tried
+first, parsed and checked as every plan is, with no model call (`rescue recipe: spell N, <steps> (weight W)`). If it gets
+the player out it gains weight (`rescue spell N: out by its recipe`). If it does not, the strategist's first round is
+asked as before, told what the recipe did; two failures in a row retire the recipe.
+
+The recipes live in `<world>/kindred/rescue-recipes.json`, at most 500, shared by every player on the server and written
+off the server thread when they change. You may read, edit or delete the file while the server is stopped; an entry whose
+steps are not of the vocabulary is left out when it is read. A server with no file starts from the starter set shipped in
+the mod (`data/kindred/rescue-recipes.json`), each recipe in it reviewed and committed with the replay that proves it.
+None is shipped yet: the set is grown from evaluation runs (F-29d, open), and until then a server starts empty.
+Recipes are tried only with rescues on. `tools/eval/run.py` keeps each run's file beside its result, as candidates for
+the starter set.
 
 Core reads the reply and refuses the whole of it for one step that is not in that list or outside its bounds. A plan
 is also refused, with nothing moved, when:
