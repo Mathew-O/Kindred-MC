@@ -127,10 +127,13 @@ class FactionPlayTest {
         var seenWest = List.of(new FactionPlay.Sighting(west.key(), blue.toString(), now - 60_000));
         var scout = FactionPlay.decide(view(person(50, 50, 50, 70), 10_000 * Coins.CENT, Optional.empty(), Optional.of(new Territory.Chunk(W, 150, 150)), List.of(),
                 List.of(), Map.of(), AuctionBook.EMPTY, seenWest));
-        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.SCOUT, west.key(), 0, "Go to an exposed enemy's border it saw"), scout.getLast());
+        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.SCOUT, west.key(), 0, "Go to an exposed enemy's border it saw"), scout.getFirst(), "combativeness 70: the raid before its own expansion");
         var capture = FactionPlay.decide(view(person(50, 50, 50, 70), 10_000 * Coins.CENT, Optional.empty(), Optional.of(west), List.of(), List.of(), Map.of(),
                 AuctionBook.EMPTY, seenWest));
-        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.CAPTURE, west.key(), 100 * Coins.CENT, "Capture this exposed border chunk"), capture.getLast());
+        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.CAPTURE, west.key(), 100 * Coins.CENT, "Capture this exposed border chunk"), capture.getFirst());
+        var fierce = FactionPlay.decide(view(person(50, 50, 50, 50), 10_000 * Coins.CENT, Optional.empty(), Optional.of(west), List.of(), List.of(), Map.of(),
+                AuctionBook.EMPTY, seenWest));
+        assertEquals(FactionPlay.Kind.CLAIM, fierce.getFirst().kind(), "combativeness 50: its own land grows first, the raid after");
         assertTrue(FactionPlay.decide(view(person(50, 50, 50, 20), 10_000 * Coins.CENT, Optional.empty(), Optional.of(west), List.of(), List.of(), Map.of(),
                 AuctionBook.EMPTY, seenWest)).stream().noneMatch(FactionPlayTest::raid), "a peaceable player does not raid");
         // Blue secure again (its power back): nothing to take.

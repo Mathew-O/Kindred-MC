@@ -1851,6 +1851,11 @@ final class PlayerRuntime {
                 task = new NativeCastAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))));
+            } else if (skill.equals("native_faction")) {
+                String kind = arguments.get("kind"), target = arguments.getOrDefault("target", "");
+                long amount = Long.parseLong(arguments.getOrDefault("amount", "0"));
+                task = new NativeFactionAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack, kind, target,
+                        () -> factionAct(entry, dev.kindred.core.factions.FactionPlay.Kind.valueOf(kind), target, amount));
             } else if (skill.equals("native_discard")) {
                 task = new NativeTossAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), Integer.parseInt(arguments.get("count")), null);
@@ -2533,6 +2538,7 @@ final class PlayerRuntime {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
                 if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
+                if (tick % 20 == 0 && factionsWorld()) watchFactionLand(entry, entry.nativeBody.entity());
                 refreshTacticalObservation(entry, tick);
                 SignalFrame frame = createSignalFrame(entry, tick);
                 entry.attentionSnapshot = entry.attention.observe(frame);
@@ -3486,6 +3492,9 @@ final class PlayerRuntime {
         if (evade != null) return evade;
         var raid = raidCandidates(entry, body);
         if (raid != null) return raid;
+        // In a faction world, what the faction world asks of it (M-06i): survival's urgent needs still come first.
+        var faction = factionCandidates(entry, body);
+        if (faction != null) return faction;
 
         // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
         shareOutFinds(entry, body);
@@ -8782,6 +8791,172 @@ final class PlayerRuntime {
         var args = new HashMap<>(at);
         args.put("range", "2.5");
         return List.of(new NativeTaskCandidate(raid, "native_goto", Map.copyOf(args)));
+    }
+
+    // ------------------------------------------------------------------ the faction world (M-06i)
+
+    /** Once a second: the claimed land round it, another faction's, as it sees it. */
+    private void watchFactionLand(Entry entry, ServerPlayerEntity player) {
+        var ledgers = projected();
+        String own = ledgers.factions().of(player.getUuid()).map(f -> f.id().toString()).orElse("");
+        entry.factionPlay.watch(player, ledgers.claims(), own, factions.now());
+    }
+
+    /**
+     * Its faction-world step: once every 30 seconds it weighs the faction world ({@link
+     * dev.kindred.core.factions.FactionPlay}), which only chooses. What it chose is one ordinary task: a {@code
+     * native_faction} request (found, join, claim or capture where it stands, sell) made only when that task is
+     * dispatched, under its lease, through the same calls a person's commands use, the rules checked again there; or a
+     * walk to a claim elsewhere, a border it saw, or its faction's home. Null when it has nothing to do there.
+     */
+    private List<NativeTaskCandidate> factionCandidates(Entry entry, NativePlayerBody body) {
+        if (!factionsWorld() || !ready || !running) return null;
+        var player = body.entity();
+        var play = entry.factionPlay;
+        long tick = server.getTicks();
+        if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
+            play.decidedAt = tick;
+            play.chosen = factionChoose(entry, player);
+            if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
+                play.move = play.chosen;
+                play.chosen = null;
+            }
+        }
+        if (play.chosen != null) {
+            var choice = play.chosen;
+            var candidate = new dev.kindred.core.TaskPreferences.Candidate(FactionsPlayer.taskId(player.getUuid(), choice),
+                    dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0, dev.kindred.core.TaskPreferences.Affinities.none(),
+                    new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+            return List.of(new NativeTaskCandidate(candidate, "native_faction", Map.of("kind", choice.kind().name(), "target", choice.target(),
+                    "amount", String.valueOf(choice.amount()))));
+        }
+        var move = play.move;
+        if (move == null) return null;
+        BlockPos to = FactionsPlayer.destination(move, player);
+        if (to == null || FactionsPlayer.arrived(move, player, to)) {
+            // There: weigh again at once, so a claim or capture is asked where it now stands.
+            play.move = null;
+            play.decidedAt = Long.MIN_VALUE / 2;
+            return null;
+        }
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(FactionsPlayer.taskId(player.getUuid(), move),
+                dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0, dev.kindred.core.TaskPreferences.Affinities.none(),
+                new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
+                "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /** The view it decides from: the ledgers' public facts, its own sightings, its spare stock, its personality. */
+    dev.kindred.core.factions.FactionPlay.View factionView(Entry entry, ServerPlayerEntity player) {
+        var ledgers = projected();
+        UUID id = player.getUuid();
+        String world = player.getServerWorld().getRegistryKey().getValue().toString();
+        var here = dev.kindred.core.factions.Territory.Chunk.at(world, player.getBlockX(), player.getBlockZ());
+        java.util.Optional<dev.kindred.core.factions.Territory.Chunk> site = java.util.Optional.empty();
+        if (entry.bases != null && !entry.bases.built.isEmpty()) {
+            var base = entry.bases.built.getFirst();
+            site = java.util.Optional.of(dev.kindred.core.factions.Territory.Chunk.at(base.dimension(), base.x(), base.z()));
+        } else if (world.equals(dev.kindred.core.factions.Territory.OVERWORLD)) site = java.util.Optional.of(here);
+        var spare = new ArrayList<dev.kindred.core.factions.FactionPlay.Spare>();
+        var slots = FactionsPlayer.spareSlots(player);
+        if (!slots.isEmpty()) {
+            var estimate = market.estimate(player, slots);
+            for (var quote : estimate.quotes().entrySet()) spare.add(new dev.kindred.core.factions.FactionPlay.Spare(quote.getKey(), quote.getValue().count(), quote.getValue().cents()));
+        }
+        boolean healthy = player.getHealth() >= player.getMaxHealth() * 0.6f && player.getHungerManager().getFoodLevel() >= 12;
+        return new dev.kindred.core.factions.FactionPlay.View(id, entry.profile.personality(), ledgers.factions(), ledgers.power(), ledgers.claims(),
+                ledgers.safe().chunks(), ledgers.captures(), ledgers.coins().of(id), factions.settings(), factions.now(), site, java.util.Optional.of(here),
+                healthy, spare, List.of(), Map.of(), ledgers.auctions(), entry.factionPlay.seen());
+    }
+
+    /** What it chooses now in the faction world, the first of its choices; nothing while a trade of its is being saved. */
+    private dev.kindred.core.factions.FactionPlay.Choice factionChoose(Entry entry, ServerPlayerEntity player) {
+        if (market.holds().held(player.getUuid())) return null;
+        var choices = dev.kindred.core.factions.FactionPlay.decide(factionView(entry, player));
+        if (choices.isEmpty()) return null;
+        var choice = choices.getFirst();
+        entry.decided(server.getTicks(), "faction: " + choice.reason() + (choice.target().isEmpty() ? "" : " (" + choice.target() + ")"));
+        return choice;
+    }
+
+    /**
+     * Its faction request, at dispatch (the {@code native_faction} task): through the same calls a person's commands use,
+     * every rule checked there again where it now stands.
+     */
+    private NativeFactionAction.Reply factionAct(Entry entry, dev.kindred.core.factions.FactionPlay.Kind kind, String target, long amount) {
+        var chosen = entry.factionPlay.chosen;
+        // Asked once: a copy of the task left in the weighed candidates asks nothing again.
+        if (chosen == null || chosen.kind() != kind || !chosen.target().equals(target)) return new NativeFactionAction.Reply(false, "Already asked");
+        entry.factionPlay.chosen = null;
+        entry.cachedRoutineCandidates = List.of();
+        attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+        var body = entry.nativeBody;
+        if (body == null || !body.connected() || !factionsWorld()) return new NativeFactionAction.Reply(false, "Not in a faction world");
+        var player = body.entity();
+        UUID id = player.getUuid();
+        String world = player.getServerWorld().getRegistryKey().getValue().toString();
+        BlockPos pos = player.getBlockPos();
+        String name = entry.data.displayName();
+        FactionsService.Reply reply = switch (kind) {
+            case FOUND -> {
+                var pick = FactionsPlayer.nameFor(name, entry.factionPlay.foundings);
+                var colours = dev.kindred.core.factions.FactionColour.values();
+                String colour = colours[Math.floorMod(id.hashCode(), colours.length)].id();
+                var r = factions.request(id, "create", List.of(pick[0], pick[1], colour), world, pos, this::playerByName, this::factionName);
+                if (!r.accepted()) entry.factionPlay.foundings++;
+                yield r;
+            }
+            case JOIN -> {
+                var faction = projected().factions().get(UUID.fromString(target)).orElse(null);
+                yield faction == null ? FactionsService.Reply.refused("That faction is gone")
+                        : factions.request(id, "join", List.of(faction.name()), world, pos, this::playerByName, this::factionName);
+            }
+            case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName);
+            case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName);
+            case SELL -> {
+                var slots = FactionsPlayer.spareSlots(player);
+                if (slots.isEmpty()) yield FactionsService.Reply.refused("Nothing spare to sell");
+                market.sell(player, slots, world, line -> KindredMod.LOGGER.info("{} faction: {}", name, line));
+                yield FactionsService.Reply.told(List.of("Offered its spare blocks to the market"));
+            }
+            case BUY -> {
+                String refused = market.buy(player, target, (int) amount, world, line -> KindredMod.LOGGER.info("{} faction: {}", name, line));
+                yield refused == null ? FactionsService.Reply.told(List.of("Buying " + amount + " " + target)) : FactionsService.Reply.refused(refused);
+            }
+            case BID -> {
+                String refused = auctions.bid(player, target, amount, world, line -> KindredMod.LOGGER.info("{} faction: {}", name, line));
+                yield refused == null ? FactionsService.Reply.told(List.of("Bid on " + target)) : FactionsService.Reply.refused(refused);
+            }
+            case DEFEND, SCOUT -> FactionsService.Reply.refused("A walk, not a request");
+        };
+        String line = String.join("; ", reply.lines());
+        entry.decided(server.getTicks(), "faction: " + line);
+        KindredMod.LOGGER.info("{} faction: {}", name, line);
+        return new NativeFactionAction.Reply(reply.accepted(), line);
+    }
+
+    /** A fixture's AI player (by its companion id) weighs the faction world now; what it chose is left for its turn. */
+    dev.kindred.core.factions.FactionPlay.Choice factionChooseForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) throw new IllegalStateException("No connected body");
+        var body = entry.nativeBody.entity();
+        watchFactionLand(entry, body);
+        var play = entry.factionPlay;
+        play.decidedAt = server.getTicks();
+        play.chosen = factionChoose(entry, body);
+        if (play.chosen != null && FactionsPlayer.moves(play.chosen, body)) {
+            play.move = play.chosen;
+            play.chosen = null;
+        }
+        return play.move != null ? play.move : play.chosen;
+    }
+
+    /** What the fixture's AI player is walking to in the faction world, if anything. */
+    dev.kindred.core.factions.FactionPlay.Choice factionMoveForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? null : entry.factionPlay.move;
     }
 
     /** An opponent of its, alive and in its sight, within six blocks of {@code pos}. */
@@ -14547,6 +14722,9 @@ final class PlayerRuntime {
         // A runner's chest it saw them use, raided at the model's call or its own rule's (E-44), before it gears up.
         var raid = raidCandidates(entry, body);
         if (raid != null) return raid;
+        // In a faction world, what the faction world asks of it (M-06i): survival's urgent needs still come first.
+        var faction = factionCandidates(entry, body);
+        if (faction != null) return faction;
         if (!huntReady(player)) return null;
         // Gearing up as the hunt goes on (M-02b): iron armour it carries put on, and the next piece made from the iron in
         // hand, before the needle is followed on.
@@ -15627,6 +15805,8 @@ final class PlayerRuntime {
         /** The campaign whose memory was read, whether the read is in, and the leg's revision last written. */
         private PortalRunCampaign memoryCampaign;
         private boolean memoryLoaded;
+        /** Its side of a faction world (M-06i): whose land it has seen, and where it is going. */
+        final FactionsPlayer factionPlay = new FactionsPlayer();
         /** Its atlas of this world (F-30), kept across goals; read from its file once, saved once a game minute and at the end. */
         dev.kindred.core.atlas.Atlas atlas;
         private boolean atlasLoading;

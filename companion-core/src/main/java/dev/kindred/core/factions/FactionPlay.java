@@ -21,7 +21,8 @@ import java.util.UUID;
  * Technical: The pure decision of M-06i. {@link #decide} reads one immutable {@link View} (the ledgers' public facts,
  * the player's own sightings, quotes and wants, its personality's bounded weights) and returns its choices in order,
  * the first to do now: membership, then claims, then earning and spending, then defence, then raids; a capture of its
- * own land under way puts going home before all of it. Every claim and
+ * own land under way puts going home before all of it, and no raid is chosen while defence is; a combative player
+ * ({@value #RAID_FIRST} or more) with an exposed enemy border in sight puts the raid before its own expansion. Every claim and
  * capture is tried against the same rules the commands use ({@link Territory#claim}, {@link Capture#capture}) with the
  * view's facts, so a choice the rules would refuse is never offered; the adapter checks again at dispatch. Personality
  * nudges thresholds only; it never permits anything the rules refuse.
@@ -35,6 +36,8 @@ public final class FactionPlay {
     public static final long UNDER_ATTACK_MS = 10 * 60_000L;
     /** A sighting older than this is checked again before it is acted on. */
     public static final long STALE_SIGHTING_MS = 60 * 60_000L;
+    /** Combativeness at which a seen exposed border is taken before free land is claimed. */
+    public static final int RAID_FIRST = 60;
 
     static final String UNDER_ATTACK = "Home: its land is being taken";
 
@@ -89,6 +92,12 @@ public final class FactionPlay {
         if (defend.isPresent() && defend.get().reason().equals(UNDER_ATTACK)) return List.of(defend.get());
         boolean officer = mine.members().get(view.self()).atLeast(Faction.Rank.OFFICER);
         long reserve = reserve(view);
+        // A raid only while nothing at home calls it back, and only by an officer fit to fight with a will to.
+        List<Choice> raids = officer && defend.isEmpty() && view.healthy() && view.personality().combativeness() >= 40
+                ? raid(view, mine, at) : List.of();
+        // A combative player with an exposed border in sight takes it before it spreads into free land; others grow first.
+        boolean raidFirst = !raids.isEmpty() && view.personality().combativeness() >= RAID_FIRST;
+        if (raidFirst) out.addAll(raids);
         if (officer) claim(view, mine, at).ifPresent(out::add);
         if (!view.spare().isEmpty()) {
             long cents = view.spare().stream().mapToLong(Spare::cents).sum();
@@ -106,11 +115,8 @@ public final class FactionPlay {
                 spendable -= ask;
             }
         }
-        if (defend.isPresent()) {
-            out.add(defend.get());
-            return out; // Home first: no raid while its own land is being taken.
-        }
-        if (officer && view.healthy() && view.personality().combativeness() >= 40) raid(view, mine, at).forEach(out::add);
+        defend.ifPresent(out::add);
+        if (!raidFirst) out.addAll(raids);
         return out;
     }
 

@@ -127,6 +127,8 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
+            case "native_faction" -> new SkillDescriptor(id, Set.of("kind"), Set.of("target", "amount"), Set.of(), Set.of(),
+                    Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
                     "hold", "leg", "safe"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
