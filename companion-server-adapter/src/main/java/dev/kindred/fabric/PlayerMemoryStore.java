@@ -107,6 +107,39 @@ final class PlayerMemoryStore implements AutoCloseable {
         Pen ranch;
         /** Its wheat plot (M-01a), or none. */
         Plot plot;
+        /** Its pens after the first (M-01a), a pen per kind, oldest first; the first stays {@link #ranch}. A file from before has none. */
+        List<Pen> pens = new ArrayList<>();
+
+        /** All its pens, the first first. */
+        List<Pen> allPens() {
+            var all = new ArrayList<Pen>();
+            if (ranch != null) all.add(ranch);
+            if (pens != null) all.addAll(pens);
+            return all;
+        }
+
+        /** The pen {@code pen} recorded as run; false if it is not one of its pens. */
+        boolean finish(Pen pen) {
+            if (pen == null) return false;
+            if (pen.equals(ranch)) {
+                ranch = ranch.finished();
+                return true;
+            }
+            if (pens == null) return false;
+            int i = pens.indexOf(pen);
+            if (i < 0) return false;
+            pens.set(i, pen.finished());
+            return true;
+        }
+
+        /** A new pen recorded: the first as {@link #ranch}, the rest after it. */
+        void addPen(Pen pen) {
+            if (ranch == null) ranch = pen;
+            else {
+                if (pens == null) pens = new ArrayList<>();
+                pens.add(pen);
+            }
+        }
     }
 
     /**
