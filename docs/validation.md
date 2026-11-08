@@ -508,6 +508,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
 
 Branch `claude/modes-1108-11`. M-01a stays open. See [M-01a](evidence/M-01a.md).
 - Native: `NativeHorseGameTests` with `NativeBoatGameTests` alone, 3 runs on `ddc70cd`, 3 of 3 each. Control (the horse's server-side movement off): 0 of 3.
+## M-01a: the ranch fixtures' intermittent failures root-caused, 2026-11-08
+
+Branch `claude/modes-1108-13`. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchTest` (the behind-the-pen test new, failing before).
+- Native: `NativeRanchGameTests` with `NativeOwnRanchGameTests` alone. Before, on `165066c`: 4 of 8 runs failed. After, on `5c4acc7`: 3 runs, 8 of 8 each.
 
 ## M-01a: more than a pair per pen; no drop it cannot climb back, 2026-11-08
 

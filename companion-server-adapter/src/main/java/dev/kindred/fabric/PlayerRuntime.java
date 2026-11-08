@@ -4817,6 +4817,9 @@ final class PlayerRuntime {
             if (!pen.complete()) return startOwnRanch(entry, body, pen, "Back to its ranch");
             kept.add(dev.kindred.core.survival.Ranch.Kind.valueOf(pen.kind()));
         }
+        // Its wheat plot tended: a cell left bare (trampled back to dirt by its animals, or its crop broken) sown again
+        // with the seeds it holds, as a player keeps its field (the wheat fixture: one cell bare after the cows went by).
+        if (tendDecision(entry, body, record, dimension)) return true;
         var player = body.entity();
         var seen = new java.util.EnumMap<dev.kindred.core.survival.Ranch.Kind, Integer>(dev.kindred.core.survival.Ranch.Kind.class);
         var food = new java.util.EnumMap<dev.kindred.core.survival.Ranch.Kind, Integer>(dev.kindred.core.survival.Ranch.Kind.class);
@@ -4948,6 +4951,30 @@ final class PlayerRuntime {
         entry.ranchNote = why;
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
+        return true;
+    }
+
+    /** Whether its wheat plot has a cell with no crop and it holds seeds to sow it; if so, the plot taken up again (M-01a). */
+    private boolean tendDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, String dimension) {
+        if (record.plot == null || !record.plot.dimension().equals(dimension)) return false;
+        var player = body.entity();
+        if (player.getInventory().count(Items.WHEAT_SEEDS) == 0) return false;
+        var world = player.getServerWorld();
+        BlockPos corner = new BlockPos(record.plot.x(), record.plot.y(), record.plot.z());
+        boolean bare = false;
+        for (int dx = 0; dx < PLOT && !bare; dx++) for (int dz = 0; dz < PLOT && !bare; dz++) {
+            BlockPos cell = corner.add(dx, 0, dz);
+            var soil = world.getBlockState(cell);
+            boolean ground = soil.isOf(Blocks.FARMLAND) || soil.isOf(Blocks.DIRT) || soil.isOf(Blocks.GRASS_BLOCK);
+            bare = ground && !world.getBlockState(cell.up()).isOf(Blocks.WHEAT);
+        }
+        if (!bare) return false;
+        String wood = RanchRunner.woodOf(player);
+        entry.growing = new WheatRunner(corner, PLOT, 0, wood == null ? "oak" : wood);
+        entry.ranchNote = "Its wheat plot tended: a bare cell sown again";
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), entry.ranchNote);
         return true;
     }
 
