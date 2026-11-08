@@ -9117,6 +9117,8 @@ final class PlayerRuntime {
         long floorSince = -1;
         /** Gone back along the line to push the stopped cart on again: kept to until the push is given. */
         boolean repush;
+        /** The furthest rail along the line the rolling cart has got to, since it was taken up (F-22c25). */
+        int rollBest = -1;
         /** Where it last walked to pick up what it took up, and the places it could not get to. */
         BlockPos lastPickup;
         final Set<BlockPos> unreached = new HashSet<>();
@@ -9538,6 +9540,7 @@ final class PlayerRuntime {
                 if (villager.getRootVehicle() == cart) {
                     b.phase = Bring.Phase.ROLL;
                     b.since = now;
+                    b.rollBest = -1;
                     return bringCandidates(entry, body);
                 }
                 if (cart.getVelocity().horizontalLength() > 0.01) return List.of(waitTask(task, "For the cart"));
@@ -9636,15 +9639,29 @@ final class PlayerRuntime {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "nudge:" + b.pushes), "native_push", Map.of("target", cart.getUuid().toString(),
                             "seconds", "5", "x", String.valueOf(b.slot.getX()), "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()))));
                 }
-                // While it rolls, back behind the line's start, as a player keeps a cart from running off its end: one that
-                // runs out of way short of the cell and rolls back meets the player there and is sent on again.
-                boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) <= 0.25;
+                // While it rolls, after it along the line, two rails behind the furthest it has got to, as a player keeps
+                // a cart from running back off the line's start: one that runs out of way short of the cell and rolls back
+                // meets the player there, near where it lost its way, and is sent on again from there. Waited for behind
+                // the line's start instead, it rolled all the way back there and was pushed from there again, as short
+                // each time: the line's turn and the climb into the hall took the way from every push (CI on PR #36,
+                // abc4fbf) (F-22c25). Only along the rails level with the line's start: up the climb into the hall there is
+                // no room to stand, and waiting there to get in, it let the cart roll back past it to the start again.
+                int along = b.rails.indexOf(cart.getBlockPos());
+                if (along > b.rollBest) b.rollBest = along;
+                BlockPos after = b.push;
+                for (int i = Math.min(b.rollBest - 2, b.rails.size() - 1); i >= 1; i--) {
+                    if (b.rails.get(i).getY() == b.push.getY()) {
+                        after = b.rails.get(i);
+                        break;
+                    }
+                }
+                boolean behind = player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(after)) <= 0.25;
                 if (!still) {
                     b.since = now;
                     b.repush = false;
-                    if (!behind && !cart.getBlockPos().equals(b.push)) {
-                        KindredMod.LOGGER.info("{} bringing: back behind the line's start at {} while the cart rolls", entry.data.displayName(), b.push.toShortString());
-                        return List.of(standAt(bringTask(entry, "back behind:" + b.pushes), b.push));
+                    if (!behind && !cart.getBlockPos().equals(after)) {
+                        KindredMod.LOGGER.info("{} bringing: after the cart along the line, to {} while it rolls", entry.data.displayName(), after.toShortString());
+                        return List.of(standAt(bringTask(entry, "after it:" + b.pushes + ":" + b.rollBest), after));
                     }
                     return List.of(waitTask(task, "For the cart to roll in"));
                 }

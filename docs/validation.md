@@ -16,6 +16,21 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## PR #36's pull-request build: the loaded cart met where it rolled back (F-22c25) — 8 November 2026 (`claude/e40-ladder-16-1107`)
+
+PR #36's pull-request build on `abc4fbf` (run 42444424547) failed one native fixture, 585 of 586:
+`NativeBringGameTests.aLibrarianOffTheLineIsBroughtHomeFromWhereItStands`, "[ROLL]". Its push build passed, and so did
+main's on the same bring code. Alone, five runs passed.
+- **From the job's log:** the loaded cart lost its way short of the climb into the hall and rolled back past the line's
+  start, where the player waited for it. The player's push on it was refused, and it ran off the line's open end.
+- **The slowed cart fixture** (F-22c25, [evidence](evidence/F-22c25.md)), staged: that scene with the loaded cart
+  slowed once on its way north, as it ran out of way in CI.
+  - On `abc4fbf`: fails 3 of 3, pushed eight times from the line's start, rolling back each time.
+  - With the fix: passes 3 of 3, brought home. A first form, following up the climb too, passed 2 of 3.
+  - With it, `NativeBringGameTests`, `NativeTradingHallGameTests`, `NativeCartGameTests` and `NativeRerollGameTests`:
+    16 of 16.
+  - **Build:** `bash ./gradlew build` successful; JUnit 959 tests, 0 failures, 6 skipped (unchanged).
+
 ## E-40, iteration 13 (`e40a13-fe2ba3b`, batch 16 up to F-25c4cg) — 8 November 2026 (`claude/e40-ladder-16-1107`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `fe2ba3b` (batch 16 with iteration 12 filed, before
