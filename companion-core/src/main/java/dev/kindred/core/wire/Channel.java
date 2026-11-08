@@ -4,7 +4,7 @@ import java.util.Locale;
 
 /**
  * In plain terms: the named places a message can be sent on: to one person, to a team, to a faction, to everyone
- * living at a place, to one side of a match, to everyone in earshot (or the whole server for a mode's own
+ * living at a place, to one side of a match, to everyone playing a match, to everyone in earshot (or the whole server for a mode's own
  * announcements), or to the operators. Each has a limit on how many lines a minute go out on it and a window in which
  * the same message is not sent twice.
  *
@@ -19,6 +19,7 @@ public enum Channel {
     FACTION(10, 60_000, Visibility.FACTION),
     SETTLEMENT(4, 120_000, Visibility.SETTLEMENT),
     SIDE(6, 30_000, Visibility.SIDE),
+    MATCH(6, 30_000, Visibility.MATCH),
     PUBLIC(3, 300_000, Visibility.PUBLIC),
     OPERATOR(20, 60_000, Visibility.OPERATOR);
 

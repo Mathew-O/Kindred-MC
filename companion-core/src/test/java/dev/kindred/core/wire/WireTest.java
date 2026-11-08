@@ -200,7 +200,7 @@ class WireTest {
         assertEquals(Delivery.Refusal.MODE, wire.send(team, GameModes.WorldMode.SPEEDRUN, roster, 1).refused().orElseThrow());
         assertEquals(Delivery.Refusal.MODE, wire.send(Message.of("faction.need", wren.id(), Scope.faction("oak"), Map.of(), List.of()),
                 GameModes.WorldMode.COOP_SURVIVAL, roster, 2).refused().orElseThrow());
-        assertEquals(Set.of(Channel.PUBLIC, Channel.OPERATOR), ModeChannels.of(GameModes.WorldMode.SPEEDRUN));
+        assertEquals(Set.of(Channel.MATCH, Channel.PUBLIC, Channel.OPERATOR), ModeChannels.of(GameModes.WorldMode.SPEEDRUN));
         assertEquals(Set.of(Channel.values()), ModeChannels.of(null));
         var audit = wire.send(Message.of("operator.anomaly", null, Scope.operators(), facts("note", Fact.of("claim refused", Visibility.OPERATOR)),
                 List.of(9L)), GameModes.WorldMode.SPEEDRUN, roster, 3);
@@ -241,6 +241,31 @@ class WireTest {
             assertEquals(2, shyLines[m], "fewer is half");
         }
         assertTrue(wire.heldForTest() < 200, "the Wire forgets what no window needs: " + wire.heldForTest());
+    }
+
+    @Test
+    void aMatchMessageReachesEveryPlayerInItAndNobodyElseInEveryMode() {
+        var wire = new Wire(Wire.Config.defaults());
+        var hunter = ai("Hawk", "", Listener.side("m1", "hunters"), SPAWN);
+        var runner = person("Ren", "", Listener.side("m1", "runners"), SPAWN);
+        var other = person("Odd", "", Listener.side("m2", "runners"), SPAWN);
+        var bystander = person("Guest", "", "", SPAWN);
+        var roster = List.of(hunter, runner, other, bystander);
+        var start = Message.of("match.started", null, Scope.match("m1"), facts("mode", Fact.of("manhunt", Visibility.MATCH)), List.of(11L));
+        var d = wire.send(start, GameModes.WorldMode.MANHUNT, roster, 0);
+        assertEquals(Set.of(hunter.id(), runner.id()), Set.copyOf(d.receivers()));
+        // A side's fact never goes on the whole match's channel; an outsider cannot post on the match.
+        assertEquals(Delivery.Refusal.NARROWER_FACT, wire.send(Message.of("match.note", hunter.id(), Scope.match("m1"),
+                facts("runner_at", Fact.of("1, 2, 3", Visibility.SIDE)), List.of()), GameModes.WorldMode.MANHUNT, roster, 1).refused().orElseThrow());
+        assertEquals(Delivery.Refusal.NOT_MEMBER, wire.send(Message.of("match.note", other.id(), Scope.match("m1"), Map.of(), List.of()),
+                GameModes.WorldMode.MANHUNT, roster, 2).refused().orElseThrow());
+        // A speedrun's split goes to its runners: each its own side of the match.
+        var a = ai("A", "", Listener.side("s1", "A"), SPAWN);
+        var b = person("B", "", Listener.side("s1", "B"), SPAWN);
+        var split = wire.send(Message.of("match.split", a.id(), Scope.match("s1"), facts("split", Fact.of("nether 6:12", Visibility.MATCH)), List.of()),
+                GameModes.WorldMode.SPEEDRUN, List.of(a, b, bystander), 3);
+        assertEquals(List.of(b.id()), split.receivers());
+        for (var mode : GameModes.WorldMode.values()) assertTrue(ModeChannels.allows(mode, Channel.MATCH), mode + " plays matches");
     }
 
     @Test

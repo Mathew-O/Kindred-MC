@@ -92,7 +92,7 @@ public final class Wire {
         if (!ModeChannels.allows(mode, channel)) return Delivery.refused(message, Delivery.Refusal.MODE);
         if (!message.fromServer()) {
             if (sender == null) return Delivery.refused(message, Delivery.Refusal.UNKNOWN_SENDER);
-            boolean group = channel == Channel.TEAM || channel == Channel.FACTION || channel == Channel.SETTLEMENT || channel == Channel.SIDE;
+            boolean group = channel != Channel.PRIVATE && channel != Channel.PUBLIC && channel != Channel.OPERATOR;
             if (group && !sender.inAudience(scope)) return Delivery.refused(message, Delivery.Refusal.NOT_MEMBER);
         }
         boolean announcement = scope.serverWide();
@@ -169,7 +169,7 @@ public final class Wire {
             boolean ok = switch (fact.visibility()) {
                 case PUBLIC, SELF -> true;
                 case OPERATOR -> receiver.operator();
-                case FACTION, TEAM, SIDE, SETTLEMENT -> sender == null
+                case FACTION, TEAM, SIDE, MATCH, SETTLEMENT -> sender == null
                         ? channel.visibility == fact.visibility()
                         : shares(receiver, sender, fact.visibility());
             };
@@ -182,6 +182,7 @@ public final class Wire {
         return switch (group) {
             case FACTION -> !a.faction().isEmpty() && a.faction().equals(b.faction());
             case SIDE -> !a.side().isEmpty() && a.side().equals(b.side());
+            case MATCH -> !a.match().isEmpty() && a.match().equals(b.match());
             case SETTLEMENT -> !a.settlement().isEmpty() && a.settlement().equals(b.settlement());
             case TEAM -> a.teams().stream().anyMatch(b.teams()::contains);
             default -> false;

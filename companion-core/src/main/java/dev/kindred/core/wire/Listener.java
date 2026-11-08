@@ -13,7 +13,7 @@ import java.util.UUID;
  * Technical: An immutable observation of one possible receiver, gathered by the adapter from the registries that own
  * each membership (the team coordinator, the factions' ledger, the match registry, the server's operator list); the
  * Wire never reads Minecraft objects. {@code side} is {@code match:side} while the receiver is joined to a running
- * match, else empty. {@code preferences} are a person's E-19a settings; ignored for AI players.
+ * match, else empty (a match without sides gives each player a side of its own, {@code match:player}). {@code preferences} are a person's E-19a settings; ignored for AI players.
  */
 public record Listener(UUID id, String name, boolean person, Set<String> teams, String faction, String settlement, String side,
                        boolean operator, Place at, ListenerPreferences preferences) {
@@ -55,6 +55,7 @@ public record Listener(UUID id, String name, boolean person, Set<String> teams, 
             case FACTION -> !faction.isEmpty() && faction.equals(scope.key());
             case SETTLEMENT -> !settlement.isEmpty() && settlement.equals(scope.key());
             case SIDE -> !side.isEmpty() && side.equals(scope.key());
+            case MATCH -> !match().isEmpty() && match().equals(scope.key());
             case PUBLIC -> scope.serverWide() || (at != null && at.within(scope.earshot(), scope.radius()));
             case OPERATOR -> operator;
         };

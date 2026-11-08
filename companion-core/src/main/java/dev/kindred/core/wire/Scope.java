@@ -8,7 +8,7 @@ import java.util.UUID;
  * place, this side of this match, everyone near here, the whole server, or the operators.
  *
  * Technical: A channel and its key: the receiver's id for {@link Channel#PRIVATE}; the team, faction or settlement id;
- * {@code match:side} for {@link Channel#SIDE}; for {@link Channel#PUBLIC} an earshot around a place, or the whole
+ * {@code match:side} for {@link Channel#SIDE}; the match id for {@link Channel#MATCH}; for {@link Channel#PUBLIC} an earshot around a place, or the whole
  * server (only for a mode's announcements); nothing for {@link Channel#OPERATOR}.
  */
 public record Scope(Channel channel, String key, Listener.Place earshot, int radius) {
@@ -33,6 +33,7 @@ public record Scope(Channel channel, String key, Listener.Place earshot, int rad
     public static Scope faction(String faction) { return new Scope(Channel.FACTION, faction, null, 0); }
     public static Scope settlement(String place) { return new Scope(Channel.SETTLEMENT, place, null, 0); }
     public static Scope side(String match, String side) { return new Scope(Channel.SIDE, Listener.side(match, side), null, 0); }
+    public static Scope match(String match) { return new Scope(Channel.MATCH, match, null, 0); }
     public static Scope earshot(Listener.Place at, int radius) { return new Scope(Channel.PUBLIC, "", at, radius); }
     public static Scope server() { return new Scope(Channel.PUBLIC, SERVER, null, 0); }
     public static Scope operators() { return new Scope(Channel.OPERATOR, "", null, 0); }
