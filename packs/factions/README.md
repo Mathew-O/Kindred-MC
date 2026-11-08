@@ -1,7 +1,8 @@
 # The Factions pack (M-06j, draft)
 
 Status: draft, 2026-11-08. Every version below was read from Modrinth's API for Minecraft 1.21.1 and Fabric on that
-date; the pack is not yet proven on a fresh server (that is M-06j's acceptance, at the end of the track).
+date. Proven on a fresh server the same day: hashes, loading, start, stop, backup, and a pre-generation sample (see
+`docs/evidence/M-06j.md`). The faction world's own steps wait for the mode to be playable (M-06i).
 
 Kindred's Factions rules live in the Kindred jar itself; this pack is the server's `mods` folder and configuration
 around it, kept as a manifest. Nothing here is bundled: each mod is downloaded from its own release by the index's
@@ -31,12 +32,13 @@ Kindred itself: the `companion-server-adapter` jar built from this repository at
 - `server.properties`: vanilla settings for the run (PvP on so Kindred's faction rules decide, vanilla spawn
   protection off as Kindred's hub is the safe zone, whitelist on).
 - `config/kindred/factions.properties`: the mode's settings, the rulebook's defaults with the 8,000-block border.
+- `config/textile_backup.json5`: backups every 3 hours and at each stop, the last 16 kept.
 
 ## Install (a fresh server)
 
 1. Java 21; the Fabric server launcher for Minecraft 1.21.1 with Fabric Loader 0.19.5.
 2. Each mod in the index into `mods/`, its SHA-512 checked; the Kindred jar beside them.
-3. `server.properties` and `config/kindred/factions.properties` from here. Memory on a 12 GB host: `-Xms8G -Xmx10G`.
+3. `server.properties`, `config/kindred/factions.properties` and `config/textile_backup.json5` from here. Memory on a 12 GB host: `-Xms8G -Xmx10G`.
 4. Start once, stop; set the world's mode: `<world>/kindred/mode.properties` with `mode=factions` (or
    `/aiplayer mode world factions` once the mode is playable; it is not until M-06i lands).
 5. Start; as an operator: `/faction admin hub` (the safe zone round spawn, the border set in every dimension, the
@@ -59,12 +61,14 @@ The border is 8,000 across, so the overworld is 4,000 out from spawn each way an
 ```
 
 That is about 250,000 overworld chunks (500 × 500) and 4,000 in the Nether. `spark profiler` while it runs, and
-`spark tps` after, should show the server back at 20 ticks a second.
+`spark tps` after, should show the server back at 20 ticks a second. On the owner's server use
+`spark heapsummary --save-to-file`, never the default, which uploads the summary to spark's public paste site.
 
 ## Backups
 
-Textile Backup: set it (its own `config/textile_backup.json5`, written on its first start) to back up every 3 hours
-and at each stop, keeping the last 16; the exact keys are to be read from that file on the proving server. Kindred's own records are inside the world folder (`<world>/kindred/companions.sqlite`, the World
+Textile Backup: `config/textile_backup.json5` from here (its own file as it writes it on a first start, with
+`backupInterval: 10800` for every 3 hours, `backupsToKeep: 16`, `shutdownBackup: true`, and `doBackupsOnEmptyServer: true`
+since AI players play with no person online). Kindred's own records are inside the world folder (`<world>/kindred/companions.sqlite`, the World
 Record), so a world backup carries them; take backups while the server runs (Textile Backup flushes saves first), never
 by copying the folder under a running server.
 
