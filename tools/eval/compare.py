@@ -16,7 +16,8 @@ from score import by_end, fmt_by_end, later
 MEASURES = [("teamFurthestIndex", "The team's furthest stage (index)", "more"), ("teamDeathsPerHour", "Deaths a game hour, the team", "fewer"),
             ("stuckSpells", "Stuck spells, the team", "fewer"), ("stuckMinutes", "Stuck game minutes, the team", "fewer"),
             ("rescues", "Rescue plans, the team", "-"), ("rescuesUnstuck", "Rescue plans that got it out, the team", "more"),
-            ("rescueAsks", "Rescues asked, the team", "-"), ("askSeconds", "Game seconds from a spell's last progress to its ask, the seed's median", "fewer"),
+            ("rescueAsks", "Rescues asked (rounds), the team", "-"), ("rescueSpells", "Rescue spells ended, the team", "-"),
+            ("rescueSpellsOut", "Rescue spells that got it out, the team", "more"), ("rescueRounds", "Rescue rounds in ended spells, the team", "-"), ("askSeconds", "Game seconds from a spell's last progress to its ask, the seed's median", "fewer"),
             ("tokens", "Model tokens, the team", "fewer")]
 
 
@@ -24,7 +25,7 @@ def on_seeds(summary, seeds, key):
     values = []
     for seed in seeds:
         s = summary["perSeed"][seed]
-        if key in ("stuckSpells", "stuckMinutes", "rescues", "rescuesUnstuck", "rescueAsks"):
+        if key in ("stuckSpells", "stuckMinutes", "rescues", "rescuesUnstuck", "rescueAsks", "rescueSpells", "rescueSpellsOut", "rescueRounds"):
             values.append(round(sum(p.get(key, 0) for p in s["players"].values()), 1))
         elif key == "askSeconds":
             asked = [x for p in s["players"].values() for x in p.get("askSeconds", [])]

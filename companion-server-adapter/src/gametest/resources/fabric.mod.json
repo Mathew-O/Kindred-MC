@@ -84,6 +84,7 @@
       "dev.kindred.fabric.NativeFallingColumnGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
+      "dev.kindred.fabric.NativeRescueRoundsGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",
       "dev.kindred.fabric.NativeFurnaceWaitGameTests",

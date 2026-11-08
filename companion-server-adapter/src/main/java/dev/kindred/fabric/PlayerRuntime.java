@@ -12744,12 +12744,13 @@ final class PlayerRuntime {
     private static java.util.Set<String> installedRescueSkills() {
         var installed = new java.util.HashSet<String>();
         for (var verb : dev.kindred.core.rescue.RescuePlan.Verb.values()) {
-            String skill = dev.kindred.core.rescue.RescuePlan.skill(verb);
-            try {
-                NativePlayerSkills.descriptor(skill);
-                installed.add(skill);
-            } catch (IllegalArgumentException notInstalled) {
-                // Not a skill of this build: a plan using it is refused.
+            for (String skill : dev.kindred.core.rescue.RescuePlan.uses(verb)) {
+                try {
+                    NativePlayerSkills.descriptor(skill);
+                    installed.add(skill);
+                } catch (IllegalArgumentException notInstalled) {
+                    // Not a skill of this build: a plan using it is refused.
+                }
             }
         }
         return java.util.Set.copyOf(installed);

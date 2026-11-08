@@ -61,8 +61,8 @@ final class StrategistBridge implements AutoCloseable {
         ModelContextStore.PlayerContext context;
         boolean loading, inFlight, asking, talking, rescueInFlight;
         long lastAt, tokensToday, lessonsAt = Long.MIN_VALUE, rescueAt;
-        /** The stuck spell last asked about, asked or turned away (F-29): each spell is asked about once. */
-        int rescueSpell;
+        /** The stuck spell last asked about, asked or turned away (F-29), and its round (F-29c): each round is asked once. */
+        int rescueSpell, rescueRound;
         int deaths = -1, stuck = -1, deathsRecorded, events = -1, strandingsRecorded;
         dev.kindred.core.survival.PortalRunPlanner.Stage stage;
         String progress = "";
@@ -507,11 +507,13 @@ final class StrategistBridge implements AutoCloseable {
      * replay when replays are on (F-27). Nothing waits for the reply.
      */
     private void rescue(UUID id, String name, State state, PortalRunCampaign campaign, ServerPlayerEntity player, MinecraftServer server) {
-        int spell = campaign.rescueWanted();
-        if (spell == 0 || spell == state.rescueSpell || state.rescueInFlight || campaign.rescuing()) return;
+        int spell = campaign.rescueWanted(), round = campaign.rescueRound();
+        if (spell == 0 || round == 0 || spell == state.rescueSpell && round <= state.rescueRound || state.rescueInFlight || campaign.rescuing()) return;
         long now = System.currentTimeMillis();
-        if (state.rescueAt != 0 && now - state.rescueAt < RESCUE_GAP_MS) return;
-        state.rescueSpell = spell; // This spell is asked about now or not at all.
+        // Five minutes between one player's conversations; a spell's later rounds follow its first at once (F-29c).
+        if (round == 1 && state.rescueAt != 0 && now - state.rescueAt < RESCUE_GAP_MS) return;
+        state.rescueSpell = spell; // This round is asked about now or not at all.
+        state.rescueRound = round;
         String report = campaign.rescueReport(player, name);
         long reserved = Strategist.rescueReservation(report);
         if (!admit(now, state, reserved)) {
@@ -530,6 +532,7 @@ final class StrategistBridge implements AutoCloseable {
             asked.rescueAsked(false);
             if (failure != null || reply == null) { // The reservation stands: it may still have been billed.
                 KindredMod.LOGGER.warn("{} rescue: no plan ({})", name, String.valueOf(failure));
+                asked.rescueUnanswered();
                 return;
             }
             long used = reply.inputTokens() - reply.cachedTokens() + (reply.cachedTokens() + 9) / 10 + reply.outputTokens();
@@ -546,6 +549,7 @@ final class StrategistBridge implements AutoCloseable {
                     + reply.millis() + " ms)";
             if (reply.failure().isPresent()) {
                 KindredMod.LOGGER.info("{} rescue: no plan ({}){}", name, reply.failure().get(), cost);
+                asked.rescueUnanswered();
                 return;
             }
             var parsed = dev.kindred.core.rescue.RescuePlan.parse(reply.steps(), reply.reason());
@@ -556,6 +560,13 @@ final class StrategistBridge implements AutoCloseable {
             var plan = parsed.plan().get();
             var refusals = new java.util.ArrayList<>(new dev.kindred.core.ProposalGate(rescueHost.installed())
                     .reject(plan.skills(), true, rescueHost.current(id, fence), java.time.Instant.now().isAfter(fence.deadline())));
+            // Every skill a step's executor may give out is installed, not only its first (F-29c).
+            for (var step : plan.steps()) {
+                for (String skill : dev.kindred.core.rescue.RescuePlan.uses(step.verb())) {
+                    String unknown = "unknown skill " + skill;
+                    if (!rescueHost.installed().contains(skill) && !refusals.contains(unknown)) refusals.add(unknown);
+                }
+            }
             var where = rescueHost.where(id);
             if (state.campaign != asked || asked.rescueWanted() != spell || asked.rescuing()) refusals.add("the stuck spell is over");
             else if (where == null || where.getSquaredDistance(from) > 2 * 2) refusals.add("it is no longer where it asked from");

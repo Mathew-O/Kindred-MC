@@ -372,18 +372,54 @@ seed's median of T in game seconds.
 The reply is one to six steps, each in one of these forms and nothing else:
 
 ```text
-walk <north|south|east|west> <1-8>       walked to the block that many away, round what is in the way, at about its height
+walk <north|south|east|west> <1-8>       a block at a time, up or down one at most; stops at the first thing in the way
+tunnel <north|south|east|west> <1-6>     a passage two high broken a block at a time and walked, with its own tool
+stairs <up|down> <north|south|east|west> <1-6>  a staircase, a block up or down for each block along; never straight down
+bridge <north|south|east|west> <1-6>     a block of its own put under each step where there is no ground
 dig <north|south|east|west|up|down> <1-4> the blocks in the way: a passage two high sideways; over its head, or under its feet
 pillar <1-6>                             up that many, a block of its own from the hotbar under its feet each jump
 place <north|south|east|west>            a block of its own from the hotbar beside its feet
+torch                                    a torch from its hotbar on the floor beside its feet
+look <north|south|east|west|up|down>     no action: the next round's report shows the blocks four that way, as far as it sees them
 wait <1-4>                               seconds
 eat                                      food from its hotbar
 retreat <north|south|east|west> <1-3>    back off without turning
 ```
 
-The strategist is told what each step does as it is carried out: a dig does not move the player (it climbs a shaft dug
-up with `pillar`, and drops into a hole dug down); a walk climbs one block at a time at most; it breaks only what a tool
-it carries can harvest, so stone, deepslate and ores need a pickaxe.
+Since F-29c the walk, the tunnel, the staircase and the bridge are local executors. Each works a block at a time from the
+blocks round the player as it sees them, never from the route planner. Each of their breaks, placements and one-block
+moves is an ordinary recorded task under the edits policy, the arbiter and the claims: `native_break` (its drops left on
+the ground), `native_place`, `native_walk` on the level and `native_traverse` up or down a block. They stop, and say
+where, at:
+
+- a two-high wall, a step with no room to jump, or a drop of more than one;
+- a block the player's tools cannot break;
+- water or lava it can see that a break would let in;
+- water, lava, a drop or what it cannot see under a staircase down;
+- lava under a bridge's next block.
+
+The step's line says how far it went: `rescue: walk north 4 -> failed: 'walk north 4' went 2, then a two-high wall of
+stone`. Every break also has the server's own guard against releasing lava or water, and a step that guard refuses ends
+the plan the same way. A `look` is one second spent looking that way; one look a plan.
+
+The strategist is told what each step does as it is carried out. A dig does not move the player: it climbs a shaft dug
+up with `pillar`, and drops into a hole dug down. It breaks only what a tool it carries can harvest, so stone,
+deepslate and ores need a pickaxe.
+
+**Rounds (F-29c).** A stuck spell may have up to three rounds, each its own plan, parsed and checked as every plan is.
+- **After a plan stops at a step, or after a look,** the next round is asked at once. Its report adds "the rounds
+  before", each step with how it went, so the plan does not repeat a step that failed.
+- **After a plan carried out to its end,** the goal has twenty seconds of game time to make progress (a new stage, a new
+  best in what it needs, or new ground). If it does not, the next round is asked.
+- **Progress after a plan has run** ends the spell as out (`rescue spell N: out after R rounds`). Three rounds without
+  it end the spell as not out (`rescue spell N: not out after 3 rounds`), and the player's own ways go on.
+- **A reply turned down** spends its round.
+- **No reply at all** ends the spell's conversation.
+- **Asks:** the five minutes between one player's asks apply to a spell's first round only. Each round goes through the
+  same rates and daily budgets as every ask. The log says `rescue asked: spell N round R, T ticks after its last
+  progress`.
+
+The evaluation's summary counts the rounds asked, the spells ended and how many got out.
 
 Core reads the reply and refuses the whole of it for one step that is not in that list or outside its bounds. A plan
 is also refused, with nothing moved, when:

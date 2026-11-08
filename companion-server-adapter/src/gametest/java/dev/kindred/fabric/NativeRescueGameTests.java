@@ -235,7 +235,7 @@ public final class NativeRescueGameTests implements FabricGameTest {
                             asked[0] - begun[0], lines, moving[0], spells[0], report.length(), report);
                     context.assertTrue(stub.reports.size() == 1, "Asked once: " + stub.reports.size());
                     context.assertTrue(lines.size() == 1, "One ask: " + lines);
-                    var m = java.util.regex.Pattern.compile("rescue asked: spell \\d+, (\\d+) ticks after its last progress").matcher(lines.getFirst());
+                    var m = java.util.regex.Pattern.compile("rescue asked: spell \\d+ round 1, (\\d+) ticks after its last progress").matcher(lines.getFirst());
                     context.assertTrue(m.matches(), "The ask's line: " + lines.getFirst());
                     long after = Long.parseLong(m.group(1));
                     // A minute with no progress, and the next of the goal's looks: the bridge asks in the look that opens the spell.

@@ -146,4 +146,95 @@ class RescueSliceTest {
         assertTrue(RescueSlice.harvests(3).contains("but obsidian"));
         assertEquals("everything but bedrock", RescueSlice.harvests(4));
     }
+
+    // ------------------------------------------------------------------ F-29c: the executors' next actions and stops
+
+    /** A wall of stone to the north: the player on open ground, stone from z -1 north, open sky over the wall. */
+    private static Scene wall() {
+        var scene = new Scene();
+        for (int dx = -RescueSlice.RADIUS; dx <= RescueSlice.RADIUS; dx++)
+            for (int dz = -RescueSlice.RADIUS; dz <= -1; dz++)
+                for (int dy = 0; dy <= 1; dy++) scene.put(dx, dy, dz, STONE);
+        return scene;
+    }
+
+    @Test
+    void aTunnelBreaksItsFeetCellThenItsHeadCellThenMoves() {
+        var scene = wall();
+        var next = RescueSlice.perceive(scene).tunnel(RescuePlan.Way.NORTH);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.BREAK, 0, 0, -1, ""), next);
+        scene.put(0, 0, -1, RescueSlice.Cell.OPEN);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.BREAK, 0, 1, -1, ""), RescueSlice.perceive(scene).tunnel(RescuePlan.Way.NORTH));
+        scene.put(0, 1, -1, RescueSlice.Cell.OPEN);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.MOVE, 0, 0, -1, ""), RescueSlice.perceive(scene).tunnel(RescuePlan.Way.NORTH));
+    }
+
+    @Test
+    void aTunnelStopsAtWaterItWouldLetInAndAtABlockItCannotBreak() {
+        var wet = wall().put(0, 2, -1, RescueSlice.Cell.water());
+        var next = RescueSlice.perceive(wet).tunnel(RescuePlan.Way.NORTH);
+        // The feet cell first: it touches no water, so it is broken; the head cell under the water is not.
+        assertEquals(RescueSlice.Next.Act.BREAK, next.act());
+        wet.put(0, 0, -1, RescueSlice.Cell.OPEN);
+        next = RescueSlice.perceive(wet).tunnel(RescuePlan.Way.NORTH);
+        assertEquals(RescueSlice.Next.Act.STOP, next.act());
+        assertEquals("water beside the stone in the passage, which breaking it would let in", next.stop());
+        var hard = wall().put(0, 0, -1, OBSIDIAN);
+        assertEquals("obsidian in the passage, which it cannot break", RescueSlice.perceive(hard).tunnel(RescuePlan.Way.NORTH).stop());
+        // Water behind the wall it cannot see does not stop it: it is unknown, never guessed.
+        var hidden = wall().put(0, 0, -2, RescueSlice.Cell.water());
+        assertEquals(RescueSlice.Next.Act.BREAK, RescueSlice.perceive(hidden).tunnel(RescuePlan.Way.NORTH).act());
+    }
+
+    @Test
+    void stairsUpClearOverItsHeadAndTheStepAheadThenClimb() {
+        var scene = wall();
+        for (int dz = -RescueSlice.RADIUS; dz <= -1; dz++) scene.put(0, 2, dz, STONE);
+        scene.put(0, 2, 0, STONE); // a ceiling over its head
+        var slice = RescueSlice.perceive(scene);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.BREAK, 0, 2, 0, ""), slice.stairs(RescuePlan.Way.UP, RescuePlan.Way.NORTH));
+        scene.put(0, 2, 0, RescueSlice.Cell.OPEN).put(0, 1, -1, RescueSlice.Cell.OPEN).put(0, 2, -1, RescueSlice.Cell.OPEN);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.MOVE, 0, 1, -1, ""),
+                RescueSlice.perceive(scene).stairs(RescuePlan.Way.UP, RescuePlan.Way.NORTH));
+        assertTrue(RescueSlice.perceive(new Scene()).stairs(RescuePlan.Way.UP, RescuePlan.Way.NORTH).stop().startsWith("no block ahead to step up onto"));
+    }
+
+    @Test
+    void stairsDownGoAStepAtATimeNeverStraightDownAndStopAtLavaOrADrop() {
+        var scene = new Scene();
+        var slice = RescueSlice.perceive(scene);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.BREAK, 0, -1, -1, ""), slice.stairs(RescuePlan.Way.DOWN, RescuePlan.Way.NORTH),
+                "The cell ahead and below, never the one under its feet");
+        scene.put(0, -1, -1, RescueSlice.Cell.OPEN);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.MOVE, 0, -1, -1, ""), RescueSlice.perceive(scene).stairs(RescuePlan.Way.DOWN, RescuePlan.Way.NORTH));
+        scene.put(0, -2, -1, RescueSlice.Cell.lava());
+        assertEquals("lava under the stair", RescueSlice.perceive(scene).stairs(RescuePlan.Way.DOWN, RescuePlan.Way.NORTH).stop());
+        scene.put(0, -2, -1, RescueSlice.Cell.OPEN);
+        assertEquals("a drop under the stair", RescueSlice.perceive(scene).stairs(RescuePlan.Way.DOWN, RescuePlan.Way.NORTH).stop());
+    }
+
+    @Test
+    void aBridgePlacesABlockOverAGapThenStepsOntoIt() {
+        var scene = new Scene();
+        for (int dy = -1; dy >= -RescueSlice.BELOW; dy--) scene.put(1, dy, 0, RescueSlice.Cell.OPEN);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.PLACE, 1, -1, 0, ""), RescueSlice.perceive(scene).bridge(RescuePlan.Way.EAST));
+        scene.put(1, -1, 0, STONE);
+        assertEquals(new RescueSlice.Next(RescueSlice.Next.Act.MOVE, 1, 0, 0, ""), RescueSlice.perceive(scene).bridge(RescuePlan.Way.EAST));
+        scene.put(1, -1, 0, RescueSlice.Cell.lava());
+        assertEquals("lava under the next block", RescueSlice.perceive(scene).bridge(RescuePlan.Way.EAST).stop());
+        assertEquals("a two-high wall of stone", RescueSlice.perceive(wall()).bridge(RescuePlan.Way.NORTH).stop());
+    }
+
+    @Test
+    void aLookShowsTheBlocksFourThatWayOnlyAsFarAsItCanSeeFromWhereItStands() {
+        // The pit's ore four blocks east behind the wall stays unknown in the look; the open sky's rim is seen.
+        var scene = pit().put(4, 0, 0, RescueSlice.Cell.solid("diamond_ore", true));
+        var look = RescueSlice.perceive((dx, dy, dz) -> scene.at(dx + 4, dy, dz + 0), 4, 0);
+        assertEquals(RescueSlice.Kind.UNKNOWN, look.at(0, 0, 0).kind(), "The look's centre, behind the wall, is not seen");
+        assertEquals("obsidian", look.at(0, 2, 0).id(), "The rim's top four east is seen from the pit's open air");
+        var key = new LinkedHashMap<String, Character>();
+        assertFalse(look.grid(key).isEmpty());
+        assertFalse(key.containsKey("diamond_ore"));
+        assertTrue(look.grid(new LinkedHashMap<>()).contains("P"), "The player shown where it stands, four west of the look's centre");
+    }
 }

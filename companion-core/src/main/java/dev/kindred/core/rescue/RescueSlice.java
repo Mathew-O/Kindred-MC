@@ -84,9 +84,13 @@ public final class RescueSlice {
     }
 
     private final Cell[] cells;
+    /** Where the player stands in the slice: its centre, but for a probe's slice (F-29c). */
+    private final int px, pz;
 
-    private RescueSlice(Cell[] cells) {
+    private RescueSlice(Cell[] cells, int px, int pz) {
         this.cells = cells;
+        this.px = px;
+        this.pz = pz;
     }
 
     /**
@@ -94,6 +98,16 @@ public final class RescueSlice {
      * through see-through cells marked unknown. A solid block is seen when it touches a cell sight reaches.
      */
     public static RescueSlice perceive(Reader reader) {
+        return perceive(reader, 0, 0);
+    }
+
+    /**
+     * The slice centred {@code ox}, {@code oz} from the player's feet, masked to what the player sees from where it
+     * stands (F-29c's probe): sight starts from its own feet and head, at ({@code -ox}, {@code -oz}) in this slice, and
+     * every cell it does not reach is unknown. The reader is given offsets from the slice's centre.
+     */
+    public static RescueSlice perceive(Reader reader, int ox, int oz) {
+        if (Math.abs(ox) > RADIUS / 2 || Math.abs(oz) > RADIUS / 2) throw new IllegalArgumentException("A look reaches four blocks at most");
         var raw = new Cell[SIDE * SIDE * HEIGHT];
         for (int dy = -BELOW; dy <= ABOVE; dy++)
             for (int dz = -RADIUS; dz <= RADIUS; dz++)
@@ -104,8 +118,8 @@ public final class RescueSlice {
         boolean[] reached = new boolean[raw.length];
         var queue = new ArrayDeque<int[]>();
         for (int dy = 0; dy <= 1; dy++) {
-            reached[index(0, dy, 0)] = true;
-            queue.add(new int[]{0, dy, 0});
+            reached[index(-ox, dy, -oz)] = true;
+            queue.add(new int[]{-ox, dy, -oz});
         }
         int[][] faces = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
         var seen = new boolean[raw.length];
@@ -125,8 +139,55 @@ public final class RescueSlice {
         }
         var kept = new Cell[raw.length];
         for (int i = 0; i < raw.length; i++) kept[i] = seen[i] ? raw[i] : Cell.UNSEEN;
-        // Its own cells are open, whatever it stands in (a player in water stands in water).
-        return new RescueSlice(kept);
+        return new RescueSlice(kept, -ox, -oz);
+    }
+
+    /**
+     * The slice centred {@code oy} blocks over (or, negative, under) the player's feet, masked to what it sees from where
+     * it stands (F-29c's look up or down). Sight starts from its feet and head, {@code -oy} and {@code 1 - oy} in this slice.
+     */
+    public static RescueSlice perceiveAbove(Reader reader, int oy) {
+        if (oy > BELOW || -oy > BELOW) throw new IllegalArgumentException("A look reaches four blocks at most");
+        var raw = new Cell[SIDE * SIDE * HEIGHT];
+        for (int dy = -BELOW; dy <= ABOVE; dy++)
+            for (int dz = -RADIUS; dz <= RADIUS; dz++)
+                for (int dx = -RADIUS; dx <= RADIUS; dx++) {
+                    Cell cell = reader.at(dx, dy, dz);
+                    raw[index(dx, dy, dz)] = cell == null ? Cell.UNSEEN : cell;
+                }
+        int[][] starts = {{0, -oy, 0}, {0, 1 - oy, 0}};
+        // The player is not in this slice's middle column at its feet: no P is drawn.
+        return new RescueSlice(mask(raw, starts), Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    /** Every cell sight does not reach from {@code starts} through see-through cells, unknown. */
+    private static Cell[] mask(Cell[] raw, int[][] starts) {
+        boolean[] reached = new boolean[raw.length];
+        boolean[] seen = new boolean[raw.length];
+        var queue = new ArrayDeque<int[]>();
+        for (int[] start : starts) {
+            if (!inside(start[0], start[1], start[2])) continue;
+            reached[index(start[0], start[1], start[2])] = true;
+            queue.add(start);
+        }
+        int[][] faces = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+        while (!queue.isEmpty()) {
+            int[] at = queue.poll();
+            seen[index(at[0], at[1], at[2])] = true;
+            for (int[] f : faces) {
+                int x = at[0] + f[0], y = at[1] + f[1], z = at[2] + f[2];
+                if (!inside(x, y, z)) continue;
+                int i = index(x, y, z);
+                seen[i] = true;
+                if (!reached[i] && raw[i].seeThrough() && raw[i].kind() != Kind.UNKNOWN) {
+                    reached[i] = true;
+                    queue.add(new int[]{x, y, z});
+                }
+            }
+        }
+        var kept = new Cell[raw.length];
+        for (int i = 0; i < raw.length; i++) kept[i] = seen[i] ? raw[i] : Cell.UNSEEN;
+        return kept;
     }
 
     /** A slice of exactly these cells, none masked: for tests of the steps on a slice already as seen. */
@@ -138,7 +199,7 @@ public final class RescueSlice {
                     Cell cell = reader.at(dx, dy, dz);
                     raw[index(dx, dy, dz)] = cell == null ? Cell.UNSEEN : cell;
                 }
-        return new RescueSlice(raw);
+        return new RescueSlice(raw, 0, 0);
     }
 
     /** The cell at that offset from its feet; unknown outside the slice. */
@@ -320,7 +381,7 @@ public final class RescueSlice {
             out.append("y").append(dy >= 0 ? "+" : "").append(dy).append(dy == 0 ? " (its feet)" : dy == 1 ? " (its head)" : "").append(":\n");
             for (int dz = -4; dz <= 4; dz++) {
                 for (int dx = -4; dx <= 4; dx++) {
-                    if (dx == 0 && dz == 0 && (dy == 0 || dy == 1)) {
+                    if (dx == px && dz == pz && (dy == 0 || dy == 1)) {
                         out.append('P');
                         continue;
                     }
@@ -352,6 +413,119 @@ public final class RescueSlice {
         var out = new LinkedHashSet<String>();
         for (Cell cell : cells) if (cell.kind() == Kind.SOLID && !cell.breakable()) out.add(cell.id());
         return out;
+    }
+
+    /** What an executor does next from the slice's centre (F-29c): break or place a cell, move a block, or stop. */
+    public record Next(Act act, int dx, int dy, int dz, String stop) {
+        public enum Act { BREAK, PLACE, MOVE, STOP }
+
+        static Next stop(String why) { return new Next(Act.STOP, 0, 0, 0, why); }
+
+        static Next of(Act act, int dx, int dy, int dz) { return new Next(act, dx, dy, dz, ""); }
+    }
+
+    /**
+     * A tunnel's next action that way (F-29c): the passage's cells ahead, at its feet and head, broken a block at a time,
+     * then a block's move into it. It stops at a block it cannot break, at a cell to break that touches water or lava it
+     * can see (the break would let it in), at liquid or what it cannot see in the passage, and at a drop: it steps down
+     * one block, never more.
+     */
+    public Next tunnel(RescuePlan.Way way) {
+        int[] s = step(way);
+        int nx = s[0], nz = s[1];
+        for (int dy = 0; dy <= 1; dy++) {
+            Next broken = clear(nx, dy, nz, "the passage");
+            if (broken != null) return broken;
+        }
+        return onto(nx, 0, nz, "the passage");
+    }
+
+    /**
+     * A staircase's next action that way (F-29c). Up: the cell over its head and the two over the step ahead cleared,
+     * then a block up onto the step; with no block ahead to step onto it stops. Down: the step's three cells ahead
+     * cleared, its head, its feet and the cell below, then, only if solid ground can be seen under that, a block down;
+     * it stops at liquid, at a drop under the stair and at what it cannot see. Never straight down.
+     */
+    public Next stairs(RescuePlan.Way rise, RescuePlan.Way way) {
+        int[] s = step(way);
+        int nx = s[0], nz = s[1];
+        if (rise == RescuePlan.Way.UP) {
+            Next over = clear(0, 2, 0, "over its head");
+            if (over != null) return over;
+            for (int dy = 1; dy <= 2; dy++) {
+                Next broken = clear(nx, dy, nz, "the stair");
+                if (broken != null) return broken;
+            }
+            Cell stepCell = at(nx, 0, nz);
+            if (stepCell.kind() != Kind.SOLID) return Next.stop("no block ahead to step up onto (" + name(stepCell) + ")");
+            return Next.of(Next.Act.MOVE, nx, 1, nz);
+        }
+        for (int dy = 1; dy >= -1; dy--) {
+            Next broken = clear(nx, dy, nz, "the stair");
+            if (broken != null) return broken;
+        }
+        Cell under = at(nx, -2, nz);
+        return switch (under.kind()) {
+            case SOLID -> Next.of(Next.Act.MOVE, nx, -1, nz);
+            case WATER -> Next.stop("water under the stair");
+            case LAVA -> Next.stop("lava under the stair");
+            case UNKNOWN -> Next.stop("what it cannot see under the stair");
+            case OPEN -> Next.stop("a drop under the stair");
+        };
+    }
+
+    /**
+     * A bridge's next action that way (F-29c): with the way ahead open at its feet and head, a block of its own placed
+     * where there is no ground under the next block (over air or water), then a block's move onto it. It stops at what
+     * is in the way, at lava under the next block, and at what it cannot see.
+     */
+    public Next bridge(RescuePlan.Way way) {
+        int[] s = step(way);
+        int nx = s[0], nz = s[1];
+        String blocked = obstacle(at(nx, 0, nz), at(nx, 1, nz));
+        if (blocked != null) return Next.stop(blocked);
+        Cell floor = at(nx, -1, nz);
+        return switch (floor.kind()) {
+            case SOLID -> Next.of(Next.Act.MOVE, nx, 0, nz);
+            case OPEN, WATER -> Next.of(Next.Act.PLACE, nx, -1, nz);
+            case LAVA -> Next.stop("lava under the next block");
+            case UNKNOWN -> Next.stop("what it cannot see under the next block");
+        };
+    }
+
+    /** The cell broken if it must be, or why it cannot be; null when it is open and nothing stops it. */
+    private Next clear(int x, int y, int z, String where) {
+        Cell cell = at(x, y, z);
+        switch (cell.kind()) {
+            case OPEN:
+                return null;
+            case WATER:
+                return Next.stop("water in " + where);
+            case LAVA:
+                return Next.stop("lava in " + where);
+            case UNKNOWN:
+                return Next.stop("what it cannot see in " + where);
+            default:
+                break;
+        }
+        if (!cell.breakable()) return Next.stop(cell.id() + " in " + where + ", which it cannot break");
+        int[][] faces = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+        for (int[] f : faces) {
+            Cell near = at(x + f[0], y + f[1], z + f[2]);
+            if (near.kind() == Kind.WATER || near.kind() == Kind.LAVA)
+                return Next.stop((near.kind() == Kind.WATER ? "water" : "lava") + " beside the " + cell.id() + " in " + where + ", which breaking it would let in");
+        }
+        return Next.of(Next.Act.BREAK, x, y, z);
+    }
+
+    /** A move onto the open cell ahead, its floor solid, or down a drop of one; else why not. */
+    private Next onto(int x, int y, int z, String where) {
+        Cell floor = at(x, y - 1, z);
+        if (floor.kind() == Kind.SOLID) return Next.of(Next.Act.MOVE, x, y, z);
+        if (floor.kind() != Kind.OPEN) return Next.stop(describe(floor, "under " + where));
+        Cell lower = at(x, y - 2, z);
+        if (lower.kind() == Kind.SOLID) return Next.of(Next.Act.MOVE, x, y - 1, z);
+        return Next.stop("a drop of more than one under " + where);
     }
 
     /** What a pickaxe of that tier (0 none, 1 wood or gold, 2 stone, 3 iron, 4 diamond or better) lets it break. */
