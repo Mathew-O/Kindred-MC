@@ -103,6 +103,34 @@ public final class RanchChoice {
         return new Decision(Optional.empty(), "No pair of animals seen near home to keep");
     }
 
+    /** The most animals, grown and young, it keeps in one pen: a herd, not a crowd. */
+    public static final int HERD = 6;
+
+    /** How long, in ticks, after a pen's last run before its animals are bred again: five minutes, their breeding wait. */
+    public static final long AGAIN = 6000;
+
+    /** Whether to breed a pen it keeps again, and why (or why not). */
+    public record Again(boolean breed, String why) {
+        public Again {
+            Objects.requireNonNull(why);
+        }
+    }
+
+    /**
+     * More than a pair: a pen whose ranch has run is taken up again to breed its grown animals once more, as players
+     * grow a herd: {@code adults} and {@code young} of {@code kind} it sees in the pen, {@code food} of their food in
+     * hand, {@code sinceRun} ticks since the pen's last run. It breeds them again once the breeding wait is over, with
+     * two grown in the pen and the food for two, until the pen holds a herd of {@link #HERD}.
+     */
+    public static Again again(Ranch.Kind kind, int adults, int young, int food, long sinceRun) {
+        Objects.requireNonNull(kind);
+        if (adults < 2) return new Again(false, "Fewer than two grown " + kind.plural() + " in its pen to breed");
+        if (adults + young >= HERD) return new Again(false, "A herd of " + (adults + young) + " " + kind.plural() + " in its pen");
+        if (sinceRun < AGAIN) return new Again(false, "The " + kind.plural() + " in its pen not ready to breed again yet");
+        if (food < FOOD) return new Again(false, "The " + kind.plural() + " in its pen ready to breed again; " + FOOD + " " + foodName(kind) + " first");
+        return new Again(true, "The " + kind.plural() + " in its pen ready to breed again: a bigger herd");
+    }
+
     private static String foodName(Ranch.Kind kind) {
         String id = kind.food.getFirst();
         return id.substring(id.indexOf(':') + 1).replace('_', ' ');

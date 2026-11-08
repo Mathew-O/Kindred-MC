@@ -289,7 +289,7 @@ class SqliteCompanionStoreTest {
         assertEquals(new ActivityLimit(id, 3_600_000, false, "UTC", 3), migrated, "a schema 8 limit upgrades to all day, nothing else changed");
         upgraded.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
-            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(11, row.getInt(1)); } // The latest schema (E-18b).
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(12, row.getInt(1)); } // The latest schema (F-31).
             statement.execute("UPDATE activity_limits SET window_start = '09:00'");
         }
         assertCause(IllegalStateException.class, open(10).limit(id));
@@ -702,7 +702,7 @@ class SqliteCompanionStoreTest {
     }
 
     /** Back to before V10 (E-18a, E-19a): no expression preset, no listener preferences. */
-    /** What schemas 10 and 11 added taken out again, so that an older schema is emulated (E-18a, E-19a, E-18b). */
+    /** What schemas 10 to 12 added taken out again, so that an older schema is emulated (E-18a, E-19a, E-18b). */
     static void dropSchemaTen(java.sql.Statement statement) throws java.sql.SQLException {
         for (String column : new String[]{"chat_style", "expression"}) {
             boolean has;
@@ -712,6 +712,7 @@ class SqliteCompanionStoreTest {
             if (has) statement.execute("ALTER TABLE social_profiles DROP COLUMN " + column);
         }
         statement.execute("DROP TABLE IF EXISTS listener_preferences");
+        statement.execute("DROP TABLE IF EXISTS world_events"); // Schema 12 (F-31).
     }
 
     private static void dropSchemaFive(java.sql.Statement statement) throws java.sql.SQLException {
