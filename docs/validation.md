@@ -16,6 +16,20 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 15 (`e40a15-dbf4e5c`, batches 17 to 20) — 8 November 2026 (`claude/e40-iter15-1108`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `dbf4e5c`. `python3 tools/eval/run.py --ref dbf4e5c
+  --name e40a15-dbf4e5c --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 2
+  --keep-world`; `score.py`; `compare.py` against `e40a14-80b7150` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 10 of 10 (iteration 14: 8); a portal lit on 7 of 10 (7);
+    stuck time under a tenth on 2 of 10 (3).
+  - Deaths 1.0 a game hour [0 to 3] (21, against 28). Stuck spells 8.5 [2 to 37] (114, against 55); stuck minutes 25.5
+    [6 to 111] (13.5 [0 to 57]).
+  - Every range overlaps both: no difference worth noting.
+  - [Summary](evidence/eval/e40a15-dbf4e5c/summary.md), [deaths](evidence/eval/e40a15-dbf4e5c/deaths.md),
+    [against iteration 14](evidence/eval/compare-e40a15.md), [against the start](evidence/eval/compare-e40a15-base.md),
+    [E-40](evidence/E-40.md).
+
 ## F-29b, F-29c and F-29d (`cd56501`) — 8 November 2026 (`claude/improvising-1108`)
 
 - **Built:**
@@ -77,6 +91,20 @@ jobs were re-run once.
     passed all 587 native fixtures. The bunker and life-first classes passed 8 of 8 alone on `e411089`.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
+
+## E-40, batch 20: a frame half cast is kept (F-25c4cn) — 8 November 2026 (`claude/e40-ladder-20-1108`)
+
+- **The fixture** (F-25c4cn, [evidence](evidence/F-25c4cn.md)): `NativeHalfCastFrameGameTests.aFrameHalfCastIsNotGivenUpForACornerOutOfSightFromItsStand`,
+  staged as it says (six of the frame's ten cast, stone in a top corner, the stand under rock at a tunnel's end). On
+  `06e32e6`, without the fix: fails 3 of 3, each giving the frame up ("cannot open" the corner's stone), as Echo did on
+  31102026 in iteration 14. With it: passes 3 of 3, "Cast: over to" the corner, cleared, the side cell cast after 40 to
+  41 ticks. A first staging without the iron and flint for its flint and steel did not reproduce (the goal mined an iron
+  first) and is not kept.
+- **The classes that cast, light and build frames** (`NativeHalfCastFrameGameTests`, `NativePortalCampaignGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`, `NativeCornersInHandGameTests`,
+  `NativeTeamPortalGameTests`, `NativeCobwebHeadRoomGameTests`, `NativeTripDownGameTests`, `ReplayGameTests`): with the
+  fix, 119 of 119.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
 
 ## E-40, batch 19: a cobweb in the climb's way (F-25c4cm) — 8 November 2026 (`claude/e40-ladder-19-1108`)
 
