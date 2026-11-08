@@ -476,6 +476,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01a: horses tamed, saddled and ridden (the mechanics), 2026-11-08
+
+Branch `claude/modes-1108-11`. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- Native: `NativeHorseGameTests` with `NativeBoatGameTests` alone, 3 runs on `ddc70cd`, 3 of 3 each. Control (the horse's server-side movement off): 0 of 3.
+
 ## M-01a: more than a pair per pen; no drop it cannot climb back, 2026-11-08
 
 Branch `claude/modes-1108-10`. M-01a stays open. See [M-01a](evidence/M-01a.md).
