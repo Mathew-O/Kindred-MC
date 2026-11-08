@@ -57,8 +57,8 @@ final class KindredWire {
         GameModes.WorldMode mode();
     }
 
-    /** Where an AI receiver's knowledge goes. */
-    interface Knowledge { void told(Delivery.Told told); }
+    /** Where an AI receiver's knowledge goes: what it was told, the receiver as the Wire saw it, and whether a person sent it. */
+    interface Knowledge { void told(Delivery.Told told, Listener receiver, boolean senderIsPerson); }
 
     /** How a line reaches one person. */
     interface Speaker { void say(ServerPlayerEntity person, String words); }
@@ -79,7 +79,7 @@ final class KindredWire {
         this.wire = Objects.requireNonNull(wire);
         this.wording = Objects.requireNonNull(wording);
         this.memberships = Objects.requireNonNull(memberships);
-        this.knowledge = knowledge == null ? t -> { } : knowledge;
+        this.knowledge = knowledge == null ? (t, r, p) -> { } : knowledge;
         this.speaker = speaker == null ? KindredWire::chat : speaker;
         this.now = Objects.requireNonNull(now);
     }
@@ -119,11 +119,15 @@ final class KindredWire {
             return d;
         }
         sent++;
+        Map<UUID, Listener> byId = new HashMap<>();
+        for (Listener l : roster) byId.put(l.id(), l);
+        Listener sender = message.fromServer() ? null : byId.get(message.from());
+        boolean senderIsPerson = sender != null && sender.person();
         for (Delivery.Told t : d.told()) {
             var inbox = inboxes.computeIfAbsent(t.receiver(), k -> new ArrayDeque<>());
             inbox.addLast(t);
             while (inbox.size() > INBOX) inbox.removeFirst();
-            knowledge.told(t);
+            knowledge.told(t, byId.get(t.receiver()), senderIsPerson);
             toldCount++;
         }
         Map<UUID, ServerPlayerEntity> bodies = new HashMap<>();

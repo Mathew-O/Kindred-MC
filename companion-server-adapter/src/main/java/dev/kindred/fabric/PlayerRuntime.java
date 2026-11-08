@@ -258,6 +258,8 @@ final class PlayerRuntime {
     private final PeerTalk peerTalk;
     /** F-34b: the Wire, the one way typed messages travel between players. */
     private final KindredWire wire;
+    /** F-32: what each AI player knows, filled from the Wire. */
+    private final KnowledgeWebs webs;
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -504,7 +506,8 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
-        wire = new KindredWire(server, KindredWire.defaultWire(java.util.Set.of()), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+        webs = new KnowledgeWebs(server::getTicks);
+        wire = new KindredWire(server, KindredWire.defaultWire(java.util.Set.of()), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
                 PlayerRuntime::now);
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
@@ -13059,6 +13062,9 @@ final class PlayerRuntime {
     /** The AI player a body belongs to, either body; null for a person or anything else. */
     /** The Wire (F-34): send typed messages on named channels; read what an AI player was told. Server thread only. */
     KindredWire wire() { return wire; }
+
+    /** What each AI player knows (F-32); ask on someone's behalf with their viewer. Server thread only. */
+    KnowledgeWebs webs() { return webs; }
 
     /** Sets how a player's faction is known (M-06i, the Factions mode's ledger): an id, or empty for none. */
     void setFactionOf(java.util.function.Function<UUID, String> factionOf) {
