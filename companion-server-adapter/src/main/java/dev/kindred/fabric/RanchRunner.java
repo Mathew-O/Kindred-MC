@@ -152,6 +152,9 @@ final class RanchRunner {
                 var args = new java.util.HashMap<String, String>(Map.of("x", str(go.target().x()), "y", str(go.target().y()), "z", str(go.target().z()),
                         "range", String.valueOf(go.range()), "hold", str(slot)));
                 if (go.leg() > 0) args.put("leg", str(go.leg()));
+                // With the food in hand, leading or looking for an animal: no drop it cannot step back up, nor the animal
+                // follow it back up (the wheat fixture: after a cow past the field's edge, down three and no way back).
+                if (go.holdFood()) args.put("drop", "1");
                 yield Optional.of(new PortalRunCampaign.Task("native_goto", Map.copyOf(args), go.why()));
             }
             case Ranch.Step.Gate gate -> Optional.of(new PortalRunCampaign.Task("native_gate", Map.of("x", str(ranch.gate().x()), "y", str(ranch.gate().y()),
@@ -192,6 +195,8 @@ final class RanchRunner {
         else if (!doorway.isEmpty() && !opened && (task.label().equals("Open the doorway") || task.label().equals("To the doorway"))) {
             if (!completed) openFailures++;
         } else if (build != null && !build.done()) build.finished(task, completed, reason, world);
+        // A walk of the ranch's own refused: the one it went for given up, or the spot crossed off, not asked for again.
+        else if (!completed && task.skill().equals("native_goto")) ranch.refused();
     }
 
     Ranch.Observation observe(ServerPlayerEntity player, ServerWorld world) {
