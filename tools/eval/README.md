@@ -113,8 +113,9 @@ server shares its cores.
   not overlap.
 - **Summaries only.** Results go under `docs/evidence/eval/` as `summary.md` files, no logs; the tracker cites them as
   it cites any evidence.
-- **Cores and memory.** Each server wants about 3 GB of heap and a core or more. On four cores, two at a time
-  (`--parallel 2`); nothing else should run on the cores meanwhile, or the runs take longer.
+- **Cores and memory.** Each server wants about 3 GB of heap and a core or more. On four cores and 15 GB, up to three
+  at a time (`--parallel 3`). Watch the pace in the run's own lines ("ticks run N, T s" for each seed): if a server falls under 20 ticks a second, go back to two.
+  Nothing else should run on the cores meanwhile, or the runs take longer.
 - **The server.** `run.py` fetches the Fabric server launcher once into `run/eval/cache/` at the pinned loader version,
   and uses the vanilla server jar from Loom's cache (or Mojang's, fetched once). It needs the network the first time.
   Loom's `runServer` is the fallback with no network: copy the scenario into its environment by hand.

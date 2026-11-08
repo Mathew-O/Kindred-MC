@@ -129,6 +129,7 @@
       "dev.kindred.fabric.NativeBaseGameTests",
       "dev.kindred.fabric.NativeCoopPaceGameTests",
       "dev.kindred.fabric.NativeOwnRanchGameTests",
+      "dev.kindred.fabric.NativeHorseGameTests",
       "dev.kindred.fabric.NativeBaseRepairGameTests",
       "dev.kindred.fabric.NativeLifeFirstGameTests",
       "dev.kindred.fabric.NativeSeedBuildGameTests",

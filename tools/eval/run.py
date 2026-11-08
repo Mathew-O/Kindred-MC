@@ -209,7 +209,7 @@ def main():
     seeds.add_argument("--seeds", help="comma-separated seeds")
     seeds.add_argument("--seed-file", help="a file of seeds, one a line")
     parser.add_argument("--scenario", default="goal=nether; ticks=144000", help="the KINDRED_EVAL scenario")
-    parser.add_argument("--parallel", type=int, choices=(1, 2), default=1, help="servers at once (each needs about 3 GB)")
+    parser.add_argument("--parallel", type=int, choices=(1, 2, 3), default=1, help="servers at once (each needs about 3 GB and a core)")
     parser.add_argument("--memory", default="3G", help="each server's heap")
     parser.add_argument("--timeout", type=int, default=6 * 3600, help="seconds a server may run before it is stopped")
     parser.add_argument("--out", default=str(ROOT / "run/eval"), help="where the runs go")
