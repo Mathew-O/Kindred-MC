@@ -90,6 +90,12 @@ public final class KnowledgeWeb {
 
         /** Whether this viewer may know a relation, by relation alone. */
         public boolean mayKnow(Relation r) {
+            return mayKnow(r, null);
+        }
+
+        /** The same, in a web kept by {@code owner}, who knows all of its own web. */
+        boolean mayKnow(Relation r, java.util.UUID owner) {
+            if (owner != null && owner.equals(who.id())) return true;
             return switch (r.visibility()) {
                 case PUBLIC -> true;
                 case OPERATOR -> who.operator();
@@ -103,9 +109,21 @@ public final class KnowledgeWeb {
         }
     }
 
+    private final java.util.UUID owner;
     private final Map<String, Entity> entities = new LinkedHashMap<>();
     private final Map<Long, Relation> relations = new LinkedHashMap<>();
     private long nextId = 1;
+
+    /** The world's web, kept by nobody: every viewer sees only what their relations allow. */
+    public KnowledgeWeb() { this(null); }
+
+    /**
+     * One player's web: what it knows. It sees all of it; anyone it would tell sees only what their relation to each fact
+     * allows (a runner's position told to a fellow runner is still the runners' side's, never a hunter's).
+     */
+    public KnowledgeWeb(java.util.UUID owner) { this.owner = owner; }
+
+    public Optional<java.util.UUID> owner() { return Optional.ofNullable(owner); }
 
     public Entity entity(String id, Kind kind, String name) {
         var e = new Entity(id, kind, name);
@@ -165,7 +183,7 @@ public final class KnowledgeWeb {
     public List<Relation> query(Viewer viewer, long tick, Predicate<Relation> filter) {
         Objects.requireNonNull(viewer, "every query names its viewer");
         var out = new ArrayList<Relation>();
-        for (var r : relations.values()) if (r.validAt(tick) && viewer.mayKnow(r) && filter.test(r)) out.add(r);
+        for (var r : relations.values()) if (r.validAt(tick) && viewer.mayKnow(r, owner) && filter.test(r)) out.add(r);
         out.sort(Comparator.comparingDouble(Relation::weight).reversed().thenComparing(Comparator.comparingLong(Relation::from).reversed()));
         return out;
     }
