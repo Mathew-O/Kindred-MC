@@ -22,11 +22,19 @@ public final class RanchChoice {
     /** The kinds in the order a player keeps them. */
     private static final Ranch.Kind[] ORDER = {Ranch.Kind.COW, Ranch.Kind.SHEEP, Ranch.Kind.PIG, Ranch.Kind.CHICKEN};
 
-    /** The ranch to start, or none yet, and why. */
-    public record Decision(Optional<Ranch.Kind> kind, String why) {
+    /**
+     * The ranch to start, or none yet, and why; and, when none yet, the kind whose food it can earn now, as it is in
+     * sight (chickens' seeds from grass), so that it keeps them once it has the food.
+     */
+    public record Decision(Optional<Ranch.Kind> kind, String why, Optional<Ranch.Kind> earn) {
         public Decision {
             Objects.requireNonNull(kind);
             Objects.requireNonNull(why);
+            Objects.requireNonNull(earn);
+        }
+
+        Decision(Optional<Ranch.Kind> kind, String why) {
+            this(kind, why, Optional.empty());
         }
     }
 
@@ -37,6 +45,16 @@ public final class RanchChoice {
      * it has seen near home; {@code food} how many of each kind's food it holds.
      */
     public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food) {
+        return next(hasBase, seen, food, false);
+    }
+
+    /**
+     * As {@link #next(boolean, Map, Map)}, and with {@code grassInSight} whether there is grass in sight to earn seeds
+     * from: with a pair of chickens seen and no kind it can feed, it earns the chickens' seeds from the grass first, as
+     * players do (one in eight breaks gives a seed). Wheat for cows and sheep is grown, not found, so is not earned
+     * this way.
+     */
+    public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food, boolean grassInSight) {
         if (!hasBase) return new Decision(Optional.empty(), "A base first, then animals of its own");
         Ranch.Kind wantingFood = null;
         for (Ranch.Kind kind : ORDER) {
@@ -45,6 +63,9 @@ public final class RanchChoice {
                 return new Decision(Optional.of(kind), "A pair of " + kind.noun() + "s close by and the food to breed them: a ranch");
             }
             if (wantingFood == null) wantingFood = kind;
+        }
+        if (grassInSight && seen.getOrDefault(Ranch.Kind.CHICKEN, 0) >= 2) {
+            return new Decision(Optional.empty(), "A pair of chickens close by; seeds first, from the grass", Optional.of(Ranch.Kind.CHICKEN));
         }
         if (wantingFood != null) {
             return new Decision(Optional.empty(), "A pair of " + wantingFood.noun() + "s close by; " + FOOD + " " + foodName(wantingFood)

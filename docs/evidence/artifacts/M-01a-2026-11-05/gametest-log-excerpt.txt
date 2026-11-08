@@ -10,3 +10,24 @@
 failure message="(-12603670, -60, -2854369) A cow ranch of its own begun: Optional.empty /  / Iron tools first: a house takes over two hundred stone
 # Crash found on 02c8b64 (3 of 3 runs): the base decision's caller asked the build runner with no build
 Caused by: java.lang.NullPointerException: Cannot invoke "dev.kindred.fabric.BuildRunner.next(dev.kindred.fabric.NativePlayerBody, dev.kindred.fabric.BuildRunner$Supply)" because "build" is null
+
+# Seeds earned from grass (2026-11-06, 7f0dccd and 4093138): NativeOwnRanchGameTests with NativeRanchGameTests alone, 3 runs then 5 runs, 4 of 4 each but one (the cow ranch, once)
+[01:05:27] [Server thread/INFO] (Kindred) Henwife ranch: A pair of chickens close by; seeds first, from the grass
+[01:05:28] [Server thread/INFO] (Kindred) Henwife ranch: Seeds enough for the chickens
+[01:05:35] [Server thread/INFO] (Kindred) Own ranch with earned seeds: 2 chickens and 1 chicks penned; 0 seeds left
+[01:06:16] [Server thread/INFO] (Kindred) Henwife ranch: A pair of chickens close by; seeds first, from the grass
+[01:06:17] [Server thread/INFO] (Kindred) Henwife ranch: Seeds enough for the chickens
+[01:06:23] [Server thread/INFO] (Kindred) Own ranch with earned seeds: 2 chickens and 1 chicks penned; 0 seeds left
+[01:07:03] [Server thread/INFO] (Kindred) Henwife ranch: A pair of chickens close by; seeds first, from the grass
+[01:07:03] [Server thread/INFO] (Kindred) Henwife ranch: Seeds enough for the chickens
+[01:07:11] [Server thread/INFO] (Kindred) Own ranch with earned seeds: 2 chickens and 1 chicks penned; 0 seeds left
+[01:07:48] [Server thread/INFO] (Kindred) Henwife ranch: A pair of chickens close by; seeds first, from the grass
+[01:07:49] [Server thread/INFO] (Kindred) Henwife ranch: Seeds enough for the chickens
+[01:07:56] [Server thread/INFO] (Kindred) Own ranch with earned seeds: 2 chickens and 1 chicks penned; 0 seeds left
+[01:08:36] [Server thread/INFO] (Kindred) Henwife ranch: A pair of chickens close by; seeds first, from the grass
+[01:08:36] [Server thread/INFO] (Kindred) Henwife ranch: Seeds enough for the chickens
+[01:08:44] [Server thread/INFO] (Kindred) Own ranch with earned seeds: 2 chickens and 1 chicks penned; 0 seeds left
+# Control (the seeds not earned): fails
+failure message="(5618855, -60, 762813) A chicken ranch of its own begun: Optional.empty / No pair of animals seen near home to keep / Iron tools first: a house takes over two hundred stone / seeds -
+# The cow ranch's one failure in eight runs (7f0dccd, run 3 of 3)
+failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
