@@ -749,6 +749,7 @@ final class PlayerRuntime {
                     dragonFight = loaded.dragonFight();
                     bases = loaded.bases();
                     worldMode = loaded.worldMode();
+                    if (factionsWorld()) TerritoryGuard.activate(factions);
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
                     talk.load(store); // E-19a: people's own preferences; nothing unasked and no jokes until they are read.
@@ -2217,7 +2218,20 @@ final class PlayerRuntime {
                     || (("native_toss".equals(entry.skillId) || "native_discard".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TOSS)
                     || ("native_wait".equals(entry.skillId) && intent == NativePlayerBody.Intent.LOOK))
                 && NativePlayerSkills.permits(entry.nativeTask, intent, target)
+                && territoryPermits(entry, intent, target)
                 && entry.activity != null && entry.activity.paid();
+    }
+
+    /**
+     * At dispatch, as at admission (RoamingEdits): an AI player's change to a block on another faction's land or in a
+     * safe zone is refused (M-06d), the same rule as a person's.
+     */
+    private boolean territoryPermits(Entry entry, NativePlayerBody.Intent intent, BlockPos target) {
+        if (target == null || entry.nativeBody == null || entry.nativeBody.entity() == null) return true;
+        return switch (intent) {
+            case MOVE, LOOK, SELECT_SLOT, EAT, EQUIP, ATTACK, BLOCK, SHOOT, THROW, TOSS, SWAP, FISH, BOAT, FEED, SHEAR, TRADE, RENAME -> true;
+            default -> TerritoryGuard.mayChange(entry.nativeBody.entity(), target);
+        };
     }
 
     static boolean isHazardousSituation(ServerPlayerEntity player) {
@@ -13272,6 +13286,7 @@ final class PlayerRuntime {
             ++entry.generation;
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
+        TerritoryGuard.deactivate(factions);
         running = false;
         matches.stopAll();
         flushMatches();
@@ -15215,6 +15230,7 @@ final class PlayerRuntime {
         requireThread();
         factionsForTest = true;
         factions.settings(settings);
+        TerritoryGuard.activate(factions);
     }
 
     /** A fixture's accounts recorded as first seen long ago, so the new-account rule is not what it tests. */

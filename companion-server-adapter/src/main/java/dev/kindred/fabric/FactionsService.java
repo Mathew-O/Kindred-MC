@@ -46,6 +46,7 @@ final class FactionsService {
     private final Supplier<Ledgers> ledgers;
     private final Consumer<List<WorldEvent>> record;
     private FactionSettings settings;
+    private java.util.Set<String> safe = java.util.Set.of();
     /** Per online player: when last measured, and the whole milliseconds measured but not yet written. */
     private final Map<UUID, long[]> online = new HashMap<>();
     /** Accounts whose first sight is written or being written. */
@@ -59,6 +60,28 @@ final class FactionsService {
     }
 
     FactionSettings settings() { return settings; }
+
+    MinecraftServer server() { return server; }
+
+    /** The chunks of the safe zones (M-06f); none until the hub is set. */
+    java.util.Set<String> safe() { return safe; }
+
+    void safe(java.util.Set<String> chunks) { safe = java.util.Set.copyOf(chunks); }
+
+    /** Whether {@code player} may break, place or use things in {@code chunk} (M-06d). */
+    boolean mayChange(ServerPlayerEntity player, dev.kindred.core.factions.Territory.Chunk chunk) {
+        return dev.kindred.core.factions.Territory.mayChange(book(), ledgers.get().claims(), safe, player.getUuid(), player.hasPermissionLevel(2), chunk);
+    }
+
+    /** Whether something may pass from {@code from} into {@code to}. */
+    boolean mayCross(dev.kindred.core.factions.Territory.Chunk from, dev.kindred.core.factions.Territory.Chunk to) {
+        return dev.kindred.core.factions.Territory.mayCross(ledgers.get().claims(), safe, from, to);
+    }
+
+    /** Whether {@code chunk} is neither claimed nor a safe zone. */
+    boolean unprotected(dev.kindred.core.factions.Territory.Chunk chunk) {
+        return dev.kindred.core.factions.Territory.access(ledgers.get().claims(), safe, chunk) == dev.kindred.core.factions.Territory.Access.ANY;
+    }
 
     void settings(FactionSettings next) { settings = next; }
 
@@ -107,7 +130,11 @@ final class FactionsService {
     /** A player connected: its first sight written once, and its online time measured from now. */
     void connected(UUID player) {
         if (!powers().firstSeen().containsKey(player) && seenAsked.add(player)) {
-            record.accept(List.of(PowerRules.seen(player, server.getTicks(), System.currentTimeMillis())));
+            var events = new ArrayList<WorldEvent>();
+            events.add(PowerRules.seen(player, server.getTicks(), System.currentTimeMillis()));
+            // The starting coins, once an account: the same rule for people and AI players (M-06d).
+            dev.kindred.core.factions.Coins.start(ledgers.get().coins(), player, settings, at("")).ifPresent(events::add);
+            record.accept(events);
         }
         online.putIfAbsent(player, new long[] {System.currentTimeMillis(), 0});
     }
@@ -229,6 +256,16 @@ final class FactionsService {
                 return Reply.of(apply(Factions.colour(book, who, colour.get(), at)));
             }
             case "disband" -> { return Reply.of(apply(Factions.disband(book, who, at))); }
+            case "claim", "unclaim" -> {
+                var chunk = dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ());
+                var decision = verb.equals("claim")
+                        ? dev.kindred.core.factions.Territory.claim(book, powers(), ledgers.get().claims(), safe, ledgers.get().coins().of(who), settings, who, chunk, at)
+                        : dev.kindred.core.factions.Territory.unclaim(book, ledgers.get().claims(), who, chunk, at);
+                if (decision.accepted()) record.accept(decision.events());
+                return new Reply(decision.accepted(), List.of(decision.reason()));
+            }
+            case "coins" -> { return Reply.told(List.of("Coins: " + ledgers.get().coins().of(who))); }
+            case "map" -> { return Reply.told(map(who, world, pos)); }
             case "info" -> {
                 var faction = first.isEmpty() ? book.of(who).orElse(null) : book.named(first).orElse(null);
                 if (faction == null) return Reply.refused(first.isEmpty() ? "You are not in a faction" : "No faction named " + first);
@@ -257,6 +294,24 @@ final class FactionsService {
             }
             default -> { return Reply.refused("Unknown: /faction " + verb); }
         }
+    }
+
+    /** The land round {@code pos}, eleven chunks across: + yours, # another faction's, s a safe zone, - the wilderness, @ here. */
+    List<String> map(UUID who, String world, BlockPos pos) {
+        var mine = book().of(who).map(f -> f.id().toString()).orElse("");
+        int cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
+        var lines = new ArrayList<String>();
+        for (int dz = -5; dz <= 5; dz++) {
+            var row = new StringBuilder();
+            for (int dx = -5; dx <= 5; dx++) {
+                String key = ClaimLedger.chunk(world, cx + dx, cz + dz);
+                String owner = ledgers.get().claims().get(key);
+                row.append(dx == 0 && dz == 0 ? '@' : safe.contains(key) ? 's' : owner == null ? '-' : owner.equals(mine) ? '+' : '#');
+            }
+            lines.add(row.toString());
+        }
+        lines.add("@ here, + yours, # another faction's, s safe, - wilderness");
+        return lines;
     }
 
     private static String dyes() {
