@@ -132,4 +132,72 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                 })
                 .completeIfSuccessful();
     }
+
+    /**
+     * A place it can find no way to (boxed in bedrock, the exposed border it sees beyond): the walk there is refused, it
+     * waits longer each time, and after three refusals it sets the place aside and stops asking, rather than asking
+     * again every moment (the engine run's walks, 2026-11-08).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionPlayNoWay", tickLimit = 3000)
+    public void aPlaceItCanFindNoWayToIsAskedThreeTimesThenSetAside(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2900);
+        var server = context.getWorld().getServer();
+        UUID[] ada = new UUID[2];
+        ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
+        String[] keys = new String[2];
+        long[] third = {-1};
+        FixtureGround.whenDone(context, () -> { if (ben[0] != null && server.getPlayerManager().getPlayer(ben[0].getUuid()) != null) server.getPlayerManager().remove(ben[0]); });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED && statuses.getFirst().connected(),
+                            "Ada established");
+                    ada[0] = statuses.getFirst().id();
+                    ada[1] = statuses.getFirst().nativeId();
+                    // Boxed in bedrock where she stands: no way out.
+                    var feet = server.getPlayerManager().getPlayer(ada[1]).getBlockPos();
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = -1; dy <= 2; dy++) {
+                        if (dx == 0 && dz == 0 && (dy == 0 || dy == 1)) continue;
+                        context.getWorld().setBlockState(feet.add(dx, dy, dz), net.minecraft.block.Blocks.BEDROCK.getDefaultState());
+                    }
+                    context.assertTrue(f.runtime.socialSetting(f.source, ada[0], null, false, Personality.Trait.COMBATIVENESS, 70) == 1, "Ada made fierce");
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, ada[0], dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.factionsWorldForTest(WIDE);
+                    ben[0] = MockPlayers.survival(context, "Ben", new BlockPos(2, 2, 2));
+                    f.runtime.factionsTickForTest();
+                    f.runtime.factions().clockForTest(-50 * 3_600_000L);
+                    context.assertTrue(f.runtime.faction(f.source, ada[1], "create", List.of("Red", "RED")).accepted(), "Ada founds Red");
+                    context.assertTrue(f.runtime.faction(f.source, ben[0].getUuid(), "create", List.of("Blue", "BLU")).accepted(), "Ben founds Blue");
+                    f.runtime.factions().clockForTest(0);
+                    var here = Territory.Chunk.at(W, feet.getX(), feet.getZ());
+                    keys[0] = here.key();
+                    keys[1] = here.offset(1, 0).key();
+                    var ledgers = f.runtime.projected();
+                    String red = ledgers.factions().named("Red").orElseThrow().id().toString();
+                    String blue = ledgers.factions().named("Blue").orElseThrow().id().toString();
+                    f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, ada[1], red, keys[0], Map.of()));
+                    f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, keys[1], Map.of()));
+                    f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(2, 0).key(), Map.of()));
+                    f.runtime.record(PowerRules.set(ben[0].getUuid(), 1, null, FactionSettings.DEFAULTS, server.getTicks(), System.currentTimeMillis()));
+                })
+                .createAndAdd(() -> {
+                    int refusals = f.runtime.factionRefusalsForTest(ada[0], keys[1]);
+                    context.assertTrue(refusals >= 3, "Refused three times, waiting longer each time: " + refusals);
+                    context.assertTrue(refusals == 3, "Not asked a fourth time: " + refusals);
+                    if (third[0] < 0) third[0] = server.getTicks();
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(server.getTicks() - third[0] >= 600, "Six hundred ticks on");
+                    context.assertTrue(f.runtime.factionRefusalsForTest(ada[0], keys[1]) == 3, "Still three: set aside, not asked again: "
+                            + f.runtime.factionRefusalsForTest(ada[0], keys[1]));
+                    var move = f.runtime.factionMoveForTest(ada[0]);
+                    context.assertTrue(move == null || !move.target().equals(keys[1]), "Not walking there: " + move);
+                    String west = Territory.Chunk.of(keys[0]).offset(-1, 0).key();
+                    context.assertTrue(f.runtime.factionRefusalsForTest(ada[0], west) <= 3, "No other place asked more than three times either: "
+                            + f.runtime.factionRefusalsForTest(ada[0], west));
+                })
+                .completeIfSuccessful();
+    }
 }

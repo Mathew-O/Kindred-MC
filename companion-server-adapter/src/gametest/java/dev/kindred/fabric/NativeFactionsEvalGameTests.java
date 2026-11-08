@@ -101,6 +101,13 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
                     context.assertTrue(book.factions().size() == 1, "One faction, its founder's: " + book.factions().values().stream().map(x -> x.name()).toList());
                     int members = book.factions().values().stream().mapToInt(x -> x.members().size()).sum();
                     context.assertTrue(members == 3, "The others asked and joined: " + members + " of 3 in it");
+                    // Its faction's channel on the Wire: a joiner told of its founder's claim, as a faction-mate.
+                    var statuses = f.runtime.nativeStatuses(dev.kindred.core.Actor.console());
+                    var sol = statuses.stream().filter(x -> x.name().equals("Sol")).findFirst().orElseThrow();
+                    var told = f.runtime.wire().inbox(sol.id(), "faction.claim");
+                    context.assertTrue(!told.isEmpty(), "Sol told of a claim on its faction's channel: " + f.runtime.wire().inbox(sol.id()));
+                    context.assertTrue(told.stream().allMatch(t -> t.message().scope().channel() == dev.kindred.core.wire.Channel.FACTION),
+                            "Only on the faction's channel");
                     run[0] = null;
                     f.runtime.stop();
                 })

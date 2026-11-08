@@ -532,6 +532,8 @@ final class PlayerRuntime {
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
                 PlayerRuntime::now);
+        // A player's faction for the Wire (M-06i): the Factions ledger's, its AI players by their bodies.
+        setFactionOf(this::factionKey);
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -7458,6 +7460,18 @@ final class PlayerRuntime {
                 entry.walksFailed++;
                 entry.walkFailedAt = server.getTicks();
             }
+            // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
+            // somewhere forgets its refusals.
+            var factionMove = entry.factionPlay.move;
+            if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
+                    && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
+                if (state == SkillRunner.State.BLOCKED) {
+                    entry.factionPlay.refused(factionMove.target(), server.getTicks());
+                    // The weighed copy of this walk is not dispatched again while it waits.
+                    entry.cachedRoutineCandidates = List.of();
+                    attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+                } else if (state == SkillRunner.State.COMPLETED) entry.factionPlay.walked(factionMove.target());
+            }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
@@ -8946,6 +8960,11 @@ final class PlayerRuntime {
             if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
                 play.move = play.chosen;
                 play.chosen = null;
+                // Setting out home or to a border it saw: its faction is told, as a player would say where it is going.
+                if (play.move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND || play.move.kind() == dev.kindred.core.factions.FactionPlay.Kind.SCOUT) {
+                    factionSay(entry, player.getUuid(), play.move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND ? "faction.defend" : "faction.scout",
+                            play.move.target(), play.move.reason());
+                }
             }
         }
         if (play.chosen != null) {
@@ -8958,6 +8977,13 @@ final class PlayerRuntime {
         }
         var move = play.move;
         if (move == null) return null;
+        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
+        if (play.setAside(tick).contains(move.target())) {
+            play.move = null;
+            play.decidedAt = Long.MIN_VALUE / 2;
+            return null;
+        }
+        if (play.waiting(move.target(), tick)) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -8971,6 +8997,32 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /** Who {@code id} (an AI player's own id, or a person's) is in, as a faction id; empty outside a faction world or a faction. */
+    private String factionKey(UUID id) {
+        if (!factionsWorld() || id == null) return "";
+        Entry entry = entries.get(id);
+        UUID body = entry != null && entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity().getUuid() : id;
+        return projected().factions().of(body).map(f -> f.id().toString()).orElse("");
+    }
+
+    /**
+     * What it did or is setting out to do, told to its own faction on the Wire (M-06i) and nobody else: the kind
+     * ({@code faction.claim}, {@code faction.capture}, {@code faction.joined}, {@code faction.founded},
+     * {@code faction.defend}, {@code faction.scout}), where, and a line; every fact the faction's to know.
+     */
+    private void factionSay(Entry entry, UUID body, String kind, String where, String line) {
+        var faction = projected().factions().of(body).orElse(null);
+        if (faction == null) return;
+        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
+        if (!where.isEmpty()) facts.put("where", dev.kindred.core.wire.Fact.of(where, dev.kindred.core.wire.Visibility.FACTION));
+        facts.put("what", dev.kindred.core.wire.Fact.of(line, dev.kindred.core.wire.Visibility.FACTION));
+        try {
+            wire.send(dev.kindred.core.wire.Message.of(kind, entry.data.id(), dev.kindred.core.wire.Scope.faction(faction.id().toString()), facts, List.of()));
+        } catch (RuntimeException refused) {
+            KindredMod.LOGGER.warn("{}'s {} not sent on its faction's channel", entry.data.displayName(), kind, refused);
+        }
     }
 
     /** The view it decides from: the ledgers' public facts, its own sightings, its spare stock, its personality. */
@@ -8993,7 +9045,8 @@ final class PlayerRuntime {
         boolean healthy = player.getHealth() >= player.getMaxHealth() * 0.6f && player.getHungerManager().getFoodLevel() >= 12;
         return new dev.kindred.core.factions.FactionPlay.View(id, entry.profile.personality(), ledgers.factions(), ledgers.power(), ledgers.claims(),
                 ledgers.safe().chunks(), ledgers.captures(), ledgers.coins().of(id), factions.settings(), factions.now(), site, java.util.Optional.of(here),
-                healthy, spare, List.of(), Map.of(), ledgers.auctions(), entry.factionPlay.seen(), entry.factionPlay.met());
+                healthy, spare, List.of(), Map.of(), ledgers.auctions(), entry.factionPlay.seen(), entry.factionPlay.met(),
+                entry.factionPlay.setAside(server.getTicks()));
     }
 
     /** What it chooses now in the faction world, the first of its choices; nothing while a trade of its is being saved. */
@@ -9064,6 +9117,17 @@ final class PlayerRuntime {
         String line = String.join("; ", reply.lines());
         entry.decided(server.getTicks(), "faction: " + line);
         KindredMod.LOGGER.info("{} faction: {}", name, line);
+        if (reply.accepted()) {
+            String said = switch (kind) {
+                case FOUND -> "faction.founded";
+                case JOIN -> "faction.joined";
+                case CLAIM -> "faction.claim";
+                case CAPTURE -> "faction.capture";
+                default -> null;
+            };
+            if (said != null) factionSay(entry, id, said, kind == dev.kindred.core.factions.FactionPlay.Kind.CLAIM || kind == dev.kindred.core.factions.FactionPlay.Kind.CAPTURE
+                    ? dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ()).key() : "", line);
+        }
         return new NativeFactionAction.Reply(reply.accepted(), line);
     }
 
@@ -9082,6 +9146,13 @@ final class PlayerRuntime {
             play.chosen = null;
         }
         return play.move != null ? play.move : play.chosen;
+    }
+
+    /** How many times in a row the fixture's AI player found no way to {@code target}. */
+    int factionRefusalsForTest(UUID player, String target) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? 0 : entry.factionPlay.refusals(target);
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */

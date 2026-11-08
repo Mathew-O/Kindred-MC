@@ -62,12 +62,13 @@ public final class FactionPlay {
     /**
      * What the player knows. {@code site} the chunk of the base site it chose (M-01c), if any; {@code standing} the
      * chunk it stands in; {@code healthy} whether it is fit to fight (health and food); {@code asks} the market's ask for
-     * each wanted item, for its whole count, where it sells it; {@code nearby} the players it saw near it lately.
+     * each wanted item, for its whole count, where it sells it; {@code nearby} the players it saw near it lately;
+     * {@code setAside} the places it could find no way to lately (chunk keys, or a home), not chosen again for a while.
      */
     public record View(UUID self, Personality personality, FactionBook factions, PowerBook powers, Map<String, String> claims, Set<String> safe,
                        Capture.Book captures, long coins, FactionSettings settings, long nowMs, Optional<Territory.Chunk> site,
                        Optional<Territory.Chunk> standing, boolean healthy, List<Spare> spare, List<Want> wants, Map<String, Long> asks,
-                       AuctionBook auctions, List<Sighting> seen, List<UUID> nearby) {
+                       AuctionBook auctions, List<Sighting> seen, List<UUID> nearby, Set<String> setAside) {
         public View {
             Objects.requireNonNull(self);
             Objects.requireNonNull(personality);
@@ -78,6 +79,7 @@ public final class FactionPlay {
             asks = Map.copyOf(asks);
             seen = List.copyOf(seen);
             nearby = List.copyOf(nearby);
+            setAside = Set.copyOf(setAside);
         }
     }
 
@@ -195,6 +197,7 @@ public final class FactionPlay {
         long needed = held.isEmpty() ? view.settings().claimCost() * Coins.CENT : reserve(view);
         if (view.coins() < needed) return Optional.empty();
         for (var chunk : candidates) {
+            if (view.setAside().contains(chunk.key())) continue;
             var decision = Territory.claim(view.factions(), view.powers(), view.claims(), view.safe(), view.coins(), view.settings(), view.self(), chunk, at);
             if (decision.accepted()) return Optional.of(new Choice(Kind.CLAIM, chunk.key(), view.settings().claimCost() * Coins.CENT,
                     held.isEmpty() ? "Claim the base site" : "Claim land beside its own"));
@@ -241,6 +244,7 @@ public final class FactionPlay {
         boolean exposed = Capture.exposure(view.factions(), view.powers(), view.claims(), mine.id(), view.settings()).overextended();
         if (!attacked && !(exposed && view.personality().caution() >= 50)) return Optional.empty();
         String home = mine.home() == null || mine.home().isEmpty() ? "" : mine.home();
+        if (!home.isEmpty() && view.setAside().contains(home)) return Optional.empty();
         return Optional.of(new Choice(Kind.DEFEND, home, 0, attacked ? UNDER_ATTACK : "Home: its faction is exposed"));
     }
 
@@ -262,7 +266,7 @@ public final class FactionPlay {
             }
         }
         var targets = view.seen().stream()
-                .filter(s -> s.faction().equals(view.claims().get(s.chunk())))
+                .filter(s -> s.faction().equals(view.claims().get(s.chunk())) && !view.setAside().contains(s.chunk()))
                 .filter(s -> capturable(view, mine, s))
                 .sorted(Comparator.comparingDouble((Sighting s) -> distance(view, s)).thenComparing(Sighting::chunk))
                 .toList();

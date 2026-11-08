@@ -32,6 +32,7 @@ class FactionPlayTest {
     private long now = 100 * H;
     private final UUID self = UUID.randomUUID();
     private List<UUID> nearby = List.of();
+    private Set<String> setAside = Set.of();
 
     private static Personality person(int initiative, int caution, int sociability, int combativeness) {
         return new Personality(initiative, caution, 50, sociability, 50, combativeness, 50, 50, 50, 0);
@@ -39,7 +40,7 @@ class FactionPlayTest {
 
     private FactionPlay.View view(Personality p, long coins, Optional<Territory.Chunk> site, Optional<Territory.Chunk> standing, List<FactionPlay.Spare> spare,
                                   List<FactionPlay.Want> wants, Map<String, Long> asks, AuctionBook auctions, List<FactionPlay.Sighting> seen) {
-        return new FactionPlay.View(self, p, factions, powers, claims, Set.of(), captures, coins, S, now, site, standing, true, spare, wants, asks, auctions, seen, nearby);
+        return new FactionPlay.View(self, p, factions, powers, claims, Set.of(), captures, coins, S, now, site, standing, true, spare, wants, asks, auctions, seen, nearby, setAside);
     }
 
     private FactionPlay.View plain(Personality p, long coins) {
@@ -215,6 +216,21 @@ class FactionPlayTest {
         assertEquals(FactionPlay.Kind.CLAIM, first.kind());
         var chunk = Territory.Chunk.of(first.target());
         assertTrue(Math.max(Math.abs(chunk.x() - 100), Math.abs(chunk.z() - 100)) == 2, "a chunk's gap from Blue, as near its site as that allows: " + chunk);
+    }
+
+    @Test
+    void aPlaceItCouldFindNoWayToIsNotChosenWhileItIsSetAside() {
+        UUID mine = found(self, "Red", "RED");
+        var site = new Territory.Chunk(W, 100, 100);
+        setAside = Set.of(site.key());
+        var first = FactionPlay.decide(view(person(50, 0, 50, 50), 100 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(), Map.of(),
+                AuctionBook.EMPTY, List.of())).getFirst();
+        assertEquals(FactionPlay.Kind.CLAIM, first.kind());
+        assertTrue(!first.target().equals(site.key()), "another chunk near it, not the one set aside: " + first.target());
+        setAside = Set.of();
+        assertEquals(site.key(), FactionPlay.decide(view(person(50, 0, 50, 50), 100 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(),
+                Map.of(), AuctionBook.EMPTY, List.of())).getFirst().target(), "chosen again once its wait is over");
+        assertTrue(mine != null);
     }
 
     private static boolean raid(FactionPlay.Choice c) { return c.kind() == FactionPlay.Kind.SCOUT || c.kind() == FactionPlay.Kind.CAPTURE; }

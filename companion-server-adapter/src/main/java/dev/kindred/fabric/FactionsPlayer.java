@@ -44,6 +44,36 @@ final class FactionsPlayer {
     FactionPlay.Choice move;
     /** What it chose to ask for, waiting for its turn to act. */
     FactionPlay.Choice chosen;
+    /** A walk's target refused (no route) this many times in a row, and until when it is not asked again. */
+    record Refusals(int times, long until) { }
+    private final Map<String, Refusals> refused = new LinkedHashMap<>();
+    /** After this many refusals in a row a target is set aside, and the faction world's choice is made without it. */
+    static final int SET_ASIDE = 3;
+    /** The wait after the first refusal, in ticks; it doubles with each, to a game day at most. */
+    static final long BACKOFF = 200, BACKOFF_MAX = 24_000;
+
+    /** A walk toward {@code target} refused: not asked again for a while, longer each time. */
+    void refused(String target, long tick) {
+        var before = refused.get(target);
+        int times = before == null ? 1 : before.times() + 1;
+        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+    }
+
+    /** A walk toward {@code target} got somewhere: its refusals forgotten. */
+    void walked(String target) { refused.remove(target); }
+
+    int refusals(String target) { var r = refused.get(target); return r == null ? 0 : r.times(); }
+
+    /** Whether a walk toward {@code target} waits now. */
+    boolean waiting(String target, long tick) { var r = refused.get(target); return r != null && r.until() > tick; }
+
+    /** The targets set aside now: refused {@value #SET_ASIDE} times in a row, their wait not over. */
+    java.util.Set<String> setAside(long tick) {
+        var out = new java.util.HashSet<String>();
+        refused.forEach((t, r) -> { if (r.times() >= SET_ASIDE && r.until() > tick) out.add(t); });
+        return out;
+    }
+
     /** A founding refused for its name, retried with another. */
     int foundings;
 
