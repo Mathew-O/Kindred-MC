@@ -13,15 +13,15 @@ import java.util.Set;
  * Technical: The market ledger (M-06g). {@code market.sale} and {@code market.buy} carry the states of the roots they
  * moved, after them, in {@code data.roots} ({@code root=stock;updatedMs;anchor;anchorMs|...}); the fold sets them, so a
  * replay never recomputes a curve. {@code market.baseline} carries an operator's root ({@code cents},
- * {@code volatility}, {@code buyable}).
+ * {@code volatility}, {@code buyable}). {@code market.signal} is a counted auction trade's demand (M-06h), its roots' states after it.
  */
 public final class MarketLedger implements Ledger<MarketBook> {
-    public static final String SALE = "market.sale", BUY = "market.buy", BASELINE = "market.baseline";
+    public static final String SALE = "market.sale", BUY = "market.buy", BASELINE = "market.baseline", SIGNAL = "market.signal";
     public static final MarketLedger INSTANCE = new MarketLedger();
 
     @Override public String name() { return "market"; }
 
-    @Override public Set<String> kinds() { return Set.of(SALE, BUY, BASELINE); }
+    @Override public Set<String> kinds() { return Set.of(SALE, BUY, BASELINE, SIGNAL); }
 
     @Override public MarketBook empty() { return MarketBook.EMPTY; }
 

@@ -341,6 +341,8 @@ final class PlayerRuntime {
     private final FactionsService factions;
     /** The market's counter (M-06g). */
     private final MarketDesk market;
+    /** The auction house (M-06h). */
+    private final AuctionHouse auctions;
     /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
     private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -493,6 +495,7 @@ final class PlayerRuntime {
         this.metadataDirectory = metadataDirectory;
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
+        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), () -> market.pricing());
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
@@ -2507,6 +2510,7 @@ final class PlayerRuntime {
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
+            auctions.tick();
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
@@ -15193,12 +15197,12 @@ final class PlayerRuntime {
      */
     private void reportOpenSales(SqliteCompanionStore database) {
         database.allWorldEvents(Set.of(MarketDesk.INTENT, MarketDesk.CANCEL, MarketDesk.RECEIVED, dev.kindred.core.market.MarketLedger.SALE,
-                        dev.kindred.core.market.MarketLedger.BUY, "market.uncertain"))
+                        dev.kindred.core.market.MarketLedger.BUY, "market.uncertain", dev.kindred.core.market.Auctions.DELIVERING, dev.kindred.core.market.Auctions.DELIVERED))
                 .whenComplete((events, failure) -> handBack(() -> {
                     if (failure != null || !running) return;
                     var open = new java.util.LinkedHashMap<String, dev.kindred.core.record.WorldEvent>();
                     for (var e : events) {
-                        if (e.kind().equals(MarketDesk.INTENT)) open.put(e.subject(), e);
+                        if (e.kind().equals(MarketDesk.INTENT) || e.kind().equals(dev.kindred.core.market.Auctions.DELIVERING)) open.put(e.subject(), e);
                         else if (e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) && !e.get("purchase", "").isEmpty()) open.put(e.get("purchase", ""), e);
                         else if (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE)) open.remove(e.get("intent", ""));
                         else open.remove(e.subject());
@@ -15210,6 +15214,64 @@ final class PlayerRuntime {
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
+    }
+
+    /** The auction house (M-06h). */
+    AuctionHouse auctions() {
+        requireThread();
+        return auctions;
+    }
+
+    /** A price typed in coins ("12.5"), in hundredths, or -1. */
+    private static long coins(String text) {
+        try {
+            return new java.math.BigDecimal(text).movePointRight(2).setScale(0, java.math.RoundingMode.DOWN).longValueExact();
+        } catch (RuntimeException bad) {
+            return -1;
+        }
+    }
+
+    /**
+     * {@code who}'s auction request (M-06h), a person's or an AI player's alike: {@code list} (open listings and orders),
+     * {@code mine}, {@code sell <start> [buyNow] [hours]} (the stack in hand), {@code bid <id> <amount>}, {@code buy <id>},
+     * {@code cancel <id>}, {@code order <item> <count> <each>}, {@code unorder <id>}. Prices in coins. Only in a faction
+     * world.
+     */
+    int auctionRequest(ServerCommandSource source, UUID who, String verb, List<String> args) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        var player = server.getPlayerManager().getPlayer(who);
+        String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : "";
+        java.util.function.Consumer<String> tell = line -> feedback(source, line);
+        String refusal;
+        try {
+            switch (verb) {
+                case "list", "help" -> { for (String line : auctions.lines(null)) feedback(source, line); return 1; }
+                case "mine" -> { for (String line : auctions.lines(who)) feedback(source, line); return 1; }
+                case "sell" -> {
+                    if (player == null) return reject(source, "Only a player online lists.");
+                    long start = coins(args.get(0)), buyNow = args.size() > 1 ? coins(args.get(1)) : 0;
+                    int hours = args.size() > 2 ? Integer.parseInt(args.get(2)) : factions.settings().auctionHours();
+                    if (start < 0 || buyNow < 0) return reject(source, "Prices are in coins, such as 12.50");
+                    auctions.list(player, start, buyNow, hours, world, tell);
+                    return 1;
+                }
+                case "bid" -> refusal = player == null ? "Only a player online bids." : auctions.bid(player, args.get(0), coins(args.get(1)), world, tell);
+                case "buy" -> {
+                    var listing = auctions.book().listings().get(args.get(0));
+                    if (listing == null || listing.buyNow() <= 0) return reject(source, "No buy-now price on that listing");
+                    refusal = player == null ? "Only a player online buys." : auctions.bid(player, args.get(0), listing.buyNow(), world, tell);
+                }
+                case "cancel" -> refusal = player == null ? "Only a player online." : auctions.cancel(player, args.get(0), world, tell);
+                case "order" -> refusal = player == null ? "Only a player online orders." : auctions.order(player, args.get(0), Integer.parseInt(args.get(1)), coins(args.get(2)), world, tell);
+                case "unorder" -> refusal = player == null ? "Only a player online." : auctions.cancelOrder(player, args.get(0), world, tell);
+                default -> { return reject(source, "/ah [list|mine] | sell <start> [buyNow] [hours] | bid <id> <amount> | buy <id> | cancel <id> | order <item> <count> <each> | unorder <id>"); }
+            }
+        } catch (IndexOutOfBoundsException | NumberFormatException bad) {
+            return reject(source, "/ah sell <start> [buyNow] [hours] | bid <id> <amount> | buy <id> | cancel <id> | order <item> <count> <each> | unorder <id>");
+        }
+        return refusal == null ? 1 : reject(source, refusal);
     }
 
     /** The market's counter (M-06g). */
