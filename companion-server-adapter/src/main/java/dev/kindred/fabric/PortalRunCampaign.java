@@ -3907,7 +3907,7 @@ final class PortalRunCampaign {
                 if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
                 // A night shelter is dug by hand when there is no pickaxe: slow in rock, but better than waiting in the
                 // open (live run 59 died four times at night on the surface just after respawning with nothing).
-                if (label.startsWith("Dig in for the night") && handClearable(body, cell)) {
+                if ((label.startsWith("Dig in for the night") || digDownByHand) && handClearable(body, cell)) {
                     return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
                 }
                 refused = true;
@@ -4206,6 +4206,23 @@ final class PortalRunCampaign {
             }
             underWaterHeading = digDirection;
             if (out.isPresent()) return out;
+            // Every way along its own level refused, the lake's water over the next cell or sand with the water on it: a
+            // step down along its heading, by hand if it must, under a block more of cover, and along from there. The cell
+            // it leaves is set aside, so that it is not stepped back up into at once. On 707 in E-40's iteration 15
+            // (`e40a15-dbf4e5c`) Echo, its pickaxe worn out, climbed by hand to the bed of a frozen lake and went "step
+            // aside" and "to the wall" between two cells under it through 10 stuck spells, 10,564 times (F-25c4cq).
+            digDownByHand = true;
+            Optional<Task> lower;
+            try {
+                lower = digDown(body, feet.getY() - 1, label + ": out from under the water, a level lower");
+            } finally {
+                digDownByHand = false;
+            }
+            underWaterHeading = digDirection;
+            if (lower.isPresent()) {
+                if (lower.get().label().endsWith(": step down")) blockedUntil.merge(feet.asLong(), lastTick + 2400, Math::max);
+                return lower;
+            }
         }
         if (headRoomRefused && !swimming) {
             Optional<Task> aside = fromBeside(body, feet, label);
@@ -4242,8 +4259,12 @@ final class PortalRunCampaign {
             }
         }
         if (toWall == null) return Optional.empty();
+        // Not over to the wall of the cell it has just stepped aside out of, whose head room it may not dig: there it
+        // steps aside again, and back, for good (F-25c4cq).
+        BlockPos wall = feet.offset(toWall, nearest - 1);
+        if (wall.equals(asideFrom) && feet.equals(asideTo) && lastTick - asideTick < 1200) return Optional.empty();
         digDirection = toWall;
-        return Optional.of(go(feet.offset(toWall, nearest - 1), 0.4, false, label + ": to the wall"));
+        return Optional.of(go(wall, 0.4, false, label + ": to the wall"));
     }
 
     /**
@@ -4273,6 +4294,9 @@ final class PortalRunCampaign {
             BlockPos side = feet.offset(way);
             if (pocket(world, side) && !blocked(side) && !headRoomRefused(world, side)) {
                 digDirection = way;
+                asideFrom = feet.toImmutable();
+                asideTo = side.toImmutable();
+                asideTick = lastTick;
                 return Optional.of(go(side, 0.4, false, label + ": step aside"));
             }
         }
@@ -4566,6 +4590,11 @@ final class PortalRunCampaign {
      */
     /** Whether the tunnel being dug may be dug by hand, with no pickaxe held (F-25c4bu). */
     private boolean tunnelByHand;
+    /** Where the climb last stepped aside from and to, and when (F-25c4cq). */
+    private BlockPos asideFrom, asideTo;
+    private long asideTick;
+    /** Whether the step down being dug may be dug by hand, with no pickaxe held: out from under the water (F-25c4cq). */
+    private boolean digDownByHand;
 
     Optional<Task> tunnel(NativePlayerBody body, String label, boolean revealLava) {
         var player = body.entity();
