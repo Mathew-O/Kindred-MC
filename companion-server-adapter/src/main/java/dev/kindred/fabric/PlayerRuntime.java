@@ -2511,6 +2511,7 @@ final class PlayerRuntime {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
             auctions.tick();
+            factions.notices();
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();

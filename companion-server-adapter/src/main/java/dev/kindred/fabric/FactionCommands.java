@@ -21,7 +21,7 @@ import net.minecraft.text.Text;
 final class FactionCommands {
     static final String HELP = "/faction create <name> <tag> [colour] | invite|uninvite|kick|promote|demote|leader <player> | join <faction> | leave"
             + " | ally|truce|enemy <faction> | sethome | home | colour <dye> | disband | info [faction] | list | power [player]"
-            + " | claim | unclaim | map | coins";
+            + " | claim | unclaim | capture | map | coins";
 
     private FactionCommands() {}
 

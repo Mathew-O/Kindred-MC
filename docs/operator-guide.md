@@ -759,6 +759,11 @@ In a faction world:
   `/ah order <item> <count> <each>` posts a buy order a later listing fills, `/ah unorder <id>`. Bids are held until
   outbid; the winner is handed the item at the close (when next online), the seller paid less 3%; unsold items come
   back. Fees leave the world. Trades between the same two accounts back and forth do not move market prices.
+- Capture (M-06e): a faction whose claims exceed its power is vulnerable (announced), with that many chunks exposed. An
+  enemy officer standing in one of its border chunks (touching the wilderness or the attacker's own land) takes it with
+  `/faction capture` for 100 coins, within its own capacity; never a new faction's first 48 hours, never within 30
+  minutes of the faction's last loss, never the same chunk twice in an hour. A captured chunk is the new owner's with
+  its chests and their contents; until then it is protected like any claim.
 
 ## Development native bodies
 Explicit development native bodies are available:

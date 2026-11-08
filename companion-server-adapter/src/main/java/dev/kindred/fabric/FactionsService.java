@@ -140,7 +140,53 @@ final class FactionsService {
 
     PowerBook powers() { return ledgers.get().power(); }
 
-    Factions.At at(String world) { return new Factions.At(server.getTicks(), System.currentTimeMillis(), world); }
+    Factions.At at(String world) { return new Factions.At(server.getTicks(), now(), world); }
+
+    /** The clock the rules read: the wall clock, moved by a fixture only. */
+    long now() { return System.currentTimeMillis() + clockOffset; }
+
+    /** A fixture's clock moved, so shields and the hour's limit can pass within a test. */
+    void clockForTest(long offsetMs) { clockOffset = offsetMs; }
+
+    /** Each faction's exposed chunks as last seen, for the vulnerable and secure notices; null until first looked. */
+    private Map<UUID, Integer> exposedSeen;
+    private long clockOffset;
+
+    /**
+     * Once a second: a faction that has just overextended is announced vulnerable, one no longer overextended secure
+     * (M-06e), to everyone online. The first look after a start only remembers.
+     */
+    void notices() {
+        var seen = new HashMap<UUID, Integer>();
+        var events = new ArrayList<WorldEvent>();
+        for (var faction : book().factions().values()) {
+            var exposure = dev.kindred.core.factions.Capture.exposure(book(), powers(), ledgers.get().claims(), faction.id(), settings);
+            seen.put(faction.id(), exposure.exposed());
+            if (exposedSeen == null) continue;
+            int before = exposedSeen.getOrDefault(faction.id(), 0);
+            if (before == 0 && exposure.exposed() > 0 || before > 0 && exposure.exposed() == 0) {
+                boolean vulnerable = exposure.exposed() > 0;
+                events.add(dev.kindred.core.factions.Capture.notice(faction.id(), vulnerable, exposure, at("")));
+                broadcast(faction.name() + (vulnerable ? " is vulnerable: " + exposure.exposed() + " chunks exposed" : " is secure again"));
+            }
+        }
+        exposedSeen = seen;
+        if (!events.isEmpty()) record.accept(events);
+    }
+
+    /** A line told to everyone online. */
+    void broadcast(String line) {
+        for (var player : server.getPlayerManager().getPlayerList()) player.sendMessage(net.minecraft.text.Text.literal(line).formatted(net.minecraft.util.Formatting.GOLD), false);
+    }
+
+    /** A line told to a faction's members online. */
+    void tellFaction(UUID faction, String line) {
+        var members = book().get(faction).map(f -> f.members().keySet()).orElse(java.util.Set.of());
+        for (UUID member : members) {
+            var player = server.getPlayerManager().getPlayer(member);
+            if (player != null) player.sendMessage(net.minecraft.text.Text.literal(line).formatted(net.minecraft.util.Formatting.YELLOW), false);
+        }
+    }
 
     /** A decision's events written to the Record; its reason either way. */
     Factions.Decision apply(Factions.Decision decision) {
@@ -315,6 +361,20 @@ final class FactionsService {
                         ? dev.kindred.core.factions.Territory.claim(book, powers(), ledgers.get().claims(), safe(), ledgers.get().coins().of(who), settings, who, chunk, at)
                         : dev.kindred.core.factions.Territory.unclaim(book, ledgers.get().claims(), who, chunk, at);
                 if (decision.accepted()) record.accept(decision.events());
+                return new Reply(decision.accepted(), List.of(decision.reason()));
+            }
+            case "capture" -> {
+                var chunk = dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ());
+                String from = ledgers.get().claims().get(chunk.key());
+                var decision = dev.kindred.core.factions.Capture.capture(book, powers(), ledgers.get().claims(), safe(), ledgers.get().captures(),
+                        ledgers.get().coins().of(who), settings, who, chunk, at);
+                if (decision.accepted()) {
+                    record.accept(decision.events());
+                    var attacker = book.of(who).orElseThrow();
+                    var loser = book.get(UUID.fromString(from)).orElseThrow();
+                    tellFaction(attacker.id(), attacker.name() + " captured " + chunk.key() + " from " + loser.name());
+                    tellFaction(loser.id(), attacker.name() + " captured your chunk " + chunk.key());
+                }
                 return new Reply(decision.accepted(), List.of(decision.reason()));
             }
             case "coins" -> { return Reply.told(List.of("Coins: " + dev.kindred.core.factions.Coins.show(ledgers.get().coins().of(who)))); }

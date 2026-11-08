@@ -1,5 +1,6 @@
 package dev.kindred.core.record;
 
+import dev.kindred.core.factions.Capture;
 import dev.kindred.core.factions.Coins;
 import dev.kindred.core.factions.FactionBook;
 import dev.kindred.core.factions.FactionLedger;
@@ -27,10 +28,11 @@ import java.util.UUID;
  */
 public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, String> claims, Map<UUID, Integer> deaths, FactionBook factions,
                       PowerBook power, Coins.Book coins, SafeZones.Book safe, MarketBook market,
-                      AuctionBook auctions) {
+                      AuctionBook auctions, Capture.Book captures) {
     public static final Ledgers EMPTY = new Ledgers(MatchLedger.INSTANCE.empty(), ClaimLedger.INSTANCE.empty(), DeathLedger.INSTANCE.empty(),
             FactionLedger.INSTANCE.empty(), PowerLedger.INSTANCE.empty(), Coins.INSTANCE.empty(),
-            SafeZones.INSTANCE.empty(), MarketLedger.INSTANCE.empty(), Auctions.INSTANCE.empty());
+            SafeZones.INSTANCE.empty(), MarketLedger.INSTANCE.empty(), Auctions.INSTANCE.empty(),
+            Capture.INSTANCE.empty());
 
     /** Every kind any of these ledgers reads: what a restart reads back from the Record. */
     public static Set<String> kinds() {
@@ -44,6 +46,7 @@ public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, Strin
         kinds.addAll(SafeZones.INSTANCE.kinds());
         kinds.addAll(MarketLedger.INSTANCE.kinds());
         kinds.addAll(Auctions.INSTANCE.kinds());
+        kinds.addAll(Capture.INSTANCE.kinds());
         return kinds;
     }
 
@@ -57,8 +60,9 @@ public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, Strin
         var s = SafeZones.INSTANCE.kinds().contains(event.kind()) ? SafeZones.INSTANCE.apply(safe, event) : safe;
         var k = MarketLedger.INSTANCE.kinds().contains(event.kind()) ? MarketLedger.INSTANCE.apply(market, event) : market;
         var a = Auctions.INSTANCE.kinds().contains(event.kind()) ? Auctions.INSTANCE.apply(auctions, event) : auctions;
-        return m == matches && c == claims && d == deaths && f == factions && p == power && o == coins && s == safe && k == market && a == auctions ? this
-                : new Ledgers(m, c, d, f, p, o, s, k, a);
+        var x = Capture.INSTANCE.kinds().contains(event.kind()) ? Capture.INSTANCE.apply(captures, event) : captures;
+        return m == matches && c == claims && d == deaths && f == factions && p == power && o == coins && s == safe && k == market && a == auctions
+                && x == captures ? this : new Ledgers(m, c, d, f, p, o, s, k, a, x);
     }
 
     public static Ledgers replay(Iterable<WorldEvent> events) {
@@ -72,7 +76,8 @@ public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, Strin
         return List.of(MatchLedger.INSTANCE.check(events, matches), ClaimLedger.INSTANCE.check(events, claims),
                 DeathLedger.INSTANCE.check(events, deaths), FactionLedger.INSTANCE.check(events, factions), PowerLedger.INSTANCE.check(events, power),
                 Coins.INSTANCE.check(events, coins), SafeZones.INSTANCE.check(events, safe),
-                MarketLedger.INSTANCE.check(events, market), Auctions.INSTANCE.check(events, auctions));
+                MarketLedger.INSTANCE.check(events, market), Auctions.INSTANCE.check(events, auctions),
+                Capture.INSTANCE.check(events, captures));
     }
 
     /** Whether every ledger agrees with the Record. */
