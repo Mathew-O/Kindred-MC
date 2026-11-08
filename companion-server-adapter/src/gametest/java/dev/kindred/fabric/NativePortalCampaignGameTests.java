@@ -3829,6 +3829,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     BlockPos p = f.player().getBlockPos().toImmutable();
                     feet[0] = p;
                     FixtureGround.keep(context, p.add(-6, -2, -6), p.add(6, 9, 6));
+                    // Its chunks kept moving, as a server's own simulation distance keeps them: climbing out it steps over a
+                    // chunk's edge where the test placed it near one, and the sand it digs down there stayed in the air,
+                    // its chunk not ticked, the climb waiting on it to the end (PR #37's builds).
+                    FixtureGround.simulated(context, p.add(-6, -2, -6), p.add(6, -2, 6));
                     // Bottom up, so no sand is set over an empty cell.
                     for (int dy = -2; dy <= 9; dy++) for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
                         world.setBlockState(p.add(dx, dy, dz), (dy <= 3 ? Blocks.SANDSTONE : dy <= 6 ? Blocks.SAND : Blocks.AIR).getDefaultState());

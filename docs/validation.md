@@ -31,17 +31,33 @@
 
 ## PR #37's builds (batch 17, `b43b7de`) — 8 November 2026
 
-Each pull-request build failed one native fixture, 586 of 587, a different one in each; main's build on `15e3ee9` was
-green. Neither fixture is in code the batch changes.
-- `NativeBunkerGameTests.itDigsOutlinesAndFurnishesItsHideoutUnderTheGround` (run 42455310230): "0/345 placed - In the
-  way of the build", still mining at 39,498 ticks. Construction code; the same fixture failed so, 197 of 345, on run
-  41803604600.
-- `NativePortalCampaignGameTests.withNoPickaxeUnderSandstoneAndSandItDigsTheSandDownAheadOfEachStepAndClimbsOut` (run
-  42455286799): "Not out". From the job's log its climb waited "let what falls settle" at 1, 4, -3 from its start to the
-  end of the test: one of the climb's two waits for a block on its way down (F-25c4ao), which have no bound, held it. Alone
-  on `b43b7de` it passed 3 of 3. A staged block that never lands (gravity off, its fall's clock held back) in the cells a
-  block up on either side did not hold it (3 of 3 passed), so the wait's bound is not yet made: no fixture reproduces it.
-- Both jobs re-run once.
+Each pull-request build failed native fixtures, a different set in each run; main's build on `15e3ee9` was green. Both
+jobs were re-run once.
+- Run 42455286799, twice: `NativePortalCampaignGameTests.withNoPickaxeUnderSandstoneAndSandItDigsTheSandDownAheadOfEachStepAndClimbsOut`,
+  "Not out". Its climb waited "let what falls settle" at 1, 4, -3 from its start to the test's end, 133 waits on the
+  re-run. Root cause: the fixture never marked its ground as simulated. The test server sets no simulation distance,
+  so entities move only in the player's own chunk and the test structure's (see `FixtureGround.simulated`). In CI the
+  pocket was three blocks south of a chunk's edge. Climbing out, the landing crossed into the chunk north, and the sand
+  dug down there never fell. Alone it passed 3 of 3, wherever the test stood. Placed three blocks south of a chunk's
+  edge as CI placed it, it failed 2 of 3, "Not out: at 1, 4, -3 ... let what falls settle". With its ground simulated,
+  as most fixtures do, it passed 3 of 3. The fixture now does so; the climb's code is unchanged.
+- Run 42455310230: first `NativeBunkerGameTests.itDigsOutlinesAndFurnishesItsHideoutUnderTheGround` ("0/345 placed -
+  In the way of the build"), then on the re-run `NativeLifeFirstGameTests.hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase`
+  and `itsFirstNightFallingAsItsCabinGoesUpItSleepsThereThenGoesBackTheNextNight` ("Its body": the fixture's time ran
+  out). In the first of those, the cabin was built, 222 of 222 at 08:19:39. Its exact check did not pass, and the
+  player went on to a keep until the fixture's end. These are construction fixtures this batch's change does not touch.
+  Their cause is not yet found; they are run on the next head.
+- On `e411089` (the fixture fixed): both jobs failed again, on fixtures this batch's change does not run.
+  - The push run: `NativeLifeFirstGameTests.hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase`. The cabin was
+    built, 222 of 222, and one block of its scaffold, four over the player, was left "out of reach to take down" when
+    night took it to its bed.
+  - The pull-request run: `NativeBringGameTests.aLibrarianThatStrollsIsHeldInABoatWhileTheLineIsLaid` ("The
+    librarian kept wandering off the line") and `NativePortalCampaignGameTests.goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe`
+    ("Out of the pit ... Explore west for logs").
+  - The pushes of branches carrying the same batch 17 code (`claude/e40-ladder-19-1108`, `claude/e40-ladder-20-1108`)
+    passed all 587 native fixtures. The bunker and life-first classes passed 8 of 8 alone on `e411089`.
+  - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
+    is not yet reproduced alone.
 
 ## E-40, batch 19: a cobweb in the climb's way (F-25c4cm) — 8 November 2026 (`claude/e40-ladder-19-1108`)
 
@@ -81,7 +97,6 @@ green. Neither fixture is in code the batch changes.
   wall it digs out of): the flint variant 3 of 3 again, with `NativeGravelTunnelGameTests`, `NativeFallingColumnGameTests`
   and `NativePortalCampaignGameTests`, 101 of 101.
 - **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
-
 ## E-40, batch 17: the trip's sticks sized to its digging (F-25c4cj) — 8 November 2026 (`claude/e40-ladder-17-1108`)
 
 - **The planner** (F-25c4cj, [evidence](evidence/F-25c4cj.md)): `PortalRunPlannerTest.theTripsSticksCoverTheStonePickaxesItsDiggingWearsOut`
