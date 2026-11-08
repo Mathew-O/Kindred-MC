@@ -38,10 +38,12 @@ public final class FactionPlay {
     public static final long STALE_SIGHTING_MS = 60 * 60_000L;
     /** Combativeness at which a seen exposed border is taken before free land is claimed. */
     public static final int RAID_FIRST = 60;
+    /** How many chunks round its site a faction's first land may be, when the site itself is refused. */
+    public static final int SITE_REACH = 3;
 
     static final String UNDER_ATTACK = "Home: its land is being taken";
 
-    public enum Kind { FOUND, JOIN, CLAIM, SELL, BUY, BID, DEFEND, SCOUT, CAPTURE }
+    public enum Kind { FOUND, JOIN, INVITE, CLAIM, SELL, BUY, BID, DEFEND, SCOUT, CAPTURE }
 
     /** One thing to do: {@code target} a faction id, chunk key, item id or listing id; {@code amount} a count or coins (hundredths). */
     public record Choice(Kind kind, String target, long amount, String reason) {
@@ -60,12 +62,12 @@ public final class FactionPlay {
     /**
      * What the player knows. {@code site} the chunk of the base site it chose (M-01c), if any; {@code standing} the
      * chunk it stands in; {@code healthy} whether it is fit to fight (health and food); {@code asks} the market's ask for
-     * each wanted item, for its whole count, where it sells it.
+     * each wanted item, for its whole count, where it sells it; {@code nearby} the players it saw near it lately.
      */
     public record View(UUID self, Personality personality, FactionBook factions, PowerBook powers, Map<String, String> claims, Set<String> safe,
                        Capture.Book captures, long coins, FactionSettings settings, long nowMs, Optional<Territory.Chunk> site,
                        Optional<Territory.Chunk> standing, boolean healthy, List<Spare> spare, List<Want> wants, Map<String, Long> asks,
-                       AuctionBook auctions, List<Sighting> seen) {
+                       AuctionBook auctions, List<Sighting> seen, List<UUID> nearby) {
         public View {
             Objects.requireNonNull(self);
             Objects.requireNonNull(personality);
@@ -75,6 +77,7 @@ public final class FactionPlay {
             wants = List.copyOf(wants);
             asks = Map.copyOf(asks);
             seen = List.copyOf(seen);
+            nearby = List.copyOf(nearby);
         }
     }
 
@@ -98,6 +101,8 @@ public final class FactionPlay {
         // A combative player with an exposed border in sight takes it before it spreads into free land; others grow first.
         boolean raidFirst = !raids.isEmpty() && view.personality().combativeness() >= RAID_FIRST;
         if (raidFirst) out.addAll(raids);
+        // Its people first: a player it met who is in no faction is asked before land is bought.
+        if (officer && view.personality().sociability() >= 40) invite(view, mine).ifPresent(out::add);
         if (officer) claim(view, mine, at).ifPresent(out::add);
         if (!view.spare().isEmpty()) {
             long cents = view.spare().stream().mapToLong(Spare::cents).sum();
@@ -121,13 +126,14 @@ public final class FactionPlay {
     }
 
     /**
-     * No faction yet: join the invitation with the most members (a sociable player takes one at once), or found its own
+     * No faction yet: join the invitation of the faction with the fewest members, where it is wanted most (a sociable
+     * player takes one at once), or found its own
      * (a player of initiative does at once; any other after a game day of waiting for an invitation).
      */
     static Optional<Choice> membership(View view) {
         var invited = view.factions().factions().values().stream()
                 .filter(f -> view.factions().invited(f.id(), view.self()) && f.members().size() < view.settings().maxMembers())
-                .sorted(Comparator.comparingInt((Faction f) -> -f.members().size()).thenComparing(Faction::name))
+                .sorted(Comparator.comparingInt((Faction f) -> f.members().size()).thenComparing(Faction::name))
                 .toList();
         var p = view.personality();
         if (!invited.isEmpty() && p.sociability() >= 35) {
@@ -140,6 +146,19 @@ public final class FactionPlay {
             return Optional.of(new Choice(Kind.FOUND, "", 0, invited.isEmpty() ? "Found a faction of its own" : "Found its own rather than join"));
         }
         return Optional.empty();
+    }
+
+    /**
+     * An officer's invitation to a player it saw near it lately who is in no faction and not yet asked, while its faction
+     * has room: the first by id, one at a time.
+     */
+    static Optional<Choice> invite(View view, Faction mine) {
+        if (mine.members().size() >= view.settings().maxMembers()) return Optional.empty();
+        return view.nearby().stream()
+                .filter(p -> !p.equals(view.self()) && view.factions().of(p).isEmpty() && !view.factions().invited(mine.id(), p))
+                .sorted(Comparator.comparing(UUID::toString))
+                .findFirst()
+                .map(p -> new Choice(Kind.INVITE, p.toString(), 0, "Invite a player it met into " + mine.name()));
     }
 
     /** Coins kept back: a claim's cost, more for a cautious player (up to three claims' worth). */
@@ -156,7 +175,13 @@ public final class FactionPlay {
         String id = mine.id().toString();
         var held = view.claims().entrySet().stream().filter(e -> e.getValue().equals(id)).map(e -> Territory.Chunk.of(e.getKey())).toList();
         var candidates = new ArrayList<Territory.Chunk>();
-        if (held.isEmpty()) view.site().ifPresent(site -> candidates.add(beyondSpawn(site, view.settings())));
+        if (held.isEmpty()) view.site().ifPresent(site -> {
+            // Its site, or the nearest chunk round it the rules allow (another faction settled beside it first).
+            var first = beyondSpawn(site, view.settings());
+            for (int r = 0; r <= SITE_REACH; r++) for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+                if (Math.max(Math.abs(dx), Math.abs(dz)) == r) candidates.add(first.offset(dx, dz));
+            }
+        });
         else {
             var centre = held.getFirst();
             for (var chunk : held) for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {

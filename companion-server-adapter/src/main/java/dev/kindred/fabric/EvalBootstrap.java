@@ -115,12 +115,15 @@ final class EvalBootstrap implements RunObserver {
             }
             case 1 -> { // Each a few blocks from the last, on the ground at the world's spawn.
                 if (lastTick - phaseAt < SPAWN_GAP) return;
-                if (spawned < scenario.starters().size()) {
+                if (spawned < scenario.everyone().size()) {
                     var base = origin != null ? origin : server.getOverworld().getSpawnPos();
                     var ground = spawnSpot(server, runtime, base.add(3 * spawned, 0, 3 * spawned));
-                    String name = scenario.starters().get(spawned);
+                    String name = scenario.everyone().get(spawned);
                     KindredMod.LOGGER.info("Evaluation run: spawn {} at {}", name, ground.toShortString());
-                    runtime.spawnCanonicalRoster(server.getCommandSource().withPosition(net.minecraft.util.math.Vec3d.ofBottomCenter(ground)), name);
+                    var at = server.getCommandSource().withPosition(net.minecraft.util.math.Vec3d.ofBottomCenter(ground));
+                    // The starters from the canonical roster; any other player as a native player of that name, with no preset.
+                    if (spawned < scenario.starters().size()) runtime.spawnCanonicalRoster(at, name);
+                    else runtime.createNative(at, name);
                     spawned++;
                     phaseAt = lastTick;
                     return;
@@ -130,7 +133,7 @@ final class EvalBootstrap implements RunObserver {
             case 2 -> { // Every starter in the world before its goal is set; a starter that never comes is noted, and the run goes on.
                 var here = runtime.nativeStatuses(Actor.console()).stream()
                         .filter(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()).toList();
-                boolean all = scenario.starters().stream().allMatch(n -> here.stream().anyMatch(s -> s.name().equalsIgnoreCase(n)));
+                boolean all = scenario.everyone().stream().allMatch(n -> here.stream().anyMatch(s -> s.name().equalsIgnoreCase(n)));
                 if (!all && lastTick - phaseAt < ESTABLISH_WAIT) return;
                 if (!all) note = "not every starter came into the world: " + here.stream().map(PlayerRuntime.NativeStatus::name).toList();
                 if (scenario.mode() == EvalScenario.Mode.FACTIONS) {
@@ -138,6 +141,20 @@ final class EvalBootstrap implements RunObserver {
                     // a safe zone, its lighthouse not built. Its locked rules are audited from the World Record at the end.
                     KindredMod.LOGGER.info("Evaluation run: a faction world");
                     runtime.factionsWorldForEval();
+                    // Founders and joiners (founders=N): the first N players set, as their administrator may set a
+                    // personality, to found at once and to invite; the rest to wait to be asked and to join.
+                    if (scenario.founders() > 0) {
+                        var everyone = scenario.everyone();
+                        for (var status : here) {
+                            int i = -1;
+                            for (int k = 0; k < everyone.size(); k++) if (everyone.get(k).equalsIgnoreCase(status.name())) i = k;
+                            if (i < 0) continue;
+                            boolean founder = i < scenario.founders();
+                            runtime.personalityForEval(status.id(), Map.of(dev.kindred.core.Personality.Trait.INITIATIVE, founder ? 80 : 20,
+                                    dev.kindred.core.Personality.Trait.SOCIABILITY, founder ? 60 : 70));
+                            KindredMod.LOGGER.info("Evaluation run: {} {}", status.name(), founder ? "a founder" : "waits to be asked");
+                        }
+                    }
                     if (runtime.factionsHub(server.getCommandSource(), false) != 1) note += (note.isEmpty() ? "" : "; ") + "the hub was not set";
                 }
                 if (scenario.goal() != EvalScenario.Goal.NONE) {
@@ -148,7 +165,7 @@ final class EvalBootstrap implements RunObserver {
                         case NONE -> dev.kindred.core.survival.SurvivalGoal.NONE;
                     };
                     for (var status : here) {
-                        if (scenario.starters().stream().noneMatch(n -> n.equalsIgnoreCase(status.name()))) continue;
+                        if (scenario.everyone().stream().noneMatch(n -> n.equalsIgnoreCase(status.name()))) continue;
                         KindredMod.LOGGER.info("Evaluation run: goal {} for {}", goal, status.name());
                         // A goal the runtime refuses is said in the run's record: a run with none set measures nothing.
                         if (runtime.startGoal(server.getCommandSource(), status.id(), goal) != 1) {
@@ -261,7 +278,7 @@ final class EvalBootstrap implements RunObserver {
     }
 
     private void look(MinecraftServer server, PlayerRuntime runtime) {
-        for (String name : scenario.starters()) {
+        for (String name : scenario.everyone()) {
             ServerPlayerEntity player = server.getPlayerManager().getPlayer(name);
             if (player == null || !player.isAlive()) continue;
             var inventory = player.getInventory();

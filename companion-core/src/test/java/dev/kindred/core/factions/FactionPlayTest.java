@@ -31,6 +31,7 @@ class FactionPlayTest {
     private Capture.Book captures = Capture.Book.EMPTY;
     private long now = 100 * H;
     private final UUID self = UUID.randomUUID();
+    private List<UUID> nearby = List.of();
 
     private static Personality person(int initiative, int caution, int sociability, int combativeness) {
         return new Personality(initiative, caution, 50, sociability, 50, combativeness, 50, 50, 50, 0);
@@ -38,7 +39,7 @@ class FactionPlayTest {
 
     private FactionPlay.View view(Personality p, long coins, Optional<Territory.Chunk> site, Optional<Territory.Chunk> standing, List<FactionPlay.Spare> spare,
                                   List<FactionPlay.Want> wants, Map<String, Long> asks, AuctionBook auctions, List<FactionPlay.Sighting> seen) {
-        return new FactionPlay.View(self, p, factions, powers, claims, Set.of(), captures, coins, S, now, site, standing, true, spare, wants, asks, auctions, seen);
+        return new FactionPlay.View(self, p, factions, powers, claims, Set.of(), captures, coins, S, now, site, standing, true, spare, wants, asks, auctions, seen, nearby);
     }
 
     private FactionPlay.View plain(Personality p, long coins) {
@@ -55,7 +56,7 @@ class FactionPlayTest {
     }
 
     @Test
-    void aSociablePlayerJoinsTheLargestFactionThatInvitedIt() {
+    void aSociablePlayerJoinsTheSmallestFactionThatInvitedIt() {
         UUID blueLeader = UUID.randomUUID(), greenLeader = UUID.randomUUID();
         UUID blue = found(blueLeader, "Blue", "BLU"), green = found(greenLeader, "Green", "GRN");
         enlist(blue, blueLeader);
@@ -63,9 +64,9 @@ class FactionPlayTest {
         apply(Factions.invite(factions, blueLeader, self, true, at()).events());
         apply(Factions.invite(factions, greenLeader, self, true, at()).events());
         var join = FactionPlay.decide(plain(person(30, 50, 60, 50), 0)).getFirst();
-        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.JOIN, blue.toString(), 0, "Join Blue, who invited it"), join);
+        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.JOIN, green.toString(), 0, "Join Green, who invited it"), join,
+                "Green (one member) wants it more than Blue (three)");
         assertEquals(FactionPlay.Kind.FOUND, FactionPlay.decide(plain(person(30, 50, 20, 50), 0)).getFirst().kind(), "an unsociable player founds its own");
-        assertTrue(green != null);
     }
 
     @Test
@@ -182,6 +183,38 @@ class FactionPlayTest {
         var home = FactionPlay.decide(view(person(50, 50, 50, 90), 10_000 * Coins.CENT, Optional.empty(), Optional.of(new Territory.Chunk(W, 150, 150)), List.of(),
                 List.of(), Map.of(), AuctionBook.EMPTY, List.of()));
         assertTrue(home.stream().noneMatch(c -> c.kind() == FactionPlay.Kind.DEFEND), "already home: nothing to go back to");
+    }
+
+    @Test
+    void anOfficerInvitesAPlayerItMetWhoIsInNoFaction() {
+        UUID mine = found(self, "Red", "RED");
+        UUID loner = UUID.randomUUID(), taken = UUID.randomUUID(), takenLeader = UUID.randomUUID();
+        found(takenLeader, "Blue", "BLU");
+        apply(Factions.invite(factions, takenLeader, taken, true, at()).events());
+        apply(Factions.join(factions, taken, factions.named("Blue").orElseThrow().id(), S, at()).events());
+        nearby = List.of(taken, loner, self);
+        var choices = FactionPlay.decide(plain(person(50, 50, 50, 50), 0));
+        assertEquals(List.of(new FactionPlay.Choice(FactionPlay.Kind.INVITE, loner.toString(), 0, "Invite a player it met into Red")), choices,
+                "only the one in no faction, never itself");
+        apply(Factions.invite(factions, self, loner, true, at()).events());
+        assertTrue(FactionPlay.decide(plain(person(50, 50, 50, 50), 0)).isEmpty(), "asked once");
+        apply(Factions.invite(factions, self, loner, false, at()).events());
+        assertTrue(FactionPlay.decide(plain(person(50, 50, 20, 50), 0)).isEmpty(), "an unsociable leader invites nobody");
+        assertTrue(mine != null);
+    }
+
+    @Test
+    void aFoundersSiteBesideAnotherFactionsLandMovesToTheNearestChunkTheRulesAllow() {
+        UUID other = UUID.randomUUID();
+        UUID blue = found(other, "Blue", "BLU");
+        claim(blue, 100, 100);
+        found(self, "Red", "RED");
+        var site = new Territory.Chunk(W, 101, 100);
+        var first = FactionPlay.decide(view(person(50, 0, 50, 50), 100 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(), Map.of(),
+                AuctionBook.EMPTY, List.of())).getFirst();
+        assertEquals(FactionPlay.Kind.CLAIM, first.kind());
+        var chunk = Territory.Chunk.of(first.target());
+        assertTrue(Math.max(Math.abs(chunk.x() - 100), Math.abs(chunk.z() - 100)) == 2, "a chunk's gap from Blue, as near its site as that allows: " + chunk);
     }
 
     private static boolean raid(FactionPlay.Choice c) { return c.kind() == FactionPlay.Kind.SCOUT || c.kind() == FactionPlay.Kind.CAPTURE; }

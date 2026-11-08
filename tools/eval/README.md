@@ -40,6 +40,8 @@ operator guide.
 | `rescue` | `on`, `off` (a stuck player asks the strategist for a way out, F-29; only with `strategist=on`) | `on` |
 | `advice` | `on`, `off` (the strategist's advice; with `strategist=on`, `advice=off` asks it for rescue plans alone) | `on` |
 | `mode` | `survival`, `factions` (a faction world the starters joined, M-06i; its locked rules audited from the World Record at the end) | `survival` |
+| `players` | more AI players by name beside the starters, comma-separated (3 to 16 letters, digits or `_`; native players with no preset) | none |
+| `founders` | with `mode=factions`, how many of the players (the starters first, in order) are set to found a faction and invite, the others to wait to be asked | 0 |
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
@@ -83,6 +85,12 @@ cast and the portal's lighting as they complete; a frame's obsidian is cast wher
 - The result is written into `eval-result.json` as `factions`: `audited`, a `note` when it could not run, `counts`
   (events, factions, claims, captures, sales, purchases, listings, deliveries, deaths, kills) and `violations` (each
   rule broken, with its event). `score.py` adds the audit's table to `summary.md`.
+- `founders=N` sets each player's bounded traits as its administrator may set them: the first N to found at once and to
+  invite the players they meet (initiative 80, sociability 60), the others to wait to be asked and to join (20, 70).
+  Everything else is the players' own: who meets whom, who asks, and who joins whom (an invited player joins the faction
+  with the fewest members that asked it).
+- The runtime holds three native players for now (`PlayerRuntime`'s envelope), so a run with more than three in all
+  makes the first three and notes that the others did not come.
 - The mode is not yet an operator's choice (`GameModes` keeps it unplayable until M-06i is complete). The run sets it
   for itself.
 

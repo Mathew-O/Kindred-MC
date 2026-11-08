@@ -62,4 +62,49 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Three AI players, one set to found and two to wait (M-06i's founders and joiners, short; the runtime's envelope
+     * holds three native players): the founder founds its faction and asks the players it meets, the others are asked
+     * and join, and the audit finds no rule broken.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionsEvalJoin", tickLimit = 7000)
+    public void aFounderAsksThePlayersItMeetsAndTheyJoinWithNoRuleBroken(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        Path out = f.directory.resolve("eval-result.json");
+        boolean[] ended = {false};
+        EvalBootstrap[] run = new EvalBootstrap[1];
+        BlockPos origin = context.getAbsolutePos(new BlockPos(20, 1, 20));
+        String scenario = "starters=Kindred,Sol,Echo; founders=1; ticks=3600; sprint=off; goal=none; mode=factions";
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    f.runtime.factions().settings(WIDE);
+                    run[0] = EvalBootstrap.forTest(scenario, out, () -> ended[0] = true, origin);
+                    context.runAtEveryTick(() -> {
+                        if (run[0] != null) run[0].tick(context.getWorld().getServer(), f.runtime);
+                    });
+                })
+                .createAndAdd(() -> context.assertTrue(ended[0], "The run has not ended: " + (run[0] == null ? "" : run[0].recordForTest(context.getWorld().getServer()))))
+                .createAndAdd(() -> {
+                    JsonObject result;
+                    try {
+                        result = JsonParser.parseString(Files.readString(out)).getAsJsonObject();
+                    } catch (Exception unreadable) {
+                        throw new net.minecraft.test.GameTestException("No readable result at " + out + ": " + unreadable);
+                    }
+                    context.assertTrue(result.getAsJsonObject("players").size() == 3, "Three players in the record: " + result.getAsJsonObject("players").keySet());
+                    var factions = result.getAsJsonObject("factions");
+                    context.assertTrue(factions != null && factions.get("audited").getAsBoolean(), "Audited: " + factions);
+                    context.assertTrue(factions.getAsJsonArray("violations").isEmpty(), "No rule broken: " + factions.getAsJsonArray("violations"));
+                    var book = f.runtime.projected().factions();
+                    context.assertTrue(book.factions().size() == 1, "One faction, its founder's: " + book.factions().values().stream().map(x -> x.name()).toList());
+                    int members = book.factions().values().stream().mapToInt(x -> x.members().size()).sum();
+                    context.assertTrue(members == 3, "The others asked and joined: " + members + " of 3 in it");
+                    run[0] = null;
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

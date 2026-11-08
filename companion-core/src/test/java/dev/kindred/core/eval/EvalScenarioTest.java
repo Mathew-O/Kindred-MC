@@ -82,4 +82,18 @@ class EvalScenarioTest {
         assertFalse(EvalScenario.parse("goal=nether").asText().contains("mode="), "a survival run's text as before");
         assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("mode=skyblock"));
     }
+
+    @Test
+    void morePlayersByNameAndFoundersReadBack() {
+        var s = EvalScenario.parse("starters=Kindred; players=Ada,Bram,Cleo; founders=2; mode=factions; goal=none");
+        assertEquals(java.util.List.of("Kindred", "Ada", "Bram", "Cleo"), s.everyone());
+        assertEquals(2, s.founders());
+        assertEquals(s, EvalScenario.parse(s.asText()));
+        assertTrue(s.asText().endsWith("; mode=factions; players=Ada,Bram,Cleo; founders=2"), s.asText());
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("players=Sol; mode=factions"), "a starter is named in starters");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("players=Ada,ada; mode=factions"), "a player twice");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("players=A!; mode=factions"), "not a name");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("starters=Kindred; founders=2; mode=factions"), "more founders than players");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("founders=1"), "founders only in a faction world");
+    }
 }

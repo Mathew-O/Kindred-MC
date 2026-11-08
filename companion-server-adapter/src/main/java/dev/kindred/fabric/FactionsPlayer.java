@@ -62,6 +62,21 @@ final class FactionsPlayer {
 
     List<FactionPlay.Sighting> seen() { return List.copyOf(seen.values()); }
 
+    /** The players it saw within {@value #MET} blocks, and when; those seen in the last five minutes are the ones it met. */
+    private final Map<UUID, Long> met = new LinkedHashMap<>();
+    static final int MET = 24;
+
+    /** Once a second: the other players it can see near it. */
+    void meet(ServerPlayerEntity player, long nowMs) {
+        for (var other : player.getServerWorld().getPlayers()) {
+            if (other == player || other.isSpectator() || !other.isAlive()) continue;
+            if (other.squaredDistanceTo(player) <= MET * MET && player.canSee(other)) met.put(other.getUuid(), nowMs);
+        }
+        met.values().removeIf(at -> nowMs - at > 5 * 60_000L);
+    }
+
+    List<UUID> met() { return List.copyOf(met.keySet()); }
+
     /** The slots of its spare common blocks: those beyond the first {@value #KEEP} of each kind, whole stacks only. */
     static List<Integer> spareSlots(ServerPlayerEntity player) {
         var kept = new LinkedHashMap<String, Integer>();
@@ -122,12 +137,25 @@ final class FactionsPlayer {
         }
         int y = player.getBlockY();
         if (world.isChunkLoaded(x >> 4, z >> 4)) {
-            int top = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
-            // The ground there when it is within reach of a walk, or at a leg's end; otherwise its own height, for the
-            // route to find the way.
-            if (far > LEG || Math.abs(top - y) <= 8) y = top;
+            // Ground to stand on there, nearest its own height first (a trunk or a roof above is not the way); else, at a
+            // leg's end, the top of the column; otherwise its own height, for the route to find the way.
+            Integer ground = null;
+            for (int d = 0; d <= 8 && ground == null; d++) {
+                if (standable(world, x, y + d, z)) ground = y + d;
+                else if (d > 0 && standable(world, x, y - d, z)) ground = y - d;
+            }
+            if (ground != null) y = ground;
+            else if (far > LEG) y = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
         }
         return new BlockPos(x, y, z);
+    }
+
+    /** Solid ground under {@code y} and room for a player above it. */
+    private static boolean standable(net.minecraft.server.world.ServerWorld world, int x, int y, int z) {
+        var feet = new BlockPos(x, y, z);
+        return world.getBlockState(feet.down()).isSideSolidFullSquare(world, feet.down(), net.minecraft.util.math.Direction.UP)
+                && world.getBlockState(feet).getCollisionShape(world, feet).isEmpty() && world.getBlockState(feet.up()).getCollisionShape(world, feet.up()).isEmpty()
+                && world.getFluidState(feet).isEmpty();
     }
 
     /** Whether a choice is a walk: defending, scouting, or a claim or capture of a chunk it is not standing in. */

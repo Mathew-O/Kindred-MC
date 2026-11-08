@@ -44,7 +44,7 @@ public final class EvalRecord {
 
     public EvalRecord(EvalScenario scenario) {
         this.scenario = scenario;
-        for (String name : scenario.starters()) players.put(name, new Player());
+        for (String name : scenario.everyone()) players.put(name, new Player());
     }
 
     public EvalScenario scenario() { return scenario; }

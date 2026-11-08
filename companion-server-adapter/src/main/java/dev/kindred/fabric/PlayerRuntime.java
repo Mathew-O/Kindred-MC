@@ -8800,6 +8800,7 @@ final class PlayerRuntime {
         var ledgers = projected();
         String own = ledgers.factions().of(player.getUuid()).map(f -> f.id().toString()).orElse("");
         entry.factionPlay.watch(player, ledgers.claims(), own, factions.now());
+        entry.factionPlay.meet(player, factions.now());
     }
 
     /**
@@ -8867,7 +8868,7 @@ final class PlayerRuntime {
         boolean healthy = player.getHealth() >= player.getMaxHealth() * 0.6f && player.getHungerManager().getFoodLevel() >= 12;
         return new dev.kindred.core.factions.FactionPlay.View(id, entry.profile.personality(), ledgers.factions(), ledgers.power(), ledgers.claims(),
                 ledgers.safe().chunks(), ledgers.captures(), ledgers.coins().of(id), factions.settings(), factions.now(), site, java.util.Optional.of(here),
-                healthy, spare, List.of(), Map.of(), ledgers.auctions(), entry.factionPlay.seen());
+                healthy, spare, List.of(), Map.of(), ledgers.auctions(), entry.factionPlay.seen(), entry.factionPlay.met());
     }
 
     /** What it chooses now in the faction world, the first of its choices; nothing while a trade of its is being saved. */
@@ -8911,6 +8912,11 @@ final class PlayerRuntime {
                 var faction = projected().factions().get(UUID.fromString(target)).orElse(null);
                 yield faction == null ? FactionsService.Reply.refused("That faction is gone")
                         : factions.request(id, "join", List.of(faction.name()), world, pos, this::playerByName, this::factionName);
+            }
+            case INVITE -> {
+                var other = server.getPlayerManager().getPlayer(UUID.fromString(target));
+                yield other == null ? FactionsService.Reply.refused("That player has gone")
+                        : factions.request(id, "invite", List.of(other.getGameProfile().getName()), world, pos, this::playerByName, this::factionName);
             }
             case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName);
             case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName);
@@ -15614,6 +15620,25 @@ final class PlayerRuntime {
         TerritoryGuard.activate(factions);
         factions.applyBorders();
         KindredMod.LOGGER.info("World mode: Factions, for an evaluation run");
+    }
+
+    /**
+     * An evaluation run's preset traits for one AI player (founders and joiners, M-06i), set as its administrator would
+     * set them and saved once; bounded weights only, nothing more.
+     */
+    void personalityForEval(UUID id, Map<Personality.Trait, Integer> traits) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || !entry.profileWrite.isDone()) return;
+        SocialProfile previous = entry.profile;
+        SocialProfile changed = previous;
+        for (var t : traits.entrySet()) changed = changed.withTrait(t.getKey(), t.getValue());
+        entry.profile = changed;
+        socials.reset(id);
+        entry.profileWrite = store.saveProfile(changed, previous.revision());
+        entry.profileWrite.whenComplete((saved, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("An evaluation run's preset traits for {} were not saved", id, failure);
+        });
     }
 
     /** The faction world's whole history audited against its locked rules (M-06i), read off the server thread. */
