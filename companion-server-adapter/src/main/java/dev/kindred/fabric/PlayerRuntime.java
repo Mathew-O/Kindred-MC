@@ -227,6 +227,9 @@ final class PlayerRuntime {
     static final double SHUN_CAP = 2.0, SHUN_PER_DANGER = 0.5;
     /** What each player has learnt about this world, kept across restarts. */
     private final PlayerMemoryStore memories;
+    /** The rescue recipes every player on this server shares (F-29d), and their file. */
+    private final RescueRecipeStore recipeStore;
+    private final dev.kindred.core.rescue.RescueRecipes rescueBook;
     /** Told, beside the log, of deaths and ended tasks (F-26's evaluation run listens); no one by default. */
     private RunObserver runObserver = RunObserver.NONE;
     /** Its players' deaths kept as replays (F-27), when the mod turns it on; none by default. */
@@ -487,6 +490,8 @@ final class PlayerRuntime {
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
         this.memories = new PlayerMemoryStore(metadataDirectory);
+        this.recipeStore = new RescueRecipeStore(metadataDirectory);
+        this.rescueBook = recipeStore.load();
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
@@ -4303,6 +4308,7 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        entry.campaign.recipes(rescueBook, rescueSkills);
         entry.campaign.customs(customs);
         entry.campaign.pursue(entry.goal);
         entry.campaign.dragonAllowed(dragonFight);
@@ -4324,6 +4330,7 @@ final class PlayerRuntime {
         body.setPortalTravelAuthorized(mayTravel && trip && tripHeld.isEmpty());
         // Advice is asked for off the game thread and taken when it comes; nothing here waits for it.
         memory.tick(entry.data.id(), entry.data.displayName(), entry.campaign, body.entity(), server, storedWords(entry));
+        recipeStore.saveIfChanged(rescueBook);
         entry.goalProgress = tripHeld.orElse(entry.campaign.progress());
         if (entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.DONE && !entry.goalAnnounced) {
             entry.goalAnnounced = true;
@@ -4510,10 +4517,7 @@ final class PlayerRuntime {
                 entry.ranch = null;
                 entry.buildTasks.clear();
                 // Its own ranch has run its course (M-01a): kept so it is not begun twice.
-                if (entry.ownRanch != null && entry.bases != null && entry.ownRanch.equals(entry.bases.ranch)) {
-                    entry.bases.ranch = entry.bases.ranch.finished();
-                    memories.saveBases(entry.data.id(), entry.bases);
-                }
+                if (entry.bases != null && entry.bases.finish(entry.ownRanch)) memories.saveBases(entry.data.id(), entry.bases);
                 entry.ownRanch = null;
                 say(entry, ranch.outcome() + ".", "the pen at " + ranch.origin.getX() + ", " + ranch.origin.getY() + ", " + ranch.origin.getZ());
                 entry.routineRefreshPending = true;
@@ -4817,10 +4821,12 @@ final class PlayerRuntime {
      */
     private boolean ranchDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last, String dimension) {
         if (last == null || !last.complete()) return false;
-        var pen = record.ranch;
-        if (pen != null) {
-            if (pen.complete() || !pen.dimension().equals(dimension)) return false;
-            return startOwnRanch(entry, body, pen, "Back to its ranch");
+        // A pen it began is taken up again; a kind it keeps, in a pen run or begun, is not kept twice (a pen per kind).
+        var kept = java.util.EnumSet.noneOf(dev.kindred.core.survival.Ranch.Kind.class);
+        for (var pen : record.allPens()) {
+            if (!pen.dimension().equals(dimension)) continue;
+            if (!pen.complete()) return startOwnRanch(entry, body, pen, "Back to its ranch");
+            kept.add(dev.kindred.core.survival.Ranch.Kind.valueOf(pen.kind()));
         }
         var player = body.entity();
         var seen = new java.util.EnumMap<dev.kindred.core.survival.Ranch.Kind, Integer>(dev.kindred.core.survival.Ranch.Kind.class);
@@ -4843,7 +4849,7 @@ final class PlayerRuntime {
             for (String item : kind.food) held += inventory.count(Registries.ITEM.get(Identifier.of(item)));
             food.put(kind, held);
         }
-        var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player));
+        var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
             return wheatDecision(entry, body, record, last, dimension, choice.why());
@@ -4863,7 +4869,7 @@ final class PlayerRuntime {
             return false;
         }
         if (RanchRunner.woodOf(player) == null) {
-            entry.ranchNote = "A pair of " + choice.kind().get().noun() + "s to keep, and no wood for a pen's fences";
+            entry.ranchNote = "A pair of " + choice.kind().get().plural() + " to keep, and no wood for a pen's fences";
             return false;
         }
         var before = footprint(last);
@@ -4873,15 +4879,19 @@ final class PlayerRuntime {
         if (record.plot != null && record.plot.dimension().equals(dimension)) {
             avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(record.plot.x(), record.plot.z(), record.plot.x() + PLOT - 1, record.plot.z() + PLOT - 1));
         }
+        for (var pen : record.allPens()) {
+            if (pen.dimension().equals(dimension)) avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(pen.x(), pen.z(), pen.x() + 6, pen.z() + 6));
+        }
         var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                 (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, 7, 7, 2, avoid);
         if (site.isEmpty()) {
             entry.ranchNote = "No flat open ground for a pen within " + BASE_RADIUS + " blocks of its " + last.stage();
             return false;
         }
-        record.ranch = new PlayerMemoryStore.Pen(dimension, site.get().x(), site.get().y(), site.get().z(), choice.kind().get().name(), false);
+        var pen = new PlayerMemoryStore.Pen(dimension, site.get().x(), site.get().y(), site.get().z(), choice.kind().get().name(), false);
+        record.addPen(pen);
         memories.saveBases(entry.data.id(), record);
-        return startOwnRanch(entry, body, record.ranch, choice.why());
+        return startOwnRanch(entry, body, pen, choice.why());
     }
 
     /**
@@ -4897,6 +4907,9 @@ final class PlayerRuntime {
             var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
             for (var base : record.built) if (base.dimension().equals(dimension)) avoid.add(footprint(base));
             if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
+            for (var pen : record.allPens()) {
+                if (pen.dimension().equals(dimension)) avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(pen.x(), pen.z(), pen.x() + 6, pen.z() + 6));
+            }
             var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                     (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, PLOT, PLOT, 1, avoid);
             if (site.isEmpty()) {
@@ -4979,7 +4992,7 @@ final class PlayerRuntime {
         entry.goalProgress = "Ranch: starting";
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
-        KindredMod.LOGGER.info("{} ranch: {}: {}s at {}, {}, {}", entry.data.displayName(), why, kind.noun(), pen.x(), pen.y(), pen.z());
+        KindredMod.LOGGER.info("{} ranch: {}: {} at {}, {}, {}", entry.data.displayName(), why, kind.plural(), pen.x(), pen.y(), pen.z());
         return true;
     }
 
@@ -5545,6 +5558,22 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** A pen of its own staged as run, as a fixture lays one down (M-01a). */
+    boolean stagePenForTest(UUID id, PlayerMemoryStore.Pen pen) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.addPen(pen);
+        return true;
+    }
+
+    /** All the pens a player chose for itself (M-01a), the first first, for fixtures. */
+    List<PlayerMemoryStore.Pen> ownPens(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? List.of() : entry.bases.allPens();
+    }
+
     /** What a player last decided about a ranch of its own (M-01a). */
     String ranchNote(UUID id) {
         requireThread();
@@ -5581,10 +5610,7 @@ final class PlayerRuntime {
             entry.ranch = null;
             entry.buildTasks.clear();
             // Its own ranch stopped by the operator is not begun again on its own (M-01a).
-            if (entry.ownRanch != null && entry.bases != null && entry.ownRanch.equals(entry.bases.ranch)) {
-                entry.bases.ranch = entry.bases.ranch.finished();
-                memories.saveBases(entry.data.id(), entry.bases);
-            }
+            if (entry.bases != null && entry.bases.finish(entry.ownRanch)) memories.saveBases(entry.data.id(), entry.bases);
             entry.ownRanch = null;
             entry.seeding = null;
             entry.growing = null;
@@ -5609,7 +5635,7 @@ final class PlayerRuntime {
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
         if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
-        feedback(source, entry.data.displayName() + ": a ranch for " + kind.noun() + "s, a " + wood + " pen at " + origin.toShortString() + ".");
+        feedback(source, entry.data.displayName() + ": a ranch for " + kind.plural() + ", a " + wood + " pen at " + origin.toShortString() + ".");
         return 1;
     }
 
@@ -5642,7 +5668,7 @@ final class PlayerRuntime {
         entry.cachedRoutineCandidates = List.of();
         entry.routineRefreshPending = true;
         if (entry.snapshot().stopLatched()) nativeLifecycle(source, "resume", id);
-        feedback(source, entry.data.displayName() + ": " + kind.noun() + "s brought into the pasture ward's pen at " + origin.toShortString()
+        feedback(source, entry.data.displayName() + ": " + kind.plural() + " brought into the pasture ward's pen at " + origin.toShortString()
                 + " by its doorway.");
         return 1;
     }
@@ -12855,12 +12881,13 @@ final class PlayerRuntime {
     private static java.util.Set<String> installedRescueSkills() {
         var installed = new java.util.HashSet<String>();
         for (var verb : dev.kindred.core.rescue.RescuePlan.Verb.values()) {
-            String skill = dev.kindred.core.rescue.RescuePlan.skill(verb);
-            try {
-                NativePlayerSkills.descriptor(skill);
-                installed.add(skill);
-            } catch (IllegalArgumentException notInstalled) {
-                // Not a skill of this build: a plan using it is refused.
+            for (String skill : dev.kindred.core.rescue.RescuePlan.uses(verb)) {
+                try {
+                    NativePlayerSkills.descriptor(skill);
+                    installed.add(skill);
+                } catch (IllegalArgumentException notInstalled) {
+                    // Not a skill of this build: a plan using it is refused.
+                }
             }
         }
         return java.util.Set.copyOf(installed);
@@ -13006,6 +13033,15 @@ final class PlayerRuntime {
         if (entry == null) return;
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         entry.campaign.stuckTicksForTest(ticks);
+    }
+
+    /** The server's rescue recipes, for fixtures (F-29d). */
+    dev.kindred.core.rescue.RescueRecipes recipesForFixtures() { return rescueBook; }
+
+    /** A player's goal, for fixtures (F-29b). */
+    PortalRunCampaign campaignForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.campaign;
     }
 
     /** A player's rescues as its goal recorded them, for fixtures (F-29). */
@@ -13268,6 +13304,8 @@ final class PlayerRuntime {
             if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
         }
         memories.close();
+        recipeStore.saveIfChanged(rescueBook);
+        recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
                 .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
