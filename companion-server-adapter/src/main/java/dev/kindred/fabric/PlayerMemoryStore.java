@@ -84,10 +84,15 @@ final class PlayerMemoryStore implements AutoCloseable {
      * The ranch the player chose for itself by its base (M-01a): its pen's north-west post, the kind it keeps there, and
      * whether the ranch has run its course. A file from before has none.
      */
-    record Pen(String dimension, int x, int y, int z, String kind, boolean complete) {
-        /** The same pen, its ranch run. */
-        Pen finished() {
-            return new Pen(dimension, x, y, z, kind, true);
+    record Pen(String dimension, int x, int y, int z, String kind, boolean complete, long ranAt) {
+        /** A pen with no run recorded yet (a file from before reads its {@code ranAt} as 0). */
+        Pen(String dimension, int x, int y, int z, String kind, boolean complete) {
+            this(dimension, x, y, z, kind, complete, 0);
+        }
+
+        /** The same pen, its ranch run at world time {@code at}. */
+        Pen finished(long at) {
+            return new Pen(dimension, x, y, z, kind, true, at);
         }
     }
 
@@ -107,6 +112,39 @@ final class PlayerMemoryStore implements AutoCloseable {
         Pen ranch;
         /** Its wheat plot (M-01a), or none. */
         Plot plot;
+        /** Its pens after the first (M-01a), a pen per kind, oldest first; the first stays {@link #ranch}. A file from before has none. */
+        List<Pen> pens = new ArrayList<>();
+
+        /** All its pens, the first first. */
+        List<Pen> allPens() {
+            var all = new ArrayList<Pen>();
+            if (ranch != null) all.add(ranch);
+            if (pens != null) all.addAll(pens);
+            return all;
+        }
+
+        /** The pen {@code pen} recorded as run at world time {@code at}; false if it is not one of its pens. */
+        boolean finish(Pen pen, long at) {
+            if (pen == null) return false;
+            if (pen.equals(ranch)) {
+                ranch = ranch.finished(at);
+                return true;
+            }
+            if (pens == null) return false;
+            int i = pens.indexOf(pen);
+            if (i < 0) return false;
+            pens.set(i, pen.finished(at));
+            return true;
+        }
+
+        /** A new pen recorded: the first as {@link #ranch}, the rest after it. */
+        void addPen(Pen pen) {
+            if (ranch == null) ranch = pen;
+            else {
+                if (pens == null) pens = new ArrayList<>();
+                pens.add(pen);
+            }
+        }
     }
 
     /**

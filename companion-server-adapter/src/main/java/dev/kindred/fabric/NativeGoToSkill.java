@@ -145,6 +145,16 @@ final class NativeGoToSkill implements SkillBody {
         return this;
     }
 
+    /** The deepest drop its route may take, or -1 for the navigator's own (M-01a). */
+    private int fall = -1;
+
+    /** Takes no drop deeper than {@code blocks}: one it can step back up from (M-01a, an animal led behind it). */
+    NativeGoToSkill fallingAtMost(int blocks) {
+        if (blocks < 0 || blocks > NativeNavigator.MAX_SAFE_DROP) throw new IllegalArgumentException("A fall is 0.." + NativeNavigator.MAX_SAFE_DROP + " blocks");
+        fall = blocks;
+        return this;
+    }
+
     /** Stops after this many blocks along the way, to look back at what follows. */
     NativeGoToSkill leg(int blocks) {
         if (blocks < 0 || blocks > 64) throw new IllegalArgumentException("A leg is 0..64 blocks");
@@ -182,6 +192,7 @@ final class NativeGoToSkill implements SkillBody {
     private boolean plan() {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
+        if (fall >= 0) navigator.fallingAtMost(fall);
         if (safe) {
             safety = new NativeNavigator(player.getServerWorld());
             navigator.endingOnly(safety::safeStand);
