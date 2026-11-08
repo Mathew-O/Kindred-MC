@@ -1,0 +1,41 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT (strategist asked for, the strategist not configured)",
+  "seed": 505,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 740, "stone_tools": 2640, "iron_ingot": 8400, "iron_pickaxe": 38460, "obsidian": 106846, "portal_lit": 120312},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52100, "x": -52, "y": 35, "z": -74, "attempt": 1}, {"tick": 81760, "x": -45, "y": 44, "z": -135, "attempt": 1}, {"tick": 112920, "x": -35, "y": -54, "z": -131, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1660, "stone_tools": 3240, "iron_ingot": 5560, "iron_pickaxe": 38640, "obsidian": 50661, "portal_lit": 51837},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 2520, "iron_ingot": 6960, "iron_pickaxe": 18500, "obsidian": 196470},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 23540, "x": -2, "y": 36, "z": 42, "attempt": 1}, {"tick": 27660, "x": -1, "y": 34, "z": 67, "attempt": 2}, {"tick": 134640, "x": 170, "y": -54, "z": 46, "attempt": 1}, {"tick": 185760, "x": 116, "y": -54, "z": 133, "attempt": 1}, {"tick": 219900, "x": 137, "y": 65, "z": 162, "attempt": 1}, {"tick": 223580, "x": 117, "y": 63, "z": 161, "attempt": 2}, {"tick": 227260, "x": 115, "y": 65, "z": 139, "attempt": 3}, {"tick": 243440, "x": 37, "y": 65, "z": 59, "attempt": 4}, {"tick": 247200, "x": 37, "y": 63, "z": 79, "attempt": 5}, {"tick": 250980, "x": 19, "y": 64, "z": 73, "attempt": 6}, {"tick": 266920, "x": 5, "y": 68, "z": -22, "attempt": 7}, {"tick": 271260, "x": 6, "y": 72, "z": -65, "attempt": 8}, {"tick": 274940, "x": 25, "y": 72, "z": -62, "attempt": 9}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

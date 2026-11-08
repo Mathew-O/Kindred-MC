@@ -1,0 +1,41 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT (strategist asked for, the strategist not configured)",
+  "seed": 101,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 700, "stone_tools": 1460, "iron_ingot": 26580, "iron_pickaxe": 41300, "obsidian": 271423, "portal_lit": 272311},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1340, "stone_tools": 2720, "iron_ingot": 7860, "iron_pickaxe": 66260, "diamond": 80000},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 41460, "x": -366, "y": 17, "z": -45, "attempt": 1}, {"tick": 177680, "x": -342, "y": 44, "z": 136, "attempt": 1}, {"tick": 196220, "x": -340, "y": 47, "z": 131, "attempt": 2}, {"tick": 203420, "x": -340, "y": 47, "z": 131, "attempt": 3}, {"tick": 221080, "x": -341, "y": 46, "z": 132, "attempt": 4}, {"tick": 227180, "x": -340, "y": 47, "z": 132, "attempt": 5}, {"tick": 244720, "x": -340, "y": 47, "z": 132, "attempt": 6}, {"tick": 251920, "x": -341, "y": 46, "z": 132, "attempt": 7}, {"tick": 268920, "x": -340, "y": 47, "z": 132, "attempt": 8}, {"tick": 274860, "x": -340, "y": 47, "z": 131, "attempt": 9}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1460, "stone_tools": 2100, "iron_ingot": 9600, "iron_pickaxe": 89900},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 51540, "x": -340, "y": 35, "z": -157, "attempt": 1}, {"tick": 59080, "x": -339, "y": 35, "z": -157, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
