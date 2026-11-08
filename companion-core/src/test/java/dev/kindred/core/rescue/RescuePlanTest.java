@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RescuePlanTest {
-    private static final Set<String> INSTALLED = Set.of("native_goto", "native_break", "native_pillar", "native_place", "native_wait",
+    private static final Set<String> INSTALLED = Set.of("native_traverse", "native_walk", "native_break", "native_pillar", "native_place", "native_wait",
             "native_eat", "native_retreat");
 
     private static RescuePlan plan(String... steps) {
@@ -31,7 +31,8 @@ class RescuePlanTest {
         var plan = plan("pillar 3", "walk north 2");
         assertEquals(List.of(new RescuePlan.Step(RescuePlan.Verb.PILLAR, null, 3), new RescuePlan.Step(RescuePlan.Verb.WALK, RescuePlan.Way.NORTH, 2)),
                 plan.steps());
-        assertEquals(List.of("native_pillar", "native_goto"), plan.skills());
+        // Since F-29c a walk is the local executor's, a block at a time, never the route planner's native_goto.
+        assertEquals(List.of("native_pillar", "native_traverse"), plan.skills());
         assertEquals("pillar 3, walk north 2", plan.text());
         assertEquals("because", plan.reason());
     }
@@ -42,7 +43,7 @@ class RescuePlanTest {
         var plan = plan(steps);
         assertEquals(List.of(steps), plan.steps().stream().map(RescuePlan.Step::text).toList());
         var rest = plan("retreat west 3", "dig down 1", "walk south 1", "place north", "wait 1");
-        assertEquals(List.of("native_retreat", "native_break", "native_goto", "native_place", "native_wait"), rest.skills());
+        assertEquals(List.of("native_retreat", "native_break", "native_traverse", "native_place", "native_wait"), rest.skills());
         assertEquals("walk north 2", plan("  Walk   NORTH 2 ").steps().getFirst().text(), "Case and spacing are the model's; the words are not");
     }
 
@@ -98,6 +99,33 @@ class RescuePlanTest {
 
     @Test
     void everyVerbIsCarriedOutByASkillTheGameInstalls() {
-        for (RescuePlan.Verb verb : RescuePlan.Verb.values()) assertTrue(INSTALLED.contains(RescuePlan.skill(verb)), verb.name());
+        for (RescuePlan.Verb verb : RescuePlan.Verb.values()) {
+            assertTrue(INSTALLED.contains(RescuePlan.skill(verb)), verb.name());
+            assertTrue(INSTALLED.containsAll(RescuePlan.uses(verb)), verb.name() + " " + RescuePlan.uses(verb));
+            assertEquals(RescuePlan.skill(verb), RescuePlan.uses(verb).getFirst(), verb.name());
+        }
+        for (RescuePlan.Verb verb : RescuePlan.Verb.values()) assertFalse(RescuePlan.uses(verb).contains("native_goto"), "No executor uses the route planner: " + verb);
+    }
+
+    @Test
+    void theNewVerbsParseAtTheirBoundsAndWriteThemselvesBack() {
+        String[] steps = {"tunnel north 6", "stairs up east 6", "stairs down west 1", "bridge south 6", "torch", "look up"};
+        var plan = plan(steps);
+        assertEquals(List.of(steps), plan.steps().stream().map(RescuePlan.Step::text).toList());
+        assertEquals(List.of("native_break", "native_break", "native_break", "native_place", "native_place", "native_wait"), plan.skills());
+        assertEquals(RescuePlan.Way.UP, plan.steps().get(1).rise());
+        assertEquals(RescuePlan.Way.EAST, plan.steps().get(1).way());
+        assertTrue(plan("look north").probeOnly());
+        assertFalse(plan("look north", "walk north 2").probeOnly());
+        assertEquals(List.of("'tunnel north 7': 7 is outside 1..6"), refused("tunnel north 7"));
+        assertEquals(List.of("'tunnel up 2': a side is north, south, east or west, not up"), refused("tunnel up 2"));
+        assertEquals(List.of("'stairs north up 2': stairs go up or down, not north"), refused("stairs north up 2"));
+        assertEquals(List.of("'stairs down down 2': a side is north, south, east or west, not down"), refused("stairs down down 2"));
+        assertEquals(List.of("'stairs up north': the step's words are not as the vocabulary writes them"), refused("stairs up north"));
+        assertEquals(List.of("'bridge east 0': 0 is outside 1..6"), refused("bridge east 0"));
+        assertEquals(List.of("'torch here': torch takes nothing more"), refused("torch here"));
+        assertEquals(List.of("'look': look takes a way"), refused("look"));
+        assertEquals(List.of("unknown step 'swim_up'"), refused("swim_up"), "Not in the vocabulary until it has a local rise");
+        assertEquals(List.of("one look a round, not 2"), refused("look north", "look south"));
     }
 }

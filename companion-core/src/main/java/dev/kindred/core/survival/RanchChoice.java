@@ -62,12 +62,27 @@ public final class RanchChoice {
      * ({@link WheatPlot}); a pig's carrots and potatoes are found, not grown from what it has, and are not earned.
      */
     public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food, boolean grassInSight) {
+        return next(hasBase, seen, food, grassInSight, java.util.Set.of());
+    }
+
+    /**
+     * As {@link #next(boolean, Map, Map, boolean)}, with {@code kept} the kinds it keeps already, each in a pen of its
+     * own: those are not kept twice, so the next kind seen in a pair gets a pen of its own (a pen per kind).
+     */
+    public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food, boolean grassInSight,
+                                java.util.Set<Ranch.Kind> kept) {
+        Objects.requireNonNull(kept);
+        if (!kept.isEmpty()) {
+            var unkept = new java.util.EnumMap<Ranch.Kind, Integer>(Ranch.Kind.class);
+            for (var e : seen.entrySet()) if (!kept.contains(e.getKey())) unkept.put(e.getKey(), e.getValue());
+            seen = unkept;
+        }
         if (!hasBase) return new Decision(Optional.empty(), "A base first, then animals of its own");
         Ranch.Kind wantingFood = null;
         for (Ranch.Kind kind : ORDER) {
             if (seen.getOrDefault(kind, 0) < 2) continue;
             if (food.getOrDefault(kind, 0) >= FOOD) {
-                return new Decision(Optional.of(kind), "A pair of " + kind.noun() + "s close by and the food to breed them: a ranch");
+                return new Decision(Optional.of(kind), "A pair of " + kind.plural() + " close by and the food to breed them: a ranch");
             }
             if (wantingFood == null) wantingFood = kind;
         }
@@ -77,15 +92,43 @@ public final class RanchChoice {
         // Cows' and sheep's wheat is grown from seeds, in a plot by its base (WheatPlot): earned so.
         for (Ranch.Kind kind : ORDER) {
             if ((kind == Ranch.Kind.COW || kind == Ranch.Kind.SHEEP) && seen.getOrDefault(kind, 0) >= 2) {
-                return new Decision(Optional.empty(), "A pair of " + kind.noun() + "s close by; " + FOOD + " wheat first, grown from seeds",
+                return new Decision(Optional.empty(), "A pair of " + kind.plural() + " close by; " + FOOD + " wheat first, grown from seeds",
                         Optional.of(kind));
             }
         }
         if (wantingFood != null) {
-            return new Decision(Optional.empty(), "A pair of " + wantingFood.noun() + "s close by; " + FOOD + " " + foodName(wantingFood)
+            return new Decision(Optional.empty(), "A pair of " + wantingFood.plural() + " close by; " + FOOD + " " + foodName(wantingFood)
                     + " first to breed them");
         }
         return new Decision(Optional.empty(), "No pair of animals seen near home to keep");
+    }
+
+    /** The most animals, grown and young, it keeps in one pen: a herd, not a crowd. */
+    public static final int HERD = 6;
+
+    /** How long, in ticks, after a pen's last run before its animals are bred again: five minutes, their breeding wait. */
+    public static final long AGAIN = 6000;
+
+    /** Whether to breed a pen it keeps again, and why (or why not). */
+    public record Again(boolean breed, String why) {
+        public Again {
+            Objects.requireNonNull(why);
+        }
+    }
+
+    /**
+     * More than a pair: a pen whose ranch has run is taken up again to breed its grown animals once more, as players
+     * grow a herd: {@code adults} and {@code young} of {@code kind} it sees in the pen, {@code food} of their food in
+     * hand, {@code sinceRun} ticks since the pen's last run. It breeds them again once the breeding wait is over, with
+     * two grown in the pen and the food for two, until the pen holds a herd of {@link #HERD}.
+     */
+    public static Again again(Ranch.Kind kind, int adults, int young, int food, long sinceRun) {
+        Objects.requireNonNull(kind);
+        if (adults < 2) return new Again(false, "Fewer than two grown " + kind.plural() + " in its pen to breed");
+        if (adults + young >= HERD) return new Again(false, "A herd of " + (adults + young) + " " + kind.plural() + " in its pen");
+        if (sinceRun < AGAIN) return new Again(false, "The " + kind.plural() + " in its pen not ready to breed again yet");
+        if (food < FOOD) return new Again(false, "The " + kind.plural() + " in its pen ready to breed again; " + FOOD + " " + foodName(kind) + " first");
+        return new Again(true, "The " + kind.plural() + " in its pen ready to breed again: a bigger herd");
     }
 
     private static String foodName(Ranch.Kind kind) {

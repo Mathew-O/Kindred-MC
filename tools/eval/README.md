@@ -113,3 +113,10 @@ tools/eval/run.py --ref HEAD --seeds 101,102,103,104,105,106,107,108,109,110 --s
 - **What `RunMetrics` measures.** Its windows (ten minutes for a repeated failure, five for work resumed) are read from
   the log's clock, so on a sprinted run they cover more game time than on a played one; compare sprinted runs with
   sprinted runs.
+
+## Rescue recipes (F-29d)
+
+Each run keeps its server's rescue recipes beside its result (`rescue-recipes.json`), with its `stuck` replays under
+`replays/`. `--recipes <run folder>` starts each seed's world with the file that seed kept in that folder, and
+`--recipes <file>` starts every world with one file: the way to measure a second run with the recipes carried over.
+`tools/eval/seeds-20.txt` is F-29e's twenty seeds.
