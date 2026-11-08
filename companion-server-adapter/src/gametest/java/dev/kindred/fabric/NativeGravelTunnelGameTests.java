@@ -28,6 +28,20 @@ public final class NativeGravelTunnelGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "gravelTunnel", tickLimit = 4000)
     public void tunnellingUnderGravelItWaitsForWhatFallsBeforeItStepsIn(TestContext context) {
+        tunnel(context, false);
+    }
+
+    /**
+     * The same tunnel, with a stone shovel of Fortune III among its tools so that each block of gravel it digs drops
+     * flint, as one in ten does (staged so). In the native classes and CI the tunnel above was buried now and then when
+     * the gravel dropped flint: the walk to the drop went through a cell the next block was coming down into (F-25c4cl).
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "gravelFlint", tickLimit = 4000)
+    public void tunnellingUnderGravelThatDropsFlintItWaitsForWhatFallsOnTheWayToTheDrop(TestContext context) {
+        tunnel(context, true);
+    }
+
+    private void tunnel(TestContext context, boolean flint) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos o = context.getAbsolutePos(new BlockPos(40, 8, 40));
         String[] buried = {null};
@@ -67,6 +81,12 @@ public final class NativeGravelTunnelGameTests implements FabricGameTest {
                     inventory.setStack(9, new ItemStack(Items.STICK, 8));
                     inventory.setStack(10, new ItemStack(Items.STONE_PICKAXE));
                     inventory.setStack(11, new ItemStack(Items.STONE_PICKAXE));
+                    if (flint) {
+                        var shovel = new ItemStack(Items.STONE_SHOVEL);
+                        shovel.addEnchantment(context.getWorld().getRegistryManager().get(net.minecraft.registry.RegistryKeys.ENCHANTMENT)
+                                .getEntry(net.minecraft.enchantment.Enchantments.FORTUNE).orElseThrow(), 3);
+                        inventory.setStack(12, shovel);
+                    }
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
                 })
