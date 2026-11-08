@@ -1739,6 +1739,9 @@ final class PlayerRuntime {
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
+            } else if (skill.equals("native_saddle")) {
+                task = new NativeSaddleAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_shear")) {
                 task = new NativeShearAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -2182,6 +2185,9 @@ final class PlayerRuntime {
                         && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
+                    || ("native_ride".equals(entry.skillId) && (intent == NativePlayerBody.Intent.RIDE || intent == NativePlayerBody.Intent.MOVE
+                        || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_saddle".equals(entry.skillId) && (intent == NativePlayerBody.Intent.RIDE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
                     || ("native_enchant".equals(entry.skillId) && intent == NativePlayerBody.Intent.ENCHANT)
