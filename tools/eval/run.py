@@ -116,7 +116,7 @@ def free_port():
         return probe.getsockname()[1]
 
 
-def prepare(folder, seed, jar, api, vanilla):
+def prepare(folder, seed, jar, api, vanilla, recipes=None):
     if folder.exists():
         shutil.rmtree(folder)
     (folder / "mods").mkdir(parents=True)
@@ -128,6 +128,10 @@ def prepare(folder, seed, jar, api, vanilla):
         "level-seed=%s" % seed, "level-name=world", "server-port=%d" % free_port(), "online-mode=false", "view-distance=8", "simulation-distance=8",
         "spawn-protection=0", "max-players=8", "motd=Kindred evaluation", "enable-command-block=false", "sync-chunk-writes=false", ""]),
         encoding="utf-8")
+    # A server's rescue recipes carried over from another run (F-29d): the new world starts with them.
+    if recipes:
+        (folder / "world" / "kindred").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(recipes, folder / "world" / "kindred" / "rescue-recipes.json")
 
 
 def environment(scenario):
@@ -153,6 +157,10 @@ def finish(folder, process, started, keep_world=False):
     replays = folder / "kindred" / "replays"
     if replays.is_dir():
         shutil.copytree(replays, folder / "replays", dirs_exist_ok=True)
+    # The server's rescue recipes (F-29d), every player's, as the run left them: candidates for the starter set, each
+    # with the stuck replay of the scene it was learned in.
+    for recipes in sorted(folder.glob("*/kindred/rescue-recipes.json"))[:1]:
+        shutil.copy2(recipes, folder / "rescue-recipes.json")
     # The jar it ran, kept with the seed: a seed run again on another jar is said so in its build's summary.
     jars = sorted(p.name for p in (folder / "mods").glob("*.jar") if not p.name.startswith("fabric-api")) if (folder / "mods").is_dir() else []
     # With --keep-world, the world's blocks as the run left them, for reproducing a stuck place from its own ground
@@ -172,6 +180,17 @@ def finish(folder, process, started, keep_world=False):
     return result.is_file(), ticks
 
 
+def recipes_for(given, seed):
+    """The recipe file a seed's world starts with: the file given, or the file kept by that seed in the run folder given."""
+    if not given:
+        return None
+    path = Path(given)
+    if path.is_dir():
+        kept = path / str(seed) / "rescue-recipes.json"
+        return kept if kept.is_file() else None
+    return path if path.is_file() else None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     source = parser.add_mutually_exclusive_group(required=True)
@@ -186,6 +205,8 @@ def main():
     parser.add_argument("--memory", default="3G", help="each server's heap")
     parser.add_argument("--timeout", type=int, default=6 * 3600, help="seconds a server may run before it is stopped")
     parser.add_argument("--out", default=str(ROOT / "run/eval"), help="where the runs go")
+    parser.add_argument("--recipes", help="F-29d: a rescue-recipes.json each world starts with, or a run folder whose seeds' kept files "
+                        "each world of the same seed starts with")
     parser.add_argument("--keep-world", action="store_true", help="keep each run's region files (world-kept/) for diagnosis")
     args = parser.parse_args()
 
@@ -212,7 +233,7 @@ def main():
         while pending and len(running) < args.parallel:
             seed = pending.pop(0)
             folder = out / name / seed
-            prepare(folder, seed, jar, api, vanilla)
+            prepare(folder, seed, jar, api, vanilla, recipes_for(args.recipes, seed))
             console = open(folder / "console.txt", "w", encoding="utf-8")
             process = subprocess.Popen(["java", "-Xmx" + args.memory, "-jar", str(start), "nogui"], cwd=folder, env=environment(args.scenario),
                                        stdin=subprocess.DEVNULL, stdout=console, stderr=subprocess.STDOUT)
