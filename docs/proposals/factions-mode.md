@@ -153,6 +153,44 @@ engine, a Factions scenario: eight AI players in three factions on an 8,000-bloc
 claims, captures, sales and deaths counted, nothing captured outside the rule, nothing sold that was pending, no
 coin minted.
 
+## M-06l The Factions HUD
+
+What a person sees while playing: a semi-transparent panel down the right side of the screen, drawn by the Kindred
+client mod (`HudRenderCallback`, beside the K panel and skins), fed by a server payload that changes only when its
+facts change (at most once a second) and carries only what that person may know (F-32's visibility: their own
+faction's private numbers, everyone's public ones).
+
+Layout, top to bottom, in the panel's dark translucent card (about 35% opacity, a thin lighter edge, rounded corners,
+Minecraft's own font; width about a quarter of the screen, scaled with the GUI scale):
+
+1. **Faction**: tag and name in the faction's colour, members online of total, the leader marked.
+2. **Power**: the person's own power as `7 / 10` with a thin bar and a smaller bar for the hour's regeneration
+   progress; the faction's power and claims as `power 42 · claims 45 / 80`, turning amber when claims approach power
+   and red with **3 exposed** when they exceed it; shield timers (new-faction, post-raid) counting down.
+3. **Coins**: the balance, and the last change fading in and out (`+120 sold oak logs`).
+4. **Here**: whose land the person stands in (`Wilderness`, `Safe zone`, `Your land`, `Red Hand (enemy)`), with
+   the chunk's exposure if it is capturable (`exposed, capturable`), updated as they cross chunk borders; the same
+   change also spoken once on the action bar for vanilla clients.
+5. **Standings**: the top five factions by power with claims and members, the person's own row always shown, arrows
+   for a change since the last hour.
+6. **Notices**: the last three faction-channel events (a capture, a vulnerability, a sale), fading after a minute.
+7. **Market** (collapsed by default): the five biggest movers of the last 24 hours and the price of the item in hand.
+
+Behaviour: a key (default `H`) cycles full, compact (faction, power, coins, here) and hidden; the opacity, scale and
+side (right by default, left as an option) are client settings; the panel hides while a chest or the K panel is open
+and during the match countdown titles; nothing in it is clickable (controls stay in commands, chat asks and the K
+panel). Colours are the faction's chosen colour plus a fixed palette for states (amber warning, red exposed, green
+safe) that stays readable over any sky.
+
+Vanilla clients, which cannot draw a custom HUD, get the fallback the match presenter already uses: a sidebar
+scoreboard with faction, power, claims, coins and standing, and the action bar for the land they enter; the server
+chooses by whether the client answered the Kindred handshake.
+
+Acceptance: a client-side rendering test of the panel from a staged payload (each section, each state colour,
+compact and hidden); a GameTest that a payload to an outsider carries no private faction numbers and that a chunk
+crossing produces one action-bar line; the panel seen on a development client over three skies (day, night, Nether)
+and the vanilla sidebar seen on an ordinary client, recorded with screenshots in the evidence.
+
 ## M-06j The Factions pack
 
 Kindred's Factions rules are inside the Kindred jar. The *pack* is the server's `mods` folder and configuration for
@@ -182,5 +220,5 @@ report.
 ## Order
 
 M-06c, M-06d, M-06f (the rules with nothing to buy yet), M-06g, M-06h, M-06e (capture needs coins and claims), M-06i,
-M-06j, then M-06k on the owner's server. F-31 to F-34 ([the World Record and the Wire](world-record.md)) run beside it:
+M-06l, M-06j, then M-06k on the owner's server. F-31 to F-34 ([the World Record and the Wire](world-record.md)) run beside it:
 M-06c onward write their events to the World Record from the start rather than to new JSON files.
