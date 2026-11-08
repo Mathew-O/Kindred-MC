@@ -116,6 +116,7 @@
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionsEvalGameTests",
+      "dev.kindred.fabric.NativeLimitGameTests",
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
       "dev.kindred.fabric.NativeManhuntGameTests",
       "dev.kindred.fabric.NativeBuildBattleGameTests",

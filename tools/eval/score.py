@@ -200,7 +200,7 @@ def score(build_dir, use_metrics=True):
         # A faction world's audit (M-06i): what the World Record held and every locked rule it shows broken.
         factions = result.get("factions")
         per_seed[folder.name] = {"complete": result["complete"], "ticksRun": result["ticksRun"], "hours": round(hours, 2), "chatter": chatter,
-                                 "factions": factions,
+                                 "factions": factions, "server": result.get("server"),
                                  "teamFurthest": STAGES[best] if best >= 0 else "none", "teamFurthestIndex": best,
                                  "teamDeathsPerHour": round(sum(p["deaths"] for p in players.values()) / hours, 2), "players": players}
     team = {
@@ -305,6 +305,12 @@ def markdown(summary):
             cells.append("%s: %s, %d, %d%s" % (name, p["furthest"], p["deaths"], p["stuckSpells"], extra))
         lines.append("| %s | %d%s | %s | %s | %s |" % (seed, s["ticksRun"], "" if s["complete"] else " (cut short)", s["teamFurthest"],
                                                      s["teamDeathsPerHour"], "; ".join(cells)))
+    loads = {seed: s["server"] for seed, s in summary["perSeed"].items() if s.get("server")}
+    if loads:
+        lines += ["", "## The server's load", "", "Each seed's mean tick (over the run, from the server's own last-hundred mean once a game second), its worst tick, and its heap at most.", "",
+                  "| Seed | Mean tick, ms | Worst tick, ms | Heap at most, MB |", "| --- | --- | --- | --- |"]
+        for seed, l in loads.items():
+            lines.append("| %s | %.2f | %.2f | %d |" % (seed, l["tickMsMean"], l["tickMsWorst"], l["heapMbMax"]))
     audited = {seed: s["factions"] for seed, s in summary["perSeed"].items() if s.get("factions")}
     if audited:
         lines += ["", "## The faction world's audit (M-06i)", "",

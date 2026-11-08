@@ -107,4 +107,53 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Eight AI players on a server set to allow eight (maxNativePlayers=8), three set to found: the founders found and
+     * ask the players they meet, the others are asked and join, the audit finds no rule broken, and the run's result
+     * carries the server's load (the measurement the month run's eight are qualified by).
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionsEvalEight", tickLimit = 7000)
+    public void eightPlayersOnAServerThatAllowsEightFormThreeFactionsWithNoRuleBroken(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8000, "maxNativePlayers=8\n");
+        Path out = f.directory.resolve("eval-result.json");
+        boolean[] ended = {false};
+        EvalBootstrap[] run = new EvalBootstrap[1];
+        BlockPos origin = context.getAbsolutePos(new BlockPos(20, 1, 20));
+        String scenario = "starters=Kindred,Sol,Echo; players=Ada,Bram,Cleo,Dara,Eli; founders=3; ticks=3600; sprint=off; goal=none; mode=factions";
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.maxNativePlayers() == 8, "Ready, eight allowed"))
+                .createAndAdd(() -> {
+                    f.runtime.factions().settings(WIDE);
+                    run[0] = EvalBootstrap.forTest(scenario, out, () -> ended[0] = true, origin);
+                    context.runAtEveryTick(() -> {
+                        if (run[0] != null) run[0].tick(context.getWorld().getServer(), f.runtime);
+                    });
+                })
+                .createAndAdd(() -> context.assertTrue(ended[0], "The run has not ended: " + (run[0] == null ? "" : run[0].recordForTest(context.getWorld().getServer()))))
+                .createAndAdd(() -> {
+                    JsonObject result;
+                    try {
+                        result = JsonParser.parseString(Files.readString(out)).getAsJsonObject();
+                    } catch (Exception unreadable) {
+                        throw new net.minecraft.test.GameTestException("No readable result at " + out + ": " + unreadable);
+                    }
+                    context.assertTrue(!result.get("build").getAsString().contains("not every starter"), "All eight came into the world: " + result.get("build"));
+                    long here = f.runtime.nativeStatuses(dev.kindred.core.Actor.console()).stream().filter(x -> x.connected()).count();
+                    context.assertTrue(here == 8, "Eight bodies in the world: " + here);
+                    var factions = result.getAsJsonObject("factions");
+                    context.assertTrue(factions != null && factions.get("audited").getAsBoolean(), "Audited: " + factions);
+                    context.assertTrue(factions.getAsJsonArray("violations").isEmpty(), "No rule broken: " + factions.getAsJsonArray("violations"));
+                    var book = f.runtime.projected().factions();
+                    context.assertTrue(book.factions().size() == 3, "Three factions, the founders': " + book.factions().values().stream().map(x -> x.name()).toList());
+                    int members = book.factions().values().stream().mapToInt(x -> x.members().size()).sum();
+                    context.assertTrue(members >= 6, "The others asked and joined: " + members + " of 8 in a faction");
+                    var load = result.getAsJsonObject("server");
+                    context.assertTrue(load != null && load.get("samples").getAsInt() > 100 && load.get("heapMbMax").getAsLong() > 0, "The server's load measured: " + load);
+                    run[0] = null;
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

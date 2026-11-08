@@ -574,7 +574,8 @@ final class PlayerRuntime {
                 : "off (KINDRED_VOICE=off): replies in chat are the fixed ones");
         // E-51: conversations between AI players (PeerTalk) replace the fixed peer conference, which whispered to anyone
         // within six blocks; none is installed, so the lane's old conference never runs.
-        this.attentionScheduler = new AttentionWorkScheduler(this.runtimeSession, AttentionSchedulePolicy.defaultPolicy());
+        // As many players in a tick's batch as any server may allow; the per-tick budget stays the same, shared (M-06i).
+        this.attentionScheduler = new AttentionWorkScheduler(this.runtimeSession, AttentionSchedulePolicy.defaultPolicy().withMaxPlayers(MAX_NATIVE_PLAYERS));
         teamCoordinator.onChange(this::saveTeamChange);
     }
 
@@ -597,6 +598,34 @@ final class PlayerRuntime {
             return false;
         }
     }
+
+    /** The native players a server allows unless its operator says otherwise, and the most it may say. */
+    static final int DEFAULT_NATIVE_PLAYERS = 3, MAX_NATIVE_PLAYERS = 12;
+    /** The native players this server allows: {@code maxNativePlayers} in edits.properties, read at startup. */
+    private int maxNativePlayers = DEFAULT_NATIVE_PLAYERS;
+
+    /**
+     * The server's limit on native players from edits.properties ({@code maxNativePlayers}), the server's own policy:
+     * {@value #DEFAULT_NATIVE_PLAYERS} when absent or unreadable, clamped to 1 to {@value #MAX_NATIVE_PLAYERS}. Raising it is
+     * a capacity decision; qualification (tick time and heap at that many) is separate.
+     */
+    static int readNativeLimit(Path directory) {
+        try {
+            java.nio.file.Path file = directory.resolve("edits.properties");
+            if (!java.nio.file.Files.exists(file)) return DEFAULT_NATIVE_PLAYERS;
+            java.util.Properties properties = new java.util.Properties();
+            try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            String raw = properties.getProperty("maxNativePlayers");
+            if (raw == null || raw.isBlank()) return DEFAULT_NATIVE_PLAYERS;
+            return Math.clamp(Integer.parseInt(raw.trim()), 1, MAX_NATIVE_PLAYERS);
+        } catch (Exception failure) {
+            KindredMod.LOGGER.error("Kindred setting maxNativePlayers could not be read; it stays " + DEFAULT_NATIVE_PLAYERS, failure);
+            return DEFAULT_NATIVE_PLAYERS;
+        }
+    }
+
+    /** The native players this server allows (for fixtures and the status line). */
+    int maxNativePlayers() { return maxNativePlayers; }
 
     /** The world's game mode from mode.properties; none (null) when absent, unreadable or not a mode. */
     private static dev.kindred.core.match.GameModes.WorldMode readWorldMode(Path directory) {
@@ -660,7 +689,8 @@ final class PlayerRuntime {
         CompletableFuture.supplyAsync(() -> readPace(directory)).whenComplete((step, failure) -> handBack(() -> {
             if (step != null && startupGeneration == currentStartupGen) groupStep = dev.kindred.core.match.GroupPace.further(Optional.ofNullable(groupStep), Optional.of(step)).orElse(null);
         }));
-        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory)))
+        startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory),
+                readNativeLimit(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
                         .thenCompose(database -> database.list().thenCompose(records -> {
                             Set<UUID> logicalIds = records.stream().map(r -> r.companion().id()).collect(java.util.stream.Collectors.toSet());
@@ -671,7 +701,7 @@ final class PlayerRuntime {
                                                             startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
                                                                     database.modes(logicalIds).thenCompose(modes ->
                                                                             database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds()).thenApply(record ->
-                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), inputs.worldMode(), database, records,
+                                                                            new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), inputs.worldMode(), inputs.maxNativePlayers(), database, records,
                                                                                     profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes,
                                                                                     dev.kindred.core.record.Ledgers.replay(record), record.isEmpty() ? 0 : record.getLast().id()))
                                                                     )
@@ -761,6 +791,9 @@ final class PlayerRuntime {
                     dragonFight = loaded.dragonFight();
                     bases = loaded.bases();
                     worldMode = loaded.worldMode();
+                    maxNativePlayers = loaded.maxNativePlayers();
+                    KindredMod.LOGGER.info("Native players allowed on this server: {} (maxNativePlayers in edits.properties; default {}, at most {})",
+                            maxNativePlayers, DEFAULT_NATIVE_PLAYERS, MAX_NATIVE_PLAYERS);
                     if (factionsWorld()) TerritoryGuard.activate(factions);
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
@@ -827,7 +860,8 @@ final class PlayerRuntime {
         if (actor == null || !actor.operator()) return reject(source, "Only an operator may create a development native player.");
         long count = entries.values().stream().filter(entry -> entry.nativeState != null
                 && entry.snapshot().lifecycle() != LifecycleState.REMOVED).count();
-        if (count + nativeCreationsPending >= 3) return reject(source, "The development envelope supports three native players; incomplete records still occupy a slot.");
+        if (count + nativeCreationsPending >= maxNativePlayers) return reject(source, "This server allows " + maxNativePlayers
+                + " native players (maxNativePlayers in edits.properties); incomplete records still occupy a slot.");
         if (nativeSpawn(source) == null) return reject(source, "Make room on solid ground in an already loaded area.");
         PlayerCreationRequest request;
         try {
@@ -13748,9 +13782,9 @@ final class PlayerRuntime {
     }
 
     private record Bootstrap(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases,
-                             dev.kindred.core.match.GameModes.WorldMode worldMode) { }
+                             dev.kindred.core.match.GameModes.WorldMode worldMode, int maxNativePlayers) { }
     private record LoadedRegistry(UUID worldId, EditPolicy.ServerPolicy edits, boolean dragonFight, boolean bases,
-                                  dev.kindred.core.match.GameModes.WorldMode worldMode, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
+                                  dev.kindred.core.match.GameModes.WorldMode worldMode, int maxNativePlayers, SqliteCompanionStore store, java.util.List<StoredCompanion> records,
                                   java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
                                   java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
                                   StartupLedgerSnapshot ledgerSnapshot,
@@ -16837,10 +16871,14 @@ final class PlayerRuntime {
         return 1;
     }
 
-    private static String policyFile(boolean edits, boolean dragon, boolean bases) {
+    /** The policy file as written; {@code maxNativePlayers} kept as the server has it, so no other change drops it. */
+    private String policyFile(boolean edits, boolean dragon, boolean bases) {
         return "# Kindred server edit policy (decision D4). autonomousEdits lets AI players break and place blocks;\n"
-                + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases.\n"
-                + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n";
+                + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases;\n"
+                + "# maxNativePlayers is how many native AI players the server allows (default " + DEFAULT_NATIVE_PLAYERS + ", at most "
+                + MAX_NATIVE_PLAYERS + ").\n"
+                + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n"
+                + (maxNativePlayers == DEFAULT_NATIVE_PLAYERS ? "" : "maxNativePlayers=" + maxNativePlayers + "\n");
     }
 
     boolean dragonFightAllowed() { return dragonFight; }

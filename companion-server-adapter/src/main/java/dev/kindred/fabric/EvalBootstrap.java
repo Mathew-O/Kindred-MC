@@ -184,7 +184,10 @@ final class EvalBootstrap implements RunObserver {
             }
             case 3 -> { // Running: a look once a second, the end when its ticks have run.
                 long run = lastTick - startTick;
-                if (run % LOOK == 0) look(server, runtime);
+                if (run % LOOK == 0) {
+                    look(server, runtime);
+                    measure(server);
+                }
                 if (run % ATTENTION_REPORT == 0) attention(runtime, run);
                 if (run >= scenario.ticks()) {
                     if (scenario.mode() == EvalScenario.Mode.FACTIONS) audit(server, runtime);
@@ -227,6 +230,18 @@ final class EvalBootstrap implements RunObserver {
     }
 
     private boolean auditing;
+    private double tickNanosSum;
+    private long worstTickNanos, heapMax;
+    private int measured;
+
+    /** Once a game second: the server's mean tick over its last hundred, its longest of them, and the heap in use. */
+    private void measure(MinecraftServer server) {
+        tickNanosSum += server.getAverageNanosPerTick();
+        for (long t : server.getTickTimes()) worstTickNanos = Math.max(worstTickNanos, t);
+        var memory = Runtime.getRuntime();
+        heapMax = Math.max(heapMax, memory.totalMemory() - memory.freeMemory());
+        measured++;
+    }
 
     /**
      * A faction world's end (M-06i): its whole history read back from the World Record, off the server thread, and
@@ -353,6 +368,7 @@ final class EvalBootstrap implements RunObserver {
 
     private void end(MinecraftServer server, boolean complete) {
         finished = true;
+        if (measured > 0) record.server(tickNanosSum / measured / 1e6, worstTickNanos / 1e6, heapMax / (1024 * 1024), measured);
         long run = startTick < 0 ? 0 : lastTick - startTick;
         String build = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("kindred")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown");

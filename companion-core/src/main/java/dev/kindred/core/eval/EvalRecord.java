@@ -85,6 +85,15 @@ public final class EvalRecord {
         if (p != null) p.tokens = Math.max(p.tokens, tokens);
     }
 
+    /** The server's load over the run: its mean and worst tick in milliseconds and its heap at most in megabytes; null until set. */
+    private String server;
+
+    /** The server's load over the run, as the file will hold it (the measurement a larger run is qualified by). */
+    public void server(double tickMsMean, double tickMsWorst, long heapMbMax, int samples) {
+        server = String.format(java.util.Locale.ROOT, ",\n  \"server\": {\"tickMsMean\": %.2f, \"tickMsWorst\": %.2f, \"heapMbMax\": %d, \"samples\": %d}",
+                tickMsMean, tickMsWorst, heapMbMax, samples);
+    }
+
     /** A faction world's audit (M-06i), written into the file; null in any other run. */
     private String factions;
 
@@ -129,6 +138,7 @@ public final class EvalRecord {
                 .append(",\n  \"ticksRun\": ").append(ticksRun)
                 .append(",\n  \"complete\": ").append(complete)
                 .append(factions == null ? "" : factions)
+                .append(server == null ? "" : server)
                 .append(",\n  \"players\": {");
         boolean firstPlayer = true;
         for (var entry : players.entrySet()) {

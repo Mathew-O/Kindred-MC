@@ -89,14 +89,22 @@ cast and the portal's lighting as they complete; a frame's obsidian is cast wher
   invite the players they meet (initiative 80, sociability 60), the others to wait to be asked and to join (20, 70).
   Everything else is the players' own: who meets whom, who asks, and who joins whom (an invited player joins the faction
   with the fewest members that asked it).
-- The runtime holds three native players for now (`PlayerRuntime`'s envelope), so a run with more than three in all
-  makes the first three and notes that the others did not come.
+- A run with more than three players in all needs the server to allow them: `--policy maxNativePlayers=8` writes that
+  line into each server's `world/kindred/edits.properties` before it starts (the server's own policy; default 3, at
+  most 12). Without it the first three are made and the run notes that the others did not come.
 - The mode is not yet an operator's choice (`GameModes` keeps it unplayable until M-06i is complete). The run sets it
   for itself.
 
 ```
 tools/eval/run.py --ref HEAD --seeds 101,102,103,104,105,106,107,108,109,110 --scenario "goal=none; mode=factions; ticks=288000" --parallel 2
+tools/eval/run.py --ref HEAD --seeds 101,102,103 --policy maxNativePlayers=8 --parallel 1 \
+    --scenario "starters=Kindred,Sol,Echo; players=Ada,Bram,Cleo,Dara,Eli; founders=3; goal=none; mode=factions; ticks=72000"
 ```
+
+Every run's result now also carries the server's load (`server`: the mean tick over the run from the server's own
+last-hundred mean, taken once a game second; the worst tick; the heap at most), and `score.py` adds a table of it. That
+is the measurement a larger run is qualified by. Run such a run one server at a time (`--parallel 1`), so no other
+server shares its cores.
 
 ## Conventions
 
