@@ -50,6 +50,65 @@ from a log:
   had counted boats never put down (four of six in the local suite's failure); those are counted apart now. With it, the
   bring, trading hall and cart fixtures alone, four runs: 52 of 52, each strolling librarian held at the first boat.
 
+## E-40, batch 15's pull-request build: stranded by walks elsewhere, the way back first (F-25c4ce); the axe fixture's staging (E-41a) — 7 and 8 November 2026 (`claude/e40-ladder-15-1107`)
+
+PR #35's builds on `f2d93b7`: the push build passed the full suite. The pull-request build failed one native fixture in
+each of its two attempts, a different one each time:
+- Attempt 1: `NativeRulesetGameTests.anAxeOnARaisedShieldPutsItOutOfUseForAHundredTicks`, the zombie's axe never disabling
+  the raised shield in 600 ticks. Alone on `f2d93b7` it passed 5 of 5; it passed in attempt 2. Not reproduced then; its
+  cause was found when it failed again (below).
+- Attempt 2: `NativePortalCampaignGameTests.goalWalksBackUpTheWayItCameWhenItsPickaxeBreaksBelow`, "Nothing dug on the way
+  back up: 440 of 448 stone left". From the job's log: three walks toward the fixture's wall top, which deep below sea level
+  reads as a cave floor, were refused. Stranded by them and with no pickaxe, it dug a stair by hand rather than walk back.
+
+- **The stranded return fixture** (F-25c4ce, [evidence](evidence/F-25c4ce.md)), `NativeStrandedReturnGameTests`, staged:
+  that fixture's staircase, with three refused walks given to the goal as it starts on the ore at the foot.
+  - On `f2d93b7`: fails 3 of 3, eight blocks cleared by hand beside the staircase ("489 of 497 stone left").
+  - With the fix: passes 3 of 3, back the way it came at once, no block cleared by hand.
+- **The affected native fixtures** with the fix, alone and while the evaluation ran: `NativePortalCampaignGameTests` (both
+  walk-back fixtures among them), `NativeTripDownGameTests`, `NativeUnderLakeKeptGameTests`, `NativeBranchMineGameTests`,
+  `NativeNightShelterGameTests`, batch 15's three classes and the new one, 110 of 110.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
+The pull-request build on `1ab35bd` passed; its re-run failed the axe fixture again, 578 of 579. A second failure, so its
+cause was looked for:
+- **The axe fixture's staging** (E-41a, [evidence](evidence/E-41a.md)). A shield blocks only a hit from in front of where
+  its holder looks, and only a blocked axe hit puts it out of use. The fixture held the player's facing fixed and set the
+  zombie down at a fixed cell of the test, but the player's spawn cell varies. Where the zombie came to stand against the
+  player was left to its path.
+  - In both failing CI runs the shield was raised 14 times and never struck.
+  - 20 repeats on the old staging, with each swing logged: 19 zombies came in from the front. One came round to the
+    player's side, its hits 84 degrees off the way the player faced; a shield covers 90.
+  - The old staging with the zombie set down just behind the player's side: fails 3 of 3 with CI's message. The shield was
+    raised 14 times, and every hit landed on it from behind its edge.
+  - With the fix, the assertions unchanged: the zombie is set down two blocks straight ahead of where the body stands, and
+    the body keeps its eyes on it as it blocks. The side-on staging passes 3 of 3, the fixture 20 of 20 repeats, the class 6
+    of 6. Every disabling hit landed square in front, and the shield was out of use 100 ticks each time.
+  - **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped, as before.
+
+## E-40, batch 15: back to its frame, snow in the frame's cells, off a spire (F-25c4by, F-25c4bz, F-25c4ca) — 7 November 2026 (`claude/e40-ladder-15-1107`)
+
+From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit portal, and the largest stuck block.
+
+- **The frame return fixture** (F-25c4by, [evidence](evidence/F-25c4by.md)), `NativeFrameReturnGameTests`, staged: its
+  frame deep in stone taken as its own, the player in a pocket three blocks over the tunnel it came along.
+  - On `42d682c` with the fixture's hook only: fails 3 of 3, the walk back refused, then climbing and waiting.
+  - With the fix: passes 3 of 3, the portal lit after 138 to 140 ticks.
+- **The snow site fixture** (F-25c4bz, [evidence](evidence/F-25c4bz.md)), `NativeSnowSiteGameTests`, staged: a cast on a
+  field under a layer of snow, no shovel.
+  - Without the fix: fails 3 of 3, the frame site given up 8,839 to 10,282 times until the time ran out (3 more runs
+    before the fixture's time-out message was reworded, the same: given up thousands of times, no frame).
+  - With the fix: passes 3 of 3, the portal lit after 775 to 777 ticks, no site given up.
+- **The spire fixture** (F-25c4ca, [evidence](evidence/F-25c4ca.md)), `NativeSpireGameTests`, staged: a spire in a lit
+  cave 27 high, a zombie (its AI off) on the floor below, the water bucket at hand.
+  - Without the fix: fails 3 of 3, "waiting for a feasible step" through nine spells.
+  - With the fix: passes 3 of 3, off the spire after 840 to 843 ticks, its fall broken with water.
+  - With no mob below it did not reproduce (off at once, 3 of 3, before the fix too); that form is not kept.
+- **The affected native fixtures** on `66a7c0a`, alone and while the evaluation ran: `NativePortalCampaignGameTests`,
+  `NativePortalLightGameTests`, `NativeTeamPortalGameTests`, `NativeFallGameTests`, `NativeEdgeFightGameTests`,
+  `NativeBranchMineGameTests` and the three new classes, 109 of 109.
+- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (companion-core 785, companion-model 49 with the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
 ## E-40, batch 14: dug in for the night, it stays in (F-25c4bx); rung c's first probe — 7 November 2026 (`claude/e40-ladder-13-1106`)
 
 - **The night shelter fixture** (F-25c4bx, [evidence](evidence/F-25c4bx.md)), `NativeNightShelterGameTests`, staged:
