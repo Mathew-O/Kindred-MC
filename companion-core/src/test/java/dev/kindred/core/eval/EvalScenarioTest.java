@@ -70,4 +70,16 @@ class EvalScenarioTest {
                 + " rescue=off; advice=off", s.asText());
         assertEquals(s, EvalScenario.parse(s.asText()));
     }
+
+    @Test
+    void aFactionWorldIsAModeOfItsOwnAndReadsBack() {
+        var s = EvalScenario.parse("goal=none; mode=factions; ticks=288000");
+        assertEquals(EvalScenario.Mode.FACTIONS, s.mode());
+        assertEquals(s, EvalScenario.parse(s.asText()));
+        assertTrue(s.asText().endsWith("; mode=factions"), s.asText());
+        assertTrue(s.earned(), "nothing handed out: a faction world is earned like any other");
+        assertEquals(EvalScenario.Mode.SURVIVAL, EvalScenario.parse("goal=nether").mode(), "survival unless said");
+        assertFalse(EvalScenario.parse("goal=nether").asText().contains("mode="), "a survival run's text as before");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("mode=skyblock"));
+    }
 }

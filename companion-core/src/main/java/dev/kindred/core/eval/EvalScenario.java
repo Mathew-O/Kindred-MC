@@ -19,15 +19,21 @@ import java.util.Set;
  * {@code edits}, {@code sprint}, {@code strategist} and {@code voice} ({@code on}/{@code off}), {@code ticks} (1 to
  * ten million), {@code keep} ({@code inventory}/{@code none}), {@code lessons}, {@code atlas}, {@code rescue} and
  * {@code advice} ({@code on}/{@code off}, on unless said; E-46, F-30, F-29: with the strategist on, {@code advice=off}
- * asks it for rescue plans alone). An unknown key, an unknown value or a key given twice is
+ * asks it for rescue plans alone), {@code mode} ({@code survival}, the default, or {@code factions}: M-06i). An unknown key, an unknown value or a key given twice is
  * refused. A run is earned only when nothing in it is handed out or kept: the starters spawn with empty inventories,
  * edits are on under the roaming policy and nothing is kept at death; every other run is staged.
  */
 public record EvalScenario(List<String> starters, Goal goal, boolean edits, long ticks, boolean sprint,
                            boolean strategist, boolean voice, Keep keep, boolean lessons, boolean atlas, boolean rescue,
-                           boolean advice) {
+                           boolean advice, Mode mode) {
     /** What the starters are set to do. */
     public enum Goal { NETHER, END, DRAGON, NONE }
+
+    /**
+     * The world the run is played in: the default survival world, or a faction world (M-06i), the starters in it as
+     * players who joined it, its locked rules audited from the World Record at the end.
+     */
+    public enum Mode { SURVIVAL, FACTIONS }
 
     /** What a death keeps: the inventory (the {@code keepInventory} rule), or nothing, as in survival. */
     public enum Keep { INVENTORY, NONE }
@@ -36,7 +42,7 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
     public static final long DEFAULT_TICKS = 144_000;
     public static final long MAX_TICKS = 10_000_000;
     private static final List<String> CANONICAL = List.of("Kindred", "Sol", "Echo");
-    private static final Set<String> KEYS = Set.of("starters", "goal", "edits", "ticks", "sprint", "strategist", "voice", "keep", "lessons", "atlas", "rescue", "advice");
+    private static final Set<String> KEYS = Set.of("starters", "goal", "edits", "ticks", "sprint", "strategist", "voice", "keep", "lessons", "atlas", "rescue", "advice", "mode");
 
     public EvalScenario {
         starters = List.copyOf(starters);
@@ -83,9 +89,14 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
             case "none" -> Keep.NONE;
             default -> throw new IllegalArgumentException("Unknown keep '" + pairs.get("keep") + "' (inventory or none)");
         };
+        Mode mode = switch (pairs.getOrDefault("mode", "survival").toLowerCase(Locale.ROOT)) {
+            case "survival" -> Mode.SURVIVAL;
+            case "factions" -> Mode.FACTIONS;
+            default -> throw new IllegalArgumentException("Unknown mode '" + pairs.get("mode") + "' (survival or factions)");
+        };
         return new EvalScenario(starters, goal, onOff(pairs, "edits", true), ticks, onOff(pairs, "sprint", true),
                 onOff(pairs, "strategist", false), onOff(pairs, "voice", false), keep, onOff(pairs, "lessons", true), onOff(pairs, "atlas", true),
-                onOff(pairs, "rescue", true), onOff(pairs, "advice", true));
+                onOff(pairs, "rescue", true), onOff(pairs, "advice", true), mode);
     }
 
     private static boolean onOff(Map<String, String> pairs, String key, boolean fallback) {
@@ -109,6 +120,7 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
                 + "; edits=" + (edits ? "on" : "off") + "; ticks=" + ticks + "; sprint=" + (sprint ? "on" : "off")
                 + "; strategist=" + (strategist ? "on" : "off") + "; voice=" + (voice ? "on" : "off")
                 + "; keep=" + keep.name().toLowerCase(Locale.ROOT) + "; lessons=" + (lessons ? "on" : "off") + "; atlas=" + (atlas ? "on" : "off")
-                + "; rescue=" + (rescue ? "on" : "off") + "; advice=" + (advice ? "on" : "off");
+                + "; rescue=" + (rescue ? "on" : "off") + "; advice=" + (advice ? "on" : "off")
+                + (mode == Mode.FACTIONS ? "; mode=factions" : "");
     }
 }

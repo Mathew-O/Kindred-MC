@@ -177,7 +177,10 @@ def score(build_dir, use_metrics=True):
         chatter = chatter_of(log_of(folder))
         minutes = max(result["ticksRun"], 1) / 1200
         chatter["linesPerMinute"] = round((chatter["talkLines"] + chatter["unaskedLines"]) / minutes, 3)
+        # A faction world's audit (M-06i): what the World Record held and every locked rule it shows broken.
+        factions = result.get("factions")
         per_seed[folder.name] = {"complete": result["complete"], "ticksRun": result["ticksRun"], "hours": round(hours, 2), "chatter": chatter,
+                                 "factions": factions,
                                  "teamFurthest": STAGES[best] if best >= 0 else "none", "teamFurthestIndex": best,
                                  "teamDeathsPerHour": round(sum(p["deaths"] for p in players.values()) / hours, 2), "players": players}
     team = {
@@ -262,6 +265,24 @@ def markdown(summary):
             cells.append("%s: %s, %d, %d%s" % (name, p["furthest"], p["deaths"], p["stuckSpells"], extra))
         lines.append("| %s | %d%s | %s | %s | %s |" % (seed, s["ticksRun"], "" if s["complete"] else " (cut short)", s["teamFurthest"],
                                                      s["teamDeathsPerHour"], "; ".join(cells)))
+    audited = {seed: s["factions"] for seed, s in summary["perSeed"].items() if s.get("factions")}
+    if audited:
+        lines += ["", "## The faction world's audit (M-06i)", "",
+                  "Every claim and capture decided again from the World Record by the rules, the safe zone, coins and the auction house's hand-overs.", "",
+                  "| Seed | Audited | Factions | Claims | Captures | Sales | Kills | Rules broken |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+        broken = 0
+        for seed, a in audited.items():
+            c = a.get("counts", {})
+            broken += len(a.get("violations", []))
+            lines.append("| %s | %s | %s | %s | %s | %s | %s | %s |" % (seed, "yes" if a.get("audited") else "no: " + a.get("note", ""),
+                         c.get("factions", "-"), c.get("claims", "-"), c.get("captures", "-"), c.get("sales", "-"), c.get("kills", "-"),
+                         len(a.get("violations", []))))
+        lines.append("")
+        lines.append("No rule broken on any seed." if broken == 0 and all(a.get("audited") for a in audited.values())
+                     else "RULES BROKEN or not audited: see each seed's eval-result.json.")
+        for seed, a in audited.items():
+            for v in a.get("violations", [])[:20]:
+                lines.append("- seed %s: %s" % (seed, v))
     lines.append("")
     return "\n".join(lines)
 

@@ -156,7 +156,7 @@ public final class FactionPlay {
         String id = mine.id().toString();
         var held = view.claims().entrySet().stream().filter(e -> e.getValue().equals(id)).map(e -> Territory.Chunk.of(e.getKey())).toList();
         var candidates = new ArrayList<Territory.Chunk>();
-        if (held.isEmpty()) view.site().ifPresent(candidates::add);
+        if (held.isEmpty()) view.site().ifPresent(site -> candidates.add(beyondSpawn(site, view.settings())));
         else {
             var centre = held.getFirst();
             for (var chunk : held) for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
@@ -175,6 +175,22 @@ public final class FactionPlay {
                     held.isEmpty() ? "Claim the base site" : "Claim land beside its own"));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Where a faction's first land can be: its site, or, when the site is within the spawn exclusion, the chunk just
+     * beyond the exclusion on the same bearing from spawn (east from spawn itself), so a faction founded at spawn walks
+     * out to settle rather than never claiming.
+     */
+    static Territory.Chunk beyondSpawn(Territory.Chunk site, FactionSettings settings) {
+        if (site.nearestToSpawn() >= settings.spawnExclusion()) return site;
+        double cx = site.x() * 16 + 8, cz = site.z() * 16 + 8;
+        double length = Math.hypot(cx, cz);
+        double dx = length < 1 ? 1 : cx / length, dz = length < 1 ? 0 : cz / length;
+        double reach = settings.spawnExclusion() + 24;
+        var out = Territory.Chunk.at(site.dimension(), (int) Math.floor(dx * reach), (int) Math.floor(dz * reach));
+        while (out.nearestToSpawn() < settings.spawnExclusion()) out = out.offset((int) Math.signum(Math.round(dx * 10)), (int) Math.signum(Math.round(dz * 10)));
+        return out;
     }
 
     /** A bid on an open listing of what it wants, at the least the house takes, within what it would pay and can spare. */

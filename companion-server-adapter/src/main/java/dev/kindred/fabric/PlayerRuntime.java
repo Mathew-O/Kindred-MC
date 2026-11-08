@@ -8843,7 +8843,8 @@ final class PlayerRuntime {
                 dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0, dev.kindred.core.TaskPreferences.Affinities.none(),
                 new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
-                "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND ? "3" : FactionsPlayer.RANGE)));
+                "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
+                        || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
     }
 
     /** The view it decides from: the ledgers' public facts, its own sightings, its spare stock, its personality. */
@@ -15593,6 +15594,36 @@ final class PlayerRuntime {
     FactionsService factions() {
         requireThread();
         return factions;
+    }
+
+    /**
+     * An evaluation run's faction world (M-06i's scenario): the world's mode set to Factions for this run as an
+     * operator's choice would set it (each AI player's playstyle, the territory guard, the borders) under the settings
+     * read from config/kindred/factions.properties, the mode not yet being an operator's choice. Not saved: the run's
+     * world is thrown away.
+     */
+    void factionsWorldForEval() {
+        requireThread();
+        worldMode = dev.kindred.core.match.GameModes.WorldMode.FACTIONS;
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null) continue;
+            entry.runtimeSettings = entry.runtimeSettings.withPlaystyle(worldMode.playstyle);
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+        }
+        TerritoryGuard.activate(factions);
+        factions.applyBorders();
+        KindredMod.LOGGER.info("World mode: Factions, for an evaluation run");
+    }
+
+    /** The faction world's whole history audited against its locked rules (M-06i), read off the server thread. */
+    CompletableFuture<dev.kindred.core.factions.FactionsAudit.Report> factionsAudit() {
+        requireThread();
+        SqliteCompanionStore database = store;
+        if (database == null) return CompletableFuture.failedFuture(new IllegalStateException("No Record"));
+        var settings = factions.settings();
+        return database.allWorldEvents(dev.kindred.core.factions.FactionsAudit.kinds())
+                .thenApplyAsync(events -> dev.kindred.core.factions.FactionsAudit.check(events, settings));
     }
 
     /** A fixture's faction world under {@code settings}, the mode not yet being playable for operators. */

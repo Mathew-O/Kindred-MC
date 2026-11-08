@@ -75,8 +75,13 @@ class FactionPlayTest {
         var first = FactionPlay.decide(view(person(50, 0, 50, 50), 100 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(), Map.of(), AuctionBook.EMPTY, List.of()));
         assertEquals(new FactionPlay.Choice(FactionPlay.Kind.CLAIM, site.key(), 100 * Coins.CENT, "Claim the base site"), first.getFirst());
         var nearSpawn = new Territory.Chunk(W, 2, 2);
-        assertTrue(FactionPlay.decide(view(person(50, 0, 50, 50), 1000 * Coins.CENT, Optional.of(nearSpawn), Optional.empty(), List.of(), List.of(), Map.of(),
-                AuctionBook.EMPTY, List.of())).isEmpty(), "never inside the spawn exclusion");
+        var out = FactionPlay.decide(view(person(50, 0, 50, 50), 1000 * Coins.CENT, Optional.of(nearSpawn), Optional.empty(), List.of(), List.of(), Map.of(),
+                AuctionBook.EMPTY, List.of()));
+        var beyond = Territory.Chunk.of(out.getFirst().target());
+        assertTrue(beyond.nearestToSpawn() >= S.spawnExclusion() && beyond.nearestToSpawn() < S.spawnExclusion() + 48 && beyond.x() > 0 && beyond.z() > 0,
+                "never inside the spawn exclusion: just beyond it, on the site's bearing: " + beyond);
+        assertTrue(FactionPlay.beyondSpawn(new Territory.Chunk(W, 0, 0), S).nearestToSpawn() >= S.spawnExclusion(), "from spawn's own chunk too");
+        assertEquals(new Territory.Chunk(W, 100, 100), FactionPlay.beyondSpawn(new Territory.Chunk(W, 100, 100), S), "a site outside the exclusion is kept");
         claim(mine, 100, 100);
         var next = FactionPlay.decide(view(person(50, 50, 50, 50), 1000 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(), Map.of(), AuctionBook.EMPTY, List.of()));
         assertEquals(FactionPlay.Kind.CLAIM, next.getFirst().kind());

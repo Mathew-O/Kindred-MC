@@ -133,6 +133,13 @@ final class EvalBootstrap implements RunObserver {
                 boolean all = scenario.starters().stream().allMatch(n -> here.stream().anyMatch(s -> s.name().equalsIgnoreCase(n)));
                 if (!all && lastTick - phaseAt < ESTABLISH_WAIT) return;
                 if (!all) note = "not every starter came into the world: " + here.stream().map(PlayerRuntime.NativeStatus::name).toList();
+                if (scenario.mode() == EvalScenario.Mode.FACTIONS) {
+                    // A faction world the starters joined (M-06i), as an operator sets one up: the mode, then the spawn hub
+                    // a safe zone, its lighthouse not built. Its locked rules are audited from the World Record at the end.
+                    KindredMod.LOGGER.info("Evaluation run: a faction world");
+                    runtime.factionsWorldForEval();
+                    if (runtime.factionsHub(server.getCommandSource(), false) != 1) note += (note.isEmpty() ? "" : "; ") + "the hub was not set";
+                }
                 if (scenario.goal() != EvalScenario.Goal.NONE) {
                     var goal = switch (scenario.goal()) {
                         case NETHER -> dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
@@ -162,7 +169,10 @@ final class EvalBootstrap implements RunObserver {
                 long run = lastTick - startTick;
                 if (run % LOOK == 0) look(server, runtime);
                 if (run % ATTENTION_REPORT == 0) attention(runtime, run);
-                if (run >= scenario.ticks()) end(server, true);
+                if (run >= scenario.ticks()) {
+                    if (scenario.mode() == EvalScenario.Mode.FACTIONS) audit(server, runtime);
+                    else end(server, true);
+                }
             }
             default -> { }
         }
@@ -193,7 +203,33 @@ final class EvalBootstrap implements RunObserver {
 
     /** The server is stopping before the ticks have run: what there is, marked incomplete. */
     void stopping(MinecraftServer server) {
-        if (!finished && phase >= 3) end(server, false);
+        if (!finished && phase >= 3) {
+            if (scenario.mode() == EvalScenario.Mode.FACTIONS && !auditing) record.factions(java.util.Map.of(), List.of(), "not run: the server stopped first");
+            end(server, false);
+        }
+    }
+
+    private boolean auditing;
+
+    /**
+     * A faction world's end (M-06i): its whole history read back from the World Record, off the server thread, and
+     * audited against the locked rules, then the result written. No further tick of the run counts meanwhile.
+     */
+    private void audit(MinecraftServer server, PlayerRuntime runtime) {
+        if (auditing) return;
+        auditing = true;
+        phase = 4;
+        runtime.factionsAudit().whenComplete((report, failure) -> server.execute(() -> {
+            if (finished) return;
+            if (failure != null || report == null) {
+                record.factions(java.util.Map.of(), List.of(), "the Record could not be read: " + (failure == null ? "no report" : failure.getMessage()));
+            } else {
+                record.factions(report.counts(), report.violations(), "");
+                KindredMod.LOGGER.info("Evaluation run: the faction world audited: {} {}", report.counts(),
+                        report.clean() ? "no rule broken" : report.violations().size() + " rules broken: " + report.violations());
+            }
+            end(server, true);
+        }));
     }
 
     /**

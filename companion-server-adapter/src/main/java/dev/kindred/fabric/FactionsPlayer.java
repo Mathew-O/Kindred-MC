@@ -31,6 +31,8 @@ final class FactionsPlayer {
     /** How far inside a chunk a walk to it ends, and within how much of that spot. */
     static final int INSET = 3;
     static final String RANGE = "1";
+    /** The longest single walk toward a far chunk. */
+    static final int LEG = 48;
     static final Set<String> COMMON = Set.of("minecraft:cobblestone", "minecraft:cobbled_deepslate", "minecraft:dirt", "minecraft:gravel",
             "minecraft:netherrack", "minecraft:andesite", "minecraft:diorite", "minecraft:granite", "minecraft:tuff", "minecraft:sand");
 
@@ -112,11 +114,18 @@ final class FactionsPlayer {
         // ends within a block of it is in it.
         int x = Math.clamp(player.getBlockX(), chunk.x() * 16 + INSET, chunk.x() * 16 + 15 - INSET);
         int z = Math.clamp(player.getBlockZ(), chunk.z() * 16 + INSET, chunk.z() * 16 + 15 - INSET);
+        // A long walk goes in legs: the next 48 blocks toward the chunk, each leg a walk of its own.
+        double far = Math.hypot(x - player.getX(), z - player.getZ());
+        if (far > LEG) {
+            x = (int) Math.floor(player.getX() + (x - player.getX()) * LEG / far);
+            z = (int) Math.floor(player.getZ() + (z - player.getZ()) * LEG / far);
+        }
         int y = player.getBlockY();
-        if (world.isChunkLoaded(chunk.x(), chunk.z())) {
+        if (world.isChunkLoaded(x >> 4, z >> 4)) {
             int top = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
-            // The ground there when it is within reach of a walk; otherwise its own height, for the route to find the way.
-            if (Math.abs(top - y) <= 8) y = top;
+            // The ground there when it is within reach of a walk, or at a leg's end; otherwise its own height, for the
+            // route to find the way.
+            if (far > LEG || Math.abs(top - y) <= 8) y = top;
         }
         return new BlockPos(x, y, z);
     }

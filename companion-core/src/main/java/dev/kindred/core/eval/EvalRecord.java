@@ -85,6 +85,30 @@ public final class EvalRecord {
         if (p != null) p.tokens = Math.max(p.tokens, tokens);
     }
 
+    /** A faction world's audit (M-06i), written into the file; null in any other run. */
+    private String factions;
+
+    /**
+     * A faction world's audit against its locked rules, as the file will hold it: what the World Record holds, every rule
+     * it shows broken, and why it could not be run if it could not ({@code note}, else empty).
+     */
+    public void factions(java.util.Map<String, Integer> counts, java.util.List<String> violations, String note) {
+        var out = new StringBuilder(",\n  \"factions\": {\"audited\": ").append(note.isEmpty()).append(", \"note\": ").append(Json.string(note))
+                .append(", \"counts\": {");
+        boolean first = true;
+        for (var c : counts.entrySet()) {
+            out.append(first ? "" : ", ").append(Json.string(c.getKey())).append(": ").append(c.getValue());
+            first = false;
+        }
+        out.append("}, \"violations\": [");
+        first = true;
+        for (String v : violations) {
+            out.append(first ? "" : ", ").append(Json.string(v));
+            first = false;
+        }
+        factions = out.append("]}").toString();
+    }
+
     public int deaths(String player) {
         var p = players.get(player);
         return p == null ? 0 : p.deaths.size() + p.deathsDropped;
@@ -104,6 +128,7 @@ public final class EvalRecord {
                 .append(",\n  \"ticks\": ").append(scenario.ticks())
                 .append(",\n  \"ticksRun\": ").append(ticksRun)
                 .append(",\n  \"complete\": ").append(complete)
+                .append(factions == null ? "" : factions)
                 .append(",\n  \"players\": {");
         boolean firstPlayer = true;
         for (var entry : players.entrySet()) {
