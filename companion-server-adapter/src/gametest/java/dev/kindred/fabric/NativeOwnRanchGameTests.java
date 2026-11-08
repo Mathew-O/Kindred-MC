@@ -42,6 +42,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     // Staged: its cabin standing, block for block on the first plan in oak.
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
@@ -144,6 +145,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
                     for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
@@ -235,6 +237,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
                     for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
@@ -321,7 +324,12 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) if (world.getBlockState(corner.add(dx, 1, dz)).isOf(Blocks.WHEAT)) resown++;
                     KindredMod.LOGGER.info("Own ranch with grown wheat: {} cows and {} calves penned; plot sown again {} of 4", adults, calves, resown);
                     context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf, fed wheat it grew: " + adults + " and " + calves);
-                    context.assertTrue(resown == 4, "The plot sown again after the harvest: " + resown);
+                    var cells = new StringBuilder();
+                    for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) {
+                        cells.append(Registries.BLOCK.getId(world.getBlockState(corner.add(dx, 0, dz)).getBlock()).getPath()).append('/')
+                                .append(Registries.BLOCK.getId(world.getBlockState(corner.add(dx, 1, dz)).getBlock()).getPath()).append(' ');
+                    }
+                    context.assertTrue(resown == 4, "The plot sown again after the harvest: " + resown + "; cells " + cells + "/ " + f.runtime.ranchNote(f.id));
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
@@ -351,6 +359,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     // Staged: its cabin standing, block for block on the first plan in oak.
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
@@ -390,7 +399,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
                         new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
                 .createAndAdd(() -> context.assertTrue(f.runtime.stagePenForTest(f.id,
-                        new PlayerMemoryStore.Pen("minecraft:overworld", cowPen.getX(), cowPen.getY(), cowPen.getZ(), "COW", true)), "Its cow pen recorded as run"))
+                        new PlayerMemoryStore.Pen("minecraft:overworld", cowPen.getX(), cowPen.getY(), cowPen.getZ(), "COW", true,
+                                context.getWorld().getTime())), "Its cow pen recorded as run just now"))
                 .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
                 .createAndAdd(() -> {
                     var pens = f.runtime.ownPens(f.id);
@@ -434,6 +444,118 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * More than a pair (M-01a): its cow pen run once more than five minutes ago, two cows and their calf in it, and wheat in
+     * hand. Nothing new to keep, it takes the pen up again and breeds the pair once more: two calves in the pen, its run
+     * recorded, two wheat fed; and not again before the next breeding wait. Staged as the pen-per-kind fixture is, with
+     * the calf put in the pen and no other animals about.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerd", tickLimit = 6000)
+    public void itsCowPenRunOnceItBreedsThePairAgainAfterTheWait(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
+        BlockPos home = o.add(16, 7, 16);
+        BlockPos cabinAt = home.add(-3, 0, -3);
+        BlockPos cowPen = o.add(22, 7, 27);
+        long[] staged = {0}, doneAt = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Herder"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
+                    world.setTimeOfDay(1000);
+                    // Staged: its cabin standing, block for block on the first plan in oak.
+                    var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
+                        try {
+                            world.setBlockState(BuildRunner.blockPos(b.at()),
+                                    BlockArgumentParser.block(Registries.BLOCK.getReadOnlyWrapper(), b.spec().toString(), false).blockState());
+                        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    }
+                    // Staged: its cow pen, the gate shut, the pair and their calf in it.
+                    for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) {
+                        if (x != 0 && x != 6 && z != 0 && z != 6) continue;
+                        world.setBlockState(cowPen.add(x, 0, z), x == 3 && z == 6 ? Blocks.OAK_FENCE_GATE.getDefaultState() : Blocks.OAK_FENCE.getDefaultState());
+                    }
+                    BlockPos inPen = cowPen.add(2, 0, 2).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
+                    context.spawnEntity(EntityType.COW, inPen);
+                    context.spawnEntity(EntityType.COW, inPen.add(2, 0, 2));
+                    context.spawnEntity(EntityType.COW, inPen.add(2, 0, 0)).setBaby(true);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    ItemStack[] held = {new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_LOG, 14),
+                            new ItemStack(Items.WHEAT, 8), new ItemStack(Items.BREAD, 16)};
+                    for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = home.add(8, 0, 0);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
+                        new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
+                .createAndAdd(() -> {
+                    // Staged: its run recorded as over the breeding wait ago.
+                    staged[0] = context.getWorld().getTime() - dev.kindred.core.survival.RanchChoice.AGAIN - 1;
+                    context.assertTrue(f.runtime.stagePenForTest(f.id,
+                            new PlayerMemoryStore.Pen("minecraft:overworld", cowPen.getX(), cowPen.getY(), cowPen.getZ(), "COW", true, staged[0])),
+                            "Its cow pen recorded as run, over the wait ago");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.ranchStatus(f.id).isPresent(),
+                        "Its cow pen taken up again: " + f.runtime.ownPens(f.id) + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)))
+                .createAndAdd(() -> {
+                    var pens = f.runtime.ownPens(f.id);
+                    context.assertTrue(pens.size() == 1 && pens.get(0).ranAt() > staged[0] && f.runtime.ranchStatus(f.id).isEmpty(),
+                            "Run again: " + f.runtime.ranchStatus(f.id).orElse("") + " / " + pens);
+                    doneAt[0] = context.getWorld().getTime();
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var penned = world.getEntitiesByClass(CowEntity.class, new Box(cowPen).expand(8), c -> c.getBlockX() > cowPen.getX()
+                            && c.getBlockX() < cowPen.getX() + 6 && c.getBlockZ() > cowPen.getZ() && c.getBlockZ() < cowPen.getZ() + 6);
+                    long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
+                    KindredMod.LOGGER.info("Own herd: {}; {} cows and {} calves penned", f.runtime.ownPens(f.id), adults, calves);
+                    context.assertTrue(adults == 2 && calves == 2, "The pair and two calves penned: " + adults + " and " + calves);
+                    context.assertTrue(held(f, Items.WHEAT) == 6, "Two wheat fed: " + held(f, Items.WHEAT));
+                })
+                // Ten seconds on, not bred again before the next wait.
+                .createAndAdd(() -> {
+                    context.assertTrue(context.getWorld().getTime() - doneAt[0] >= 200, "Ten seconds on");
+                    context.assertTrue(f.runtime.ranchStatus(f.id).isEmpty() && held(f, Items.WHEAT) == 6,
+                            "Not again before the wait: " + f.runtime.ranchStatus(f.id).orElse("") + " / " + f.runtime.ranchNote(f.id));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Staged: a low wall round the laid field's edge, where the ground drops three blocks to the stone beyond. Animals
+     * that wander off it can no longer be fetched back (no walk the player or they can climb back up), and in suite runs
+     * a chicken or a cow wandered off one run in four or so.
+     */
+    static void walled(TestContext context) {
+        var world = context.getWorld();
+        BlockPos o = NativeBaseGameTests.origin(context);
+        for (int i = -12; i <= 44; i++) for (int y = 7; y <= 8; y++) {
+            world.setBlockState(o.add(i, y, -12), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(i, y, 44), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(-12, y, i), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(44, y, i), Blocks.STONE.getDefaultState());
+        }
     }
 
     private static String tablesAbout(net.minecraft.server.world.ServerWorld world, BlockPos feet) {

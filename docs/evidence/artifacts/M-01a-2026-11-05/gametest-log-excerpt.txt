@@ -52,3 +52,15 @@ failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
 # Control (the kinds it keeps not passed to the choice): fails 3 of 3
 (-8762418, -60, -7937145) For the sheep, not cows twice: Pen[dimension=minecraft:overworld, x=-8762365, y=-53, z=-7937103, kind=COW, complete=false]
 # Before the fixture's cow pen was moved into sight, the control passed 3 of 3 (the penned cows unseen behind the cabin): the fixture did not test the change, and was fixed
+# More than a pair per pen, and no drop it cannot climb back (2026-11-08, faec0c5, claude/modes-1108-10)
+[17:06:11] [Server thread/INFO] (Kindred) Herder ranch: The cows in its pen ready to breed again: a bigger herd: cows at -5914467, -53, -4758921
+[17:06:12] [Server thread/INFO] (Kindred) Own herd: [Pen[dimension=minecraft:overworld, x=-5914467, y=-53, z=-4758921, kind=COW, complete=true, ranAt=70017]]; 2 cows and 2 calves penned
+[17:08:33] [Server thread/INFO] (Kindred) Ranch, one sunken: 1 penned; cows from the pen's post: Daisy 2, 0, 5; Bess 18, -3, 4; 
+# Controls: breed-again off, NativeOwnRanchGameTests.itsCowPenRunOnce... fails 3 of 3
+(-7466367, -60, -13366134) Its cow pen taken up again: [Pen[dimension=minecraft:overworld, x=-7466305, y=-53, z=-13366067, kind=COW, complete=true, ranAt=1765]] / No pair of animals seen near home to keep / Iron tools first: a house takes over two hundred stone
+# fall cap and refusal off, NativeRanchGameTests.oneOfThePairDown... fails 3 of 3
+(-13986148, -60, 14801627) Never down off the field: -3 below it, at 18, -3, 5 from the pen's post
+# Ranch flakes root-caused (2026-11-08, 5c4acc7, claude/modes-1108-13): NativeRanchGameTests + NativeOwnRanchGameTests alone
+Before, on 165066c (with #52): 8 runs, 4 failed: sheep given up behind the far fence (2); a chicken 3 down off the field; the plot resown 3 of 4 then the cows bred again
+[18:53:12] [Server thread/INFO] (Kindred) Ranch leaving at 11409125, -53, 10935079: leaving the pen; standing at Pos[x=11409128, y=-53, z=10935082], it saw [cow at 11409126,-53,10935083, cow at 11409127,-53,10935083, cow (young) at 11409126,-53,10935083]
+After: 5 runs on e90abe0, 4 clean (the fifth: the new sunken fixture's penned cow grazed into the patch, fixed); 3 runs on 5c4acc7, 8 of 8 each

@@ -130,6 +130,9 @@ public final class Ranch {
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
+    /** The one the last walk it asked for went toward, or whose last-seen spot it went to ({@link #goingToSpot}); none for others. */
+    private UUID goingFor;
+    private boolean goingToSpot;
     /** How many times it has gone back to the animals it gave up on. */
     private int retried, refetched;
     private static final int RETRIES = 2;
@@ -215,6 +218,8 @@ public final class Ranch {
     }
 
     public Step next(Observation seen) {
+        goingFor = null;
+        goingToSpot = false;
         if (phase == Phase.DONE) return new Step.Done(outcome, bred);
         // Where it sees each grown one of its kind outside the pen, from the first: one may wander off while it builds.
         for (var a : seen.animals()) if (a.kind() == kind && a.adult() && !inside(a.at())) lastSeen.put(a.id(), a.at());
@@ -321,6 +326,27 @@ public final class Ranch {
         return new Step.Done(outcome, bred);
     }
 
+    /**
+     * The walk it last asked for was refused: no route there the body would take (one it can come back from). Asked for
+     * again it is refused again, over and over (the wheat fixture: thousands of times, for minutes, its cow past the
+     * field's edge below a drop). So the one it walked toward, or led, is given up, and a spot where it looked for a stray
+     * is crossed off as looked at; it goes on with the others, or leaves with what it has. Any other walk refused (into
+     * or out of the pen, to the gate) is asked for again as before.
+     */
+    public void refused() {
+        if (goingFor == null) return;
+        if (goingToSpot) {
+            lastSeen.remove(goingFor);
+            searched++;
+        } else {
+            givenUp.add(goingFor);
+            lastSeen.remove(goingFor);
+            if (goingFor.equals(leading)) leading = null;
+        }
+        goingFor = null;
+        goingToSpot = false;
+    }
+
     /** Two or more of the kind outside in the row of {@code mouth}, within a block of it across: jammed at a way in one wide. */
     private boolean jammedAt(Observation seen, Pos mouth) {
         return seen.animals().stream().filter(a -> a.kind() == kind && !inside(a.at()) && a.at().z() == mouth.z()
@@ -363,7 +389,10 @@ public final class Ranch {
             var far = seen.animals().stream().filter(a -> a.kind() == kind && wanted.test(a) && !inside(a.at()) && !givenUp.contains(a.id())
                             && a.at().distanceSquared(gate()) <= (long) SEARCH * SEARCH)
                     .min(Comparator.comparingLong(a -> a.at().distanceSquared(seen.feet())));
-            if (far.isPresent()) return new Step.Go(far.get().at(), 2, true, 0, "Look for the other " + kind.noun() + ": toward the one in sight far off");
+            if (far.isPresent()) {
+                goingFor = far.get().id();
+                return new Step.Go(far.get().at(), 2, true, 0, "Look for the other " + kind.noun() + ": toward the one in sight far off");
+            }
             var visible = new HashSet<UUID>();
             for (var a : seen.animals()) visible.add(a.id());
             var stray = lastSeen.entrySet().stream().filter(e -> !visible.contains(e.getKey()) && !givenUp.contains(e.getKey())
@@ -375,6 +404,8 @@ public final class Ranch {
                     searched++;
                     return new Step.Wait(true, "Not where it was");
                 }
+                goingFor = stray.get().getKey();
+                goingToSpot = true;
                 return new Step.Go(stray.get().getValue(), 2, true, 0, "Look for the other " + kind.noun() + " where it was last seen");
             }
         }
@@ -383,6 +414,7 @@ public final class Ranch {
         }
         if (seen.food() <= 0) return leave(seen, "No " + foodName() + " to lead " + kind.plural() + " with");
         var animal = lead.get();
+        goingFor = animal.id();
         if (!animal.id().equals(leading)) {
             leading = animal.id();
             waitingSince = -1;
@@ -417,6 +449,10 @@ public final class Ranch {
             // into the fence there and stayed (the ranch fixture, about one suite run in three).
             boolean beside = animal.at().z() == outside().z() && animal.at().x() != outside().x()
                     && Math.abs(animal.at().x() - outside().x()) <= 2;
+            // One behind the pen, outside a fence other than the gate's, walks straight at it inside and stays pressed to
+            // that fence: brought round to the gate from outside likewise (a sheep behind the far fence, the own-ranch
+            // fixtures; a cow past the pen's far corner, the cattle fixture in CI).
+            beside |= !inside(animal.at()) && animal.at().z() < outside().z();
             if (beside && seen.tick() - waitingSince > 2 * DRAW && relined < RELINES) {
                 relined++;
                 waitingSince = -1;
