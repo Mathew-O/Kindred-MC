@@ -3516,6 +3516,10 @@ final class PlayerRuntime {
             candidates.addAll(seedCandidates(entry, body));
             return candidates;
         }
+        if (entry.growing != null) {
+            candidates.addAll(growCandidates(entry, body));
+            return candidates;
+        }
         if (entry.field != null) {
             candidates.addAll(fieldCandidates(entry, body));
             return candidates;
@@ -3555,7 +3559,8 @@ final class PlayerRuntime {
         // and then built as any build is.
         if (baseDecision(entry, body)) {
             // A base begun is a build; a ranch of its own begun is a ranch (M-01a).
-            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
+            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.growing != null ? growCandidates(entry, body)
+                    : entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
             return candidates;
         }
 
@@ -4565,21 +4570,23 @@ final class PlayerRuntime {
             entry.cachedRoutineCandidates = List.of();
             return;
         }
-        if (task != null && entry.ranch != null && entry.nativeBody != null) {
+        if (task != null && (entry.ranch != null || entry.growing != null || entry.seeding != null) && entry.nativeBody != null) {
             var world = entry.nativeBody.entity().getServerWorld();
             boolean completed = state == SkillRunner.State.COMPLETED;
-            if (completed && "native_place".equals(task.skill()) && entry.campaign != null) {
-                // A table it set down to craft the pen's fences is its own to craft at again.
+            if ("native_place".equals(task.skill()) && entry.campaign != null) {
                 BlockPos placed = new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")),
                         Integer.parseInt(task.args().get("z")));
-                if (world.getBlockState(placed).isOf(Blocks.CRAFTING_TABLE)) {
+                // A table it set down to craft the pen's fences or its hoe is its own to craft at again.
+                if (completed && world.getBlockState(placed).isOf(Blocks.CRAFTING_TABLE)) {
                     entry.campaign.placedWorkstation(placed);
                     entry.campaign.knowledge().remember(WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
+                // One that would not go down there: not there again for a minute (M-01a).
+                if (!completed) entry.campaign.setAside(placed, server.getTicks() + 1200);
             }
             if (!completed) KindredMod.LOGGER.info("{} ranch step did not complete: {} [{}]", entry.data.displayName(),
                     entry.runner.reason().orElse(""), task.label());
-            entry.ranch.finished(task, completed, entry.runner.reason().orElse(""), world);
+            if (entry.ranch != null) entry.ranch.finished(task, completed, entry.runner.reason().orElse(""), world);
             entry.routineRefreshPending = true;
             entry.cachedRoutineCandidates = List.of();
             return;
@@ -4654,8 +4661,8 @@ final class PlayerRuntime {
     private static final int BASE_LOOK = 200, BASE_NO_SITE = 1200, BASE_RETRY = 6000;
     /** How far from its anchor a player looks for ground for a base, and how often a stage that ends short is tried. */
     private static final int BASE_RADIUS = 24, BASE_TRIES = 3;
-    /** How far a player looks round it for animals to keep (M-01a). */
-    private static final int RANCH_LOOK = 32;
+    /** How far a player looks round it for animals to keep (M-01a); its wheat plot's side. */
+    private static final int RANCH_LOOK = 32, PLOT = 2;
 
     /**
      * A player's own base (M-01c), with the operator's leave and AI world edits on, when it has no goal, build or ranch
@@ -4667,7 +4674,7 @@ final class PlayerRuntime {
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
         if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4801,12 +4808,18 @@ final class PlayerRuntime {
         var player = body.entity();
         var seen = new java.util.EnumMap<dev.kindred.core.survival.Ranch.Kind, Integer>(dev.kindred.core.survival.Ranch.Kind.class);
         var food = new java.util.EnumMap<dev.kindred.core.survival.Ranch.Kind, Integer>(dev.kindred.core.survival.Ranch.Kind.class);
-        // Only animals it can see from where it stands: nothing hidden is known.
+        // Only animals it can see from where it stands, or saw lately: nothing hidden is known. A herd that wandered off
+        // while its wheat grew is the herd it saw (the wheat fixture: the cows out of sight by the harvest).
+        long now = server.getTicks();
         for (var animal : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.AnimalEntity.class,
                 player.getBoundingBox().expand(RANCH_LOOK), a -> !a.isBaby() && player.canSee(a))) {
             String type = Registries.ENTITY_TYPE.getId(animal.getType()).toString();
-            for (var kind : dev.kindred.core.survival.Ranch.Kind.values()) if (kind.entity.equals(type)) seen.merge(kind, 1, Integer::sum);
+            for (var kind : dev.kindred.core.survival.Ranch.Kind.values()) {
+                if (kind.entity.equals(type)) entry.herd.put(animal.getUuid(), new Sighting(kind, animal.getBlockPos().toImmutable(), now));
+            }
         }
+        entry.herd.values().removeIf(sighting -> now - sighting.tick() > HERD_MEMORY);
+        for (var sighting : entry.herd.values()) seen.merge(sighting.kind(), 1, Integer::sum);
         var inventory = player.getInventory();
         for (var kind : dev.kindred.core.survival.Ranch.Kind.values()) {
             int held = 0;
@@ -4814,10 +4827,14 @@ final class PlayerRuntime {
             food.put(kind, held);
         }
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player));
+        if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
+            // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
+            return wheatDecision(entry, body, record, last, dimension, choice.why());
+        }
         if (choice.kind().isEmpty() && choice.earn().isPresent()) {
             // The chickens' seeds earned first, from the grass about it; then the ranch, with them in hand.
             entry.ranchNote = choice.why();
-            entry.seeding = new SeedRunner(dev.kindred.core.survival.RanchChoice.FOOD);
+            entry.seeding = new SeedRunner(dev.kindred.core.survival.RanchChoice.EARN);
             entry.goalProgress = "Ranch: seeds first";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -4836,6 +4853,9 @@ final class PlayerRuntime {
         var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
         for (var base : record.built) if (base.dimension().equals(dimension)) avoid.add(footprint(base));
         if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
+        if (record.plot != null && record.plot.dimension().equals(dimension)) {
+            avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(record.plot.x(), record.plot.z(), record.plot.x() + PLOT - 1, record.plot.z() + PLOT - 1));
+        }
         var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                 (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, 7, 7, 2, avoid);
         if (site.isEmpty()) {
@@ -4847,6 +4867,81 @@ final class PlayerRuntime {
         return startOwnRanch(entry, body, record.ranch, choice.why());
     }
 
+    /**
+     * The cows' or sheep's wheat grown (M-01a): its plot by its base, sited on the nearest flat open ground and kept with its
+     * bases, worked until it holds the wheat; while the wheat grows it gets on with other things, and each look at its
+     * base takes the plot up again.
+     */
+    private boolean wheatDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last,
+                                  String dimension, String why) {
+        var player = body.entity();
+        if (record.plot == null || !record.plot.dimension().equals(dimension)) {
+            var before = footprint(last);
+            var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
+            for (var base : record.built) if (base.dimension().equals(dimension)) avoid.add(footprint(base));
+            if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
+            var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
+                    (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, PLOT, PLOT, 1, avoid);
+            if (site.isEmpty()) {
+                entry.ranchNote = "No flat open ground for a wheat plot within " + BASE_RADIUS + " blocks of its " + last.stage();
+                return false;
+            }
+            // The site's floor is laid on the ground; the plot is the ground itself, one below.
+            record.plot = new PlayerMemoryStore.Plot(dimension, site.get().x(), site.get().y() - 1, site.get().z());
+            memories.saveBases(entry.data.id(), record);
+        }
+        String wood = RanchRunner.woodOf(player);
+        entry.growing = new WheatRunner(new BlockPos(record.plot.x(), record.plot.y(), record.plot.z()), PLOT,
+                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood);
+        if (!why.equals(entry.ranchNote)) KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), why);
+        entry.ranchNote = why;
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        return true;
+    }
+
+    /** Its wheat plot's next step (M-01a), as one project candidate; survival needs still outrank it. */
+    private List<NativeTaskCandidate> growCandidates(Entry entry, NativePlayerBody body) {
+        var growing = entry.growing;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        var task = growing.next(body, entry.campaign);
+        if (!growing.progress().isEmpty()) entry.goalProgress = "Ranch: " + growing.progress();
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), growing.progress());
+        }
+        if (task.isEmpty()) {
+            entry.growing = null;
+            entry.buildTasks.clear();
+            entry.ranchNote = growing.outcome();
+            // Growing: looked at again with its base; with the wheat in hand, decided again at once.
+            if (!growing.growing()) entry.baseCheckAt = 0;
+            entry.routineRefreshPending = true;
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("wheat:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /** The wheat plot of its own (M-01a), for fixtures. */
+    Optional<PlayerMemoryStore.Plot> plot(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? Optional.empty() : Optional.ofNullable(entry.bases.plot);
+    }
+
+    /** Where and when it last saw a grown animal of a kind it might keep (M-01a). */
+    private record Sighting(dev.kindred.core.survival.Ranch.Kind kind, BlockPos at, long tick) { }
+
+    /** How long a sighting is remembered: five minutes, the time its wheat may take to grow and be harvested. */
+    private static final long HERD_MEMORY = 6000;
+
     /** Its own ranch begun at its pen (M-01a), as the operator's command begins one. */
     private boolean startOwnRanch(Entry entry, NativePlayerBody body, PlayerMemoryStore.Pen pen, String why) {
         String wood = RanchRunner.woodOf(body.entity());
@@ -4856,14 +4951,11 @@ final class PlayerRuntime {
         }
         var kind = dev.kindred.core.survival.Ranch.Kind.valueOf(pen.kind());
         entry.ranch = new RanchRunner(new BlockPos(pen.x(), pen.y(), pen.z()), kind, wood);
-        // The ones it saw as it chose to keep them, to look for where it saw them should they stray meanwhile.
-        var player = body.entity();
-        for (var animal : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.AnimalEntity.class,
-                player.getBoundingBox().expand(RANCH_LOOK), a -> !a.isBaby() && player.canSee(a))) {
-            if (Registries.ENTITY_TYPE.getId(animal.getType()).toString().equals(kind.entity)) {
-                BlockPos at = animal.getBlockPos();
-                entry.ranch.ranch.remember(animal.getUuid(), new dev.kindred.core.construction.Pos(at.getX(), at.getY(), at.getZ()));
-            }
+        // The ones it saw, to look for where it saw them last should they stray meanwhile.
+        for (var sighting : entry.herd.entrySet()) {
+            if (sighting.getValue().kind() != kind) continue;
+            BlockPos at = sighting.getValue().at();
+            entry.ranch.ranch.remember(sighting.getKey(), new dev.kindred.core.construction.Pos(at.getX(), at.getY(), at.getZ()));
         }
         entry.ownRanch = pen;
         entry.ranchNote = why;
@@ -5478,6 +5570,7 @@ final class PlayerRuntime {
             }
             entry.ownRanch = null;
             entry.seeding = null;
+            entry.growing = null;
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -15430,6 +15523,10 @@ final class PlayerRuntime {
         PlayerMemoryStore.Pen ownRanch;
         /** Seeds being earned from the grass for chickens of its own (M-01a), or null. */
         SeedRunner seeding;
+        /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
+        WheatRunner growing;
+        /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */
+        final Map<UUID, Sighting> herd = new HashMap<>();
         /** Its trading hall's build while it is at it (E-45d), and the times it ended short. */
         BuildRunner hallBuild;
         /** Whether the hall's build in hand is a repair (its record already complete). */
