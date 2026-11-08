@@ -6503,6 +6503,31 @@ final class PortalRunCampaign {
         return hunt(player, animal -> false);
     }
 
+    /** Where it last saw an animal it could hunt, and when (F-22c27). */
+    private record GameSighting(BlockPos at, long tick) { }
+
+    /** How long a sighting of game is remembered: a minute, the length of a chase. */
+    private static final long GAME_MEMORY = 1200;
+
+    /** The game it saw lately, by animal: only what it saw, nothing hidden. */
+    private final Map<java.util.UUID, GameSighting> gameSeen = new HashMap<>();
+
+    /**
+     * No game in sight: back to where it last saw some, the nearest such place first, before it walks out to look. Led
+     * off from the herd (a cow that fled drew its chase out of the 24 blocks it looks about it), it explored and found
+     * no way off the field, and began its base short of food (F-22c27). Each place is walked to once: a walk that
+     * cannot get there, or finds the game gone, moves on to the next, and a minute on it is forgotten.
+     */
+    private Optional<Task> backToGame(ServerPlayerEntity player, long now) {
+        BlockPos feet = player.getBlockPos();
+        gameSeen.values().removeIf(seen -> now - seen.tick() > GAME_MEMORY || seen.at().getSquaredDistance(feet) <= 4 * 4);
+        var back = gameSeen.entrySet().stream().min(java.util.Comparator.comparingDouble(e -> e.getValue().at().getSquaredDistance(feet)));
+        if (back.isEmpty()) return Optional.empty();
+        BlockPos at = back.get().getValue().at();
+        gameSeen.remove(back.get().getKey());
+        return Optional.of(go(at, 2.0, false, "To where it last saw game at " + at.toShortString()));
+    }
+
     private Optional<Task> hunt(ServerPlayerEntity player, java.util.function.Predicate<PassiveEntity> spare) {
         var world = player.getServerWorld();
         Box area = player.getBoundingBox().expand(24, 8, 24);
@@ -6517,7 +6542,9 @@ final class PortalRunCampaign {
                 && !spare.test(animal)
                 && (animal instanceof CowEntity || animal instanceof PigEntity || animal instanceof SheepEntity
                 || animal instanceof ChickenEntity || animal instanceof RabbitEntity) && player.canSee(animal));
-        if (animals.isEmpty()) return Optional.empty();
+        long now = world.getTime();
+        for (PassiveEntity animal : animals) gameSeen.put(animal.getUuid(), new GameSighting(animal.getBlockPos().toImmutable(), now));
+        if (animals.isEmpty()) return backToGame(player, now);
         PassiveEntity nearest = animals.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
         if (player.squaredDistanceTo(nearest) <= 2.8 * 2.8) {
             return Optional.of(strike(player, nearest, "Hunt " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath()));
