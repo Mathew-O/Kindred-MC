@@ -79,6 +79,10 @@ public final class NativeWorldRecordGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     // A sale: Ada sells sixteen iron ingots to the market (M-06g), its price and her coins ledgers.
                     f.runtime.factionsWorldForTest(dev.kindred.core.factions.FactionSettings.DEFAULTS);
+                    // The faction world's first tick now, before the restart: both players first seen and given their
+                    // starting coins, so the restarted runtime's own ticks have nothing new to record and the ledgers
+                    // compared are the Record's alone, however soon after the restart a tick comes.
+                    f.runtime.factionsTickForTest();
                     var ada = player(f, players[0]);
                     ada.getInventory().setStack(8, new net.minecraft.item.ItemStack(net.minecraft.item.Items.IRON_INGOT, 16));
                     f.runtime.market().sell(ada, List.of(8), "minecraft:overworld", sold::add);
