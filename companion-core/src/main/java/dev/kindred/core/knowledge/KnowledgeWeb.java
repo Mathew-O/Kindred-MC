@@ -170,6 +170,19 @@ public final class KnowledgeWeb {
         return Optional.of(c);
     }
 
+    /** Every open fact matching {@code which} ended at {@code tick} (it no longer holds; its history stays); how many. */
+    public int end(Predicate<Relation> which, long tick) {
+        int n = 0;
+        for (var r : List.copyOf(relations.values())) {
+            if (r.closedBy() == null && r.until() > tick && which.test(r)) {
+                relations.put(r.id(), new Relation(r.id(), r.subject(), r.verb(), r.object(), r.value(), r.provenance(), r.from(),
+                        Math.max(r.from(), tick), null, r.visibility(), r.group(), r.weight()));
+                n++;
+            }
+        }
+        return n;
+    }
+
     /** "Forget that": the fact closed at {@code tick} with the correction event as its end, never deleted. */
     public Optional<Relation> correct(long relationId, long correctionEvent, long tick) {
         var r = relations.get(relationId);

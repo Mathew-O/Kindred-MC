@@ -757,6 +757,11 @@ final class PlayerRuntime {
                     ledgersThrough = loaded.ledgersThrough();
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
+                    store.allWorldEvents(dev.kindred.core.knowledge.RecordFeed.KINDS).whenComplete((events, unread) -> server.execute(() -> {
+                        if (unread == null && events != null) webs.rebuild(events);
+                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                    }));
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -12431,10 +12436,12 @@ final class PlayerRuntime {
     private List<dev.kindred.core.social.PeerLedger.Told> voicePeers(UUID id, ServerPlayerEntity speaker) {
         var out = new ArrayList<>(peerRadio.told(id));
         var web = webs.existing(id);
-        if (web.isEmpty()) return out;
         var viewer = wire.roster().stream().filter(l -> l.id().equals(wire.idOf(speaker))).findFirst();
-        viewer.ifPresent(l -> out.addAll(dev.kindred.core.knowledge.WebLines.forListener(web.get(), dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(l),
-                server.getTicks(), PeerRadio.TOLD)));
+        viewer.ifPresent(l -> {
+            var asker = dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(l);
+            web.ifPresent(w -> out.addAll(dev.kindred.core.knowledge.WebLines.forListener(w, asker, server.getTicks(), PeerRadio.TOLD)));
+            out.addAll(dev.kindred.core.knowledge.WebLines.forListener(webs.world(), asker, server.getTicks(), PeerRadio.TOLD));
+        });
         return out;
     }
 
@@ -15328,6 +15335,7 @@ final class PlayerRuntime {
                 for (var event : written) {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
+                    webs.recorded(event); // F-32b: what the Record tells everyone.
                 }
             });
         });
