@@ -22,7 +22,9 @@ public final class NativeLakeBedClimbGameTests implements FabricGameTest {
      * the block of the run's kept world round it (read offline, diagnosis only), 28 by 17 by 23, the liquid on the block's
      * faces made stone; daylight held; the player where Echo stood, with what Echo had left: a stone sword, seven raw
      * iron, cobblestone, coal and bread, no pickaxe and no wood. Passes once it stands on dry ground under the open sky,
-     * within 12,000 ticks, alive: by hand, stone takes it some seven seconds a block, and the way out is a score of them.
+     * within 12,000 ticks, alive (by hand, stone takes it some seven seconds a block, and the way out is a score of them),
+     * having stepped aside and back to the wall fewer than 100 times on the way: Echo's loop was those two steps, over and
+     * over, and with them the watchdog's moves came only after three minutes of it.
      */
     @GameTest(templateName = "kindred_gametest:lakebed-707", skyAccess = true, batchId = "lakeBed707", tickLimit = 12600)
     public void underALakesBedWithNoPickaxeItGetsOutFromUnderTheLake(TestContext context) {
@@ -69,6 +71,8 @@ public final class NativeLakeBedClimbGameTests implements FabricGameTest {
                             .append(player.getBlockPos().subtract(o).toShortString()).append("; ");
                     BlockPos at = player.getBlockPos();
                     String tail = seen.length() > 600 ? "..." + seen.substring(seen.length() - 600) : seen.toString();
+                    context.assertTrue(turns[0] < 100, "To and fro under the lake: " + turns[0] + " steps aside and back to the wall in "
+                            + watched[0] + " ticks; " + tail);
                     context.assertTrue(watched[0] <= 12000, "Still under the lake after 12,000 ticks, " + turns[0] + " steps aside and to the wall: " + tail
                             + " now " + progress + " @ " + at.subtract(o).toShortString());
                     boolean out = player.isOnGround() && !player.isTouchingWater() && context.getWorld().isSkyVisible(at.up());
