@@ -83,6 +83,7 @@
       "dev.kindred.fabric.NativeCornersInHandGameTests",
       "dev.kindred.fabric.NativeFallingColumnGameTests",
       "dev.kindred.fabric.NativeCobwebHeadRoomGameTests",
+      "dev.kindred.fabric.NativeHalfCastFrameGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",

@@ -59,6 +59,20 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 20: a frame half cast is kept (F-25c4cn) — 8 November 2026 (`claude/e40-ladder-20-1108`)
+
+- **The fixture** (F-25c4cn, [evidence](evidence/F-25c4cn.md)): `NativeHalfCastFrameGameTests.aFrameHalfCastIsNotGivenUpForACornerOutOfSightFromItsStand`,
+  staged as it says (six of the frame's ten cast, stone in a top corner, the stand under rock at a tunnel's end). On
+  `06e32e6`, without the fix: fails 3 of 3, each giving the frame up ("cannot open" the corner's stone), as Echo did on
+  31102026 in iteration 14. With it: passes 3 of 3, "Cast: over to" the corner, cleared, the side cell cast after 40 to
+  41 ticks. A first staging without the iron and flint for its flint and steel did not reproduce (the goal mined an iron
+  first) and is not kept.
+- **The classes that cast, light and build frames** (`NativeHalfCastFrameGameTests`, `NativePortalCampaignGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`, `NativeCornersInHandGameTests`,
+  `NativeTeamPortalGameTests`, `NativeCobwebHeadRoomGameTests`, `NativeTripDownGameTests`, `ReplayGameTests`): with the
+  fix, 119 of 119.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
+
 ## E-40, batch 19: a cobweb in the climb's way (F-25c4cm) — 8 November 2026 (`claude/e40-ladder-19-1108`)
 
 - **The fixtures** (F-25c4cm, [evidence](evidence/F-25c4cm.md)): `NativeCobwebHeadRoomGameTests.aCobwebOverItsHeadIsClearedAndItClimbs`
