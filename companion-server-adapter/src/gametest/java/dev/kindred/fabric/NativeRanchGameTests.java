@@ -147,7 +147,7 @@ public final class NativeRanchGameTests implements FabricGameTest {
                         }
                     }
                     // The sunken patch, three below the field, its sides sheer.
-                    for (int x = 22; x <= 30; x++) for (int z = 6; z <= 16; z++) {
+                    for (int x = 25; x <= 32; x++) for (int z = 6; z <= 16; z++) {
                         world.setBlockState(o.add(x, -2, z), Blocks.GRASS_BLOCK.getDefaultState());
                         for (int y = -1; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
@@ -166,9 +166,10 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     wren.getInventory().clear();
                     wren.getInventory().insertStack(new ItemStack(Items.OAK_LOG, 14));
                     wren.getInventory().insertStack(new ItemStack(Items.WHEAT, 8));
-                    // Daisy on the field east of the pen; Bess down in the patch.
-                    cows[0] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 18, 2, 4 + 20)).getUuid();
-                    cows[1] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 26, -1, 4 + 11)).getUuid();
+                    // Daisy on the field south of the pen, well west of the patch, so that she does not wander into it as
+                    // she grazes (once in five runs, nearer it, she did); Bess down in the patch.
+                    cows[0] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 10, 2, 4 + 18)).getUuid();
+                    cows[1] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 29, -1, 4 + 11)).getUuid();
                     context.assertTrue(f.runtime.startRanch(f.source, id[0], pen, Ranch.Kind.COW) == 1, "Ranch started");
                 })
                 .createAndAdd(() -> {
