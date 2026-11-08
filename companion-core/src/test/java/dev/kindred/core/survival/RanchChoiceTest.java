@@ -31,4 +31,23 @@ class RanchChoiceTest {
         assertTrue(hungry.why().contains("2 wheat first"), hungry.why());
         assertTrue(RanchChoice.next(true, Map.of(), Map.of(Ranch.Kind.COW, 9)).why().startsWith("No pair"));
     }
+
+    @Test
+    void withAPairOfChickensAndNoSeedsItEarnsTheSeedsFromGrassInSight() {
+        var earn = RanchChoice.next(true, Map.of(Ranch.Kind.CHICKEN, 2), Map.of(), true);
+        assertTrue(earn.kind().isEmpty(), "not yet: no seeds in hand");
+        assertEquals(Optional.of(Ranch.Kind.CHICKEN), earn.earn(), "seeds first, from the grass");
+        assertTrue(earn.why().contains("seeds first, from the grass"), earn.why());
+        // Cows with no wheat are not earned for this way (their wheat is grown), so the chickens are, though cows come first.
+        assertEquals(Optional.of(Ranch.Kind.CHICKEN), RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.CHICKEN, 2), Map.of(), true).earn());
+        // No grass in sight: nothing to earn them from.
+        assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.CHICKEN, 2), Map.of(), false).earn().isEmpty());
+        // With the seeds, the chickens are kept, nothing earned.
+        var kept = RanchChoice.next(true, Map.of(Ranch.Kind.CHICKEN, 2), Map.of(Ranch.Kind.CHICKEN, 3), true);
+        assertEquals(Optional.of(Ranch.Kind.CHICKEN), kept.kind());
+        assertTrue(kept.earn().isEmpty());
+        // No base, or no pair: nothing.
+        assertTrue(RanchChoice.next(false, Map.of(Ranch.Kind.CHICKEN, 2), Map.of(), true).earn().isEmpty());
+        assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.CHICKEN, 1), Map.of(), true).earn().isEmpty());
+    }
 }
