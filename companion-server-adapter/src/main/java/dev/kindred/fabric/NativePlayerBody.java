@@ -139,6 +139,8 @@ final class NativePlayerBody implements BodyAdapter {
     /** The beliefs of a viewer that is no native player: every creature at its kind's full health. Read only. */
     private static final dev.kindred.core.tactics.HealthBeliefs NO_BELIEFS = new dev.kindred.core.tactics.HealthBeliefs();
     private Runnable deathHook = () -> { };
+    /** What killed the body last, as the game gave it to its death (F-31's death event); null before any death. */
+    private net.minecraft.entity.damage.DamageSource deathSource;
     /** Another player's hit that got through to the body: who, and what it took after armour, absorption included. */
     interface HitHook { void hit(ServerPlayerEntity by, float taken); }
     private HitHook hitHook = (by, taken) -> { };
@@ -272,6 +274,9 @@ final class NativePlayerBody implements BodyAdapter {
     }
     /** Runs when the body dies, before vanilla drops its inventory, so in-flight work settles against real contents. */
     void onDeath(Runnable hook) { requireThread(); deathHook = Objects.requireNonNull(hook); }
+
+    /** What killed the body last, or null. */
+    net.minecraft.entity.damage.DamageSource deathSource() { return deathSource; }
 
     /** Runs when another player's hit gets through to the body and it lives (E-41g): what the hit took, measured. */
     void onHitByPlayer(HitHook hook) { requireThread(); hitHook = Objects.requireNonNull(hook); }
@@ -2704,6 +2709,7 @@ final class NativePlayerBody implements BodyAdapter {
         @Override public void onDeath(net.minecraft.entity.damage.DamageSource damageSource) {
             if (this == player) {
                 haltControls();
+                deathSource = damageSource;
                 deathHook.run();
             }
             super.onDeath(damageSource);

@@ -24,6 +24,7 @@
   "vanillaClientTarget": "1.21.1",
   "clientCompatibilityQualification": "Native entity contracts tested separately; actual client join matrix remains pending",
   "mappings": "net.fabricmc:yarn:1.21.1+build.3:v2",
+  "worldRecord": "F-31: persistence schema 12 (the persistenceSchema key below is from F-11f and stale): the append-only world_events table, written only by the ordered writer; the journal and action ledger written there by their own calls; matches, claims and deaths rebuilt from it at startup; a ledger check once a game day. docs/evidence/F-31.md",
   "loom": "1.10.5",
   "gradle": "8.14.3",
   "javaMajor": 21,

@@ -327,6 +327,14 @@ final class PlayerRuntime {
     private final Set<ProjectId> storedProjects = new HashSet<>();
     /** Matches, and who may attack whom in them (M-00a, D7). */
     private final dev.kindred.core.match.MatchRegistry matches = new dev.kindred.core.match.MatchRegistry();
+    /**
+     * The exact facts kept from the World Record (F-31), rebuilt from it at startup and advanced as each event is written;
+     * owner-thread only. {@link #recordFlush} is the last write to it, waited for at shutdown.
+     */
+    private dev.kindred.core.record.Ledgers ledgers = dev.kindred.core.record.Ledgers.EMPTY;
+    private CompletableFuture<?> recordFlush = CompletableFuture.completedFuture(null);
+    /** The last event the ledgers have folded in. */
+    private long ledgersThrough;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
     private final MatchPresenter presenter;
     /** Each race's splits, by match (M-03a). */
@@ -638,9 +646,11 @@ final class PlayerRuntime {
                                             database.workSetups().thenCompose(setups ->
                                                     database.nativePlayers().thenCompose(nativePlayers ->
                                                             startupLedgerReader.read(database, logicalIds).thenCompose(ledgerSnapshot ->
-                                                                    database.modes(logicalIds).thenApply(modes ->
+                                                                    database.modes(logicalIds).thenCompose(modes ->
+                                                                            database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds()).thenApply(record ->
                                                                             new LoadedRegistry(inputs.worldId(), inputs.edits(), inputs.dragonFight(), inputs.bases(), inputs.worldMode(), database, records,
-                                                                                    profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes)
+                                                                                    profiles, mannerisms, setups, nativePlayers, ledgerSnapshot, modes,
+                                                                                    dev.kindred.core.record.Ledgers.replay(record), record.isEmpty() ? 0 : record.getLast().id()))
                                                                     )
                                                             )
                                                     )
@@ -716,6 +726,11 @@ final class PlayerRuntime {
                     worldId = loaded.worldId();
                     claims.invalidateOtherEpochs(worldId);
                     store = loaded.store();
+                    // The ledgers from the World Record alone (F-31); the matches it kept put back, any cut short stopped.
+                    ledgers = loaded.ledgers();
+                    ledgersThrough = loaded.ledgersThrough();
+                    matches.restore(ledgers.matches().values());
+                    flushMatches();
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -2457,6 +2472,8 @@ final class PlayerRuntime {
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
+        flushMatches();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
@@ -5975,6 +5992,7 @@ final class PlayerRuntime {
     private void onNativeDeath(Entry entry, NativePlayerBody body) {
         if (entry.nativeBody != body || entry.awaitingRespawn) return;
         var player = body.entity();
+        recordDeath(player, body.deathSource() != null ? body.deathSource() : player.getRecentDamageSource());
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
@@ -13242,6 +13260,7 @@ final class PlayerRuntime {
         }
         running = false;
         matches.stopAll();
+        flushMatches();
         presenter.clear();
         memory.close(); // The strategist's bridge, when there is one.
         peerRadio.saveAll(); // What each knows of the others (E-50).
@@ -13251,7 +13270,7 @@ final class PlayerRuntime {
         memories.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
-                .toArray(CompletableFuture[]::new)).handle((ignored, failure) -> null);
+                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
         shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
                 loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
                 .thenCompose(future -> future));
@@ -13415,7 +13434,7 @@ final class PlayerRuntime {
                                   java.util.List<SocialProfile> profiles, java.util.List<Mannerisms> mannerisms,
                                   java.util.List<WorkSetup> setups, java.util.List<StoredNativePlayer> nativePlayers,
                                   StartupLedgerSnapshot ledgerSnapshot,
-                                  Map<UUID, OperatingMode> modes) { }
+                                  Map<UUID, OperatingMode> modes, dev.kindred.core.record.Ledgers ledgers, long ledgersThrough) { }
     private record SpawnLocation(double x, double y, double z, float yaw) { }
 
     /** The store's budget writes for a new session, each after the test seam's delay when one is set (F-22c2). */
@@ -15037,6 +15056,120 @@ final class PlayerRuntime {
         if (!result.accepted()) return reject(source, result.reason());
         announce(result.match().orElseThrow());
         return 1;
+    }
+
+    /**
+     * A player died, a person or an AI player alike: the death written to the World Record (F-31) with where, how and
+     * by whom, then {@link #playerFell}.
+     */
+    void playerDied(net.minecraft.server.network.ServerPlayerEntity player, net.minecraft.entity.damage.DamageSource source) {
+        requireThread();
+        // This runtime's own AI players are recorded by their own death hook (onNativeDeath), once.
+        if (entryForPlayer(player.getUuid()) == null) recordDeath(player, source);
+        playerFell(player.getUuid());
+    }
+
+    /** A death written to the World Record (F-31): who, where, the cause, and the killer when a player. */
+    private void recordDeath(net.minecraft.server.network.ServerPlayerEntity player, net.minecraft.entity.damage.DamageSource source) {
+        UUID killer = source != null && source.getAttacker() instanceof net.minecraft.server.network.ServerPlayerEntity attacker && attacker != player ? attacker.getUuid() : null;
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("cause", source == null ? "unknown" : source.getName());
+        data.put("killer", killer == null ? "" : killer.toString());
+        BlockPos at = player.getBlockPos();
+        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), player.getServerWorld().getRegistryKey().getValue().toString(),
+                dev.kindred.core.record.DeathLedger.DEATH, player.getUuid(), player.getGameProfile().getName(), at.getX() + "," + at.getY() + "," + at.getZ(), data));
+    }
+
+    /** Once a game day, at night: the ledgers checked against the Record (F-31). */
+    static final int LEDGER_CHECK_TICKS = 24_000;
+
+    /**
+     * The agreement check (F-31): every ledger kept here, and the action ledger's own table, against the same rebuilt from
+     * the World Record alone up to the last event the ledgers have folded in, read and folded off the server thread. Each check
+     * is itself an event ({@code ledger_check}); a disagreement is logged as an error for an operator, never repaired.
+     */
+    CompletableFuture<Boolean> checkLedgers() {
+        requireThread();
+        SqliteCompanionStore database = store;
+        if (database == null) return CompletableFuture.completedFuture(false);
+        // The ledgers as they stand against the Record up to the last event they have folded in.
+        dev.kindred.core.record.Ledgers kept = ledgers;
+        long through = ledgersThrough;
+        var result = new CompletableFuture<Boolean>();
+        database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds())
+                .thenCombine(database.checkActionLedger(), (events, actions) -> {
+                    var upTo = events.stream().filter(event -> event.id() <= through).toList();
+                    var checks = new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo));
+                    checks.add(actions);
+                    return checks;
+                }).whenComplete((checks, failure) -> handBack(() -> {
+                    if (failure != null) {
+                        KindredMod.LOGGER.error("World Record check could not run", failure);
+                        result.complete(false);
+                        return;
+                    }
+                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees);
+                    var data = new java.util.LinkedHashMap<String, String>();
+                    for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
+                    for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
+                            check.ledger(), check.kept(), check.fromRecord());
+                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
+                            agree ? "agrees" : "differs", "", data));
+                    result.complete(agree);
+                }));
+        return result;
+    }
+
+    /** Each match changed since the last flush written to the World Record as it now stands (F-31). */
+    private void flushMatches() {
+        var changed = matches.drainChanges();
+        if (changed.isEmpty()) return;
+        long tick = server.getTicks(), now = System.currentTimeMillis();
+        record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
+    }
+
+    /** One event written to the World Record (F-31). */
+    void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
+
+    /**
+     * Events written to the World Record through the ordered writer, all or none, never blocking the tick; once written,
+     * the ledgers advance by them on this thread. Without an open store (not yet ready) nothing durable can be written,
+     * and that is logged.
+     */
+    void record(List<dev.kindred.core.record.WorldEvent> drafts) {
+        requireThread();
+        if (drafts.isEmpty()) return;
+        SqliteCompanionStore database = store;
+        if (database == null) {
+            KindredMod.LOGGER.error("World Record not open; {} event(s) not written: {}", drafts.size(), drafts.getFirst().kind());
+            return;
+        }
+        var write = database.record(drafts);
+        recordFlush = write;
+        write.whenComplete((written, failure) -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("World Record write failed for {} event(s): {}", drafts.size(), drafts.getFirst().kind(), failure);
+                return;
+            }
+            handBack(() -> {
+                for (var event : written) {
+                    ledgers = ledgers.apply(event);
+                    ledgersThrough = Math.max(ledgersThrough, event.id());
+                }
+            });
+        });
+    }
+
+    /** The ledgers as the World Record now gives them (F-31). */
+    dev.kindred.core.record.Ledgers ledgers() {
+        requireThread();
+        return ledgers;
+    }
+
+    /** Whether every write to the World Record asked for so far is done. */
+    boolean recordWritten() {
+        requireThread();
+        return recordFlush.isDone();
     }
 
     /** A player fell: a running duel it was in ends, the other the winner. */
