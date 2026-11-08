@@ -476,6 +476,14 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01a: a pen per kind, 2026-11-08
+
+Branch `claude/modes-1108-9`, from M-01a's wheat branch. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchChoiceTest` 5 of 5, the kept-kinds test not compiling before.
+- Native: `NativeOwnRanchGameTests` alone, three runs on `a60daed`, 4 of 4 each.
+  - Control (the kinds it keeps not passed to the choice): fails 3 of 3, a second cow pen begun.
+  - On the way: the first fixture's cow pen was out of sight and its control passed; moved into sight. In one control run the wheat fixture timed out with its cows being led in (not touched by the control; possible flake, not root-caused).
+
 ## M-01a: wheat grown for cows and sheep, 2026-11-08
 
 Branch `claude/modes-1106-8`, from M-01a's seeds branch, main merged in. M-01a stays open. See [M-01a](evidence/M-01a.md).

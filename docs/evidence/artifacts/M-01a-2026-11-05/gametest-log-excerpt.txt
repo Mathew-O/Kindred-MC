@@ -45,3 +45,10 @@ failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
 # Control (the wheat not grown): fails
 (8390914, -60, -1710801) Its plot sown: Optional.empty, 0 of 4 / No pair of animals seen near home to keep / -
 # Before the fixes: the hoe never made (twelve tables set down round the player, none found by the shared-budget scan), tills refused 5,092 times out of reach; then on 1efb6ff run 1 of 3: one table spot refused 1,890 times, and the cows out of sight by the harvest
+# A pen per kind (2026-11-08, a60daed, claude/modes-1108-9): NativeOwnRanchGameTests.withItsCowsPennedItKeepsAPairOfSheepInAPenOfTheirOwn, run 1 of 3
+[13:52:04] [Server thread/INFO] (Kindred) Shepherd ranch: A pair of sheep close by and the food to breed them: a ranch: sheep at -6154669, -53, -11957012
+[13:52:10] [Server thread/INFO] (Kindred) Shepherd ranch: A young sheep born in the pen
+[13:52:10] [Server thread/INFO] (Kindred) Own pens: [Pen[dimension=minecraft:overworld, x=-6154660, y=-53, z=-11956987, kind=COW, complete=true], Pen[dimension=minecraft:overworld, x=-6154669, y=-53, z=-11957012, kind=SHEEP, complete=true]]; 2 sheep and 1 lambs penned
+# Control (the kinds it keeps not passed to the choice): fails 3 of 3
+(-8762418, -60, -7937145) For the sheep, not cows twice: Pen[dimension=minecraft:overworld, x=-8762365, y=-53, z=-7937103, kind=COW, complete=false]
+# Before the fixture's cow pen was moved into sight, the control passed 3 of 3 (the penned cows unseen behind the cabin): the fixture did not test the change, and was fixed

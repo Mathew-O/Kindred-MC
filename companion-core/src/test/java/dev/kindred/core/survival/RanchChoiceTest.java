@@ -63,4 +63,17 @@ class RanchChoiceTest {
         // Pigs' carrots and potatoes are found, not grown from what it has: not earned.
         assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.PIG, 2), Map.of(), true).earn().isEmpty());
     }
+
+    @Test
+    void aKindAlreadyKeptIsNotKeptTwiceSoTheNextKindGetsAPenOfItsOwn() {
+        var cows = java.util.Set.of(Ranch.Kind.COW);
+        var next = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.SHEEP, 2), Map.of(Ranch.Kind.COW, 4, Ranch.Kind.SHEEP, 4), false, cows);
+        assertEquals(Optional.of(Ranch.Kind.SHEEP), next.kind(), "the sheep get a pen of their own");
+        var earn = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.CHICKEN, 2), Map.of(Ranch.Kind.COW, 4), true, cows);
+        assertTrue(earn.kind().isEmpty());
+        assertEquals(Optional.of(Ranch.Kind.CHICKEN), earn.earn(), "the chickens' seeds earned, not the cows' wheat again");
+        var none = RanchChoice.next(true, Map.of(Ranch.Kind.COW, 4), Map.of(Ranch.Kind.COW, 4), true, cows);
+        assertTrue(none.kind().isEmpty() && none.earn().isEmpty(), "only cows about, and cows are kept: nothing");
+        assertTrue(none.why().startsWith("No pair"), none.why());
+    }
 }
