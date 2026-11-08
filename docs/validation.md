@@ -440,6 +440,14 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01a: wheat grown for cows and sheep, 2026-11-08
+
+Branch `claude/modes-1106-8`, from M-01a's seeds branch, main merged in. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `WheatPlotTest` 2 of 2 (new); `RanchChoiceTest` 4 of 4, the wheat test failing before.
+- Native: `NativeOwnRanchGameTests` with `NativeRanchGameTests` and `NativeCompoundGameTests` alone, three runs on `26301ef`, 11 of 11 each.
+  - Control (the wheat not grown): fails, no plot.
+  - On the way: the hoe never made (the shared-budget scan, now nearest first), tills refused out of reach (now walked to), and on `1efb6ff` one run in three with a refused table spot and the cows out of sight at the harvest (both fixed).
+
 ## M-01a: the chickens' seeds earned from grass, 2026-11-06
 
 Branch `claude/modes-1106-7`, from main. M-01a stays open. See [M-01a](evidence/M-01a.md).

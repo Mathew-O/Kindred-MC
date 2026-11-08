@@ -31,3 +31,17 @@ Caused by: java.lang.NullPointerException: Cannot invoke "dev.kindred.fabric.Bui
 failure message="(5618855, -60, 762813) A chicken ranch of its own begun: Optional.empty / No pair of animals seen near home to keep / Iron tools first: a house takes over two hundred stone / seeds -
 # The cow ranch's one failure in eight runs (7f0dccd, run 3 of 3)
 failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
+
+# Wheat grown for cows and sheep (2026-11-08, 26301ef): NativeOwnRanchGameTests with NativeRanchGameTests and NativeCompoundGameTests alone, 3 runs, 11 of 11 each
+[12:37:50] [Server thread/INFO] (Kindred) Granger ranch: A pair of cows close by; 2 wheat first, grown from seeds
+[12:37:52] [Server thread/INFO] (Kindred) Granger ranch: Wheat enough: 4
+[12:38:00] [Server thread/INFO] (Kindred) Own ranch with grown wheat: 2 cows and 1 calves penned; plot sown again 4 of 4
+[12:47:11] [Server thread/INFO] (Kindred) Granger ranch: A pair of cows close by; 2 wheat first, grown from seeds
+[12:47:13] [Server thread/INFO] (Kindred) Granger ranch: Wheat enough: 4
+[12:47:22] [Server thread/INFO] (Kindred) Own ranch with grown wheat: 2 cows and 1 calves penned; plot sown again 4 of 4
+[12:56:32] [Server thread/INFO] (Kindred) Granger ranch: A pair of cows close by; 2 wheat first, grown from seeds
+[12:56:34] [Server thread/INFO] (Kindred) Granger ranch: Wheat enough: 4
+[12:56:46] [Server thread/INFO] (Kindred) Own ranch with grown wheat: 2 cows and 1 calves penned; plot sown again 4 of 4
+# Control (the wheat not grown): fails
+(8390914, -60, -1710801) Its plot sown: Optional.empty, 0 of 4 / No pair of animals seen near home to keep / -
+# Before the fixes: the hoe never made (twelve tables set down round the player, none found by the shared-budget scan), tills refused 5,092 times out of reach; then on 1efb6ff run 1 of 3: one table spot refused 1,890 times, and the cows out of sight by the harvest
