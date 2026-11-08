@@ -12308,6 +12308,20 @@ final class PlayerRuntime {
      * is to it, what it is at, its goal, its run's last events, what it last said and what it remembers of this world.
      * Null when it cannot be voiced now.
      */
+    /**
+     * What the player knows of the others for its voice: its peer ledger (E-50), then what its web (F-32) holds that this
+     * speaker may know by their relation to each fact; the voice's tiers then apply to both.
+     */
+    private List<dev.kindred.core.social.PeerLedger.Told> voicePeers(UUID id, ServerPlayerEntity speaker) {
+        var out = new ArrayList<>(peerRadio.told(id));
+        var web = webs.existing(id);
+        if (web.isEmpty()) return out;
+        var viewer = wire.roster().stream().filter(l -> l.id().equals(wire.idOf(speaker))).findFirst();
+        viewer.ifPresent(l -> out.addAll(dev.kindred.core.knowledge.WebLines.forListener(web.get(), dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(l),
+                server.getTicks(), PeerRadio.TOLD)));
+        return out;
+    }
+
     private PlayerVoice.Facts voiceFacts(UUID id, ServerPlayerEntity speaker) {
         Entry entry = entries.get(id);
         if (entry == null || !running || !ready) return null;
@@ -12326,7 +12340,7 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), peerRadio.told(id));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
 
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
