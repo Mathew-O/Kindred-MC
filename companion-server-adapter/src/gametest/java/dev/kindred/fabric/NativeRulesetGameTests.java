@@ -133,10 +133,11 @@ public final class NativeRulesetGameTests implements FabricGameTest {
                             1200, 4, false, false));
                     player.setYaw(0);
                     player.setHeadYaw(0);
-                    // Spawned with its goals (the test context's spawnMob clears them): it walks up and swings.
+                    // Spawned with its goals (the test context's spawnMob clears them): it walks up and swings. It is set
+                    // down two blocks straight ahead of where the body stands, which is not always the same cell.
                     var world = context.getWorld();
                     zombie[0] = EntityType.ZOMBIE.create(world);
-                    var at = context.getAbsolute(new Vec3d(3.5, 2.0, 5.5));
+                    var at = player.getPos().add(0, 0, 2);
                     zombie[0].refreshPositionAndAngles(at.x, at.y, at.z, 180, 0);
                     zombie[0].setPersistent();
                     world.spawnEntity(zombie[0]);
@@ -146,6 +147,16 @@ public final class NativeRulesetGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.nativeBlock(f.source, f.id, 40) == 1, "Block requested");
                 })
                 .createAndAdd(() -> {
+                    // A shield blocks only a hit from in front of where its holder looks, so the body keeps its eyes on
+                    // the zombie as a player blocking keeps its attacker in front of it. With its facing held fixed, a
+                    // zombie that came round to its side struck past the shield every time, and none was blocked.
+                    var holder = f.player();
+                    double dx = zombie[0].getX() - holder.getX(), dz = zombie[0].getZ() - holder.getZ();
+                    if (dx * dx + dz * dz > 1.0e-4) {
+                        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                        holder.setYaw(yaw);
+                        holder.setHeadYaw(yaw);
+                    }
                     // Up again until the axe lands.
                     if (!f.player().getItemCooldownManager().isCoolingDown(Items.SHIELD)
                             && f.runtime.nativeActivityStatus(Actor.console(), f.id).phase().equals("IDLE")) f.runtime.nativeBlock(f.source, f.id, 40);
