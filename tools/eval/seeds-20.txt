@@ -1,0 +1,22 @@
+# The twenty seeds of F-29e (2026-11-08): the ten of seeds-10.txt, then ten rolled with Python's secrets.randbelow
+# for this file, none of them E-40's reserved gate seeds or named in the repository before.
+8675309
+20261030
+31102026
+101
+202
+303
+404
+505
+606
+707
+1166122638
+891567637
+1908023170
+1394473968
+1530142077
+779795571
+292680596
+126202224
+121616477
+848677377

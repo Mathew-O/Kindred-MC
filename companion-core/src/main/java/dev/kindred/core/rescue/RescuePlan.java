@@ -30,7 +30,7 @@ public record RescuePlan(List<Step> steps, String reason) {
 
     /** What a step does. */
     public enum Verb {
-        /** Walk that many blocks that way (1 to 8), round what is in the way. */
+        /** Walk that many blocks that way (1 to 8), block by block, up or down one at a time; it stops at the first obstruction (F-29c). */
         WALK,
         /** Dig that many blocks that way (1 to 4): a passage two high sideways, a shaft up or down. */
         DIG,
@@ -43,26 +43,44 @@ public record RescuePlan(List<Step> steps, String reason) {
         /** Eat what it carries. */
         EAT,
         /** Back off that many blocks that way (1 to 3). */
-        RETREAT
+        RETREAT,
+        /** Break a passage two high that way and walk it, block by block (1 to 6); it stops at liquid it would let in or a drop of more than two (F-29c). */
+        TUNNEL,
+        /** A staircase that way, up or down a block a step (1 to 6), never straight down; down stops at liquid or a drop (F-29c). */
+        STAIRS,
+        /** Walk that way over a gap, a block of its own placed under each step where there is none (1 to 6) (F-29c). */
+        BRIDGE,
+        /** Place a torch at its feet (F-29c). */
+        TORCH,
+        /** No action: the next round's report shows the blocks four that way, as far as it can see them (F-29c). */
+        LOOK
     }
 
     /** A way to go: the four sides, up and down. */
     public enum Way { NORTH, SOUTH, EAST, WEST, UP, DOWN }
 
-    /** One step: its verb, its way (none for those that have none), and its count (1 for those that have none). */
-    public record Step(Verb verb, Way way, int count) {
+    /**
+     * One step: its verb, its way (none for those that have none), its count (1 for those that have none), and for a
+     * staircase whether it goes up or down.
+     */
+    public record Step(Verb verb, Way way, int count, Way rise) {
         public Step {
             Objects.requireNonNull(verb);
+        }
+
+        public Step(Verb verb, Way way, int count) {
+            this(verb, way, count, null);
         }
 
         /** The step as the vocabulary writes it: {@code walk north 2}, {@code pillar 3}, {@code eat}. */
         public String text() {
             String name = verb.name().toLowerCase(Locale.ROOT);
             return switch (verb) {
-                case WALK, DIG, RETREAT -> name + " " + way.name().toLowerCase(Locale.ROOT) + " " + count;
-                case PLACE -> name + " " + way.name().toLowerCase(Locale.ROOT);
+                case WALK, DIG, RETREAT, TUNNEL, BRIDGE -> name + " " + way.name().toLowerCase(Locale.ROOT) + " " + count;
+                case STAIRS -> name + " " + rise.name().toLowerCase(Locale.ROOT) + " " + way.name().toLowerCase(Locale.ROOT) + " " + count;
+                case PLACE, LOOK -> name + " " + way.name().toLowerCase(Locale.ROOT);
                 case PILLAR, WAIT -> name + " " + count;
-                case EAT -> name;
+                case EAT, TORCH -> name;
             };
         }
     }
@@ -83,7 +101,12 @@ public record RescuePlan(List<Step> steps, String reason) {
             "place <north|south|east|west>",
             "wait <1-4>",
             "eat",
-            "retreat <north|south|east|west> <1-3>");
+            "retreat <north|south|east|west> <1-3>",
+            "tunnel <north|south|east|west> <1-6>",
+            "stairs <up|down> <north|south|east|west> <1-6>",
+            "bridge <north|south|east|west> <1-6>",
+            "torch",
+            "look <north|south|east|west|up|down>");
 
     /**
      * The reply's steps and reason parsed against the vocabulary and its bounds. Every step that does not parse is
@@ -115,9 +138,20 @@ public record RescuePlan(List<Step> steps, String reason) {
                             if (words.length != 2) throw new IllegalArgumentException("place takes a side");
                             yield new Step(verb, side(words, 1), 1);
                         }
-                        case EAT -> {
+                        case EAT, TORCH -> {
                             if (words.length != 1) throw new IllegalArgumentException(words[0] + " takes nothing more");
                             yield new Step(verb, null, 1);
+                        }
+                        case TUNNEL -> new Step(verb, side(words, 1), count(words, 2, 1, 6, 3));
+                        case BRIDGE -> new Step(verb, side(words, 1), count(words, 2, 1, 6, 3));
+                        case STAIRS -> {
+                            Way rise = way(words, 1);
+                            if (rise != Way.UP && rise != Way.DOWN) throw new IllegalArgumentException("stairs go up or down, not " + words[1]);
+                            yield new Step(verb, side(words, 2), count(words, 3, 1, 6, 4), rise);
+                        }
+                        case LOOK -> {
+                            if (words.length != 2) throw new IllegalArgumentException("look takes a way");
+                            yield new Step(verb, way(words, 1), 1);
                         }
                     };
                 } catch (IllegalArgumentException bad) {
@@ -127,16 +161,26 @@ public record RescuePlan(List<Step> steps, String reason) {
             if (why != null) refusals.add(why);
             else parsed.add(step);
         }
+        if (parsed.stream().filter(step -> step.verb() == Verb.LOOK).count() > 1) refusals.add("one look a round, not "
+                + parsed.stream().filter(step -> step.verb() == Verb.LOOK).count());
         if (!refusals.isEmpty()) return new Parsed(Optional.empty(), refusals);
         String why = reason == null ? "" : reason.strip().replaceAll("\\s+", " ");
         if (why.length() > MAX_REASON) why = why.substring(0, MAX_REASON);
         return new Parsed(Optional.of(new RescuePlan(parsed, why)), List.of());
     }
 
-    /** The installed skill each verb is carried out by. */
+    /**
+     * The installed skill each verb is carried out by: since F-29c the first a step's local executor gives out (a walk,
+     * a tunnel's and a staircase's moves are {@code native_traverse} up or down a block and {@code native_walk} on the
+     * level, a block at a time; their breaks {@code native_break};
+     * a bridge's blocks {@code native_place}). A look is a moment's look that way, {@code native_wait}.
+     */
     public static String skill(Verb verb) {
         return switch (verb) {
-            case WALK -> "native_goto";
+            case WALK -> "native_traverse";
+            case TUNNEL, STAIRS -> "native_break";
+            case BRIDGE, TORCH -> "native_place";
+            case LOOK -> "native_wait";
             case DIG -> "native_break";
             case PILLAR -> "native_pillar";
             case PLACE -> "native_place";
@@ -149,6 +193,21 @@ public record RescuePlan(List<Step> steps, String reason) {
     /** The skill of each step, in order: what {@link ProposalGate} checks. */
     public List<String> skills() {
         return steps.stream().map(step -> skill(step.verb())).toList();
+    }
+
+    /** Every installed skill a verb's executor may give out, the first of them {@link #skill}'s (F-29c). */
+    public static List<String> uses(Verb verb) {
+        return switch (verb) {
+            case WALK -> List.of("native_traverse", "native_walk");
+            case TUNNEL, STAIRS -> List.of("native_break", "native_traverse", "native_walk");
+            case BRIDGE -> List.of("native_place", "native_traverse", "native_walk");
+            default -> List.of(skill(verb));
+        };
+    }
+
+    /** Whether the plan's only step is a look: a probe, which costs no round of its own (F-29c). */
+    public boolean probeOnly() {
+        return steps.stream().allMatch(step -> step.verb() == Verb.LOOK);
     }
 
     /** The plan as the vocabulary writes it: {@code pillar 3, walk north 2}. */
