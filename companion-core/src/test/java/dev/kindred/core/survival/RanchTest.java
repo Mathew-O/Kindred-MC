@@ -400,4 +400,56 @@ class RanchTest {
         assertTrue(ranch.phase().startsWith("leaving") || ranch.done());
         assertThrows(IllegalArgumentException.class, () -> new Ranch(new Pos(0, 0, 0), 6, 7, Ranch.Kind.COW));
     }
+
+    /**
+     * A walk the body refused (no route there it can come back from: the wheat fixture, a cow past the field's edge 3
+     * below) is not asked for again and again: the one walked toward is given up, a spot looked at is crossed off, and it
+     * leaves with what it has.
+     */
+    @Test
+    void aWalkRefusedTowardAnAnimalOrASpotIsNotAskedForAgain() {
+        var far = ranch();
+        far.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        far.next(seen(3, 7, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        var toward = assertInstanceOf(Ranch.Step.Go.class, far.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3), cow(BESS, 40, 40))));
+        assertEquals(new Pos(40, 64, 40), toward.target());
+        far.refused();
+        var after = far.next(seen(3, 7, false, 8, 30, cow(DAISY, 3, 3), cow(BESS, 40, 40)));
+        assertFalse(after instanceof Ranch.Step.Go go && go.target().equals(new Pos(40, 64, 40)), "not toward Bess again: " + after);
+
+        var spot = ranch();
+        spot.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 20, 20)));
+        spot.next(seen(3, 7, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 20, 20)));
+        var look = assertInstanceOf(Ranch.Step.Go.class, spot.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3))));
+        assertEquals(new Pos(20, 64, 20), look.target());
+        spot.refused();
+        var then = spot.next(seen(3, 7, false, 8, 30, cow(DAISY, 3, 3)));
+        assertFalse(then instanceof Ranch.Step.Go go && go.target().equals(new Pos(20, 64, 20)), "not to that spot again: " + then);
+
+        // One near the gate it walked up to, refused: given up, so it is not walked up to over and over.
+        var near = ranch();
+        near.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 8, 12)));
+        var walk = assertInstanceOf(Ranch.Step.Go.class, near.next(seen(3, 7, false, 8, 10, cow(DAISY, 3, 3), cow(BESS, 8, 12))));
+        near.refused();
+        var next = near.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3), cow(BESS, 8, 12)));
+        assertFalse(next instanceof Ranch.Step.Go go && go.target().equals(walk.target()), "not walked up to again at once: " + next);
+    }
+
+    /**
+     * One following the food from behind the pen, outside a fence other than the gate's, walks straight at the player
+     * inside and stays pressed to that fence: it is brought round to the gate from outside, as one beside the gate is,
+     * not given up as one that will not come in (the own-ranch fixtures: a sheep behind the far fence, and the cattle
+     * fixture in CI: a cow past the pen's far corner).
+     */
+    @Test
+    void oneFollowingFromBehindThePenIsBroughtRoundToTheGateNotGivenUp() {
+        for (var behind : List.of(cow(BESS, 3, -1), cow(BESS, 8, 3), cow(BESS, -2, 4))) {
+            var ranch = ranch();
+            ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), behind));
+            assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(3, 1, true, 8, 30, cow(DAISY, 3, 3), behind)));
+            var out = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 1, true, 8, 130, cow(DAISY, 3, 3), behind)), "from " + behind.at());
+            assertEquals("Out to bring the cow round to the gate", out.why(), "from " + behind.at());
+            assertFalse(out.holdFood());
+        }
+    }
 }
