@@ -93,6 +93,8 @@ public final class NativeMarketGameTests implements FabricGameTest {
         var server = context.getWorld().getServer();
         ServerPlayerEntity[] cleo = new ServerPlayerEntity[1];
         List<String> replies = new ArrayList<>();
+        long[] estimate = new long[1];
+        boolean[] settledFirst = new boolean[1];
         FixtureGround.whenDone(context, () -> { if (cleo[0] != null && server.getPlayerManager().getPlayer(cleo[0].getUuid()) != null) server.getPlayerManager().remove(cleo[0]); });
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
@@ -105,16 +107,27 @@ public final class NativeMarketGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 50_000, "500 coins to start");
                     cleo[0].getInventory().setStack(0, new ItemStack(Items.IRON_INGOT, 64));
                     cleo[0].getInventory().selectedSlot = 0;
+                    estimate[0] = f.runtime.market().estimate(cleo[0], List.of(0)).cents();
                     f.runtime.market().sell(cleo[0], List.of(0), "minecraft:overworld", replies::add);
-                    // Gone before the intent is written: the sale must not happen, and nothing may move.
+                    // The intent's write can already be done when its callback is attached, and the sale then settles at
+                    // once, inside sell, before anyone could leave: whole the other way (sold, paid exactly). Otherwise
+                    // the seller is gone before the intent is written: the sale must not happen, and nothing may move.
+                    settledFirst[0] = !replies.isEmpty();
                     server.getPlayerManager().remove(cleo[0]);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(replies.size() == 1 && replies.getFirst().startsWith("Sale cancelled (the seller left)"), "Cancelled: " + replies);
                     context.assertTrue(f.runtime.recordWritten(), "Written");
-                    context.assertTrue(cleo[0].getInventory().count(Items.IRON_INGOT) == 64, "The 64 ingots still the seller's");
-                    context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 50_000, "No coins paid");
-                    context.assertTrue(f.runtime.market().book().states().isEmpty(), "The market untouched");
+                    long coins = f.runtime.projected().coins().of(cleo[0].getUuid());
+                    if (settledFirst[0]) {
+                        context.assertTrue(replies.size() == 1 && replies.getFirst().startsWith("Sold for "), "Settled before the disconnect: " + replies);
+                        context.assertTrue(cleo[0].getInventory().count(Items.IRON_INGOT) == 0, "The ingots taken");
+                        context.assertTrue(coins == 50_000 + estimate[0], "Paid exactly the estimate: " + coins);
+                    } else {
+                        context.assertTrue(replies.size() == 1 && replies.getFirst().startsWith("Sale cancelled (the seller left)"), "Cancelled: " + replies);
+                        context.assertTrue(cleo[0].getInventory().count(Items.IRON_INGOT) == 64, "The 64 ingots still the seller's");
+                        context.assertTrue(coins == 50_000, "No coins paid");
+                        context.assertTrue(f.runtime.market().book().states().isEmpty(), "The market untouched");
+                    }
                 })
                 .completeIfSuccessful();
     }
