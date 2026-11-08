@@ -154,7 +154,7 @@ final class RanchRunner {
                 if (go.leg() > 0) args.put("leg", str(go.leg()));
                 // With the food in hand, leading or looking for an animal: no drop it cannot step back up, nor the animal
                 // follow it back up (the wheat fixture: after a cow past the field's edge, down three and no way back).
-                if (go.holdFood()) args.put("drop", "1");
+                if (go.holdFood()) args.put("fall", "1");
                 yield Optional.of(new PortalRunCampaign.Task("native_goto", Map.copyOf(args), go.why()));
             }
             case Ranch.Step.Gate gate -> Optional.of(new PortalRunCampaign.Task("native_gate", Map.of("x", str(ranch.gate().x()), "y", str(ranch.gate().y()),
