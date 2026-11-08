@@ -171,13 +171,21 @@ public final class Chronicle {
         public boolean none() { return missing.isEmpty() && contradictions.isEmpty(); }
     }
 
-    private static final Pattern DEATHS = Pattern.compile("\\b([A-Z][\\w-]{1,15})\\b[^.;]{0,40}?\\b(no|one|two|three|four|five|six|seven|eight|nine|ten|\\d+)\\s+(?:times|deaths?)\\b|\\b([A-Z][\\w-]{1,15})\\s+died\\s+(once|twice|\\d+\\s+times)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DEATHS = Pattern.compile("\\b([A-Z][\\w-]{1,15})\\b[^.;]{0,40}?\\b(no|one|two|three|four|five|six|seven|eight|nine|ten|\\d+)\\s+deaths?\\b|\\b([A-Z][\\w-]{1,15})\\s+died\\s+(once|twice|(?:one|two|three|four|five|six|seven|eight|nine|ten|\\d+)\\s+times)", Pattern.CASE_INSENSITIVE);
+    /**
+     * Words that put events in an order of their own (the lines are already in order, and a model's "earlier" or "between
+     * the deaths" was measured against the ticks), and words about the page itself rather than the world.
+     */
+    private static final Pattern ORDER = Pattern.compile("\\b(earlier|before|between|meanwhile|previously|prior to|beforehand)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern META = Pattern.compile("\\b(the|these|those) (lines?|page|entries|entry|records? given)\\b|\\bthe chronicle\\b", Pattern.CASE_INSENSITIVE);
+
     private static final Pattern PRICE = Pattern.compile("\\b([a-z][\\w ]{1,30}?)\\s+(?:sold\\s+)?(?:at|for)\\s+(\\d+)\\s+coins?\\b", Pattern.CASE_INSENSITIVE);
 
     /**
      * The checks a summary must pass before it is kept: every event it cites exists in {@code existing} (the
      * Record's ids for its span and scope), and no count of deaths, owner or price it states differs from the
-     * ledgers' {@code facts}. A statement about someone or something the ledgers do not hold is not checked here.
+     * ledgers' {@code facts}. A statement about someone or something the ledgers do not hold is not checked here. A
+     * model's page also may not order events in words of its own nor speak of the page or its lines.
      */
     public static Problems check(Summary summary, java.util.Set<Long> existing, Facts facts) {
         var missing = new ArrayList<Long>();
@@ -207,6 +215,12 @@ public final class Chronicle {
                     wrong.add(m.group().strip() + " (the ledger: " + e.getValue() + ")");
                 }
             }
+        }
+        if (summary.model()) {
+            var order = ORDER.matcher(text);
+            while (order.find()) wrong.add("\"" + order.group() + "\" orders events itself");
+            var meta = META.matcher(text);
+            while (meta.find()) wrong.add("\"" + meta.group() + "\" speaks of the page, not the world");
         }
         return new Problems(List.copyOf(missing), List.copyOf(wrong));
     }

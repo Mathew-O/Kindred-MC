@@ -72,9 +72,12 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription(RescuePrompt.REASON) String reason) { }
 
     /** A page of the Chronicle as the model is constrained to write it (F-33). */
-    public record PageReply(
-            @JsonPropertyDescription(ChroniclePrompt.TEXT) String text,
-            @JsonPropertyDescription(ChroniclePrompt.CITES) List<Long> cites) { }
+    public record PageReply(@JsonPropertyDescription(ChroniclePrompt.SENTENCES) List<PageSentence> sentences) { }
+
+    /** One sentence of a page and the number of its line. */
+    public record PageSentence(
+            @JsonPropertyDescription(ChroniclePrompt.LINE) List<Long> lines,
+            @JsonPropertyDescription(ChroniclePrompt.SAY) String text) { }
 
     /** A follow-up for the player's queue (F-19e). */
     public record FollowUp(
@@ -349,7 +352,9 @@ public final class ClaudeStrategist implements Strategist {
             if (!stop.equalsIgnoreCase("end_turn")) return Page.failed("stopped: " + stop, in, cached, out, millis);
             Optional<PageReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
             if (reply.isEmpty()) return Page.failed("no reply text", in, cached, out, millis);
-            return new Page(Optional.ofNullable(reply.get().text()), reply.get().cites(), in, cached, out, millis, Optional.empty());
+            var said = reply.get().sentences() == null ? List.<PageSentence>of() : reply.get().sentences();
+            return ChroniclePrompt.page(said.stream().map(x -> x.lines() == null ? new long[0] : x.lines().stream().filter(java.util.Objects::nonNull).mapToLong(Long::longValue).toArray()).toList(), said.stream().map(PageSentence::text).toList(),
+                    in, cached, out, millis);
         } catch (RateLimitException limited) {
             return Page.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
         } catch (AnthropicServiceException service) {

@@ -80,6 +80,19 @@ class ChronicleTest {
             var bad = new Summary(Tier.PLAYER_DAY, WREN.toString(), 0, Chronicle.DAY, wrong, List.of(1L), true);
             assertEquals(1, Chronicle.check(bad, existing, facts).contradictions().size(), wrong + " " + Chronicle.check(bad, existing, facts));
         }
+        // A model's page may not order events itself, nor speak of its lines; the plain list is never held to it.
+        for (String wrong : List.of("Between the deaths, Wren traded.", "Earlier Wren had sold iron.", "The lines give no more of it.",
+                "Meanwhile oak took a chunk.", "This the chronicle has not confirmed.")) {
+            var bad = new Summary(Tier.PLAYER_DAY, WREN.toString(), 0, Chronicle.DAY, wrong, List.of(1L), true);
+            assertEquals(1, Chronicle.check(bad, existing, facts).contradictions().size(), wrong + " " + Chronicle.check(bad, existing, facts));
+        }
+        assertTrue(Chronicle.check(new Summary(Tier.PLAYER_DAY, "x", 0, Chronicle.DAY, "Wren fell. Later a Zombie came. Then Wren traded.",
+                List.of(1L), true), existing, facts).none());
+        // Other things done several times are not deaths.
+        assertTrue(Chronicle.check(new Summary(Tier.PLAYER_DAY, "x", 0, Chronicle.DAY, "Wren mined coal five times and ate bread twice. Wren died twice.",
+                List.of(1L), true), existing, facts).none());
+        assertEquals(1, Chronicle.check(new Summary(Tier.PLAYER_DAY, "x", 0, Chronicle.DAY, "Wren died five times.", List.of(1L), true), existing, facts)
+                .contradictions().size());
         // Something the ledgers do not hold is not contradicted.
         var other = new Summary(Tier.PLAYER_DAY, WREN.toString(), 0, Chronicle.DAY, "Ash died twice. Rook owns a boat. Bread at 2 coins.", List.of(1L), true);
         assertTrue(Chronicle.check(other, existing, facts).none());
