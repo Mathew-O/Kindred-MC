@@ -7,7 +7,8 @@ the market is the adaptive shop plus auctions, with no chest shops.
 
 ## The rulebook
 
-The owner's *Factions SMP, Complete Server Rules and Systems Specification* (the "spec") is the rulebook. It was
+The owner's *Factions SMP, Complete Server Rules and Systems Specification* (the "spec", kept in the repository as
+[factions-smp-spec.md](factions-smp-spec.md)) is the rulebook. It was
 written for a Paper plugin stack; Kindred cannot run on Paper and those plugins cannot run on Fabric, so this
 proposal maps its rules onto Kindred's own code. Where the spec names a plugin, read "the rule that plugin enforced".
 What the spec locks stays locked: power-based factions, −2 power per qualifying PvP death and +1 per online hour,
