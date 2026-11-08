@@ -3082,3 +3082,7 @@ After the block's first merge from main, CI on PR #25 found:
     scaffold block it could not reach, waiting.
   - Not reproduced locally: 4 of 4 before the fix and 4 of 4 after. The build classes and `NativeLifeFirstGameTests`
     passed 37 of 37.
+- PR #31 merged as `e0368f9`. Main's CI on it (run 42138874868) was red; F-22c21 to F-22c25, from the E-40 branches,
+  followed.
+- Main's CI green three runs running: `c451f94` (run 42414280759), `eb680aa` (42444314816) and `15e3ee9`
+  (42455260820). The block's definition of done is met.
