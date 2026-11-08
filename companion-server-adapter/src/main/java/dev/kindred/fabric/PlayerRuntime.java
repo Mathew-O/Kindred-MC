@@ -12897,6 +12897,12 @@ final class PlayerRuntime {
         entry.campaign.stuckTicksForTest(ticks);
     }
 
+    /** A player's goal, for fixtures (F-29b). */
+    PortalRunCampaign campaignForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.campaign;
+    }
+
     /** A player's rescues as its goal recorded them, for fixtures (F-29). */
     List<String> rescuesForFixtures(UUID id) {
         Entry entry = entries.get(id);

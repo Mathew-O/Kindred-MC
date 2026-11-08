@@ -25,6 +25,8 @@ METRICS = re.compile(r"^\s+(\S+): (\d+) tasks done, (\d+) blocked, (\d+) cut sho
                      r" walks in vain (\d+) \(([\d.]+) a minute\), at most (\d+) running")
 
 
+ASKED = re.compile(r"rescue asked: spell \d+, (\d+) ticks after its last progress")
+
 def cause_of(message):
     """A death's cause as a kind: the mob that did it, or what killed it."""
     text = message.lower()
@@ -166,12 +168,17 @@ def score(build_dir, use_metrics=True):
             for d in p["deaths"]:
                 causes[cause_of(d["cause"])] = causes.get(cause_of(d["cause"]), 0) + 1
             deaths = len(p["deaths"]) + p.get("deathsNotListed", 0)
-            rescues = p.get("rescues", [])
+            lines = p.get("rescues", [])
+            # Since F-29b an ask is a line of its own ("rescue asked: spell N, T ticks after its last progress"); a plan's
+            # line is every other.
+            asks = [int(ASKED.match(r["line"]).group(1)) for r in lines if ASKED.match(r["line"])]
+            rescues = [r for r in lines if not r["line"].startswith("rescue asked")]
             players[name] = {"furthest": STAGES[furthest] if furthest >= 0 else "none", "furthestIndex": furthest,
                              "minutesTo": {s: round(p["stages"][s] / 1200, 1) for s in reached},
                              "deaths": deaths, "deathsPerHour": round(deaths / hours, 2), "causes": causes,
                              "stuckSpells": len(p["stuck"]) + p.get("stuckNotListed", 0), "stuckMinutes": stuck_minutes(len(p["stuck"]) + p.get("stuckNotListed", 0)),
                              "rescues": len(rescues), "rescuesUnstuck": sum(1 for r in rescues if r["line"].endswith("-> unstuck")),
+                             "rescueAsks": len(asks), "askSeconds": [round(t / 20, 1) for t in asks],
                              "tokens": p.get("tokens", 0),
                              "metrics": metrics.get(str(log_of(folder)), {}).get(name)}
         chatter = chatter_of(log_of(folder))
@@ -187,6 +194,11 @@ def score(build_dir, use_metrics=True):
         "stuckMinutes": spread([round(sum(p["stuckMinutes"] for p in s["players"].values()), 1) for s in per_seed.values()]),
         "rescues": spread([sum(p["rescues"] for p in s["players"].values()) for s in per_seed.values()]),
         "rescuesUnstuck": spread([sum(p["rescuesUnstuck"] for p in s["players"].values()) for s in per_seed.values()]),
+        "rescueAsks": spread([sum(p.get("rescueAsks", 0) for p in s["players"].values()) for s in per_seed.values()]),
+        # Each seed's median game seconds from a spell's last progress to its ask, and every ask's, pooled.
+        "askSeconds": spread([statistics.median(a) if a else None
+                              for a in ([x for p in s["players"].values() for x in p.get("askSeconds", [])] for s in per_seed.values())]),
+        "askSecondsPooled": spread([x for s in per_seed.values() for p in s["players"].values() for x in p.get("askSeconds", [])]),
         "tokens": spread([sum(p["tokens"] for p in s["players"].values()) for s in per_seed.values()]),
         "linesPerMinute": spread([s["chatter"]["linesPerMinute"] for s in per_seed.values()]),
         "talkLines": spread([s["chatter"]["talkLines"] for s in per_seed.values()]),
@@ -241,6 +253,10 @@ def markdown(summary):
     lines.append("| Stuck spells, the team | %s |" % fmt(t["stuckSpells"]))
     lines.append("| Stuck game minutes, the team | %s |" % fmt(t["stuckMinutes"]))
     lines.append("| Rescue plans, the team (of them, out) | %s (%s) |" % (fmt(t["rescues"]), fmt(t["rescuesUnstuck"])))
+    if "rescueAsks" in t:
+        lines.append("| Rescues asked, the team | %s |" % fmt(t["rescueAsks"]))
+        lines.append("| Game seconds from a spell's last progress to its ask: each seed's median / every ask | %s / %s |"
+                     % (fmt(t["askSeconds"]), fmt(t["askSecondsPooled"])))
     lines.append("| Model tokens, the team | %s |" % fmt(t["tokens"]))
     if "linesPerMinute" in t:
         lines.append("| Lines spoken a game minute (between AI players, and said first to people) | %s |" % fmt(t["linesPerMinute"]))

@@ -344,19 +344,30 @@ says `atlas=off`).
 
 ### Rescue plans (F-29)
 
-With the strategist on, a player that is stuck and whose own move elsewhere has had its turn (its watchdog's second
-spell in a row of three minutes with no progress) asks the strategist for a way out. It asks once for each such spell,
-at most once every five minutes, within the same rates and daily budgets as advice. It sends a report of about 800
-tokens:
+With the strategist on, a player that has made no progress on its goal for a minute of game time (F-29b; before, its
+watchdog's second spell in a row of three minutes) asks the strategist for a way out. Time spent sheltering, waiting for
+daylight, resting or fighting is not counted. Its own move elsewhere is begun at the same moment, if none is under way,
+and the strategist is told of it; it stops while a plan runs. The watchdog's stuck spells are still counted at three
+minutes with no progress, whether or not a move begun early is under way, so stuck minutes mean what they meant. It asks
+once for each such spell, at most once every five minutes, within the same rates and daily budgets as advice. It sends a
+report of about a thousand tokens:
 
 - where it is, and its health and food;
-- the light at its feet;
-- the blocks round it, nine by nine and five high, each kind a letter;
+- the light at its feet, whether the sky is open over it, the time of day, and the hostile mobs it can see;
+- the blocks round it, nine by nine and five high, each kind a letter, as it sees them: a block its sight does not
+  reach from where it stands is `?`, whatever is there;
+- where it can walk each way and what stops it (a two-high wall, a step with no room to jump, a drop of so many, water,
+  lava, what it cannot see), how many blocks are clear over its head, and what is under its feet, all worked out from
+  those blocks alone and never from the route planner;
+- what its best pickaxe lets it break, and the blocks within reach it cannot;
+- what it can place: full blocks, torches, ladders, water buckets and boats; and what it carries;
 - the last five things refused or failed, with why;
-- what it carries;
 - what the goal wants next;
 - its stance and habits;
-- what its own tries did.
+- what its own tries are doing: its move elsewhere and which way, so the plan does not send it the same way.
+
+The log says `rescue asked: spell N, T ticks after its last progress` as it asks; the evaluation's summary gives each
+seed's median of T in game seconds.
 
 The reply is one to six steps, each in one of these forms and nothing else:
 

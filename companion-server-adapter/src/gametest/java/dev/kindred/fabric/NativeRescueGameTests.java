@@ -120,9 +120,15 @@ public final class NativeRescueGameTests implements FabricGameTest {
         context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
     }
 
+    /** The last rescue carried out or refused; since F-29b an ask is a line of its own among them, left out here. */
     private static String rescued(NativePaidSkillsGameTests.Fixture f) {
-        var lines = f.runtime.rescuesForFixtures(f.id);
+        var lines = f.runtime.rescuesForFixtures(f.id).stream().filter(line -> !line.startsWith("rescue asked")).toList();
         return lines.isEmpty() ? "" : lines.getLast();
+    }
+
+    /** The asks among its rescues' lines (F-29b). */
+    static List<String> asks(NativePaidSkillsGameTests.Fixture f) {
+        return f.runtime.rescuesForFixtures(f.id).stream().filter(line -> line.startsWith("rescue asked")).toList();
     }
 
     /**
@@ -179,6 +185,74 @@ public final class NativeRescueGameTests implements FabricGameTest {
                     }
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * F-29b: in the pit with the watchdog's spell as it is in play (three minutes), it asks for a way out within a minute
+     * of game time of its last progress, its own move elsewhere begun and under way as it asks, and no watchdog spell
+     * counted yet. The report says where it can walk (every way a two-high wall of obsidian, six clear over its head), that
+     * it cannot break the obsidian, and that its own move is under way. The stub's plan then gets it out.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rescueMinute", tickLimit = 4000)
+    public void inThePitItAsksWithinAMinuteItsOwnMoveUnderWayAndTheReportSaysWhereItCanWalk(TestContext context) {
+        var ledger = new Ledger();
+        var f = new NativePaidSkillsGameTests.Fixture(context, ledger.watch(), true);
+        var stub = new Stub(OUT, false);
+        BlockPos[] base = new BlockPos[1];
+        long[] begun = {0}, asked = {0};
+        boolean[] moving = {false};
+        int[] spells = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Minute"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> pit(context, f, stub, base))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(base[0]), "In the pit"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    begun[0] = context.getWorld().getServer().getTicks();
+                })
+                .createAndAdd(() -> {
+                    var campaign = f.runtime.campaignForFixtures(f.id);
+                    if (asked[0] == 0 && !stub.reports.isEmpty()) {
+                        asked[0] = context.getWorld().getServer().getTicks();
+                        moving[0] = campaign != null && campaign.relocatingEarlyForTest();
+                        spells[0] = campaign == null ? -1 : campaign.stuckSpells();
+                    }
+                    context.assertTrue(asked[0] != 0, "Asked for a way out");
+                })
+                .createAndAdd(() -> context.assertTrue(rescued(f).endsWith("-> unstuck") || rescued(f).contains("-> failed") || rescued(f).contains("-> refused"),
+                        "A rescue carried out"))
+                .createAndAdd(() -> {
+                    String report = stub.reports.getFirst();
+                    var lines = asks(f);
+                    KindredMod.LOGGER.info("Rescue minute: asked {} ticks after the goal began, {}; its move under way {}, spells {}; report {} characters:\n{}",
+                            asked[0] - begun[0], lines, moving[0], spells[0], report.length(), report);
+                    context.assertTrue(stub.reports.size() == 1, "Asked once: " + stub.reports.size());
+                    context.assertTrue(lines.size() == 1, "One ask: " + lines);
+                    var m = java.util.regex.Pattern.compile("rescue asked: spell \\d+, (\\d+) ticks after its last progress").matcher(lines.getFirst());
+                    context.assertTrue(m.matches(), "The ask's line: " + lines.getFirst());
+                    long after = Long.parseLong(m.group(1));
+                    // A minute with no progress, and the next of the goal's looks: the bridge asks in the look that opens the spell.
+                    context.assertTrue(after >= PortalRunCampaign.RESCUE_AFTER_TICKS && after <= PortalRunCampaign.RESCUE_AFTER_TICKS + 40,
+                            "Asked a minute after its last progress: " + after);
+                    context.assertTrue(asked[0] - begun[0] <= PortalRunCampaign.RESCUE_AFTER_TICKS + 200, "Within a minute of its goal's start: " + (asked[0] - begun[0]));
+                    context.assertTrue(moving[0], "Its own move elsewhere under way as it asked");
+                    context.assertTrue(spells[0] == 0, "No watchdog spell counted at a minute: " + spells[0]);
+                    for (String way : List.of("north", "south", "east", "west")) {
+                        context.assertTrue(report.contains("- " + way + ": not a block, then a two-high wall of obsidian"), "The way " + way + ": " + report);
+                    }
+                    context.assertTrue(report.contains("- up: 6 blocks clear over its head"), "Up: " + report);
+                    context.assertTrue(report.contains("within reach it cannot break obsidian"), "The block it cannot break: " + report);
+                    context.assertTrue(report.contains("obsidian (cannot break)"), "The key marks it: " + report);
+                    context.assertTrue(report.contains("its own move elsewhere is under way toward"), "Its own move told: " + report);
+                    context.assertTrue(report.contains("8 full blocks"), "What it can place: " + report);
+                    context.assertTrue(rescued(f).equals("rescue: pillar 3, walk north 2 -> unstuck"), "Out: " + rescued(f));
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

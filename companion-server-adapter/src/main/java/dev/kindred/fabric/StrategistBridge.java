@@ -365,6 +365,7 @@ final class StrategistBridge implements AutoCloseable {
             store.save(id, state.context);
         }
         if (lessons) learn(id, name, state, campaign, player, server, fresh);
+        campaign.rescueOn(strategist != null && rescue && rescueHost != null);
         if (strategist != null && rescue && rescueHost != null) rescue(id, name, state, campaign, player, server);
         if (strategist == null || state.inFlight || !advice) return;
         long now = System.currentTimeMillis();
@@ -499,7 +500,7 @@ final class StrategistBridge implements AutoCloseable {
     }
 
     /**
-     * A way out asked for (F-29): once for each stuck spell whose move elsewhere has had its turn, five minutes apart at
+     * A way out asked for (F-29): once for each stuck spell, a minute with no progress (F-29b), five minutes apart at
      * the least, within the same rates and budgets as advice. The reply is parsed and bounded in core, then checked by
      * {@link dev.kindred.core.ProposalGate} against the skills installed and the player's fence; a plan that passes goes
      * to the goal, which carries it out a step at a time as ordinary tasks. Before it runs, the scene is captured as a

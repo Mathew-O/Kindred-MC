@@ -13,10 +13,12 @@ final class RescuePrompt {
     private RescuePrompt() { }
 
     static final String SYSTEM = """
-            You help a player in Minecraft (Java Edition 1.21.1) that is stuck. Its own ways of getting moving have run \
-            for minutes and failed. You are given the blocks around it, what it carries, what it was doing and what it \
-            tried. Reply with a short plan that gets it out: one to six steps, each written exactly in one of these \
-            forms and nothing else:
+            You help a player in Minecraft (Java Edition 1.21.1) that is stuck: it has made no progress on its goal for \
+            about a minute. You are given the blocks around it as it sees them (what it cannot see is marked unknown), \
+            how far it can walk each way and what stops it, what it can break and place, what it carries, what it was \
+            doing and what its own tries are doing; its own move elsewhere, if under way, stops while your plan runs, \
+            so do not send it the same way. Reply with a short plan that gets it out: one to six steps, each written \
+            exactly in one of these forms and nothing else:
             """ + RescuePlan.VOCABULARY + """
 
             north is -z, south +z, east +x, west -x. Each step starts where the one before left it. "walk" goes on foot \
