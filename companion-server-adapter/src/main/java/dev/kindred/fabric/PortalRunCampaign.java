@@ -2960,6 +2960,21 @@ final class PortalRunCampaign {
      */
     private static final float HAND_HARDNESS = 3.5f;
 
+    /**
+     * A block with nothing to collide with that a walk will not go through, a cobweb, a bush or powder snow, when nothing
+     * it carries cuts it faster: by hand, as a player with no sword clears a cobweb from its way (F-25c4cm). A pickaxe
+     * is no faster at it than a hand.
+     */
+    private boolean snareClearable(NativePlayerBody body, BlockPos pos) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockState state = world.getBlockState(pos);
+        if (!state.getCollisionShape(world, pos).isEmpty() || !state.getFluidState().isEmpty() || state.isIn(BlockTags.FIRE)
+                || state.getHardness(world, pos) < 0 || new NativeNavigator(world).passable(pos)) return false;
+        if (eyeDistance(player, pos) > REACH || !body.miningEligible(pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null;
+    }
+
     /** Rock a player with no pickaxe at all can still punch through: no drop, but a way out. */
     private boolean handClearable(NativePlayerBody body, BlockPos pos) {
         var player = body.entity();
@@ -3628,13 +3643,17 @@ final class PortalRunCampaign {
         boolean headRoomRefused = false;
         // The ways whose step up was refused for a liquid beside the landing, not for the block over its head (F-25c4bf).
         var besideWater = new java.util.ArrayList<Direction>();
+        // A cell with nothing in it to collide with is room to climb through only if a walk will go through it too: a
+        // cobweb is not. In E-40's iteration 14 (`e40a14-80b7150`) on 8675309 Sol, in a mineshaft's corridor with a cobweb
+        // over its head, had every step up refused for "no walkable route", and walked "to the wall" 1,141 times (F-25c4cm).
+        var walk = new NativeNavigator(world);
         for (int turn = 0; turn < 4; turn++) {
             BlockPos step = feet.offset(digDirection);
             BlockPos landing = step.up();
             // Nothing to climb onto this way, or a landing it already failed to reach (live run 49 tried one 232 times).
             boolean refused = passable(world, step) || blocked(landing);
             for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
-                if (refused || passable(world, cell)) continue;
+                if (refused || passable(world, cell) && walk.passable(cell)) continue;
                 if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) {
                     // Over the sand or gravel resting on it, if any: a lake's bed over the ceiling (F-25c4bg).
                     waterOver |= world.getFluidState(columnTop(world, cell)).isIn(FluidTags.WATER);
@@ -3655,6 +3674,7 @@ final class PortalRunCampaign {
                 // Its last pickaxe gone below ground: punch the way up, slowly, as a player would (live run 57 broke
                 // its last one climbing out and stood at Y 54 for good).
                 if (handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
+                if (snareClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
                 refused = true;
             }
             // The block over its head once up there, sand or gravel resting on it, dug from here first: what rests on it
