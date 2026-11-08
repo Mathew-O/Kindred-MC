@@ -92,6 +92,11 @@ public final class Chronicle {
         public Visibility visibility() { return tier.visibility(); }
     }
 
+    /** A model's page as a summary to check: empty when it wrote nothing. */
+    public static Optional<Summary> fromModel(Tier tier, String scope, long from, Optional<String> text, List<Long> cites) {
+        return text.filter(t -> !t.isBlank()).map(t -> new Summary(tier, scope, from, from + tier.span, t, cites, true));
+    }
+
     /**
      * The plain list of a span's events by kind, the most frequent first: "3 deaths: a Zombie; a fall; lava [4, 9, 12].
      * 1 trade: 4 iron for bread [7]." At most three examples a kind, every event cited.
