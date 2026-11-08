@@ -16,6 +16,33 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 14 (`e40a14-80b7150`, batch 16) — 8 November 2026 (`claude/e40-ladder-18-1108`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `80b7150` (batch 16 with F-25c4ch and F-25c4ci, before
+  batches 17 and 18). Restarts of the machine stopped it twice; the seeds not finished were run again from their start
+  into the same folder.
+  - The iron pickaxe on 10 of 10, all within the first hour (median 18.95 min, the last at 47.3).
+  - A portal lit on 7 of 10 (iteration 13: 4); obsidian on 8 of 10; stuck time under a tenth on 3 of 10 (iteration 13: 2).
+  - Deaths 1.25 a game hour [0 to 3.5] (28, against 26). Stuck spells 4.5 [0 to 19] (55, against 111).
+  - Against iteration 13 and the starting build every range overlaps: no difference worth noting.
+  - [Summary](evidence/eval/e40a14-80b7150/summary.md), [deaths](evidence/eval/e40a14-80b7150/deaths.md),
+    [against iteration 13](evidence/eval/compare-e40a14.md), [against the start](evidence/eval/compare-e40a14-base.md),
+    [E-40](evidence/E-40.md).
+
+## PR #37's builds (batch 17, `b43b7de`) — 8 November 2026
+
+Each pull-request build failed one native fixture, 586 of 587, a different one in each; main's build on `15e3ee9` was
+green. Neither fixture is in code the batch changes.
+- `NativeBunkerGameTests.itDigsOutlinesAndFurnishesItsHideoutUnderTheGround` (run 42455310230): "0/345 placed - In the
+  way of the build", still mining at 39,498 ticks. Construction code; the same fixture failed so, 197 of 345, on run
+  41803604600.
+- `NativePortalCampaignGameTests.withNoPickaxeUnderSandstoneAndSandItDigsTheSandDownAheadOfEachStepAndClimbsOut` (run
+  42455286799): "Not out". From the job's log its climb waited "let what falls settle" at 1, 4, -3 from its start to the
+  end of the test: one of the climb's two waits for a block on its way down (F-25c4ao), which have no bound, held it. Alone
+  on `b43b7de` it passed 3 of 3. A staged block that never lands (gravity off, its fall's clock held back) in the cells a
+  block up on either side did not hold it (3 of 3 passed), so the wait's bound is not yet made: no fixture reproduces it.
+- Both jobs re-run once.
+
 ## E-40, batch 18: out from under a falling column, and the walk to a drop under one (F-25c4ck, F-25c4cl) — 8 November 2026 (`claude/e40-ladder-18-1108`)
 
 - **The fixture** (F-25c4ck, [evidence](evidence/F-25c4ck.md)): `NativeFallingColumnGameTests.buriedUnderAColumnOfGravelItStepsOutFromUnderIt`,
