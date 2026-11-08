@@ -128,7 +128,7 @@ final class NativePlayerSkills {
             case "native_toss" -> new SkillDescriptor(id, Set.of("slot", "count", "target"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
-                    "hold", "leg", "safe"), Set.of("move"), Set.of(),
+                    "hold", "leg", "safe", "fall"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
             case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot", "over_lava"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
@@ -206,6 +206,7 @@ final class NativePlayerSkills {
             if (arguments.containsKey("hold")) go.holding(Integer.parseInt(arguments.get("hold")));
             if (habits != null && habits.shun() != null) go.shunning(habits.shun());
             if (arguments.containsKey("leg")) go.leg(Integer.parseInt(arguments.get("leg")));
+            if (arguments.containsKey("fall")) go.fallingAtMost(Integer.parseInt(arguments.get("fall")));
             if (Boolean.parseBoolean(arguments.getOrDefault("safe", "false"))) go.safely();
             return Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
         }

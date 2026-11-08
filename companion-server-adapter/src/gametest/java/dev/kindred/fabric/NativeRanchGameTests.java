@@ -120,6 +120,91 @@ public final class NativeRanchGameTests implements FabricGameTest {
     }
 
     /**
+     * One of the pair stands down in a sunken patch three deep past the pen, in sight, with no way up a cow or a player
+     * can walk (the wheat fixture: a cow past the field's edge, the player down after it and there for good). It does not
+     * go down after it: it pens the one it can bring and leaves, the other given up, the gate shut behind; its wheat kept,
+     * there being no pair to breed. Staged: the field walled in as above, the patch dug in it, one cow put in it.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "ranchSunken", tickLimit = 4000)
+    public void oneOfThePairDownWhereNoneCanWalkUpIsNotFollowedDown(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3800);
+        UUID[] id = new UUID[1], player = new UUID[1], cows = new UUID[2];
+        int[] lowest = {Integer.MAX_VALUE};
+        BlockPos o = context.getAbsolutePos(new BlockPos(4, 0, 4));
+        BlockPos pen = o.add(4, 2, 2);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    forceChunks(world, o, true);
+                    FixtureGround.keep(context, o.add(-4, -3, -4), o.add(34, 12, 24));
+                    for (int x = -4; x <= 34; x++) for (int z = -4; z <= 24; z++) {
+                        boolean edge = x == -4 || x == 34 || z == -4 || z == 24;
+                        for (int y = -3; y <= 0; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        world.setBlockState(o.add(x, 1, z), Blocks.GRASS_BLOCK.getDefaultState());
+                        for (int y = 2; y <= 12; y++) {
+                            world.setBlockState(o.add(x, y, z), edge && y <= 3 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    // The sunken patch, three below the field, its sides sheer.
+                    for (int x = 25; x <= 32; x++) for (int z = 6; z <= 16; z++) {
+                        world.setBlockState(o.add(x, -2, z), Blocks.GRASS_BLOCK.getDefaultState());
+                        for (int y = -1; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    f.runtime.createNative(f.source, "Wren");
+                })
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Wren established");
+                    id[0] = statuses.getFirst().id();
+                    player[0] = statuses.getFirst().nativeId();
+                })
+                .createAndAdd(() -> {
+                    var wren = player(f, player[0]);
+                    wren.refreshPositionAndAngles(o.getX() + 7.5, o.getY() + 2, o.getZ() + 14.5, 0, 0);
+                    wren.getInventory().clear();
+                    wren.getInventory().insertStack(new ItemStack(Items.OAK_LOG, 14));
+                    wren.getInventory().insertStack(new ItemStack(Items.WHEAT, 8));
+                    // Daisy on the field south of the pen, well west of the patch, so that she does not wander into it as
+                    // she grazes (once in five runs, nearer it, she did); Bess down in the patch.
+                    cows[0] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 10, 2, 4 + 18)).getUuid();
+                    cows[1] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 29, -1, 4 + 11)).getUuid();
+                    context.assertTrue(f.runtime.startRanch(f.source, id[0], pen, Ranch.Kind.COW) == 1, "Ranch started");
+                })
+                .createAndAdd(() -> {
+                    var wren = player(f, player[0]);
+                    if (wren != null) lowest[0] = Math.min(lowest[0], wren.getBlockY());
+                    context.assertTrue(lowest[0] >= o.getY() + 2, "Never down off the field: " + (lowest[0] - o.getY() - 2) + " below it, at "
+                            + (wren == null ? "-" : wren.getBlockPos().subtract(pen).toShortString()) + " from the pen's post");
+                    var status = f.runtime.ranchStatus(id[0]);
+                    context.assertTrue(status.isEmpty(), "Ranch done: " + status.orElse("") + "; " + f.runtime.buildStatus(id[0]).orElse(""));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var wren = player(f, player[0]);
+                    var gateState = world.getBlockState(pen.add(3, 0, 6));
+                    context.assertTrue(gateState.isOf(Blocks.OAK_FENCE_GATE) && !gateState.get(FenceGateBlock.OPEN), "The gate shut: " + gateState);
+                    context.assertTrue(!inside(pen, wren.getBlockPos()) && wren.getBlockY() >= o.getY() + 2, "Wren out of the pen, on the field: "
+                            + wren.getBlockPos().subtract(pen).toShortString());
+                    var penned = world.getEntitiesByClass(CowEntity.class, new Box(pen).expand(8), c -> inside(pen, c.getBlockPos()));
+                    var where = new StringBuilder();
+                    for (var cow : world.getEntitiesByClass(CowEntity.class, new Box(pen).expand(40), c -> true)) {
+                        where.append(cow.getUuid().equals(cows[0]) ? "Daisy " : cow.getUuid().equals(cows[1]) ? "Bess " : "other ")
+                                .append(cow.getBlockPos().subtract(pen).toShortString()).append("; ");
+                    }
+                    KindredMod.LOGGER.info("Ranch, one sunken: {} penned; cows from the pen's post: {}", penned.size(), where);
+                    context.assertTrue(penned.size() == 1 && penned.getFirst().getUuid().equals(cows[0]), "Daisy penned alone: " + where);
+                    context.assertTrue(wren.getInventory().count(Items.WHEAT) == 8, "No pair to breed, its wheat kept: " + wren.getInventory().count(Items.WHEAT));
+                    forceChunks(world, o, false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Pressed against the pen's fence, a player's middle can be in the fence's block, clear of its post: in the pen from
      * inside, out of it from outside, and the same at the gate shut. Read by that block alone, a player its cows had pushed
      * against the fence from inside was out of the pen, and the ranch was done with it shut in (the cattle fixture, once in
