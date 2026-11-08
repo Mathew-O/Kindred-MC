@@ -16,6 +16,39 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 15 (`e40a15-dbf4e5c`, batches 17 to 20) — 8 November 2026 (`claude/e40-iter15-1108`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `dbf4e5c`. `python3 tools/eval/run.py --ref dbf4e5c
+  --name e40a15-dbf4e5c --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 2
+  --keep-world`; `score.py`; `compare.py` against `e40a14-80b7150` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 10 of 10 (iteration 14: 8); a portal lit on 7 of 10 (7);
+    stuck time under a tenth on 2 of 10 (3).
+  - Deaths 1.0 a game hour [0 to 3] (21, against 28). Stuck spells 8.5 [2 to 37] (114, against 55); stuck minutes 25.5
+    [6 to 111] (13.5 [0 to 57]).
+  - Every range overlaps both: no difference worth noting.
+  - [Summary](evidence/eval/e40a15-dbf4e5c/summary.md), [deaths](evidence/eval/e40a15-dbf4e5c/deaths.md),
+    [against iteration 14](evidence/eval/compare-e40a15.md), [against the start](evidence/eval/compare-e40a15-base.md),
+    [E-40](evidence/E-40.md).
+
+## F-29b, F-29c and F-29d (`cd56501`) — 8 November 2026 (`claude/improvising-1108`)
+
+- **Built:**
+  - F-29b: a rescue asked after a minute with no progress, from a report of what the player sees.
+  - F-29c: up to three rounds, the `look` probe, and the local executors.
+  - F-29d: recipes.
+- **JUnit:** `./gradlew build`, 982 tests, 0 failed, 6 skipped.
+- **Each rescue class alone, three runs:**
+  - `NativeRescueGameTests` 9 of 9 each time;
+  - `NativeRescueRoundsGameTests` 9 of 9 each time (new);
+  - `NativeRescueRecipesGameTests` 2 of 2 each time (new);
+  - `ReplayGameTests` 7 of 7 (one run).
+- **The full native suite on `cd56501`, nothing else on the cores:** 601 of 602 in 49.1 minutes.
+  - The one failure: `NativeRanchGameTests.anAiPlayerPensAPairOfCowsWithItsOwnWoodAndBreedsThem`, the ranch's pen. It is
+    on the open list: the suite before F-25c4y, further down this page, failed it too, with the ranch's pen and the
+    pasture's doorway pair called "both known". Run alone right after, the class passed 2 of 2.
+- **Evaluations:** none yet. The rescue-off arms (20 seeds at two hours, 10 at four) run in this container. The rescue-on
+  arms run in the lead's, which has the model key ([F-29e](evidence/F-29e.md)).
+
 ## E-40, iteration 14 (`e40a14-80b7150`, batch 16) — 8 November 2026 (`claude/e40-ladder-18-1108`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `80b7150` (batch 16 with F-25c4ch and F-25c4ci, before
@@ -58,6 +91,20 @@ jobs were re-run once.
     passed all 587 native fixtures. The bunker and life-first classes passed 8 of 8 alone on `e411089`.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
+
+## E-40, batch 20: a frame half cast is kept (F-25c4cn) — 8 November 2026 (`claude/e40-ladder-20-1108`)
+
+- **The fixture** (F-25c4cn, [evidence](evidence/F-25c4cn.md)): `NativeHalfCastFrameGameTests.aFrameHalfCastIsNotGivenUpForACornerOutOfSightFromItsStand`,
+  staged as it says (six of the frame's ten cast, stone in a top corner, the stand under rock at a tunnel's end). On
+  `06e32e6`, without the fix: fails 3 of 3, each giving the frame up ("cannot open" the corner's stone), as Echo did on
+  31102026 in iteration 14. With it: passes 3 of 3, "Cast: over to" the corner, cleared, the side cell cast after 40 to
+  41 ticks. A first staging without the iron and flint for its flint and steel did not reproduce (the goal mined an iron
+  first) and is not kept.
+- **The classes that cast, light and build frames** (`NativeHalfCastFrameGameTests`, `NativePortalCampaignGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`, `NativeCornersInHandGameTests`,
+  `NativeTeamPortalGameTests`, `NativeCobwebHeadRoomGameTests`, `NativeTripDownGameTests`, `ReplayGameTests`): with the
+  fix, 119 of 119.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
 
 ## E-40, batch 19: a cobweb in the climb's way (F-25c4cm) — 8 November 2026 (`claude/e40-ladder-19-1108`)
 
@@ -456,6 +503,26 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01a: the ranch fixtures' intermittent failures root-caused, 2026-11-08
+
+Branch `claude/modes-1108-13`. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchTest` (the behind-the-pen test new, failing before).
+- Native: `NativeRanchGameTests` with `NativeOwnRanchGameTests` alone. Before, on `165066c`: 4 of 8 runs failed. After, on `5c4acc7`: 3 runs, 8 of 8 each.
+
+## M-01a: more than a pair per pen; no drop it cannot climb back, 2026-11-08
+
+Branch `claude/modes-1108-10`. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchChoiceTest` 6 of 6, `RanchTest` (the refused-walk test new).
+- Native: `NativeRanchGameTests`, `NativeOwnRanchGameTests` and `NativeCompoundGameTests` alone, 3 runs on `faec0c5`, 14 of 14 each. Controls: breed-again off, 0 of 3; cap and refusal off, 0 of 3.
+
+## M-01a: a pen per kind, 2026-11-08
+
+Branch `claude/modes-1108-9`, from M-01a's wheat branch. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchChoiceTest` 5 of 5, the kept-kinds test not compiling before.
+- Native: `NativeOwnRanchGameTests` alone, three runs on `a60daed`, 4 of 4 each.
+  - Control (the kinds it keeps not passed to the choice): fails 3 of 3, a second cow pen begun.
+  - On the way: the first fixture's cow pen was out of sight and its control passed; moved into sight. In one control run the wheat fixture timed out with its cows being led in (not touched by the control; root-caused in the next slice: a cow past the field's edge, the player down after it).
 
 ## M-01a: wheat grown for cows and sheep, 2026-11-08
 
