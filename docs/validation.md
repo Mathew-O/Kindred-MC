@@ -16,6 +16,24 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, batch 17: the trip's sticks sized to its digging (F-25c4cj) — 8 November 2026 (`claude/e40-ladder-17-1108`)
+
+- **The planner** (F-25c4cj, [evidence](evidence/F-25c4cj.md)): `PortalRunPlannerTest.theTripsSticksCoverTheStonePickaxesItsDiggingWearsOut`
+  fails before the change (18 sticks for 18 stone pickaxes' 36) and passes after; with the torches' share and threshold
+  it also states the stick for torches each 310 blocks and that torches are made from sticks over the pickaxes' and four
+  spare pairs. Five planner tests whose scenarios were stocked to the old reserve now stock to the reserve as the plan
+  works it out. `PortalRunPlannerTest` 44 of 44; `companion-core` 787 of 787.
+- **Torches** (F-25c4cj): with the larger reserve as the torches' threshold, the native classes below passed 121 of 122:
+  `NativePortalCampaignGameTests.goalExploresACaveAndMinesIronItCouldNotSeeAtFirst` failed, "It lit the dark passage
+  with its own torch", its player staged with the old reserve's sticks and one for a torch. Torches are now made from
+  sticks over the pickaxes still to make and four spare pairs (`sticksKeptFromTorches`), and the reserve packs a stick for
+  them each 310 blocks of digging.
+- **The native classes that pack for the trip** (`NativePortalCampaignGameTests`, `NativeTripDownGameTests`,
+  `NativeBranchMineGameTests`, `NativeTeamPortalGameTests`, `NativeToldTreesGameTests`, `NativeTreeSightGameTests`,
+  `NativeCraftGameTests`, `NativeCornersInHandGameTests`): 122 of 122 with the torches' threshold and share (121 of 122 before them, above).
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (companion-core 787, companion-model 49 with
+  the 6 skipped, companion-persistence 50, companion-scheduler 62, companion-sim 3, companion-testkit 9).
+
 ## PR #36's pull-request build: the loaded cart met where it rolled back (F-22c25) — 8 November 2026 (`claude/e40-ladder-16-1107`)
 
 PR #36's pull-request build on `abc4fbf` (run 42444424547) failed one native fixture, 585 of 586:
