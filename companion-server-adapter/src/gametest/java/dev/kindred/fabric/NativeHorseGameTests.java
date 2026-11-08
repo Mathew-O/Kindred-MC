@@ -113,10 +113,16 @@ public final class NativeHorseGameTests implements FabricGameTest {
                         }
                     }
                     context.assertTrue(player.getVehicle() == tame, "On its own horse");
+                    lastAsk[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    // A second on, the mount done with: off across the field.
+                    var tame = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    context.assertTrue(context.getTick() - lastAsk[0] >= 20, "A second on");
                     startX[0] = tame.getX();
                     lastAsk[0] = context.getTick();
-                    f.runtime.nativeTaskForFixtures(f.source, f.id, "native_ride", Map.of("op", "go", "x", String.valueOf(o.getX() + 38.5),
-                            "z", String.valueOf(o.getZ() + 10.5), "range", "2", "seconds", "30"));
+                    context.assertTrue(f.runtime.nativeTaskForFixtures(f.source, f.id, "native_ride", Map.of("op", "go", "x", String.valueOf(o.getX() + 38.5),
+                            "z", String.valueOf(o.getZ() + 10.5), "range", "2", "seconds", "30")) == 1, "The ride taken up");
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
