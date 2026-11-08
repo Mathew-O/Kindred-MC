@@ -1,5 +1,9 @@
 package dev.kindred.core.record;
 
+import dev.kindred.core.factions.FactionBook;
+import dev.kindred.core.factions.FactionLedger;
+import dev.kindred.core.factions.PowerBook;
+import dev.kindred.core.factions.PowerLedger;
 import dev.kindred.core.match.MatchRegistry;
 import java.util.List;
 import java.util.Map;
@@ -8,15 +12,17 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 /**
- * In plain terms: the exact facts the server keeps from the World Record, all together: matches, claimed land and
- * deaths, each always rebuildable from the Record alone.
+ * In plain terms: the exact facts the server keeps from the World Record, all together: matches, claimed land,
+ * deaths, factions and power, each always rebuildable from the Record alone.
  *
  * Technical: The set of ledgers the runtime keeps live (F-31). {@link #apply} folds one written event into each ledger
  * that reads its kind; {@link #replay} rebuilds all of them from the Record; {@link #check} is the agreement check. Later
  * slices (power, coins, the market) add their ledgers here.
  */
-public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, String> claims, Map<UUID, Integer> deaths) {
-    public static final Ledgers EMPTY = new Ledgers(MatchLedger.INSTANCE.empty(), ClaimLedger.INSTANCE.empty(), DeathLedger.INSTANCE.empty());
+public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, String> claims, Map<UUID, Integer> deaths, FactionBook factions,
+                      PowerBook power) {
+    public static final Ledgers EMPTY = new Ledgers(MatchLedger.INSTANCE.empty(), ClaimLedger.INSTANCE.empty(), DeathLedger.INSTANCE.empty(),
+            FactionLedger.INSTANCE.empty(), PowerLedger.INSTANCE.empty());
 
     /** Every kind any of these ledgers reads: what a restart reads back from the Record. */
     public static Set<String> kinds() {
@@ -24,6 +30,8 @@ public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, Strin
         kinds.addAll(MatchLedger.INSTANCE.kinds());
         kinds.addAll(ClaimLedger.INSTANCE.kinds());
         kinds.addAll(DeathLedger.INSTANCE.kinds());
+        kinds.addAll(FactionLedger.INSTANCE.kinds());
+        kinds.addAll(PowerLedger.INSTANCE.kinds());
         return kinds;
     }
 
@@ -31,7 +39,9 @@ public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, Strin
         var m = MatchLedger.INSTANCE.kinds().contains(event.kind()) ? MatchLedger.INSTANCE.apply(matches, event) : matches;
         var c = ClaimLedger.INSTANCE.kinds().contains(event.kind()) ? ClaimLedger.INSTANCE.apply(claims, event) : claims;
         var d = DeathLedger.INSTANCE.kinds().contains(event.kind()) ? DeathLedger.INSTANCE.apply(deaths, event) : deaths;
-        return m == matches && c == claims && d == deaths ? this : new Ledgers(m, c, d);
+        var f = FactionLedger.INSTANCE.kinds().contains(event.kind()) ? FactionLedger.INSTANCE.apply(factions, event) : factions;
+        var p = PowerLedger.INSTANCE.kinds().contains(event.kind()) ? PowerLedger.INSTANCE.apply(power, event) : power;
+        return m == matches && c == claims && d == deaths && f == factions && p == power ? this : new Ledgers(m, c, d, f, p);
     }
 
     public static Ledgers replay(Iterable<WorldEvent> events) {
@@ -43,7 +53,7 @@ public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, Strin
     /** The agreement check of each ledger against the Record. */
     public List<Ledger.Agreement<?>> check(List<WorldEvent> events) {
         return List.of(MatchLedger.INSTANCE.check(events, matches), ClaimLedger.INSTANCE.check(events, claims),
-                DeathLedger.INSTANCE.check(events, deaths));
+                DeathLedger.INSTANCE.check(events, deaths), FactionLedger.INSTANCE.check(events, factions), PowerLedger.INSTANCE.check(events, power));
     }
 
     /** Whether every ledger agrees with the Record. */

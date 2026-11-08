@@ -66,7 +66,10 @@ public final class KindredMod implements ModInitializer {
         KindredSkinPayloads.register();
         KindredSkins.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
-                PlayerCommands.register(dispatcher));
+{
+            PlayerCommands.register(dispatcher);
+            FactionCommands.register(dispatcher); // Factions mode (M-06c).
+        });
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, position, state, blockEntity) ->
                 NativePlayerBody.allowBreak(world, player, position, state));
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register((world, player, position, state, blockEntity) ->
