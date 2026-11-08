@@ -76,4 +76,18 @@ class RanchChoiceTest {
         assertTrue(none.kind().isEmpty() && none.earn().isEmpty(), "only cows about, and cows are kept: nothing");
         assertTrue(none.why().startsWith("No pair"), none.why());
     }
+
+    @Test
+    void aPenRunOnceIsBredAgainAfterTheWaitUpToAHerd() {
+        long wait = RanchChoice.AGAIN;
+        var again = RanchChoice.again(Ranch.Kind.COW, 2, 1, 4, wait);
+        assertTrue(again.breed(), again.why());
+        assertTrue(again.why().contains("cows"), again.why());
+        assertFalse(RanchChoice.again(Ranch.Kind.COW, 2, 1, 4, wait - 1).breed(), "not before the breeding wait");
+        assertFalse(RanchChoice.again(Ranch.Kind.COW, 2, 1, RanchChoice.FOOD - 1, wait).breed(), "not without the food for two");
+        assertFalse(RanchChoice.again(Ranch.Kind.COW, 1, 2, 4, wait).breed(), "not with fewer than two grown");
+        var herd = RanchChoice.again(Ranch.Kind.SHEEP, 4, RanchChoice.HERD - 4, 4, wait);
+        assertFalse(herd.breed(), "a herd is enough");
+        assertTrue(herd.why().contains("sheep") && !herd.why().contains("sheeps"), herd.why());
+    }
 }
