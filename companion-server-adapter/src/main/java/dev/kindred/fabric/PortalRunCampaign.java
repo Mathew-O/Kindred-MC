@@ -2771,10 +2771,11 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         int torch = slotOf(body, Items.TORCH);
         if (torch < 0) {
-            // Fuel for smelting and the sticks kept for pickaxes still to make come first.
+            // Fuel for smelting and the sticks kept for pickaxes still to make, with four spare pairs, come first; not
+            // the whole trip's spares, which left its tunnels dark (F-25c4cj).
             int coal = ItemMoves.count(inventory, Items.COAL) + ItemMoves.count(inventory, Items.CHARCOAL);
             WorldFacts known = facts(player);
-            int keptSticks = PortalRunPlanner.sticksReserved(snapshot, PortalRunPlanner.frameMethod(snapshot, known),
+            int keptSticks = PortalRunPlanner.sticksKeptFromTorches(snapshot, PortalRunPlanner.frameMethod(snapshot, known),
                     known.can(WorldFacts.Method.DIG_FOR_STONE));
             // About fifteen iron to smelt through the iron stage: two coal stay for the furnace until then.
             int keptCoal = stage.ordinal() <= PortalRunPlanner.Stage.IRON.ordinal() ? 2 : 0;
