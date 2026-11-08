@@ -247,6 +247,9 @@ public final class NativeNavigationGameTests implements FabricGameTest {
         BlockPos obsidian = context.getAbsolutePos(new BlockPos(5, 2, 3));
         long[] started = new long[1];
         long[] lastTick = new long[1];
+        // Ticks held to 50 ms, and whether a park found the server thread interrupted (it returns at once then).
+        long[] held = new long[1];
+        boolean[] interrupted = new boolean[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Slicer"))
@@ -262,7 +265,9 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     // No faster than a live server: each tick takes at least 50 ms of wall-clock time.
                     long wait = 50_000_000L - (System.nanoTime() - lastTick[0]);
+                    if (Thread.currentThread().isInterrupted()) interrupted[0] = true;
                     if (wait > 0) java.util.concurrent.locks.LockSupport.parkNanos(wait);
+                    held[0]++;
                     lastTick[0] = System.nanoTime();
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_break"),
@@ -270,7 +275,8 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     double seconds = (System.nanoTime() - started[0]) / 1e9;
-                    context.assertTrue(seconds > 6, "It ran past one five-second slice: " + seconds + " s");
+                    context.assertTrue(seconds > 6, "It ran past one five-second slice: " + seconds + " s over "
+                            + held[0] + " ticks held to 50 ms" + (interrupted[0] ? ", the server thread interrupted" : ""));
                     context.assertTrue(context.getWorld().getBlockState(obsidian).isAir(), "The obsidian was broken");
                     context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 1, "Its own obsidian was picked up");
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
