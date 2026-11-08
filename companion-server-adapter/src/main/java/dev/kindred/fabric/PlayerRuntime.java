@@ -509,7 +509,7 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
-        wire = new KindredWire(server, KindredWire.defaultWire(java.util.Set.of()), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
                 PlayerRuntime::now);
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
