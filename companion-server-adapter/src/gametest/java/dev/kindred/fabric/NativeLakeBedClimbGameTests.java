@@ -62,7 +62,9 @@ public final class NativeLakeBedClimbGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(6000);
                     var player = f.player();
-                    context.assertTrue(player != null && player.isAlive(), "The player died; " + seen);
+                    context.assertTrue(player != null && player.isAlive(), (player == null ? "No body" : "The player died ("
+                            + (player.getRecentDamageSource() == null ? "no damage source" : player.getRecentDamageSource().getName()) + " at "
+                            + player.getBlockPos().subtract(o).toShortString() + ")") + "; " + seen);
                     var bots = f.runtime.panelBots(Actor.console());
                     String progress = bots.isEmpty() ? "" : bots.getFirst().goalProgress();
                     if ((progress.endsWith(": step aside") || progress.endsWith(": to the wall")) && !progress.equals(last[0])) turns[0]++;
