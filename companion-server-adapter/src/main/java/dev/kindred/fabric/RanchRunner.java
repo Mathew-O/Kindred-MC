@@ -169,7 +169,7 @@ final class RanchRunner {
                     if (slot < 0) yield swapIn(player, false);
                     BlockPos feet = player.getBlockPos();
                     yield Optional.of(new PortalRunCampaign.Task("native_goto", Map.of("x", str(feet.getX()), "y", str(feet.getY()), "z", str(feet.getZ()),
-                            "range", "1.5", "hold", str(slot)), "Put the " + ranch.kind().noun() + "s' food away"));
+                            "range", "1.5", "hold", str(slot)), "Put the food for the " + ranch.kind().plural() + " away"));
                 }
                 yield Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), wait.why()));
             }

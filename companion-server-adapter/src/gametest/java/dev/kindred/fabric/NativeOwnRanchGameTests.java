@@ -329,6 +329,113 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * A pen per kind (M-01a): its cow ranch already run, the cows penned, and a pair of sheep in sight. It does not keep
+     * cows twice: it sites a second pen by its cabin, clear of the first, builds it from its own wood and keeps the sheep,
+     * bred with its wheat. Staged as the cow fixture is, and its cow pen laid down and recorded as run, its cows in it.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchPens", tickLimit = 9000)
+    public void withItsCowsPennedItKeepsAPairOfSheepInAPenOfTheirOwn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
+        BlockPos home = o.add(16, 7, 16);
+        BlockPos cabinAt = home.add(-3, 0, -3);
+        BlockPos cowPen = o.add(22, 7, 27);
+        java.util.UUID[] sheep = new java.util.UUID[2];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Shepherd"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    world.setTimeOfDay(1000);
+                    // Staged: its cabin standing, block for block on the first plan in oak.
+                    var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
+                        try {
+                            world.setBlockState(BuildRunner.blockPos(b.at()),
+                                    BlockArgumentParser.block(Registries.BLOCK.getReadOnlyWrapper(), b.spec().toString(), false).blockState());
+                        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    }
+                    // Staged: its cow pen, seven by seven with the gate shut on its south side, and two cows in it.
+                    for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) {
+                        if (x != 0 && x != 6 && z != 0 && z != 6) continue;
+                        world.setBlockState(cowPen.add(x, 0, z), x == 3 && z == 6 ? Blocks.OAK_FENCE_GATE.getDefaultState() : Blocks.OAK_FENCE.getDefaultState());
+                    }
+                    BlockPos inPen = cowPen.add(2, 0, 2).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
+                    context.spawnEntity(EntityType.COW, inPen);
+                    context.spawnEntity(EntityType.COW, inPen.add(2, 0, 2));
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    ItemStack[] held = {new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_LOG, 14),
+                            new ItemStack(Items.WHEAT, 8), new ItemStack(Items.BREAD, 16)};
+                    for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = home.add(8, 0, 0);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    // Staged: a pair of sheep in sight, east of its cabin.
+                    BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
+                    sheep[0] = context.spawnEntity(EntityType.SHEEP, rel).getUuid();
+                    sheep[1] = context.spawnEntity(EntityType.SHEEP, rel.add(1, 0, 2)).getUuid();
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
+                        new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.stagePenForTest(f.id,
+                        new PlayerMemoryStore.Pen("minecraft:overworld", cowPen.getX(), cowPen.getY(), cowPen.getZ(), "COW", true)), "Its cow pen recorded as run"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
+                .createAndAdd(() -> {
+                    var pens = f.runtime.ownPens(f.id);
+                    context.assertTrue(pens.size() == 2 && f.runtime.ranchStatus(f.id).isPresent(),
+                            "A second pen begun: " + pens + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id));
+                    var second = pens.get(1);
+                    context.assertTrue(second.kind().equals("SHEEP"), "For the sheep, not cows twice: " + second);
+                    // Clear of the cow pen, and by its cabin.
+                    context.assertTrue(second.x() + 6 < cowPen.getX() || second.x() > cowPen.getX() + 6 || second.z() + 6 < cowPen.getZ() || second.z() > cowPen.getZ() + 6,
+                            "Clear of the cow pen: " + second);
+                    context.assertTrue(Math.abs(second.x() + 3 - (cabinAt.getX() + 3)) <= 24 && Math.abs(second.z() + 3 - (cabinAt.getZ() + 3)) <= 24, "By its cabin: " + second);
+                })
+                .createAndAdd(() -> {
+                    var pens = f.runtime.ownPens(f.id);
+                    context.assertTrue(pens.size() == 2 && pens.get(1).complete() && f.runtime.ranchStatus(f.id).isEmpty(),
+                            "Sheep ranch run: " + f.runtime.ranchStatus(f.id).orElse("") + " / " + pens);
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var pens = f.runtime.ownPens(f.id);
+                    var pen = pens.get(1);
+                    BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+                    int fences = 0;
+                    for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) {
+                        if (x != 0 && x != 6 && z != 0 && z != 6) continue;
+                        if (world.getBlockState(post.add(x, 0, z)).isOf(Blocks.OAK_FENCE)) fences++;
+                    }
+                    context.assertTrue(fences == 23 && world.getBlockState(post.add(3, 0, 6)).isOf(Blocks.OAK_FENCE_GATE), "Its sheep pen built: " + fences + " fences");
+                    var penned = world.getEntitiesByClass(net.minecraft.entity.passive.SheepEntity.class, new Box(post).expand(8),
+                            c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
+                    long adults = penned.stream().filter(c -> !c.isBaby()).count(), lambs = penned.stream().filter(c -> c.isBaby()).count();
+                    KindredMod.LOGGER.info("Own pens: {}; {} sheep and {} lambs penned", pens, adults, lambs);
+                    context.assertTrue(adults == 2 && lambs == 1, "The sheep penned and a lamb: " + adults + " and " + lambs);
+                    context.assertTrue(pens.get(0).kind().equals("COW") && pens.get(0).complete(), "Its cow pen as it was: " + pens.get(0));
+                    long cows = world.getEntitiesByClass(CowEntity.class, new Box(cowPen).expand(8), c -> c.getBlockX() > cowPen.getX()
+                            && c.getBlockX() < cowPen.getX() + 6 && c.getBlockZ() > cowPen.getZ() && c.getBlockZ() < cowPen.getZ() + 6).size();
+                    context.assertTrue(cows == 2, "Its cows still penned: " + cows);
+                    context.assertTrue(held(f, Items.WHEAT) == 6, "Two wheat fed: " + held(f, Items.WHEAT));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     private static String tablesAbout(net.minecraft.server.world.ServerWorld world, BlockPos feet) {
         var found = new StringBuilder();
         for (BlockPos pos : BlockPos.iterate(feet.add(-8, -3, -8), feet.add(8, 3, 8))) {

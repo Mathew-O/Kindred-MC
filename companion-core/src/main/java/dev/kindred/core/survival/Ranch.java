@@ -37,6 +37,9 @@ public final class Ranch {
 
         public String noun() { return name().toLowerCase(java.util.Locale.ROOT); }
 
+        /** Its plural, as said: cows, sheep, pigs, chickens. */
+        public String plural() { return this == SHEEP ? noun() : noun() + "s"; }
+
         public static Optional<Kind> of(String entity) {
             for (Kind kind : values()) if (kind.entity.equals(entity)) return Optional.of(kind);
             return Optional.empty();
@@ -193,9 +196,9 @@ public final class Ranch {
     public String phase() {
         return switch (phase) {
             case BUILD -> "building the pen";
-            case FETCH -> "leading " + kind.noun() + "s into the pen";
+            case FETCH -> "leading " + kind.plural() + " into the pen";
             case SHUT -> "shutting the gate";
-            case BREED -> "breeding the " + kind.noun() + "s";
+            case BREED -> "breeding the " + kind.plural();
             case LEAVE -> "leaving the pen";
             case RETURN -> "bringing a " + kind.noun() + " back into the pen";
             case DONE -> outcome;
@@ -252,7 +255,7 @@ public final class Ranch {
                 return go(inner().add(0, 0, -1), 1, false, 0, "Into the pen");
             }
             // Food put away first, so the animals stop following it to the gate.
-            if (seen.gateOpen()) return gate(seen, false, inner(), false, "Shut the " + kind.noun() + "s in");
+            if (seen.gateOpen()) return gate(seen, false, inner(), false, "Shut the " + kind.plural() + " in");
             seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
             // Brought back in after breeding: out again, the gate shut behind.
             if (bred) return leave(seen, outcome);
@@ -295,7 +298,7 @@ public final class Ranch {
                 return new Step.Wait(false, "Wait for the young " + kind.noun());
             }
             if (inLove.size() + ready.size() < 2) {
-                return leave(seen, "The " + kind.noun() + "s are not ready to breed again yet (" + adultsIn.size() + " in the pen, "
+                return leave(seen, "The " + kind.plural() + " are not ready to breed again yet (" + adultsIn.size() + " in the pen, "
                         + ready.size() + " ready, " + inLove.size() + " in love)");
             }
             if (seen.food() <= 0) return leave(seen, "Out of " + foodName() + " to breed them");
@@ -351,7 +354,7 @@ public final class Ranch {
                 && !inside(a.at()) && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE)) {
             retried++;
             givenUp.clear();
-            return new Step.Wait(true, "Try the " + kind.noun() + "s again");
+            return new Step.Wait(true, "Try the " + kind.plural() + " again");
         }
         if (lead.isEmpty() && searched < SEARCHES) {
             // Out of sight now: to where it was last seen, the food in hand, as a player goes to look for a stray. A spot it
@@ -376,9 +379,9 @@ public final class Ranch {
             }
         }
         if (lead.isEmpty()) {
-            return leave(seen, adultsIn == 1 ? "Only one " + kind.noun() + " in the pen; no other in sight" : "No " + kind.noun() + "s in sight to bring in");
+            return leave(seen, adultsIn == 1 ? "Only one " + kind.noun() + " in the pen; no other in sight" : "No " + kind.plural() + " in sight to bring in");
         }
-        if (seen.food() <= 0) return leave(seen, "No " + foodName() + " to lead " + kind.noun() + "s with");
+        if (seen.food() <= 0) return leave(seen, "No " + foodName() + " to lead " + kind.plural() + " with");
         var animal = lead.get();
         if (!animal.id().equals(leading)) {
             leading = animal.id();
@@ -394,7 +397,7 @@ public final class Ranch {
         if (!jammed && (jamSince < 0 || seen.tick() - jamSince <= JAM)) jamSince = -1;
         else if (jamSince < 0) jamSince = seen.tick();
         if (jamSince >= 0 && seen.tick() - jamSince > JAM) {
-            if (seen.tick() - jamSince <= JAM + LOOSEN) return new Step.Wait(false, "Let the " + kind.noun() + "s wander off the way in");
+            if (seen.tick() - jamSince <= JAM + LOOSEN) return new Step.Wait(false, "Let the " + kind.plural() + " wander off the way in");
             jamSince = -1;
             alignSince = -1;
             waitingSince = -1;
@@ -476,7 +479,7 @@ public final class Ranch {
                     && !inside(other.at()) && other.at().z() == animal.at().z() && Math.abs(other.at().x() - animal.at().x()) <= 1);
             if (alignSince < 0) alignSince = seen.tick();
             if ((!behind || abreast) && seen.tick() - alignSince <= DRAW) {
-                return new Step.Wait(true, abreast ? "Let the " + kind.noun() + "s come up one behind the other"
+                return new Step.Wait(true, abreast ? "Let the " + kind.plural() + " come up one behind the other"
                         : "Let the " + kind.noun() + " come up behind, in line with the doorway");
             }
             // The wait is not begun again here: asked again before the walk through has run, it is the same walk. Begun
@@ -503,7 +506,7 @@ public final class Ranch {
             boolean crowded = seen.animals().stream().anyMatch(a -> a.kind() == kind && inside(a.at()) && a.at().distanceSquared(inner()) <= 2);
             if (crowded && Math.sqrt(gate().distanceSquared(seen.feet())) <= AT_GATE) {
                 if (clearSince < 0) clearSince = seen.tick();
-                if (seen.tick() - clearSince <= CLEAR) return new Step.Wait(false, "Wait for the " + kind.noun() + "s to move off the gate");
+                if (seen.tick() - clearSince <= CLEAR) return new Step.Wait(false, "Wait for the " + kind.plural() + " to move off the gate");
             }
             return gate(seen, true, inner(), false, open);
         }
