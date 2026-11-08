@@ -4493,10 +4493,7 @@ final class PlayerRuntime {
                 entry.ranch = null;
                 entry.buildTasks.clear();
                 // Its own ranch has run its course (M-01a): kept so it is not begun twice.
-                if (entry.ownRanch != null && entry.bases != null && entry.ownRanch.equals(entry.bases.ranch)) {
-                    entry.bases.ranch = entry.bases.ranch.finished();
-                    memories.saveBases(entry.data.id(), entry.bases);
-                }
+                if (entry.bases != null && entry.bases.finish(entry.ownRanch)) memories.saveBases(entry.data.id(), entry.bases);
                 entry.ownRanch = null;
                 say(entry, ranch.outcome() + ".", "the pen at " + ranch.origin.getX() + ", " + ranch.origin.getY() + ", " + ranch.origin.getZ());
                 entry.routineRefreshPending = true;
@@ -4800,10 +4797,12 @@ final class PlayerRuntime {
      */
     private boolean ranchDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last, String dimension) {
         if (last == null || !last.complete()) return false;
-        var pen = record.ranch;
-        if (pen != null) {
-            if (pen.complete() || !pen.dimension().equals(dimension)) return false;
-            return startOwnRanch(entry, body, pen, "Back to its ranch");
+        // A pen it began is taken up again; a kind it keeps, in a pen run or begun, is not kept twice (a pen per kind).
+        var kept = java.util.EnumSet.noneOf(dev.kindred.core.survival.Ranch.Kind.class);
+        for (var pen : record.allPens()) {
+            if (!pen.dimension().equals(dimension)) continue;
+            if (!pen.complete()) return startOwnRanch(entry, body, pen, "Back to its ranch");
+            kept.add(dev.kindred.core.survival.Ranch.Kind.valueOf(pen.kind()));
         }
         var player = body.entity();
         var seen = new java.util.EnumMap<dev.kindred.core.survival.Ranch.Kind, Integer>(dev.kindred.core.survival.Ranch.Kind.class);
@@ -4826,7 +4825,7 @@ final class PlayerRuntime {
             for (String item : kind.food) held += inventory.count(Registries.ITEM.get(Identifier.of(item)));
             food.put(kind, held);
         }
-        var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player));
+        var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
             return wheatDecision(entry, body, record, last, dimension, choice.why());
@@ -4856,15 +4855,19 @@ final class PlayerRuntime {
         if (record.plot != null && record.plot.dimension().equals(dimension)) {
             avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(record.plot.x(), record.plot.z(), record.plot.x() + PLOT - 1, record.plot.z() + PLOT - 1));
         }
+        for (var pen : record.allPens()) {
+            if (pen.dimension().equals(dimension)) avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(pen.x(), pen.z(), pen.x() + 6, pen.z() + 6));
+        }
         var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                 (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, 7, 7, 2, avoid);
         if (site.isEmpty()) {
             entry.ranchNote = "No flat open ground for a pen within " + BASE_RADIUS + " blocks of its " + last.stage();
             return false;
         }
-        record.ranch = new PlayerMemoryStore.Pen(dimension, site.get().x(), site.get().y(), site.get().z(), choice.kind().get().name(), false);
+        var pen = new PlayerMemoryStore.Pen(dimension, site.get().x(), site.get().y(), site.get().z(), choice.kind().get().name(), false);
+        record.addPen(pen);
         memories.saveBases(entry.data.id(), record);
-        return startOwnRanch(entry, body, record.ranch, choice.why());
+        return startOwnRanch(entry, body, pen, choice.why());
     }
 
     /**
@@ -4880,6 +4883,9 @@ final class PlayerRuntime {
             var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
             for (var base : record.built) if (base.dimension().equals(dimension)) avoid.add(footprint(base));
             if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
+            for (var pen : record.allPens()) {
+                if (pen.dimension().equals(dimension)) avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(pen.x(), pen.z(), pen.x() + 6, pen.z() + 6));
+            }
             var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                     (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, PLOT, PLOT, 1, avoid);
             if (site.isEmpty()) {
@@ -5528,6 +5534,22 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** A pen of its own staged as run, as a fixture lays one down (M-01a). */
+    boolean stagePenForTest(UUID id, PlayerMemoryStore.Pen pen) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.addPen(pen);
+        return true;
+    }
+
+    /** All the pens a player chose for itself (M-01a), the first first, for fixtures. */
+    List<PlayerMemoryStore.Pen> ownPens(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? List.of() : entry.bases.allPens();
+    }
+
     /** What a player last decided about a ranch of its own (M-01a). */
     String ranchNote(UUID id) {
         requireThread();
@@ -5564,10 +5586,7 @@ final class PlayerRuntime {
             entry.ranch = null;
             entry.buildTasks.clear();
             // Its own ranch stopped by the operator is not begun again on its own (M-01a).
-            if (entry.ownRanch != null && entry.bases != null && entry.ownRanch.equals(entry.bases.ranch)) {
-                entry.bases.ranch = entry.bases.ranch.finished();
-                memories.saveBases(entry.data.id(), entry.bases);
-            }
+            if (entry.bases != null && entry.bases.finish(entry.ownRanch)) memories.saveBases(entry.data.id(), entry.bases);
             entry.ownRanch = null;
             entry.seeding = null;
             entry.growing = null;

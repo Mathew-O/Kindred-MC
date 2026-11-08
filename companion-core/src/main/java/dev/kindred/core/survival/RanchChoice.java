@@ -62,6 +62,21 @@ public final class RanchChoice {
      * ({@link WheatPlot}); a pig's carrots and potatoes are found, not grown from what it has, and are not earned.
      */
     public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food, boolean grassInSight) {
+        return next(hasBase, seen, food, grassInSight, java.util.Set.of());
+    }
+
+    /**
+     * As {@link #next(boolean, Map, Map, boolean)}, with {@code kept} the kinds it keeps already, each in a pen of its
+     * own: those are not kept twice, so the next kind seen in a pair gets a pen of its own (a pen per kind).
+     */
+    public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food, boolean grassInSight,
+                                java.util.Set<Ranch.Kind> kept) {
+        Objects.requireNonNull(kept);
+        if (!kept.isEmpty()) {
+            var unkept = new java.util.EnumMap<Ranch.Kind, Integer>(Ranch.Kind.class);
+            for (var e : seen.entrySet()) if (!kept.contains(e.getKey())) unkept.put(e.getKey(), e.getValue());
+            seen = unkept;
+        }
         if (!hasBase) return new Decision(Optional.empty(), "A base first, then animals of its own");
         Ranch.Kind wantingFood = null;
         for (Ranch.Kind kind : ORDER) {
