@@ -16,6 +16,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 14 (`e40a14-80b7150`, batch 16) — 8 November 2026 (`claude/e40-ladder-18-1108`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `80b7150` (batch 16 with F-25c4ch and F-25c4ci, before
+  batches 17 and 18). Restarts of the machine stopped it twice; the seeds not finished were run again from their start
+  into the same folder.
+  - The iron pickaxe on 10 of 10, all within the first hour (median 18.95 min, the last at 47.3).
+  - A portal lit on 7 of 10 (iteration 13: 4); obsidian on 8 of 10; stuck time under a tenth on 3 of 10 (iteration 13: 2).
+  - Deaths 1.25 a game hour [0 to 3.5] (28, against 26). Stuck spells 4.5 [0 to 19] (55, against 111).
+  - Against iteration 13 and the starting build every range overlaps: no difference worth noting.
+  - [Summary](evidence/eval/e40a14-80b7150/summary.md), [deaths](evidence/eval/e40a14-80b7150/deaths.md),
+    [against iteration 13](evidence/eval/compare-e40a14.md), [against the start](evidence/eval/compare-e40a14-base.md),
+    [E-40](evidence/E-40.md).
+
 ## PR #37's builds (batch 17, `b43b7de`) — 8 November 2026
 
 Each pull-request build failed native fixtures, a different set in each run; main's build on `15e3ee9` was green. Both
@@ -34,7 +47,39 @@ jobs were re-run once.
   out). In the first of those, the cabin was built, 222 of 222 at 08:19:39. Its exact check did not pass, and the
   player went on to a keep until the fixture's end. These are construction fixtures this batch's change does not touch.
   Their cause is not yet found; they are run on the next head.
+- On `e411089` (the fixture fixed): both jobs failed again, on fixtures this batch's change does not run.
+  - The push run: `NativeLifeFirstGameTests.hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase`. The cabin was
+    built, 222 of 222, and one block of its scaffold, four over the player, was left "out of reach to take down" when
+    night took it to its bed.
+  - The pull-request run: `NativeBringGameTests.aLibrarianThatStrollsIsHeldInABoatWhileTheLineIsLaid` ("The
+    librarian kept wandering off the line") and `NativePortalCampaignGameTests.goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe`
+    ("Out of the pit ... Explore west for logs").
+  - The pushes of branches carrying the same batch 17 code (`claude/e40-ladder-19-1108`, `claude/e40-ladder-20-1108`)
+    passed all 587 native fixtures. The bunker and life-first classes passed 8 of 8 alone on `e411089`.
+  - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
+    is not yet reproduced alone.
 
+## E-40, batch 18: out from under a falling column, and the walk to a drop under one (F-25c4ck, F-25c4cl) — 8 November 2026 (`claude/e40-ladder-18-1108`)
+
+- **The fixture** (F-25c4ck, [evidence](evidence/F-25c4ck.md)): `NativeFallingColumnGameTests.buriedUnderAColumnOfGravelItStepsOutFromUnderIt`,
+  staged as it says (a hurt player in a tunnel, gravel in its cells and seven blocks over its head). On `14cdf8a`,
+  without the fix: fails 3 of 3, "It died under the column". With it: passes 3 of 3, out from under it to the cell
+  beside, its health untouched. The fixture's first form looked at whichever body the player had, and passed on the
+  body it respawned in; it now holds the body it buried.
+- **The walk to a drop** (F-25c4cl, [evidence](evidence/F-25c4cl.md)): with F-25c4ck, the same classes passed 117 of 118;
+  `NativeGravelTunnelGameTests.tunnellingUnderGravelItWaitsForWhatFallsBeforeItStepsIn` failed, "Buried in its tunnel",
+  as in batch 16's classes: the gravel it broke dropped flint, and the walk to it went into the cell it had just cleared
+  while the gravel over it came down. `NativeGravelTunnelGameTests.tunnellingUnderGravelThatDropsFlintItWaitsForWhatFallsOnTheWayToTheDrop`
+  stages the drops (a stone shovel of Fortune III among its tools): without the fix it fails 3 of 3, "Buried in its
+  tunnel"; with it, passes 3 of 3. Three scenes staged first, a flint and gravel let fall over or beside it, did not
+  reproduce it (9 of 9 passed without the fix) and are not kept.
+- **The classes that dig out of walls, tunnel and climb** (`NativeFallingColumnGameTests`, `NativeGravelTunnelGameTests`,
+  `NativePortalCampaignGameTests`, `NativeTripDownGameTests`, `NativeBranchMineGameTests`, `NativeBucketGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `ReplayGameTests`): with F-25c4ck alone, 117 of 118 (above);
+  with both, 119 of 119. With the walk's own column then left out of the way it checks (what comes down there is the
+  wall it digs out of): the flint variant 3 of 3 again, with `NativeGravelTunnelGameTests`, `NativeFallingColumnGameTests`
+  and `NativePortalCampaignGameTests`, 101 of 101.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
 ## E-40, batch 17: the trip's sticks sized to its digging (F-25c4cj) — 8 November 2026 (`claude/e40-ladder-17-1108`)
 
 - **The planner** (F-25c4cj, [evidence](evidence/F-25c4cj.md)): `PortalRunPlannerTest.theTripsSticksCoverTheStonePickaxesItsDiggingWearsOut`
@@ -394,6 +439,14 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01a: the chickens' seeds earned from grass, 2026-11-06
+
+Branch `claude/modes-1106-7`, from main. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `RanchChoiceTest` 3 of 3; the new test would not compile before.
+- Native: `NativeOwnRanchGameTests` with `NativeRanchGameTests` alone. Three runs on `7f0dccd`, then five on `4093138`, 4 of 4 each but one.
+  - The one failure: the operator-started cow ranch, once in eight, "Only one cow in the pen; no other in sight". Not reproduced in the next five; its message now reports where the cows were.
+  - Control (the seeds not earned): fails, no ranch begun. Its first run crashed the test server on the fixture's own failure message, now guarded.
 
 ## M-01a: a ranch of its own, 2026-11-05
 

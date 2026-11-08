@@ -3512,6 +3512,10 @@ final class PlayerRuntime {
             candidates.addAll(ranchCandidates(entry, body));
             return candidates;
         }
+        if (entry.seeding != null) {
+            candidates.addAll(seedCandidates(entry, body));
+            return candidates;
+        }
         if (entry.field != null) {
             candidates.addAll(fieldCandidates(entry, body));
             return candidates;
@@ -3551,7 +3555,7 @@ final class PlayerRuntime {
         // and then built as any build is.
         if (baseDecision(entry, body)) {
             // A base begun is a build; a ranch of its own begun is a ranch (M-01a).
-            candidates.addAll(entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
+            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
             return candidates;
         }
 
@@ -4439,6 +4443,36 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
+    /** The next step of earning seeds from the grass (M-01a), as one project candidate; survival needs still outrank it. */
+    private List<NativeTaskCandidate> seedCandidates(Entry entry, NativePlayerBody body) {
+        var seeding = entry.seeding;
+        var player = body.entity();
+        var task = seeding.next(player);
+        entry.goalProgress = "Ranch: " + seeding.progress(player);
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), seeding.progress(player));
+        }
+        if (task.isEmpty()) {
+            entry.seeding = null;
+            entry.buildTasks.clear();
+            entry.ranchNote = seeding.outcome();
+            KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), seeding.outcome());
+            // Decided again at once: with the seeds in hand, the ranch.
+            entry.baseCheckAt = 0;
+            entry.routineRefreshPending = true;
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("seeds:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
     /** The ranch's next step, as one project candidate; survival needs still outrank it (M-01a). */
     private List<NativeTaskCandidate> ranchCandidates(Entry entry, NativePlayerBody body) {
         var ranch = entry.ranch;
@@ -4633,7 +4667,7 @@ final class PlayerRuntime {
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
         if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.field != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4779,7 +4813,17 @@ final class PlayerRuntime {
             for (String item : kind.food) held += inventory.count(Registries.ITEM.get(Identifier.of(item)));
             food.put(kind, held);
         }
-        var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food);
+        var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player));
+        if (choice.kind().isEmpty() && choice.earn().isPresent()) {
+            // The chickens' seeds earned first, from the grass about it; then the ranch, with them in hand.
+            entry.ranchNote = choice.why();
+            entry.seeding = new SeedRunner(dev.kindred.core.survival.RanchChoice.FOOD);
+            entry.goalProgress = "Ranch: seeds first";
+            entry.cachedRoutineCandidates = List.of();
+            entry.routineRefreshPending = true;
+            KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), choice.why());
+            return true;
+        }
         if (choice.kind().isEmpty()) {
             entry.ranchNote = choice.why();
             return false;
@@ -5433,6 +5477,7 @@ final class PlayerRuntime {
                 memories.saveBases(entry.data.id(), entry.bases);
             }
             entry.ownRanch = null;
+            entry.seeding = null;
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -15383,6 +15428,8 @@ final class PlayerRuntime {
         String ranchNote = "";
         /** Its own ranch's pen while that ranch runs (M-01a), or null for none or an operator's. */
         PlayerMemoryStore.Pen ownRanch;
+        /** Seeds being earned from the grass for chickens of its own (M-01a), or null. */
+        SeedRunner seeding;
         /** Its trading hall's build while it is at it (E-45d), and the times it ended short. */
         BuildRunner hallBuild;
         /** Whether the hall's build in hand is a repair (its record already complete). */

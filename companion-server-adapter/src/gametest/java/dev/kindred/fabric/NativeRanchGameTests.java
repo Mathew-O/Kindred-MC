@@ -93,7 +93,11 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     var wren = player(f, player[0]);
                     BlockPos feet = wren.getBlockPos();
                     context.assertTrue(!inside(pen, feet), "Wren out of the pen: " + feet.toShortString());
-                    context.assertTrue(wren.getInventory().count(Items.WHEAT) == 6, "Two wheat fed: " + wren.getInventory().count(Items.WHEAT) + " left");
+                    var where = new StringBuilder();
+                    for (var cow : world.getEntitiesByClass(CowEntity.class, new Box(pen).expand(40), c -> true)) {
+                        where.append(cow.getBlockPos().subtract(pen).toShortString()).append(cow.isBaby() ? " young" : "").append("; ");
+                    }
+                    context.assertTrue(wren.getInventory().count(Items.WHEAT) == 6, "Two wheat fed: " + wren.getInventory().count(Items.WHEAT) + " left; cows from the pen's post: " + where);
                     var penned = world.getEntitiesByClass(CowEntity.class, new Box(pen).expand(8), c -> inside(pen, c.getBlockPos()));
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
                     KindredMod.LOGGER.info("Ranch: {} fences, gate {}, {} cows and {} calves penned, Wren at {}", fences, gateState, adults, calves, feet.toShortString());
