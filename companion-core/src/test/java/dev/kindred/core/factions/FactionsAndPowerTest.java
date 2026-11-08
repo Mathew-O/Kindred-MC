@@ -266,7 +266,7 @@ class FactionsAndPowerTest {
     }
 
     private WorldEvent loss(UUID victim, UUID killer, int amount) {
-        var settings = new FactionSettings(10, 10, 10, Math.min(amount, 10), 3600, 80, 1200, 3600, 500, 100, 500, 48, 30, 8000, 3, 25, 5, 48);
+        var settings = new FactionSettings(10, 10, 10, Math.min(amount, 10), 3600, 80, 1200, 3600, 500, 100, 500, 48, 30, 8000, 3, 25, 5, 48, 64);
         return PowerRules.loss(powers, victim, killer, settings, id++, now, "w", "0,64,0");
     }
 
