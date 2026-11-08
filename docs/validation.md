@@ -92,6 +92,16 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 21: a finished frame's opening cleared before it is lit (F-25c4co) — 8 November 2026 (`claude/e40-ladder-21-1108`)
+
+- **The fixture** (F-25c4co, [evidence](evidence/F-25c4co.md)): `NativeObstructedPortalGameTests.gravelInAFinishedFramesOpeningIsClearedAndThePortalLit`,
+  staged as it says (the frame finished, two gravel in the opening's bottom row). Run alone, 3 times on each commit, in
+  the CI-green session's container (this one's cores held the F-29e comparison); entrypoints narrowed and restored.
+  - `40d9e55` (fixture, no fix): fails 3 of 3, "No portal lit after 1,200 ticks", as Kindred on 31102026 in iteration 15.
+  - `7e9e03c` (the fix): passes 3 of 3, lit after 26 ticks each.
+- **Build and the rest of the native suite:** not run locally (the cores held the F-29e comparison); the pull request's
+  CI build and full native suite are the record.
+
 ## E-40, batch 20: a frame half cast is kept (F-25c4cn) — 8 November 2026 (`claude/e40-ladder-20-1108`)
 
 - **The fixture** (F-25c4cn, [evidence](evidence/F-25c4cn.md)): `NativeHalfCastFrameGameTests.aFrameHalfCastIsNotGivenUpForACornerOutOfSightFromItsStand`,
