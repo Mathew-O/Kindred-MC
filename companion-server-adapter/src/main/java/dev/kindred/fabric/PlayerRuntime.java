@@ -218,6 +218,8 @@ final class PlayerRuntime {
      * bridge when there is one, else the same memory with no model behind it.
      */
     private StrategistBridge memory;
+    /** F-33: each AI player's page of the Chronicle once a game day, from the World Record. */
+    private final ChronicleKeeper chronicle = new ChronicleKeeper(new ChronicleHost());
     private boolean lessons = true;
     /** Whether the players keep an atlas of the world and use it (F-30): on unless {@code KINDRED_ATLAS=off} or a scenario says so. */
     private boolean atlasOn = true;
@@ -496,6 +498,7 @@ final class PlayerRuntime {
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
+        this.memory.chronicle(id -> chronicle.pages(id)); // F-33: the report reads a player's latest page.
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
         this.rescueBook = recipeStore.load();
@@ -748,6 +751,7 @@ final class PlayerRuntime {
                     ledgersThrough = loaded.ledgersThrough();
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    chronicle.start();
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -2490,6 +2494,7 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
+        chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
         if (tick % 20 == 11 && factionsWorld()) factions.tick(server.getPlayerManager().getPlayerList());
         if (!heldHunts.isEmpty()) releaseHunts(tick);
@@ -12602,6 +12607,7 @@ final class PlayerRuntime {
         memory = strategist.get();
         memory.lessons(lessons);
         memory.rescueHost(rescueHost);
+        memory.chronicle(id -> chronicle.pages(id));
         memory.rescue(rescueOn);
         memory.advice(adviceOn);
     }
@@ -15245,6 +15251,37 @@ final class PlayerRuntime {
         if (changed.isEmpty()) return;
         long tick = server.getTicks(), now = System.currentTimeMillis();
         record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
+    }
+
+    /** The Chronicle (F-33), for fixtures: its pages and counts, and a day's pages written now. */
+    ChronicleKeeper chronicleForFixtures() { return chronicle; }
+
+    /** The keeper's side: the Record, the AI players with their bodies' ids, the strategist's bridge. */
+    private final class ChronicleHost implements ChronicleKeeper.Host {
+        @Override public java.util.concurrent.CompletableFuture<List<dev.kindred.core.record.WorldEvent>> events(java.util.Set<String> kinds, long afterId, int limit) {
+            SqliteCompanionStore database = store;
+            return database == null ? java.util.concurrent.CompletableFuture.completedFuture(List.of()) : database.worldEvents(kinds, afterId, limit);
+        }
+
+        @Override public void record(dev.kindred.core.record.WorldEvent event) { PlayerRuntime.this.record(event); }
+
+        @Override public List<ChronicleKeeper.Player> players() {
+            var out = new ArrayList<ChronicleKeeper.Player>();
+            for (Entry entry : entries.values()) {
+                if (entry.data == null) continue;
+                var actors = new java.util.HashSet<UUID>();
+                actors.add(entry.data.id());
+                if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
+                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors));
+            }
+            return out;
+        }
+
+        @Override public long tick() { return server.getTicks(); }
+
+        @Override public StrategistBridge bridge() { return memory; }
+
+        @Override public net.minecraft.server.MinecraftServer server() { return server; }
     }
 
     /** One event written to the World Record (F-31). */

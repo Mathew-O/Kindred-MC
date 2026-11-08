@@ -92,6 +92,64 @@ public final class Chronicle {
         public Visibility visibility() { return tier.visibility(); }
     }
 
+    /** The kinds of the World Record a player's day is written from (F-31's), and the page's own kind. */
+    public static final java.util.Set<String> DAY_KINDS = java.util.Set.of("death", "journal", "capture", "claim", "unclaim", "match");
+    public static final String PAGE = "chronicle.page";
+
+    /**
+     * One of the World Record's events as the Chronicle reads it, or nothing for a kind it does not tell: a death by its
+     * cause, a journal line by its type and detail, a claim, an unclaim or a capture by its chunk, a match by its result.
+     */
+    public static Optional<Event> fromRecord(dev.kindred.core.record.WorldEvent e) {
+        if (e.id() <= 0 || !DAY_KINDS.contains(e.kind())) return Optional.empty();
+        var d = e.data();
+        String who = e.subject().isEmpty() ? "someone" : e.subject();
+        String text = switch (e.kind()) {
+            case "death" -> who + " died: " + d.getOrDefault("cause", "unknown").replace('.', ' ');
+            case "journal" -> who + ": " + d.getOrDefault("detail", "");
+            case "capture", "claim", "unclaim" -> e.kind() + " " + who + " " + String.join(" ", d.values());
+            case "match" -> "match " + who + " " + d.getOrDefault("result", d.getOrDefault("state", ""));
+            default -> who;
+        };
+        if (text.length() > 200) text = text.substring(0, 199) + "…";
+        return Optional.of(new Event(e.id(), Math.max(0, e.tick()), e.kind(), e.actor(), e.subject(), text));
+    }
+
+    /** The plain list of exactly these events (a batch read from the Record since the last page), for a span. */
+    public static Summary plainOf(Tier tier, String scope, long from, long until, List<Event> events) {
+        var shifted = new ArrayList<Event>();
+        for (Event e : events) shifted.add(new Event(e.id(), from, e.kind(), e.actor(), e.subject(), e.text()));
+        var page = plain(tier, scope, from, shifted);
+        return new Summary(tier, scope, from, Math.max(from + 1, until), page.text(), page.cites(), false);
+    }
+
+    /** A page as a World Record event's data: its span, the last event it read, its words, its citations, and who wrote it. */
+    public static java.util.Map<String, String> pageData(Summary page, long through) {
+        var d = new LinkedHashMap<String, String>();
+        d.put("tier", page.tier().name());
+        d.put("from", String.valueOf(page.from()));
+        d.put("until", String.valueOf(page.until()));
+        d.put("through", String.valueOf(through));
+        d.put("text", page.text());
+        d.put("cites", page.cites().stream().map(String::valueOf).reduce((a, b) -> a + "," + b).orElse(""));
+        d.put("model", page.model() ? "1" : "0");
+        return d;
+    }
+
+    /** A page read back from its World Record event, or nothing when it is not one. */
+    public static Optional<Summary> fromPage(dev.kindred.core.record.WorldEvent e) {
+        if (!PAGE.equals(e.kind())) return Optional.empty();
+        try {
+            var d = e.data();
+            var cites = new ArrayList<Long>();
+            for (String c : d.getOrDefault("cites", "").split(",")) if (!c.isBlank()) cites.add(Long.parseLong(c.strip()));
+            return Optional.of(new Summary(Tier.valueOf(d.get("tier")), e.subject(), Long.parseLong(d.get("from")), Long.parseLong(d.get("until")),
+                    d.getOrDefault("text", ""), cites, "1".equals(d.get("model"))));
+        } catch (RuntimeException unreadable) {
+            return Optional.empty();
+        }
+    }
+
     /** A model's page as a summary to check: empty when it wrote nothing. */
     public static Optional<Summary> fromModel(Tier tier, String scope, long from, Optional<String> text, List<Long> cites) {
         return text.filter(t -> !t.isBlank()).map(t -> new Summary(tier, scope, from, from + tier.span, t, cites, true));
