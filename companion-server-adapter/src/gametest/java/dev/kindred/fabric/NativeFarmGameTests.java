@@ -83,6 +83,7 @@ public final class NativeFarmGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "farmCropSow", tickLimit = 900)
     public void cropSowingAndReplantingConservation(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, NativeGameTestSupport.synchronousAdmissionWriter(), true);
+        String[] harvestAge = {"unknown"};
         // Keep the crop beside the player's standing position, outside their collision box.
         BlockPos farmPos = context.getAbsolutePos(new BlockPos(4, 2, 3));
         BlockPos waterPos = context.getAbsolutePos(new BlockPos(5, 2, 3));
@@ -136,6 +137,9 @@ public final class NativeFarmGameTests implements FabricGameTest {
                     context.getWorld().setBlockState(cropPos, Blocks.WHEAT.getDefaultState().with(CropBlock.AGE, 7));
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
                     context.assertTrue(f.runtime.nativeHarvest(f.source, f.id, cropPos, 0, true) == 1, "Harvest task requested");
+                    // Diagnostics for an unreproduced intermittent (PR #45's CI): the crop's age as the harvest was asked for.
+                    var asked = context.getWorld().getBlockState(cropPos);
+                    harvestAge[0] = asked.isOf(Blocks.WHEAT) ? String.valueOf(asked.get(CropBlock.AGE)) : asked.getBlock().toString();
                 })
                 .createAndAdd(() -> { })
                 .createAndAdd(() -> { })
@@ -171,8 +175,10 @@ public final class NativeFarmGameTests implements FabricGameTest {
                     context.assertTrue(currentCropState.get(CropBlock.AGE) == 0, "Replanted crop is at age 0");
                     context.assertTrue(context.getWorld().getBlockState(farmPos).isOf(Blocks.FARMLAND), "Farmland preserved intact");
 
-                    // Surplus wheat collected in inventory
-                    context.assertTrue(countItem(f, Items.WHEAT) >= 1, "Surplus wheat gathered into player inventory");
+                    // Surplus wheat collected in inventory. The failure message carries diagnostics for an unreproduced
+                    // intermittent (PR #45's CI: no wheat, the harvest done within a second); the check itself is unchanged.
+                    context.assertTrue(countItem(f, Items.WHEAT) >= 1, "Surplus wheat gathered into player inventory; "
+                            + harvestDiagnostics(context, f, cropPos, harvestAge[0], action));
 
                     f.runtime.stop();
                 })
@@ -278,6 +284,33 @@ public final class NativeFarmGameTests implements FabricGameTest {
         context.assertTrue(anchorTaskObj != null && anchorTaskObj.dependencies().contains(placeBedTask), "Anchoring spawn depends on placing bed");
 
         context.complete();
+    }
+
+    /** What a failed harvest check needs to be read: the inventory, the item drops near the crop, the crop's age, the ledger. */
+    private static String harvestDiagnostics(TestContext context, NativePaidSkillsGameTests.Fixture f, BlockPos cropPos, String age, ActionRecord action) {
+        var text = new StringBuilder("crop age when asked ").append(age).append("; inventory");
+        var player = f.player();
+        if (player == null) {
+            text.append(" (player gone)");
+        } else {
+            var counts = new java.util.TreeMap<String, Integer>();
+            var inventory = player.getInventory();
+            for (int slot = 0; slot < inventory.size(); slot++) {
+                var stack = inventory.getStack(slot);
+                if (!stack.isEmpty()) counts.merge(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).getPath(), stack.getCount(), Integer::sum);
+            }
+            text.append(' ').append(counts).append("; player at ").append(player.getBlockPos().subtract(cropPos).toShortString()).append(" from the crop");
+        }
+        text.append("; drops near the crop:");
+        var drops = context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(cropPos).expand(8), e -> true);
+        if (drops.isEmpty()) text.append(" none");
+        for (var drop : drops) {
+            text.append(' ').append(net.minecraft.registry.Registries.ITEM.getId(drop.getStack().getItem()).getPath()).append('x').append(drop.getStack().getCount())
+                    .append(" at ").append(drop.getBlockPos().subtract(cropPos).toShortString())
+                    .append(context.getWorld().getFluidState(drop.getBlockPos()).isEmpty() ? "" : " in fluid");
+        }
+        text.append("; ledger ").append(action == null ? "none" : action.state() + " " + action.afterEvidence());
+        return text.toString();
     }
 
     private static int countItem(NativePaidSkillsGameTests.Fixture f, net.minecraft.item.Item item) {

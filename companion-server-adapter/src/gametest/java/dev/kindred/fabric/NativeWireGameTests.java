@@ -252,4 +252,24 @@ public final class NativeWireGameTests implements FabricGameTest {
         s.cleanup(context);
         context.complete();
     }
+
+    /** The Factions mode's four announcements reach everyone on the server from the server alone; nothing else does. */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wire")
+    public void factionAnnouncementsReachTheWholeServerFromTheServerAlone(TestContext context) {
+        var s = new Stand(context, KindredWire.FACTION_ANNOUNCEMENTS);
+        UUID wren = s.aiPlayer(context, "Wren", new BlockPos(1, 2, 1), faction("oak"));
+        var far = s.person(context, "Far", new BlockPos(1, 2, 60), KindredWire.Belongs.NONE);
+        for (String kind : KindredWire.FACTION_ANNOUNCEMENTS) {
+            s.now.addAndGet(1_000);
+            var d = s.wire.send(Message.of(kind, null, Scope.server(), facts("faction", Fact.of("oak", Visibility.PUBLIC)), List.of(1L)));
+            context.assertTrue(d.sent() && d.receivers().contains(far.getUuid()) && d.receivers().contains(wren), kind + " to everyone: " + d.refused());
+        }
+        var fromAPlayer = s.wire.send(Message.of("faction.capture", wren, Scope.server(), Map.of(), List.of()));
+        context.assertTrue(fromAPlayer.refused().orElse(null) == Delivery.Refusal.NOT_ANNOUNCEMENT, "Only the server announces");
+        var other = s.wire.send(Message.of("faction.gossip", null, Scope.server(), Map.of(), List.of()));
+        context.assertTrue(other.refused().orElse(null) == Delivery.Refusal.NOT_ANNOUNCEMENT, "Only the four kinds");
+        context.assertTrue(s.heardBy(far).size() == 4, "Said once each: " + s.heardBy(far));
+        s.cleanup(context);
+        context.complete();
+    }
 }

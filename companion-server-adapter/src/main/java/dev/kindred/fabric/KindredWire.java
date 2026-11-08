@@ -34,6 +34,12 @@ import java.util.function.LongSupplier;
  * sent to that person alone through {@link Speaker}. Every delivery is logged by counts.
  */
 final class KindredWire {
+    /**
+     * The Factions mode's announcements to the whole server (M-06e's notices, the spec's notifications): few and fixed,
+     * past the public channel's budget, never deduped away. Sent only by the server.
+     */
+    static final Set<String> FACTION_ANNOUNCEMENTS = Set.of("faction.vulnerable", "faction.secure", "faction.capture", "faction.shield");
+
     /** Messages kept in an AI player's inbox. */
     static final int INBOX = 64;
 
