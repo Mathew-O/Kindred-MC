@@ -12,7 +12,7 @@ package dev.kindred.core.survival;
  * @param logs            any log or wood item that crafts planks
  * @param planks          any planks
  * @param sticks          sticks
- * @param cobble          cobblestone-like blocks usable for stone tools and furnaces
+ * @param cobble          cobblestone-like blocks carried, usable for stone tools and furnaces
  * @param coal            coal or charcoal
  * @param rawIron         raw iron (including any in the furnace being used)
  * @param ironIngots      iron ingots (including smelted output waiting in that furnace)
@@ -42,6 +42,8 @@ package dev.kindred.core.survival;
  * @param portalLit       a lit portal this player built is observed nearby
  * @param rawMeat         raw meat and fish carried that a furnace cooks
  * @param furnaceCooking  the reachable furnace has raw meat or fish to cook
+ * @param cornersPlaced   corner blocks already set in its own frame, which count with those carried toward the four
+ *                        corners but make no tool (F-25c4ci)
  */
 public record PortalRunSnapshot(
         int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
@@ -49,7 +51,21 @@ public record PortalRunSnapshot(
         int craftingTables, int furnaces, int saplings, int edibleFood,
         int pickaxeTier, int pickaxes, int swordTier, int chestArmorTier, int shields,
         boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
-        int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking) {
+        int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking, int cornersPlaced) {
+
+    /** As the canonical constructor, with no corner of a frame set. */
+    public PortalRunSnapshot(
+            int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
+            int flint, int gravel, int obsidian, int emptyBuckets, int lavaBuckets, int waterBuckets, int flintAndSteel,
+            int craftingTables, int furnaces, int saplings, int edibleFood,
+            int pickaxeTier, int pickaxes, int swordTier, int chestArmorTier, int shields,
+            boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
+            int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking) {
+        this(logs, planks, sticks, cobble, coal, rawIron, ironIngots, diamonds, flint, gravel, obsidian, emptyBuckets, lavaBuckets,
+                waterBuckets, flintAndSteel, craftingTables, furnaces, saplings, edibleFood, pickaxeTier, pickaxes, swordTier,
+                chestArmorTier, shields, tableNearby, furnaceNearby, furnaceSmelting, furnaceOutput, foodLevel, portalFramed, portalLit,
+                rawMeat, furnaceCooking, 0);
+    }
 
     /** As the canonical constructor, with no raw meat carried or cooking. */
     public PortalRunSnapshot(
@@ -63,6 +79,9 @@ public record PortalRunSnapshot(
                 waterBuckets, flintAndSteel, craftingTables, furnaces, saplings, edibleFood, pickaxeTier, pickaxes, swordTier,
                 chestArmorTier, shields, tableNearby, furnaceNearby, furnaceSmelting, furnaceOutput, foodLevel, portalFramed, portalLit, 0, false);
     }
+
+    /** Blocks toward the frame's four corners: those carried and those already set in it. */
+    public int cornerBlocks() { return cobble + cornersPlaced; }
 
     /** Plank-equivalents available from planks and uncrafted logs. */
     public int woodUnits() { return planks + logs * 4; }

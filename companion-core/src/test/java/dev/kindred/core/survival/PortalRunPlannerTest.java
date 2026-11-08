@@ -31,12 +31,14 @@ class PortalRunPlannerTest {
 
         /** Raw meat carried, and raw meat cooking in the furnace. */
         int rawMeat, meatCooking;
+        /** Corner blocks already set in its frame. */
+        int corners;
 
         PortalRunSnapshot snapshot() {
             return new PortalRunSnapshot(logs, planks, sticks, cobble, coal + charcoalOut, rawIron + furnaceInput, iron + furnaceOutput, diamonds,
                     flint, gravel, obsidian, buckets, lava, water, fns, tables, furnaces, saplings, food, pick, Math.max(pickaxes, pick >= 2 ? 1 : 0), sword, chest, shields,
                     tableNearby, furnaceNearby, furnaceInput + charcoalIn + meatCooking > 0, furnaceOutput + charcoalOut, foodLevel, framed, lit,
-                    rawMeat, meatCooking > 0);
+                    rawMeat, meatCooking > 0, corners);
         }
 
         /** What a player on the sky island sees: its tree while it stands, leaves, its saplings and generator, the ore islands. */
@@ -214,6 +216,63 @@ class PortalRunPlannerTest {
         step = PortalRunPlanner.plan(sim.snapshot()).getLast();
         assertEquals(Action.CRAFT, step.action());
         assertEquals("stone_pickaxe", step.item(), "no detour through logs and a wooden pickaxe");
+    }
+
+    @Test
+    void theCornersSetInItsFrameMakeNoPickaxeButCountTowardTheFour() {
+        // Back from a death with its frame begun (F-25c4ci): four corners set, no cobblestone carried, logs and a table.
+        Sim sim = new Sim();
+        sim.logs = 3;
+        sim.tableNearby = true;
+        sim.corners = 4;
+        var step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        assertEquals(Action.CRAFT, step.action());
+        assertEquals("planks", step.item(), "toward a wooden pickaxe, not a stone one from the corners: " + step);
+        for (int i = 0; i < 6 && !(step.action() == Action.CRAFT && step.item().endsWith("_pickaxe")); i++) {
+            sim.apply(step);
+            step = PortalRunPlanner.plan(sim.snapshot()).getLast();
+        }
+        assertEquals("wooden_pickaxe", step.item(), "the pickaxe it makes: " + step);
+        // The same corners still stand for the frame's four: walked from nothing to the frame, with its corners set
+        // and none carried, the frame is built and no corner block mined again.
+        Sim frame = new Sim();
+        for (int i = 0; i < 400; i++) {
+            var next = PortalRunPlanner.plan(frame.snapshot()).stream().filter(c -> c.action() != Action.HUNT).findFirst().orElseThrow();
+            if (next.action() == Action.BUILD_PORTAL) break;
+            frame.apply(next);
+        }
+        frame.cobble = 0;
+        frame.corners = 4;
+        var build = PortalRunPlanner.plan(frame.snapshot()).stream().filter(c -> c.action() != Action.HUNT).findFirst().orElseThrow();
+        assertEquals(Action.BUILD_PORTAL, build.action(), "its corners set, the frame is built: " + build);
+        frame.corners = 0;
+        var mine = PortalRunPlanner.plan(frame.snapshot()).stream().filter(c -> c.action() != Action.HUNT).findFirst().orElseThrow();
+        assertTrue(mine.why().contains("corner"), "with none set nor carried, corner blocks are mined: " + mine);
+    }
+
+    @Test
+    void theTripsSticksCoverTheStonePickaxesItsDiggingWearsOut() {
+        // F-25c4cj: a stone pickaxe and its sword at the stone stage, all the cast route's iron still to find, no lava yet.
+        // In iteration 13 such a player dug about 90 blocks an iron and some 700 more toward lava, a stone pickaxe every
+        // 131: some twenty pickaxes, forty sticks, and a stick for four torches every 310 blocks. The figure before packed
+        // twenty sticks, and the players climbed to the surface for logs again and again.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 24; sim.tableNearby = true;
+        var s = sim.snapshot();
+        int iron = PortalRunPlanner.ironShortfall(s, WorldFacts.Method.CAST_OBSIDIAN);
+        int blocks = iron * 90 + 700;
+        int pickaxes = (blocks + 130) / 131, torches = (blocks + 309) / 310;
+        int reserved = PortalRunPlanner.sticksReserved(s, WorldFacts.Method.CAST_OBSIDIAN);
+        assertTrue(reserved >= 2 * pickaxes + torches,
+                "sticks for " + pickaxes + " stone pickaxes and " + torches + " crafts of torches (" + iron + " iron and the lava's search): " + reserved);
+        // Torches may still be made from what is over the pickaxes still to make and four spare pairs: a tunnel is not
+        // left dark for want of the whole trip's spares.
+        int keptFromTorches = PortalRunPlanner.sticksKeptFromTorches(s, WorldFacts.Method.CAST_OBSIDIAN, true);
+        assertEquals(PortalRunPlanner.sticksKept(s, WorldFacts.Method.CAST_OBSIDIAN) + 8, keptFromTorches);
+        assertTrue(keptFromTorches < reserved, "torches from the trip's spares: " + keptFromTorches + " of " + reserved);
+        // Where the frame is mined there is no search for lava to pack for: fewer.
+        assertTrue(PortalRunPlanner.sticksReserved(s, WorldFacts.Method.MINE_OBSIDIAN) < PortalRunPlanner.sticksReserved(s, WorldFacts.Method.CAST_OBSIDIAN)
+                || PortalRunPlanner.ironShortfall(s, WorldFacts.Method.MINE_OBSIDIAN) > iron, "no lava search where the frame is mined");
     }
 
     @Test
@@ -526,10 +585,11 @@ class PortalRunPlannerTest {
     void beforeTheWorkBelowItPacksASparePickaxeAndATablesWorthOfWood() {
         // Live run 57 left its table in a branch tunnel and wore out its last pickaxe at Y=54, with no way to make another.
         Sim sim = new Sim();
-        // The reserve's eighteen sticks and the spare's two (sticks used for a spare are topped up like any others).
-        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 24; sim.sticks = 20; sim.shields = 1; sim.tableNearby = true;
+        // The reserve's sticks and the spare's two (sticks used for a spare are topped up like any others).
+        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 24; sim.shields = 1; sim.tableNearby = true;
         sim.coal = 2; // Its iron's fuel, so no wood is packed for it.
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
+        sim.sticks = reserve(sim, trees) + 2;
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals("stone_pickaxe", step.item(), "a spare pickaxe, made while it is cheap");
         assertTrue(step.why().contains("spare"));
@@ -804,10 +864,13 @@ class PortalRunPlannerTest {
         sim.coal = 3; // Its iron's fuel, so no wood is packed for it.
         assertEquals(2, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN), "the iron pickaxe's two");
         assertEquals(4, PortalRunPlanner.sticksKept(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN), "and the diamond one's two more");
-        // The spares follow the digging still ahead instead: casting's second bucket is three more iron to mine.
+        // The spares follow the digging still ahead instead: casting's second bucket is three more iron to mine, and its
+        // lava has to be looked for (F-25c4cj).
         int cast = PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN);
         int mine = PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN);
-        assertEquals(cast - 2, mine - 4 + 2, "one more stone pickaxe's pair of spares for the second bucket's iron");
+        assertEquals(spares(PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN), true), cast - 2, "the cast route's spares");
+        assertEquals(spares(PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.MINE_OBSIDIAN), false), mine - 4, "the mined route's spares");
+        assertTrue(cast - 2 > mine - 4, "more spares where the frame is cast: the second bucket's iron and the search for lava");
         var bothNearTrees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), BOTH.methods());
         sim.sticks = cast - 1;
         assertEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(sim.snapshot(), bothNearTrees).getLast().action(), "short of the reserve: topped up");
@@ -818,9 +881,10 @@ class PortalRunPlannerTest {
     @Test
     void aShieldIsMadeFromWoodKeptNearTheTreesAndTheFirstIron() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 24; sim.tableNearby = true; // Pickaxe sticks and the digging's spares.
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.tableNearby = true;
         sim.coal = 2; // Its iron's fuel, so no wood is packed for it.
         var trees = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 12), WorldFacts.ordinary().methods());
+        sim.sticks = reserve(sim, trees); // Pickaxe sticks and the digging's spares.
         var step = PortalRunPlanner.plan(sim.snapshot(), trees).getLast();
         assertEquals(Action.GATHER_LOGS, step.action(), "wood for a shield before going down for iron, while trees are in sight");
         assertTrue(step.why().contains("shield"));
@@ -879,12 +943,14 @@ class PortalRunPlannerTest {
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().action(), "a spare table's wood is kept, not made into sticks");
         sim.planks = 6;
         assertEquals("stick", PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast().item(), "carried wood beyond it still becomes spare sticks");
-        // Eighteen iron to mine at about fifty blocks each wears out seven stone pickaxes, and a pair over: sixteen spares.
-        assertEquals(2 + 16, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
+        // The cast route's iron still to mine at about ninety blocks each, and its search for lava (F-25c4cj).
+        int iron = PortalRunPlanner.ironShortfall(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN);
+        assertEquals(2 + spares(iron, true), PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN));
         assertEquals(8, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN, false),
                 "no caves to dig in, and so no iron pickaxe to make: the four spare pairs as before");
         sim.rawIron = 15;
-        assertEquals(2 + 8, PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN), "most of the iron in hand: fewer spares");
+        assertEquals(2 + spares(iron - 15, true), PortalRunPlanner.sticksReserved(sim.snapshot(), WorldFacts.Method.CAST_OBSIDIAN), "most of the iron in hand: fewer spares");
+        assertTrue(spares(iron - 15, true) < spares(iron, true));
         sim.rawIron = 0;
     }
 
@@ -897,9 +963,26 @@ class PortalRunPlannerTest {
     /** Iron stage below ground, stocked as usual (six food), coal for its iron, a table at hand, trees in sight. */
     private static Sim ironWork() {
         Sim sim = new Sim();
-        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.sticks = 20; sim.shields = 1; sim.tableNearby = true;
+        sim.pick = 2; sim.pickaxes = 2; sim.sword = 2; sim.cobble = 24; sim.shields = 1; sim.tableNearby = true;
         sim.food = 6; sim.planks = 4; sim.coal = 2;
+        sim.sticks = reserve(sim, TREES); // Packed to the trip's reserve.
         return sim;
+    }
+
+    /** The sticks the trip's reserve asks for, as the plan works it out where {@code facts} hold. */
+    private static int reserve(Sim sim, WorldFacts facts) {
+        var s = sim.snapshot();
+        return PortalRunPlanner.sticksReserved(s, PortalRunPlanner.frameMethod(s, facts));
+    }
+
+    /**
+     * Two sticks for each stone pickaxe the digging still ahead wears out, a pair over, and a stick for its torches every
+     * 310 blocks (F-25c4cj): about 90 blocks for each iron still to find, 700 more for lava where the frame is cast and
+     * none is in hand, a stone pickaxe every 131.
+     */
+    private static int spares(int iron, boolean lavaSearch) {
+        int blocks = iron * 90 + (lavaSearch ? 700 : 0);
+        return 2 * ((blocks + 130) / 131 + 1) + (blocks + 309) / 310;
     }
 
     private static final WorldFacts TREES = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 10), WorldFacts.ordinary().methods());
@@ -1000,6 +1083,7 @@ class PortalRunPlannerTest {
     @Test
     void aPlayerThatLearnedOneSpareIsNotEnoughPacksTwo() {
         Sim sim = ironWork();
+        sim.sticks += 2; // The second spare's two (sticks used for a spare are topped up like any others).
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), TREES).getLast().action(), "one spare packed already");
         var step = PortalRunPlanner.plan(sim.snapshot(), TREES, habit(PlanPreferences.Habit.SPARE_PICKAXE)).getLast();
         assertEquals("stone_pickaxe", step.item(), "a second spare");

@@ -54,10 +54,23 @@ public final class PortalRunPlanner {
      */
     static final int SPARE_STICKS = 8;
     /**
-     * Blocks dug for each iron ore found, a planning figure for the stick reserve: branch mining at the richest depth
-     * took live run 58 about 800 blocks for 14 iron, and it ran out of sticks one iron short of the last pickaxe.
+     * Blocks dug for each iron the route still wants, all of the digging counted: the branch mine, the staircases down
+     * and the climbs back. In E-40's iteration 13 (`e40a13-fe2ba3b`) the median player dug 1,853 blocks for its 19 iron
+     * ores, about 90 an ore; 50, the figure before (from live run 58's branch mine, about 800 blocks for 14 iron),
+     * packed sticks for half the stone pickaxes it wore out, and the players on the six seeds that lit no portal climbed
+     * to the surface for logs again and again (F-25c4cj).
      */
-    static final int BLOCKS_PER_IRON = 50;
+    static final int BLOCKS_PER_IRON = 90;
+    /**
+     * Blocks dug looking for lava where the frame is cast, once its buckets are made: in iteration 13 the median player
+     * casting a frame dug about 700 in its staircases down and branch mines toward lava (F-25c4cj).
+     */
+    static final int LAVA_SEARCH_BLOCKS = 700;
+    /**
+     * Blocks dug for each stick its torches take: in iteration 13 the players crafted four torches from a stick and a
+     * coal about once every 310 blocks they dug (195 crafts over 61,143 blocks) (F-25c4cj).
+     */
+    static final int BLOCKS_PER_TORCH_STICK = 310;
     /** Blocks a stone pickaxe digs before it wears out. */
     static final int STONE_PICKAXE_USES = 131;
     public static final int DIAMONDS_NEEDED = 3;
@@ -294,7 +307,8 @@ public final class PortalRunPlanner {
         WorldFacts.Method frame = frameMethod(s, facts);
         // Wood: a crafting table and a wooden pickaxe, with logs to spare for sticks and fuel.
         if (s.pickaxeTier() <= 0) {
-            // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone.
+            // A worn-out or lost pickaxe with cobblestone already in hand goes straight back to stone. In hand: the corners
+            // set in its frame make no pickaxe (F-25c4ci).
             if (s.cobble() >= 3) return craftAtTable(s, facts, "stone_pickaxe", 0, 2, Stage.WOOD);
             boolean haveTable = s.tableNearby() || s.craftingTables() > 0;
             int woodWanted = haveTable ? 6 : 12;
@@ -342,8 +356,8 @@ public final class PortalRunPlanner {
         // Kept until the pickaxe is final: diamond on the classic route, iron when the frame is cast. Not while no
         // more stone can be had (a limited world's few stone blocks used up, no generator yet): iron for the buckets
         // that build one comes first.
-        if (s.cobble() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4) && stoneAvailable(s, facts)) {
-            return stone(s, facts, COBBLE_TARGET - s.cobble(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
+        if (s.cornerBlocks() < COBBLE_TARGET - 6 && s.pickaxeTier() < (frame == WorldFacts.Method.CAST_OBSIDIAN ? 3 : 4) && stoneAvailable(s, facts)) {
+            return stone(s, facts, COBBLE_TARGET - s.cornerBlocks(), Stage.STONE, "Mine cobblestone for a furnace and portal corners");
         }
 
         // A spare pickaxe, made while it is cheap: one wearing out halfway up a climb never leaves the player with none.
@@ -474,7 +488,7 @@ public final class PortalRunPlanner {
         }
 
         if (!s.portalFramed()) {
-            if (s.cobble() < PORTAL_CORNERS) return stone(s, facts, PORTAL_CORNERS - s.cobble(), Stage.PORTAL, "Mine corner blocks for the frame");
+            if (s.cornerBlocks() < PORTAL_CORNERS) return stone(s, facts, PORTAL_CORNERS - s.cornerBlocks(), Stage.PORTAL, "Mine corner blocks for the frame");
             return Step.of(Action.BUILD_PORTAL, Stage.PORTAL, "Build the obsidian portal frame");
         }
         return Step.of(Action.IGNITE_PORTAL, Stage.PORTAL, "Light the portal with flint and steel");
@@ -557,19 +571,35 @@ public final class PortalRunPlanner {
     }
 
     /**
-     * Sticks kept from torches and topped up near trees: those for the pickaxes still to make, and spares sized to the
-     * digging still ahead, as a player packs for a trip down. Where there is ground to dig, two for each stone pickaxe
-     * the iron still wanted will wear out, at about {@link #BLOCKS_PER_IRON} blocks an iron, and a pair over; never
-     * fewer than four spare pairs.
+     * Sticks packed and topped up near trees: those for the pickaxes still to make, and spares sized to the digging still
+     * ahead, as a player packs for a trip down (torches may use the spares: {@link #sticksKeptFromTorches}). Where there
+     * is ground to dig, two for each stone pickaxe the iron still wanted will wear out, at about {@link #BLOCKS_PER_IRON}
+     * blocks an iron, and where the frame is cast and no lava is yet in hand, those its search for lava will wear out
+     * ({@link #LAVA_SEARCH_BLOCKS}); and a pair over; and a stick for each four torches that digging lights
+     * ({@link #BLOCKS_PER_TORCH_STICK}); never fewer than four spare pairs.
      */
     public static int sticksReserved(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
         int spares = SPARE_STICKS;
         if (caves) {
             int iron = Math.max(0, ironShortfall(s, frame, true) - s.ironIngots() - s.rawIron());
-            int pickaxes = (iron * BLOCKS_PER_IRON + STONE_PICKAXE_USES - 1) / STONE_PICKAXE_USES + 1;
-            spares = Math.max(SPARE_STICKS, 2 * pickaxes);
+            int blocks = iron * BLOCKS_PER_IRON;
+            if (frame == WorldFacts.Method.CAST_OBSIDIAN && s.lavaBuckets() == 0 && s.obsidian() < PORTAL_OBSIDIAN && !s.portalFramed()) {
+                blocks += LAVA_SEARCH_BLOCKS;
+            }
+            int pickaxes = (blocks + STONE_PICKAXE_USES - 1) / STONE_PICKAXE_USES + 1;
+            int torches = (blocks + BLOCKS_PER_TORCH_STICK - 1) / BLOCKS_PER_TORCH_STICK;
+            spares = Math.max(SPARE_STICKS, 2 * pickaxes + torches);
         }
         return sticksKept(s, frame, caves) + spares;
+    }
+
+    /**
+     * Sticks a torch may not be made from: those for the pickaxes still to make, and four spare pairs. Fewer than the
+     * trip packs ({@link #sticksReserved(PortalRunSnapshot, WorldFacts.Method, boolean)}): a stick makes four torches, and
+     * a tunnel left dark for want of the whole digging's spares would spawn the mobs that kill it (F-25c4cj).
+     */
+    public static int sticksKeptFromTorches(PortalRunSnapshot s, WorldFacts.Method frame, boolean caves) {
+        return sticksKept(s, frame, caves) + SPARE_STICKS;
     }
 
     /** Planks held back from sticks, torches and fuel: a shield's still to make, and a spare table's for the work below. */

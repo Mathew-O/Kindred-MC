@@ -58,12 +58,17 @@ final class NativePushSkill implements SkillBody {
         }
         Vec3d at = minecart.getPos(), from = player.getPos(), velocity = minecart.getVelocity();
         double gap = Math.hypot(at.x - from.x, at.z - from.z), speed = velocity.horizontalLength();
+        // Rolling on is rolling away from the player: one rolling back down its line toward it, as a cart does that ran
+        // out of way short of its cell, is met and pushed on, not taken for one rolling on. Taken so, each push of a
+        // bring's loaded cart that had rolled back ended at once, at the speed it rolled back at, and the bring gave up
+        // after eight with the librarian short of its cell (the wandered bring fixture in CI on 5b130a6).
+        boolean rollingAway = speed >= ROLLING && velocity.x * (at.x - from.x) + velocity.z * (at.z - from.z) > 0;
         if (clear != null) {
             if (speed < 0.02 && !minecart.getBoundingBox().intersects(new net.minecraft.util.math.Box(clear))) {
                 body.stopInputs();
                 return Step.completed(Map.of("ended", "clear"));
             }
-        } else if (speed >= ROLLING && gap > 1.0) {
+        } else if (rollingAway && gap > 1.0) {
             body.stopInputs();
             return Step.completed(Map.of("ended", "rolling", "speed", String.format(Locale.ROOT, "%.2f", speed)));
         }
@@ -71,12 +76,17 @@ final class NativePushSkill implements SkillBody {
             body.stopInputs();
             return Step.blocked("The cart would not roll", true);
         }
+        // Coming back toward it: waited for where it stands, and met as it comes, not walked away from as too far.
+        if (speed >= ROLLING && !rollingAway && gap > 1.0) {
+            body.stopInputs();
+            return Step.running(Map.of("coming back", String.format(Locale.ROOT, "%.2f", speed)), false);
+        }
         if (gap > 4) {
             body.stopInputs();
             return Step.blocked("Too far from the cart to push it", true);
         }
         // Rolling away already: let it go, rather than walk into its back again.
-        if (speed >= ROLLING) {
+        if (rollingAway) {
             body.stopInputs();
             return Step.running(Map.of("speed", String.format(Locale.ROOT, "%.2f", speed)), false);
         }
