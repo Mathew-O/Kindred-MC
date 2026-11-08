@@ -6044,7 +6044,13 @@ final class PortalRunCampaign {
                 || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;
         // Short of breath, the way out of the water comes first: the next plan only chose it again, and in the live pair
         // on 41f9de9 Echo drowned at Y=8 so, its walk up for air stopped each time to fight back first (F-25c4af).
-        if (running.label().startsWith("Get out of the water") && player.getAir() < player.getMaxAir() / 2) return null;
+        // Still in deep water, the way out comes first whatever its breath: while there is one the goal gives it before
+        // any fight, and stopped for the mob it was only given again, so the player neither left the water nor fought. In
+        // E-40's iteration 12 (`e40a12-66a7c0a`) on 8675309 Echo, in a flooded passage with a drowned about, had its walk
+        // out stopped so 502 times, and a drowned killed it there (F-25c4cg). Once out of the deep water, it is stopped
+        // to fight as before.
+        if (running.label().startsWith("Get out of the water") && (player.getAir() < player.getMaxAir() / 2
+                || PlayerRuntime.inDeepWater(player) || wadingTwoDeep(player))) return null;
         // Rowing outruns what swims after it: a drowned is left behind, not fought from the seat (staged run 12's row
         // was cancelled every tick for one, and the boat drifted).
         if ("native_row".equals(running.skill()) || "native_boat".equals(running.skill())) return null;

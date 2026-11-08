@@ -81,9 +81,18 @@ from a log:
     `NativeTeamPortalGameTests`, `NativePortalLightGameTests`, `NativeAtlasGameTests`, `NativeLessonsGameTests`,
     `NativeFollowUpGameTests`, `NativeBoatGameTests`, `NativeBucketGameTests`, batch 15's four classes, batch 16's three
     and the new one: 139 of 139.
+- **The water exit fixture** (F-25c4cg, [evidence](evidence/F-25c4cg.md)), `NativeWaterExitGameTests`, staged: a
+  pool two deep, a drowned after the player swimming in it, the shore two or three blocks off.
+  - On `ef60cf6`: fails 2 of 3, still in the water after 200 ticks; the third out after 198 ticks with 5 health. Its
+    walk out stopped for the drowned 55 to 61 times in each run.
+  - With the fix: passes 3 of 3, out after 115 to 124 ticks with 19 or more health, its walk out stopped once.
+  - With it, alone and while the evaluation ran: `NativePortalCampaignGameTests`, `NativeTripDownGameTests`,
+    `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterFightGameTests`, `NativeEdgeFightGameTests`,
+    `NativeFallGameTests`, `NativeBoatGameTests`, `NativeBucketGameTests`, `NativeFollowUpGameTests`,
+    `NativeNightShelterGameTests`, `NativeSpireGameTests`, `NativeWaterEdgeGameTests` and the new class: 126 of 126.
 - **The affected native fixtures** on `9811c15`: `NativePortalCampaignGameTests`, `NativeTeamPortalGameTests`,
   `NativeTreeSightGameTests`, `NativeEdgeFightGameTests`, `NativeFallGameTests` and the two new classes, 106 of 106.
-- **Build:** `bash ./gradlew build` successful; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
+- **Build:** `bash ./gradlew build` successful on the batch's head; JUnit 958 tests, 0 failures, 6 skipped (unchanged modules).
 ## E-40, batch 15's pull-request build: stranded by walks elsewhere, the way back first (F-25c4ce) — 7 November 2026 (`claude/e40-ladder-15-1107`)
 
 PR #35's builds on `f2d93b7`: the push build passed the full suite. The pull-request build failed one native fixture in
