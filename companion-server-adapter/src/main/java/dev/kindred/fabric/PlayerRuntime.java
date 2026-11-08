@@ -4493,7 +4493,7 @@ final class PlayerRuntime {
                 entry.ranch = null;
                 entry.buildTasks.clear();
                 // Its own ranch has run its course (M-01a): kept so it is not begun twice.
-                if (entry.bases != null && entry.bases.finish(entry.ownRanch)) memories.saveBases(entry.data.id(), entry.bases);
+                if (entry.bases != null && entry.bases.finish(entry.ownRanch, body.entity().getServerWorld().getTime())) memories.saveBases(entry.data.id(), entry.bases);
                 entry.ownRanch = null;
                 say(entry, ranch.outcome() + ".", "the pen at " + ranch.origin.getX() + ", " + ranch.origin.getY() + ", " + ranch.origin.getZ());
                 entry.routineRefreshPending = true;
@@ -4826,6 +4826,7 @@ final class PlayerRuntime {
             food.put(kind, held);
         }
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
+        if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
             return wheatDecision(entry, body, record, last, dimension, choice.why());
@@ -4868,6 +4869,37 @@ final class PlayerRuntime {
         record.addPen(pen);
         memories.saveBases(entry.data.id(), record);
         return startOwnRanch(entry, body, pen, choice.why());
+    }
+
+    /**
+     * More than a pair (M-01a): with no new kind to keep, a pen it keeps is taken up again to breed its grown animals once
+     * more after their breeding wait, until it holds a herd. Only a pen it can see into from where it stands is counted:
+     * nothing hidden is known. The first pen ready, oldest first.
+     */
+    private boolean againDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, String dimension,
+                                  java.util.Map<dev.kindred.core.survival.Ranch.Kind, Integer> food) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        long now = world.getTime();
+        String why = null;
+        for (var pen : record.allPens()) {
+            if (!pen.complete() || !pen.dimension().equals(dimension)) continue;
+            var kind = dev.kindred.core.survival.Ranch.Kind.valueOf(pen.kind());
+            BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+            if (post.getSquaredDistance(player.getBlockPos()) > (double) RANCH_LOOK * RANCH_LOOK) continue;
+            int adults = 0, young = 0;
+            for (var animal : world.getEntitiesByClass(net.minecraft.entity.passive.AnimalEntity.class, new net.minecraft.util.math.Box(post).expand(8),
+                    a -> a.getBlockX() > post.getX() && a.getBlockX() < post.getX() + 6 && a.getBlockZ() > post.getZ() && a.getBlockZ() < post.getZ() + 6
+                            && Registries.ENTITY_TYPE.getId(a.getType()).toString().equals(kind.entity) && player.canSee(a))) {
+                if (animal.isBaby()) young++;
+                else adults++;
+            }
+            var again = dev.kindred.core.survival.RanchChoice.again(kind, adults, young, food.getOrDefault(kind, 0), now - pen.ranAt());
+            if (again.breed()) return startOwnRanch(entry, body, pen, again.why());
+            if (why == null) why = again.why();
+        }
+        if (why != null) entry.ranchNote = why;
+        return false;
     }
 
     /**
@@ -5586,7 +5618,7 @@ final class PlayerRuntime {
             entry.ranch = null;
             entry.buildTasks.clear();
             // Its own ranch stopped by the operator is not begun again on its own (M-01a).
-            if (entry.bases != null && entry.bases.finish(entry.ownRanch)) memories.saveBases(entry.data.id(), entry.bases);
+            if (entry.bases != null && entry.bases.finish(entry.ownRanch, server.getOverworld().getTime())) memories.saveBases(entry.data.id(), entry.bases);
             entry.ownRanch = null;
             entry.seeding = null;
             entry.growing = null;
