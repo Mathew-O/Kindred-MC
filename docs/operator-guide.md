@@ -747,6 +747,13 @@ In a faction world:
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
   In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
   beyond the border takes nobody anywhere.
+- The market (M-06g): `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
+  `/shop buy <item> <count>` (raw materials the market stocks), `/shop price [item]`, `/market top` (the day's movers),
+  `/market history <item>`; operators `/market baseline <item> <hundredths> <mass|ordinary|scarce> [nobuy]` to price a
+  pending item. Prices fall as the market fills and drift back over hours; a sale of many walks down the price; made
+  things are priced from what they are made of, so no craft or smelt loop pays. Refused, with the reason: admin-only
+  items, containers with things in them, unknown data or enchantments, anything not yet priced. A sale left half done
+  by a crash is logged as uncertain for an operator to reconcile.
 
 ## Development native bodies
 Explicit development native bodies are available:

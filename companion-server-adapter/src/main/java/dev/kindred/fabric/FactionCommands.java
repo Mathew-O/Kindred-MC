@@ -26,6 +26,17 @@ final class FactionCommands {
     private FactionCommands() {}
 
     static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        // The market (M-06g): /shop sell hand|all [confirm], /shop buy <item> <count>, /shop price [item]; /market top,
+        // /market history <item>, /market baseline (operators); /sellall as /shop sell all.
+        for (String root : new String[] {"shop", "market"}) {
+            dispatcher.register(CommandManager.literal(root)
+                    .executes(context -> market(context.getSource(), "help"))
+                    .then(CommandManager.argument("request", StringArgumentType.greedyString())
+                            .executes(context -> market(context.getSource(), StringArgumentType.getString(context, "request")))));
+        }
+        dispatcher.register(CommandManager.literal("sellall")
+                .executes(context -> market(context.getSource(), "sell all"))
+                .then(CommandManager.literal("confirm").executes(context -> market(context.getSource(), "sell all confirm"))));
         dispatcher.register(CommandManager.literal("faction")
                 .executes(context -> help(context.getSource()))
                 .then(CommandManager.literal("admin").requires(source -> source.hasPermissionLevel(2))
@@ -57,9 +68,24 @@ final class FactionCommands {
                         })));
     }
 
+    private static int market(ServerCommandSource source, String request) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(source);
+        var player = source.getPlayer();
+        List<String> words = Arrays.stream(request.trim().split("\\s+")).filter(w -> !w.isEmpty()).toList();
+        if (player == null && !(words.size() > 0 && List.of("price", "top", "history", "baseline").contains(words.getFirst()))) {
+            source.sendError(Text.literal("Only a player sells and buys; an operator uses /faction as <player> shop ..."));
+            return 0;
+        }
+        return runtime.marketRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), words.isEmpty() ? "help" : words.getFirst(), words.isEmpty() ? List.of() : words.subList(1, words.size()));
+    }
+
     private static int run(PlayerRuntime runtime, ServerCommandSource source, UUID who, String request) {
         List<String> words = Arrays.stream(request.trim().split("\\s+")).filter(w -> !w.isEmpty()).toList();
         if (words.isEmpty()) return help(source);
+        if ((words.getFirst().equals("shop") || words.getFirst().equals("market")) && words.size() > 1) {
+            return runtime.marketRequest(source, who, words.get(1), words.subList(2, words.size()));
+        }
         return runtime.faction(source, who, words.getFirst(), words.subList(1, words.size())).accepted() ? 1 : 0;
     }
 

@@ -317,7 +317,7 @@ final class FactionsService {
                 if (decision.accepted()) record.accept(decision.events());
                 return new Reply(decision.accepted(), List.of(decision.reason()));
             }
-            case "coins" -> { return Reply.told(List.of("Coins: " + ledgers.get().coins().of(who))); }
+            case "coins" -> { return Reply.told(List.of("Coins: " + dev.kindred.core.factions.Coins.show(ledgers.get().coins().of(who)))); }
             case "map" -> { return Reply.told(map(who, world, pos)); }
             case "info" -> {
                 var faction = first.isEmpty() ? book.of(who).orElse(null) : book.named(first).orElse(null);

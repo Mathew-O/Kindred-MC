@@ -33,7 +33,7 @@ class TerritoryTest {
         UUID red = UUID.randomUUID();
         found(red, "Red", "RED");
         assertTrue(claim(red, 100, 100).accepted());
-        assertEquals(400, coins.of(red), "100 coins a claim");
+        assertEquals(40_000, coins.of(red), "100 coins a claim (in hundredths)");
         assertTrue(claim(red, 101, 100).accepted(), "edge-adjacent");
         assertEquals("Not touching your land: claims grow from your own chunks", claim(red, 103, 100).reason());
         assertFalse(claim(red, 102, 101).accepted(), "a diagonal does not touch");
@@ -85,7 +85,7 @@ class TerritoryTest {
     void powerAndTheEightyChunkCapBoundTheClaimsAndCoinsPayForThem() {
         UUID red = UUID.randomUUID();
         found(red, "Red", "RED");
-        coins = new Coins.Book(Map.of(red, 1_000_000L), 0);
+        coins = new Coins.Book(Map.of(red, 100_000_000L), 0);
         for (int i = 0; i < 10; i++) assertTrue(claim(red, 100 + i, 100).accepted(), "chunk " + i);
         assertEquals("Over capacity: 10 claimed of 10 (power 10, cap 80)", claim(red, 110, 100).reason(), "one member supports 10");
         for (int i = 0; i < 9; i++) enlist(red);
@@ -94,8 +94,8 @@ class TerritoryTest {
         assertEquals("Over capacity: 80 claimed of 80 (power 100, cap 80)", claim(red, 140, 100).reason(), "ten full members, the cap");
         UUID poor = UUID.randomUUID();
         found(poor, "Poor", "POO");
-        coins = new Coins.Book(Map.of(poor, 99L), 0);
-        assertEquals("A claim costs 100 coins; you have 99", claim(poor, -200, -200).reason());
+        coins = new Coins.Book(Map.of(poor, 9_999L), 0);
+        assertEquals("A claim costs 100 coins; you have 99.99", claim(poor, -200, -200).reason());
     }
 
     @Test
@@ -103,7 +103,7 @@ class TerritoryTest {
         UUID red = UUID.randomUUID();
         found(red, "Red", "RED");
         UUID member = enlist(red);
-        coins = new Coins.Book(Map.of(red, 500L, member, 500L), 0);
+        coins = new Coins.Book(Map.of(red, 50_000L, member, 50_000L), 0);
         assertEquals("Only an officer or the leader claims land", claim(member, 100, 100).reason());
         assertTrue(claim(red, 100, 100).accepted());
         assertFalse(Territory.unclaim(factions, claims, member, new Territory.Chunk(W, 100, 100), at()).accepted());
@@ -149,8 +149,8 @@ class TerritoryTest {
         for (int i = 0; i < record.size(); i++) written.add(record.get(i).withId(i + 1));
         assertEquals(claims, ClaimLedger.INSTANCE.replay(written));
         assertEquals(coins, Coins.INSTANCE.replay(written));
-        assertEquals(300, coins.of(red));
-        assertEquals(500, coins.minted(), "only the start rule puts coins into the world");
+        assertEquals(30_000, coins.of(red));
+        assertEquals(50_000, coins.minted(), "only the start rule puts coins into the world");
     }
 
     // --- helpers ---

@@ -1,0 +1,289 @@
+# Kindred's market baselines (M-06g), in hundredths of a coin, at about ten coins a minute of play (Worth's minutes where
+# it has them). Raw materials only: anything made is priced from these by its cheapest recipe. An item neither listed
+# nor made from listed ones is valuation pending until an operator sets its baseline (/market baseline).
+# root <item> <cents> <mass|ordinary|scarce> [nobuy]   as <item> <unit> <ratio>   enchant <id> <cents a level>
+# admin <item>: never paid for.
+
+# Ores and minerals
+root diamond 3000 scarce nobuy
+root iron_ingot 600 ordinary
+root gold_ingot 600 ordinary
+root copper_ingot 150 ordinary
+root netherite_scrap 6000 scarce nobuy
+root emerald 500 ordinary
+root lapis_lazuli 150 ordinary
+root coal 80 mass
+root redstone 30 mass
+root quartz 80 ordinary
+root amethyst_shard 100 ordinary
+root glowstone_dust 50 ordinary
+root obsidian 600 ordinary
+root crying_obsidian 100 ordinary nobuy
+root flint 200 ordinary
+as iron_block iron_ingot 9
+as raw_iron iron_ingot 1
+as raw_iron_block iron_ingot 9
+as iron_nugget iron_ingot 1/9
+as iron_ore iron_ingot 1
+as deepslate_iron_ore iron_ingot 1
+as gold_block gold_ingot 9
+as raw_gold gold_ingot 1
+as raw_gold_block gold_ingot 9
+as gold_nugget gold_ingot 1/9
+as gold_ore gold_ingot 1
+as deepslate_gold_ore gold_ingot 1
+as nether_gold_ore gold_ingot 0.5
+as copper_block copper_ingot 9
+as raw_copper copper_ingot 1
+as raw_copper_block copper_ingot 9
+as copper_ore copper_ingot 2
+as deepslate_copper_ore copper_ingot 2
+as diamond_block diamond 9
+as diamond_ore diamond 1
+as deepslate_diamond_ore diamond 1
+as emerald_block emerald 9
+as emerald_ore emerald 1
+as deepslate_emerald_ore emerald 1
+as lapis_block lapis_lazuli 9
+as lapis_ore lapis_lazuli 4
+as deepslate_lapis_ore lapis_lazuli 4
+as coal_block coal 9
+as charcoal coal 1
+as coal_ore coal 1
+as deepslate_coal_ore coal 1
+as redstone_block redstone 9
+as redstone_ore redstone 4
+as deepslate_redstone_ore redstone 4
+as quartz_block quartz 4
+as nether_quartz_ore quartz 1
+as ancient_debris netherite_scrap 1
+as netherite_ingot netherite_scrap 4
+as netherite_block netherite_scrap 36
+as amethyst_block amethyst_shard 4
+as glowstone glowstone_dust 4
+
+# Stone, earth and sand (mass-farmable)
+root cobblestone 2 mass
+root stone 3 mass
+root cobbled_deepslate 2 mass
+root deepslate 3 mass
+root dirt 1 mass
+root netherrack 1 mass
+root blackstone 3 mass
+root basalt 3 mass
+root andesite 2 mass
+root diorite 2 mass
+root granite 2 mass
+root tuff 2 mass
+root calcite 3 mass
+root end_stone 5 mass
+root sand 3 mass
+root red_sand 3 mass
+root gravel 3 mass
+root clay_ball 20 mass
+root soul_sand 5 mass
+root soul_soil 5 mass
+root mud 2 mass
+root snowball 1 mass
+root ice 20 ordinary
+root packed_ice 180 ordinary
+root moss_block 10 mass
+root dripstone_block 5 mass
+root pointed_dripstone 10 mass
+root magma_block 20 ordinary
+root prismarine_shard 100 ordinary
+root prismarine_crystals 100 ordinary
+root sponge 1000 scarce nobuy
+root wet_sponge 1000 scarce nobuy
+
+# Wood
+root oak_log 50 mass
+root spruce_log 50 mass
+root birch_log 50 mass
+root jungle_log 50 mass
+root acacia_log 50 mass
+root dark_oak_log 50 mass
+root mangrove_log 50 mass
+root cherry_log 50 mass
+root crimson_stem 60 mass
+root warped_stem 60 mass
+root bamboo 5 mass
+root stick 10 mass
+
+# Crops and plants
+root wheat 20 mass
+root wheat_seeds 5 mass
+root beetroot 20 mass
+root beetroot_seeds 5 mass
+root carrot 80 mass
+root potato 80 mass
+root poisonous_potato 5 mass
+root pumpkin 50 mass
+root melon_slice 10 mass
+root sugar_cane 20 mass
+root cactus 20 mass
+root kelp 5 mass
+root cocoa_beans 20 mass
+root nether_wart 30 mass
+root sweet_berries 30 mass
+root glow_berries 30 mass
+root apple 150 ordinary
+root brown_mushroom 20 mass
+root red_mushroom 20 mass
+root crimson_fungus 20 mass
+root warped_fungus 20 mass
+root chorus_fruit 30 mass
+root vine 5 mass
+root lily_pad 10 mass
+root seagrass 5 mass
+root sea_pickle 20 mass
+root dandelion 10 mass
+root poppy 10 mass
+root blue_orchid 10 mass
+root allium 10 mass
+root azure_bluet 10 mass
+root red_tulip 10 mass
+root orange_tulip 10 mass
+root white_tulip 10 mass
+root pink_tulip 10 mass
+root oxeye_daisy 10 mass
+root cornflower 10 mass
+root lily_of_the_valley 10 mass
+root wither_rose 200 ordinary nobuy
+root sunflower 20 mass
+root lilac 20 mass
+root rose_bush 20 mass
+root peony 20 mass
+root torchflower 50 ordinary
+root pitcher_plant 50 ordinary
+root oak_sapling 10 mass
+root spruce_sapling 10 mass
+root birch_sapling 10 mass
+root jungle_sapling 10 mass
+root acacia_sapling 10 mass
+root dark_oak_sapling 10 mass
+root cherry_sapling 10 mass
+root mangrove_propagule 10 mass
+
+# Mob drops
+root rotten_flesh 10 mass
+root bone 50 mass
+root string 150 ordinary
+root spider_eye 50 ordinary
+root gunpowder 100 ordinary
+root ender_pearl 2000 ordinary
+root blaze_rod 2000 ordinary
+root ghast_tear 1000 ordinary nobuy
+root slime_ball 200 ordinary
+root magma_cream 300 ordinary
+root leather 100 ordinary
+root rabbit_hide 50 ordinary
+root rabbit_foot 500 ordinary
+root feather 30 mass
+root egg 30 mass
+root ink_sac 50 ordinary
+root glow_ink_sac 100 ordinary
+root phantom_membrane 300 ordinary
+root shulker_shell 3000 scarce nobuy
+root nautilus_shell 200 ordinary
+root heart_of_the_sea 1000 scarce nobuy
+root turtle_scute 300 ordinary
+root armadillo_scute 300 ordinary
+root honeycomb 100 ordinary
+root white_wool 300 ordinary
+root beef 150 mass
+root porkchop 150 mass
+root mutton 150 mass
+root chicken 150 mass
+root rabbit 150 mass
+root cod 150 mass
+root salmon 150 mass
+root tropical_fish 100 mass
+root pufferfish 100 mass
+root totem_of_undying 20000 scarce nobuy
+root trident 5000 scarce nobuy
+root dragon_breath 500 ordinary nobuy
+root nether_star 20000 scarce nobuy
+root wither_skeleton_skull 3000 scarce nobuy
+root saddle 1000 ordinary nobuy
+root name_tag 1000 ordinary nobuy
+root enchanted_golden_apple 30000 scarce nobuy
+root echo_shard 1000 scarce nobuy
+root disc_fragment_5 500 ordinary nobuy
+root experience_bottle 300 ordinary nobuy
+root breeze_rod 1000 ordinary nobuy
+
+# Enchantments: what a level of each adds to an item, in hundredths
+enchant protection 300
+enchant fire_protection 150
+enchant feather_falling 200
+enchant blast_protection 150
+enchant projectile_protection 150
+enchant respiration 150
+enchant aqua_affinity 150
+enchant thorns 150
+enchant depth_strider 150
+enchant frost_walker 150
+enchant soul_speed 150
+enchant swift_sneak 300
+enchant sharpness 300
+enchant smite 150
+enchant bane_of_arthropods 100
+enchant knockback 100
+enchant fire_aspect 200
+enchant looting 400
+enchant sweeping_edge 150
+enchant efficiency 300
+enchant silk_touch 500
+enchant unbreaking 300
+enchant fortune 500
+enchant power 300
+enchant punch 100
+enchant flame 200
+enchant infinity 500
+enchant luck_of_the_sea 200
+enchant lure 200
+enchant loyalty 200
+enchant impaling 200
+enchant riptide 200
+enchant channeling 300
+enchant multishot 300
+enchant quick_charge 200
+enchant piercing 150
+enchant mending 1000
+enchant density 200
+enchant breach 300
+enchant wind_burst 300
+enchant binding_curse 0
+enchant vanishing_curse 0
+
+# Never paid for
+admin command_block
+admin chain_command_block
+admin repeating_command_block
+admin command_block_minecart
+admin structure_block
+admin structure_void
+admin jigsaw
+admin barrier
+admin light
+admin debug_stick
+admin knowledge_book
+admin bedrock
+admin end_portal_frame
+admin reinforced_deepslate
+admin spawner
+admin trial_spawner
+admin vault
+admin petrified_oak_slab
+admin player_head
+admin budding_amethyst
+admin farmland
+admin dirt_path
+admin infested_stone
+admin infested_cobblestone
+admin infested_deepslate
+admin infested_stone_bricks
+admin infested_mossy_stone_bricks
+admin infested_cracked_stone_bricks
+admin infested_chiseled_stone_bricks
