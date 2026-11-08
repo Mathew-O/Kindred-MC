@@ -16,6 +16,25 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## F-29b, F-29c and F-29d (`cd56501`) — 8 November 2026 (`claude/improvising-1108`)
+
+- **Built:**
+  - F-29b: a rescue asked after a minute with no progress, from a report of what the player sees.
+  - F-29c: up to three rounds, the `look` probe, and the local executors.
+  - F-29d: recipes.
+- **JUnit:** `./gradlew build`, 982 tests, 0 failed, 6 skipped.
+- **Each rescue class alone, three runs:**
+  - `NativeRescueGameTests` 9 of 9 each time;
+  - `NativeRescueRoundsGameTests` 9 of 9 each time (new);
+  - `NativeRescueRecipesGameTests` 2 of 2 each time (new);
+  - `ReplayGameTests` 7 of 7 (one run).
+- **The full native suite on `cd56501`, nothing else on the cores:** 601 of 602 in 49.1 minutes.
+  - The one failure: `NativeRanchGameTests.anAiPlayerPensAPairOfCowsWithItsOwnWoodAndBreedsThem`, the ranch's pen. It is
+    on the open list: the suite before F-25c4y, further down this page, failed it too, with the ranch's pen and the
+    pasture's doorway pair called "both known". Run alone right after, the class passed 2 of 2.
+- **Evaluations:** none yet. The rescue-off arms (20 seeds at two hours, 10 at four) run in this container. The rescue-on
+  arms run in the lead's, which has the model key ([F-29e](evidence/F-29e.md)).
+
 ## E-40, iteration 14 (`e40a14-80b7150`, batch 16) — 8 November 2026 (`claude/e40-ladder-18-1108`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `80b7150` (batch 16 with F-25c4ch and F-25c4ci, before
@@ -470,6 +489,14 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01a: wheat grown for cows and sheep, 2026-11-08
+
+Branch `claude/modes-1106-8`, from M-01a's seeds branch, main merged in. M-01a stays open. See [M-01a](evidence/M-01a.md).
+- JUnit: `WheatPlotTest` 2 of 2 (new); `RanchChoiceTest` 4 of 4, the wheat test failing before.
+- Native: `NativeOwnRanchGameTests` with `NativeRanchGameTests` and `NativeCompoundGameTests` alone, three runs on `26301ef`, 11 of 11 each.
+  - Control (the wheat not grown): fails, no plot.
+  - On the way: the hoe never made (the shared-budget scan, now nearest first), tills refused out of reach (now walked to), and on `1efb6ff` one run in three with a refused table spot and the cows out of sight at the harvest (both fixed).
 
 ## M-01a: the chickens' seeds earned from grass, 2026-11-06
 
@@ -3166,3 +3193,7 @@ After the block's first merge from main, CI on PR #25 found:
     scaffold block it could not reach, waiting.
   - Not reproduced locally: 4 of 4 before the fix and 4 of 4 after. The build classes and `NativeLifeFirstGameTests`
     passed 37 of 37.
+- PR #31 merged as `e0368f9`. Main's CI on it (run 42138874868) was red; F-22c21 to F-22c25, from the E-40 branches,
+  followed.
+- Main's CI green three runs running: `c451f94` (run 42414280759), `eb680aa` (42444314816) and `15e3ee9`
+  (42455260820). The block's definition of done is met.
