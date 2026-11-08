@@ -16,6 +16,25 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## PR #37's builds (batch 17, `b43b7de`) — 8 November 2026
+
+Each pull-request build failed native fixtures, a different set in each run; main's build on `15e3ee9` was green. Both
+jobs were re-run once.
+- Run 42455286799, twice: `NativePortalCampaignGameTests.withNoPickaxeUnderSandstoneAndSandItDigsTheSandDownAheadOfEachStepAndClimbsOut`,
+  "Not out". Its climb waited "let what falls settle" at 1, 4, -3 from its start to the test's end, 133 waits on the
+  re-run. Root cause: the fixture never marked its ground as simulated. The test server sets no simulation distance,
+  so entities move only in the player's own chunk and the test structure's (see `FixtureGround.simulated`). In CI the
+  pocket was three blocks south of a chunk's edge. Climbing out, the landing crossed into the chunk north, and the sand
+  dug down there never fell. Alone it passed 3 of 3, wherever the test stood. Placed three blocks south of a chunk's
+  edge as CI placed it, it failed 2 of 3, "Not out: at 1, 4, -3 ... let what falls settle". With its ground simulated,
+  as most fixtures do, it passed 3 of 3. The fixture now does so; the climb's code is unchanged.
+- Run 42455310230: first `NativeBunkerGameTests.itDigsOutlinesAndFurnishesItsHideoutUnderTheGround` ("0/345 placed -
+  In the way of the build"), then on the re-run `NativeLifeFirstGameTests.hungryWithTooLittleToLastItHuntsFirstThenBuildsItsBase`
+  and `itsFirstNightFallingAsItsCabinGoesUpItSleepsThereThenGoesBackTheNextNight` ("Its body": the fixture's time ran
+  out). In the first of those, the cabin was built, 222 of 222 at 08:19:39. Its exact check did not pass, and the
+  player went on to a keep until the fixture's end. These are construction fixtures this batch's change does not touch.
+  Their cause is not yet found; they are run on the next head.
+
 ## E-40, batch 17: the trip's sticks sized to its digging (F-25c4cj) — 8 November 2026 (`claude/e40-ladder-17-1108`)
 
 - **The planner** (F-25c4cj, [evidence](evidence/F-25c4cj.md)): `PortalRunPlannerTest.theTripsSticksCoverTheStonePickaxesItsDiggingWearsOut`
