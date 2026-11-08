@@ -66,7 +66,10 @@ public final class KindredMod implements ModInitializer {
         KindredSkinPayloads.register();
         KindredSkins.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
-                PlayerCommands.register(dispatcher));
+{
+            PlayerCommands.register(dispatcher);
+            FactionCommands.register(dispatcher); // Factions mode (M-06c).
+        });
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, position, state, blockEntity) ->
                 NativePlayerBody.allowBreak(world, player, position, state));
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.AFTER.register((world, player, position, state, blockEntity) ->
@@ -139,13 +142,41 @@ public final class KindredMod implements ModInitializer {
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
             if (entity instanceof CompanionEntity companion && runtime != null) runtime.unloaded(companion);
         });
-        // A player's fall ends a duel it was in (M-00a); a native player's own death is handled by its runtime as well.
+        // A player's fall ends a duel it was in (M-00a) and is written to the World Record (F-31); a native player's own death is
+        // handled by its runtime as well.
         net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-            if (entity instanceof net.minecraft.server.network.ServerPlayerEntity fallen && runtime != null) runtime.playerFell(fallen.getUuid());
+            if (entity instanceof net.minecraft.server.network.ServerPlayerEntity fallen && runtime != null) runtime.playerDied(fallen, source);
         });
         // A build battle's plots are their builders' alone while it runs (M-04a).
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) ->
                 !(player instanceof net.minecraft.server.network.ServerPlayerEntity builder) || runtime == null || runtime.mayEditAt(builder, pos));
+        // A faction's land and the safe zones (M-06d): only its members break, place or use anything there, people and AI
+        // players alike; doors, buttons, chests and levers included, and a double chest's other half.
+        net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) ->
+                !(player instanceof net.minecraft.server.network.ServerPlayerEntity someone) || TerritoryGuard.mayChange(someone, pos));
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
+            if (!(player instanceof net.minecraft.server.network.ServerPlayerEntity someone)) return net.minecraft.util.ActionResult.PASS;
+            boolean allowed = TerritoryGuard.mayChange(someone, hit.getBlockPos()) && TerritoryGuard.mayChange(someone, hit.getBlockPos().offset(hit.getSide()));
+            return allowed ? net.minecraft.util.ActionResult.PASS : net.minecraft.util.ActionResult.FAIL;
+        });
+        net.fabricmc.fabric.api.event.player.AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) ->
+                !(player instanceof net.minecraft.server.network.ServerPlayerEntity someone) || TerritoryGuard.mayChange(someone, pos)
+                        ? net.minecraft.util.ActionResult.PASS : net.minecraft.util.ActionResult.FAIL);
+        // In a faction world, a hit from one player on another lands only between enemy factions' members, never in a safe
+        // zone (M-06f, D7): melee, arrows and anything else a player's hit is, the attacker told why.
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (!(entity instanceof net.minecraft.server.network.ServerPlayerEntity target)
+                    || !(source.getAttacker() instanceof net.minecraft.server.network.ServerPlayerEntity attacker) || attacker == target) return true;
+            boolean matchAllows = runtime != null && runtime.isReady() && runtime.mayAttackForMatch(attacker.getUuid(), target.getUuid());
+            return TerritoryGuard.strikeRefusal(attacker, target, matchAllows) == null;
+        });
+        // Frames, stands, paintings and storage carts on a faction's land are its own too.
+        net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((player, world, hand, entity, hit) ->
+                !(player instanceof net.minecraft.server.network.ServerPlayerEntity someone) || !TerritoryGuard.blockLike(entity)
+                        || TerritoryGuard.mayChange(someone, entity.getBlockPos()) ? net.minecraft.util.ActionResult.PASS : net.minecraft.util.ActionResult.FAIL);
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) ->
+                !(player instanceof net.minecraft.server.network.ServerPlayerEntity someone) || !TerritoryGuard.blockLike(entity)
+                        || TerritoryGuard.mayChange(someone, entity.getBlockPos()) ? net.minecraft.util.ActionResult.PASS : net.minecraft.util.ActionResult.FAIL);
         net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
             if (!(player instanceof net.minecraft.server.network.ServerPlayerEntity builder) || runtime == null) return net.minecraft.util.ActionResult.PASS;
             boolean placing = !player.getStackInHand(hand).isEmpty() && player.getStackInHand(hand).getItem() instanceof net.minecraft.item.BlockItem;
