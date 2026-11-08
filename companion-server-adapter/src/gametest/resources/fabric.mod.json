@@ -107,6 +107,7 @@
       "dev.kindred.fabric.NativeWorldRecordGameTests",
       "dev.kindred.fabric.NativeFactionPowerGameTests",
       "dev.kindred.fabric.NativeTerritoryGameTests",
+      "dev.kindred.fabric.NativeSafeZoneGameTests",
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
       "dev.kindred.fabric.NativeManhuntGameTests",
       "dev.kindred.fabric.NativeBuildBattleGameTests",

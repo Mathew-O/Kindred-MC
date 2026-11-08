@@ -17,7 +17,8 @@
     "DropperTerritoryMixin",
     "ProjectileTerritoryMixin",
     "SmallFireballTerritoryMixin",
-    "FireTerritoryMixin"
+    "FireTerritoryMixin",
+    "PortalBorderMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin"

@@ -742,6 +742,11 @@ In a faction world:
   (500 at your first sight on a faction world). On claimed land only its faction's members break, place, open or use
   anything; explosions and fire break nothing there; water, lava, pistons, hoppers, dispensers and droppers reach
   nothing over its border; an outsider's arrow sets nothing off.
+- Spawn and the border (M-06f): `/faction admin hub` makes spawn's chunks within `safeRadius` (64) blocks a safe zone,
+  sets the border (`border`, 8,000, across round 0 0 with a 20-block warning; the Nether an eighth, the End the same)
+  and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
+  In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
+  beyond the border takes nobody anywhere.
 
 ## Development native bodies
 Explicit development native bodies are available:

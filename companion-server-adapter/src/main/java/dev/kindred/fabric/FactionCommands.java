@@ -28,6 +28,9 @@ final class FactionCommands {
     static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("faction")
                 .executes(context -> help(context.getSource()))
+                .then(CommandManager.literal("admin").requires(source -> source.hasPermissionLevel(2))
+                        .then(CommandManager.literal("hub").executes(context -> hub(context.getSource(), true))
+                                .then(CommandManager.literal("zone").executes(context -> hub(context.getSource(), false)))))
                 .then(CommandManager.literal("as").requires(source -> source.hasPermissionLevel(2))
                         .then(CommandManager.argument("player", StringArgumentType.word())
                                 .then(CommandManager.argument("request", StringArgumentType.greedyString())
@@ -58,6 +61,11 @@ final class FactionCommands {
         List<String> words = Arrays.stream(request.trim().split("\\s+")).filter(w -> !w.isEmpty()).toList();
         if (words.isEmpty()) return help(source);
         return runtime.faction(source, who, words.getFirst(), words.subList(1, words.size())).accepted() ? 1 : 0;
+    }
+
+    private static int hub(ServerCommandSource source, boolean build) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        return runtime == null ? unavailable(source) : runtime.factionsHub(source, build);
     }
 
     private static int help(ServerCommandSource source) {

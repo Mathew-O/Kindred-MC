@@ -56,6 +56,29 @@ public final class TerritoryGuard {
         return mayChange(player, pos) ? null : "Another faction's land, or a safe zone";
     }
 
+    /**
+     * Why {@code attacker}'s hit on {@code target} (both players) is refused in a faction world, or null (M-06f): a safe
+     * zone is absolute; elsewhere only enemy factions' members, or players a running match lets strike, fight. The
+     * attacker is told why. {@code matchAllows} is the match registry's own leave.
+     */
+    public static String strikeRefusal(ServerPlayerEntity attacker, ServerPlayerEntity target, boolean matchAllows) {
+        for (var service : of(attacker.getServerWorld())) {
+            String why = service.strikeRefusal(attacker, target);
+            if (why == null || matchAllows && !why.startsWith("No fighting in a safe zone")) continue;
+            service.tell(attacker, why);
+            return why;
+        }
+        return null;
+    }
+
+    /** Whether a Nether portal at {@code pos} in {@code world} would lead out of the border; the traveller told so (M-06f). */
+    public static boolean portalRefused(ServerWorld world, net.minecraft.entity.Entity traveller, BlockPos pos) {
+        var services = of(world);
+        if (services.isEmpty() || !FactionsService.leavesBorder(world, pos)) return false;
+        if (traveller instanceof ServerPlayerEntity player) services.getFirst().tell(player, "This portal would lead beyond the border");
+        return true;
+    }
+
     /** Frames, stands, paintings and minecarts that hold things: protected on claimed land as its blocks are. */
     public static boolean blockLike(net.minecraft.entity.Entity entity) {
         return entity instanceof net.minecraft.entity.decoration.AbstractDecorationEntity || entity instanceof net.minecraft.entity.decoration.ArmorStandEntity

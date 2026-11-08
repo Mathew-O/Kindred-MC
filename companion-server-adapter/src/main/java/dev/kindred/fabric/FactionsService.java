@@ -46,7 +46,6 @@ final class FactionsService {
     private final Supplier<Ledgers> ledgers;
     private final Consumer<List<WorldEvent>> record;
     private FactionSettings settings;
-    private java.util.Set<String> safe = java.util.Set.of();
     /** Per online player: when last measured, and the whole milliseconds measured but not yet written. */
     private final Map<UUID, long[]> online = new HashMap<>();
     /** Accounts whose first sight is written or being written. */
@@ -63,24 +62,76 @@ final class FactionsService {
 
     MinecraftServer server() { return server; }
 
-    /** The chunks of the safe zones (M-06f); none until the hub is set. */
-    java.util.Set<String> safe() { return safe; }
+    /** The chunks of the safe zones (M-06f), from the Record; none until the hub is set. */
+    java.util.Set<String> safe() { return ledgers.get().safe().chunks(); }
 
-    void safe(java.util.Set<String> chunks) { safe = java.util.Set.copyOf(chunks); }
+    /** The last refusal each player was told, for fixtures. */
+    private final Map<UUID, String> told = new HashMap<>();
 
+    /** {@code player} told {@code line} on its action bar, and kept as its last refusal. */
+    void tell(ServerPlayerEntity player, String line) {
+        told.put(player.getUuid(), line);
+        player.sendMessage(net.minecraft.text.Text.literal(line).formatted(net.minecraft.util.Formatting.RED), true);
+    }
+
+    String lastTold(UUID player) { return told.getOrDefault(player, ""); }
+
+    /**
+     * Why a player's hit on another player stands refused in a faction world, or null where it may land: a safe zone
+     * first, then the faction rules (D7). A running match's own leave is the caller's.
+     */
+    String strikeRefusal(ServerPlayerEntity attacker, ServerPlayerEntity target) {
+        if (zone(attacker) == Zone.SAFE || zone(target) == Zone.SAFE) return "No fighting in a safe zone";
+        return mayAttack(attacker, target) ? null : "Only enemy factions' members fight here";
+    }
+
+    /**
+     * The borders kept as the settings have them once the hub is set (M-06f): the overworld's {@code border} across round
+     * (0, 0) with a 20-block warning, the Nether's an eighth of it (vanilla copies the overworld's size unscaled, which
+     * would let the Nether reach eight times the overworld's land), the End's the same as the overworld's. Applied when
+     * the hub is set and checked again once a second, so a restart or vanilla's own copying is put right.
+     */
+    void applyBorders() {
+        if (!ledgers.get().safe().zones().containsKey(dev.kindred.core.factions.SafeZones.HUB)) return;
+        set(server.getOverworld(), settings.border());
+        var nether = server.getWorld(net.minecraft.world.World.NETHER);
+        if (nether != null) set(nether, settings.border() / 8.0);
+        var end = server.getWorld(net.minecraft.world.World.END);
+        if (end != null) set(end, settings.border());
+    }
+
+    private static void set(net.minecraft.server.world.ServerWorld world, double size) {
+        var border = world.getWorldBorder();
+        if (border.getCenterX() != 0 || border.getCenterZ() != 0) border.setCenter(0, 0);
+        if (border.getSize() != size) border.setSize(size);
+        if (border.getWarningBlocks() != 20) border.setWarningBlocks(20);
+    }
+
+    /**
+     * Whether a portal from {@code from} at {@code pos} would lead out of the playable area: the place it leads to, at
+     * the destination's scale, outside that dimension's border.
+     */
+    static boolean leavesBorder(net.minecraft.server.world.ServerWorld from, BlockPos pos) {
+        var server = from.getServer();
+        boolean inNether = from.getRegistryKey() == net.minecraft.world.World.NETHER;
+        var to = server.getWorld(inNether ? net.minecraft.world.World.OVERWORLD : net.minecraft.world.World.NETHER);
+        if (to == null) return false;
+        double scale = net.minecraft.world.dimension.DimensionType.getCoordinateScaleFactor(from.getDimension(), to.getDimension());
+        return !to.getWorldBorder().contains(pos.getX() * scale, pos.getZ() * scale);
+    }
     /** Whether {@code player} may break, place or use things in {@code chunk} (M-06d). */
     boolean mayChange(ServerPlayerEntity player, dev.kindred.core.factions.Territory.Chunk chunk) {
-        return dev.kindred.core.factions.Territory.mayChange(book(), ledgers.get().claims(), safe, player.getUuid(), player.hasPermissionLevel(2), chunk);
+        return dev.kindred.core.factions.Territory.mayChange(book(), ledgers.get().claims(), safe(), player.getUuid(), player.hasPermissionLevel(2), chunk);
     }
 
     /** Whether something may pass from {@code from} into {@code to}. */
     boolean mayCross(dev.kindred.core.factions.Territory.Chunk from, dev.kindred.core.factions.Territory.Chunk to) {
-        return dev.kindred.core.factions.Territory.mayCross(ledgers.get().claims(), safe, from, to);
+        return dev.kindred.core.factions.Territory.mayCross(ledgers.get().claims(), safe(), from, to);
     }
 
     /** Whether {@code chunk} is neither claimed nor a safe zone. */
     boolean unprotected(dev.kindred.core.factions.Territory.Chunk chunk) {
-        return dev.kindred.core.factions.Territory.access(ledgers.get().claims(), safe, chunk) == dev.kindred.core.factions.Territory.Access.ANY;
+        return dev.kindred.core.factions.Territory.access(ledgers.get().claims(), safe(), chunk) == dev.kindred.core.factions.Territory.Access.ANY;
     }
 
     void settings(FactionSettings next) { settings = next; }
@@ -99,7 +150,9 @@ final class FactionsService {
 
     /** The zone at {@code pos} in {@code world}: claimed land, or the wilderness; safe zones are M-06f's. */
     Zone zone(String world, BlockPos pos) {
-        return ledgers.get().claims().containsKey(ClaimLedger.chunk(world, pos.getX() >> 4, pos.getZ() >> 4)) ? Zone.CLAIMED : Zone.WILDERNESS;
+        String key = ClaimLedger.chunk(world, pos.getX() >> 4, pos.getZ() >> 4);
+        if (safe().contains(key)) return Zone.SAFE;
+        return ledgers.get().claims().containsKey(key) ? Zone.CLAIMED : Zone.WILDERNESS;
     }
 
     Zone zone(ServerPlayerEntity player) { return zone(player.getServerWorld().getRegistryKey().getValue().toString(), player.getBlockPos()); }
@@ -259,7 +312,7 @@ final class FactionsService {
             case "claim", "unclaim" -> {
                 var chunk = dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ());
                 var decision = verb.equals("claim")
-                        ? dev.kindred.core.factions.Territory.claim(book, powers(), ledgers.get().claims(), safe, ledgers.get().coins().of(who), settings, who, chunk, at)
+                        ? dev.kindred.core.factions.Territory.claim(book, powers(), ledgers.get().claims(), safe(), ledgers.get().coins().of(who), settings, who, chunk, at)
                         : dev.kindred.core.factions.Territory.unclaim(book, ledgers.get().claims(), who, chunk, at);
                 if (decision.accepted()) record.accept(decision.events());
                 return new Reply(decision.accepted(), List.of(decision.reason()));
@@ -306,7 +359,7 @@ final class FactionsService {
             for (int dx = -5; dx <= 5; dx++) {
                 String key = ClaimLedger.chunk(world, cx + dx, cz + dz);
                 String owner = ledgers.get().claims().get(key);
-                row.append(dx == 0 && dz == 0 ? '@' : safe.contains(key) ? 's' : owner == null ? '-' : owner.equals(mine) ? '+' : '#');
+                row.append(dx == 0 && dz == 0 ? '@' : safe().contains(key) ? 's' : owner == null ? '-' : owner.equals(mine) ? '+' : '#');
             }
             lines.add(row.toString());
         }
