@@ -92,6 +92,22 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 22: off a ledge in a cavern's wall (F-25c4cp) — 8 November 2026 (`claude/e40-ladder-22-1108`)
+
+- **The fixture** (F-25c4cp, [evidence](evidence/F-25c4cp.md)): `NativeCavernLedgeGameTests.onACavernsLedgeWithAnAquiferBehindItItGetsOffTheLedge`,
+  on ground cut from 505's kept world in iteration 15 (a ledge high in a cavern's wall, an aquifer behind it), staged as
+  it says. On `6edf706`, without the fix: fails 3 of 3, "Still on the ledge after 3,000 ticks", waiting at Echo's spot
+  "for a feasible step" as in the run. With it: passes 3 of 3, jumping down from the ledge after three spells and landing 16 below, off it after 1,450 to 1,468 ticks. Two forms of a way back along its trail were
+  tried first and are not kept: from the ledge no route goes anywhere.
+- **The classes that climb, tunnel, dig out and jump down** (`NativeCavernLedgeGameTests`, `NativeCobwebHeadRoomGameTests`,
+  `NativePortalCampaignGameTests`, `NativeTripDownGameTests`, `NativeBranchMineGameTests`, `NativeStairGameTests`,
+  `NativeStrandedReturnGameTests`, `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests`,
+  `NativeNightShelterGameTests`, `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`,
+  `NativeFallingColumnGameTests`, `NativeGravelTunnelGameTests`, `ReplayGameTests`, `NativeAtlasGameTests`,
+  `NativeSurvivalGameTests`, `NativeMovementGameTests`, `NativeWaterEdgeGameTests`, `NativeSpireGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeHalfCastFrameGameTests`, `NativeFallGameTests`): with the fix, 155 of 155.
+- **Build:** `bash ./gradlew build` successful; JUnit 999 tests, 0 failures, 6 skipped (no JUnit in this batch).
+
 ## E-40, batch 21: a finished frame's opening cleared before it is lit (F-25c4co) — 8 November 2026 (`claude/e40-ladder-21-1108`)
 
 - **The fixture** (F-25c4co, [evidence](evidence/F-25c4co.md)): `NativeObstructedPortalGameTests.gravelInAFinishedFramesOpeningIsClearedAndThePortalLit`,

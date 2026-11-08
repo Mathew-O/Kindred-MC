@@ -2656,7 +2656,15 @@ final class PortalRunCampaign {
         var navigator = new NativeNavigator(world);
         // With a water bucket ready the fall is broken (E-07d): deeper drops, and no health spent on them.
         boolean clutch = NativeNavigator.clutchReady(player);
-        int deepest = clutch ? NativeNavigator.MAX_CLUTCH_DROP : 12;
+        // Stranded through three spells of no progress, whole and fed, with every way off a fall too deep to take lightly
+        // and no water to break it: the shortest fall onto clear ground that leaves it six health or more, rather than wait
+        // for ever. On 505 in E-40's iteration 15 (`e40a15-dbf4e5c`) Echo's stair down for iron came out on a ledge high in
+        // a cavern's wall, an aquifer behind the wall: every step down was over the drop, every step up into the water, no
+        // walk back the way it came, and the cavern's floor fifteen below. It waited there "for a feasible step" through 20
+        // stuck spells, until a zombie's blows put it down into the cavern at night, where it died (F-25c4cp).
+        boolean longStranded = !clutch && stuckLevel >= 3 && player.getHealth() >= player.getMaxHealth()
+                && player.getHungerManager().getFoodLevel() >= 18;
+        int deepest = clutch ? NativeNavigator.MAX_CLUTCH_DROP : longStranded ? 17 : 12;
         BlockPos feet = player.getBlockPos();
         BlockPos best = null;
         int bestDrop = Integer.MAX_VALUE;
@@ -2674,7 +2682,7 @@ final class PortalRunCampaign {
                 }
                 if (!navigator.passable(landing)) break; // Lava and fire are not passable either.
                 if (navigator.standable(landing)) {
-                    boolean affordable = k <= deepest && (clutch && k > 12 || player.getHealth() - Math.max(0, k - 3) >= 10);
+                    boolean affordable = k <= deepest && (clutch && k > 12 || player.getHealth() - Math.max(0, k - 3) >= (k > 12 ? 6 : 10));
                     // Never down beside lava, nor in the Nether below the shore of its lava sea: a knock or a slip on
                     // landing ends in it (staged End run 7 jumped down twice there and a hoglin knocked it in).
                     boolean safe = !lavaAround(world, landing, 3) && (world.getRegistryKey() != net.minecraft.world.World.NETHER || landing.getY() >= StrongholdLeg.NETHER_FLOOR);
@@ -2693,12 +2701,14 @@ final class PortalRunCampaign {
         // blocks or more, its water bucket at hand, waited there "for a feasible step" for the last 61 minutes of the run,
         // 21 stuck spells (F-25c4ca).
         boolean stranded = stuckLevel >= 2 && player.getHealth() >= 14 && armed(player);
+        // A long fall with nothing to break it lands it hurt: never among mobs, shield or no shield (F-25c4cp).
+        boolean hurtLanding = !clutch && bestDrop > 12;
         Vec3d landed = Vec3d.ofBottomCenter(landing);
-        if (!shielded(player) && !world.getEntitiesByClass(HostileEntity.class, new Box(landing).expand(12, 6, 12),
+        if ((hurtLanding || !shielded(player)) && !world.getEntitiesByClass(HostileEntity.class, new Box(landing).expand(12, 6, 12),
                 mob -> mob.isAlive() && !(mob instanceof EndermanEntity)
-                        && (!stranded || mob instanceof CreeperEntity && mob.squaredDistanceTo(landed) < 8 * 8)).isEmpty()) return Optional.empty();
+                        && (hurtLanding || !stranded || mob instanceof CreeperEntity && mob.squaredDistanceTo(landed) < 8 * 8)).isEmpty()) return Optional.empty();
         return Optional.of(new Task("native_goto", coords(best, Map.of("range", "0.8", "partial", "false",
-                "drop", String.valueOf(Math.min(deepest, bestDrop)))), bestDrop > 12 ? "Jump down from the ledge and break the fall with water" : "Jump down from the ledge"));
+                "drop", String.valueOf(Math.min(deepest, bestDrop)))), clutch && bestDrop > 12 ? "Jump down from the ledge and break the fall with water" : "Jump down from the ledge"));
     }
 
     /**
