@@ -69,3 +69,9 @@ failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
 [18:10:07] [Server thread/INFO] (Kindred) Horse ridden 25.6 blocks in 61 ticks
 # Control (the horse's server-side movement off): fails 3 of 3
 (4857024, -60, -10105877) Ridden across the field: 14.0 from the field's edge, 0.0 ridden
+# A horse of its own (2026-11-08, 165066c, claude/modes-1108-12): NativeHorseGameTests.withItsCabinStanding..., 3 runs
+[18:18:46] [Server thread/INFO] (Kindred) Own horse: abceee7c-82db-4862-a035-14ae33fd9bbf, tame true, saddled true; A horse of its own, tamed and saddled
+[18:19:57] [Server thread/INFO] (Kindred) Own horse: 6c710622-7a21-46b0-8433-47b9f33c8244, tame true, saddled true; A horse of its own, tamed and saddled
+[18:21:13] [Server thread/INFO] (Kindred) Own horse: 9210cffa-20f9-4fc2-a8d0-2d6068fad1da, tame true, saddled true; No pair of animals seen near home to keep
+# Control (horseDecision off): fails 3 of 3
+(3878718, -60, 125400) A horse of its own kept: No pair of animals seen near home to keep / Iron tools first: a house takes over two hundred stone; tame false, temper 0
