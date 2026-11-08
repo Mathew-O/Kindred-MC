@@ -16,6 +16,28 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, batch 18: out from under a falling column, and the walk to a drop under one (F-25c4ck, F-25c4cl) — 8 November 2026 (`claude/e40-ladder-18-1108`)
+
+- **The fixture** (F-25c4ck, [evidence](evidence/F-25c4ck.md)): `NativeFallingColumnGameTests.buriedUnderAColumnOfGravelItStepsOutFromUnderIt`,
+  staged as it says (a hurt player in a tunnel, gravel in its cells and seven blocks over its head). On `14cdf8a`,
+  without the fix: fails 3 of 3, "It died under the column". With it: passes 3 of 3, out from under it to the cell
+  beside, its health untouched. The fixture's first form looked at whichever body the player had, and passed on the
+  body it respawned in; it now holds the body it buried.
+- **The walk to a drop** (F-25c4cl, [evidence](evidence/F-25c4cl.md)): with F-25c4ck, the same classes passed 117 of 118;
+  `NativeGravelTunnelGameTests.tunnellingUnderGravelItWaitsForWhatFallsBeforeItStepsIn` failed, "Buried in its tunnel",
+  as in batch 16's classes: the gravel it broke dropped flint, and the walk to it went into the cell it had just cleared
+  while the gravel over it came down. `NativeGravelTunnelGameTests.tunnellingUnderGravelThatDropsFlintItWaitsForWhatFallsOnTheWayToTheDrop`
+  stages the drops (a stone shovel of Fortune III among its tools): without the fix it fails 3 of 3, "Buried in its
+  tunnel"; with it, passes 3 of 3. Three scenes staged first, a flint and gravel let fall over or beside it, did not
+  reproduce it (9 of 9 passed without the fix) and are not kept.
+- **The classes that dig out of walls, tunnel and climb** (`NativeFallingColumnGameTests`, `NativeGravelTunnelGameTests`,
+  `NativePortalCampaignGameTests`, `NativeTripDownGameTests`, `NativeBranchMineGameTests`, `NativeBucketGameTests`,
+  `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `ReplayGameTests`): with F-25c4ck alone, 117 of 118 (above);
+  with both, 119 of 119. With the walk's own column then left out of the way it checks (what comes down there is the
+  wall it digs out of): the flint variant 3 of 3 again, with `NativeGravelTunnelGameTests`, `NativeFallingColumnGameTests`
+  and `NativePortalCampaignGameTests`, 101 of 101.
+- **Build:** `bash ./gradlew build` successful; JUnit 960 tests, 0 failures, 6 skipped (unchanged: no JUnit in this batch).
+
 ## E-40, batch 17: the trip's sticks sized to its digging (F-25c4cj) — 8 November 2026 (`claude/e40-ladder-17-1108`)
 
 - **The planner** (F-25c4cj, [evidence](evidence/F-25c4cj.md)): `PortalRunPlannerTest.theTripsSticksCoverTheStonePickaxesItsDiggingWearsOut`

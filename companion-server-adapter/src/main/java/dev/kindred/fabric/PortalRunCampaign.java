@@ -2865,9 +2865,53 @@ final class PortalRunCampaign {
         cells.add(player.getBlockPos());
         for (BlockPos cell : cells) {
             if (world.getBlockState(cell).getCollisionShape(world, cell).isEmpty() || !breakableNow(body, cell)) continue;
+            // Under a column of gravel or sand, each block dug out of its head room brings the next one down into it, and
+            // it suffocates a block at a time: out from under the column first, where there is room to stand clear of it.
+            // In E-40's iteration 14 (`e40a14-80b7150`) three of the first fifteen deaths came so, each within a second or
+            // two of digging at the first block (F-25c4ck).
+            if (fallingColumn(world, cell)) {
+                Optional<BlockPos> clear = clearOfTheColumn(player, cell);
+                if (clear.isPresent()) {
+                    return Optional.of(go(clear.get(), 0.3, false, "Dig out of the wall: out from under the falling "
+                            + net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(cell).getBlock()).getPath() + " to " + clear.get().toShortString()));
+                }
+            }
             return Optional.of(clearAt(cell, "Dig out of the wall at " + cell.toShortString()));
         }
         return Optional.empty();
+    }
+
+    /** A falling block with more over it, at rest on it or on its way down onto it: a column that digging brings down. */
+    private static boolean fallingColumn(net.minecraft.server.world.ServerWorld world, BlockPos cell) {
+        if (!(world.getBlockState(cell).getBlock() instanceof net.minecraft.block.FallingBlock)) return false;
+        if (world.getBlockState(cell.up()).getBlock() instanceof net.minecraft.block.FallingBlock) return true;
+        return !world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, new Box(cell.up()).stretch(0, 8, 0), e -> true).isEmpty();
+    }
+
+    /**
+     * Where it stands clear of the column at {@code cell}: the middle of its own cell when the column only reaches into its
+     * eyes from beside it, else a cell beside its own with room for its body, a floor under it and no falling block over.
+     */
+    private Optional<BlockPos> clearOfTheColumn(ServerPlayerEntity player, BlockPos cell) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if ((cell.getX() != feet.getX() || cell.getZ() != feet.getZ()) && roomToStand(world, feet)) return Optional.of(feet);
+        for (Direction direction : Direction.Type.HORIZONTAL) {
+            BlockPos beside = feet.offset(direction);
+            if (beside.getX() == cell.getX() && beside.getZ() == cell.getZ()) continue;
+            if (blocked(beside) || !roomToStand(world, beside)) continue;
+            if (world.getBlockState(beside.up(2)).getBlock() instanceof net.minecraft.block.FallingBlock) continue;
+            return Optional.of(beside);
+        }
+        return Optional.empty();
+    }
+
+    /** Feet and head room clear of blocks and fluids, over a full floor. */
+    private static boolean roomToStand(net.minecraft.server.world.ServerWorld world, BlockPos feet) {
+        for (BlockPos cell : List.of(feet, feet.up())) {
+            if (!world.getBlockState(cell).getCollisionShape(world, cell).isEmpty() || !world.getFluidState(cell).isEmpty()) return false;
+        }
+        return world.getBlockState(feet.down()).isSideSolidFullSquare(world, feet.down(), Direction.UP);
     }
 
     /** A block this player could break right now from where it stands. */
@@ -6264,7 +6308,33 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         ItemEntity nearest = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
-        return Optional.of(go(nearest.getBlockPos(), 0.6, false, "Pick up " + Registries.ITEM.getId(nearest.getStack().getItem()).getPath().replace('_', ' ')));
+        String label = "Pick up " + Registries.ITEM.getId(nearest.getStack().getItem()).getPath().replace('_', ' ');
+        // Sand or gravel coming down on the way to the drop, or into its cell: a moment for it to come to rest first, as
+        // the tunnel waits before it steps in (F-25c4bv). The walk to flint from gravel it broke two cells off went
+        // through the cell the next block was coming down into, and was buried there (F-25c4cl).
+        if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
+        return Optional.of(go(nearest.getBlockPos(), 0.6, false, label));
+    }
+
+    /**
+     * Sand or gravel coming down ({@link #comingDown}) into a cell on the straight way from {@code from} to {@code to}, at
+     * either one's height, or into {@code to} itself: a short walk's way, as to a drop in reach. Not where it stands: what
+     * comes down there is the wall it digs out of ({@link #digOut}), and waiting under it would not help.
+     */
+    private static boolean comingDownOnTheWay(ServerWorld world, BlockPos from, BlockPos to) {
+        int steps = Math.max(1, (int) Math.ceil(Math.sqrt(from.getSquaredDistance(to)) * 2));
+        var seen = new java.util.HashSet<Long>();
+        for (int i = 1; i <= steps; i++) {
+            double t = (double) i / steps;
+            int x = (int) Math.floor(from.getX() + 0.5 + (to.getX() - from.getX()) * t);
+            int z = (int) Math.floor(from.getZ() + 0.5 + (to.getZ() - from.getZ()) * t);
+            if (x == from.getX() && z == from.getZ()) continue;
+            for (int y : new int[]{from.getY(), to.getY()}) {
+                BlockPos cell = new BlockPos(x, y, z);
+                if (seen.add(cell.asLong()) && comingDown(world, cell)) return true;
+            }
+        }
+        return false;
     }
 
     /** When the player started waiting for each drop still in water. */
