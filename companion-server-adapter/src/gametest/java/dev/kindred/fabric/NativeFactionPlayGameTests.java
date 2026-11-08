@@ -66,7 +66,7 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionPlayRaid", tickLimit = 2400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionPlayRaid", tickLimit = 2400)
     public void aFiercePlayerScoutsTheExposedBorderItSawAndCapturesItThere(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
         var server = context.getWorld().getServer();
@@ -77,10 +77,11 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
-                    // Open ground east of the start, across the chunks Ada will walk: a floor, and air above it.
+                    // Open ground east of the start, across the chunks Ada will walk, inside this test's own 80-block field
+                    // (a corridor out past its own ground was another test's to build on): a floor, and air above it.
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
-                    for (int x = -4; x <= 44; x++) for (int z = -4; z <= 12; z++) {
+                    for (int x = 0; x <= 60; x++) for (int z = 0; z <= 14; z++) {
                         world.setBlockState(o.add(x, 1, z), net.minecraft.block.Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 8; y++) world.setBlockState(o.add(x, y, z), net.minecraft.block.Blocks.AIR.getDefaultState());
                     }
