@@ -123,7 +123,8 @@ public final class NativeRanchGameTests implements FabricGameTest {
      * One of the pair stands down in a sunken patch three deep past the pen, in sight, with no way up a cow or a player
      * can walk (the wheat fixture: a cow past the field's edge, the player down after it and there for good). It does not
      * go down after it: it pens the one it can bring and leaves, the other given up, the gate shut behind; its wheat kept,
-     * there being no pair to breed. Staged: the field walled in as above, the patch dug in it, one cow put in it.
+     * there being no pair to breed. Staged: the field walled in as above, the patch dug in it, one cow put in it, the other
+     * held still on the field until the pen stands (staging the scene, not loosening the check).
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "ranchSunken", tickLimit = 4000)
     public void oneOfThePairDownWhereNoneCanWalkUpIsNotFollowedDown(TestContext context) {
@@ -168,12 +169,20 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     wren.getInventory().insertStack(new ItemStack(Items.WHEAT, 8));
                     // Daisy on the field south of the pen, well west of the patch, so that she does not wander into it as
                     // she grazes (once in five runs, nearer it, she did); Bess down in the patch.
-                    cows[0] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 10, 2, 4 + 18)).getUuid();
+                    var daisy = context.spawnEntity(EntityType.COW, new BlockPos(4 + 10, 2, 4 + 18));
+                    // Staged: Daisy held where she stands until the pen stands, so that the scene is the one described
+                    // (one cow on the field, one in the patch) when the leading begins. In CI she once wandered into the
+                    // patch while the pen went up, and with both down there was rightly nothing to lead.
+                    daisy.setAiDisabled(true);
+                    cows[0] = daisy.getUuid();
                     cows[1] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 29, -1, 4 + 11)).getUuid();
                     context.assertTrue(f.runtime.startRanch(f.source, id[0], pen, Ranch.Kind.COW) == 1, "Ranch started");
                 })
                 .createAndAdd(() -> {
                     var wren = player(f, player[0]);
+                    var progress = f.runtime.ranchStatus(id[0]).orElse("");
+                    if (!progress.startsWith("Crafting") && !progress.startsWith("Building")
+                            && context.getWorld().getEntity(cows[0]) instanceof CowEntity daisy && daisy.isAiDisabled()) daisy.setAiDisabled(false);
                     if (wren != null) lowest[0] = Math.min(lowest[0], wren.getBlockY());
                     context.assertTrue(lowest[0] >= o.getY() + 2, "Never down off the field: " + (lowest[0] - o.getY() - 2) + " below it, at "
                             + (wren == null ? "-" : wren.getBlockPos().subtract(pen).toShortString()) + " from the pen's post");
