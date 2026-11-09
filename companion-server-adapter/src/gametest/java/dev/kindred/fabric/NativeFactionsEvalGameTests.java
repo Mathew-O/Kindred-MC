@@ -78,6 +78,8 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
         EvalBootstrap[] run = new EvalBootstrap[1];
         BlockPos origin = context.getAbsolutePos(new BlockPos(20, 1, 20));
         String scenario = "starters=Kindred,Sol,Echo; founders=1; ticks=3600; sprint=off; goal=none; mode=factions";
+        @SuppressWarnings("unchecked")
+        java.util.concurrent.CompletableFuture<java.util.List<dev.kindred.core.record.WorldEvent>>[] events = new java.util.concurrent.CompletableFuture[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
@@ -103,13 +105,32 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
                     context.assertTrue(book.factions().size() == 1, "One faction, its founder's: " + book.factions().values().stream().map(x -> x.name()).toList());
                     int members = book.factions().values().stream().mapToInt(x -> x.members().size()).sum();
                     context.assertTrue(members == 3, "The others asked and joined: " + members + " of 3 in it");
-                    // Its faction's channel on the Wire: a joiner told of its founder's claim, as a faction-mate.
+                    events[0] = f.runtime.worldEventsForTest(java.util.Set.of(dev.kindred.core.factions.FactionLedger.JOIN,
+                            dev.kindred.core.record.ClaimLedger.CLAIM));
+                })
+                .createAndAdd(() -> context.assertTrue(events[0] != null && events[0].isDone(), "The Record read back"))
+                .createAndAdd(() -> {
+                    // Its faction's channel on the Wire: each joiner in the faction when a claim was recorded is told of it, as a
+                    // faction-mate, and only there; whichever joined first (a claim can fall between two joins).
+                    var record = events[0].join();
                     var statuses = f.runtime.nativeStatuses(dev.kindred.core.Actor.console());
-                    var sol = statuses.stream().filter(x -> x.name().equals("Sol")).findFirst().orElseThrow();
-                    var told = f.runtime.wire().inbox(sol.id(), "faction.claim");
-                    context.assertTrue(!told.isEmpty(), "Sol told of a claim on its faction's channel: " + f.runtime.wire().inbox(sol.id()));
-                    context.assertTrue(told.stream().allMatch(t -> t.message().scope().channel() == dev.kindred.core.wire.Channel.FACTION),
-                            "Only on the faction's channel");
+                    int checked = 0;
+                    for (var joiner : statuses) {
+                        if (joiner.name().equals("Kindred")) continue;
+                        var joined = record.stream().filter(e -> e.kind().equals(dev.kindred.core.factions.FactionLedger.JOIN)
+                                && joiner.nativeId().equals(e.actor())).findFirst();
+                        if (joined.isEmpty()) continue;
+                        long after = record.stream().filter(e -> e.kind().equals(dev.kindred.core.record.ClaimLedger.CLAIM)
+                                && e.subject().equals(joined.get().subject()) && e.id() > joined.get().id()).count();
+                        if (after == 0) continue;
+                        var told = f.runtime.wire().inbox(joiner.id(), "faction.claim");
+                        context.assertTrue(told.size() >= after, joiner.name() + " told of each claim after it joined (" + after + "): "
+                                + f.runtime.wire().inbox(joiner.id()));
+                        context.assertTrue(told.stream().allMatch(t -> t.message().scope().channel() == dev.kindred.core.wire.Channel.FACTION),
+                                "Only on the faction's channel");
+                        checked++;
+                    }
+                    context.assertTrue(checked >= 1, "A joiner in the faction when a claim was made: " + record);
                     run[0] = null;
                     f.runtime.stop();
                 })

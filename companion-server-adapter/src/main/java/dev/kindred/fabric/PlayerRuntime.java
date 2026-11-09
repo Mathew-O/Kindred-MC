@@ -16156,6 +16156,15 @@ final class PlayerRuntime {
         factions.tick(server.getPlayerManager().getPlayerList());
     }
 
+    /**
+     * Test-only and read-only: the World Record's events of {@code kinds}, read back from the store (its {@code
+     * allWorldEvents}), for a fixture to check what was recorded (M-06i's faction-channel fixture). It writes nothing.
+     */
+    CompletableFuture<List<dev.kindred.core.record.WorldEvent>> worldEventsForTest(Set<String> kinds) {
+        requireThread();
+        return store.allWorldEvents(kinds);
+    }
+
     /** A player's own goal and the goal it works toward, for a fixture; null for none. */
     dev.kindred.core.survival.SurvivalGoal[] goalsForTest(UUID id) {
         requireThread();
