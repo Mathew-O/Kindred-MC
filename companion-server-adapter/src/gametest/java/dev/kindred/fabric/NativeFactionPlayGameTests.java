@@ -66,6 +66,71 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Hungry with too little to last, in a faction world with its base to make (bases on): it hunts first, and founds its
+     * faction only once it has food to last, as what keeps it alive comes before what the faction world asks of it.
+     * Before, the faction world's choices came ahead of its life list: it founded and claimed at once, and in factions2's
+     * ten seeds nothing it did kept it fed or in a bed. The ground and herd are the life-first hunger fixture's.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "factionPlayLife", tickLimit = 20000)
+    public void hungryInAFactionWorldItHuntsBeforeItFoundsItsFaction(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 19500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(40, 7, 4), o.add(40, 7, 40)};
+        BlockPos home = o.add(16, 7, 16);
+        int[] atFound = {-1, -1};
+        boolean[] noted = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    world.setTimeOfDay(1000);
+                    for (int i = 0; i < 8; i++) {
+                        var cow = net.minecraft.entity.EntityType.COW.create(world, null, o.add(8 + 2 * i, 7, 28 + (i % 3) * 2),
+                                net.minecraft.entity.SpawnReason.COMMAND, false, false);
+                        context.assertTrue(cow != null && world.spawnEntity(cow), "A cow");
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new net.minecraft.item.ItemStack(net.minecraft.item.Items.STONE_SWORD));
+                    inventory.setStack(1, new net.minecraft.item.ItemStack(net.minecraft.item.Items.BREAD, 1));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(8);
+                    player.getHungerManager().setSaturationLevel(0);
+                    player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                    f.runtime.factionsWorldForTest(WIDE);
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    boolean founded = f.runtime.projected().factions().of(player.getUuid()).isPresent();
+                    if (!founded && f.runtime.lifeNote(f.id).startsWith("Hungry")) noted[0] = true;
+                    if (founded && atFound[0] < 0) {
+                        atFound[0] = NativeLifeFirstGameTests.stock(player);
+                        atFound[1] = player.getStatHandler().getStat(net.minecraft.stat.Stats.KILLED, net.minecraft.entity.EntityType.COW);
+                        KindredMod.LOGGER.info("Faction world, life first: founded with {} food in body and pack, {} cows killed", atFound[0], atFound[1]);
+                    }
+                    context.assertTrue(founded, "Its faction founded: " + f.runtime.lifeNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(noted[0], "It said why it waited: hungry");
+                    context.assertTrue(atFound[1] >= 1, "It hunted before it founded: " + atFound[1] + " cows killed");
+                    context.assertTrue(atFound[0] >= dev.kindred.core.survival.LifeFirst.FULL + dev.kindred.core.survival.LifeFirst.RESERVE,
+                            "Food to last before its faction: " + atFound[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionPlayRaid", tickLimit = 2400)
     public void aFiercePlayerScoutsTheExposedBorderItSawAndCapturesItThere(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);

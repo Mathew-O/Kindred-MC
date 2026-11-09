@@ -3554,10 +3554,6 @@ final class PlayerRuntime {
         if (evade != null) return evade;
         var raid = raidCandidates(entry, body);
         if (raid != null) return raid;
-        // In a faction world, what the faction world asks of it (M-06i): survival's urgent needs still come first.
-        var faction = factionCandidates(entry, body);
-        if (faction != null) return faction;
-
         // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
         shareOutFinds(entry, body);
 
@@ -3605,6 +3601,11 @@ final class PlayerRuntime {
                 return candidates;
             }
         }
+
+        // In a faction world, what the faction world asks of it (M-06i), after what keeps it alive: its bed at night and
+        // food when hunger is low come before a claim or a walk to one.
+        var faction = factionCandidates(entry, body);
+        if (faction != null) return faction;
 
         // Supplies it was asked to bring someone, fetched from its storage and handed over (E-01), before its own work.
         var delivering = deliveryCandidates(entry, body);
