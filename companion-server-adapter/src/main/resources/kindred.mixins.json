@@ -8,7 +8,17 @@
     "PlayerManagerMixin",
     "PlayerManagerSaveInvoker",
     "FishingBobberAccessor",
-    "ServerCommandSourceAccessor"
+    "ServerCommandSourceAccessor",
+    "ExplosionTerritoryMixin",
+    "FluidTerritoryMixin",
+    "PistonTerritoryMixin",
+    "HopperTerritoryMixin",
+    "DispenserTerritoryMixin",
+    "DropperTerritoryMixin",
+    "ProjectileTerritoryMixin",
+    "SmallFireballTerritoryMixin",
+    "FireTerritoryMixin",
+    "PortalBorderMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin"

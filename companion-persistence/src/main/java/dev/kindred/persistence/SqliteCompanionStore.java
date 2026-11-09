@@ -12,6 +12,10 @@ import dev.kindred.core.Mannerisms;
 import dev.kindred.core.Personality;
 import dev.kindred.core.SocialProfile;
 import dev.kindred.core.WorkSetup;
+import dev.kindred.core.record.ActionLedgerView;
+import dev.kindred.core.record.EventData;
+import dev.kindred.core.record.Ledger;
+import dev.kindred.core.record.WorldEvent;
 import dev.kindred.core.social.Expression;
 import dev.kindred.core.social.ListenerPreferences;
 import dev.kindred.core.team.ProjectId;
@@ -649,6 +653,7 @@ public final class SqliteCompanionStore {
                 insert.setLong(16, now);
                 insert.executeUpdate();
             }
+            insertWorldEvent(actionEvent(record, now));
             return record;
         }));
     }
@@ -686,6 +691,7 @@ public final class SqliteCompanionStore {
                 update.setLong(9, expectedRevision);
                 if (update.executeUpdate() != 1) throw new ConcurrentModificationException("Stale action revision");
             }
+            insertWorldEvent(actionEvent(next, Instant.now().toEpochMilli()));
             if (next.state() == ActionRecord.State.UNCERTAIN) {
                 insertEvent(next.companionId(), Instant.now(), "ACTION_UNCERTAIN", next.kind() + " " + next.actionId() + ": " + next.detail());
             }
@@ -1489,7 +1495,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 11) {
+            if (schemaVersion < 0 || schemaVersion > 12) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1503,6 +1509,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 9) migrate(9, "V9__activity_windows.sql");
             if (schemaVersion < 10) migrate(10, "V10__expression.sql");
             if (schemaVersion < 11) migrate(11, "V11__rough_talk.sql");
+            if (schemaVersion < 12) migrate(12, "V12__world_record.sql");
         }
         recover();
     }
@@ -1516,6 +1523,11 @@ public final class SqliteCompanionStore {
         transaction(() -> {
             try (Statement statement = database.createStatement()) {
                 for (String command : schema.split(";")) if (!command.isBlank()) statement.execute(command);
+                if (version == 12) {
+                    // The World Record is append-only (F-31): the database itself refuses an update or a delete.
+                    statement.execute("CREATE TRIGGER world_events_append_only_update BEFORE UPDATE ON world_events BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
+                    statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
+                }
                 statement.execute("PRAGMA user_version = " + version);
             }
             return null;
@@ -1567,6 +1579,7 @@ public final class SqliteCompanionStore {
                     update.setLong(7, record.revision());
                     update.executeUpdate();
                 }
+                insertWorldEvent(actionEvent(uncertain, Instant.now().toEpochMilli()));
                 insertEvent(record.companionId(), Instant.now(), "ACTION_UNCERTAIN", record.kind() + " " + record.actionId() + ": " + uncertain.detail());
             }
 
@@ -1688,10 +1701,135 @@ public final class SqliteCompanionStore {
             insert.setString(4, detail);
             insert.executeUpdate();
         }
+        long sequence;
         try (Statement query = database.createStatement(); ResultSet row = query.executeQuery("SELECT last_insert_rowid()")) {
             if (!row.next()) throw new SQLException("Missing journal sequence");
-            return new JournalEvent(row.getLong(1), id, Instant.ofEpochMilli(at.toEpochMilli()), type, detail);
+            sequence = row.getLong(1);
         }
+        // The journal is a kind of event (F-31): the same line in the World Record, in the same transaction.
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("sequence", String.valueOf(sequence));
+        data.put("detail", detail.length() > 4_000 ? detail.substring(0, 4_000) : detail);
+        if (detail.length() > 4_000) data.put("truncated", "1");
+        insertWorldEvent(WorldEvent.recorded(-1, at.toEpochMilli(), "", "journal", id, type.length() > WorldEvent.MAX_TEXT ? type.substring(0, WorldEvent.MAX_TEXT) : type, "", data));
+        return new JournalEvent(sequence, id, Instant.ofEpochMilli(at.toEpochMilli()), type, detail);
+    }
+
+    // ----- The World Record (F-31) -----
+
+    /** An action-ledger row as its event: the action ledger is a kind of event, written in the row's own transaction. */
+    private static WorldEvent actionEvent(ActionRecord record, long atMs) {
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("state", record.state().name());
+        data.put("revision", String.valueOf(record.revision()));
+        data.put("kind", record.kind());
+        data.put("outcome", record.outcome().name());
+        return WorldEvent.recorded(-1, atMs, "", ActionLedgerView.ACTION, record.companionId(), record.actionId().toString(), "", data);
+    }
+
+    private WorldEvent insertWorldEvent(WorldEvent draft) throws SQLException {
+        if (draft.id() != 0) throw new IllegalArgumentException("Only an unwritten event is recorded");
+        try (PreparedStatement insert = database.prepareStatement(
+                "INSERT INTO world_events(tick, real_time_ms, world, kind, actor, subject, place, data, how_known) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+            insert.setLong(1, draft.tick());
+            insert.setLong(2, draft.realTimeMs());
+            insert.setString(3, draft.world());
+            insert.setString(4, draft.kind());
+            insert.setString(5, draft.actor() == null ? null : draft.actor().toString());
+            insert.setString(6, draft.subject());
+            insert.setString(7, draft.place());
+            insert.setString(8, EventData.encode(draft.data()));
+            insert.setString(9, draft.howKnown().code());
+            insert.executeUpdate();
+        }
+        try (Statement query = database.createStatement(); ResultSet row = query.executeQuery("SELECT last_insert_rowid()")) {
+            if (!row.next()) throw new SQLException("Missing event id");
+            return draft.withId(row.getLong(1));
+        }
+    }
+
+    private static WorldEvent readWorldEvent(ResultSet row) throws SQLException {
+        String actor = row.getString("actor");
+        return new WorldEvent(row.getLong("id"), row.getLong("tick"), row.getLong("real_time_ms"), row.getString("world"), row.getString("kind"),
+                actor == null ? null : UUID.fromString(actor), row.getString("subject"), row.getString("place"),
+                EventData.decode(row.getString("data")), WorldEvent.HowKnown.parse(row.getString("how_known")));
+    }
+
+    /**
+     * Appends events to the World Record, all or none, in order, through this ordered writer: the only way anything is
+     * written there. Each returned event carries its id.
+     */
+    public CompletableFuture<List<WorldEvent>> record(List<WorldEvent> drafts) {
+        List<WorldEvent> copy = List.copyOf(drafts);
+        if (copy.isEmpty()) return CompletableFuture.completedFuture(List.of());
+        for (WorldEvent draft : copy) if (draft.id() != 0) throw new IllegalArgumentException("Only an unwritten event is recorded");
+        return submit(() -> transaction(() -> {
+            var written = new ArrayList<WorldEvent>(copy.size());
+            for (WorldEvent draft : copy) written.add(insertWorldEvent(draft));
+            return List.copyOf(written);
+        }));
+    }
+
+    /** Appends one event to the World Record. */
+    public CompletableFuture<WorldEvent> record(WorldEvent draft) {
+        return record(List.of(draft)).thenApply(List::getFirst);
+    }
+
+    /** Up to {@code limit} events after {@code afterId}, of {@code kinds} (every kind when empty), in the Record's order. */
+    public CompletableFuture<List<WorldEvent>> worldEvents(Set<String> kinds, long afterId, int limit) {
+        Set<String> wanted = Set.copyOf(kinds);
+        if (afterId < 0 || limit < 1 || limit > 10_000) throw new IllegalArgumentException("Invalid Record cursor or limit");
+        return submit(() -> selectWorldEvents(wanted, afterId, limit));
+    }
+
+    /** Every event of {@code kinds} (every kind when empty), in the Record's order, read in pages on the writer. */
+    public CompletableFuture<List<WorldEvent>> allWorldEvents(Set<String> kinds) {
+        Set<String> wanted = Set.copyOf(kinds);
+        return submit(() -> {
+            var all = new ArrayList<WorldEvent>();
+            long after = 0;
+            while (true) {
+                List<WorldEvent> page = selectWorldEvents(wanted, after, 5_000);
+                all.addAll(page);
+                if (page.size() < 5_000) return List.copyOf(all);
+                after = page.getLast().id();
+            }
+        });
+    }
+
+    private List<WorldEvent> selectWorldEvents(Set<String> kinds, long afterId, int limit) throws SQLException {
+        String filter = kinds.isEmpty() ? "" : " AND kind IN (" + String.join(", ", Collections.nCopies(kinds.size(), "?")) + ")";
+        try (PreparedStatement query = database.prepareStatement("SELECT * FROM world_events WHERE id > ?" + filter + " ORDER BY id LIMIT ?")) {
+            int index = 1;
+            query.setLong(index++, afterId);
+            for (String kind : new java.util.TreeSet<>(kinds)) query.setString(index++, kind);
+            query.setInt(index, limit);
+            var out = new ArrayList<WorldEvent>();
+            try (ResultSet rows = query.executeQuery()) { while (rows.next()) out.add(readWorldEvent(rows)); }
+            return out;
+        }
+    }
+
+    /**
+     * The agreement check for the action ledger (F-31): every row of {@code action_ledger}, its state and revision, against
+     * the same ledger rebuilt from the Record's action events alone.
+     */
+    public CompletableFuture<Ledger.Agreement<Map<UUID, ActionLedgerView.Row>>> checkActionLedger() {
+        return submit(() -> {
+            var kept = new java.util.TreeMap<UUID, ActionLedgerView.Row>();
+            try (Statement query = database.createStatement(); ResultSet rows = query.executeQuery("SELECT action_id, state, revision FROM action_ledger")) {
+                while (rows.next()) kept.put(UUID.fromString(rows.getString(1)), new ActionLedgerView.Row(rows.getString(2), rows.getLong(3)));
+            }
+            var events = new ArrayList<WorldEvent>();
+            long after = 0;
+            while (true) {
+                List<WorldEvent> page = selectWorldEvents(ActionLedgerView.INSTANCE.kinds(), after, 5_000);
+                events.addAll(page);
+                if (page.size() < 5_000) break;
+                after = page.getLast().id();
+            }
+            return ActionLedgerView.INSTANCE.check(events, Collections.unmodifiableMap(kept));
+        });
     }
 
     private Optional<BudgetState> selectBudget(UUID id, Instant start) throws SQLException {

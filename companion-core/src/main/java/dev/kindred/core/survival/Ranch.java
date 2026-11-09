@@ -449,6 +449,10 @@ public final class Ranch {
             // into the fence there and stayed (the ranch fixture, about one suite run in three).
             boolean beside = animal.at().z() == outside().z() && animal.at().x() != outside().x()
                     && Math.abs(animal.at().x() - outside().x()) <= 2;
+            // One behind the pen, outside a fence other than the gate's, walks straight at it inside and stays pressed to
+            // that fence: brought round to the gate from outside likewise (a sheep behind the far fence, the own-ranch
+            // fixtures; a cow past the pen's far corner, the cattle fixture in CI).
+            beside |= !inside(animal.at()) && animal.at().z() < outside().z();
             if (beside && seen.tick() - waitingSince > 2 * DRAW && relined < RELINES) {
                 relined++;
                 waitingSince = -1;

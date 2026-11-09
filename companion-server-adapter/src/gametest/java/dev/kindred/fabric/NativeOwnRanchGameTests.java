@@ -42,6 +42,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     // Staged: its cabin standing, block for block on the first plan in oak.
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
@@ -144,6 +145,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
                     for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
@@ -235,6 +237,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
                     for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
@@ -321,7 +324,12 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) if (world.getBlockState(corner.add(dx, 1, dz)).isOf(Blocks.WHEAT)) resown++;
                     KindredMod.LOGGER.info("Own ranch with grown wheat: {} cows and {} calves penned; plot sown again {} of 4", adults, calves, resown);
                     context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf, fed wheat it grew: " + adults + " and " + calves);
-                    context.assertTrue(resown == 4, "The plot sown again after the harvest: " + resown);
+                    var cells = new StringBuilder();
+                    for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) {
+                        cells.append(Registries.BLOCK.getId(world.getBlockState(corner.add(dx, 0, dz)).getBlock()).getPath()).append('/')
+                                .append(Registries.BLOCK.getId(world.getBlockState(corner.add(dx, 1, dz)).getBlock()).getPath()).append(' ');
+                    }
+                    context.assertTrue(resown == 4, "The plot sown again after the harvest: " + resown + "; cells " + cells + "/ " + f.runtime.ranchNote(f.id));
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
@@ -351,6 +359,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     // Staged: its cabin standing, block for block on the first plan in oak.
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
@@ -460,6 +469,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
                     world.setTimeOfDay(1000);
                     // Staged: its cabin standing, block for block on the first plan in oak.
                     var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
@@ -530,6 +540,22 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * Staged: a low wall round the laid field's edge, where the ground drops three blocks to the stone beyond. Animals
+     * that wander off it can no longer be fetched back (no walk the player or they can climb back up), and in suite runs
+     * a chicken or a cow wandered off one run in four or so.
+     */
+    static void walled(TestContext context) {
+        var world = context.getWorld();
+        BlockPos o = NativeBaseGameTests.origin(context);
+        for (int i = -12; i <= 44; i++) for (int y = 7; y <= 8; y++) {
+            world.setBlockState(o.add(i, y, -12), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(i, y, 44), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(-12, y, i), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(44, y, i), Blocks.STONE.getDefaultState());
+        }
     }
 
     private static String tablesAbout(net.minecraft.server.world.ServerWorld world, BlockPos feet) {

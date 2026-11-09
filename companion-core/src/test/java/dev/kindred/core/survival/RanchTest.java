@@ -434,4 +434,22 @@ class RanchTest {
         var next = near.next(seen(3, 7, false, 8, 20, cow(DAISY, 3, 3), cow(BESS, 8, 12)));
         assertFalse(next instanceof Ranch.Step.Go go && go.target().equals(walk.target()), "not walked up to again at once: " + next);
     }
+
+    /**
+     * One following the food from behind the pen, outside a fence other than the gate's, walks straight at the player
+     * inside and stays pressed to that fence: it is brought round to the gate from outside, as one beside the gate is,
+     * not given up as one that will not come in (the own-ranch fixtures: a sheep behind the far fence, and the cattle
+     * fixture in CI: a cow past the pen's far corner).
+     */
+    @Test
+    void oneFollowingFromBehindThePenIsBroughtRoundToTheGateNotGivenUp() {
+        for (var behind : List.of(cow(BESS, 3, -1), cow(BESS, 8, 3), cow(BESS, -2, 4))) {
+            var ranch = ranch();
+            ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), behind));
+            assertInstanceOf(Ranch.Step.Wait.class, ranch.next(seen(3, 1, true, 8, 30, cow(DAISY, 3, 3), behind)));
+            var out = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 1, true, 8, 130, cow(DAISY, 3, 3), behind)), "from " + behind.at());
+            assertEquals("Out to bring the cow round to the gate", out.why(), "from " + behind.at());
+            assertFalse(out.holdFood());
+        }
+    }
 }
