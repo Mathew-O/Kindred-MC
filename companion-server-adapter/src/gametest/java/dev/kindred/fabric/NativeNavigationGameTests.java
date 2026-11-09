@@ -391,9 +391,9 @@ public final class NativeNavigationGameTests implements FabricGameTest {
     }
 
     /**
-     * Stood on a slab, half a block up in its own cell, it walks down off it: the step beside it, a stair of blocks down
-     * to the ground. Searched from the slab's cell, which holds the slab and is no stand, the search expanded that one
-     * cell and the walk was "no walkable route" (#78's CI, run 42556777789: an oak cabin's builder on its roof's slabs and
+     * Stood on the middle slab of a roof of slabs, half a block up in that slab's cell, it walks across the roof and down
+     * off it by a stair of blocks to the ground. Searched from the slab's cell, which holds the slab and is no stand, with
+     * only more slabs beside it, the search expanded that one cell and the walk was "no walkable route" (#78's CI, run 42556777789: an oak cabin's builder on its roof's slabs and
      * stairs, eight walks in a row to its scaffold's foot, and the cabin stopped eight blocks short). Staged: the player
      * set on the slab.
      */

@@ -1,0 +1,280 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 28457,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -12,
+    5,
+    -107
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.02022517980612,
+    8.017529011717905,
+    16.437006027601015
+  ],
+  "yaw": 83.09566,
+  "pitch": 18.159489,
+  "health": 6.4921627,
+  "food": 14,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 57
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 35
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 39
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 90
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 49
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 5
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 10
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 3
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 38
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 41
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 9
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 60
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 4
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 4457,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from skeleton the way it came",
+  "task": "Back off from skeleton the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[01:57:40] [Server thread/INFO]: Echo native_craft COMPLETED [Craft torch]",
+    "[01:57:40] [Server thread/INFO]: Echo native_place COMPLETED [Place a torch at 11, 15, -80]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 8, 21, -81 [Back to where it saw iron ore at 8, 21, -81]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: step down]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+    "[01:57:40] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+    "[01:57:41] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to iron ore at 4, 13, -93]",
+    "[01:57:43] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[01:57:43] [Server thread/INFO]: Echo native_place CANCELLED: In deep water; up for air first [Take cover from skeleton]",
+    "[01:57:43] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[01:57:43] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[01:57:44] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 7, 14, -92]",
+    "[01:57:44] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: clear 6, 13, -92]",
+    "[01:57:44] [Server thread/INFO]: Echo native_place CANCELLED: In deep water; up for air first [Take cover from skeleton]",
+    "[01:57:45] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[01:57:45] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[01:57:46] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from skeleton the way it came]"
+  ]
+}

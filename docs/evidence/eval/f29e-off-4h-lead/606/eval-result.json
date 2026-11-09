@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT (strategist asked for, the strategist not configured)",
+  "seed": 606,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 380, "stone_tools": 3220, "iron_ingot": 5520, "iron_pickaxe": 41960, "obsidian": 110455},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 46500, "x": 280, "y": 27, "z": -45, "attempt": 1}, {"tick": 69180, "x": 280, "y": -5, "z": -7, "attempt": 1}, {"tick": 151960, "x": 314, "y": 63, "z": 83, "attempt": 1}, {"tick": 172400, "x": 299, "y": 64, "z": 77, "attempt": 2}, {"tick": 179380, "x": 298, "y": 64, "z": 68, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 220, "stone_tools": 2960, "iron_ingot": 10200, "iron_pickaxe": 24220, "obsidian": 95109},
+      "deaths": [
+        {"tick": 106878, "cause": "Sol was slain by Drowned", "x": 280, "y": 12, "z": -8, "light": 3, "timeOfDay": 11040, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 122798, "cause": "Sol was blown up by Creeper", "x": 304, "y": 23, "z": 7, "light": 4, "timeOfDay": 2960, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Fight creeper"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29760, "x": 293, "y": 2, "z": -72, "attempt": 1}, {"tick": 204220, "x": 292, "y": 6, "z": -38, "attempt": 1}, {"tick": 211420, "x": 295, "y": -10, "z": -39, "attempt": 2}, {"tick": 245540, "x": 287, "y": 72, "z": -22, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 580, "stone_tools": 2460, "iron_ingot": 6820, "iron_pickaxe": 128080, "obsidian": 155394},
+      "deaths": [
+        {"tick": 106482, "cause": "Echo was doomed to fall by Drowned", "x": 280, "y": 0, "z": -4, "light": 5, "timeOfDay": 10644, "dimension": "minecraft:overworld", "hunger": 0, "underSky": false, "stage": "Iron: fight back - Fight drowned", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 173460, "x": 114, "y": -18, "z": 9, "attempt": 1}, {"tick": 177840, "x": 114, "y": -18, "z": 9, "attempt": 2}, {"tick": 200560, "x": 86, "y": 37, "z": 5, "attempt": 3}, {"tick": 204160, "x": 86, "y": 37, "z": 5, "attempt": 4}, {"tick": 219160, "x": 86, "y": 37, "z": 5, "attempt": 5}, {"tick": 222760, "x": 86, "y": 37, "z": 5, "attempt": 6}, {"tick": 226360, "x": 86, "y": 37, "z": 5, "attempt": 7}, {"tick": 241380, "x": 86, "y": 37, "z": 5, "attempt": 8}, {"tick": 245000, "x": 86, "y": 37, "z": 5, "attempt": 9}, {"tick": 248600, "x": 86, "y": 37, "z": 5, "attempt": 10}, {"tick": 252200, "x": 86, "y": 37, "z": 5, "attempt": 11}, {"tick": 267700, "x": 86, "y": 37, "z": 5, "attempt": 12}, {"tick": 271300, "x": 86, "y": 37, "z": 5, "attempt": 13}, {"tick": 274900, "x": 86, "y": 37, "z": 5, "attempt": 14}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
