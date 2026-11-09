@@ -184,6 +184,12 @@ final class PortalRunCampaign {
     private long retraceStalledUntil;
     /** Where it sealed its night shelter, by the tick it did: the way out in the morning when no other goes (F-25c4at). */
     private final Map<Long, Long> ownSeals = new HashMap<>();
+    /** Its own cover from a mob, by the cell, and the tick it was put up (F-25c4cy). */
+    private final Map<Long, Long> ownCover = new HashMap<>();
+    /** Of that cover, the cells still standing with a hostile mob close by: held from every dig, as a cell set aside is (F-25c4cy). */
+    private final Set<Long> coverHeld = new HashSet<>();
+    /** Cover is kept for at most two minutes, against a hostile mob within six blocks of it (F-25c4cy). */
+    private static final int COVER_KEPT = 2400, COVER_MOB_NEAR = 6;
     /** Pillars beside the water refused where it stood, by the cell, and until when they count (F-25c4bf). */
     private final Map<Long, Integer> pillarMisses = new HashMap<>();
     private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
@@ -700,6 +706,12 @@ final class PortalRunCampaign {
             ownSeals.put(position(task.args()).asLong(), tick);
             if (atlas != null && atlasWorld != null) atlas.shelter(place(atlasWorld, lastFeet), "seal");
         }
+        // Its own cover from a mob: kept from its digs while a mob is about (F-25c4cy).
+        if (task != null && completed && "native_place".equals(task.skill()) && task.label().startsWith("Take cover from")
+                && position(task.args()) != null) {
+            if (ownCover.size() > 32) ownCover.clear();
+            ownCover.put(position(task.args()).asLong(), tick);
+        }
         if (task != null && !completed && task.label().startsWith(LEAD_LABEL)) leadFailedUntil = tick + 1200;
         // A pillar beside the water refused where it stood (F-25c4bf).
         if (task != null && !completed && "native_pillar".equals(task.skill()) && task.label().endsWith(": pillar up beside the water")
@@ -968,6 +980,7 @@ final class PortalRunCampaign {
     }
 
     boolean blocked(BlockPos pos) {
+        if (coverHeld.contains(pos.asLong())) return true;
         Long until = blockedUntil.get(pos.asLong());
         return until != null && until > lastTick;
     }
@@ -2081,6 +2094,22 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Cover it put up from a mob, still standing with a hostile mob within a few blocks of it, is held from every dig, as a
+     * cell set aside is ({@link #blocked}). In ReplayGameTests' echo-73670 on #83's CI the player, at four health with no
+     * food and its way off refused, took cover from a zombie; with the zombie out of sight the goal's next step was the
+     * hungry climb, which dug that same block out at once, three times over, until the zombie killed it (F-25c4cy). Let go
+     * once no such mob is near, the block is gone, or two minutes have passed.
+     */
+    private void holdCover(ServerWorld world) {
+        coverHeld.clear();
+        ownCover.entrySet().removeIf(e -> lastTick - e.getValue() > COVER_KEPT || world.getBlockState(BlockPos.fromLong(e.getKey())).isAir());
+        for (long key : ownCover.keySet()) {
+            BlockPos cell = BlockPos.fromLong(key);
+            if (!world.getEntitiesByClass(HostileEntity.class, new Box(cell).expand(COVER_MOB_NEAR), HostileEntity::isAlive).isEmpty()) coverHeld.add(key);
+        }
+    }
+
     /** A climb on a move elsewhere: its step up is a level the move never steps back down from. */
     private Optional<Task> climbed(Optional<Task> up) {
         if (up.get().label().endsWith(": step up")) relocateFloor = Math.max(relocateFloor, lastFeet.getY() + 1);
@@ -2091,6 +2120,7 @@ final class PortalRunCampaign {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
         atlasWorld = body.entity().getServerWorld();
+        holdCover(body.entity().getServerWorld());
         // A pickaxe broken below ground with none left (E-46's trouble), seen as a player sees a tool break: vanilla
         // counts each broken item in the player's statistics.
         int broken = brokenPickaxes(body.entity());
