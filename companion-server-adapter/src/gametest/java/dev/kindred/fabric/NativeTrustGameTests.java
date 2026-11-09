@@ -117,10 +117,46 @@ public final class NativeTrustGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "trustToss", tickLimit = 2400)
     public void tossesToOnePersonStopAtSixteenADayWhoeverAsks(TestContext context) {
+        tosses(context, false);
+    }
+
+    /**
+     * The same with the cap's day ending as its asks begin: the cap's day is the server's tick over
+     * {@link dev.kindred.core.Trust#DAY}, and on #83's CI (run 42563294688) a day ended between the third ask, refused,
+     * and the command's toss, which a new day's cap let through. Staged: the server's tick moved on, once, to 55 ticks
+     * before a day ends, which falls among the asks.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "trustTossDayEnd", tickLimit = 2400)
+    public void tossesStopAtSixteenWithTheCapsDayEndingAsTheAsksBegin(TestContext context) {
+        tosses(context, true);
+    }
+
+    /** The server's tick set to {@code ticks}, for the staging above: its field, found by name. */
+    private static void serverTicks(TestContext context, int ticks) {
+        try {
+            var field = net.minecraft.server.MinecraftServer.class.getDeclaredField("ticks");
+            field.setAccessible(true);
+            field.setInt(context.getWorld().getServer(), ticks);
+        } catch (ReflectiveOperationException unavailable) {
+            throw new IllegalStateException("The server's tick cannot be staged", unavailable);
+        }
+    }
+
+    private static void tosses(TestContext context, boolean dayEnding) {
         var t = new NativeVoiceGameTests.Talk(context, false);
         var f = t.f;
         int[] asked = {0};
+        var server = context.getWorld().getServer();
         context.createTimedTaskRunner()
+                .createAndAdd(() -> {
+                    if (!dayEnding) return;
+                    long day = dev.kindred.core.Trust.DAY;
+                    serverTicks(context, (int) ((Math.floorDiv(server.getTicks(), day) + 1) * day - 55));
+                })
+                // The asks and the command's toss all in one of the cap's days: begun only with more than 600 of its ticks
+                // left (they take some 250), else once the next has begun (F-22c36).
+                .createAndAdd(() -> context.assertTrue(dev.kindred.core.Trust.DAY - Math.floorMod(server.getTicks(), dev.kindred.core.Trust.DAY) > 600,
+                        "Room in the cap's day: " + Math.floorMod(server.getTicks(), dev.kindred.core.Trust.DAY)))
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
                 .createAndAdd(() -> t.createOwned(context))
                 .createAndAdd(() -> f.established(context))

@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT (strategist asked for, the strategist not configured)",
+  "seed": 31102026,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 28540, "stone_tools": 30380, "iron_ingot": 32680, "iron_pickaxe": 56720, "obsidian": 156509},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 107900, "x": -159, "y": 63, "z": 345, "attempt": 1}, {"tick": 129500, "x": -145, "y": 63, "z": 283, "attempt": 2}, {"tick": 147620, "x": -146, "y": 64, "z": 264, "attempt": 3}, {"tick": 161120, "x": -35, "y": -23, "z": 42, "attempt": 1}, {"tick": 165080, "x": -33, "y": -20, "z": 42, "attempt": 1}, {"tick": 169040, "x": -30, "y": -20, "z": 42, "attempt": 2}, {"tick": 173440, "x": -31, "y": -20, "z": 42, "attempt": 3}, {"tick": 191560, "x": -27, "y": -17, "z": 50, "attempt": 4}, {"tick": 219700, "x": 106, "y": 67, "z": 343, "attempt": 1}, {"tick": 223400, "x": 87, "y": 68, "z": 341, "attempt": 2}, {"tick": 235000, "x": -35, "y": -22, "z": 45, "attempt": 3}, {"tick": 238600, "x": -35, "y": -22, "z": 45, "attempt": 4}, {"tick": 242200, "x": -35, "y": -22, "z": 45, "attempt": 5}, {"tick": 245800, "x": -35, "y": -22, "z": 45, "attempt": 6}, {"tick": 249420, "x": -35, "y": -22, "z": 45, "attempt": 7}, {"tick": 253020, "x": -35, "y": -22, "z": 45, "attempt": 8}, {"tick": 256620, "x": -35, "y": -22, "z": 45, "attempt": 9}, {"tick": 260220, "x": -35, "y": -22, "z": 45, "attempt": 10}, {"tick": 263820, "x": -35, "y": -22, "z": 45, "attempt": 11}, {"tick": 267420, "x": -35, "y": -22, "z": 45, "attempt": 12}, {"tick": 271040, "x": -35, "y": -22, "z": 45, "attempt": 13}, {"tick": 274640, "x": -35, "y": -22, "z": 45, "attempt": 14}, {"tick": 278240, "x": -35, "y": -22, "z": 45, "attempt": 15}, {"tick": 281840, "x": -35, "y": -22, "z": 45, "attempt": 16}, {"tick": 285440, "x": -35, "y": -22, "z": 45, "attempt": 17}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1820, "stone_tools": 2280, "iron_ingot": 6340, "iron_pickaxe": 17800, "obsidian": 148440, "portal_lit": 160580},
+      "deaths": [
+        {"tick": 119957, "cause": "Sol was slain by Husk", "x": 90, "y": 72, "z": 152, "light": 15, "timeOfDay": 119, "dimension": "minecraft:overworld", "hunger": 13, "underSky": true, "stage": "Wood: fight back - Back off from husk the way it came (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 107420, "x": 76, "y": 63, "z": 181, "attempt": 1}, {"tick": 127740, "x": 26, "y": 66, "z": 364, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 81400, "stone_tools": 82900, "iron_ingot": 92620, "iron_pickaxe": 106520},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 23940, "x": 37, "y": 62, "z": -2, "attempt": 1}, {"tick": 34880, "x": 35, "y": 62, "z": -2, "attempt": 2}, {"tick": 111940, "x": 176, "y": 50, "z": 212, "attempt": 1}, {"tick": 126880, "x": 179, "y": 70, "z": 237, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
