@@ -3472,3 +3472,7 @@ After the block's first merge from main, CI on PR #25 found:
 - **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
   what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
   `NativeGatherGameTests`, 3 runs, 5 of 5 each.
+
+- **F-22c39 (fixture diagnostics, in progress):** the pasture-doorway fixture's "A calf born in the pen" failure names every
+  cow about the pen (#91's run 42568179856: the ranch done with the calf in the pen, then no calf counted in it). No
+  assertion changed. `NativeCompoundGameTests`, 3 runs, 6 of 6 each.
