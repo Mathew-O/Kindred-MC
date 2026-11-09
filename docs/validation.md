@@ -590,6 +590,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01f: every ended task traced to its routine, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeOwnRanchGameTests` alone, 3 runs before the change (0 of 3: 4 tasks unlabelled each), 3 after (6 of 6 each).
+
 ## M-01a: the pigs' carrots or potatoes grown, 2026-11-09
 
 - Build: `./gradlew build`.
