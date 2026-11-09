@@ -9203,7 +9203,8 @@ final class PlayerRuntime {
             case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName);
             case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName);
             case SELL -> {
-                var slots = FactionsPlayer.spareSlots(player);
+                // Only the kinds it chose to sell, each a lot worth selling (FactionPlay.MIN_LOT); none named, all its spare.
+                var slots = FactionsPlayer.spareSlots(player, target.isEmpty() ? null : java.util.Set.of(target.split(",")));
                 if (slots.isEmpty()) yield FactionsService.Reply.refused("Nothing spare to sell");
                 market.sell(player, slots, world, line -> KindredMod.LOGGER.info("{} faction: {}", name, line));
                 yield FactionsService.Reply.told(List.of("Offered its spare blocks to the market"));
