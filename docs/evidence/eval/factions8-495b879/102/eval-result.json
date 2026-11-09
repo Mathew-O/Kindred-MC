@@ -1,0 +1,137 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=72000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions; players=Ada,Bram,Cleo,Dara,Eli; founders=3",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 102,
+  "ticks": 72000,
+  "ticksRun": 72001,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 135, "factions": 3, "claims": 7, "captures": 0, "sales": 0, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 37, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 14.25, "tickMsWorst": 914.30, "heapMbMax": 1072, "samples": 3600},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 6722, "cause": "Kindred was slain by Drowned", "x": -9, "y": 62, "z": -313, "light": 14, "timeOfDay": 7084, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {},
+      "deaths": [
+        {"tick": 16698, "cause": "Sol was slain by Zombie Villager", "x": 62, "y": 85, "z": -528, "light": 4, "timeOfDay": 17060, "dimension": "minecraft:overworld", "hunger": 18, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 37267, "cause": "Sol was slain by Drowned", "x": 4, "y": 74, "z": -54, "light": 5, "timeOfDay": 13629, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 39397, "cause": "Sol was slain by Drowned", "x": -10, "y": 70, "z": -63, "light": 4, "timeOfDay": 15759, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 41170, "cause": "Sol was shot by Skeleton", "x": -10, "y": 70, "z": -73, "light": 0, "timeOfDay": 17532, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 41758, "cause": "Sol was slain by Zombie", "x": -4, "y": 70, "z": -64, "light": 4, "timeOfDay": 18120, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 42393, "cause": "Sol was shot by Skeleton", "x": 10, "y": 71, "z": -66, "light": 4, "timeOfDay": 18755, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 43704, "cause": "Sol was shot by Skeleton", "x": -7, "y": 70, "z": -63, "light": 3, "timeOfDay": 20066, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 45512, "cause": "Sol was shot by Skeleton", "x": 2, "y": 75, "z": -58, "light": 4, "timeOfDay": 21874, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 55634, "cause": "Sol was blown up by Creeper", "x": -11, "y": 73, "z": -68, "light": 15, "timeOfDay": 7996, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Ada": {
+      "stages": {},
+      "deaths": [
+        {"tick": 25088, "cause": "Ada was shot by Skeleton", "x": 4, "y": 61, "z": -56, "light": 4, "timeOfDay": 1450, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 37585, "cause": "Ada was slain by Drowned", "x": 9, "y": 71, "z": -66, "light": 4, "timeOfDay": 13947, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 45094, "cause": "Ada was shot by Skeleton", "x": 7, "y": 74, "z": -58, "light": 4, "timeOfDay": 21456, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 46010, "cause": "Ada was shot by Skeleton", "x": -12, "y": 69, "z": -59, "light": 5, "timeOfDay": 22372, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 46789, "cause": "Ada was slain by Zombie", "x": 11, "y": 70, "z": -58, "light": 10, "timeOfDay": 23151, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Bram": {
+      "stages": {},
+      "deaths": [
+        {"tick": 20686, "cause": "Bram was shot by Skeleton", "x": 15, "y": 66, "z": -51, "light": 3, "timeOfDay": 21048, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 21841, "cause": "Bram was shot by Skeleton", "x": 0, "y": 77, "z": -72, "light": 2, "timeOfDay": 22203, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 22654, "cause": "Bram was shot by Skeleton", "x": 10, "y": 72, "z": -69, "light": 8, "timeOfDay": 23016, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 39141, "cause": "Bram was slain by Drowned", "x": -10, "y": 70, "z": -63, "light": 4, "timeOfDay": 15503, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 39600, "cause": "Bram was slain by Drowned", "x": -12, "y": 68, "z": -60, "light": 2, "timeOfDay": 15962, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 61502, "cause": "Bram was shot by Skeleton", "x": 6, "y": 64, "z": -48, "light": 4, "timeOfDay": 13864, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 65091, "cause": "Bram was slain by Zombie", "x": -4, "y": 71, "z": -58, "light": 4, "timeOfDay": 17453, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 67150, "cause": "Bram was slain by Zombie", "x": 0, "y": 68, "z": -70, "light": 3, "timeOfDay": 19512, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 67441, "cause": "Bram was slain by Zombie", "x": 3, "y": 71, "z": -61, "light": 4, "timeOfDay": 19803, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 67752, "cause": "Bram was slain by Zombie", "x": 0, "y": 71, "z": -62, "light": 4, "timeOfDay": 20114, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Cleo": {
+      "stages": {},
+      "deaths": [
+        {"tick": 21814, "cause": "Cleo was shot by Skeleton", "x": 18, "y": 66, "z": -47, "light": 4, "timeOfDay": 22176, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 45217, "cause": "Cleo hit the ground too hard", "x": 2, "y": 70, "z": -66, "light": 4, "timeOfDay": 21579, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 45793, "cause": "Cleo was slain by Zombie", "x": 4, "y": 70, "z": -71, "light": 3, "timeOfDay": 22155, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 46243, "cause": "Cleo was slain by Zombie", "x": 5, "y": 64, "z": -48, "light": 6, "timeOfDay": 22605, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 47319, "cause": "Cleo was slain by Zombie", "x": 2, "y": 71, "z": -61, "light": 13, "timeOfDay": 23681, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 60783, "cause": "Cleo was shot by Skeleton", "x": 8, "y": 71, "z": -67, "light": 8, "timeOfDay": 13145, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Dara": {
+      "stages": {},
+      "deaths": [
+        {"tick": 25846, "cause": "Dara was shot by Skeleton", "x": 18, "y": 65, "z": -45, "light": 14, "timeOfDay": 2208, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 61195, "cause": "Dara was shot by Skeleton", "x": 6, "y": 64, "z": -47, "light": 5, "timeOfDay": 13557, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Eli": {
+      "stages": {},
+      "deaths": [
+        {"tick": 22688, "cause": "Eli was shot by Skeleton", "x": 22, "y": 67, "z": -45, "light": 7, "timeOfDay": 23050, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 36856, "cause": "Eli was slain by Drowned", "x": 0, "y": 64, "z": -36, "light": 7, "timeOfDay": 13218, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 37785, "cause": "Eli was slain by Drowned", "x": 13, "y": 71, "z": -65, "light": 2, "timeOfDay": 14147, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 40839, "cause": "Eli was shot by Skeleton", "x": 3, "y": 80, "z": -71, "light": 4, "timeOfDay": 17201, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
