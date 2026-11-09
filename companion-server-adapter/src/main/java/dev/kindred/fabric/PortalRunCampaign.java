@@ -666,6 +666,19 @@ final class PortalRunCampaign {
             lavaNoWalk = position(task.args()).toImmutable();
         }
         if (task != null && completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava")) lavaNoWalk = null;
+        // Where its bucket was filled: the lava flowing in there comes from the pocket round it, followed from there (F-25c4cz).
+        if (task != null && completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava")
+                && position(task.args()) != null) {
+            BlockPos hole = position(task.args()).toImmutable();
+            lavaHoles.remove(hole);
+            lavaHoles.addLast(hole);
+            while (lavaHoles.size() > POCKET_HOLES) lavaHoles.removeFirst();
+        }
+        // A cell over the pocket it could not open, or a walk back to it that found no way: set aside, not tried again and again.
+        if (task != null && !completed && position(task.args()) != null
+                && task.label().startsWith(POCKET_OPEN)) {
+            blockedUntil.put(position(task.args()).asLong(), tick + 1200);
+        }
         if (task != null && task.label().startsWith(LAVA_LEG_LABEL)) {
             boolean nearer = completed && lavaLegFrom != null && lavaLegFrom.getSquaredDistance(lastFeet) >= 8 * 8;
             lavaLegStalls = nearer ? 0 : lavaLegStalls + 1;
@@ -5294,7 +5307,8 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         BlockPos feet = player.getBlockPos();
         if (knownCastLava(player) == null) {
-            return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
+            return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
+                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
         // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set aside,
@@ -5369,6 +5383,55 @@ final class PortalRunCampaign {
         BlockPos lava = knownCastLava(player);
         boolean below = lava != null && !player.getServerWorld().isSkyVisible(lava.up()) && lava.getSquaredDistance(player.getBlockPos()) <= 64 * 64;
         return below ? lavaForCast(body) : Optional.empty();
+    }
+
+    /** Where it filled its cast's bucket lately, newest last: each the way into the pocket of lava round it (F-25c4cz). */
+    private final java.util.ArrayDeque<BlockPos> lavaHoles = new java.util.ArrayDeque<>();
+    private static final int POCKET_HOLES = 24, POCKET_RANGE = 16;
+    private static final String POCKET_OPEN = "Cast: open the rock over the lava flowing in at ", POCKET_DIG = "Cast: dig toward the lava flowing in at ";
+
+    /**
+     * The pocket of lava under the rock its bucket was filled from, followed (F-25c4cz): the lava flowing into where it took
+     * a source comes from the still sources beside that cell, under the rock, and the cell over each is opened, from where it
+     * stands, as its tunnel opens the cell ahead over lava (F-25c4ac); out of reach or of view, it digs toward that lava as
+     * toward lava seen that no walk leads to (F-25c4ad), whose tunnel opens the cell when it comes to it. Opened, the lava is
+     * in view and filled in turn, so the pocket is followed a source at a time. Before, once the one or two
+     * sources it could see from the cell its tunnel opened were taken, the search went back to branch legs leading away: on
+     * 707 in E-40's iteration 17 (`e40a17-7bc5b42`) Kindred took 2 of a pocket of 208 and branch-mined on for half an hour.
+     */
+    private Optional<Task> followPocket(NativePlayerBody body) {
+        if (lavaHoles.isEmpty()) return Optional.empty();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        // Each cell over a still source beside a hole, with the hole it is beside, nearest first.
+        java.util.List<BlockPos[]> cells = new java.util.ArrayList<>();
+        for (BlockPos hole : lavaHoles) {
+            if (hole.getSquaredDistance(feet) > POCKET_RANGE * POCKET_RANGE) continue;
+            for (Direction side : Direction.Type.HORIZONTAL) {
+                BlockPos source = hole.offset(side), cell = source.up();
+                var fluid = world.getFluidState(source);
+                if (!fluid.isIn(FluidTags.LAVA) || !fluid.isStill() || passable(world, cell) || blocked(cell) || !onlyLavaBelow(world, cell)) continue;
+                cells.add(new BlockPos[] {cell, hole});
+            }
+        }
+        if (cells.isEmpty()) return Optional.empty();
+        cells.sort(java.util.Comparator.comparingDouble(pair -> pair[0].getSquaredDistance(feet)));
+        // In reach and in view: opened from where it stands.
+        for (BlockPos[] pair : cells) {
+            if (eyeDistance(player, pair[0]) <= REACH && body.miningEligible(pair[0])) {
+                return Optional.of(new Task("native_break", coords(pair[0], Map.of("collect", "false", "over_lava", "true")), POCKET_OPEN + pair[0].toShortString()));
+            }
+        }
+        // Out of reach or of view: dug toward, as lava seen that no walk leads to is (F-25c4ad), until it stands a block above
+        // the lava, where the cell over it is opened and its bucket filled.
+        for (BlockPos[] pair : cells) {
+            BlockPos source = pair[0].down();
+            Optional<Task> dig = digToward(body, source, POCKET_DIG + source.toShortString());
+            if (dig.isPresent()) return dig;
+            blockedUntil.put(pair[0].asLong(), lastTick + 1200);
+        }
+        return Optional.empty();
     }
 
     /** The lava the cast fills its bucket at: the one chosen, while it is still there, else the nearest it knows of. */
