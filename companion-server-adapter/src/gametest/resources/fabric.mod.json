@@ -90,6 +90,7 @@
       "dev.kindred.fabric.NativeTripWoodGameTests",
       "dev.kindred.fabric.NativeCastRefusalGameTests",
       "dev.kindred.fabric.NativeObsidianPickupGameTests",
+      "dev.kindred.fabric.NativeWeaponToHandGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeRescueRoundsGameTests",

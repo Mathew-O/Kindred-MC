@@ -140,6 +140,25 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
+
+- **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
+  staged as it says (a walled and roofed room, 707 Kindred's hotbar as its death's replay held it, the stone sword in
+  slot 15, and a zombie set on the player).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "The sword never reached its hotbar", the zombie struck five times with
+    the stone pickaxe each time.
+  - With the fix: passes 3 of 3, the sword taken to hand ("Take its weapon to hand") before "Fight zombie".
+- **The death it came from**: `ReplayGameTests` with 707 Kindred's replay (`kindred-43985-707`, now kept). On `e7e0b57` it
+  died again 2 of 3, fighting with the stone pickaxe; with the fix it lived 3 of 3, the sword taken to hand first.
+- **The classes that fight, swap and cast** (`NativeWeaponToHandGameTests`, `ReplayGameTests`, `NativePortalCampaignGameTests`,
+  `NativeCombatGameTests`, `NativeTacticalGameTests`, `NativeEncounterGameTests`, `NativeFallGameTests`,
+  `NativeInitiativeGameTests`, `NativeSpireGameTests`): 126 of 126 in each of three runs.
+- **The kept replay `echo-73670`** died again once in the first replay run with the fix (1 of 3), knocked off a ledge by a
+  zombie villager. The new step never ran there: its sword was on its hotbar from the start. In the three class runs it
+  lived 9 of 9, so 11 of 12 with the fix; on `e7e0b57` it lived 3 of 3. Its course varies; the fix does not reach it.
+- **The benches** ran with the batch's other benches on the cores, at most three at a time.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
 ## E-40, batch 24: the trip's wood from the next trees (F-25c4cr) — 8 November 2026 (`claude/e40-ladder-24-1108`)
 
 - **The planner test** (F-25c4cr, [evidence](evidence/F-25c4cr.md)): `PortalRunPlannerTest.theTripsWoodIsTakenAmongTheTreesBeforeTheFirstStone`
