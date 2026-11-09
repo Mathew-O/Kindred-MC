@@ -88,6 +88,20 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the one before it, with the loaded cart sent rolling back down the line fast from short of the climb into the
+     * hall on its first roll home: Hal, as the cart rolls away, stops the line's open end with a rail of its own in the
+     * cell it pushed from and a block of its own beyond; the cart rolling back stops there, still on its rails, and Hal
+     * breaks the block, pushes the cart on from where it stood and puts the block back as the cart rolls away, brings the librarian home, and takes the rail and the block back with the rest.
+     * In #70's CI (run 42533785406) the cart rolled back through Hal, waiting on the rails behind it, and off the line's
+     * open end, off the rails; pushed from there it ran off over the field and Hal gave up (F-22c30). Staged: the cart's
+     * roll turned back once, short of the climb, at half a block a tick.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDerailed", tickLimit = 14000)
+    public void aLoadedCartRollingBackAtTheLinesStartIsMetOnItsFirstRail(TestContext context) {
+        scene(context, false, true, false, false, false, false, false, true);
+    }
+
+    /**
      * As the first, with a river three wide right across the field between the librarian and the hall: Hal bridges it
      * with dirt from the bank it is on, lays the line over the bridge, brings the librarian home, and takes the bridge
      * back after its rails, the river running as it did.
@@ -160,9 +174,18 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed) {
+        scene(context, make, wander, river, mine, strolling, lake, slowed, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed, boolean derailed) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
+        boolean[] derailedOnce = {false};
+        BlockPos[] firstRail = {null};
+        boolean[] backAtEnd = {false};
+        String[] offLine = {null};
         var hall = TradingHall.of(3, "oak", "cobblestone");
         BlockPos[] origin = new BlockPos[1];
         VillagerEntity[] librarian = new VillagerEntity[1];
@@ -290,6 +313,33 @@ public final class NativeBringGameTests implements FabricGameTest {
                         damped[0] = true;
                         KindredMod.LOGGER.info("Bring: the loaded cart slowed at {}", cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                     }
+                    // Staged: the loaded cart, round the line's turn and on north short of the climb into the hall, sent rolling back
+                    // down the line as one that ran out of way does, fast, at half a block a tick (F-22c30). Where the line's first rail is: east along the rails from the
+                    // one the cart is on when it first rolls loaded.
+                    if (derailed && moved[0] && librarian[0].getRootVehicle() instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity cart) {
+                        var world = context.getWorld();
+                        if (firstRail[0] == null && cart.getVelocity().horizontalLength() > 0.1) {
+                            BlockPos first = cart.getBlockPos();
+                            while (world.getBlockState(first.east()).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) first = first.east();
+                            firstRail[0] = first;
+                        }
+                        if (firstRail[0] != null && !derailedOnce[0] && cart.getZ() - origin[0].getZ() < 11 && cart.getVelocity().z < -0.05) {
+                            cart.setVelocity(0, 0, 0.5);
+                            derailedOnce[0] = true;
+                            KindredMod.LOGGER.info("Bring: the loaded cart sent rolling back at {}, the line's first rail at {}",
+                                    cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()), firstRail[0].subtract(origin[0]).toShortString());
+                        }
+                        if (derailedOnce[0] && !backAtEnd[0] && cart.getX() > firstRail[0].getX() + 1.0) {
+                            backAtEnd[0] = true;
+                            KindredMod.LOGGER.info("Bring: the cart back past the line's first rail, at {}, on {}", cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
+                                    world.getBlockState(cart.getBlockPos()));
+                        }
+                        // Kept on the rails: never past the line's first rail off them (on a rail Hal put beyond it, it is on the line).
+                        if (derailedOnce[0] && cart.getX() > firstRail[0].getX() + 1.0 && !world.getBlockState(cart.getBlockPos()).isIn(net.minecraft.registry.tag.BlockTags.RAILS)
+                                && offLine[0] == null) offLine[0] = "the cart at "
+                                + cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()) + ", past the line's first rail at "
+                                + firstRail[0].subtract(origin[0]).toShortString();
+                    }
                     if (context.getWorld().getTime() % 100 == 0) {
                         KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}, health {}{}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
                                 librarian[0].getVehicle(), librarian[0].getHealth(),
@@ -300,6 +350,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                   try {
+                    context.assertTrue(offLine[0] == null, "Kept on the rails, never rolled off the line's start: " + offLine[0]);
                     var world = context.getWorld();
                     var cell = TradingHall.cells(3).stream().filter(c -> librarian[0].getBlockX() == origin[0].getX() + c.stand().x()).findFirst();
                     context.assertTrue(cell.isPresent(), "In a cell's column: at " + librarian[0].getBlockPos().subtract(origin[0]).toShortString());
