@@ -16,6 +16,55 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
+  7bc5b42 --name e40a17-7bc5b42 --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 3
+  --keep-world`; 707, stopped short by the launcher's time limit, again alone with `--seeds 707 --parallel 1`;
+  `score.py`; `compare.py` against `e40a16-922f4fd` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 8 of 10 (8); a portal lit on 7 of 10 (6), median 60.05
+    minutes (95.15); stuck time under a tenth on 3 of 10 (3).
+  - Deaths 1.0 a game hour [0 to 3.0] (22, against 23); 4 while backing off from a zombie (10). Stuck spells 4 [3 to
+    21] (64, against 65); stuck minutes 12 [9 to 63] (21 [3 to 42]).
+  - Every range overlaps both: no difference worth noting.
+  - No player stopped for reconciliation (2 in iteration 16).
+  - [Summary](evidence/eval/e40a17-7bc5b42/summary.md), [deaths](evidence/eval/e40a17-7bc5b42/deaths.md),
+    [against iteration 16](evidence/eval/compare-e40a17.md), [against the start](evidence/eval/compare-e40a17-base.md),
+    [E-40](evidence/E-40.md).
+
+## The lake-bed fixture's intermittent (F-25c4cu) — 9 November 2026 (`claude/lakebed-memory-1109`)
+
+- **[F-25c4cu](evidence/F-25c4cu.md):** `NativeLakeBedClimbGameTests`' fixture in copies of eight (a scratch class, not
+  committed).
+  - On `feb4f82`, without the fix: 14 of 16 out from under the lake (median 6,674 ticks, at most 7,628), and 2 still under it
+    at the end.
+  - With the fix: 24 of 24 out (median 6,861 ticks, at most 6,875).
+  - Scratch logging, never committed, counted "back the way it came" chosen with the under-water order run out: 544 times in
+    eight copies without the fix, none in 24 with it.
+- **The climb's classes**, batch 23's 26 (`NativeLakeBedClimbGameTests`, `NativePortalCampaignGameTests`,
+  `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests` and the rest): 156 of 156 in each of
+  three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
+## Two cast-route intermittents (F-25c4cs, F-25c4ct) — 9 November 2026 (`claude/cast-refusal-1109`)
+
+- **[F-25c4ct](evidence/F-25c4ct.md), a frame's mould refused with nothing placed:** `NativeCastRefusalGameTests`, the thick-rock
+  cast scene, the inventory changed while the first mould's placement was being recorded (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the refused mould passed over for some 2,400 ticks while the cast stepped
+    closer 244 to 246 times.
+  - With the fix: passes 3 of 3, the mould placed 4 to 5 ticks after its refusal, with no step closer.
+- **[F-25c4cs](evidence/F-25c4cs.md), the obsidian site kept until its water is taken back:** `NativeObsidianPickupGameTests`,
+  the poured-water obsidian scene, the step to take the water back asked for once and not run (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the site given up with its water still standing.
+  - With the fix: passes 3 of 3.
+  - Two forms of the fixture not kept are in the evidence: one cancelled the mining, the other told the two apart 1 of 3.
+- **The classes that cast and make obsidian**, with both fixes (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+  `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+  106 of 106 in each of three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `bash ./gradlew build` successful; JUnit 1,067 tests, 0 failures, 6 skipped.
 ## E-40, iteration 16 (`e40a16-922f4fd`, batches 22 to 24) — 9 November 2026 (`claude/e40-iter16-1109`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `922f4fd`. `python3 tools/eval/run.py --ref 922f4fd
@@ -589,6 +638,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01f: every ended task traced to its routine, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeOwnRanchGameTests` alone, 3 runs before the change (0 of 3: 4 tasks unlabelled each), 3 after (6 of 6 each).
 
 ## M-01a: the pigs' carrots or potatoes grown, 2026-11-09
 
@@ -3389,3 +3443,17 @@ After the block's first merge from main, CI on PR #25 found:
   - `NativePetGameTests`, 3 runs, 2 of 2 each.
   - The other workstation users (`NativeBrewGameTests`, `NativeEnchantGameTests`, `NativeHouseGameTests`,
     `NativeKitNameGameTests`, `NativeNetheriteGameTests`), 1 run: 10 of 10.
+
+- **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
+  #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
+  - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+  - Reopened (#87's run 42584555878: 24 mounts counted for 5 rides). The fixture now checks each mount counted was made.
+    With the first form of the change, 0 of 3 ("counted 24, made 6"); with the step kept till a task of it has run, 3
+    of 3. `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+
+- **[F-22c32](evidence/F-22c32.md):** a boat a strolling villager steps into late is not broken under it (product; #72's CI on
+  `a2c7baa`, the lake fixture: a break of the boat, planned while it stood empty, went on after the librarian stepped in).
+  - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
+    both staged copies held and brought home.
+  - `NativeBringGameTests`, 3 runs, 10 of 10 each.
