@@ -3294,7 +3294,7 @@ final class PortalRunCampaign {
         spots.add(feet.up().offset(digDirection.getOpposite()));
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
-            if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP)) continue;
+            if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
         }
@@ -3557,6 +3557,16 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Whether the player may work the block at {@code pos}: the world's own rule (spawn protection, the border) and, in a
+     * faction world, its land's ({@link TerritoryGuard#mayChange}: a safe zone or another faction's land takes no edit).
+     * The goal chooses what to gather and where to put things down by the rule the edit itself is checked by, so it does
+     * not walk to logs it may not cut (M-06i). Outside a faction world the second part is always true.
+     */
+    static boolean mayWork(ServerPlayerEntity player, BlockPos pos) {
+        return player.getServerWorld().canPlayerModifyAt(player, pos) && TerritoryGuard.mayChange(player, pos);
+    }
+
     /** A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both. */
     private Predicate<BlockPos> gatherable(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
         var player = body.entity();
@@ -3565,7 +3575,7 @@ final class PortalRunCampaign {
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
                 && also.test(p)
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
-                && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
+                && harvestable(body, p) && mayWork(player, p)
                 && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
     }
 
@@ -4853,7 +4863,7 @@ final class PortalRunCampaign {
                 var floor = world.getBlockState(spot.down()).getCollisionShape(world, spot.down());
                 // Not on a wall or a fence: it stands taller than a block, into the spot (the sky island's edge wall).
                 if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0) continue;
-                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
+                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot) || !mayWork(player, spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
                 if (!ground && besideTheVoid(world, spot)) continue;
                 // Not where the player (standing off the middle of its block) or anything living overlaps it: vanilla
@@ -4866,7 +4876,7 @@ final class PortalRunCampaign {
         List<Direction> sides = List.of(digDirection.rotateYClockwise(), digDirection.rotateYCounterclockwise(), digDirection.getOpposite(), digDirection);
         for (Direction direction : sides) {
             BlockPos wall = feet.offset(direction);
-            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall)) continue;
+            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || !mayWork(player, wall)) continue;
             if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
             if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
         }
@@ -4877,7 +4887,8 @@ final class PortalRunCampaign {
         for (BlockPos cell : BlockPos.iterateOutwards(feet, 5, 2, 5)) {
             if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
             var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
-            if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)) continue;
+            if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)
+                    || !mayWork(player, cell)) continue;
             for (Direction side : Direction.Type.HORIZONTAL) {
                 BlockPos stand = cell.offset(side);
                 if (stand.equals(feet) || !standable(world, stand) || blocked(stand) || unreachable(stand) || !ground && besideTheVoid(world, stand)) continue;
@@ -5019,7 +5030,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // At night below ground, only water down there too: water under the sky waits for daylight (see daylightBelow).
         boolean below = underground(player) && night(world);
-        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
+        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p) && mayWork(player, p)
                 && p.getSquaredDistance(feet) < 64 * 64 && !(below && world.isSkyVisible(p.up())));
         if (source.isEmpty()) return Optional.empty();
         BlockPos water = source.get();

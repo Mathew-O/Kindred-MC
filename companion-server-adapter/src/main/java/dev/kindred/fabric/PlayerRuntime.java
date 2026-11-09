@@ -16194,6 +16194,13 @@ final class PlayerRuntime {
         return store.allWorldEvents(kinds);
     }
 
+    /** Test-only and read-only: the label of the goal step a player is on now, or null. */
+    String goalStepForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.activeCampaignTask == null ? null : entry.activeCampaignTask.label();
+    }
+
     /** A player's own goal and the goal it works toward, for a fixture; null for none. */
     dev.kindred.core.survival.SurvivalGoal[] goalsForTest(UUID id) {
         requireThread();
