@@ -18,7 +18,9 @@
     "ProjectileTerritoryMixin",
     "SmallFireballTerritoryMixin",
     "FireTerritoryMixin",
-    "PortalBorderMixin"
+    "PortalBorderMixin",
+    "SmithingTransformAccessor",
+    "PlayerSaveHandlerMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin"
