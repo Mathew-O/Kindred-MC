@@ -102,7 +102,12 @@ public final class NativeGatherGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
                     var player = f.player();
-                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_gather"), "Gather completed");
+                    // What ran instead, and how far it got, named in the failure (F-22c37): on #87's CI (run 42565807178) the
+                    // gather resumed and never completed within the test, and "Gather completed" said nothing more.
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_gather"), "Gather completed: "
+                            + activity + "; logs " + (player == null ? "no body" : ItemMoves.count(player.getInventory(), Items.OAK_LOG))
+                            + "; log blocks left " + context.getWorld().getBlockState(log1).isOf(Blocks.OAK_LOG) + "/" + context.getWorld().getBlockState(log2).isOf(Blocks.OAK_LOG)
+                            + "; " + f.runtime.nativeLastResult(f.id) + "; said " + f.runtime.said(f.id));
                     context.assertTrue(player != null, "Player connected");
                     context.assertEquals(4, ItemMoves.count(player.getInventory(), Items.OAK_LOG), "Exactly 4 logs reached; did not gather 2 more to 5");
                     f.runtime.stop();

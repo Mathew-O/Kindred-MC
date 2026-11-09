@@ -3467,3 +3467,28 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
     both staged copies held and brought home.
   - `NativeBringGameTests`, 3 runs, 10 of 10 each.
+
+- **[F-22c36](evidence/F-22c36.md):** the toss-cap fixture's asks all fall in one of the cap's days (fixture; #83's run
+  42563294688: a cap day ended between the refused third ask and the command's toss, which the new day's cap let through).
+  - The staged fixture (the server's tick 55 before a cap day ends): 0 of 3 before the guard; after, 3 of 3.
+  - `NativeTrustGameTests`, 3 runs, 8 of 8 each.
+
+- **[F-22c35](evidence/F-22c35.md):** a walk from a roof of slabs or stairs crosses them to the nearest stand (product;
+  #78's run 42556777789: a cabin's builder on its roof, "no walkable route" eight times, the cabin eight blocks short).
+  - The staged fixture (the player on a slab roof's middle): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeNavigationGameTests`, 3 runs, 8 of 8 each; `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
+  what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
+  `NativeGatherGameTests`, 3 runs, 5 of 5 each.
+
+- **F-22c39 (fixture diagnostics, in progress):** the pasture-doorway fixture's "A calf born in the pen" failure names every
+  cow about the pen (#91's run 42568179856: the ranch done with the calf in the pen, then no calf counted in it). No
+  assertion changed. `NativeCompoundGameTests`, 3 runs, 6 of 6 each.
+
+- **[F-22c40](evidence/F-22c40.md):** a scaffold column left too high to take down from the ground is reached from a scaffold
+  beside it (product; #86's run 42566156809: fallen off its column, "out of reach to take down" eight times).
+  - The staged fixture (the player put in the pit as its scaffold comes down): 1 of 3 before, the failures CI's; 3 of 3 after.
+  - `:companion-core:test` 899 of 899; `NativeBuildGameTests`, 3 runs, 6 of 6 each; `NativeHouseGameTests`,
+    `NativeBaseGameTests`, `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.

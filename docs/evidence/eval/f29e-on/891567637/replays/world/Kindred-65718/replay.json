@@ -1,0 +1,272 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 65718,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    168,
+    8,
+    -189
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.658974822751475,
+    8.24918707874468,
+    16.82653865661632
+  ],
+  "yaw": 1.4666119,
+  "pitch": 10.999668,
+  "health": 17.8,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [
+    {
+      "id": "minecraft:poison",
+      "amplifier": 0,
+      "duration": 436
+    }
+  ],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 53
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 63
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 6
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 33
+        }
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 47
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 21
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 29
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 13
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 49
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 17718,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Ready a block",
+  "task": "Back off from witch",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred was killed by Witch using magic",
+  "ticks": 1200,
+  "log": [
+    "[01:02:35] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 149, 18, -160]",
+    "[01:02:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[01:02:36] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 149, 18, -160]",
+    "[01:02:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[01:02:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[01:02:37] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 149, 18, -160]",
+    "[01:02:38] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[01:02:39] [Server thread/INFO]: Kindred native_eat COMPLETED",
+    "[01:02:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[01:02:40] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[01:02:40] [Server thread/INFO]: Kindred native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[01:02:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[01:02:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[01:02:46] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 194, 14, -168 is blocked [Back off from zombie]",
+    "[01:02:46] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[01:02:49] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[01:02:52] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight witch]",
+    "[01:02:52] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from witch]",
+    "[01:02:53] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from witch]",
+    "[01:02:53] [Server thread/INFO]: Kindred died at 184, 16, -173: Kindred was killed by Witch using magic (tick 65718, night, under cover, hunger 17, armour 0, holding stone_sword, no shield; doing \"Back off from witch\" in \"Iron: fight back - Ready a block\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

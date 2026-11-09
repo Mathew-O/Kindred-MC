@@ -1,0 +1,266 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 137837,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    111,
+    53,
+    -10
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.526442024367242,
+    8.206924595524413,
+    16.515478071096652
+  ],
+  "yaw": 2552.4385,
+  "pitch": -4.9999995,
+  "health": 18.0,
+  "food": 20,
+  "saturation": 1.8000001,
+  "air": -2,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:orange_tulip",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:chicken",
+        "count": 3
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 79
+        }
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 5
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 16
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 26
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 22
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 6
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 115
+        }
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 34
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 17837,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: up for air",
+  "task": "Get out of the water: up for air",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred drowned",
+  "ticks": 1200,
+  "log": [
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[06:00:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]"
+  ]
+}
