@@ -26,7 +26,7 @@ public final class NativeCaveLedgeGameTests implements FabricGameTest {
      * A cave three up the chamber's wall, on a ledge: the walk there is refused, then it climbs to it with its own
      * cobblestone and stands in it.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1800)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "caveLedge", tickLimit = 1800)
     public void aCaveSeenUpTheWallIsClimbedToWithItsOwnBlocks(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] origin = new BlockPos[1];

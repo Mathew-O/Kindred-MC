@@ -3268,15 +3268,16 @@ final class PortalRunCampaign {
      */
     private Optional<Task> pocket(NativePlayerBody body, String what, BlockPos feet) {
         if (climbingTo != null) {
-            if (feet.isWithinDistance(climbingTo, 1.5) || ++climbSteps > POCKET_STEPS) {
-                if (!feet.isWithinDistance(climbingTo, 1.5)) letPocketGo(climbingTo, "its climb ran long");
+            if (inPocket(feet, climbingTo) || ++climbSteps > POCKET_STEPS) {
+                if (!inPocket(feet, climbingTo)) letPocketGo(climbingTo, "its climb ran long");
                 climbingTo = null;
                 return null;
             }
             // Mid-jump on a pillar or a stair: the route is planned again on landing, not given up.
             var player = body.entity();
             if (!player.isOnGround() && !player.isTouchingWater()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), POCKET_CLIMB + what + ": land"));
-            var step = buildRoute(body, climbingTo, cell -> cell.isWithinDistance(climbingTo, 1.5), false, POCKET_CLIMB + what);
+            BlockPos to = climbingTo;
+            var step = buildRoute(body, to, cell -> inPocket(cell, to), false, POCKET_CLIMB + what);
             if (step.isPresent()) return step;
             letPocketGo(climbingTo, "no way up to it");
             climbingTo = null;
@@ -3289,7 +3290,7 @@ final class PortalRunCampaign {
         int up = Math.abs(refused.getY() - feet.getY());
         boolean near = up <= POCKET_UP && Math.hypot(refused.getX() - feet.getX(), refused.getZ() - feet.getZ()) <= POCKET_ACROSS;
         if (near && pocketsTried.add(key) && policy != null && policy.autonomousEditsEnabled()) {
-            var step = buildRoute(body, refused, cell -> cell.isWithinDistance(refused, 1.5), true, POCKET_CLIMB + what);
+            var step = buildRoute(body, refused, cell -> inPocket(cell, refused), true, POCKET_CLIMB + what);
             if (step.isPresent()) {
                 climbingTo = refused;
                 climbSteps = 0;
@@ -3300,6 +3301,14 @@ final class PortalRunCampaign {
         }
         letPocketGo(refused, near ? "no way to it with its own blocks" : "too far up or down a cave wall");
         return null;
+    }
+
+    /**
+     * Standing in the pocket: at its floor's height and a block across at most. Within a block and a half was arrived a
+     * step short, diagonally below it on the stair up, and the climb was let end there.
+     */
+    private static boolean inPocket(BlockPos feet, BlockPos pocket) {
+        return feet.getY() == pocket.getY() && Math.abs(feet.getX() - pocket.getX()) <= 1 && Math.abs(feet.getZ() - pocket.getZ()) <= 1;
     }
 
     /** A refused cave pocket let go: the cells round it set aside as the refused one is, so the next walk goes elsewhere. */
