@@ -34,9 +34,20 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
         BlockPos cabinAt = home.add(-3, 0, -3);
         java.util.UUID[] cows = new java.util.UUID[2];
         long[] doneAt = {-1};
+        // Every task it ends says where it came from (M-01): its label, or the routine that proposed it.
+        var unlabelled = new java.util.ArrayList<String>();
+        int[] ended = {0};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Drover"))
+                .createAndAdd(() -> {
+                    f.runtime.observeRun(new RunObserver() {
+                        @Override public void ended(String player, String skill, String state, String label) {
+                            ended[0]++;
+                            if (label == null || label.isEmpty()) unlabelled.add(skill + " " + state);
+                        }
+                    });
+                    f.runtime.createNative(f.source, "Drover");
+                })
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
@@ -117,6 +128,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.assertTrue(context.getWorld().getTime() - doneAt[0] >= 200, "Ten seconds on");
                     context.assertTrue(f.runtime.ranchStatus(f.id).isEmpty(), "Not begun twice: " + f.runtime.ranchStatus(f.id).orElse(""));
+                    KindredMod.LOGGER.info("Own ranch: {} tasks ended, {} with no label or routine: {}", ended[0], unlabelled.size(), unlabelled);
+                    context.assertTrue(ended[0] > 0 && unlabelled.isEmpty(), "Every task it ended says where it came from: " + unlabelled.size() + " of " + ended[0]
+                            + " did not: " + unlabelled.subList(0, Math.min(8, unlabelled.size())));
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
