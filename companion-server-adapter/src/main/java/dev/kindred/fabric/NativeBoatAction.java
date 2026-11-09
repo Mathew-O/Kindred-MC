@@ -59,6 +59,8 @@ final class NativeBoatAction extends NativeRecordedAction {
     private BlockPos boatAt;
     private int waited;
     private boolean started, halted, unknown, left;
+    /** A break of a boat only while it is empty (F-22c32): one a villager has stepped into since is not broken. */
+    private boolean emptyOnly;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
@@ -91,6 +93,16 @@ final class NativeBoatAction extends NativeRecordedAction {
         this.target = target;
         if ((mode == Mode.LAUNCH || mode == Mode.PLACE) && (slot < 0 || slot > 8 || water == null)) throw new IllegalArgumentException("A launch or a place needs an owned hotbar slot 0..8 and a block");
         if (mode == Mode.BREAK && target == null) throw new IllegalArgumentException("A break needs its boat");
+    }
+
+    /**
+     * A break only of an empty boat: refused, blocked, if anything sits in it when the strike would land. A boat put down
+     * for a strolling villager, judged not taken and to be broken again, was stepped into while the break went on, and
+     * the break broke the boat that held it and let it go (the lake fixture in CI on #72, a2c7baa) (F-22c32).
+     */
+    NativeBoatAction onlyEmpty() {
+        emptyOnly = true;
+        return this;
     }
 
     /** Moves the boat work on by one tick. */
@@ -220,6 +232,7 @@ final class NativeBoatAction extends NativeRecordedAction {
             return settle(null, Map.of("picked", "true"));
         }
         boatAt = target.getBlockPos();
+        if (emptyOnly && target.hasPassengers()) return settle("The boat is no longer empty: " + target.getFirstPassenger().getName().getString() + " sits in it", null);
         if (++waited > BREAK_TICKS || !player.canInteractWithEntity(target, 0)) return settle("Could not break the boat", null);
         if (player.getAttackCooldownProgress(0.5f) >= 1f) body.strikeBoat(lease.get(), target, true);
         return waiting();

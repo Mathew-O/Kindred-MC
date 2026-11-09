@@ -3331,3 +3331,9 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
+- **[F-22c32](evidence/F-22c32.md):** a boat a strolling villager steps into late is not broken under it (product; #72's CI on
+  `a2c7baa`, the lake fixture: a break of the boat, planned while it stood empty, went on after the librarian stepped in).
+  - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
+    both staged copies held and brought home.
+  - `NativeBringGameTests`, 3 runs, 10 of 10 each.

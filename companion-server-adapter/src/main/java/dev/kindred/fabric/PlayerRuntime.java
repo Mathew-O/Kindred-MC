@@ -1778,6 +1778,7 @@ final class PlayerRuntime {
                         arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null,
                         arguments.containsKey("hx") && water != null ? new Vec3d(Double.parseDouble(arguments.get("hx")), water.getY() + 1.0,
                                 Double.parseDouble(arguments.get("hz"))) : null);
+                if ("true".equals(arguments.get("empty"))) ((NativeBoatAction) task).onlyEmpty();
             } else if (skill.equals("native_cart")) {
                 var mode = NativeCartAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
                 BlockPos rail = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
@@ -9625,9 +9626,11 @@ final class PlayerRuntime {
             case HOLD -> {
                 // A villager that strolls (its AI on) held while the line is laid, as players hold one: a boat put down
                 // beside its feet takes it up, and it sits where it is, carried in the boat by the cart to its cell.
-                // A boat step under way is kept to till it ends: the boat it puts down is spent from its hand at once.
+                // A boat step under way is kept to till it ends: the boat it puts down is spent from its hand at once. Not once
+                // the villager sits in a boat: a break of a boat it had passed by, still under way when it stepped in, broke the
+                // boat that held it and let it go (the lake fixture in CI on #72, a2c7baa) (F-22c32).
                 if (b.boatStep != null && "native_boat".equals(entry.skillId) && b.boatStep.candidate().id().equals(entry.currentTaskId)
-                        && entry.runner.state() == SkillRunner.State.RUNNING) return List.of(b.boatStep);
+                        && entry.runner.state() == SkillRunner.State.RUNNING && !(villager.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity)) return List.of(b.boatStep);
                 b.boatStep = null;
                 if (villager.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                     b.boatId = boat.getUuid();
@@ -9663,7 +9666,8 @@ final class PlayerRuntime {
                 // which had not been opened for a boat (the strolling fixture, hurt by its ride, in a full suite on 7 November).
                 if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive()) {
                     if (!player.canInteractWithEntity(empty, 0)) return List.of(goNear(bringTask(entry, "to the boat:" + b.boatTries), empty.getBlockPos()));
-                    b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString()));
+                    b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString(),
+                            "empty", "true"));
                     return List.of(b.boatStep);
                 }
                 var boatLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
