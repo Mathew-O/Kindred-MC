@@ -223,8 +223,12 @@ public final class NativeVoiceGameTests implements FabricGameTest {
                             "After the typing delay (" + SpeechTiming.delayMillis(line) + " ms), within the deadline: " + took + " ms");
                     context.assertTrue(t.heardBy(far[0]).isEmpty(), "Nothing to a player forty blocks off: " + t.heard);
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    // With what ran instead, its kind and state, and the work line: on #77's CI (run 42544269231) the action was
+                    // another task's, and which could not be told from its id alone (F-22c31's diagnostics).
                     context.assertTrue(f.runtime.nativeActivityStatus(Actor.console(), f.id).work().startsWith("Running native_gather")
-                            && action != null && action.taskId().equals(task[0]), "The same gather goes on: " + (action == null ? null : action.taskId()));
+                            && action != null && action.taskId().equals(task[0]), "The same gather goes on: " + (action == null ? null
+                            : action.taskId() + " (" + action.kind() + ", " + action.state() + ", " + action.detail() + ")") + " for " + task[0]
+                            + "; at work on " + f.runtime.nativeActivityStatus(Actor.console(), f.id).work() + "; said " + f.runtime.said(f.id));
                     t.cleanup(context);
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
