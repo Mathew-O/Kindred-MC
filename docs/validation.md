@@ -108,6 +108,21 @@ jobs were re-run once.
   its sibling trip-wood fixture, and the rest of batch 22's 25 classes): with the fix, 156 of 156.
 - **Build:** `bash ./gradlew build` successful; JUnit 1,033 tests, 0 failures, 6 skipped.
 
+## E-40, batch 23: out from under a lake's bed (F-25c4cq) — 8 November 2026 (`claude/e40-ladder-23-1108`)
+
+- **The fixture** (F-25c4cq, [evidence](evidence/F-25c4cq.md)): `NativeLakeBedClimbGameTests.underALakesBedWithNoPickaxeItGetsOutFromUnderTheLake`,
+  on ground cut from 707's kept world in iteration 15 (under a frozen lake's bed, no pickaxe), staged as it says.
+  - On `84fde42`, without the fix: fails 3 of 3. Each run steps aside and back some 400 times, then loses its body
+    digging toward elsewhere by hand.
+  - With it (`305c9fd`): passes 3 of 3, out under the sky after 6,653 to 7,326 ticks.
+  - The fixture's limit and criterion were settled over three forms, as its evidence says. Over all of them the fix
+    passed 11 of 13 runs.
+- **The classes that climb, tunnel, dig out and jump down** (`NativeLakeBedClimbGameTests` and batch 22's 25 classes): with
+  the fix, 154 of 156. The two failures were in `NativePortalCampaignGameTests`, in fixtures whose players never came
+  to the changed code: in one, the obsidian's drop was not picked up before the player moved on; in the other, the player
+  never climbed. Both fixtures have failed before on other branches. That class alone, with the fix: 95 of 95.
+- **Build:** `bash ./gradlew build` successful; JUnit 999 tests, 0 failures, 6 skipped (no JUnit in this batch).
+
 ## E-40, batch 22: off a ledge in a cavern's wall (F-25c4cp) — 8 November 2026 (`claude/e40-ladder-22-1108`)
 
 - **The fixture** (F-25c4cp, [evidence](evidence/F-25c4cp.md)): `NativeCavernLedgeGameTests.onACavernsLedgeWithAnAquiferBehindItItGetsOffTheLedge`,

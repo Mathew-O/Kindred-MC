@@ -86,6 +86,7 @@
       "dev.kindred.fabric.NativeHalfCastFrameGameTests",
       "dev.kindred.fabric.NativeObstructedPortalGameTests",
       "dev.kindred.fabric.NativeCavernLedgeGameTests",
+      "dev.kindred.fabric.NativeLakeBedClimbGameTests",
       "dev.kindred.fabric.NativeTripWoodGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
