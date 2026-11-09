@@ -111,7 +111,10 @@ tools/eval/run.py --ref HEAD --seeds 101,102,103 --policy maxNativePlayers=8 --p
 ```
 
 Every run's result now also carries the server's load (`server`: the mean tick over the run from the server's own
-last-hundred mean, taken once a game second; the worst tick; the heap at most), and `score.py` adds a table of it. That
+last-hundred mean, taken once a game second; the worst tick and when it fell, in ticks into the run (`tickMsWorstAt`);
+how many of the run's ticks took over 50 and over 200 ms (`ticksOver50ms`, `ticksOver200ms`), each tick counted once
+and the set-up before the run's start not counted; the heap at most), and `score.py` adds a table of it. An autosave
+falls every 6,000 ticks and its time counts in its tick, so a worst tick at a multiple of 6,000 is the save. That
 is the measurement a larger run is qualified by. Run such a run one server at a time (`--parallel 1`), so no other
 server shares its cores.
 

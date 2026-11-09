@@ -231,13 +231,32 @@ final class EvalBootstrap implements RunObserver {
 
     private boolean auditing;
     private double tickNanosSum;
-    private long worstTickNanos, heapMax;
-    private int measured;
+    private long worstTickNanos, worstTickAt, heapMax;
+    private int measured, over50, over200;
+    /** The last server tick whose time is counted: each tick of the run counted once. */
+    private long tallied = -1;
+    private static final long MS = 1_000_000L;
 
-    /** Once a game second: the server's mean tick over its last hundred, its longest of them, and the heap in use. */
+    /**
+     * Once a game second: the server's mean tick over its last hundred, the heap in use, and each tick of the run since
+     * the last look counted once: its longest (and when, in ticks into the run), and how many took over 50 and over 200
+     * ms. The server keeps each tick's time at its count modulo a hundred once the tick ends (an autosave's included), so
+     * from within a tick the ninety-nine before it are there to read.
+     */
     private void measure(MinecraftServer server) {
         tickNanosSum += server.getAverageNanosPerTick();
-        for (long t : server.getTickTimes()) worstTickNanos = Math.max(worstTickNanos, t);
+        long[] times = server.getTickTimes();
+        long now = server.getTicks();
+        for (long t = Math.max(Math.max(tallied + 1, now - (times.length - 1)), startTick + 1); t < now; t++) {
+            long took = times[(int) (t % times.length)];
+            if (took > worstTickNanos) {
+                worstTickNanos = took;
+                worstTickAt = t - startTick;
+            }
+            if (took > 50 * MS) over50++;
+            if (took > 200 * MS) over200++;
+        }
+        tallied = Math.max(tallied, now - 1);
         var memory = Runtime.getRuntime();
         heapMax = Math.max(heapMax, memory.totalMemory() - memory.freeMemory());
         measured++;
@@ -368,7 +387,7 @@ final class EvalBootstrap implements RunObserver {
 
     private void end(MinecraftServer server, boolean complete) {
         finished = true;
-        if (measured > 0) record.server(tickNanosSum / measured / 1e6, worstTickNanos / 1e6, heapMax / (1024 * 1024), measured);
+        if (measured > 0) record.server(tickNanosSum / measured / 1e6, worstTickNanos / 1e6, worstTickAt, over50, over200, heapMax / (1024 * 1024), measured);
         long run = startTick < 0 ? 0 : lastTick - startTick;
         String build = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("kindred")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown");

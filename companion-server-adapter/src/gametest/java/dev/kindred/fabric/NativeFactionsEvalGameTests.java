@@ -160,6 +160,10 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
                     context.assertTrue(members >= 6, "The others asked and joined: " + members + " of 8 in a faction");
                     var load = result.getAsJsonObject("server");
                     context.assertTrue(load != null && load.get("samples").getAsInt() > 100 && load.get("heapMbMax").getAsLong() > 0, "The server's load measured: " + load);
+                    long worstAt = load.get("tickMsWorstAt").getAsLong();
+                    int over50 = load.get("ticksOver50ms").getAsInt(), over200 = load.get("ticksOver200ms").getAsInt();
+                    context.assertTrue(worstAt >= 1 && worstAt <= 3600 && over200 <= over50 && over50 <= 3600,
+                            "When its worst tick fell, in the run's own ticks, and how many ran long: " + load);
                     run[0] = null;
                     f.runtime.stop();
                 })

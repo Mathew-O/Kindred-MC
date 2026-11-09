@@ -85,13 +85,17 @@ public final class EvalRecord {
         if (p != null) p.tokens = Math.max(p.tokens, tokens);
     }
 
-    /** The server's load over the run: its mean and worst tick in milliseconds and its heap at most in megabytes; null until set. */
+    /**
+     * The server's load over the run: its mean and worst tick in milliseconds, when the worst fell (ticks into the run),
+     * how many ticks took over 50 and over 200 ms, and its heap at most in megabytes; null until set.
+     */
     private String server;
 
     /** The server's load over the run, as the file will hold it (the measurement a larger run is qualified by). */
-    public void server(double tickMsMean, double tickMsWorst, long heapMbMax, int samples) {
-        server = String.format(java.util.Locale.ROOT, ",\n  \"server\": {\"tickMsMean\": %.2f, \"tickMsWorst\": %.2f, \"heapMbMax\": %d, \"samples\": %d}",
-                tickMsMean, tickMsWorst, heapMbMax, samples);
+    public void server(double tickMsMean, double tickMsWorst, long worstAtTick, int ticksOver50ms, int ticksOver200ms, long heapMbMax, int samples) {
+        server = String.format(java.util.Locale.ROOT, ",\n  \"server\": {\"tickMsMean\": %.2f, \"tickMsWorst\": %.2f, \"tickMsWorstAt\": %d, "
+                        + "\"ticksOver50ms\": %d, \"ticksOver200ms\": %d, \"heapMbMax\": %d, \"samples\": %d}",
+                tickMsMean, tickMsWorst, worstAtTick, ticksOver50ms, ticksOver200ms, heapMbMax, samples);
     }
 
     /** A faction world's audit (M-06i), written into the file; null in any other run. */
