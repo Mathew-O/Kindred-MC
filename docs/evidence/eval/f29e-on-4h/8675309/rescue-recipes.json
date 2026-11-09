@@ -1,0 +1,45 @@
+[
+  {
+    "signature": "walls=-SEW;head=0;under=solid;liquid=;hard=false;dark=true;ledge=false;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig up 2",
+      "walk north 2",
+      "tunnel north 4"
+    ],
+    "weight": 2,
+    "failures": 1,
+    "source": "server"
+  },
+  {
+    "signature": "walls=NSEW;head=0;under=solid;liquid=b;hard=false;dark=true;ledge=false;shaft=false;blocks=true;pickaxe=1",
+    "steps": [
+      "dig up 2",
+      "pillar 2"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  },
+  {
+    "signature": "walls=NSE-;head=1;under=solid;liquid=;hard=false;dark=true;ledge=true;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig up 1",
+      "pillar 1",
+      "dig north 1"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  },
+  {
+    "signature": "walls=----;head=4;under=solid;liquid=;hard=false;dark=false;ledge=false;shaft=false;blocks=true;pickaxe=3",
+    "steps": [
+      "dig up 1",
+      "walk north 2",
+      "tunnel west 3"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]
