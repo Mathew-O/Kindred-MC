@@ -3347,3 +3347,8 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
+- **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
+  #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
+  - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.

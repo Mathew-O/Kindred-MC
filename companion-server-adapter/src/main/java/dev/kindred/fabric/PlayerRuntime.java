@@ -4601,6 +4601,15 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
         var stable = entry.stable;
         var player = body.entity();
+        // A swap or a ride under way is kept to till it ends: planned again while it waited on its record, each plan was a
+        // try, and four of them gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's
+        // CI, run 42566194927) (F-22c38).
+        var step = entry.stableStep;
+        if (step != null && step.candidate().id().equals(entry.currentTaskId) && entry.runner.state() == SkillRunner.State.RUNNING
+                && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
+            return List.of(step);
+        }
+        entry.stableStep = null;
         var task = stable.next(player);
         if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
@@ -4629,7 +4638,8 @@ final class PlayerRuntime {
         entry.buildTasks.put(id, t);
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+        entry.stableStep = new NativeTaskCandidate(candidate, t.skill(), t.args());
+        return List.of(entry.stableStep);
     }
 
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
@@ -16393,6 +16403,8 @@ final class PlayerRuntime {
         SeedRunner seeding;
         /** The horse it is taming to keep (M-01a), or none. */
         StableRunner stable;
+        /** Its horse's last step handed out, kept while it runs if it is a swap or a ride (F-22c38). */
+        NativeTaskCandidate stableStep;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */
