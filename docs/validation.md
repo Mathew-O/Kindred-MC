@@ -108,6 +108,19 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: the cast route takes its table along (F-25c4cw) — 9 November 2026 (`claude/cast-table-1109`)
+
+- **The fixture** (F-25c4cw, [evidence](evidence/F-25c4cw.md)): `NativeCastTableGameTests.onTheCastRouteItsTableIsTakenAlongWhenItGoesOnForLava`,
+  staged as it says (a chamber deep in stone with no lava, the cast route's kit with its pickaxe gone and a table, cobblestone
+  and sticks to make another).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "Gone on for lava with its table left behind", branch-mining for lava.
+  - With the fix: passes 3 of 3.
+- **The cast route's classes and the trip's wood** (`NativeCastTableGameTests`, `NativeTripWoodGameTests`,
+  `NativePortalCampaignGameTests`, `NativeBucketGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 106 of 106 in each of three runs.
+- **The benches** ran with the batch's other benches on the cores, at most three at a time.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
 ## E-40, batch 24: the trip's wood from the next trees (F-25c4cr) — 8 November 2026 (`claude/e40-ladder-24-1108`)
 
 - **The planner test** (F-25c4cr, [evidence](evidence/F-25c4cr.md)): `PortalRunPlannerTest.theTripsWoodIsTakenAmongTheTreesBeforeTheFirstStone`
@@ -3361,3 +3374,41 @@ After the block's first merge from main, CI on PR #25 found:
     CI's slower runners ran out of ticks.
   - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
     `MockPlayers`, 1 run, 89 of 89.
+
+- **[F-22c34](evidence/F-22c34.md):** a workstation is put down where nothing stands (product; #74's run 42556590202: its anvil
+  refused 1318 times in a row for its tamed wolf in the cell, until the test's time ran out). The pet fixture's body is
+  asserted at every use (fixture: the runtime's stop at tick 8000 removed it, and the step's exception stopped the server).
+  - The staged fixture (its wolf sitting in the first cell): 0 of 3 before, 807 placements refused; after, 3 of 3.
+  - `NativePetGameTests`, 3 runs, 2 of 2 each.
+  - The other workstation users (`NativeBrewGameTests`, `NativeEnchantGameTests`, `NativeHouseGameTests`,
+    `NativeKitNameGameTests`, `NativeNetheriteGameTests`), 1 run: 10 of 10.
+
+- **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
+  #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
+  - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+
+- **[F-22c32](evidence/F-22c32.md):** a boat a strolling villager steps into late is not broken under it (product; #72's CI on
+  `a2c7baa`, the lake fixture: a break of the boat, planned while it stood empty, went on after the librarian stepped in).
+  - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
+    both staged copies held and brought home.
+  - `NativeBringGameTests`, 3 runs, 10 of 10 each.
+
+- **[F-22c36](evidence/F-22c36.md):** the toss-cap fixture's asks all fall in one of the cap's days (fixture; #83's run
+  42563294688: a cap day ended between the refused third ask and the command's toss, which the new day's cap let through).
+  - The staged fixture (the server's tick 55 before a cap day ends): 0 of 3 before the guard; after, 3 of 3.
+  - `NativeTrustGameTests`, 3 runs, 8 of 8 each.
+
+- **[F-22c35](evidence/F-22c35.md):** a walk from a roof of slabs or stairs crosses them to the nearest stand (product;
+  #78's run 42556777789: a cabin's builder on its roof, "no walkable route" eight times, the cabin eight blocks short).
+  - The staged fixture (the player on a slab roof's middle): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeNavigationGameTests`, 3 runs, 8 of 8 each; `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
+  what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
+  `NativeGatherGameTests`, 3 runs, 5 of 5 each.
+
+- **F-22c39 (fixture diagnostics, in progress):** the pasture-doorway fixture's "A calf born in the pen" failure names every
+  cow about the pen (#91's run 42568179856: the ranch done with the calf in the pen, then no calf counted in it). No
+  assertion changed. `NativeCompoundGameTests`, 3 runs, 6 of 6 each.
