@@ -265,6 +265,8 @@ final class PlayerRuntime {
     private final KindredWire wire;
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
+    /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
+    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -2541,7 +2543,10 @@ final class PlayerRuntime {
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
         chronicle.tick();
-        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
+            checkLedgers();
+            logCost(tick / LEDGER_CHECK_TICKS + 1);
+        }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
@@ -4993,9 +4998,19 @@ final class PlayerRuntime {
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
         if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
+        if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() == dev.kindred.core.survival.Ranch.Kind.PIG) {
+            // The pigs' carrots or potatoes grown in the plot from one it holds (its beetroot is food, not planted).
+            var held = player.getInventory();
+            var crop = held.count(Items.CARROT) > 0 ? WheatRunner.Crop.CARROT : held.count(Items.POTATO) > 0 ? WheatRunner.Crop.POTATO : null;
+            if (crop == null) {
+                entry.ranchNote = "A pair of pigs close by; no carrot or potato to plant";
+                return false;
+            }
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), crop);
+        }
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
-            return wheatDecision(entry, body, record, last, dimension, choice.why());
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), WheatRunner.Crop.WHEAT);
         }
         if (choice.kind().isEmpty() && choice.earn().isPresent()) {
             // The chickens' seeds earned first, from the grass about it; then the ranch, with them in hand.
@@ -5069,12 +5084,12 @@ final class PlayerRuntime {
     }
 
     /**
-     * The cows' or sheep's wheat grown (M-01a): its plot by its base, sited on the nearest flat open ground and kept with its
+     * The cows' or sheep's wheat grown (M-01a), or the pigs' carrots or potatoes from one it holds: its plot by its base, sited on the nearest flat open ground and kept with its
      * bases, worked until it holds the wheat; while the wheat grows it gets on with other things, and each look at its
      * base takes the plot up again.
      */
     private boolean wheatDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last,
-                                  String dimension, String why) {
+                                  String dimension, String why, WheatRunner.Crop crop) {
         var player = body.entity();
         if (record.plot == null || !record.plot.dimension().equals(dimension)) {
             var before = footprint(last);
@@ -5096,7 +5111,7 @@ final class PlayerRuntime {
         }
         String wood = RanchRunner.woodOf(player);
         entry.growing = new WheatRunner(new BlockPos(record.plot.x(), record.plot.y(), record.plot.z()), PLOT,
-                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood);
+                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood, crop);
         if (!why.equals(entry.ranchNote)) KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), why);
         entry.ranchNote = why;
         entry.cachedRoutineCandidates = List.of();
@@ -13636,6 +13651,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
+        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -15733,6 +15749,14 @@ final class PlayerRuntime {
         }
     }
 
+    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    CompletableFuture<String> logCost(long day) {
+        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept());
+        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        line.thenAccept(KindredMod.LOGGER::info);
+        return line;
+    }
+
     /** One event written to the World Record (F-31). */
     void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
 
@@ -15764,6 +15788,7 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
+                    gauge.written(event); // The month-long cost check.
                 }
             });
         });

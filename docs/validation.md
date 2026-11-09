@@ -124,6 +124,16 @@ jobs were re-run once.
 - **The kept replay `echo-73670`** died again once in the first replay run with the fix (1 of 3), knocked off a ledge by a
   zombie villager. The new step never ran there: its sword was on its hotbar from the start. In the three class runs it
   lived 9 of 9, so 11 of 12 with the fix; on `e7e0b57` it lived 3 of 3. Its course varies; the fix does not reach it.
+## E-40, batch 25: the cast route takes its table along (F-25c4cw) — 9 November 2026 (`claude/cast-table-1109`)
+
+- **The fixture** (F-25c4cw, [evidence](evidence/F-25c4cw.md)): `NativeCastTableGameTests.onTheCastRouteItsTableIsTakenAlongWhenItGoesOnForLava`,
+  staged as it says (a chamber deep in stone with no lava, the cast route's kit with its pickaxe gone and a table, cobblestone
+  and sticks to make another).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "Gone on for lava with its table left behind", branch-mining for lava.
+  - With the fix: passes 3 of 3.
+- **The cast route's classes and the trip's wood** (`NativeCastTableGameTests`, `NativeTripWoodGameTests`,
+  `NativePortalCampaignGameTests`, `NativeBucketGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 106 of 106 in each of three runs.
 - **The benches** ran with the batch's other benches on the cores, at most three at a time.
 - **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
 
@@ -595,6 +605,12 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01a: the pigs' carrots or potatoes grown, 2026-11-09
+
+- Build: `./gradlew build`.
+- JUnit: `WheatPlotTest`, `RanchChoiceTest` (one new case each).
+- Native: `NativeOwnRanchGameTests` alone, 3 runs, 6 of 6 each. Control (the pigs' choice off): 0 of 1.
 
 ## M-01a: a horse of its own, 2026-11-08
 
@@ -3366,3 +3382,11 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
+- **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
+  second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
+  - A throwaway reproduction (a test leaving a creative stand-in, then the second-night fixture): before, 91 s to the second
+    bedtime and a 49 s second night ending at dawn (23461); after, 32 s and the night skipped (time 1). Locally both pass;
+    CI's slower runners ran out of ticks.
+  - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
+    `MockPlayers`, 1 run, 89 of 89.
