@@ -179,6 +179,10 @@ public final class NativeHorseGameTests implements FabricGameTest {
         BlockPos home = o.add(16, 7, 16);
         BlockPos cabinAt = home.add(-3, 0, -3);
         UUID[] horse = new UUID[1];
+        // The mounts made, seen tick by tick, and the most its taming counted: a mount counted that was not made is a try
+        // lost (24 counted for 4 made on #87's CI, run 42584555878, the horse given up unbonded) (F-22c38).
+        int[] made = {0, 0};
+        boolean[] on = {false};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Wrangler"))
@@ -218,11 +222,16 @@ public final class NativeHorseGameTests implements FabricGameTest {
                         new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
                 .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
                 .createAndAdd(() -> {
-                    var kept = f.runtime.ownHorse(f.id);
                     var wild = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    boolean riding = wild != null && f.player().getVehicle() == wild;
+                    if (riding && !on[0]) made[0]++;
+                    on[0] = riding;
+                    made[1] = Math.max(made[1], f.runtime.stableMountsForTest(f.id));
+                    var kept = f.runtime.ownHorse(f.id);
                     context.assertTrue(kept.isPresent(), "A horse of its own kept: " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)
-                            + (wild == null ? "" : "; tame " + wild.isTame() + ", temper " + wild.getTemper()));
+                            + (wild == null ? "" : "; tame " + wild.isTame() + ", temper " + wild.getTemper()) + "; mounts counted " + made[1] + ", made " + made[0]);
                 })
+                .createAndAdd(() -> context.assertTrue(made[1] <= made[0] + 1, "Each mount counted made: counted " + made[1] + ", made " + made[0]))
                 .createAndAdd(() -> {
                     var player = f.player();
                     var kept = (HorseEntity) context.getWorld().getEntity(horse[0]);
