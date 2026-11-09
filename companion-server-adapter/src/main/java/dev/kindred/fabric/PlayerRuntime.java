@@ -265,6 +265,8 @@ final class PlayerRuntime {
     private final KindredWire wire;
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
+    /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
+    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -2541,7 +2543,10 @@ final class PlayerRuntime {
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
         chronicle.tick();
-        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
+            checkLedgers();
+            logCost(tick / LEDGER_CHECK_TICKS + 1);
+        }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
@@ -13540,6 +13545,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
+        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -15637,6 +15643,14 @@ final class PlayerRuntime {
         }
     }
 
+    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    CompletableFuture<String> logCost(long day) {
+        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept());
+        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        line.thenAccept(KindredMod.LOGGER::info);
+        return line;
+    }
+
     /** One event written to the World Record (F-31). */
     void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
 
@@ -15668,6 +15682,7 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
+                    gauge.written(event); // The month-long cost check.
                 }
             });
         });
