@@ -11,5 +11,5 @@ cores. Build `495b879`, `tools/eval/run.py --parallel 1 --policy maxNativePlayer
 - Load for eight players: mean tick 8.27 to 14.80 ms, worst tick 512 to 914 ms, heap at most 972 to 1,171 MB (3 GB
   allowed).
 - As in `factions2-495b879`, `goal=none` with bases off gives the players no survival goal: none progressed, and deaths
-  a game hour were 18 to 37, all but one fall to mobs. The load is of faction play alone; players that gather, build and
+  a game hour were 18 to 37, 72 of 75 to mobs (two drownings and a fall the rest). The load is of faction play alone; players that gather, build and
   fight would load the server more. A run with `bases=true` is the fairer capacity reading.
