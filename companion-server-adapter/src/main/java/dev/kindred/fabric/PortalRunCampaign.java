@@ -369,6 +369,14 @@ final class PortalRunCampaign {
 
     /** What the strategist is told: where the player is, what it has, where the route stands, and what happened. */
     String strategyReport(ServerPlayerEntity player, String name, List<String> memory) {
+        return strategyReport(player, name, memory, List.of());
+    }
+
+    /**
+     * As {@link #strategyReport(ServerPlayerEntity, String, List)}, what happened told from the player's latest Chronicle
+     * page and only the events since it (F-33), when it has one; its whole list of events when not.
+     */
+    String strategyReport(ServerPlayerEntity player, String name, List<String> memory, List<dev.kindred.core.chronicle.Chronicle.Summary> chronicle) {
         var world = player.getServerWorld();
         var s = lastSnapshot;
         var out = new StringBuilder();
@@ -407,9 +415,10 @@ final class PortalRunCampaign {
             out.append(".\n");
         }
         out.append("Queue: ").append(followUps.describe(player)).append('\n');
-        if (!events.isEmpty()) {
-            out.append("Recent events, oldest first:\n");
-            for (String e : events) out.append("- ").append(e).append('\n');
+        var history = dev.kindred.core.chronicle.Chronicle.reportHistory(chronicle, List.copyOf(events), 0, 1, 4);
+        if (!history.isEmpty()) {
+            out.append(chronicle.isEmpty() ? "Recent events, oldest first:\n" : "Its chronicle, then events since, oldest first:\n");
+            for (String e : history) out.append("- ").append(e).append('\n');
         }
         if (!dangerZones.isEmpty()) {
             out.append("Danger zones:");

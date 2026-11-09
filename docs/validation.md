@@ -16,6 +16,22 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 16 (`e40a16-922f4fd`, batches 22 to 24) — 9 November 2026 (`claude/e40-iter16-1109`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `922f4fd`. `python3 tools/eval/run.py --ref 922f4fd
+  --name e40a16-922f4fd --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 3
+  --keep-world`; `score.py`; `compare.py` against `e40a15-dbf4e5c` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 8 of 10 (iteration 15: 10); a portal lit on 6 of 10 (7);
+    stuck time under a tenth on 3 of 10 (2).
+  - Deaths 0.0 a game hour [0 to 3.5] (23, against 21). Stuck spells 7 [1 to 14] (65, against 114); stuck minutes 21
+    [3 to 42] (25.5 [6 to 111]).
+  - Every range overlaps both: no difference worth noting.
+  - Two players stopped for reconciliation by a cast's outcome (31102026, 404); no pillar held for it.
+  - The lead's GameTest benches ran beside it at the lowest priority.
+  - [Summary](evidence/eval/e40a16-922f4fd/summary.md), [deaths](evidence/eval/e40a16-922f4fd/deaths.md),
+    [against iteration 15](evidence/eval/compare-e40a16.md), [against the start](evidence/eval/compare-e40a16-base.md),
+    [E-40](evidence/E-40.md).
+
 ## E-40, iteration 15 (`e40a15-dbf4e5c`, batches 17 to 20) — 8 November 2026 (`claude/e40-iter15-1108`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `dbf4e5c`. `python3 tools/eval/run.py --ref dbf4e5c
@@ -3325,3 +3341,9 @@ After the block's first merge from main, CI on PR #25 found:
   - Two other forms were tried first and are not kept: set down in the pit from the start (0 of 3, no way back behind
     it), and the ore at the pit's foot (2 of 3, the ore not seen from the plot's top). The benches ran beside the
     Factions evaluation, at the lowest priority.
+
+- **[F-22c30](evidence/F-22c30.md):** a loaded cart rolling back fast is stopped on its rails at the line's open end (product;
+  #70's run 42533785406: through the player's body and off the line's start, off the rails, and the bring gave up).
+  - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
+  - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
+  - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
