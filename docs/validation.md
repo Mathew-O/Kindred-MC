@@ -3462,3 +3462,9 @@ After the block's first merge from main, CI on PR #25 found:
   42563294688: a cap day ended between the refused third ask and the command's toss, which the new day's cap let through).
   - The staged fixture (the server's tick 55 before a cap day ends): 0 of 3 before the guard; after, 3 of 3.
   - `NativeTrustGameTests`, 3 runs, 8 of 8 each.
+
+- **[F-22c35](evidence/F-22c35.md):** a walk from a roof of slabs or stairs crosses them to the nearest stand (product;
+  #78's run 42556777789: a cabin's builder on its roof, "no walkable route" eight times, the cabin eight blocks short).
+  - The staged fixture (the player on a slab roof's middle): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeNavigationGameTests`, 3 runs, 8 of 8 each; `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
