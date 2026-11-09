@@ -3326,6 +3326,12 @@ After the block's first merge from main, CI on PR #25 found:
     it), and the ore at the pit's foot (2 of 3, the ore not seen from the plot's top). The benches ran beside the
     Factions evaluation, at the lowest priority.
 
+- **[F-22c30](evidence/F-22c30.md):** a loaded cart rolling back fast is stopped on its rails at the line's open end (product;
+  #70's run 42533785406: through the player's body and off the line's start, off the rails, and the bring gave up).
+  - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
+  - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
+  - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
 - **[F-22c34](evidence/F-22c34.md):** a workstation is put down where nothing stands (product; #74's run 42556590202: its anvil
   refused 1318 times in a row for its tamed wolf in the cell, until the test's time ran out). The pet fixture's body is
   asserted at every use (fixture: the runtime's stop at tick 8000 removed it, and the step's exception stopped the server).
