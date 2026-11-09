@@ -1,9 +1,11 @@
-# On every push and pull request, GitHub builds the mod, runs all the tests (unit tests, the
-# self-check demo and every GameTest in a real Minecraft test world), and keeps the mod jar
-# as a download on the run's page.
+# On every pull request, and on every push to main, GitHub builds the mod, runs all the tests (unit
+# tests, the self-check demo and every GameTest in a real Minecraft test world), and keeps the mod jar
+# as a download on the run's page. A push to any other branch runs nothing on its own: its pull request
+# runs the suite once a push, where before the push and the pull request each ran it, an hour a run.
 name: Build and test
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read

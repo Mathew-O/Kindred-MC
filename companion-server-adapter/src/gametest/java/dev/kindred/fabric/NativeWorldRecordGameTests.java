@@ -19,12 +19,13 @@ import net.minecraft.test.TestContext;
 
 /**
  * In plain terms: a GameTest: two AI players fight a duel, one is killed by the other, a faction's chunk is claimed and
- * another captured, the server's runtime is stopped and started again, and every ledger (the duel and its winner, the
- * death and its killer, who owns each chunk) comes back exactly as it was, from the World Record alone.
+ * another captured, Ada sells iron to the market, the server's runtime is stopped and started again, and every ledger
+ * (the duel and its winner, the death and its killer, who owns each chunk, the market's stock and Ada's coins) comes back
+ * exactly as it was, from the World Record alone.
  *
  * Technical: F-31's restart fixture. The ledgers before the stop are the live ones, advanced as each event was written;
  * after the restart they are rebuilt by replaying the Record at startup; both are compared, and the Record read straight
- * from the database after the final stop agrees with them, as does the nightly check run once by hand. The sale is M-06g's to add here: no market exists yet.
+ * from the database after the final stop agrees with them, as does the nightly check run once by hand.
  */
 public final class NativeWorldRecordGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "worldRecord", tickLimit = 1600)
@@ -36,6 +37,7 @@ public final class NativeWorldRecordGameTests implements FabricGameTest {
         UUID[] match = new UUID[1];
         Ledgers[] before = new Ledgers[1];
         boolean[] dead = {false};
+        List<String> sold = new java.util.ArrayList<>();
         @SuppressWarnings("unchecked") CompletableFuture<Boolean>[] check = new CompletableFuture[1];
         @SuppressWarnings("unchecked") CompletableFuture<List<WorldEvent>>[] read = new CompletableFuture[1];
         String home = ClaimLedger.chunk("minecraft:overworld", 40, 40), taken = ClaimLedger.chunk("minecraft:overworld", 41, 40);
@@ -75,6 +77,15 @@ public final class NativeWorldRecordGameTests implements FabricGameTest {
                     context.assertTrue(dead[0], "Bram killed");
                 })
                 .createAndAdd(() -> {
+                    // A sale: Ada sells sixteen iron ingots to the market (M-06g), its price and her coins ledgers.
+                    f.runtime.factionsWorldForTest(dev.kindred.core.factions.FactionSettings.DEFAULTS);
+                    // The faction world's first tick now, before the restart: both players first seen and given their
+                    // starting coins, so the restarted runtime's own ticks have nothing new to record and the ledgers
+                    // compared are the Record's alone, however soon after the restart a tick comes.
+                    f.runtime.factionsTickForTest();
+                    var ada = player(f, players[0]);
+                    ada.getInventory().setStack(8, new net.minecraft.item.ItemStack(net.minecraft.item.Items.IRON_INGOT, 16));
+                    f.runtime.market().sell(ada, List.of(8), "minecraft:overworld", sold::add);
                     f.runtime.record(WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "minecraft:overworld", ClaimLedger.CLAIM,
                             players[0], "red", home, Map.of()));
                     f.runtime.record(List.of(
@@ -83,8 +94,11 @@ public final class NativeWorldRecordGameTests implements FabricGameTest {
                                     Map.of("from", "blue"))));
                 })
                 .createAndAdd(() -> {
+                    context.assertTrue(sold.size() == 1 && sold.getFirst().startsWith("Sold for "), "Ada's sale settled: " + sold);
                     context.assertTrue(f.runtime.recordWritten(), "Written");
                     var ledgers = f.runtime.ledgers();
+                    context.assertTrue(ledgers.market().state("minecraft:iron_ingot").stock() == 16, "The market holds sixteen more ingots: " + ledgers.market().states());
+                    context.assertTrue(ledgers.coins().of(players[0]) > 0, "Ada paid");
                     var duel = ledgers.matches().get(match[0]);
                     context.assertTrue(duel != null && duel.match().state() == MatchRegistry.State.ENDED && players[0].equals(duel.match().winner()),
                             "The duel ended, Ada the winner: " + duel);
