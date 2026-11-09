@@ -12548,11 +12548,15 @@ final class PlayerRuntime {
     private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        var state = Registries.BLOCK.get(Identifier.of(block)).getDefaultState();
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
             for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
                         || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
+                // Not where something stands, as the server's own placement checks: its tamed wolf sat in the cell it
+                // chose, and it chose that cell again on every decision, refused each time (#74's CI, run 42556590202).
+                if (!world.canPlace(state, pos, net.minecraft.block.ShapeContext.of(player))) continue;
                 if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
