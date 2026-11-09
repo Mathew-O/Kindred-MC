@@ -120,4 +120,76 @@ public final class NativeTeamPortalGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * F-34c (E-40 iteration 17: "I've got the best pickaxe; I'll dig the obsidian for the portal." said 123 times): the
+     * team's parts taken up, Wren goes out of the team's range and back, three times, and each part is still said once.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "teamPortal", tickLimit = 1200)
+    public void aPartOfTheRunIsSaidOnceThoughTheTeamIsWeighedAgain(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        UUID[] ids = new UUID[2], players = new UUID[2]; // Mason, Wren
+        int[] trips = {0};
+        long[] at = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
+                    context.setBlockState(6, 61, 6, Blocks.STONE); // Wren's perch, 60 blocks up: out of the team's 48.
+                    f.runtime.createNative(f.source, "Mason");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Mason allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wren"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "Both established");
+                    for (var status : statuses) {
+                        int i = player(f, status.nativeId()).getName().getString().equals("Mason") ? 0 : 1;
+                        ids[i] = status.id();
+                        players[i] = status.nativeId();
+                    }
+                })
+                .createAndAdd(() -> {
+                    var mason = player(f, players[0]);
+                    var wren = player(f, players[1]);
+                    context.assertTrue(mason.isOnGround() && wren.isOnGround(), "Both standing");
+                    var m = mason.getInventory();
+                    m.clear();
+                    m.setStack(0, new ItemStack(Items.DIAMOND_PICKAXE));
+                    m.setStack(1, new ItemStack(Items.BREAD, 5));
+                    var w = wren.getInventory();
+                    w.clear();
+                    w.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    w.setStack(1, new ItemStack(Items.BREAD, 5));
+                    BlockPos a = context.getAbsolutePos(new BlockPos(2, 2, 2)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
+                    mason.refreshPositionAndAngles(a.getX() + 0.5, a.getY(), a.getZ() + 0.5, 0, 0);
+                    wren.refreshPositionAndAngles(b.getX() + 0.5, b.getY(), b.getZ() + 0.5, 180, 0);
+                    context.assertTrue(f.runtime.startGoal(f.source, ids[0], SurvivalGoal.NETHER_PORTAL) == 1
+                            && f.runtime.startGoal(f.source, ids[1], SurvivalGoal.NETHER_PORTAL) == 1, "Both on the goal");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.partsTaken(ids[0]).size() == 1 && f.runtime.partsTaken(ids[1]).size() == 1,
+                        "Each took up its part: " + f.runtime.partsTaken(ids[0]) + " / " + f.runtime.partsTaken(ids[1])))
+                .createAndAdd(() -> {
+                    // Up and back three times, a second (and a few of the runtime's weighings) each way.
+                    long now = context.getWorld().getServer().getTicks();
+                    if (now - at[0] < 30) context.assertTrue(false, "Waiting on the trip");
+                    at[0] = now;
+                    var wren = player(f, players[1]);
+                    boolean up = trips[0] % 2 == 0;
+                    BlockPos to = context.getAbsolutePos(up ? new BlockPos(6, 62, 6) : new BlockPos(6, 2, 6));
+                    wren.refreshPositionAndAngles(to.getX() + 0.5, to.getY(), to.getZ() + 0.5, 180, 0);
+                    wren.fallDistance = 0;
+                    trips[0]++;
+                    context.assertTrue(trips[0] >= 6, "Trips: " + trips[0]);
+                })
+                .createAndAdd(() -> {
+                    if (context.getWorld().getServer().getTicks() - at[0] < 40) context.assertTrue(false, "Back a while");
+                    context.assertTrue(f.runtime.partsTaken(ids[0]).size() == 1 && f.runtime.partsTaken(ids[1]).size() == 1,
+                            "Each part said once, the team weighed again six times: " + f.runtime.partsTaken(ids[0]) + " / " + f.runtime.partsTaken(ids[1]));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

@@ -1,0 +1,331 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 124873,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    10,
+    24,
+    60
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.999178181729818,
+    8.936319079016698,
+    16.85181902957231
+  ],
+  "yaw": 162.50174,
+  "pitch": 18.109434,
+  "health": 20.0,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 62
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 56
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 32
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 20
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 5
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:bow",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 300
+        }
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 6
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 26
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:bow",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 369
+        }
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 11
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 4
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 11
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 6
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 25
+        }
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 4873,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight creeper",
+  "task": "Fight creeper",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was blown up by Creeper",
+  "ticks": 1200,
+  "log": [
+    "[05:07:38] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -19, 2, 56 [Explore the cave toward lava]",
+    "[05:07:38] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -19, 2, 55 [Explore the cave toward lava]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 35, 71]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 34, 71]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 33, 71]",
+    "[05:07:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward lava: step down]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 34, 70]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 33, 70]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 32, 70]",
+    "[05:07:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward lava: step down]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 33, 69]",
+    "[05:07:39] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 32, 69]",
+    "[05:07:40] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 19, 31, 69]",
+    "[05:07:40] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward lava: step down]",
+    "[05:07:40] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -12, -7, 34 [Explore the cave toward lava]",
+    "[05:07:40] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -20, 2, 48 [Explore the cave toward lava]",
+    "[05:07:40] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+    "[05:07:42] [Server thread/INFO]: Sol native_fight BLOCKED: The fight broke off [Fight zombie]",
+    "[05:07:43] [Server thread/INFO]: Sol native_fight CANCELLED: The player died [Fight creeper]",
+    "[05:07:43] [Server thread/INFO]: Sol died at 26, 32, 76: Sol was blown up by Creeper (tick 124873, day, under cover, hunger 17, armour 6, holding stone_sword, a shield; doing \"Fight creeper\" in \"Iron: fight back - Fight creeper\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

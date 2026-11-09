@@ -287,6 +287,13 @@ final class ChronicleKeeper {
         return id == null ? List.of() : pages(id);
     }
 
+    /** Pages kept in memory, all tiers (the month-long cost check). */
+    int kept() {
+        int n = 0;
+        for (var l : pages.values()) n += l.size();
+        return n;
+    }
+
     /** Pages written since start, and how many by the model. */
     int[] counts() { return new int[] {written, byModel}; }
 

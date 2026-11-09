@@ -1,0 +1,12 @@
+[
+  {
+    "signature": "walls=NSE-;head=3;under=solid;liquid=;hard=false;dark=true;ledge=true;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig west 2",
+      "walk west 3"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]

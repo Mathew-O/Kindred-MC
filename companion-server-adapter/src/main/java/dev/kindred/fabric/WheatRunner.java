@@ -30,6 +30,29 @@ import java.util.function.Predicate;
  * collected). Nothing is given: short of wood for a hoe, or of seeds with no grass in sight, it stops and says so.
  */
 final class WheatRunner {
+    /**
+     * What the plot grows: wheat from seeds broken from grass (cows', sheep's), or carrots or potatoes planted from one it
+     * holds (pigs', M-01a), its seed being the food.
+     */
+    enum Crop {
+        WHEAT(Items.WHEAT_SEEDS, Items.WHEAT, Blocks.WHEAT, "wheat"),
+        CARROT(Items.CARROT, Items.CARROT, Blocks.CARROTS, "carrots"),
+        POTATO(Items.POTATO, Items.POTATO, Blocks.POTATOES, "potatoes");
+
+        final Item seed, food;
+        final net.minecraft.block.Block block;
+        final String name;
+
+        Crop(Item seed, Item food, net.minecraft.block.Block block, String name) {
+            this.seed = seed;
+            this.food = food;
+            this.block = block;
+            this.name = name;
+        }
+
+        boolean seedIsFood() { return seed == food; }
+    }
+
     private static final double REACH = 4.0;
     /** Steps at most on one visit to the plot: a hoe made, seeds broken, four cells tilled and sown, the wheat harvested. */
     private static final int MOST_STEPS = 400;
@@ -42,11 +65,20 @@ final class WheatRunner {
     private boolean done, growing;
     private String outcome = "", progress = "";
 
+    private final Crop crop;
+
     WheatRunner(BlockPos corner, int size, int wanted, String wood) {
-        this.plot = new WheatPlot(new Pos(corner.getX(), corner.getY(), corner.getZ()), size);
+        this(corner, size, wanted, wood, Crop.WHEAT);
+    }
+
+    WheatRunner(BlockPos corner, int size, int wanted, String wood, Crop crop) {
+        this.crop = crop;
+        this.plot = new WheatPlot(new Pos(corner.getX(), corner.getY(), corner.getZ()), size, crop.seedIsFood());
         this.wanted = wanted;
         this.wood = wood;
     }
+
+    Crop crop() { return crop; }
 
     String outcome() { return outcome; }
 
@@ -77,6 +109,15 @@ final class WheatRunner {
             }
             case WheatPlot.Step.NeedSeeds need -> {
                 progress = need.why();
+                // Carrots and potatoes are planted from one it holds: none in hand, none to plant (none from nothing).
+                if (crop.seedIsFood()) {
+                    // What it just harvested lying in sight, not yet picked up: a moment to pick it up, not a stop.
+                    var drop = lying(player);
+                    if (drop.isPresent() && ++waits <= MOST_WAITS) {
+                        yield Optional.of(PortalRunCampaign.go(drop.get(), 0.5, true, "Pick up the " + crop.name + " it harvested"));
+                    }
+                    yield stop(false, "No " + crop.name + " to plant");
+                }
                 seeds = new SeedRunner((int) plot.cells().size());
                 lastSeeds = seeds;
                 var task = seeds.next(player);
@@ -92,15 +133,15 @@ final class WheatRunner {
             case WheatPlot.Step.Sow sow -> {
                 progress = sow.why();
                 if (far(player, pos(sow.at()))) yield Optional.of(PortalRunCampaign.go(pos(sow.at()).up(), 2.0, true, "To the plot"));
-                int slot = hotbar(player, stack -> stack.isOf(Items.WHEAT_SEEDS));
-                if (slot < 0) yield bring(player, stack -> stack.isOf(Items.WHEAT_SEEDS), "Take the seeds in hand");
+                int slot = hotbar(player, stack -> stack.isOf(crop.seed));
+                if (slot < 0) yield bring(player, stack -> stack.isOf(crop.seed), "Take the " + (crop.seedIsFood() ? crop.name : "seeds") + " in hand");
                 yield Optional.of(new PortalRunCampaign.Task("native_plant", coords(sow.at(), Map.of("slot", str(slot), "roam", "true")), sow.why()));
             }
             case WheatPlot.Step.Harvest harvest -> {
                 progress = harvest.why();
                 BlockPos crop = pos(harvest.at()).up();
                 if (far(player, crop)) {
-                    yield Optional.of(PortalRunCampaign.go(crop, 2.0, true, "To the ripe wheat"));
+                    yield Optional.of(PortalRunCampaign.go(crop, 2.0, true, "To the ripe " + this.crop.name));
                 }
                 yield Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(crop.getX()), "y", str(crop.getY()), "z", str(crop.getZ())),
                         harvest.why()));
@@ -111,6 +152,18 @@ final class WheatRunner {
     }
 
     private SeedRunner lastSeeds;
+    /** Walks to a harvest's drops, at most a few, before it says it has none. */
+    private static final int MOST_WAITS = 4;
+    private int waits;
+
+    /** Where the nearest of its crop lies on the ground about the plot, in sight. */
+    private Optional<BlockPos> lying(ServerPlayerEntity player) {
+        var c = plot.corner();
+        var around = new net.minecraft.util.math.Box(c.x() - 3, c.y(), c.z() - 3, c.x() + 5, c.y() + 3, c.z() + 5);
+        return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, around,
+                        e -> e.getStack().isOf(crop.food) && player.canSee(e)).stream()
+                .min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).map(net.minecraft.entity.Entity::getBlockPos);
+    }
 
     private String seedsOutcome() { return lastSeeds == null ? "" : lastSeeds.outcome().toLowerCase(java.util.Locale.ROOT); }
 
@@ -152,7 +205,7 @@ final class WheatRunner {
             var above = world.getBlockState(at.up());
             WheatPlot.Soil kind;
             if (state.isOf(Blocks.FARMLAND)) {
-                if (above.isOf(Blocks.WHEAT)) kind = ((CropBlock) above.getBlock()).isMature(above) ? WheatPlot.Soil.RIPE : WheatPlot.Soil.SOWN;
+                if (above.isOf(crop.block)) kind = ((CropBlock) above.getBlock()).isMature(above) ? WheatPlot.Soil.RIPE : WheatPlot.Soil.SOWN;
                 else kind = above.isAir() ? WheatPlot.Soil.FARMLAND : WheatPlot.Soil.OTHER;
             } else if ((state.isOf(Blocks.DIRT) || state.isOf(Blocks.GRASS_BLOCK)) && (above.isAir() || above.isReplaceable() && above.getFluidState().isEmpty())) {
                 kind = WheatPlot.Soil.DRY;
@@ -165,8 +218,8 @@ final class WheatRunner {
         boolean hoe = false;
         for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).getItem() instanceof HoeItem) hoe = true;
         BlockPos feet = player.getBlockPos();
-        return new WheatPlot.Observation(new Pos(feet.getX(), feet.getY(), feet.getZ()), soil, hoe, inventory.count(Items.WHEAT_SEEDS),
-                inventory.count(Items.WHEAT));
+        return new WheatPlot.Observation(new Pos(feet.getX(), feet.getY(), feet.getZ()), soil, hoe, inventory.count(crop.seed),
+                inventory.count(crop.food));
     }
 
     private static int hotbar(ServerPlayerEntity player, Predicate<ItemStack> wanted) {

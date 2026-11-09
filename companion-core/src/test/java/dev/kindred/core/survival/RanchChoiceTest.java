@@ -90,4 +90,17 @@ class RanchChoiceTest {
         assertFalse(herd.breed(), "a herd is enough");
         assertTrue(herd.why().contains("sheep") && !herd.why().contains("sheeps"), herd.why());
     }
+
+    @Test
+    void aPairOfPigsAndOneCarrotOrPotatoInHandGrowsMoreFromIt() {
+        var one = RanchChoice.next(true, Map.of(Ranch.Kind.PIG, 2), Map.of(Ranch.Kind.PIG, 1), false);
+        assertTrue(one.kind().isEmpty(), "one is not enough to breed a pair");
+        assertEquals(Optional.of(Ranch.Kind.PIG), one.earn(), "the one it holds planted and grown");
+        assertTrue(one.why().contains("planted"), one.why());
+        assertTrue(RanchChoice.next(true, Map.of(Ranch.Kind.PIG, 2), Map.of(), false).earn().isEmpty(), "none held: none grown from nothing");
+        assertEquals(Optional.of(Ranch.Kind.PIG), RanchChoice.next(true, Map.of(Ranch.Kind.PIG, 2), Map.of(Ranch.Kind.PIG, 2), false).kind(),
+                "two in hand: the ranch at once");
+        assertEquals(Optional.of(Ranch.Kind.COW), RanchChoice.next(true, Map.of(Ranch.Kind.COW, 2, Ranch.Kind.PIG, 2), Map.of(Ranch.Kind.PIG, 1), false).earn(),
+                "cows' wheat before pigs' carrots, in the order it keeps them");
+    }
 }
