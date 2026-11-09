@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144146,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 336, "factions": 3, "claims": 3, "captures": 0, "sales": 102, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 2, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 15.40, "tickMsWorst": 1647.46, "tickMsWorstAt": 5838, "ticksOver50ms": 878, "ticksOver200ms": 9, "heapMbMax": 1405, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 9960, "stone_tools": 13120, "iron_ingot": 20960},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1760, "stone_tools": 29000, "iron_ingot": 37140, "iron_pickaxe": 52960, "obsidian": 100532, "portal_lit": 104921},
+      "deaths": [
+        {"tick": 6041, "cause": "Sol drowned", "x": 125, "y": 52, "z": -202, "light": 4, "timeOfDay": 6203, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Stone: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 13437, "cause": "Sol drowned", "x": 105, "y": 61, "z": -235, "light": 3, "timeOfDay": 13599, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Wood: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "Get out of the water: up for air"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 48040, "x": 20, "y": 17, "z": -291, "attempt": 1}, {"tick": 96540, "x": -68, "y": -54, "z": -278, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1920, "stone_tools": 6800, "iron_ingot": 13920, "iron_pickaxe": 41400, "obsidian": 73115, "portal_lit": 74131},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

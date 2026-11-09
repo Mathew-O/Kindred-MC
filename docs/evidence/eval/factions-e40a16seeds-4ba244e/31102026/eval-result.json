@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144033,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 397, "factions": 3, "claims": 10, "captures": 0, "sales": 116, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 4, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 13.12, "tickMsWorst": 1724.79, "tickMsWorstAt": 5838, "ticksOver50ms": 529, "ticksOver200ms": 11, "heapMbMax": 1305, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 111768, "cause": "Kindred drowned", "x": -85, "y": 61, "z": 76, "light": 2, "timeOfDay": 15930, "dimension": "minecraft:overworld", "hunger": 5, "underSky": false, "stage": "Wood: Get out of the water: up for air (tried elsewhere 6 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 124089, "cause": "Kindred suffocated in a wall", "x": -70, "y": 82, "z": 185, "light": 11, "timeOfDay": 4251, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Wood: stuck in a wall - Dig out of the wall: out from under the falling sand to -70, 82, 185", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 8120, "x": -19, "y": 71, "z": 531, "attempt": 1}, {"tick": 11860, "x": -43, "y": 68, "z": 529, "attempt": 2}, {"tick": 28680, "x": -8, "y": 71, "z": 514, "attempt": 3}, {"tick": 58040, "x": -147, "y": 66, "z": 322, "attempt": 4}, {"tick": 75960, "x": -149, "y": 66, "z": 303, "attempt": 5}, {"tick": 79720, "x": -123, "y": 65, "z": 300, "attempt": 6}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 51400, "stone_tools": 120020, "iron_ingot": 128480},
+      "deaths": [
+        {"tick": 53076, "cause": "Sol hit the ground too hard", "x": 87, "y": 55, "z": 249, "light": 0, "timeOfDay": 5238, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Stone: outmatched - Hole up: recover behind the wall", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28120, "x": -180, "y": 71, "z": 495, "attempt": 1}, {"tick": 31800, "x": -179, "y": 69, "z": 474, "attempt": 2}, {"tick": 35480, "x": -158, "y": 70, "z": 472, "attempt": 3}, {"tick": 83660, "x": 375, "y": 62, "z": 357, "attempt": 1}, {"tick": 100800, "x": 327, "y": 64, "z": 430, "attempt": 2}, {"tick": 104480, "x": 323, "y": 64, "z": 408, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 53120, "stone_tools": 55560, "iron_ingot": 58500, "iron_pickaxe": 90160},
+      "deaths": [
+        {"tick": 17274, "cause": "Echo drowned", "x": 235, "y": 61, "z": 477, "light": 2, "timeOfDay": 17436, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Wood: Get out of the water: up for air (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "Get out of the water: up for air"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 8940, "x": 196, "y": 64, "z": 477, "attempt": 1}, {"tick": 69020, "x": 86, "y": 17, "z": 259, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

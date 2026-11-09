@@ -1,0 +1,51 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144001,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 215, "factions": 3, "claims": 10, "captures": 0, "sales": 54, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 5, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 11.19, "tickMsWorst": 1171.47, "tickMsWorstAt": 5838, "ticksOver50ms": 309, "ticksOver200ms": 10, "heapMbMax": 1228, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2220, "stone_tools": 25780, "iron_ingot": 31000, "iron_pickaxe": 57260},
+      "deaths": [
+        {"tick": 16483, "cause": "Kindred was shot by Skeleton", "x": -223, "y": 63, "z": -579, "light": 4, "timeOfDay": 16645, "dimension": "minecraft:overworld", "hunger": 8, "underSky": true, "stage": "Stone: fight back - Back off from stray", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 19544, "cause": "Kindred was blown up by Creeper", "x": -35, "y": 71, "z": 8, "light": 0, "timeOfDay": 19706, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Wood: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[]", "task": "Fight creeper"},
+        {"tick": 34460, "cause": "Kindred was slain by Zombie", "x": 68, "y": 33, "z": -6, "light": 0, "timeOfDay": 10622, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 48140, "x": 103, "y": 37, "z": -14, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 6300, "stone_tools": 8200, "iron_ingot": 9820, "iron_pickaxe": 41180, "obsidian": 57940, "portal_lit": 58728},
+      "deaths": [
+        {"tick": 20097, "cause": "Sol was shot by Skeleton", "x": 64, "y": 29, "z": -502, "light": 0, "timeOfDay": 20259, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: outmatched - Hole up: recover behind the wall", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3820, "stone_tools": 5880, "iron_ingot": 32920, "iron_pickaxe": 85760},
+      "deaths": [
+        {"tick": 23837, "cause": "Echo was doomed to fall by Skeleton", "x": 77, "y": 28, "z": -481, "light": 0, "timeOfDay": 23999, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Run from creeper (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 11920, "x": 77, "y": 40, "z": -484, "attempt": 1}, {"tick": 21200, "x": 77, "y": 37, "z": -484, "attempt": 2}, {"tick": 68960, "x": 170, "y": 13, "z": -53, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
