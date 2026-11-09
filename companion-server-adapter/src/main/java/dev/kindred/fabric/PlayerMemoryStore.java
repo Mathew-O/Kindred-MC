@@ -112,6 +112,8 @@ final class PlayerMemoryStore implements AutoCloseable {
         Pen ranch;
         /** Its wheat plot (M-01a), or none. */
         Plot plot;
+        /** The horse it tamed and keeps (M-01a), by its id, or none. A file from before has none. */
+        String horse;
         /** Its pens after the first (M-01a), a pen per kind, oldest first; the first stays {@link #ranch}. A file from before has none. */
         List<Pen> pens = new ArrayList<>();
 
