@@ -15,10 +15,11 @@ import java.util.concurrent.CompletionException;
 
 /**
  * In plain terms: reads an AI player's save file (its inventory and so on) in the background, before the body
- * joins. It only reads; Minecraft's own saving stays the only thing that writes it.
+ * joins. It only reads, and only once any trade's save of the same file has finished writing.
  *
- * Technical: Read-only native-save preparation. Vanilla PlayerSaveHandler remains the only physical-state
- * writer.
+ * Technical: Read-only native-save preparation, chained after {@link PlayerSaves#written}. The writers are vanilla's
+ * PlayerSaveHandler, the native body's own save and the market's two-phase save, all ordered by {@link PlayerSaves}
+ * while one of its writes is pending.
  */
 final class NativePlayerSaves {
     private static final int MAX_BYTES = 16 * 1024 * 1024;
@@ -44,7 +45,8 @@ final class NativePlayerSaves {
     static CompletableFuture<Optional<Bytes>> read(Path playerDirectory, UUID nativeId) {
         Path file = playerDirectory.resolve(nativeId + ".dat");
         // Workers receive only a path/UUID and return defensively copied bytes, never Minecraft state.
-        return CompletableFuture.supplyAsync(() -> {
+        // After any trade's save of the same file still being written (M-06g), never an older copy.
+        return PlayerSaves.written(nativeId).thenApplyAsync(ignored -> {
             try {
                 if (Files.notExists(file)) return Optional.empty();
                 try (var input = Files.newInputStream(file)) {

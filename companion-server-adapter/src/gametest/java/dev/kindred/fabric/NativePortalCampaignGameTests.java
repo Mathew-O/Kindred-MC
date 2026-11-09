@@ -2157,6 +2157,13 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * minutes later (the staircase fixture's failure while its foot lay open). Now a walk back that ends where it
      * started is set aside, and the player climbs out, clearing a step by hand. The course runs ten blocks east, into
      * the next plot, so it has a batch of its own: a neighbour's setup once filled its ore and pit with stone.
+     *
+     * <p>Staged into the pit: once the ore is mined and its pickaxe broken on it, the pit's two cells are cleared and
+     * the player is set down at its foot, its walk down the stair behind it. It no longer falls in by itself: mining from
+     * up the stair, it took the drop from the stair's foot, or from over the pit on a block it had set down there. The check for the
+     * pit (any height under the plot's base) was then met on the test world's floor after it jumped off the walled plot,
+     * and the climb back under open sky never came (on CI, 3 times on 8 November). It passed only when its search for
+     * logs took it back down the stair and into the pit.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "pitfall", tickLimit = 2400)
     public void goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe(TestContext context) {
@@ -2200,9 +2207,23 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(1000);
-                    context.assertTrue(f.player().getBlockY() < base[0].getY() - 1, "Down in the pit: " + f.player().getBlockPos().toShortString()
-                            + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    var inventory = f.player().getInventory();
+                    boolean pickaxe = false;
+                    for (int s = 0; s < inventory.size(); s++) pickaxe |= inventory.getStack(s).isIn(net.minecraft.registry.tag.ItemTags.PICKAXES);
+                    context.assertTrue(context.getWorld().getBlockState(base[0].add(9, 0, 0)).isAir() && !pickaxe, "The ore mined and its pickaxe broken: "
+                            + f.player().getBlockPos().subtract(base[0]).toShortString() + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
+                .createAndAdd(() -> {
+                    // Into the pit after the drop, as the players this was found from fell: its two cells open, the player at its foot.
+                    var world = context.getWorld();
+                    world.setBlockState(base[0].add(9, -1, 0), Blocks.AIR.getDefaultState());
+                    world.setBlockState(base[0].add(9, -2, 0), Blocks.AIR.getDefaultState());
+                    BlockPos foot = base[0].add(9, -2, 0);
+                    f.player().refreshPositionAndAngles(foot.getX() + 0.5, foot.getY(), foot.getZ() + 0.5, -90, 30);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(base[0].add(9, -2, 0)),
+                        "Down in the pit: " + f.player().getBlockPos().subtract(base[0]).toShortString()))
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(1000);
                     var player = f.player();

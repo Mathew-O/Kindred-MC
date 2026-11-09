@@ -21,11 +21,27 @@ import net.minecraft.text.Text;
 final class FactionCommands {
     static final String HELP = "/faction create <name> <tag> [colour] | invite|uninvite|kick|promote|demote|leader <player> | join <faction> | leave"
             + " | ally|truce|enemy <faction> | sethome | home | colour <dye> | disband | info [faction] | list | power [player]"
-            + " | claim | unclaim | map | coins";
+            + " | claim | unclaim | capture | map | coins";
 
     private FactionCommands() {}
 
     static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        // The market (M-06g): /shop sell hand|all [confirm], /shop buy <item> <count>, /shop price [item]; /market top,
+        // /market history <item>, /market baseline (operators); /sellall as /shop sell all.
+        for (String root : new String[] {"shop", "market"}) {
+            dispatcher.register(CommandManager.literal(root)
+                    .executes(context -> market(context.getSource(), "help"))
+                    .then(CommandManager.argument("request", StringArgumentType.greedyString())
+                            .executes(context -> market(context.getSource(), StringArgumentType.getString(context, "request")))));
+        }
+        // The auction house (M-06h): /ah [list|mine], /ah sell <start> [buyNow] [hours], /ah bid|buy|cancel <id> ...
+        dispatcher.register(CommandManager.literal("ah")
+                .executes(context -> auction(context.getSource(), "list"))
+                .then(CommandManager.argument("request", StringArgumentType.greedyString())
+                        .executes(context -> auction(context.getSource(), StringArgumentType.getString(context, "request")))));
+        dispatcher.register(CommandManager.literal("sellall")
+                .executes(context -> market(context.getSource(), "sell all"))
+                .then(CommandManager.literal("confirm").executes(context -> market(context.getSource(), "sell all confirm"))));
         dispatcher.register(CommandManager.literal("faction")
                 .executes(context -> help(context.getSource()))
                 .then(CommandManager.literal("admin").requires(source -> source.hasPermissionLevel(2))
@@ -57,9 +73,34 @@ final class FactionCommands {
                         })));
     }
 
+    private static int market(ServerCommandSource source, String request) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(source);
+        var player = source.getPlayer();
+        List<String> words = Arrays.stream(request.trim().split("\\s+")).filter(w -> !w.isEmpty()).toList();
+        if (player == null && !(words.size() > 0 && List.of("price", "top", "history", "baseline").contains(words.getFirst()))) {
+            source.sendError(Text.literal("Only a player sells and buys; an operator uses /faction as <player> shop ..."));
+            return 0;
+        }
+        return runtime.marketRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), words.isEmpty() ? "help" : words.getFirst(), words.isEmpty() ? List.of() : words.subList(1, words.size()));
+    }
+
+    private static int auction(ServerCommandSource source, String request) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(source);
+        var player = source.getPlayer();
+        List<String> words = Arrays.stream(request.trim().split("\\s+")).filter(w -> !w.isEmpty()).toList();
+        return runtime.auctionRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), words.isEmpty() ? "list" : words.getFirst(),
+                words.isEmpty() ? List.of() : words.subList(1, words.size()));
+    }
+
     private static int run(PlayerRuntime runtime, ServerCommandSource source, UUID who, String request) {
         List<String> words = Arrays.stream(request.trim().split("\\s+")).filter(w -> !w.isEmpty()).toList();
         if (words.isEmpty()) return help(source);
+        if ((words.getFirst().equals("shop") || words.getFirst().equals("market")) && words.size() > 1) {
+            return runtime.marketRequest(source, who, words.get(1), words.subList(2, words.size()));
+        }
+        if (words.getFirst().equals("ah")) return runtime.auctionRequest(source, who, words.size() > 1 ? words.get(1) : "list", words.size() > 2 ? words.subList(2, words.size()) : List.of());
         return runtime.faction(source, who, words.getFirst(), words.subList(1, words.size())).accepted() ? 1 : 0;
     }
 

@@ -41,8 +41,9 @@ public final class PortalRunPlanner {
     /** Trees this close are worth a detour for a shield's wood or spare sticks; farther ones are not. */
     static final int TREE_RANGE = 24;
     /**
-     * Before the work below, a tree this close is worth the walk for the stick reserve: live run 68 went down a cave
-     * by spawn with two sticks, the nearest tree forty blocks off, and climbed fifty-five blocks for logs from Y=19.
+     * Before the work below, a tree this close is worth the walk for the stick reserve and the trip's wood: live run 68
+     * went down a cave by spawn with two sticks, the nearest tree forty blocks off, and climbed fifty-five blocks for logs
+     * from Y=19.
      */
     static final int TREE_PACK_RANGE = 64;
     /** Smelts still ahead for which a log is better made into charcoal than burnt as planks. */
@@ -323,9 +324,11 @@ public final class PortalRunPlanner {
             // The trip's wood first, while among the trees, as players take a stack of logs before going down: the first
             // cobblestone takes it below, out of sight of them, and the packing further on found no tree from there. In
             // the live runs that checked F-25c4b to h, three of five players ran out of sticks and wood below, and were
-            // left with no pickaxe.
+            // left with no pickaxe. From any tree in the packing range, not only one beside it: the tree it made its
+            // pickaxe from is often cut by then, or a teammate's, and in E-40's iteration 15 six of the ten players who
+            // climbed from deep down for logs for sticks had left for want of a tree within 24 blocks (F-25c4cr).
             int trip = tripWood(s, facts, frame);
-            if (s.woodUnits() < trip && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_RANGE) {
+            if (s.woodUnits() < trip && facts.distance(WorldFacts.Source.TREE).orElse(Integer.MAX_VALUE) <= TREE_PACK_RANGE) {
                 return logs(facts, (trip - s.woodUnits() + 3) / 4, Stage.STONE, "Gather logs for the trip below");
             }
             if (s.cobble() < 3) return stone(s, facts, 3 - s.cobble(), Stage.STONE, "Mine cobblestone for a stone pickaxe");

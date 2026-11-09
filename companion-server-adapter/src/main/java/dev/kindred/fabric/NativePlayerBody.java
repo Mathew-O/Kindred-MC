@@ -330,6 +330,12 @@ final class NativePlayerBody implements BodyAdapter {
         Path directory = player.server.getSavePath(WorldSavePath.PLAYERDATA);
         Path file = directory.resolve(player.getUuidAsString() + ".dat");
         Path temp = directory.resolve(player.getUuidAsString() + ".dat_" + UUID.randomUUID());
+        if (PlayerSaves.pending(player.getUuid())) {
+            // A trade's save of this body is still being written: this one goes after it, never under it (M-06g).
+            PlayerSaves.enqueue(player.getUuid(), directory, player.writeNbt(new NbtCompound()))
+                    .whenComplete((ignored, failure) -> { if (failure != null) KindredMod.LOGGER.error("Native player save could not be written", failure); });
+            return;
+        }
         try {
             Files.createDirectories(directory);
             NbtCompound nbt = player.writeNbt(new NbtCompound());
