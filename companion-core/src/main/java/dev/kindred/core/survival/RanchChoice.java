@@ -59,7 +59,8 @@ public final class RanchChoice {
      * As {@link #next(boolean, Map, Map)}, and with {@code grassInSight} whether there is grass in sight to earn seeds
      * from: with a pair of chickens seen and no kind it can feed, it earns the chickens' seeds from the grass first, as
      * players do (one in eight breaks gives a seed). Wheat for cows and sheep is grown from seeds in a plot by its base
-     * ({@link WheatPlot}); a pig's carrots and potatoes are found, not grown from what it has, and are not earned.
+     * ({@link WheatPlot}); a pig's carrots or potatoes are grown there too, from one it holds (found: none is grown from
+     * nothing).
      */
     public static Decision next(boolean hasBase, Map<Ranch.Kind, Integer> seen, Map<Ranch.Kind, Integer> food, boolean grassInSight) {
         return next(hasBase, seen, food, grassInSight, java.util.Set.of());
@@ -95,6 +96,11 @@ public final class RanchChoice {
                 return new Decision(Optional.empty(), "A pair of " + kind.plural() + " close by; " + FOOD + " wheat first, grown from seeds",
                         Optional.of(kind));
             }
+        }
+        // A pig's carrots or potatoes are planted from one it holds and grown in the plot (WheatPlot, its seed the food).
+        if (seen.getOrDefault(Ranch.Kind.PIG, 0) >= 2 && food.getOrDefault(Ranch.Kind.PIG, 0) >= 1) {
+            return new Decision(Optional.empty(), "A pair of pigs close by; the one it holds planted first, grown to " + EARN,
+                    Optional.of(Ranch.Kind.PIG));
         }
         if (wantingFood != null) {
             return new Decision(Optional.empty(), "A pair of " + wantingFood.plural() + " close by; " + FOOD + " " + foodName(wantingFood)

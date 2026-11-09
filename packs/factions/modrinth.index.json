@@ -1,0 +1,118 @@
+{
+  "formatVersion": 1,
+  "game": "minecraft",
+  "versionId": "factions-0.1.0-draft",
+  "name": "Kindred Factions (server)",
+  "summary": "The server mods for Kindred's Factions mode, beside the Kindred jar built from this repository. Draft: not yet proven on a fresh server.",
+  "files": [
+    {
+      "path": "mods/fabric-api-0.116.17+1.21.1.jar",
+      "hashes": {
+        "sha1": "810b2b0195371a012906241d8b85a32a1d6de53c",
+        "sha512": "98c478217da19181f0e4df3ea6c2da6bdbda271c7544a4aea048513a49b444f1ff5b71dc0df6303017c48e8ff69b7bb6af6179bdf0d0e09ab3c1ee08411857a8"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/P7dR8mSH/versions/Mys3P7lK/fabric-api-0.116.17%2B1.21.1.jar"
+      ],
+      "fileSize": 2452735
+    },
+    {
+      "path": "mods/Chunky-Fabric-1.4.23.jar",
+      "hashes": {
+        "sha1": "6c8098fc0f124c7b6492de60db0108747f7f9821",
+        "sha512": "02ca6af1ed31e9ebc51af20948a2afb670fe653c80aaeb990947caf6b655d6ab8eda3f1b64ef478633b67ef5d2fd0d1fe67e2107a4a522ef45fd1f183c9a6c9c"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/fALzjamp/versions/RVFHfo1D/Chunky-Fabric-1.4.23.jar"
+      ],
+      "fileSize": 342979
+    },
+    {
+      "path": "mods/spark-1.10.109-fabric.jar",
+      "hashes": {
+        "sha1": "eff42cbeee6fe9a7f3c57031c23200256366dcd1",
+        "sha512": "367f574f6d28432067f09737577d799ced9c309c1725da1d09ffdfe10eacf461a66967205cc938131afbcc8b8255c8c25f8aa516e15f061c6481b6e7b8c94250"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/l6YH9Als/versions/cALUj9l1/spark-1.10.109-fabric.jar"
+      ],
+      "fileSize": 3609981
+    },
+    {
+      "path": "mods/lithium-fabric-0.15.4+mc1.21.1.jar",
+      "hashes": {
+        "sha1": "7d82a004403b7780d4443d8e40361a55cfd0ae63",
+        "sha512": "182064b00e6315e2255b857eaab8eb759e6b042ebd4cc8b855ff0d93f875a5a7188fac49f878d7b29d4ef7e6b6341190ad7f6f6f39f4a6d2c62003468b08e4c6"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/lithium-fabric-0.15.4%2Bmc1.21.1.jar"
+      ],
+      "fileSize": 797454
+    },
+    {
+      "path": "mods/ferritecore-7.0.3-fabric.jar",
+      "hashes": {
+        "sha1": "a8a6a34fcda177da2828cedef44e0e538cf78aad",
+        "sha512": "3ad31620fac4ff44327dc7dedbe162b2d978f3f246dc16255a6e400ce9592a0d326fe36a626f3c1bf30a11f813093cbb4dcc107af039cff724d0cdf648541fdf"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/uXXizFIs/versions/sOzRw3CG/ferritecore-7.0.3-fabric.jar"
+      ],
+      "fileSize": 123450
+    },
+    {
+      "path": "mods/textile_backup-3.1.3-1.21.jar",
+      "hashes": {
+        "sha1": "f390d2acd7e963d2087580fa94b6e4eafe7ac652",
+        "sha512": "76e9581dcf92108e32b1e492bc30a85c19fc383b4823ebbf55d4d8c5659d25305638371a8331ef93822e26954c0d05808224b816a80dea9b7034efd70213f292"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/wwcspvkr/versions/C73KkDD6/textile_backup-3.1.3-1.21.jar"
+      ],
+      "fileSize": 1308283
+    },
+    {
+      "path": "mods/cloth-config-15.0.140-fabric.jar",
+      "hashes": {
+        "sha1": "5d82342a2df53fd6df712bfdd583a811572918a4",
+        "sha512": "1b3f5db4fc1d481704053db9837d530919374bf7518d7cede607360f0348c04fc6347a3a72ccfef355559e1f4aef0b650cd58e5ee79c73b12ff0fc2746797a00"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/9s6osm5g/versions/HpMb5wGb/cloth-config-15.0.140-fabric.jar"
+      ],
+      "fileSize": 1157166
+    }
+  ],
+  "dependencies": {
+    "minecraft": "1.21.1",
+    "fabric-loader": "0.19.5"
+  }
+}
