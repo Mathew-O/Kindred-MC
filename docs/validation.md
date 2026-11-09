@@ -3427,3 +3427,9 @@ After the block's first merge from main, CI on PR #25 found:
   - Reopened (#87's run 42584555878: 24 mounts counted for 5 rides). The fixture now checks each mount counted was made.
     With the first form of the change, 0 of 3 ("counted 24, made 6"); with the step kept till a task of it has run, 3
     of 3. `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+
+- **[F-22c32](evidence/F-22c32.md):** a boat a strolling villager steps into late is not broken under it (product; #72's CI on
+  `a2c7baa`, the lake fixture: a break of the boat, planned while it stood empty, went on after the librarian stepped in).
+  - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
+    both staged copies held and brought home.
+  - `NativeBringGameTests`, 3 runs, 10 of 10 each.
