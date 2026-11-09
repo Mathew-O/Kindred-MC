@@ -5507,8 +5507,11 @@ final class PlayerRuntime {
         long now = server.getTicks();
         long time = world.getTimeOfDay() % 24000L;
         boolean sleepTime = world.isNight() || world.isThundering() || time >= 12542L && time <= 23460L;
+        // Dug in for the night by its goal (a faction world's life first beside a goal, M-06i): the goal's shelter is its
+        // night, and no walk to a bed takes it out of it.
+        boolean dugIn = goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null && entry.campaign.dugInForTheNight(player);
         BlockPos bed = player.isSleeping() ? player.getSleepingPosition().orElse(null)
-                : sleepTime && now >= entry.sleepRetryAt ? nearestOwnBed(entry, world, player.getBlockPos()) : null;
+                : sleepTime && !dugIn && now >= entry.sleepRetryAt ? nearestOwnBed(entry, world, player.getBlockPos()) : null;
         int hunger = player.getHungerManager().getFoodLevel();
         int carried = foodCarried(player);
         var decision = dev.kindred.core.survival.LifeFirst.next(new dev.kindred.core.survival.LifeFirst.State(hunger, carried, sleepTime,
