@@ -15444,6 +15444,7 @@ final class PlayerRuntime {
         @Override public StrategistBridge bridge() { return memory; }
 
         @Override public net.minecraft.server.MinecraftServer server() { return server; }
+    }
 
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
