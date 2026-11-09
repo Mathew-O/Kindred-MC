@@ -66,4 +66,24 @@ class WheatPlotTest {
         assertInstanceOf(WheatPlot.Step.Done.class, lost, "nothing it can grow on: it says so");
         assertTrue(((WheatPlot.Step.Done) lost).outcome().contains("nothing to grow"), ((WheatPlot.Step.Done) lost).outcome());
     }
+
+    @Test
+    void aCropPlantedFromItsFoodIsPlantedOneAtATimeOnlyWhileItHasFewerThanItWants() {
+        var plot = new WheatPlot(new Pos(0, 64, 0), 2, true);
+        // One carrot, the plot bare: planted, the one it has.
+        assertInstanceOf(WheatPlot.Step.Sow.class, plot.next(seen(all(WheatPlot.Soil.FARMLAND), true, 1, 1), 4));
+        // Planted, none left: left to grow; it does not ask for another to plant.
+        var one = all(WheatPlot.Soil.FARMLAND);
+        one.put(new Pos(0, 64, 0), WheatPlot.Soil.SOWN);
+        assertInstanceOf(WheatPlot.Step.Growing.class, plot.next(seen(one, true, 0, 0), 4));
+        // Harvested to three, nothing growing: one planted again toward four.
+        assertInstanceOf(WheatPlot.Step.Sow.class, plot.next(seen(all(WheatPlot.Soil.FARMLAND), true, 3, 3), 4));
+        // Three held, one growing: not planted again, so the three are kept; it waits.
+        assertInstanceOf(WheatPlot.Step.Growing.class, plot.next(seen(one, true, 3, 3), 4), "planting never eats what it grew");
+        // What it wants held: done, the surplus kept, not planted (a plot ripening fast was farmed without end).
+        assertInstanceOf(WheatPlot.Step.Done.class, plot.next(seen(all(WheatPlot.Soil.FARMLAND), true, 5, 5), 4));
+        assertInstanceOf(WheatPlot.Step.Done.class, plot.next(seen(one, true, 4, 4), 4));
+        // None held and nothing growing: one to plant first, never one from nothing.
+        assertInstanceOf(WheatPlot.Step.NeedSeeds.class, plot.next(seen(all(WheatPlot.Soil.FARMLAND), true, 0, 0), 4));
+    }
 }
