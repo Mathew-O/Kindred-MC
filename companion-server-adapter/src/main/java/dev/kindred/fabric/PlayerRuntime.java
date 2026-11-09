@@ -265,6 +265,8 @@ final class PlayerRuntime {
     private final KindredWire wire;
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
+    /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
+    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -2542,7 +2544,10 @@ final class PlayerRuntime {
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
         chronicle.tick();
-        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
+            checkLedgers();
+            logCost(tick / LEDGER_CHECK_TICKS + 1);
+        }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
@@ -4602,6 +4607,15 @@ final class PlayerRuntime {
     private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
         var stable = entry.stable;
         var player = body.entity();
+        // A swap or a ride under way is kept to till it ends: planned again while it waited on its record, each plan was a
+        // try, and four of them gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's
+        // CI, run 42566194927) (F-22c38).
+        var step = entry.stableStep;
+        if (step != null && step.candidate().id().equals(entry.currentTaskId) && entry.runner.state() == SkillRunner.State.RUNNING
+                && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
+            return List.of(step);
+        }
+        entry.stableStep = null;
         var task = stable.next(player);
         if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
@@ -4630,7 +4644,8 @@ final class PlayerRuntime {
         entry.buildTasks.put(id, t);
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+        entry.stableStep = new NativeTaskCandidate(candidate, t.skill(), t.args());
+        return List.of(entry.stableStep);
     }
 
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
@@ -12547,11 +12562,15 @@ final class PlayerRuntime {
     private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        var state = Registries.BLOCK.get(Identifier.of(block)).getDefaultState();
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
             for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
                         || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
+                // Not where something stands, as the server's own placement checks: its tamed wolf sat in the cell it
+                // chose, and it chose that cell again on every decision, refused each time (#74's CI, run 42556590202).
+                if (!world.canPlace(state, pos, net.minecraft.block.ShapeContext.of(player))) continue;
                 if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
@@ -13650,6 +13669,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
+        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -15747,6 +15767,14 @@ final class PlayerRuntime {
         }
     }
 
+    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    CompletableFuture<String> logCost(long day) {
+        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept());
+        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        line.thenAccept(KindredMod.LOGGER::info);
+        return line;
+    }
+
     /** One event written to the World Record (F-31). */
     void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
 
@@ -15778,6 +15806,7 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
+                    gauge.written(event); // The month-long cost check.
                 }
             });
         });
@@ -16407,6 +16436,8 @@ final class PlayerRuntime {
         SeedRunner seeding;
         /** The horse it is taming to keep (M-01a), or none. */
         StableRunner stable;
+        /** Its horse's last step handed out, kept while it runs if it is a swap or a ride (F-22c38). */
+        NativeTaskCandidate stableStep;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */

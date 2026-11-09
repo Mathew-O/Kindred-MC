@@ -66,10 +66,17 @@ final class PortalRunCampaign {
     private static final int BRANCH_LEG = 20, BRANCH_STEP = 3;
     /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
     private static final int EXPLORE_RADIUS = 192;
+    /**
+     * The steps that take it off to look for something, its own table and an emptied furnace taken along. The cast route's
+     * too: on 303 in E-40's iteration 16 (`e40a16-922f4fd`) Kindred, its pickaxe worn out on the way to cast its frame,
+     * made a stone one at a table it put down at Y=-54, branch-mined fifty blocks on for lava without it, wore that one
+     * out as well and climbed for logs for another table (F-25c4cw).
+     */
     private static final java.util.EnumSet<PortalRunPlanner.Action> TRAVEL = java.util.EnumSet.of(
             PortalRunPlanner.Action.GATHER_LOGS, PortalRunPlanner.Action.GATHER_STONE, PortalRunPlanner.Action.MINE_COAL,
             PortalRunPlanner.Action.MINE_IRON, PortalRunPlanner.Action.MINE_DIAMOND, PortalRunPlanner.Action.MAKE_OBSIDIAN,
-            PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT);
+            PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT, PortalRunPlanner.Action.CAST_PORTAL,
+            PortalRunPlanner.Action.FILL_LAVA);
     private static final int DIAMOND_TOP = -52, DIAMOND_TARGET = -58;
     /**
      * Lava is looked for a block above the deep caves' lava level, which lies at Y=-55: there the lakes are under the
