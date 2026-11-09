@@ -1,0 +1,11 @@
+[
+  {
+    "signature": "walls=NSEW;head=0;under=solid;liquid=;hard=false;dark=false;ledge=false;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "tunnel north 2"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]

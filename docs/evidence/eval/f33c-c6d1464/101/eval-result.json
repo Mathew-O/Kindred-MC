@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 72000,
+  "ticksRun": 72000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 4260, "stone_tools": 4800, "iron_ingot": 10720},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 35389
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 920, "stone_tools": 1960, "iron_ingot": 39020},
+      "deaths": [
+        {"tick": 11890, "cause": "Sol drowned", "x": -303, "y": 33, "z": -55, "light": 0, "timeOfDay": 12052, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 33398, "cause": "Sol was slain by Zombie", "x": -398, "y": 22, "z": -154, "light": 0, "timeOfDay": 9560, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 10860, "line": "rescue asked: spell 1 round 1, 1201 ticks after its last progress"}, {"tick": 10980, "line": "rescue: dig up 2, walk north 1, dig down 1 -> failed: 'walk north 1' went 0, then a two-high wall of stone"}, {"tick": 10980, "line": "rescue asked: spell 1 round 2, 1318 ticks after its last progress"}, {"tick": 11380, "line": "rescue: dig north 1, walk north 1, dig down 1 -> failed: 'walk north 1' went 0, then water"}, {"tick": 11380, "line": "rescue asked: spell 1 round 3, 1706 ticks after its last progress"}, {"tick": 11480, "line": "rescue: dig south 1, walk south 4, pillar 2 -> refused: the stuck spell is over"}],
+      "rescuesNotListed": 0,
+      "tokens": 35881
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1740, "stone_tools": 3120},
+      "deaths": [
+        {"tick": 10522, "cause": "Echo was blown up by Creeper", "x": -357, "y": 20, "z": -157, "light": 2, "timeOfDay": 10684, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 28145
+    }
+  }
+}
