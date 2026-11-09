@@ -3325,3 +3325,9 @@ After the block's first merge from main, CI on PR #25 found:
   - Two other forms were tried first and are not kept: set down in the pit from the start (0 of 3, no way back behind
     it), and the ore at the pit's foot (2 of 3, the ore not seen from the plot's top). The benches ran beside the
     Factions evaluation, at the lowest priority.
+
+- **[F-22c34](evidence/F-22c34.md):** a workstation is put down where nothing stands (product; #74's run 42556590202: its anvil
+  refused 1318 times in a row for its tamed wolf in the cell, until the test's time ran out). The pet fixture's body is
+  asserted at every use (fixture: the runtime's stop at tick 8000 removed it, and the step's exception stopped the server).
+  - The staged fixture (its wolf sitting in the first cell): 0 of 3 before, 807 placements refused; after, 3 of 3.
+  - `NativePetGameTests`, 3 runs, 2 of 2 each.
