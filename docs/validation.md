@@ -3279,3 +3279,12 @@ After the block's first merge from main, CI on PR #25 found:
     back now uses the route builder, which may dig, stair and pillar: a second fixture, moved to the foot of that edge,
     failed 0 of 3 with the walk-only version and passed 3 of 3 after ("stairs up 3"), the first 3 of 3 again.
   - The ten classes that place huntable animals, three runs: 136 of 136 each.
+- **[F-22c28](evidence/F-22c28.md):** the pit-climb fixture stages its fall into the pit (fixture; CI failed it three times on
+  8 November, on #41's, #63's and #64's, and #71's runs, "Out of the pit and back up under open sky").
+  - The player no longer falls into the pit: it takes the ore's drop from the stair. Its check for the pit was met on the
+    test world's floor after it jumped off the walled plot, and the climb back up could never follow.
+  - Now the fixture sets it down at the pit's foot once the ore is mined and its pickaxe broken, its walk down the stair
+    behind it, and checks for the pit's own cell. `NativePortalCampaignGameTests`, three runs: 95 of 95 each.
+  - Two other forms were tried first and are not kept: set down in the pit from the start (0 of 3, no way back behind
+    it), and the ore at the pit's foot (2 of 3, the ore not seen from the plot's top). The benches ran beside the
+    Factions evaluation, at the lowest priority.
