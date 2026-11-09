@@ -66,10 +66,17 @@ final class PortalRunCampaign {
     private static final int BRANCH_LEG = 20, BRANCH_STEP = 3;
     /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
     private static final int EXPLORE_RADIUS = 192;
+    /**
+     * The steps that take it off to look for something, its own table and an emptied furnace taken along. The cast route's
+     * too: on 303 in E-40's iteration 16 (`e40a16-922f4fd`) Kindred, its pickaxe worn out on the way to cast its frame,
+     * made a stone one at a table it put down at Y=-54, branch-mined fifty blocks on for lava without it, wore that one
+     * out as well and climbed for logs for another table (F-25c4cw).
+     */
     private static final java.util.EnumSet<PortalRunPlanner.Action> TRAVEL = java.util.EnumSet.of(
             PortalRunPlanner.Action.GATHER_LOGS, PortalRunPlanner.Action.GATHER_STONE, PortalRunPlanner.Action.MINE_COAL,
             PortalRunPlanner.Action.MINE_IRON, PortalRunPlanner.Action.MINE_DIAMOND, PortalRunPlanner.Action.MAKE_OBSIDIAN,
-            PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT);
+            PortalRunPlanner.Action.FILL_WATER, PortalRunPlanner.Action.GATHER_FLINT, PortalRunPlanner.Action.CAST_PORTAL,
+            PortalRunPlanner.Action.FILL_LAVA);
     private static final int DIAMOND_TOP = -52, DIAMOND_TARGET = -58;
     /**
      * Lava is looked for a block above the deep caves' lava level, which lies at Y=-55: there the lakes are under the
@@ -785,7 +792,14 @@ final class PortalRunCampaign {
         // it from here has no route to the next cell of it either: live run 61, below a lake, tried 1,200 of its cells.
         boolean walk = "native_goto".equals(task.skill()) && task.label().startsWith("Walk to");
         boolean pool = walk && (task.label().startsWith("Walk to water") || task.label().startsWith("Walk to lava"));
-        if (pos != null && !firstRefusedFill) avoid(pos, walk, pool, tick);
+        // A frame's own mould or corner refused with nothing placed (its inventory changed as the placement was recorded, a
+        // drop coming in, say) is tried again, not set aside. Set aside, it was passed over for two minutes, and meanwhile
+        // the cast stepped from one stand to another for it, 267 times; on a CI run of #51 its watchdog then moved it away
+        // from the frame, and it found no way back (F-25c4ct).
+        // A refusal that lasts is set aside as the same task failing again and again, above.
+        boolean framePlacement = "native_place".equals(task.skill()) && (task.label().startsWith("Cast: mould at")
+                || task.label().startsWith("Cast: corner at"));
+        if (pos != null && !firstRefusedFill && !framePlacement) avoid(pos, walk, pool, tick);
         if ("native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploreFailures++;
             exploreHeading = null;
@@ -2183,6 +2197,15 @@ final class PortalRunCampaign {
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
+        }
+        // Its sword or axe on the hotbar, where the goal's fights strike from and armed() looks for one: behind a hotbar of
+        // odds and ends it was never fought with. On 707 in E-40's iteration 16 (`e40a16-922f4fd`) Kindred, its stone sword
+        // in slot 15, backed off from three zombies as though it had none and struck them with its stone pickaxe, and they
+        // killed it; four of the iteration's 23 deaths carried a sword off the hotbar (F-25c4cv).
+        Optional<Task> weapon = weaponToHand(body);
+        if (weapon.isPresent()) {
+            progress = stageLabel(stage) + ": " + weapon.get().label();
+            return weapon;
         }
         // A fight or a retreat, once chosen, is held for a few seconds, as a player commits to one: a zombie knocked a
         // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
@@ -3980,7 +4003,10 @@ final class PortalRunCampaign {
         for (int slot = 0; slot < inventory.size() && !pickaxe; slot++) pickaxe = inventory.getStack(slot).isIn(ItemTags.PICKAXES);
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
-        boolean underWater = underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24;
+        // Or still no higher than a block over where the water was over it: out from under it by hand, a block of stone some
+        // seven seconds, the half minute ran out a few blocks out, and the way back led under the lake again (F-25c4cu).
+        boolean underWater = underWaterAt != null && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24
+                && (lastTick - underWaterTick <= 600 || lastFeet.getY() <= underWaterAt.getY() + 1);
         // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
         // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
         // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
@@ -4895,7 +4921,64 @@ final class PortalRunCampaign {
         var inventory = body.entity().getInventory();
         int target = 8;
         for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { target = s; break; }
+        // Not the only sword or axe on the hotbar: swapped out for a block, it was only taken back to hand (F-25c4cv).
+        if (onlyWeaponAt(inventory, target)) target = 7;
         return new Task("native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(target)), label);
+    }
+
+    static final String WEAPON_TO_HAND = "Take its weapon to hand";
+
+    /** Its best sword or axe swapped onto the hotbar when none is there; empty when one is, or it has none (F-25c4cv). */
+    private Optional<Task> weaponToHand(NativePlayerBody body) {
+        var player = body.entity();
+        if (armed(player)) return Optional.empty();
+        var best = Weapons.choose(player, player.getMaxHealth(), false);
+        if (best.isEmpty() || best.get().slot() < 9) return Optional.empty();
+        int target = handSlot(player.getInventory());
+        if (target < 0) return Optional.empty();
+        return Optional.of(new Task("native_swap", Map.of("source", String.valueOf(best.get().slot()), "target", String.valueOf(target)),
+                WEAPON_TO_HAND));
+    }
+
+    /**
+     * The hotbar slot a weapon taken to hand goes to: an empty one; else one holding nothing kept to hand (no tool,
+     * bucket, food, torch, shield or block); else a block while another block stays on the hotbar, so that nothing has to
+     * be readied again; -1 when every slot holds something kept to hand.
+     */
+    static int handSlot(net.minecraft.entity.player.PlayerInventory inventory) {
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) return s;
+        for (int s = 0; s < 9; s++) {
+            var stack = inventory.getStack(s);
+            if (!keptToHand(stack) && !(stack.getItem() instanceof net.minecraft.item.BlockItem)) return s;
+        }
+        int blocks = 0;
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).getItem() instanceof net.minecraft.item.BlockItem && !keptToHand(inventory.getStack(s))) blocks++;
+        if (blocks < 2) return -1;
+        for (int s = 8; s >= 0; s--) {
+            var stack = inventory.getStack(s);
+            if (stack.getItem() instanceof net.minecraft.item.BlockItem && !keptToHand(stack)) return s;
+        }
+        return -1;
+    }
+
+    /** What the goal keeps on the hotbar for its own use: tools and weapons, buckets, food, torches, a shield, flint and steel. */
+    private static boolean keptToHand(ItemStack stack) {
+        var item = stack.getItem();
+        return item instanceof net.minecraft.item.MiningToolItem || stack.isIn(ItemTags.SWORDS) || item instanceof net.minecraft.item.BucketItem
+                || item instanceof net.minecraft.item.ShieldItem || item instanceof net.minecraft.item.FlintAndSteelItem
+                || item instanceof net.minecraft.item.ShearsItem || stack.contains(DataComponentTypes.FOOD)
+                || stack.isOf(Items.TORCH) || stack.isOf(Items.SOUL_TORCH);
+    }
+
+    /** Whether hotbar {@code slot} holds a sword or axe and no other hotbar slot does. */
+    private static boolean onlyWeaponAt(net.minecraft.entity.player.PlayerInventory inventory, int slot) {
+        if (!meleeWeapon(inventory.getStack(slot))) return false;
+        for (int s = 0; s < 9; s++) if (s != slot && meleeWeapon(inventory.getStack(s))) return false;
+        return true;
+    }
+
+    private static boolean meleeWeapon(ItemStack stack) {
+        return stack.isIn(ItemTags.SWORDS) || stack.isIn(ItemTags.AXES);
     }
 
     private Optional<Task> smelt(NativePlayerBody body) {
@@ -5082,8 +5165,11 @@ final class PortalRunCampaign {
         if (hardened) {
             return Optional.of(new Task("native_break", coords(site.lava(), Map.of("guarded", "true")), "Obsidian: mine " + site.lava().toShortString()));
         }
+        // Done with this lava source: the water back into the bucket for the next one. The site is kept until it is back,
+        // and given up then (siteStillUseful): given up here, as this step is chosen, a choice the runtime did not take
+        // left it with the water still standing and the obsidian in its flow, and it went exploring without either
+        // (F-25c4cs).
         if (waterPlaced && world.getFluidState(site.water()).isStill()) {
-            obsidianSite = null; // Done with this lava source; recover the water for the next one.
             return Optional.of(new Task("native_bucket", coords(site.water(), Map.of("mode", "fill")), "Obsidian: recover the water"));
         }
         obsidianSite = null;
@@ -6653,7 +6739,9 @@ final class PortalRunCampaign {
         if (running != null && "native_goto".equals(running.skill()) && holdingForRescue(player)) return "A way out asked for; holding still";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
-                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;
+                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)
+                // Nor the weapon taken to hand, a swap of one tick, for the mob it is taken up to fight (F-25c4cv).
+                || running.label().equals(WEAPON_TO_HAND)) return null;
         // Short of breath, the way out of the water comes first: the next plan only chose it again, and in the live pair
         // on 41f9de9 Echo drowned at Y=8 so, its walk up for air stopped each time to fight back first (F-25c4af).
         // Still in deep water, the way out comes first whatever its breath: while there is one the goal gives it before
@@ -6850,8 +6938,8 @@ final class PortalRunCampaign {
         if (drops.isEmpty()) {
             // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
             // fixture's obsidian was left behind once caving without a shield was allowed). Five seconds at most each,
-            // and not while its own poured water is still to be taken back.
-            if (obsidianSite != null) return Optional.empty();
+            // and not while its own poured water is still to be taken back: the site is in use until then (F-25c4cs).
+            if (obsidianSite != null && siteStillUseful(world, obsidianSite)) return Optional.empty();
             if (dropWaits.size() > 256) dropWaits.clear();
             var settling = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(5, 3, 5),
                     drop -> keep(drop.getStack(), saplings) && !blocked(drop.getBlockPos()));
