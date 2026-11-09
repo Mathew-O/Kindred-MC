@@ -33,6 +33,15 @@ final class KnowledgeWebs implements KindredWire.Knowledge {
 
     Optional<KnowledgeWeb> existing(UUID ai) { return Optional.ofNullable(webs.get(ai)); }
 
+    /** How many webs, and how many relations they hold in all (the month-long cost check). */
+    int count() { return webs.size(); }
+
+    long relations() {
+        long n = 0;
+        for (var w : webs.values()) n += w.size();
+        return n;
+    }
+
     /** The world's web. */
     KnowledgeWeb world() { return world; }
 
