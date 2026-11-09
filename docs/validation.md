@@ -16,6 +16,22 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
+  7bc5b42 --name e40a17-7bc5b42 --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 3
+  --keep-world`; 707, stopped short by the launcher's time limit, again alone with `--seeds 707 --parallel 1`;
+  `score.py`; `compare.py` against `e40a16-922f4fd` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 8 of 10 (8); a portal lit on 7 of 10 (6), median 60.05
+    minutes (95.15); stuck time under a tenth on 3 of 10 (3).
+  - Deaths 1.0 a game hour [0 to 3.0] (22, against 23); 4 while backing off from a zombie (10). Stuck spells 4 [3 to
+    21] (64, against 65); stuck minutes 12 [9 to 63] (21 [3 to 42]).
+  - Every range overlaps both: no difference worth noting.
+  - No player stopped for reconciliation (2 in iteration 16).
+  - [Summary](evidence/eval/e40a17-7bc5b42/summary.md), [deaths](evidence/eval/e40a17-7bc5b42/deaths.md),
+    [against iteration 16](evidence/eval/compare-e40a17.md), [against the start](evidence/eval/compare-e40a17-base.md),
+    [E-40](evidence/E-40.md).
+
 ## The lake-bed fixture's intermittent (F-25c4cu) — 9 November 2026 (`claude/lakebed-memory-1109`)
 
 - **[F-25c4cu](evidence/F-25c4cu.md):** `NativeLakeBedClimbGameTests`' fixture in copies of eight (a scratch class, not
@@ -30,6 +46,7 @@
   three runs.
 - **The benches** ran beside E-40's iteration 16, at the lowest priority.
 - **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
 ## Two cast-route intermittents (F-25c4cs, F-25c4ct) — 9 November 2026 (`claude/cast-refusal-1109`)
 
 - **[F-25c4ct](evidence/F-25c4ct.md), a frame's mould refused with nothing placed:** `NativeCastRefusalGameTests`, the thick-rock
@@ -651,6 +668,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01f: every ended task traced to its routine, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeOwnRanchGameTests` alone, 3 runs before the change (0 of 3: 4 tasks unlabelled each), 3 after (6 of 6 each).
 
 ## M-01a: the pigs' carrots or potatoes grown, 2026-11-09
 
@@ -3429,6 +3451,13 @@ After the block's first merge from main, CI on PR #25 found:
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
 
+- **[F-22c42](evidence/F-22c42.md):** the hungry search's field under a gapped roof is laid inside its own structure (fixture;
+  #72's run 42584495579: "Back to the climb … back the way it came at -12, 0, -30", 32 blocks out beyond its north wall).
+  - A throwaway copy (not committed) with stone laid 8 blocks over its origin beyond the walls on all four sides, as a test
+    beside it could leave: 0 of 3, each with the CI's text. Over the north side only: 3 of 3, its search went another way.
+  - The fixed fixture on `FixtureGround.WIDE` with sky access, its origin at the middle: a copy, 2 of 2;
+    `NativePortalCampaignGameTests`, 1 run, 95 of 95.
+
 - **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
   second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
   - A throwaway reproduction (a test leaving a creative stand-in, then the second-night fixture): before, 91 s to the second
@@ -3436,3 +3465,25 @@ After the block's first merge from main, CI on PR #25 found:
     CI's slower runners ran out of ticks.
   - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
     `MockPlayers`, 1 run, 89 of 89.
+
+- **[F-22c34](evidence/F-22c34.md):** a workstation is put down where nothing stands (product; #74's run 42556590202: its anvil
+  refused 1318 times in a row for its tamed wolf in the cell, until the test's time ran out). The pet fixture's body is
+  asserted at every use (fixture: the runtime's stop at tick 8000 removed it, and the step's exception stopped the server).
+  - The staged fixture (its wolf sitting in the first cell): 0 of 3 before, 807 placements refused; after, 3 of 3.
+  - `NativePetGameTests`, 3 runs, 2 of 2 each.
+  - The other workstation users (`NativeBrewGameTests`, `NativeEnchantGameTests`, `NativeHouseGameTests`,
+    `NativeKitNameGameTests`, `NativeNetheriteGameTests`), 1 run: 10 of 10.
+
+- **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
+  #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
+  - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+  - Reopened (#87's run 42584555878: 24 mounts counted for 5 rides). The fixture now checks each mount counted was made.
+    With the first form of the change, 0 of 3 ("counted 24, made 6"); with the step kept till a task of it has run, 3
+    of 3. `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+
+- **[F-22c32](evidence/F-22c32.md):** a boat a strolling villager steps into late is not broken under it (product; #72's CI on
+  `a2c7baa`, the lake fixture: a break of the boat, planned while it stood empty, went on after the librarian stepped in).
+  - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
+    both staged copies held and brought home.
+  - `NativeBringGameTests`, 3 runs, 10 of 10 each.
