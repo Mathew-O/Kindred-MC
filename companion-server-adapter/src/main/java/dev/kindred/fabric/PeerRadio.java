@@ -96,7 +96,7 @@ final class PeerRadio {
         if (now - lastUpdate >= UPDATE_TICKS) {
             lastUpdate = now;
             for (Member from : members) {
-                if (from.update() != null && !from.inMatch()) source.sendState(from.update()); // The Wire decides who is a teammate.
+                if (from.update() != null) source.sendState(from.update()); // The Wire decides who is a teammate: a team, or a match side.
             }
         }
         if (now - lastSave >= SAVE_TICKS) {

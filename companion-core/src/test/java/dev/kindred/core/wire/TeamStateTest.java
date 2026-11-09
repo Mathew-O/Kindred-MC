@@ -74,6 +74,30 @@ class TeamStateTest {
     }
 
     @Test
+    void inAManhuntHuntersTellHuntersAndRunnersRunners() {
+        var wire = wire();
+        String hunters = Listener.side("m1", "hunters"), runners = Listener.side("m1", "runners");
+        var hawk = new Listener(UUID.randomUUID(), "Hawk", false, Set.of(), "", "", hunters, false, SPAWN, null);
+        var kite = new Listener(UUID.randomUUID(), "Kite", false, Set.of(), "", "", hunters, false, SPAWN, null);
+        var fox = new Listener(UUID.randomUUID(), "Fox", false, Set.of(), "", "", runners, false, SPAWN, null);
+        var vix = new Listener(UUID.randomUUID(), "Vix", false, Set.of(), "", "", runners, false, SPAWN, null);
+        var roster = List.of(hawk, kite, fox, vix);
+        var scope = TeamState.scopeOf(hawk).orElseThrow();
+        assertEquals(Channel.SIDE, scope.channel());
+        var m = TeamState.of(update(hawk, 40), scope);
+        assertTrue(m.facts().values().stream().allMatch(f -> f.visibility() == Visibility.SIDE));
+        for (int i = 0; i < 12; i++) {
+            assertEquals(List.of(kite.id()), wire.send(TeamState.of(update(hawk, 40), scope), GameModes.WorldMode.MANHUNT, roster, i * 5_000L).receivers());
+            assertEquals(List.of(vix.id()), wire.send(TeamState.of(update(fox, 9), TeamState.scopeOf(fox).orElseThrow()), GameModes.WorldMode.MANHUNT, roster, i * 5_000L).receivers());
+        }
+        assertEquals(hawk.id(), TeamState.update(m).orElseThrow().from());
+        // A team comes first; neither team nor side, nowhere.
+        assertEquals(Channel.TEAM, TeamState.scopeOf(ai("Wren", "world", "")).orElseThrow().channel());
+        assertTrue(TeamState.scopeOf(new Listener(UUID.randomUUID(), "Lone", false, Set.of(), "", "", "", false, SPAWN, null)).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> TeamState.of(update(hawk, 1), Scope.faction("oak")));
+    }
+
+    @Test
     void itKeepsEveryOtherCheck() {
         var wire = wire();
         var wren = ai("Wren", "world:oak", "oak");

@@ -204,13 +204,13 @@ final class KindredWire {
 
     /**
      * An AI player's own update to its team (F-34c, E-50): sent on the first team it belongs to, to that team's AI players
-     * alone. Nothing when it is on no team (in a match, or a mode without one).
+     * alone; in a match, on its own side (a manhunt's hunters to hunters, runners to runners: the match service's own
+     * membership, through {@link #belongs}). Nothing when it is on neither, or the world's mode has no such channel.
      */
     Delivery sendState(dev.kindred.core.social.PeerUpdate update) {
         for (Listener l : roster()) {
             if (!l.id().equals(update.from())) continue;
-            var team = dev.kindred.core.wire.TeamState.teamOf(l.teams());
-            return team.map(t -> send(dev.kindred.core.wire.TeamState.of(update, t))).orElse(null);
+            return dev.kindred.core.wire.TeamState.scopeOf(l).map(scope -> send(dev.kindred.core.wire.TeamState.of(update, scope))).orElse(null);
         }
         return null;
     }
