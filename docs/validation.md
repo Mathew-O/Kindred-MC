@@ -3361,3 +3361,7 @@ After the block's first merge from main, CI on PR #25 found:
     CI's slower runners ran out of ticks.
   - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
     `MockPlayers`, 1 run, 89 of 89.
+
+- **F-22c39 (fixture diagnostics, in progress):** the pasture-doorway fixture's "A calf born in the pen" failure names every
+  cow about the pen (#91's run 42568179856: the ranch done with the calf in the pen, then no calf counted in it). No
+  assertion changed. `NativeCompoundGameTests`, 3 runs, 6 of 6 each.
