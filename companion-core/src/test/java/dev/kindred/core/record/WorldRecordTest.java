@@ -92,7 +92,7 @@ class WorldRecordTest {
         assertEquals(Map.of("w:0:0", "red"), drifted.fromRecord());
         Ledgers kept = Ledgers.replay(events);
         assertTrue(kept.agrees(events));
-        assertFalse(new Ledgers(kept.matches(), Map.of(), kept.deaths(), kept.factions(), kept.power()).agrees(events));
+        assertFalse(new Ledgers(kept.matches(), Map.of(), kept.deaths(), kept.factions(), kept.power(), kept.coins(), kept.safe()).agrees(events));
     }
 
     @Test

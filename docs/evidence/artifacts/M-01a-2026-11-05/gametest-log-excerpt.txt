@@ -60,6 +60,15 @@ failure message="(-14916564, -60, -6883720) Two wheat fed: 8 left
 (-7466367, -60, -13366134) Its cow pen taken up again: [Pen[dimension=minecraft:overworld, x=-7466305, y=-53, z=-13366067, kind=COW, complete=true, ranAt=1765]] / No pair of animals seen near home to keep / Iron tools first: a house takes over two hundred stone
 # fall cap and refusal off, NativeRanchGameTests.oneOfThePairDown... fails 3 of 3
 (-13986148, -60, 14801627) Never down off the field: -3 below it, at 18, -3, 5 from the pen's post
+# Horses tamed, saddled and ridden (2026-11-08, ddc70cd, claude/modes-1108-11): NativeHorseGameTests, 3 runs
+[18:09:14] [Server thread/INFO] (Kindred) Horse tamed after 5 mounts
+[18:09:15] [Server thread/INFO] (Kindred) Horse ridden 10.3 blocks in 28 ticks
+[18:09:40] [Server thread/INFO] (Kindred) Horse tamed after 5 mounts
+[18:09:41] [Server thread/INFO] (Kindred) Horse ridden 36.3 blocks in 78 ticks
+[18:10:06] [Server thread/INFO] (Kindred) Horse tamed after 8 mounts
+[18:10:07] [Server thread/INFO] (Kindred) Horse ridden 25.6 blocks in 61 ticks
+# Control (the horse's server-side movement off): fails 3 of 3
+(4857024, -60, -10105877) Ridden across the field: 14.0 from the field's edge, 0.0 ridden
 # Ranch flakes root-caused (2026-11-08, 5c4acc7, claude/modes-1108-13): NativeRanchGameTests + NativeOwnRanchGameTests alone
 Before, on 165066c (with #52): 8 runs, 4 failed: sheep given up behind the far fence (2); a chicken 3 down off the field; the plot resown 3 of 4 then the cows bred again
 [18:53:12] [Server thread/INFO] (Kindred) Ranch leaving at 11409125, -53, 10935079: leaving the pen; standing at Pos[x=11409128, y=-53, z=10935082], it saw [cow at 11409126,-53,10935083, cow at 11409127,-53,10935083, cow (young) at 11409126,-53,10935083]

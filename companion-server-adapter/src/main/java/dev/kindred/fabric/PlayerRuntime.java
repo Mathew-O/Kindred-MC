@@ -261,6 +261,10 @@ final class PlayerRuntime {
     private final InitiativeLane initiative;
     /** Conversations between AI players (E-51). */
     private final PeerTalk peerTalk;
+    /** F-34b: the Wire, the one way typed messages travel between players. */
+    private final KindredWire wire;
+    /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
+    private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
     private final GiftWatch gifts;
     /** Short trips together to somewhere it has seen (E-27a). */
@@ -523,6 +527,8 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+                PlayerRuntime::now);
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -758,6 +764,7 @@ final class PlayerRuntime {
                     dragonFight = loaded.dragonFight();
                     bases = loaded.bases();
                     worldMode = loaded.worldMode();
+                    if (factionsWorld()) TerritoryGuard.activate(factions);
                     for (CompanionEntity entity : new ArrayList<>(awaitingRegistry)) loaded(entity);
                     awaitingRegistry.clear();
                     talk.load(store); // E-19a: people's own preferences; nothing unasked and no jokes until they are read.
@@ -1736,6 +1743,9 @@ final class PlayerRuntime {
             } else if (skill.equals("native_feed")) {
                 task = new NativeFeedAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
+            } else if (skill.equals("native_saddle")) {
+                task = new NativeSaddleAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
+                        Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
             } else if (skill.equals("native_shear")) {
                 task = new NativeShearAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")), UUID.fromString(arguments.get("target")));
@@ -2179,6 +2189,9 @@ final class PlayerRuntime {
                         && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_gate".equals(entry.skillId) && intent == NativePlayerBody.Intent.GATE)
+                    || ("native_ride".equals(entry.skillId) && (intent == NativePlayerBody.Intent.RIDE || intent == NativePlayerBody.Intent.MOVE
+                        || intent == NativePlayerBody.Intent.SELECT_SLOT))
+                    || ("native_saddle".equals(entry.skillId) && (intent == NativePlayerBody.Intent.RIDE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || (("native_take".equals(entry.skillId) || "native_loot".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TAKE)
                     || ("native_rename".equals(entry.skillId) && intent == NativePlayerBody.Intent.RENAME)
                     || ("native_enchant".equals(entry.skillId) && intent == NativePlayerBody.Intent.ENCHANT)
@@ -2226,7 +2239,20 @@ final class PlayerRuntime {
                     || (("native_toss".equals(entry.skillId) || "native_discard".equals(entry.skillId)) && intent == NativePlayerBody.Intent.TOSS)
                     || ("native_wait".equals(entry.skillId) && intent == NativePlayerBody.Intent.LOOK))
                 && NativePlayerSkills.permits(entry.nativeTask, intent, target)
+                && territoryPermits(entry, intent, target)
                 && entry.activity != null && entry.activity.paid();
+    }
+
+    /**
+     * At dispatch, as at admission (RoamingEdits): an AI player's change to a block on another faction's land or in a
+     * safe zone is refused (M-06d), the same rule as a person's.
+     */
+    private boolean territoryPermits(Entry entry, NativePlayerBody.Intent intent, BlockPos target) {
+        if (target == null || entry.nativeBody == null || entry.nativeBody.entity() == null) return true;
+        return switch (intent) {
+            case MOVE, LOOK, SELECT_SLOT, EAT, EQUIP, ATTACK, BLOCK, SHOOT, THROW, TOSS, SWAP, FISH, BOAT, FEED, SHEAR, TRADE, RENAME -> true;
+            default -> TerritoryGuard.mayChange(entry.nativeBody.entity(), target);
+        };
     }
 
     static boolean isHazardousSituation(ServerPlayerEntity player) {
@@ -2496,7 +2522,10 @@ final class PlayerRuntime {
         flushMatches();
         chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
-        if (tick % 20 == 11 && factionsWorld()) factions.tick(server.getPlayerManager().getPlayerList());
+        if (tick % 20 == 11 && factionsWorld()) {
+            factions.tick(server.getPlayerManager().getPlayerList());
+            factions.applyBorders();
+        }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
@@ -13183,6 +13212,31 @@ final class PlayerRuntime {
     }
 
     /** The AI player a body belongs to, either body; null for a person or anything else. */
+    /** The Wire (F-34): send typed messages on named channels; read what an AI player was told. Server thread only. */
+    KindredWire wire() { return wire; }
+
+    /** Sets how a player's faction is known (M-06i, the Factions mode's ledger): an id, or empty for none. */
+    void setFactionOf(java.util.function.Function<UUID, String> factionOf) {
+        this.factionOf = factionOf == null ? id -> "" : factionOf;
+    }
+
+    /**
+     * Who belongs where, for the Wire: AI players out of any match share the world's team, as teammates do in co-op;
+     * a manhunt's players its hunters' or runners' side; another match's players each a side of their own; the faction
+     * as the Factions mode says.
+     */
+    private final class WireMemberships implements KindredWire.Memberships {
+        @Override public UUID aiPlayerOf(ServerPlayerEntity body) { return PlayerRuntime.this.aiPlayerOf(body); }
+
+        @Override public KindredWire.Belongs of(UUID id, ServerPlayerEntity body) {
+            return KindredWire.belongs(PlayerRuntime.this.aiPlayerOf(body) != null, matches.running(body.getUuid()), body.getUuid(), factionOf.apply(id));
+        }
+
+        @Override public dev.kindred.core.social.ListenerPreferences preferences(UUID person) { return socials.preferences(person); }
+
+        @Override public dev.kindred.core.match.GameModes.WorldMode mode() { return worldMode; }
+    }
+
     private UUID aiPlayerOf(net.minecraft.entity.Entity entity) {
         if (entity instanceof CompanionEntity companion) return companion.companionId();
         if (!(entity instanceof ServerPlayerEntity player)) return null;
@@ -13373,6 +13427,7 @@ final class PlayerRuntime {
             ++entry.generation;
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
+        TerritoryGuard.deactivate(factions);
         running = false;
         matches.stopAll();
         flushMatches();
@@ -15349,12 +15404,62 @@ final class PlayerRuntime {
         requireThread();
         factionsForTest = true;
         factions.settings(settings);
+        TerritoryGuard.activate(factions);
+    }
+
+    /** The faction world's once-a-second step, for a fixture whose runtime has no AI body to tick it. */
+    void factionsTickForTest() {
+        requireThread();
+        factions.tick(server.getPlayerManager().getPlayerList());
     }
 
     /** A fixture's accounts recorded as first seen long ago, so the new-account rule is not what it tests. */
     void factionsSeenLongAgoForTest(List<UUID> players) {
         requireThread();
         for (UUID player : players) record(dev.kindred.core.factions.PowerRules.seen(player, server.getTicks(), 0));
+    }
+
+    /** Whether a running match lets {@code attacker} strike {@code target}. */
+    boolean mayAttackForMatch(UUID attacker, UUID target) {
+        requireThread();
+        return matches.mayAttack(attacker, target);
+    }
+
+    /**
+     * The spawn hub (M-06f), operators only, in a faction world: its chunks made a safe zone in the World Record, the
+     * border set to the settings' width round (0, 0) with a 20-block warning, and, if {@code build}, the hub's lighthouse
+     * and market district built from the builder's generators on the ground at spawn (server setup, an operator's own
+     * blocks, as /fill would place them).
+     */
+    int factionsHub(ServerCommandSource source, boolean build) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator sets the hub.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        var settings = factions.settings();
+        UUID by = source.getPlayer() == null ? null : source.getPlayer().getUuid();
+        var chunks = dev.kindred.core.factions.SafeZones.hub(settings.safeRadius());
+        record(dev.kindred.core.factions.SafeZones.zone(dev.kindred.core.factions.SafeZones.HUB, chunks, by, server.getTicks(), System.currentTimeMillis()));
+        factions.applyBorders();
+        int placed = 0;
+        if (build) {
+            var world = server.getOverworld();
+            int ground = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, 0, 0);
+            for (var part : dev.kindred.core.factions.SafeZones.plan()) {
+                for (var block : part.blueprint().blocks()) {
+                    var at = new BlockPos(part.origin().x() + block.at().x(), ground + part.origin().y() + block.at().y(), part.origin().z() + block.at().z());
+                    try {
+                        var state = net.minecraft.command.argument.BlockArgumentParser.block(
+                                net.minecraft.registry.Registries.BLOCK.getReadOnlyWrapper(), block.spec().toString(), false).blockState();
+                        if (world.setBlockState(at, state)) placed++;
+                    } catch (Exception unknown) {
+                        KindredMod.LOGGER.warn("Hub block {} not known; left out", block.spec());
+                    }
+                }
+            }
+        }
+        feedback(source, "The hub is a safe zone (" + chunks.size() + " chunks); the border " + settings.border() + " across" + (build ? "; " + placed + " blocks of hub built" : "") + ".");
+        return 1;
     }
 
     /** Whether {@code attacker} may strike {@code target} by the faction rules, in a faction world. */

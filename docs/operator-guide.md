@@ -809,6 +809,18 @@ In a faction world:
   killer within 20 minutes, and the killer's account not first seen in the last hour. Online time restores 1 power an hour,
   kept to the second across logouts and restarts (written every five minutes, at a logout and at a stop).
 - Every change is an event in the World Record (F-31); factions and power are rebuilt from it at startup.
+- Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
+  anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
+  500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
+  `/faction unclaim` gives it up (no refund); `/faction map` shows the land round you; `/faction coins` your balance
+  (500 at your first sight on a faction world). On claimed land only its faction's members break, place, open or use
+  anything; explosions and fire break nothing there; water, lava, pistons, hoppers, dispensers and droppers reach
+  nothing over its border; an outsider's arrow sets nothing off.
+- Spawn and the border (M-06f): `/faction admin hub` makes spawn's chunks within `safeRadius` (64) blocks a safe zone,
+  sets the border (`border`, 8,000, across round 0 0 with a 20-block warning; the Nether an eighth, the End the same)
+  and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
+  In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
+  beyond the border takes nobody anywhere.
 
 ## Development native bodies
 Explicit development native bodies are available:
