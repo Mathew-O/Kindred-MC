@@ -120,6 +120,7 @@
       "dev.kindred.fabric.NativeSafeZoneGameTests",
       "dev.kindred.fabric.NativeMarketGameTests",
       "dev.kindred.fabric.NativeAuctionGameTests",
+      "dev.kindred.fabric.NativeCaveLedgeGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeHudGameTests",
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
