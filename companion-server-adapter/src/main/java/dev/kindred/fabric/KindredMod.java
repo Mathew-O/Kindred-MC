@@ -216,6 +216,7 @@ public final class KindredMod implements ModInitializer {
             }
             if (runtime != null) runtime.finishShutdown();
             runtime = null;
+            PlayerSaves.drain();
             if (customs != null) {
                 customs.close();
                 customs = null;

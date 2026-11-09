@@ -48,7 +48,7 @@ public final class NativeWireGameTests implements FabricGameTest {
         final KindredWire wire;
 
         Stand(TestContext context, Set<String> announcements) {
-            wire = new KindredWire(context.getWorld().getServer(), KindredWire.defaultWire(announcements), new Wording(), this, told::add,
+            wire = new KindredWire(context.getWorld().getServer(), KindredWire.defaultWire(announcements), new Wording(), this, (t, r, p) -> told.add(t),
                     (person, words) -> heard.computeIfAbsent(person.getUuid(), k -> new ArrayList<>()).add(words), now::get);
         }
 
@@ -206,6 +206,50 @@ public final class NativeWireGameTests implements FabricGameTest {
         var r = KindredWire.belongs(true, java.util.Optional.of(hunt), runner, "");
         context.assertTrue(h.side().equals(hunt.id() + ":hunters") && r.side().equals(hunt.id() + ":runners") && h.teams().isEmpty(), "Sides: " + h + " " + r);
         context.assertTrue(KindredWire.belongs(true, java.util.Optional.of(race), racer, "").side().equals(race.id() + ":" + racer), "A racer its own side");
+        context.complete();
+    }
+
+    /**
+     * F-32: a runner's position sent on every channel there is; each AI player's web filled from the server's Wire. The
+     * hunter's query never returns it, from its own web or a runner's; the runner's teammate's does.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wire")
+    public void aHuntersQueryNeverReturnsARunnersPositionWhileATeammatesDoes(TestContext context) {
+        var s = new Stand(context, Set.of());
+        s.mode = GameModes.WorldMode.MANHUNT;
+        var webs = new KnowledgeWebs(() -> context.getWorld().getTime());
+        var wire = new KindredWire(context.getWorld().getServer(), KindredWire.defaultWire(Set.of()), new Wording(), s, webs, (p, w) -> { }, s.now::get);
+        String hunters = Listener.side("m1", "hunters"), runners = Listener.side("m1", "runners");
+        UUID fox = s.aiPlayer(context, "Fox", new BlockPos(1, 2, 1), side(runners));
+        UUID wolf = s.aiPlayer(context, "Wolf", new BlockPos(2, 2, 1), side(runners));
+        UUID hawk = s.aiPlayer(context, "Hawk", new BlockPos(3, 2, 1), side(hunters));
+        var mat = s.person(context, "Mat", new BlockPos(1, 2, 2), side(hunters));
+        var at = context.getAbsolutePos(new BlockPos(1, 2, 1));
+        var here = new Listener.Place(context.getWorld().getRegistryKey().getValue().toString(), at.getX(), at.getY(), at.getZ());
+        UUID hawkBody = s.ai.entrySet().stream().filter(e -> e.getValue().equals(hawk)).findFirst().orElseThrow().getKey();
+        var scopes = List.of(Scope.side("m1", "runners"), Scope.side("m1", "hunters"), Scope.match("m1"), Scope.toPlayer(hawk),
+                Scope.toPlayer(hawkBody), Scope.toPlayer(mat.getUuid()), Scope.toPlayer(wolf), wire.wire().earshotOf(here), Scope.server(), Scope.operators());
+        for (var scope : scopes) {
+            s.now.addAndGet(31_000);
+            wire.send(Message.of("side.where", fox, scope, facts("runner_at", Fact.of("120, 70, -40", Visibility.SIDE)), List.of(77L)));
+        }
+        var hawkListener = wire.roster().stream().filter(l -> l.id().equals(hawk)).findFirst().orElseThrow();
+        var wolfListener = wire.roster().stream().filter(l -> l.id().equals(wolf)).findFirst().orElseThrow();
+        var matListener = wire.roster().stream().filter(l -> l.id().equals(mat.getUuid())).findFirst().orElseThrow();
+        String foxAt = dev.kindred.core.knowledge.WebFeed.entityOf(fox, false) + "/runner";
+        long now = context.getWorld().getTime();
+        for (UUID owner : List.of(fox, wolf, hawk)) {
+            var web = webs.of(owner);
+            for (var asker : List.of(hawkListener, matListener)) {
+                context.assertTrue(web.about(dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(asker), foxAt,
+                        dev.kindred.core.knowledge.KnowledgeWeb.Verb.SAW_AT, now).isEmpty(), "A hunter never gets it, from " + owner + "'s web");
+            }
+        }
+        var known = webs.of(wolf).about(dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(wolfListener), foxAt,
+                dev.kindred.core.knowledge.KnowledgeWeb.Verb.SAW_AT, now);
+        context.assertTrue(known.size() == 1 && known.getFirst().provenance().events().equals(List.of(77L)), "The teammate has it: " + known);
+        context.assertTrue(webs.existing(hawk).map(w -> w.size() == 0).orElse(true), "The hunter was told nothing");
+        s.cleanup(context);
         context.complete();
     }
 

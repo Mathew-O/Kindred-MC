@@ -95,7 +95,7 @@ public final class NativeSafeZoneGameTests implements FabricGameTest {
                     home[0] = cleo[0].getBlockPos();
                 })
                 .createAndAdd(() -> f.runtime.factionsTickForTest())
-                .createAndAdd(() -> context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 500, "Cleo starts with 500 coins"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 50_000, "Cleo starts with 500 coins"))
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.faction(f.source, cleo[0].getUuid(), "create", List.of("Red", "RED")).accepted(), "Cleo founds Red");
                     var cleoNow = cleo[0];
@@ -110,7 +110,7 @@ public final class NativeSafeZoneGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var claims = f.runtime.projected().claims();
                     context.assertTrue(claims.size() == 1 && claims.containsKey("minecraft:overworld:37:0"), "One claim, at chunk 37,0: " + claims);
-                    context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 400, "100 coins paid");
+                    context.assertTrue(f.runtime.projected().coins().of(cleo[0].getUuid()) == 40_000, "100 coins paid");
                 })
                 .completeIfSuccessful();
     }

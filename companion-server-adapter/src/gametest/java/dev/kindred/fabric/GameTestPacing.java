@@ -2,6 +2,7 @@ package dev.kindred.fabric;
 
 import dev.kindred.persistence.SqliteCompanionStore;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.test.TestContext;
 import net.minecraft.test.TestServer;
@@ -33,6 +34,14 @@ public final class GameTestPacing implements ModInitializer {
     /** The tests that asked for a live server's pace, while they run. */
     private static final Set<TestContext> LIVE = Collections.synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
     private long started;
+    /**
+     * A live server's simulation distance, its default in {@code server.properties}. The test server sets none, and with
+     * its player manager's 0 only the chunks next to a player tick. Sand dug two chunks from it hung in the air, and a
+     * climb that crossed a chunk edge waited for it till its test ended. A villager stopped by a chunk's edge, and a
+     * minecart rolling out of the player's chunk stopped dead. Each such fixture held its ground simulated by hand
+     * ({@link FixtureGround#simulated}), and one that did not failed whenever the grid put an edge in its way (F-22c26).
+     */
+    static final int SIMULATION_DISTANCE = 10;
 
     /**
      * The server kept at a live server's pace, 50 ms a tick, from now until {@code context}'s test ends: for a test that
@@ -45,6 +54,11 @@ public final class GameTestPacing implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            if (!(server instanceof TestServer)) return;
+            server.getPlayerManager().setViewDistance(SIMULATION_DISTANCE);
+            server.getPlayerManager().setSimulationDistance(SIMULATION_DISTANCE);
+        });
         ServerTickEvents.START_SERVER_TICK.register(server -> {
             if (server instanceof TestServer) started = System.nanoTime();
         });

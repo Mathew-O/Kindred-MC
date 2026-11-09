@@ -92,6 +92,22 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 22: off a ledge in a cavern's wall (F-25c4cp) — 8 November 2026 (`claude/e40-ladder-22-1108`)
+
+- **The fixture** (F-25c4cp, [evidence](evidence/F-25c4cp.md)): `NativeCavernLedgeGameTests.onACavernsLedgeWithAnAquiferBehindItItGetsOffTheLedge`,
+  on ground cut from 505's kept world in iteration 15 (a ledge high in a cavern's wall, an aquifer behind it), staged as
+  it says. On `6edf706`, without the fix: fails 3 of 3, "Still on the ledge after 3,000 ticks", waiting at Echo's spot
+  "for a feasible step" as in the run. With it: passes 3 of 3, jumping down from the ledge after three spells and landing 16 below, off it after 1,450 to 1,468 ticks. Two forms of a way back along its trail were
+  tried first and are not kept: from the ledge no route goes anywhere.
+- **The classes that climb, tunnel, dig out and jump down** (`NativeCavernLedgeGameTests`, `NativeCobwebHeadRoomGameTests`,
+  `NativePortalCampaignGameTests`, `NativeTripDownGameTests`, `NativeBranchMineGameTests`, `NativeStairGameTests`,
+  `NativeStrandedReturnGameTests`, `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests`,
+  `NativeNightShelterGameTests`, `NativeFrameReturnGameTests`, `NativePortalLightGameTests`, `NativeBucketGameTests`,
+  `NativeFallingColumnGameTests`, `NativeGravelTunnelGameTests`, `ReplayGameTests`, `NativeAtlasGameTests`,
+  `NativeSurvivalGameTests`, `NativeMovementGameTests`, `NativeWaterEdgeGameTests`, `NativeSpireGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeHalfCastFrameGameTests`, `NativeFallGameTests`): with the fix, 155 of 155.
+- **Build:** `bash ./gradlew build` successful; JUnit 999 tests, 0 failures, 6 skipped (no JUnit in this batch).
+
 ## E-40, batch 21: a finished frame's opening cleared before it is lit (F-25c4co) — 8 November 2026 (`claude/e40-ladder-21-1108`)
 
 - **The fixture** (F-25c4co, [evidence](evidence/F-25c4co.md)): `NativeObstructedPortalGameTests.gravelInAFinishedFramesOpeningIsClearedAndThePortalLit`,
@@ -3251,3 +3267,21 @@ After the block's first merge from main, CI on PR #25 found:
   followed.
 - Main's CI green three runs running: `c451f94` (run 42414280759), `eb680aa` (42444314816) and `15e3ee9`
   (42455260820). The block's definition of done is met.
+- **[F-22c26](evidence/F-22c26.md):** the test server's view and simulation distances set to a live server's 10; it
+  kept 0.
+  - The new fixture, sand two chunks from a player, failed 0 of 3 before and passed 3 of 3 after.
+  - Two full local suites with it, 49.5 and 53.7 minutes: 587 of 588 and 586 of 588.
+  - Both failed the paid-slice break, whose single park per tick ended early (4.45 s and 4.43 s, and 4.37 s over 203
+    ticks with its class alone). It parks until its 50 ms are up now: 21 of 21 in three runs of its class.
+  - The second also failed the life-first hunt once (31 food against 32, open, product); its class passed 12 of 12 in
+    three runs.
+  - Neighbouring grounds: bring, ranch and pasture passed in both suites, and players' deaths were the same as in two
+    suites without the change.
+- **[F-22c27](evidence/F-22c27.md):** led off from the herd, the hunt goes back to where it saw game before it explores
+  (product; PR #42's run 42498227499 and main's run 42455310230 failed the life-first hunt at 31 food against 32).
+  - The new fixture, moved once to the field's north edge after its first kill, failed 3 of 6 before and passed 3 of 3
+    after.
+  - Its third class run chased off the field's south edge, a drop of three, and found no walkable route back up. The way
+    back now uses the route builder, which may dig, stair and pillar: a second fixture, moved to the foot of that edge,
+    failed 0 of 3 with the walk-only version and passed 3 of 3 after ("stairs up 3"), the first 3 of 3 again.
+  - The ten classes that place huntable animals, three runs: 136 of 136 each.

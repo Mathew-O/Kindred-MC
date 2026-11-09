@@ -261,6 +261,8 @@ final class PlayerRuntime {
     private final PeerTalk peerTalk;
     /** F-34b: the Wire, the one way typed messages travel between players. */
     private final KindredWire wire;
+    /** F-32: what each AI player knows, filled from the Wire. */
+    private final KnowledgeWebs webs;
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -346,6 +348,10 @@ final class PlayerRuntime {
     private final java.util.ArrayDeque<dev.kindred.core.record.WorldEvent> unwritten = new java.util.ArrayDeque<>();
     /** Factions mode's rules at the game's events (M-06c onward). */
     private final FactionsService factions;
+    /** The market's counter (M-06g). */
+    private final MarketDesk market;
+    /** The auction house (M-06h). */
+    private final AuctionHouse auctions;
     /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
     private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -497,6 +503,8 @@ final class PlayerRuntime {
         this.presenter = new MatchPresenter(server);
         this.metadataDirectory = metadataDirectory;
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
+        this.market = new MarketDesk(server, this::projected, this::recordThen);
+        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
@@ -524,8 +532,10 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+        webs = new KnowledgeWebs(server::getTicks);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
                 PlayerRuntime::now);
+        wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -752,8 +762,14 @@ final class PlayerRuntime {
                     // The ledgers from the World Record alone (F-31); the matches it kept put back, any cut short stopped.
                     ledgers = loaded.ledgers();
                     ledgersThrough = loaded.ledgersThrough();
+                    reportOpenSales(loaded.store());
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
+                        if (unread == null && events != null) webs.rebuild(events);
+                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                    }));
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -2520,6 +2536,8 @@ final class PlayerRuntime {
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
+            auctions.tick();
+            factions.notices();
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
@@ -12514,6 +12532,22 @@ final class PlayerRuntime {
      * is to it, what it is at, its goal, its run's last events, what it last said and what it remembers of this world.
      * Null when it cannot be voiced now.
      */
+    /**
+     * What the player knows of the others for its voice: its peer ledger (E-50), then what its web (F-32) holds that this
+     * speaker may know by their relation to each fact; the voice's tiers then apply to both.
+     */
+    private List<dev.kindred.core.social.PeerLedger.Told> voicePeers(UUID id, ServerPlayerEntity speaker) {
+        var out = new ArrayList<>(peerRadio.told(id));
+        var web = webs.existing(id);
+        var viewer = wire.roster().stream().filter(l -> l.id().equals(wire.idOf(speaker))).findFirst();
+        viewer.ifPresent(l -> {
+            var asker = dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(l);
+            web.ifPresent(w -> out.addAll(dev.kindred.core.knowledge.WebLines.forListener(w, asker, server.getTicks(), PeerRadio.TOLD)));
+            out.addAll(dev.kindred.core.knowledge.WebLines.forListener(webs.world(), asker, server.getTicks(), PeerRadio.TOLD));
+        });
+        return out;
+    }
+
     private PlayerVoice.Facts voiceFacts(UUID id, ServerPlayerEntity speaker) {
         Entry entry = entries.get(id);
         if (entry == null || !running || !ready) return null;
@@ -12532,7 +12566,7 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), peerRadio.told(id));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
 
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
@@ -13278,6 +13312,9 @@ final class PlayerRuntime {
     /** The AI player a body belongs to, either body; null for a person or anything else. */
     /** The Wire (F-34): send typed messages on named channels; read what an AI player was told. Server thread only. */
     KindredWire wire() { return wire; }
+
+    /** What each AI player knows (F-32); ask on someone's behalf with their viewer. Server thread only. */
+    KnowledgeWebs webs() { return webs; }
 
     /** Sets how a player's faction is known (M-06i, the Factions mode's ledger): an id, or empty for none. */
     void setFactionOf(java.util.function.Function<UUID, String> factionOf) {
@@ -15372,6 +15409,186 @@ final class PlayerRuntime {
         record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
     }
 
+    /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
+    void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
+        requireThread();
+        if (store == null) {
+            failed.accept(new IllegalStateException("World Record not open"));
+            return;
+        }
+        record(drafts);
+        var write = recordFlush;
+        write.whenComplete((ignored, failure) -> handBack(() -> {
+            if (failure == null) written.run(); else failed.accept(failure);
+        }));
+    }
+
+    /**
+     * A sale's intent the Record holds with neither its sale nor its cancel is ambiguous: the server stopped between
+     * taking the items and writing the coins, or before. It is reported for an operator as a {@code market.uncertain}
+     * event and in the log, and never settled or replayed (M-06g).
+     */
+    private void reportOpenSales(SqliteCompanionStore database) {
+        database.allWorldEvents(Set.of(MarketDesk.INTENT, MarketDesk.CANCEL, MarketDesk.RECEIVED, dev.kindred.core.market.MarketLedger.SALE,
+                        dev.kindred.core.market.MarketLedger.BUY, "market.uncertain", dev.kindred.core.market.Auctions.DELIVERING, dev.kindred.core.market.Auctions.DELIVERED))
+                .whenComplete((events, failure) -> handBack(() -> {
+                    if (failure != null || !running) return;
+                    var open = new java.util.LinkedHashMap<String, dev.kindred.core.record.WorldEvent>();
+                    for (var e : events) {
+                        if (e.kind().equals(MarketDesk.INTENT) || e.kind().equals(dev.kindred.core.market.Auctions.DELIVERING)) open.put(e.subject(), e);
+                        else if (e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) && !e.get("purchase", "").isEmpty()) open.put(e.get("purchase", ""), e);
+                        else if (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE)) open.remove(e.get("intent", ""));
+                        else open.remove(e.subject());
+                    }
+                    for (var e : open.values()) {
+                        String id = e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) ? e.get("purchase", "") : e.subject();
+                        KindredMod.LOGGER.error("Market {} {} by {} is unfinished: reconcile its items and coins by hand", e.kind(), id, e.actor());
+                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), id, "",
+                                java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
+                    }
+                }));
+    }
+
+    /** The auction house (M-06h). */
+    AuctionHouse auctions() {
+        requireThread();
+        return auctions;
+    }
+
+    /** A price typed in coins ("12.5"), in hundredths, or -1. */
+    private static long coins(String text) {
+        try {
+            return new java.math.BigDecimal(text).movePointRight(2).setScale(0, java.math.RoundingMode.DOWN).longValueExact();
+        } catch (RuntimeException bad) {
+            return -1;
+        }
+    }
+
+    /**
+     * {@code who}'s auction request (M-06h), a person's or an AI player's alike: {@code list} (open listings and orders),
+     * {@code mine}, {@code sell <start> [buyNow] [hours]} (the stack in hand), {@code bid <id> <amount>}, {@code buy <id>},
+     * {@code cancel <id>}, {@code order <item> <count> <each>}, {@code unorder <id>}. Prices in coins. Only in a faction
+     * world.
+     */
+    int auctionRequest(ServerCommandSource source, UUID who, String verb, List<String> args) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        var player = server.getPlayerManager().getPlayer(who);
+        String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : "";
+        java.util.function.Consumer<String> tell = line -> feedback(source, line);
+        String refusal;
+        try {
+            switch (verb) {
+                case "list", "help" -> { for (String line : auctions.lines(null)) feedback(source, line); return 1; }
+                case "mine" -> { for (String line : auctions.lines(who)) feedback(source, line); return 1; }
+                case "sell" -> {
+                    if (player == null) return reject(source, "Only a player online lists.");
+                    long start = coins(args.get(0)), buyNow = args.size() > 1 ? coins(args.get(1)) : 0;
+                    int hours = args.size() > 2 ? Integer.parseInt(args.get(2)) : factions.settings().auctionHours();
+                    if (start < 0 || buyNow < 0) return reject(source, "Prices are in coins, such as 12.50");
+                    auctions.list(player, start, buyNow, hours, world, tell);
+                    return 1;
+                }
+                case "bid" -> refusal = player == null ? "Only a player online bids." : auctions.bid(player, args.get(0), coins(args.get(1)), world, tell);
+                case "buy" -> {
+                    var listing = auctions.book().listings().get(args.get(0));
+                    if (listing == null || listing.buyNow() <= 0) return reject(source, "No buy-now price on that listing");
+                    refusal = player == null ? "Only a player online buys." : auctions.bid(player, args.get(0), listing.buyNow(), world, tell);
+                }
+                case "cancel" -> refusal = player == null ? "Only a player online." : auctions.cancel(player, args.get(0), world, tell);
+                case "order" -> refusal = player == null ? "Only a player online orders." : auctions.order(player, args.get(0), Integer.parseInt(args.get(1)), coins(args.get(2)), world, tell);
+                case "unorder" -> refusal = player == null ? "Only a player online." : auctions.cancelOrder(player, args.get(0), world, tell);
+                default -> { return reject(source, "/ah [list|mine] | sell <start> [buyNow] [hours] | bid <id> <amount> | buy <id> | cancel <id> | order <item> <count> <each> | unorder <id>"); }
+            }
+        } catch (IndexOutOfBoundsException | NumberFormatException bad) {
+            return reject(source, "/ah sell <start> [buyNow] [hours] | bid <id> <amount> | buy <id> | cancel <id> | order <item> <count> <each> | unorder <id>");
+        }
+        return refusal == null ? 1 : reject(source, refusal);
+    }
+
+    /** The market's counter (M-06g). */
+    MarketDesk market() {
+        requireThread();
+        return market;
+    }
+
+    /**
+     * {@code who}'s market request (M-06g), a person's or an AI player's alike: {@code sell hand|all [confirm]},
+     * {@code buy <item> <count>}, {@code price [item]}, {@code top}, {@code history <item>}, and for operators
+     * {@code baseline <item> <cents> <mass|ordinary|scarce> [nobuy]}. Only in a faction world. The outcome of a sale or
+     * purchase, settled a moment later, is told to {@code source} then.
+     */
+    int marketRequest(ServerCommandSource source, UUID who, String verb, List<String> args) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        var player = server.getPlayerManager().getPlayer(who);
+        String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : "";
+        String first = args.isEmpty() ? "" : args.getFirst();
+        switch (verb) {
+            case "sell" -> {
+                if (player == null) return reject(source, "Only a player online sells.");
+                var slots = new ArrayList<Integer>();
+                if (first.equals("all")) for (int i = 0; i < player.getInventory().main.size(); i++) slots.add(i);
+                else slots.add(player.getInventory().selectedSlot);
+                if (first.equals("all") && !(args.size() > 1 && args.get(1).equals("confirm"))) {
+                    var estimate = market.estimate(player, slots);
+                    feedback(source, "Would pay " + dev.kindred.core.factions.Coins.show(estimate.cents()) + " coins for " + estimate.quotes().size()
+                            + " kinds of item" + (estimate.refused().isEmpty() ? "" : "; " + estimate.refused().size() + " stacks refused: "
+                            + estimate.refused().values().iterator().next()) + ". /shop sell all confirm to sell.");
+                    return 1;
+                }
+                market.sell(player, slots, world, line -> feedback(source, line));
+                return 1;
+            }
+            case "buy" -> {
+                if (player == null) return reject(source, "Only a player online buys.");
+                int count;
+                try { count = args.size() > 1 ? Integer.parseInt(args.get(1)) : 1; } catch (NumberFormatException bad) { return reject(source, "A count is a number."); }
+                String refusal = market.buy(player, first, count, world, line -> feedback(source, line));
+                return refusal == null ? 1 : reject(source, refusal);
+            }
+            case "price" -> {
+                String item = !first.isEmpty() ? first : player == null ? "" : net.minecraft.registry.Registries.ITEM.getId(player.getMainHandStack().getItem()).toString();
+                if (item.isEmpty()) return reject(source, "/shop price <item>");
+                feedback(source, market.priceLine(item));
+                return 1;
+            }
+            case "top" -> {
+                for (String line : market.movers()) feedback(source, line);
+                return 1;
+            }
+            case "history" -> {
+                SqliteCompanionStore database = store;
+                String item = dev.kindred.core.market.MarketTable.id(first);
+                database.worldEvents(Set.of(dev.kindred.core.market.MarketLedger.SALE, dev.kindred.core.market.MarketLedger.BUY), 0, 10_000).whenComplete((events, failure) -> handBack(() -> {
+                    if (failure != null) { reject(source, "The history could not be read."); return; }
+                    var lines = events.stream().filter(e -> e.subject().startsWith(item)).toList();
+                    if (lines.isEmpty()) { feedback(source, "No trades of " + item + " yet"); return; }
+                    for (var e : lines.subList(Math.max(0, lines.size() - 10), lines.size())) {
+                        feedback(source, (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE) ? "sold " : "bought ") + e.get("count", "?") + " for "
+                                + dev.kindred.core.factions.Coins.show(Long.parseLong(e.get("cents", "0"))) + " at " + java.time.Instant.ofEpochMilli(e.realTimeMs()));
+                    }
+                }));
+                return 1;
+            }
+            case "baseline" -> {
+                if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator sets a baseline.");
+                try {
+                    var root = new dev.kindred.core.market.MarketTable.Root(dev.kindred.core.market.MarketTable.id(first), Long.parseLong(args.get(1)),
+                            dev.kindred.core.market.MarketTable.Volatility.valueOf(args.get(2).toUpperCase(java.util.Locale.ROOT)), !(args.size() > 3 && args.get(3).equals("nobuy")));
+                    record(dev.kindred.core.market.Market.baseline(root, source.getPlayer() == null ? null : source.getPlayer().getUuid(), factions.at(world)));
+                    feedback(source, "Baseline set: " + root.item() + " at " + dev.kindred.core.factions.Coins.show(root.baseline()));
+                    return 1;
+                } catch (RuntimeException bad) {
+                    return reject(source, "/market baseline <item> <hundredths> <mass|ordinary|scarce> [nobuy]");
+                }
+            }
+            default -> { return reject(source, "/shop sell hand|all [confirm] | buy <item> <count> | price [item]; /market top | history <item>"); }
+        }
+    }
+
     /** One event written to the World Record (F-31). */
     void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
 
@@ -15402,6 +15619,7 @@ final class PlayerRuntime {
                 for (var event : written) {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
+                    webs.recorded(event); // F-32b: what the Record tells everyone.
                 }
             });
         });
