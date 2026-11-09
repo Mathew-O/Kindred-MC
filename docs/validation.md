@@ -3374,3 +3374,11 @@ After the block's first merge from main, CI on PR #25 found:
     CI's slower runners ran out of ticks.
   - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
     `MockPlayers`, 1 run, 89 of 89.
+
+- **[F-22c34](evidence/F-22c34.md):** a workstation is put down where nothing stands (product; #74's run 42556590202: its anvil
+  refused 1318 times in a row for its tamed wolf in the cell, until the test's time ran out). The pet fixture's body is
+  asserted at every use (fixture: the runtime's stop at tick 8000 removed it, and the step's exception stopped the server).
+  - The staged fixture (its wolf sitting in the first cell): 0 of 3 before, 807 placements refused; after, 3 of 3.
+  - `NativePetGameTests`, 3 runs, 2 of 2 each.
+  - The other workstation users (`NativeBrewGameTests`, `NativeEnchantGameTests`, `NativeHouseGameTests`,
+    `NativeKitNameGameTests`, `NativeNetheriteGameTests`), 1 run: 10 of 10.
