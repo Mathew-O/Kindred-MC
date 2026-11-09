@@ -530,6 +530,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
 
+## M-01a: its horse ridden on its travels, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeHorseGameTests` with `NativeBoatGameTests` and `NativeOwnRanchGameTests` alone, 3 runs, 10 of 10 each. Control (`onItsHorse` off): 0 of 1.
+
 ## M-01a: a horse of its own, 2026-11-08
 
 Branch `claude/modes-1108-12`. M-01a stays open. See [M-01a](evidence/M-01a.md).
