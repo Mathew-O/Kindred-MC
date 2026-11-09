@@ -1,0 +1,190 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 40984,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    0,
+    46,
+    -65
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.819740698734016,
+    8.173800047469136,
+    16.42677553115383
+  ],
+  "yaw": 87.04203,
+  "pitch": 12.5160885,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": -15,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 51
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 45
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 5
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 45
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 9
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 42
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 16984,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: open the way up at 15, 55, -49 (tried elsewhere 4 times)",
+  "task": "Get out of the water: open the way up at 15, 55, -49",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol drowned",
+  "ticks": 1200,
+  "log": [
+    "[06:28:15] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to find another way: step up]",
+    "[06:28:15] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to find another way: step up]",
+    "[06:28:24] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 31, 37, -46 [Explore the cave toward iron]",
+    "[06:28:24] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 30, 38, -49 [Explore the cave toward iron]",
+    "[06:28:25] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 19, 21, -8 [Explore the cave toward iron]",
+    "[06:28:36] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 42, 47, -48 [try elsewhere, toward 42, 47, -48]",
+    "[06:28:37] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:28:37] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:28:37] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to find another way: step up]",
+    "[06:28:37] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to find another way: step up]",
+    "[06:28:39] [Server thread/INFO]: Sol native_break CANCELLED: In deep water; up for air first [Rescue: dig up 2: 18, 50, -48]",
+    "[06:28:39] [Server thread/INFO]: Sol native_break refused: Nothing solid to break [Rescue: dig up 2: 18, 50, -48]",
+    "[06:28:40] [Server thread/INFO]: Sol native_break COMPLETED [Get out of the water: open the way up at 18, 51, -48]",
+    "[06:28:42] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 16, 47, -46 is blocked [Get out of the water: to dry ground]",
+    "[06:28:44] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 16, 47, -45 is blocked [Get out of the water: to dry ground]",
+    "[06:28:45] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 16, 46, -44 is blocked [Get out of the water: to dry ground]",
+    "[06:28:47] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 15, 45, -42 is blocked [Get out of the water: to dry ground]",
+    "[06:28:50] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 13, 57, -44 is blocked [Get out of the water: to dry ground]",
+    "[06:28:52] [Server thread/INFO]: Sol native_break COMPLETED [Get out of the water: open the way up at 16, 55, -49]",
+    "[06:28:52] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]"
+  ]
+}

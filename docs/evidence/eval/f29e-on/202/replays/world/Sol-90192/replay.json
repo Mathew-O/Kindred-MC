@@ -1,0 +1,323 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 90192,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    39,
+    53,
+    37
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.51277912414657,
+    8.165632234927543,
+    16.47160427201795
+  ],
+  "yaw": -1974.0006,
+  "pitch": -4.9999995,
+  "health": 18.0,
+  "food": 20,
+  "saturation": 0.6000004,
+  "air": -7,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 13
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 63
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:sunflower",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:amethyst_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 20
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:smooth_basalt",
+        "count": 7
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 37
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 45
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 10
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:raw_copper_block",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 3
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 58
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:dripstone_block",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 13
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 18192,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: up for air",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol drowned",
+  "ticks": 1200,
+  "log": [
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:16] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[22:43:17] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]"
+  ]
+}

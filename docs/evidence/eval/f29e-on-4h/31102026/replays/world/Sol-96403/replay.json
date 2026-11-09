@@ -1,0 +1,121 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 96403,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -82,
+    66,
+    148
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.648552748316334,
+    8.0,
+    16.580466545512195
+  ],
+  "yaw": 9.176976,
+  "pitch": 7.341015,
+  "health": 2.5,
+  "food": 11,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cactus",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 54
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 35
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 403,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Cut through west for animals: clear -66, 75, 165",
+  "task": "Cut through west for animals: clear -66, 75, 165",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[04:59:09] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for animals: advance]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for animals]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -94, 81, 161 [Explore west for animals]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto COMPLETED [Explore north for animals]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -75, 75, 158 [Back off from skeleton]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto COMPLETED [Explore north for animals]",
+    "[04:59:09] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -65, 69, 134 [Explore north for animals]",
+    "[04:59:09] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for animals]",
+    "[04:59:10] [Server thread/INFO]: Sol native_break COMPLETED [Cut through west for animals: clear -66, 74, 163]",
+    "[04:59:10] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for animals: advance]",
+    "[04:59:10] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for animals: advance]",
+    "[04:59:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -94, 74, 164 [Explore west for animals]",
+    "[04:59:10] [Server thread/INFO]: Sol native_goto COMPLETED [Explore south for animals]",
+    "[04:59:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -64, 74, 194 [Explore south for animals]",
+    "[04:59:11] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for animals]",
+    "[04:59:11] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -76, 74, 164 [Back off from skeleton]",
+    "[04:59:11] [Server thread/INFO]: Sol native_break CANCELLED: The player died [Cut through west for animals: clear -66, 75, 165]",
+    "[04:59:11] [Server thread/INFO]: Sol died at -66, 74, 164: Sol was shot by Skeleton (tick 96403, day, under the sky, hunger 11, armour 0, holding sand, no shield; doing \"Cut through west for animals: clear -66, 75, 165\" in \"Wood: hurt and out of food - Cut through west for animals: clear -66, 75, 165\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

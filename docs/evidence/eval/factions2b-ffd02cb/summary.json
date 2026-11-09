@@ -1,0 +1,1722 @@
+{
+ "build": "factions2b-ffd02cb",
+ "jar": "kindred-mc-0.1.0-SNAPSHOT.jar",
+ "otherJars": {},
+ "seeds": [
+  "101",
+  "102",
+  "103",
+  "104",
+  "105",
+  "106",
+  "107",
+  "108",
+  "109",
+  "110"
+ ],
+ "missing": [],
+ "short": {},
+ "kinds": [
+  "earned"
+ ],
+ "scenarios": [
+  "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions"
+ ],
+ "team": {
+  "teamFurthestIndex": {
+   "median": -1.0,
+   "min": -1,
+   "max": -1,
+   "n": 10
+  },
+  "teamDeathsPerHour": {
+   "median": 8.0,
+   "min": 4.5,
+   "max": 26.0,
+   "n": 10
+  },
+  "stuckSpells": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "stuckMinutes": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "rescues": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "rescuesUnstuck": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "rescueAsks": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "rescueSpells": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "rescueSpellsOut": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "rescueRounds": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "recipesTried": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "spellsOutByRecipe": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "askSeconds": null,
+  "askSecondsPooled": null,
+  "tokens": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "linesPerMinute": {
+   "median": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "n": 10
+  },
+  "talkLines": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "unaskedLines": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "silentMeetings": {
+   "median": 0.0,
+   "min": 0,
+   "max": 2,
+   "n": 10
+  },
+  "minutesTo_wooden_tool": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_wooden_tool": 0,
+  "minutesTo_stone_tools": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_stone_tools": 0,
+  "minutesTo_iron_ingot": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_iron_ingot": 0,
+  "minutesTo_iron_pickaxe": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_iron_pickaxe": 0,
+  "minutesTo_diamond": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_diamond": 0,
+  "minutesTo_obsidian": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_obsidian": 0,
+  "minutesTo_portal_lit": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_portal_lit": 0,
+  "minutesTo_nether_entered": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_nether_entered": 0,
+  "minutesTo_blaze_rods": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_blaze_rods": 0,
+  "minutesTo_eyes": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_eyes": 0,
+  "minutesTo_stronghold": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_stronghold": 0,
+  "minutesTo_end": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_end": 0,
+  "minutesTo_dragon": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 10,
+   "reached": 0
+  },
+  "reached_dragon": 0
+ },
+ "deathCauses": {
+  "zombie": 231,
+  "skeleton": 83,
+  "spider": 30,
+  "drowned": 28,
+  "drowning": 19,
+  "phantom": 19,
+  "creeper": 18,
+  "enderman": 2,
+  "polar_bear": 2,
+  "zombie_villager": 1,
+  "witch": 1,
+  "pillager": 1
+ },
+ "perSeed": {
+  "101": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 240,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 104,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 3.84,
+    "tickMsWorst": 710.45,
+    "heapMbMax": 1131,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 26.0,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 28,
+     "deathsPerHour": 7.0,
+     "causes": {
+      "zombie": 20,
+      "drowning": 4,
+      "skeleton": 2,
+      "spider": 2
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 220,
+      "blocked": 29,
+      "cutShort": 42,
+      "worstRepeat": 3,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 25
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 26,
+     "deathsPerHour": 6.5,
+     "causes": {
+      "drowning": 3,
+      "drowned": 1,
+      "zombie": 17,
+      "creeper": 1,
+      "phantom": 1,
+      "spider": 3
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 204,
+      "blocked": 9,
+      "cutShort": 50,
+      "worstRepeat": 2,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 7
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 50,
+     "deathsPerHour": 12.5,
+     "causes": {
+      "drowned": 4,
+      "creeper": 1,
+      "zombie": 35,
+      "enderman": 1,
+      "skeleton": 6,
+      "spider": 1,
+      "drowning": 1,
+      "phantom": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 496,
+      "blocked": 34,
+      "cutShort": 34,
+      "worstRepeat": 23,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 10
+     }
+    }
+   }
+  },
+  "102": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 97,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 27,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 7.78,
+    "tickMsWorst": 834.36,
+    "heapMbMax": 1573,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 6.75,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 4,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "skeleton": 1,
+      "phantom": 1,
+      "drowned": 1,
+      "creeper": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 182,
+      "blocked": 614,
+      "cutShort": 15,
+      "worstRepeat": 35,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 3,
+      "recoveredPct": 67,
+      "walksInVain": 614
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 7,
+     "deathsPerHour": 1.75,
+     "causes": {
+      "zombie": 6,
+      "creeper": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 85,
+      "blocked": 21,
+      "cutShort": 3,
+      "worstRepeat": 3,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 21
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 16,
+     "deathsPerHour": 4.0,
+     "causes": {
+      "zombie": 13,
+      "spider": 1,
+      "skeleton": 1,
+      "zombie_villager": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 300,
+      "blocked": 43,
+      "cutShort": 13,
+      "worstRepeat": 3,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 43
+     }
+    }
+   }
+  },
+  "103": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 2,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 140,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 52,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 6.03,
+    "tickMsWorst": 588.24,
+    "heapMbMax": 1013,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 13.0,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 23,
+     "deathsPerHour": 5.75,
+     "causes": {
+      "drowned": 4,
+      "spider": 4,
+      "zombie": 9,
+      "skeleton": 3,
+      "drowning": 2,
+      "creeper": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 202,
+      "blocked": 740,
+      "cutShort": 113,
+      "worstRepeat": 27,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 738
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 17,
+     "deathsPerHour": 4.25,
+     "causes": {
+      "drowning": 3,
+      "drowned": 3,
+      "zombie": 5,
+      "phantom": 3,
+      "spider": 3
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 286,
+      "blocked": 378,
+      "cutShort": 285,
+      "worstRepeat": 11,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 2,
+      "recoveredPct": 100,
+      "walksInVain": 377
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 12,
+     "deathsPerHour": 3.0,
+     "causes": {
+      "drowned": 3,
+      "skeleton": 4,
+      "creeper": 1,
+      "zombie": 1,
+      "phantom": 2,
+      "spider": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 182,
+      "blocked": 244,
+      "cutShort": 13,
+      "worstRepeat": 16,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 243
+     }
+    }
+   }
+  },
+  "104": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 2,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 72,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 18,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 3.58,
+    "tickMsWorst": 762.76,
+    "heapMbMax": 1025,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 4.5,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 6,
+     "deathsPerHour": 1.5,
+     "causes": {
+      "zombie": 4,
+      "drowned": 1,
+      "phantom": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 88,
+      "blocked": 7,
+      "cutShort": 1,
+      "worstRepeat": 2,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 7
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 8,
+     "deathsPerHour": 2.0,
+     "causes": {
+      "zombie": 7,
+      "phantom": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 88,
+      "blocked": 5,
+      "cutShort": 5,
+      "worstRepeat": 2,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 4
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 4,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "witch": 1,
+      "skeleton": 1,
+      "zombie": 2
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 67,
+      "blocked": 60,
+      "cutShort": 1,
+      "worstRepeat": 4,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 59
+     }
+    }
+   }
+  },
+  "105": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 2,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 106,
+     "factions": 3,
+     "claims": 6,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 37,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 6.44,
+    "tickMsWorst": 756.0,
+    "heapMbMax": 1297,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 9.25,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 18,
+     "deathsPerHour": 4.5,
+     "causes": {
+      "polar_bear": 1,
+      "creeper": 2,
+      "skeleton": 4,
+      "zombie": 9,
+      "spider": 2
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 198,
+      "blocked": 139,
+      "cutShort": 68,
+      "worstRepeat": 8,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 2,
+      "recoveredPct": 50,
+      "walksInVain": 137
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 8,
+     "deathsPerHour": 2.0,
+     "causes": {
+      "drowned": 1,
+      "skeleton": 5,
+      "zombie": 2
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 68,
+      "blocked": 12,
+      "cutShort": 3,
+      "worstRepeat": 2,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 12
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 11,
+     "deathsPerHour": 2.75,
+     "causes": {
+      "polar_bear": 1,
+      "phantom": 2,
+      "zombie": 4,
+      "creeper": 2,
+      "spider": 1,
+      "skeleton": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 313,
+      "blocked": 88,
+      "cutShort": 42,
+      "worstRepeat": 9,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 3,
+      "recoveredPct": 67,
+      "walksInVain": 85
+     }
+    }
+   }
+  },
+  "106": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 141,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 54,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 5.0,
+    "tickMsWorst": 845.22,
+    "heapMbMax": 1628,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 13.5,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 17,
+     "deathsPerHour": 4.25,
+     "causes": {
+      "zombie": 10,
+      "skeleton": 7
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 210,
+      "blocked": 6,
+      "cutShort": 6,
+      "worstRepeat": 1,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 6
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 14,
+     "deathsPerHour": 3.5,
+     "causes": {
+      "drowning": 4,
+      "spider": 3,
+      "skeleton": 1,
+      "creeper": 3,
+      "zombie": 2,
+      "phantom": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 150,
+      "blocked": 96,
+      "cutShort": 79,
+      "worstRepeat": 7,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 2,
+      "recoveredPct": 50,
+      "walksInVain": 95
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 23,
+     "deathsPerHour": 5.75,
+     "causes": {
+      "creeper": 1,
+      "zombie": 13,
+      "skeleton": 8,
+      "phantom": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 246,
+      "blocked": 27,
+      "cutShort": 10,
+      "worstRepeat": 4,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 27
+     }
+    }
+   }
+  },
+  "107": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 72,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 19,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 4.31,
+    "tickMsWorst": 778.9,
+    "heapMbMax": 1059,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 4.75,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 4,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "phantom": 1,
+      "skeleton": 2,
+      "zombie": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 60,
+      "blocked": 3,
+      "cutShort": 1,
+      "worstRepeat": 2,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 3
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 7,
+     "deathsPerHour": 1.75,
+     "causes": {
+      "zombie": 3,
+      "phantom": 2,
+      "spider": 1,
+      "creeper": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 50,
+      "blocked": 6,
+      "cutShort": 5,
+      "worstRepeat": 2,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 6
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 8,
+     "deathsPerHour": 2.0,
+     "causes": {
+      "zombie": 3,
+      "skeleton": 4,
+      "phantom": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 106,
+      "blocked": 10,
+      "cutShort": 2,
+      "worstRepeat": 2,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 9
+     }
+    }
+   }
+  },
+  "108": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 84,
+     "factions": 3,
+     "claims": 6,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 26,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 5.66,
+    "tickMsWorst": 1198.95,
+    "heapMbMax": 1259,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 6.5,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 10,
+     "deathsPerHour": 2.5,
+     "causes": {
+      "drowning": 2,
+      "creeper": 1,
+      "skeleton": 4,
+      "phantom": 1,
+      "zombie": 2
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 267,
+      "blocked": 108,
+      "cutShort": 88,
+      "worstRepeat": 15,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 4,
+      "recoveredPct": 100,
+      "walksInVain": 106
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 10,
+     "deathsPerHour": 2.5,
+     "causes": {
+      "drowned": 1,
+      "zombie": 6,
+      "skeleton": 3
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 355,
+      "blocked": 105,
+      "cutShort": 10,
+      "worstRepeat": 9,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 7,
+      "recoveredPct": 86,
+      "walksInVain": 104
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 6,
+     "deathsPerHour": 1.5,
+     "causes": {
+      "drowned": 2,
+      "zombie": 1,
+      "skeleton": 1,
+      "spider": 1,
+      "creeper": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 61,
+      "blocked": 415,
+      "cutShort": 23,
+      "worstRepeat": 13,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 415
+     }
+    }
+   }
+  },
+  "109": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 172,
+     "factions": 3,
+     "claims": 7,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 71,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 4.46,
+    "tickMsWorst": 592.67,
+    "heapMbMax": 1423,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 17.75,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 11,
+     "deathsPerHour": 2.75,
+     "causes": {
+      "skeleton": 7,
+      "enderman": 1,
+      "zombie": 3
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 169,
+      "blocked": 925,
+      "cutShort": 107,
+      "worstRepeat": 44,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 4,
+      "recoveredPct": 100,
+      "walksInVain": 923
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 40,
+     "deathsPerHour": 10.0,
+     "causes": {
+      "spider": 4,
+      "skeleton": 4,
+      "zombie": 32
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 661,
+      "blocked": 249,
+      "cutShort": 19,
+      "worstRepeat": 16,
+      "resumedPct": 100,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 241
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 20,
+     "deathsPerHour": 5.0,
+     "causes": {
+      "zombie": 7,
+      "skeleton": 10,
+      "spider": 3
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 280,
+      "blocked": 431,
+      "cutShort": 18,
+      "worstRepeat": 21,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 431
+     }
+    }
+   }
+  },
+  "110": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 71,
+     "factions": 3,
+     "claims": 0,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 27,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 4.64,
+    "tickMsWorst": 382.69,
+    "heapMbMax": 817,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 6.75,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 7,
+     "deathsPerHour": 1.75,
+     "causes": {
+      "drowned": 3,
+      "skeleton": 2,
+      "zombie": 1,
+      "creeper": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 57,
+      "blocked": 1174,
+      "cutShort": 8,
+      "worstRepeat": 35,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 0,
+      "recoveredPct": 100,
+      "walksInVain": 1174
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 15,
+     "deathsPerHour": 3.75,
+     "causes": {
+      "zombie": 10,
+      "skeleton": 2,
+      "drowned": 2,
+      "pillager": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 64,
+      "blocked": 1218,
+      "cutShort": 9,
+      "worstRepeat": 52,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 0,
+      "recoveredPct": 100,
+      "walksInVain": 1218
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 5,
+     "deathsPerHour": 1.25,
+     "causes": {
+      "drowned": 2,
+      "zombie": 3
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": {
+      "done": 32,
+      "blocked": 984,
+      "cutShort": 11,
+      "worstRepeat": 58,
+      "resumedPct": 0,
+      "changesPerMin": 0.0,
+      "stuck": 1,
+      "recoveredPct": 0,
+      "walksInVain": 978
+     }
+    }
+   }
+  }
+ }
+}

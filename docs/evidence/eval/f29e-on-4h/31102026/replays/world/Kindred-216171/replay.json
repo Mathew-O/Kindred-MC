@@ -1,0 +1,184 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 216171,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -87,
+    54,
+    99
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.7279389933302,
+    8.9137713075364,
+    16.473600365189583
+  ],
+  "yaw": -455.3786,
+  "pitch": 18.159302,
+  "health": 1.5,
+  "food": 0,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 4
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cactus",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 46
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 171,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: to dry ground (tried elsewhere 1 time)",
+  "task": "Get out of the water: to dry ground",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Husk",
+  "ticks": 1200,
+  "log": [
+    "[05:11:04] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:04] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:05] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:05] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:05] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:06] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:06] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[05:11:07] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[05:11:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk the way it came]",
+    "[05:11:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[05:11:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[05:11:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[05:11:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[05:11:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[05:11:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[05:11:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk the way it came]",
+    "[05:11:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[05:11:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk the way it came]",
+    "[05:11:10] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+    "[05:11:10] [Server thread/INFO]: Kindred died at -71, 62, 115: Kindred was slain by Husk (tick 216171, day, under the sky, hunger 0, armour 0, holding sand, no shield; doing \"Get out of the water: to dry ground\" in \"Wood: Get out of the water: to dry ground (tried elsewhere 1 time)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

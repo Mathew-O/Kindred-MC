@@ -1,0 +1,319 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 136063,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    263,
+    -21,
+    -63
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.659631340307385,
+    8.0,
+    16.428638473593807
+  ],
+  "yaw": 286.70886,
+  "pitch": 12.157194,
+  "health": 4.800002,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cooked_chicken",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 25
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:diamond",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 15
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:amethyst_block",
+        "count": 6
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 11
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 7
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 4
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 12
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 16063,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Ready a block",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[00:02:42] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 266, -8, -15]",
+    "[00:02:42] [Server thread/INFO]: Sol native_place COMPLETED [Place a torch at 268, -8, -15]",
+    "[00:02:43] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 266, -9, -15]",
+    "[00:02:43] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 267, -8, -16]",
+    "[00:02:43] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 267, -9, -16]",
+    "[00:02:43] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 267, -10, -16]",
+    "[00:02:43] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward lava: step down]",
+    "[00:02:43] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 267, -9, -17]",
+    "[00:02:44] [Server thread/INFO]: Sol native_craft COMPLETED [Craft crafting table]",
+    "[00:02:44] [Server thread/INFO]: Sol native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Place a crafting table]",
+    "[00:02:44] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[00:02:44] [Server thread/INFO]: Sol native_craft COMPLETED [Craft stone pickaxe]",
+    "[00:02:44] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 267, -10, -17]",
+    "[00:02:44] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Dig down toward lava: step down]",
+    "[00:02:44] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[00:02:45] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[00:02:45] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[00:02:47] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[00:02:49] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 269, -11, -18 is blocked [Back off from spider]",
+    "[00:02:49] [Server thread/INFO]: Sol native_eat CANCELLED: The player died"
+  ]
+}
