@@ -16,6 +16,22 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
+  7bc5b42 --name e40a17-7bc5b42 --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 3
+  --keep-world`; 707, stopped short by the launcher's time limit, again alone with `--seeds 707 --parallel 1`;
+  `score.py`; `compare.py` against `e40a16-922f4fd` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 8 of 10 (8); a portal lit on 7 of 10 (6), median 60.05
+    minutes (95.15); stuck time under a tenth on 3 of 10 (3).
+  - Deaths 1.0 a game hour [0 to 3.0] (22, against 23); 4 while backing off from a zombie (10). Stuck spells 4 [3 to
+    21] (64, against 65); stuck minutes 12 [9 to 63] (21 [3 to 42]).
+  - Every range overlaps both: no difference worth noting.
+  - No player stopped for reconciliation (2 in iteration 16).
+  - [Summary](evidence/eval/e40a17-7bc5b42/summary.md), [deaths](evidence/eval/e40a17-7bc5b42/deaths.md),
+    [against iteration 16](evidence/eval/compare-e40a17.md), [against the start](evidence/eval/compare-e40a17-base.md),
+    [E-40](evidence/E-40.md).
+
 ## The lake-bed fixture's intermittent (F-25c4cu) — 9 November 2026 (`claude/lakebed-memory-1109`)
 
 - **[F-25c4cu](evidence/F-25c4cu.md):** `NativeLakeBedClimbGameTests`' fixture in copies of eight (a scratch class, not
@@ -30,6 +46,7 @@
   three runs.
 - **The benches** ran beside E-40's iteration 16, at the lowest priority.
 - **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
 ## Two cast-route intermittents (F-25c4cs, F-25c4ct) — 9 November 2026 (`claude/cast-refusal-1109`)
 
 - **[F-25c4ct](evidence/F-25c4ct.md), a frame's mould refused with nothing placed:** `NativeCastRefusalGameTests`, the thick-rock
@@ -3403,6 +3420,13 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
+- **[F-22c42](evidence/F-22c42.md):** the hungry search's field under a gapped roof is laid inside its own structure (fixture;
+  #72's run 42584495579: "Back to the climb … back the way it came at -12, 0, -30", 32 blocks out beyond its north wall).
+  - A throwaway copy (not committed) with stone laid 8 blocks over its origin beyond the walls on all four sides, as a test
+    beside it could leave: 0 of 3, each with the CI's text. Over the north side only: 3 of 3, its search went another way.
+  - The fixed fixture on `FixtureGround.WIDE` with sky access, its origin at the middle: a copy, 2 of 2;
+    `NativePortalCampaignGameTests`, 1 run, 95 of 95.
 
 - **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
   second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
