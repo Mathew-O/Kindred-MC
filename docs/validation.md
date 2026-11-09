@@ -3463,3 +3463,8 @@ After the block's first merge from main, CI on PR #25 found:
   and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
+
+- **[F-22c44](evidence/F-22c44.md):** a pasture doorway left a block short is shut from the block's own drop, picked up
+  where it lies (product; #101's run 42584569435: "Nothing in hand to place", a plank short, for good).
+  - The staged fixture (a doorway plank left lying): 0 of 3 before, as CI; 3 of 3 after.
+  - The class runs pending.
