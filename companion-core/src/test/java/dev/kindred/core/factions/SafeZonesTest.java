@@ -44,7 +44,7 @@ class SafeZonesTest {
         assertFalse(PowerRules.qualifies(book, PowerBook.EMPTY, settings, blue, red, Zone.SAFE, 1).counts());
         var safe = SafeZones.hub(settings.safeRadius());
         var spawn = new Territory.Chunk(Territory.OVERWORLD, 0, 0);
-        assertFalse(Territory.claim(book, PowerBook.EMPTY, Map.of(), safe, 500, settings, red, spawn, at).accepted());
+        assertFalse(Territory.claim(book, PowerBook.EMPTY, Map.of(), safe, 50_000, settings, red, spawn, at).accepted());
         assertFalse(Territory.mayChange(book, Map.of(), safe, red, false, spawn));
         assertTrue(Territory.mayChange(book, Map.of(), safe, red, true, spawn), "an operator");
         assertFalse(Territory.mayCross(Map.of(), safe, new Territory.Chunk(Territory.OVERWORLD, 10, 0), spawn), "nothing flows in from outside");
