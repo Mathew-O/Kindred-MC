@@ -149,7 +149,31 @@ public final class NativeHorseGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownHorse", tickLimit = 6000)
     public void withItsCabinStandingItTamesAWildHorseItSeesAndSaddlesIt(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        ownHorse(context, false);
+    }
+
+    /**
+     * The same with each step's durable record slow to be kept, as on a busy runner: on #82's CI (run 42566194927) the
+     * saddle's swap, planned while it waited on its record, was counted as tried four times and the saddle given up
+     * ("its saddle could not be brought to hand") as the swap completed; its mounts likewise were counted 12 for 3 rides.
+     * Staged: the record of each swap and ride kept 1.5 seconds late.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownHorseSlow", tickLimit = 6000)
+    public void withItsStepsSlowToBeRecordedItStillSaddlesTheHorseItTames(TestContext context) {
+        ownHorse(context, true);
+    }
+
+    private static void ownHorse(TestContext context, boolean slow) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> !slow ? writer : new dev.kindred.core.ActionAdmission.Writer() {
+            @Override public java.util.concurrent.CompletableFuture<dev.kindred.core.ActionRecord> prepare(dev.kindred.core.ActionRecord intent) {
+                if (!"native_swap".equals(intent.kind()) && !"native_ride".equals(intent.kind())) return writer.prepare(intent);
+                return writer.prepare(intent).thenCompose(kept -> java.util.concurrent.CompletableFuture.supplyAsync(() -> kept,
+                        java.util.concurrent.CompletableFuture.delayedExecutor(1500, java.util.concurrent.TimeUnit.MILLISECONDS)));
+            }
+            @Override public java.util.concurrent.CompletableFuture<dev.kindred.core.ActionRecord> transition(dev.kindred.core.ActionRecord next, long expectedRevision) {
+                return writer.transition(next, expectedRevision);
+            }
+        }, true, 5500);
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
         BlockPos home = o.add(16, 7, 16);
