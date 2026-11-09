@@ -3468,3 +3468,7 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged fixture (the player on a slab roof's middle): 0 of 3 before, as CI; 3 of 3 after.
   - `NativeNavigationGameTests`, 3 runs, 8 of 8 each; `NativeHouseGameTests`, `NativeBaseGameTests`,
     `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
+  what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
+  `NativeGatherGameTests`, 3 runs, 5 of 5 each.
