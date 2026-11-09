@@ -287,7 +287,14 @@ final class StrategistBridge implements AutoCloseable {
         State state = states.computeIfAbsent(id, key -> new State());
         var paged = new java.util.concurrent.CompletableFuture<Optional<Strategist.Page>>();
         long reserved = (dev.kindred.model.ChroniclePrompt.SYSTEM.length() + request.length()) / 3 + 100 + Strategist.CHRONICLE_MAX_OUTPUT_TOKENS;
-        if (strategist == null || !admit(System.currentTimeMillis(), state, reserved)) {
+        if (strategist == null) {
+            paged.complete(Optional.empty());
+            return paged;
+        }
+        if (!admit(System.currentTimeMillis(), state, reserved)) {
+            // F-33c's run: the plain list was kept with no reason said; a page the budget or rate turns away says so.
+            KindredMod.LOGGER.info("{} chronicle: no room for the model's page ({} tokens reserved; {} used today by it, {} in all); the plain list kept",
+                    name, reserved, state.tokensToday, tokensToday);
             paged.complete(Optional.empty());
             return paged;
         }
