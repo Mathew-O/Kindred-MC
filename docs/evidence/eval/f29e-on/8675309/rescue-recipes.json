@@ -1,0 +1,23 @@
+[
+  {
+    "signature": "walls=NSEW;head=0;under=solid;liquid=;hard=false;dark=false;ledge=false;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "tunnel south 2"
+    ],
+    "weight": 3,
+    "failures": 0,
+    "source": "server"
+  },
+  {
+    "signature": "walls=--EW;head=2;under=solid;liquid=;hard=false;dark=true;ledge=true;shaft=false;blocks=true;pickaxe=3",
+    "steps": [
+      "dig up 2",
+      "pillar 2",
+      "walk north 2",
+      "tunnel south 3"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]

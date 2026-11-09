@@ -1,0 +1,127 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 130048,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -18,
+    32,
+    57
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.252203340253729,
+    16.30000001192093
+  ],
+  "yaw": 22.366898,
+  "pitch": 29.479374,
+  "health": 6.0,
+  "food": 12,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 7
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 36
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 30
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 10048,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[05:08:24] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:08:24] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -9, 42, 94]",
+    "[05:08:25] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -10, 41, 94]",
+    "[05:08:25] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -10, 42, 94]",
+    "[05:08:25] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:08:25] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -6, 39, 85]",
+    "[05:08:26] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:08:26] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[05:08:26] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[05:08:26] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -5, 42, 78]",
+    "[05:08:26] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -6, 41, 78]",
+    "[05:08:26] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -6, 42, 78]",
+    "[05:08:26] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: step up]",
+    "[05:08:27] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:08:27] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:08:27] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -2, 39, 63 [Back off from zombie]",
+    "[05:08:28] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[05:08:28] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[05:08:29] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 1, 39, 64 [Back off from zombie]",
+    "[05:08:29] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -3, 40, 73]"
+  ]
+}

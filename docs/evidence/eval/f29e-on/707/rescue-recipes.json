@@ -1,0 +1,33 @@
+[
+  {
+    "signature": "walls=NS-W;head=0;under=solid;liquid=;hard=false;dark=true;ledge=false;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig north 1"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  },
+  {
+    "signature": "walls=NSEW;head=0;under=solid;liquid=;hard=false;dark=true;ledge=false;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig up 2",
+      "tunnel north 1"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  },
+  {
+    "signature": "walls=N-EW;head=1;under=solid;liquid=;hard=false;dark=true;ledge=true;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig north 1",
+      "walk north 1",
+      "dig up 1",
+      "walk south 1"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]

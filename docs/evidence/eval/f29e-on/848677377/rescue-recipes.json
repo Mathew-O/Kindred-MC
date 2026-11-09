@@ -1,0 +1,11 @@
+[
+  {
+    "signature": "walls=NSEW;head=1;under=solid;liquid=;hard=false;dark=true;ledge=false;shaft=false;blocks=true;pickaxe=3",
+    "steps": [
+      "dig up 1"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]
