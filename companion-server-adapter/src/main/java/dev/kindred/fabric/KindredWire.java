@@ -78,7 +78,9 @@ final class KindredWire {
     private final LongSupplier now;
     private final Map<UUID, ArrayDeque<Delivery.Told>> inboxes = new HashMap<>();
     private final Map<UUID, String> names = new HashMap<>();
-    private long sent, refused, toldCount, spoken;
+    private long sent, refused, toldCount, spoken, stateTold;
+    /** Where teammates' updates go (F-34c): each receiver's peer ledger. Never the inbox, the web or the World Record. */
+    private java.util.function.BiConsumer<UUID, dev.kindred.core.social.PeerUpdate> stateSink = (r, u) -> { };
     /** Where a delivery to AI players is kept in the World Record (F-32b), or nowhere. */
     private java.util.function.Consumer<dev.kindred.core.record.WorldEvent> recorder = e -> { };
 
@@ -136,6 +138,14 @@ final class KindredWire {
         for (Listener l : roster) byId.put(l.id(), l);
         Listener sender = message.fromServer() ? null : byId.get(message.from());
         boolean senderIsPerson = sender != null && sender.person();
+        var state = wire.config().state().contains(message.kind()) ? dev.kindred.core.wire.TeamState.update(message) : java.util.Optional.<dev.kindred.core.social.PeerUpdate>empty();
+        if (state.isPresent()) { // Twelve a minute per player: the receiver's ledger keeps the latest, nothing else does.
+            for (Delivery.Told t : d.told()) {
+                stateSink.accept(t.receiver(), state.get());
+                stateTold++;
+            }
+            return d;
+        }
         for (Delivery.Told t : d.told()) {
             var inbox = inboxes.computeIfAbsent(t.receiver(), k -> new ArrayDeque<>());
             inbox.addLast(t);
@@ -187,19 +197,44 @@ final class KindredWire {
         return ai != null ? ai : body.getUuid();
     }
 
-    /** A fresh Wire with the defaults and these announcements. */
-    static Wire defaultWire(Set<String> announcements) { return new Wire(Wire.Config.defaults().withAnnouncements(announcements)); }
+    /** A fresh Wire with the defaults, these announcements, and the teammates' updates as its state kind (F-34c). */
+    static Wire defaultWire(Set<String> announcements) {
+        return new Wire(Wire.Config.defaults().withAnnouncements(announcements).withState(dev.kindred.core.wire.TeamState.KINDS));
+    }
+
+    /**
+     * An AI player's own update to its team (F-34c, E-50): sent on the first team it belongs to, to that team's AI players
+     * alone. Nothing when it is on no team (in a match, or a mode without one).
+     */
+    Delivery sendState(dev.kindred.core.social.PeerUpdate update) {
+        for (Listener l : roster()) {
+            if (!l.id().equals(update.from())) continue;
+            var team = dev.kindred.core.wire.TeamState.teamOf(l.teams());
+            return team.map(t -> send(dev.kindred.core.wire.TeamState.of(update, t))).orElse(null);
+        }
+        return null;
+    }
+
+    /** Where a teammate's update goes once the Wire delivers it: the receiving AI player and the update. */
+    void onState(java.util.function.BiConsumer<UUID, dev.kindred.core.social.PeerUpdate> sink) {
+        stateSink = sink == null ? (r, u) -> { } : sink;
+    }
+
+    /** Teammates' updates delivered since start: told to a receiver, kept only as its ledger's latest from that sender. */
+    long stateTold() { return stateTold; }
 
     /**
      * What a player belongs to in the runtime: an AI player out of any match the world's team, as teammates are in
-     * co-op; in a running manhunt its hunters' or runners' side; in another running match a side of its own
+     * co-op, and in a Factions world its faction's own team ({@code world:<faction>}), so no team's news crosses a
+     * faction; in a running manhunt its hunters' or runners' side; in another running match a side of its own
      * ({@code match:body}); its faction as the Factions mode says (empty for none).
      */
     static Belongs belongs(boolean ai, java.util.Optional<dev.kindred.core.match.MatchRegistry.Match> running, UUID body, String faction) {
         String side = running.map(m -> m.mode() == dev.kindred.core.match.MatchRegistry.Mode.MANHUNT
                 ? Listener.side(m.id().toString(), m.runners().contains(body) ? "runners" : "hunters")
                 : Listener.side(m.id().toString(), body.toString())).orElse("");
-        return new Belongs(ai && running.isEmpty() ? Set.of(TEAM) : Set.of(), faction == null ? "" : faction, "", side);
+        String f = faction == null ? "" : faction;
+        return new Belongs(ai && running.isEmpty() ? Set.of(f.isEmpty() ? TEAM : TEAM + ":" + f) : Set.of(), f, "", side);
     }
 
     /** The team every AI player out of a match shares, as in co-op. */

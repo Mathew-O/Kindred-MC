@@ -200,7 +200,9 @@ public final class NativeWireGameTests implements FabricGameTest {
         var race = new dev.kindred.core.match.MatchRegistry.Match(UUID.randomUUID(), dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN,
                 List.of(racer), Set.of(racer), Set.of(racer), Set.of(), dev.kindred.core.match.MatchRegistry.State.RUNNING, 0, 0, null, Set.of(), "");
         var free = KindredWire.belongs(true, java.util.Optional.empty(), UUID.randomUUID(), "oak");
-        context.assertTrue(free.teams().equals(Set.of(KindredWire.TEAM)) && free.faction().equals("oak") && free.side().isEmpty(), "Out of a match: " + free);
+        context.assertTrue(free.teams().equals(Set.of(KindredWire.TEAM + ":oak")) && free.faction().equals("oak") && free.side().isEmpty(), "Out of a match, its faction's team: " + free);
+        var unaligned = KindredWire.belongs(true, java.util.Optional.empty(), UUID.randomUUID(), "");
+        context.assertTrue(unaligned.teams().equals(Set.of(KindredWire.TEAM)), "Out of a match and of any faction: " + unaligned);
         context.assertTrue(KindredWire.belongs(false, java.util.Optional.empty(), UUID.randomUUID(), null).teams().isEmpty(), "A person is on no AI team");
         var h = KindredWire.belongs(true, java.util.Optional.of(hunt), hunter, "");
         var r = KindredWire.belongs(true, java.util.Optional.of(hunt), runner, "");

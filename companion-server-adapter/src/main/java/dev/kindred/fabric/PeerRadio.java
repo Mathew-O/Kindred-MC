@@ -53,6 +53,9 @@ final class PeerRadio {
 
         /** Who {@code speaker} is to the AI player {@code id}, or null when it cannot be told anything now. */
         Audience audience(UUID id, ServerPlayerEntity speaker);
+
+        /** Sends an AI player's own update to its team through the Wire (F-34c), which tells it to each teammate. */
+        void sendState(PeerUpdate update);
     }
 
     private final PlayerMemoryStore store;
@@ -93,12 +96,7 @@ final class PeerRadio {
         if (now - lastUpdate >= UPDATE_TICKS) {
             lastUpdate = now;
             for (Member from : members) {
-                if (from.update() == null || from.inMatch()) continue;
-                for (Member to : members) {
-                    if (to == from || to.inMatch()) continue;
-                    PeerLedger ledger = ledgers.get(to.id());
-                    if (ledger != null) ledger.update(from.update(), now);
-                }
+                if (from.update() != null && !from.inMatch()) source.sendState(from.update()); // The Wire decides who is a teammate.
             }
         }
         if (now - lastSave >= SAVE_TICKS) {
@@ -158,6 +156,12 @@ final class PeerRadio {
         var claims = ledger.claims(person, PeerLedger.Topic.NEEDS, server.getTicks());
         for (var claim : claims) out.add(claim.text()); // The ledger gives them newest first.
         return out;
+    }
+
+    /** A teammate's update, as the Wire told it to the AI player {@code id} (F-34c). */
+    void teamState(UUID id, PeerUpdate update) {
+        PeerLedger ledger = ledgers.get(id);
+        if (ledger != null && !id.equals(update.from())) ledger.update(update, server.getTicks());
     }
 
     /** The AI player's own last update to its team (what it is doing, needs, could spare), or empty. */

@@ -535,6 +535,8 @@ final class PlayerRuntime {
                 var facts = voiceFacts(id, speaker);
                 return facts == null ? null : new PeerRadio.Audience(facts.relation(), facts.controls());
             }
+
+            @Override public void sendState(PeerUpdate update) { wire.sendState(update); } // F-34c: the team path is the Wire's.
         });
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
@@ -543,6 +545,7 @@ final class PlayerRuntime {
         wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
                 PlayerRuntime::now);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
+        wire.onState(peerRadio::teamState); // F-34c: a teammate's update into the receiver's ledger, and nowhere else.
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
