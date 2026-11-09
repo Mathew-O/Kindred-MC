@@ -9470,6 +9470,14 @@ final class PlayerRuntime {
         /** The blocks of the bridge the line is laid on over water, in the line's order; and every one it put down. */
         List<BlockPos> bridge;
         final Set<BlockPos> bridged = new HashSet<>();
+        /**
+         * The block of its own that stops the line's open end, beyond a rail of its own in the cell it pushes from, and
+         * whether the stop was looked at for this roll (F-22c30): a loaded cart rolling back fast went through the player
+         * waiting on the rails behind it and off the line's start, off the rails (CI on #70, run 42533785406).
+         */
+        BlockPos stop;
+        boolean stopLooked;
+        int stopTakes;
         /** The boat that holds a villager that strolls (its AI on) while the line is laid, and the boats put down for it. */
         UUID boatId;
         int boatTries;
@@ -10006,6 +10014,12 @@ final class PlayerRuntime {
                     b.rollAt = cart.getPos();
                     b.rollSince = now;
                 }
+                // The line's open end stopped while the cart rolls away from it, from where the push left the player: a rail of its
+                // own in the push's cell, joined to the line, and a block of its own just beyond on the line's axis. A cart that
+                // rolls back fast then stops on that rail, still on the rails, against the block (F-22c30). Not with none of
+                // either to spare, nor where there is no room: the line's start is then open as before.
+                var stopStep = lineStop(entry, body, b, cart);
+                if (stopStep != null) return stopStep;
                 // Still: no speed, or none it got a quarter of a block by in the last two seconds.
                 boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
@@ -10073,9 +10087,23 @@ final class PlayerRuntime {
                 }
                 // On the rail behind it: two behind ran through a turn into the corridor's wall.
                 var stand = at >= 1 ? b.rails.get(at - 1) : b.push;
+                // Stopped against the line's stop, on its rail in the push's cell: the stop's block broken, as any break it makes
+                // (the server's policy and any claim judged then), and the cart pushed on from where it stood, straight behind
+                // it; the block is put back as the cart rolls away. Pushed from beside the block, at an angle, a push gave the
+                // cart too little way, and eight of them left it short of the climb into the hall (F-22c30).
+                boolean atStop = b.stop != null && cart.getBlockPos().equals(b.push) && world.getBlockState(b.push).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
+                if (atStop) {
+                    if (isShutter(world.getBlockState(b.stop))) {
+                        var open = bringTask(entry, "open the stop:" + b.pushes);
+                        if (!reaches(player, b.stop)) return List.of(goNear(open, b.stop));
+                        return List.of(breakAt(open, b.stop));
+                    }
+                    if (!world.getBlockState(b.stop).isReplaceable()) return giveUp(entry, body, "The cart with the " + b.noun + " stopped at the line's end, with no room to push it on.");
+                    stand = b.stop;
+                }
                 b.since = now;
                 b.repush = true;
-                if (player.getBlockPos().getSquaredDistance(stand) > 1) {
+                if (atStop ? !player.getBlockPos().equals(stand) : player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
                             "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "centre", "true")));
                 }
@@ -10302,6 +10330,21 @@ final class PlayerRuntime {
                 return bringCandidates(entry, body);
             }
             case UNBRIDGE -> {
+                // The line's stop taken back first, from wherever it is in reach; its drop picked up with the rest (F-22c30).
+                if (b.stop != null) {
+                    if (!isShutter(world.getBlockState(b.stop))) b.stop = null;
+                    else {
+                        // A break refused there (the policy, a claim since) is not asked for without end: left, and said.
+                        if (b.stopTakes++ >= 400) {
+                            KindredMod.LOGGER.info("{} bringing: the line's stop at {} left standing", entry.data.displayName(), b.stop.toShortString());
+                            b.stop = null;
+                            return bringCandidates(entry, body);
+                        }
+                        var take = bringTask(entry, "take back the stop");
+                        if (!reaches(player, b.stop)) return List.of(goNear(take, b.stop));
+                        return List.of(breakAt(take, b.stop));
+                    }
+                }
                 // The bridge taken back toward the hall: the block furthest from its door first, from the block beside it
                 // on the hall's side, so that it ends on the hall's bank. A block broken over the water floats up beside it.
                 var in = dev.kindred.core.construction.RailRoute.approach(b.cells);
@@ -10607,6 +10650,59 @@ final class PlayerRuntime {
      * first, walked onto the bridge so far to reach it. Null when the bridge stands; it gives up when what is left of
      * it has nothing to be put down against.
      */
+    /** The next step of putting down the line's stop as the cart rolls away (F-22c30), or null when there is none to take. */
+    private List<NativeTaskCandidate> lineStop(Entry entry, NativePlayerBody body, Bring b, net.minecraft.entity.vehicle.AbstractMinecartEntity cart) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var axis = b.push.subtract(b.rails.getFirst());
+        BlockPos end = b.push.add(axis);
+        if (!b.stopLooked) {
+            b.stopLooked = true;
+            boolean straight = Math.abs(axis.getX()) + Math.abs(axis.getZ()) == 1 && axis.getY() == 0;
+            boolean room = world.getBlockState(b.push).isReplaceable() && world.getBlockState(b.push.down()).isSideSolidFullSquare(world, b.push.down(), net.minecraft.util.math.Direction.UP)
+                    && world.getBlockState(end).isReplaceable() && world.getBlockState(end.down()).isSideSolidFullSquare(world, end.down(), net.minecraft.util.math.Direction.UP);
+            if (straight && room && slotOf(player, Items.RAIL) >= 0 && shutterSlot(player) >= 0) b.stop = end;
+            KindredMod.LOGGER.info("{} bringing: the line's end {}", entry.data.displayName(), b.stop != null ? "stopped at " + end.toShortString()
+                    : "left open (" + (!straight ? "not straight" : !room ? "no room" : "no rail or block to spare") + ")");
+        }
+        if (b.stop == null) return null;
+        // Only while the cart is away from the line's start: one already back there is met as before.
+        if (cart.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) < 2.5 * 2.5) return null;
+        if (!world.getBlockState(b.push).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
+            if (!world.getBlockState(b.push).isReplaceable()) {
+                b.stop = null;
+                return null;
+            }
+            var rail = bringTask(entry, "stop rail");
+            int slot = slotOf(player, Items.RAIL);
+            if (slot < 0) {
+                b.stop = null;
+                return null;
+            }
+            if (slot >= 9) return List.of(new NativeTaskCandidate(rail, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+            if (!reaches(player, b.push)) return List.of(goNear(rail, b.push));
+            b.laid.add(b.push);
+            return List.of(new NativeTaskCandidate(rail, "native_place", Map.of("x", String.valueOf(b.push.getX()), "y", String.valueOf(b.push.getY()),
+                    "z", String.valueOf(b.push.getZ()), "slot", String.valueOf(slot), "side", "up")));
+        }
+        if (!isShutter(world.getBlockState(b.stop))) {
+            if (!world.getBlockState(b.stop).isReplaceable()) {
+                b.stop = null;
+                return null;
+            }
+            var block = bringTask(entry, "stop block");
+            int slot = shutterSlot(player);
+            if (slot < 0) return null;
+            if (slot >= 9) return List.of(new NativeTaskCandidate(block, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+            // Not from inside the cell it goes in.
+            if (player.getBlockPos().equals(b.stop)) return List.of(standAt(bringTask(entry, "off the stop"), b.push));
+            if (!reaches(player, b.stop)) return List.of(goNear(block, b.stop));
+            return List.of(new NativeTaskCandidate(block, "native_place", Map.of("x", String.valueOf(b.stop.getX()), "y", String.valueOf(b.stop.getY()),
+                    "z", String.valueOf(b.stop.getZ()), "slot", String.valueOf(slot), "side", "up")));
+        }
+        return null;
+    }
+
     private List<NativeTaskCandidate> bridgeStep(Entry entry, NativePlayerBody body, Bring b) {
         var player = body.entity();
         var world = player.getServerWorld();
