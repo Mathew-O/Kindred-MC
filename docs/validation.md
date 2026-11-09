@@ -16,6 +16,25 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Two cast-route intermittents (F-25c4cs, F-25c4ct) — 9 November 2026 (`claude/cast-refusal-1109`)
+
+- **[F-25c4ct](evidence/F-25c4ct.md), a frame's mould refused with nothing placed:** `NativeCastRefusalGameTests`, the thick-rock
+  cast scene, the inventory changed while the first mould's placement was being recorded (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the refused mould passed over for some 2,400 ticks while the cast stepped
+    closer 244 to 246 times.
+  - With the fix: passes 3 of 3, the mould placed 4 to 5 ticks after its refusal, with no step closer.
+- **[F-25c4cs](evidence/F-25c4cs.md), the obsidian site kept until its water is taken back:** `NativeObsidianPickupGameTests`,
+  the poured-water obsidian scene, the step to take the water back asked for once and not run (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the site given up with its water still standing.
+  - With the fix: passes 3 of 3.
+  - Two forms of the fixture not kept are in the evidence: one cancelled the mining, the other told the two apart 1 of 3.
+- **The classes that cast and make obsidian**, with both fixes (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+  `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+  106 of 106 in each of three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `bash ./gradlew build` successful; JUnit 1,067 tests, 0 failures, 6 skipped.
+
 ## E-40, iteration 15 (`e40a15-dbf4e5c`, batches 17 to 20) — 8 November 2026 (`claude/e40-iter15-1108`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `dbf4e5c`. `python3 tools/eval/run.py --ref dbf4e5c
