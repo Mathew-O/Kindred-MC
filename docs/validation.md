@@ -126,6 +126,19 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: the cast route takes its table along (F-25c4cw) — 9 November 2026 (`claude/cast-table-1109`)
+
+- **The fixture** (F-25c4cw, [evidence](evidence/F-25c4cw.md)): `NativeCastTableGameTests.onTheCastRouteItsTableIsTakenAlongWhenItGoesOnForLava`,
+  staged as it says (a chamber deep in stone with no lava, the cast route's kit with its pickaxe gone and a table, cobblestone
+  and sticks to make another).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "Gone on for lava with its table left behind", branch-mining for lava.
+  - With the fix: passes 3 of 3.
+- **The cast route's classes and the trip's wood** (`NativeCastTableGameTests`, `NativeTripWoodGameTests`,
+  `NativePortalCampaignGameTests`, `NativeBucketGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 106 of 106 in each of three runs.
+- **The benches** ran with the batch's other benches on the cores, at most three at a time.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
 ## E-40, batch 24: the trip's wood from the next trees (F-25c4cr) — 8 November 2026 (`claude/e40-ladder-24-1108`)
 
 - **The planner test** (F-25c4cr, [evidence](evidence/F-25c4cr.md)): `PortalRunPlannerTest.theTripsWoodIsTakenAmongTheTreesBeforeTheFirstStone`
