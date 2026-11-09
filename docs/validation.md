@@ -16,6 +16,21 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The lake-bed fixture's intermittent (F-25c4cu) — 9 November 2026 (`claude/lakebed-memory-1109`)
+
+- **[F-25c4cu](evidence/F-25c4cu.md):** `NativeLakeBedClimbGameTests`' fixture in copies of eight (a scratch class, not
+  committed).
+  - On `feb4f82`, without the fix: 14 of 16 out from under the lake (median 6,674 ticks, at most 7,628), and 2 still under it
+    at the end.
+  - With the fix: 24 of 24 out (median 6,861 ticks, at most 6,875).
+  - Scratch logging, never committed, counted "back the way it came" chosen with the under-water order run out: 544 times in
+    eight copies without the fix, none in 24 with it.
+- **The climb's classes**, batch 23's 26 (`NativeLakeBedClimbGameTests`, `NativePortalCampaignGameTests`,
+  `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests` and the rest): 156 of 156 in each of
+  three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
 ## E-40, iteration 15 (`e40a15-dbf4e5c`, batches 17 to 20) — 8 November 2026 (`claude/e40-iter15-1108`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `dbf4e5c`. `python3 tools/eval/run.py --ref dbf4e5c
