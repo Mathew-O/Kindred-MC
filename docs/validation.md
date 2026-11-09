@@ -19,7 +19,7 @@
 ## F-35b: a cave pocket up a wall climbed to once, 2026-11-09
 
 - Build: `./gradlew build`.
-- Native: `NativeCaveLedgeGameTests` alone, 0 of 3 before (the fix taken out), passing after; the campaign and climb classes, 3 runs (recorded in the PR).
+- Native: `NativeCaveLedgeGameTests` alone, 0 of 3 before (the fix taken out), passing after; with `NativeCavernLedgeGameTests`, `NativeLakeBedClimbGameTests`, `NativeStairGameTests`, `NativeStrandedReturnGameTests` and `NativePortalCampaignGameTests`, 3 runs, 101 of 101 each.
 
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
