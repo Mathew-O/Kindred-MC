@@ -26,6 +26,7 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionsEval", tickLimit = 4000)
     public void aFactionWorldRunIsAuditedFromTheRecordWithNoRuleBroken(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        keepBorders(context); // After the fixture: its runtime stops first, then the borders are put back.
         Path out = f.directory.resolve("eval-result.json");
         boolean[] ended = {false};
         EvalBootstrap[] run = new EvalBootstrap[1];
@@ -71,6 +72,7 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionsEvalJoin", tickLimit = 7000)
     public void aFounderAsksThePlayersItMeetsAndTheyJoinWithNoRuleBroken(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        keepBorders(context); // After the fixture: its runtime stops first, then the borders are put back.
         Path out = f.directory.resolve("eval-result.json");
         boolean[] ended = {false};
         EvalBootstrap[] run = new EvalBootstrap[1];
@@ -123,6 +125,7 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionsEvalEight", tickLimit = 7000)
     public void eightPlayersOnAServerThatAllowsEightFormThreeFactionsWithNoRuleBroken(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8000, "maxNativePlayers=8\n");
+        keepBorders(context); // After the fixture: its runtime stops first, then the borders are put back.
         Path out = f.directory.resolve("eval-result.json");
         boolean[] ended = {false};
         EvalBootstrap[] run = new EvalBootstrap[1];
@@ -162,5 +165,25 @@ public final class NativeFactionsEvalGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * Every world's border put back as it was when the test ends: the run sets the hub, and with it the border, which
+     * the server's other tests (far from spawn, the Nether's included) must not inherit.
+     */
+    static void keepBorders(TestContext context) {
+        var server = context.getWorld().getServer();
+        var kept = new java.util.ArrayList<Runnable>();
+        for (var world : server.getWorlds()) {
+            var border = world.getWorldBorder();
+            double size = border.getSize(), cx = border.getCenterX(), cz = border.getCenterZ();
+            int warning = border.getWarningBlocks();
+            kept.add(() -> {
+                border.setCenter(cx, cz);
+                border.setSize(size);
+                border.setWarningBlocks(warning);
+            });
+        }
+        FixtureGround.whenDone(context, () -> kept.forEach(Runnable::run));
     }
 }
