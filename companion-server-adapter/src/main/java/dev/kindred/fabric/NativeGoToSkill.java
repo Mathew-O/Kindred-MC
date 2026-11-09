@@ -208,9 +208,15 @@ final class NativeGoToSkill implements SkillBody {
         boolean below = found.complete() && found.nodes().size() == 1 && goalReached(found.nodes().getFirst());
         if (found.nodes().size() < 2 && !goalReached(start) && !below || !found.complete() && !partial) {
             // Said at info: a build stopped by eight of these in a row says nothing more of where it stood (#82).
-            KindredMod.LOGGER.info("No route from {} ({}, on the ground {}) toward {} (expanded {}, standing {})", start.toShortString(),
+            // With the goal's own cell, the block under it and the cell its middle is in: a cabin's walk to the foot of its
+            // scaffold, the block just taken down from under it, found none eight times in a row, and what the goal stood
+            // on could not be told from this line (F-22c29's diagnostics).
+            var world = player.getServerWorld();
+            KindredMod.LOGGER.info("No route from {} ({}, on the ground {}) toward {} (expanded {}, standing {}; the goal standable {}, on {}, at {};"
+                            + " its middle in {} at {})", start.toShortString(),
                     String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f", player.getX(), player.getY(), player.getZ()), player.isOnGround(),
-                    target.toShortString(), found.expanded(), navigator.standable(start));
+                    target.toShortString(), found.expanded(), navigator.standable(start), navigator.standable(target),
+                    world.getBlockState(target.down()), world.getBlockState(target), over.toShortString(), world.getBlockState(over));
             path = null;
             return false;
         }
