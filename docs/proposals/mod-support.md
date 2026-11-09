@@ -1,7 +1,7 @@
 # Mod support: reason by what things do, detect what is installed, grow support one folder at a time
 
-Status: proposal, 2026-11-09. IDs F-35 (the capability model), F-36 (the mod enabler and profiles) and F-37 (deep
-integrations) are reserved in the [tracker](../feature-spec.md). F-35 starts now, in its own session; F-36 and
+Status: proposal, 2026-11-09. IDs F-38 (the capability model), F-36 (the mod enabler and profiles) and F-37 (deep
+integrations) are reserved in the [tracker](../feature-spec.md). F-38 starts now, in its own session; F-36 and
 F-37 follow once the current track is stable. The pack specs are in [modpacks.md](modpacks.md) and
 [cobblemon.md](cobblemon.md).
 
@@ -26,7 +26,7 @@ does and does not understand on this server.
   build palettes and generators, `Need` (a fixed enum of 15), `Worth`, the Nether, End and trading plans, lessons and
   the atlas priors.
 
-## F-35 The capability model (start now)
+## F-38 The capability model (start now)
 
 A refactor with no mod installed, in `companion-core` and the adapter, that pays off on its own.
 
@@ -164,8 +164,8 @@ skill and one need and is exercised by a GameTest; a server without the stub's d
 For the sessions building Factions and the World Record, so mod support slots in later without rework:
 
 1. **No new `minecraft:` ids in core.** Tags, components and attributes; anything that must be an id goes in
-   `VanillaIds` with a note. The JUnit guard lands with F-35; until then, review for it.
-2. **Needs are data.** Nothing new is added to the `Need` enum; new needs wait for F-35's records.
+   `VanillaIds` with a note. The JUnit guard lands with F-38; until then, review for it.
+2. **Needs are data.** Nothing new is added to the `Need` enum; new needs wait for F-38's records.
 3. **Skills are a registry, already.** `ProposalGate`'s installed-skill set stays the one list of what a body can
    do; integrations add to it through the entrypoint, never by editing `NativePlayerSkills`.
 4. **Event kinds and channels are strings with a registry**, not enums, in F-31 and F-34, so an integration can log
@@ -183,7 +183,7 @@ For the sessions building Factions and the World Record, so mod support slots in
 
 | Step | Sessions | When |
 | --- | --- | --- |
-| F-35 the capability model | 2–3 (Opus, medium effort; it is careful, repetitive work with the suite as the net) | now, in its own session |
+| F-38 the capability model | 2–3 (Opus, medium effort; it is careful, repetitive work with the suite as the net) | now, in its own session |
 | F-36 detection, the folder, the profile format, the template, `/aiplayer mods` | 1–2 | after the current track |
 | The first certified profiles (the food and furniture pack) | 1 | with F-36 |
 | F-37 the integration entrypoint and services | 1 | before Cobblemon |

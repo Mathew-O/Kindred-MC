@@ -1,7 +1,7 @@
 # Pack support: the five pack shapes people run on Fabric, and what each asks of Kindred
 
 Status: proposal, 2026-11-09. E-56 (certified packs) and its children E-56a to E-56e are reserved in the
-[tracker](../feature-spec.md). Depends on F-35 and F-36 ([mod support](mod-support.md)); Cobblemon has its own
+[tracker](../feature-spec.md). Depends on F-38 and F-36 ([mod support](mod-support.md)); Cobblemon has its own
 spec ([cobblemon.md](cobblemon.md)).
 
 Pack popularity shifts month to month and the best-known pack of a kind is often on a different Minecraft version
@@ -81,7 +81,7 @@ is how the trading code finds one anyway.
 
 **Acceptance.** A profile mapping the pack's biomes to priors; a fixture gathering and building with a pack wood;
 the three-seed scenario with stage times reported against vanilla, differences explained by terrain. Plausibility 8,
-effort a half session after F-35.
+effort a half session after F-38.
 
 ## E-56d The RPG and combat pack (Prominence II RPG, Better Adventures, packs built on Better Combat, Spell Engine,
 Epic Fight-style mods and new dungeons)
@@ -111,7 +111,7 @@ thirst or temperature mod.
 **What it asks.** Every tier. The plan is **Better MC-lite**: certify the pack with its tier 1 and 2 mods
 `supported`, its difficulty and combat mods `partial`, Create and other machines `unknown` (Kindred lives beside
 them and never touches them), and waystones and backpacks under `policy` (travel forbidden; a backpack used only as
-a container it earned). A thirst or temperature mod stays `unknown` until F-35's data needs and a profile give the
+a container it earned). A thirst or temperature mod stays `unknown` until F-38's data needs and a profile give the
 player the rule (drink, dress warm); until then the pack's version with that mod disabled is the certified one, and
 the folder says so.
 

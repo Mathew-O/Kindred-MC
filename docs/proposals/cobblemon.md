@@ -1,7 +1,7 @@
 # Cobblemon: a player that catches, raises and battles
 
 Status: proposal, 2026-11-09. E-57 and its children E-57a to E-57e are reserved in the
-[tracker](../feature-spec.md). Depends on F-35, F-36 and above all F-37's integration entrypoint
+[tracker](../feature-spec.md). Depends on F-38, F-36 and above all F-37's integration entrypoint
 ([mod support](mod-support.md)). Cobblemon is a Fabric and NeoForge mod for Minecraft 1.21.1 (its 1.6 line),
 written in Kotlin, licensed MPL-2.0, with a public API and events for spawning, capture, battles, parties and
 storage. The session that builds this verifies the API against the pinned Cobblemon version first; the shape below
