@@ -47,8 +47,10 @@ public record PowerBook(Map<UUID, Power> powers, Map<String, Long> lastCounted, 
         return new PowerBook(powers, next, firstSeen);
     }
 
+    /** Its first sight: the earliest written, whatever order the sights were written in. */
     PowerBook seen(UUID player, long atMs) {
-        if (firstSeen.containsKey(player)) return this;
+        Long known = firstSeen.get(player);
+        if (known != null && known <= atMs) return this;
         var next = new LinkedHashMap<>(firstSeen);
         next.put(player, atMs);
         return new PowerBook(powers, lastCounted, next);
