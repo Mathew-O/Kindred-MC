@@ -3491,4 +3491,7 @@ After the block's first merge from main, CI on PR #25 found:
 - **[F-22c44](evidence/F-22c44.md):** a pasture doorway left a block short is shut from the block's own drop, picked up
   where it lies (product; #101's run 42584569435: "Nothing in hand to place", a plank short, for good).
   - The staged fixture (a doorway plank left lying): 0 of 3 before, as CI; 3 of 3 after.
-  - The class runs pending.
+  - `NativeCompoundGameTests`, 3 runs, 7 of 7 each. `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeBuildGameTests`, `NativeRanchGameTests`, `NativeOwnRanchGameTests`, 1 run, 24 of 25.
+    The one failure is the life-first night fixture's hut, "built but for 13 oak planks", as on #87's CI before the
+    change.
