@@ -15754,7 +15754,7 @@ final class PlayerRuntime {
 
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
-        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept());
+        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept(), wire.stateTold());
         var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;

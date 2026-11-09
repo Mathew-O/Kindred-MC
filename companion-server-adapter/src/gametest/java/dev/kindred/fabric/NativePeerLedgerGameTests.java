@@ -164,7 +164,7 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
     /**
      * F-34c: a teammate's update travels on the Wire. Sol of oak and Echo of birch: no update of Sol's reaches Echo, through
      * all the seconds it is sent; both of oak, Echo has Sol's update from the team, by Sol. Never in Echo's inbox, never
-     * a word to anyone: the receiver's ledger alone keeps it.
+     * a word to anyone, never a message in the World Record (the cost gauge's count of what it wrote): the receiver's ledger alone keeps it.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "peers-wire", tickLimit = 1600)
     public void aTeammatesUpdateTravelsOnTheWireAndCrossesNoFaction(TestContext context) {
@@ -173,6 +173,7 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
         var f = t.f;
         long[] at = new long[3];
         String[] oakOf = {""};
+        @SuppressWarnings("unchecked") java.util.concurrent.CompletableFuture<String>[] cost = new java.util.concurrent.CompletableFuture[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
                 .createAndAdd(() -> t.createOwned(context))
@@ -209,6 +210,12 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
                     context.assertTrue(t.heard.stream().noneMatch(h -> h.to().equals(two.echoBody.getUuid()) || h.to().equals(two.solBody.getUuid())), "No word to either: " + t.heard);
                 })
                 .createAndAdd(() -> {
+                    if (cost[0] == null) cost[0] = f.runtime.logCost(1);
+                    context.assertTrue(cost[0].isDone(), "The cost line measured");
+                    String line = cost[0].join();
+                    var told = java.util.regex.Pattern.compile("team\\.state\\) (\\d+) told").matcher(line);
+                    context.assertTrue(told.find() && Long.parseLong(told.group(1)) > 0, "The gauge counts what was told: " + line);
+                    context.assertTrue(!line.contains("team.state=") && !line.contains("message="), "Nothing of it written to the World Record: " + line);
                     f.runtime.setFactionOf(id -> "");
                     t.cleanup(context);
                 })
