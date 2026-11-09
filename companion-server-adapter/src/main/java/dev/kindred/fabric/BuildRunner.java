@@ -77,6 +77,14 @@ final class BuildRunner {
     /** The breaks it was last planned for, and the spot it was to stand at for the latest, to know a to and fro (F-22c10). */
     private Pos lastBreakTo, breakToBefore, lastBreakStance;
     private int breakWalks;
+    /**
+     * Walks to a break that ended with no break made between them, and the last time the state was logged: in a full
+     * local suite the farm ward walked 1,959 times each way between two spots, each the spot for the block under the
+     * other, and neither of F-22c10's two guards broke one. Not reproduced in 22 copies since; logged the next time
+     * (F-22c29's diagnostics).
+     */
+    private int walksWithoutBreak, walksLogged;
+    static final int WALKS_LOGGED = 16;
     /** A placement it walked over to make, to be made there, as it was planned when it set out. */
     private ConstructionPlanner.Step placeStep;
     /** The cells it has asked a pillar step of its scaffold for, until it sees whether a block went down there (F-22c9). */
@@ -474,6 +482,13 @@ final class BuildRunner {
         // block underfoot came first, to be broken from the far end of a passage it was digging: it walked there, and
         // there the block underfoot came first again, back at the other end, so it walked to and fro breaking neither
         // (the keep, M-06a). Arrived is standing in the spot, as the plan reckons where it stands.
+        if (walksWithoutBreak != walksLogged && (walksWithoutBreak == WALKS_LOGGED || walksWithoutBreak % (WALKS_LOGGED * 16) == 0)) {
+            walksLogged = walksWithoutBreak;
+            KindredMod.LOGGER.info("{} {}: {} walks to a break without one; going to {} from {} (walks {}), feet {} at {}, {}, {} on the ground {},"
+                            + " last breaks {} then {} from {}, {} there {}, {} there {}", player.getName().getString(), blueprint.name(), walksWithoutBreak,
+                    breakTarget, breakStance, breakWalks, feet, player.getX(), player.getY(), player.getZ(), player.isOnGround(),
+                    breakToBefore, lastBreakTo, lastBreakStance, breakToBefore, there(world, breakToBefore), lastBreakTo, there(world, lastBreakTo));
+        }
         if (breakTarget != null) {
             Pos target = breakTarget, from = breakStance;
             boolean there = !world.getBlockState(blockPos(target)).isAir();
@@ -950,8 +965,10 @@ final class BuildRunner {
         // ward's first course, and gave up every spot round a block it could reach.
         // A walk to a break that found no way there lets the break go, to be planned again from where it is: kept, the
         // same walk was asked for again, and eight such failures in a row stopped a hideout at its first steps (F-22c10).
+        if ("native_break".equals(task.skill()) && completed) walksWithoutBreak = 0;
         if ("native_goto".equals(task.skill()) && task.label().startsWith("To break ")) {
             breakWalks++;
+            if (completed) walksWithoutBreak++;
             if (!completed) breakTarget = breakStance = null;
         }
         if ("native_goto".equals(task.skill()) && task.label().startsWith("To ") && task.label().contains(" to place ")) {
@@ -1121,6 +1138,11 @@ final class BuildRunner {
 
     /** On the spot, near its middle (the walk there stops within 0.4 of it). */
     /** Break {@code target}, collecting the drop; the block it stands on with the leave to step down onto what is below. */
+    /** Whether a block stands at {@code at}, for the diagnostics; null for no cell. */
+    private static Boolean there(ServerWorld world, Pos at) {
+        return at == null ? null : !world.getBlockState(blockPos(at)).isAir();
+    }
+
     private static PortalRunCampaign.Task breakTask(Pos target, Pos feet, String reason) {
         var args = new HashMap<String, String>(Map.of("x", str(target.x()), "y", str(target.y()), "z", str(target.z()), "collect", "true"));
         if (target.equals(feet.down())) args.put("underfoot", "true");
