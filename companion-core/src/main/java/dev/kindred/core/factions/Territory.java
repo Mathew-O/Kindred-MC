@@ -90,9 +90,9 @@ public final class Territory {
             UUID otherId = UUID.fromString(other);
             if (factions.relation(faction.id(), otherId) != Faction.Relation.ALLY) return Decision.refused("Leave a chunk between your land and another faction's");
         }
-        if (coins < settings.claimCost()) return Decision.refused("A claim costs " + settings.claimCost() + " coins; you have " + coins);
+        if (coins < settings.claimCost() * Coins.CENT) return Decision.refused("A claim costs " + settings.claimCost() + " coins; you have " + Coins.show(coins));
         var claim = WorldEvent.recorded(at.tick(), at.realTimeMs(), at.world(), ClaimLedger.CLAIM, player, id, chunk.key(), Map.of());
-        var cost = Coins.change(new Coins.Book(Map.of(player, coins), 0), player, -settings.claimCost(), "claim " + chunk.key(), at, chunk.key()).orElseThrow();
+        var cost = Coins.change(new Coins.Book(Map.of(player, coins), 0), player, -settings.claimCost() * Coins.CENT, "claim " + chunk.key(), at, chunk.key()).orElseThrow();
         return new Decision(java.util.List.of(claim, cost), "Claimed " + chunk.key() + " for " + faction.name() + " (" + (held + 1) + " / "
                 + PowerRules.capacity(power, settings) + ")");
     }

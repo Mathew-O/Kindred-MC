@@ -821,6 +821,23 @@ In a faction world:
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
   In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
   beyond the border takes nobody anywhere.
+- The market (M-06g): `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
+  `/shop buy <item> <count>` (raw materials the market stocks), `/shop price [item]`, `/market top` (the day's movers),
+  `/market history <item>`; operators `/market baseline <item> <hundredths> <mass|ordinary|scarce> [nobuy]` to price a
+  pending item. Prices fall as the market fills and drift back over hours; a sale of many walks down the price; made
+  things are priced from what they are made of, so no craft or smelt loop pays. Refused, with the reason: admin-only
+  items, containers with things in them, unknown data or enchantments, anything not yet priced. A sale left half done
+  by a crash is logged as uncertain for an operator to reconcile.
+- Auctions (M-06h): `/ah` lists what is open; `/ah sell <start> [buyNow] [hours]` lists the stack in hand (25 coins, at
+  most five, up to 48 hours); `/ah bid <id> <amount>`, `/ah buy <id>`, `/ah cancel <id>` (before any bid);
+  `/ah order <item> <count> <each>` posts a buy order a later listing fills, `/ah unorder <id>`. Bids are held until
+  outbid; the winner is handed the item at the close (when next online), the seller paid less 3%; unsold items come
+  back. Fees leave the world. Trades between the same two accounts back and forth do not move market prices.
+- Capture (M-06e): a faction whose claims exceed its power is vulnerable (announced), with that many chunks exposed. An
+  enemy officer standing in one of its border chunks (touching the wilderness or the attacker's own land) takes it with
+  `/faction capture` for 100 coins, within its own capacity; never a new faction's first 48 hours, never within 30
+  minutes of the faction's last loss, never the same chunk twice in an hour. A captured chunk is the new owner's with
+  its chests and their contents; until then it is protected like any claim.
 
 ## Development native bodies
 Explicit development native bodies are available:
