@@ -218,6 +218,8 @@ final class PlayerRuntime {
      * bridge when there is one, else the same memory with no model behind it.
      */
     private StrategistBridge memory;
+    /** F-33: each AI player's page of the Chronicle once a game day, from the World Record. */
+    private final ChronicleKeeper chronicle = new ChronicleKeeper(new ChronicleHost());
     private boolean lessons = true;
     /** Whether the players keep an atlas of the world and use it (F-30): on unless {@code KINDRED_ATLAS=off} or a scenario says so. */
     private boolean atlasOn = true;
@@ -263,6 +265,8 @@ final class PlayerRuntime {
     private final KindredWire wire;
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
+    /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
+    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -352,6 +356,8 @@ final class PlayerRuntime {
     private final MarketDesk market;
     /** The auction house (M-06h). */
     private final AuctionHouse auctions;
+    /** The Factions panel and its vanilla fallback (M-06l). */
+    private final FactionsHud hud;
     /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
     private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -505,9 +511,12 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.hud = new FactionsHud(factions, market);
+        factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
+        this.memory.chronicle(id -> chronicle.pages(id)); // F-33: the report reads a player's latest page.
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
         this.rescueBook = recipeStore.load();
@@ -765,6 +774,7 @@ final class PlayerRuntime {
                     reportOpenSales(loaded.store());
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    chronicle.start();
                     // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
                     store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
                         if (unread == null && events != null) webs.rebuild(events);
@@ -1630,6 +1640,9 @@ final class PlayerRuntime {
     private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> requested, boolean own) {
         requireThread();
         final Map<String, String> arguments = own && skill.equals("native_goto") ? onItsHorse(entry, requested) : requested;
+        // Where this task was proposed, for its outcome line (M-01): only the autonomous choice hands one over.
+        String proposedBy = own && entry.pendingSource != null ? entry.pendingSource : "";
+        entry.pendingSource = null;
         UUID id = entry.data.id();
         if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
             return 0;
@@ -1970,6 +1983,7 @@ final class PlayerRuntime {
                     try {
                         entry.skillId = skill;
                         entry.skillArgs = Map.copyOf(arguments);
+                        entry.dispatchSource = proposedBy;
                         entry.nativeTask = task;
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
@@ -2426,7 +2440,24 @@ final class PlayerRuntime {
         return best;
     }
 
-    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) { }
+    /**
+     * A task it might do now. {@code source} is where it was proposed (the routine's method and line), found when it is
+     * made, so that an outcome with no task label of its own still says which routine issued it (M-01): a goal-less
+     * player's thousand refused walks were logged with nothing to trace them by.
+     */
+    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments, String source) {
+        NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) {
+            this(candidate, skill, arguments, proposer());
+        }
+
+        private static final StackWalker WALKER = StackWalker.getInstance();
+
+        /** The method (and line) that made the candidate: the first frame past this record's own. */
+        private static String proposer() {
+            return WALKER.walk(frames -> frames.filter(f -> !f.getClassName().endsWith("NativeTaskCandidate")).findFirst()
+                    .map(f -> f.getMethodName() + ":" + f.getLineNumber()).orElse("?"));
+        }
+    }
 
     private boolean canScanBlock() {
         return blocksScannedThisTick < MAX_BLOCK_CHECKS_PER_TICK;
@@ -2535,12 +2566,17 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
-        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
+        chronicle.tick();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
+            checkLedgers();
+            logCost(tick / LEDGER_CHECK_TICKS + 1);
+        }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
             auctions.tick();
             factions.notices();
+            hud.tick(server.getPlayerManager().getPlayerList());
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
@@ -5039,9 +5075,19 @@ final class PlayerRuntime {
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
         if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
+        if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() == dev.kindred.core.survival.Ranch.Kind.PIG) {
+            // The pigs' carrots or potatoes grown in the plot from one it holds (its beetroot is food, not planted).
+            var held = player.getInventory();
+            var crop = held.count(Items.CARROT) > 0 ? WheatRunner.Crop.CARROT : held.count(Items.POTATO) > 0 ? WheatRunner.Crop.POTATO : null;
+            if (crop == null) {
+                entry.ranchNote = "A pair of pigs close by; no carrot or potato to plant";
+                return false;
+            }
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), crop);
+        }
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
-            return wheatDecision(entry, body, record, last, dimension, choice.why());
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), WheatRunner.Crop.WHEAT);
         }
         if (choice.kind().isEmpty() && choice.earn().isPresent()) {
             // The chickens' seeds earned first, from the grass about it; then the ranch, with them in hand.
@@ -5115,12 +5161,12 @@ final class PlayerRuntime {
     }
 
     /**
-     * The cows' or sheep's wheat grown (M-01a): its plot by its base, sited on the nearest flat open ground and kept with its
+     * The cows' or sheep's wheat grown (M-01a), or the pigs' carrots or potatoes from one it holds: its plot by its base, sited on the nearest flat open ground and kept with its
      * bases, worked until it holds the wheat; while the wheat grows it gets on with other things, and each look at its
      * base takes the plot up again.
      */
     private boolean wheatDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last,
-                                  String dimension, String why) {
+                                  String dimension, String why, WheatRunner.Crop crop) {
         var player = body.entity();
         if (record.plot == null || !record.plot.dimension().equals(dimension)) {
             var before = footprint(last);
@@ -5142,7 +5188,7 @@ final class PlayerRuntime {
         }
         String wood = RanchRunner.woodOf(player);
         entry.growing = new WheatRunner(new BlockPos(record.plot.x(), record.plot.y(), record.plot.z()), PLOT,
-                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood);
+                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood, crop);
         if (!why.equals(entry.ranchNote)) KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), why);
         entry.ranchNote = why;
         entry.cachedRoutineCandidates = List.of();
@@ -6691,6 +6737,7 @@ final class PlayerRuntime {
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
+                    entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
@@ -7366,6 +7413,8 @@ final class PlayerRuntime {
             return;
         }
         UUID finishedTaskId = entry.currentTaskId;
+        // Its life task's label, read before the life task is let go below.
+        String lifeLabel = finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null ? entry.lifeTask.label() : null;
         if (state == SkillRunner.State.CANCELLED && entry.runner.reason().filter(r -> r.startsWith("authority lost")).isPresent()) {
             var snapshot = entry.arbiter.snapshot();
             KindredMod.LOGGER.debug("{} {} lost authority: lifecycle={} stop={} intent={} task={} lease={}", entry.data.displayName(),
@@ -7576,15 +7625,13 @@ final class PlayerRuntime {
             }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
+            // Its label, or the routine that issued it: every outcome says where it came from (M-01).
+            String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
-                    entry.runner.reason().map(r -> ": " + r).orElse(""),
-                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+                    entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
-                    + (entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : ""));
-            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
-                    : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
+                    + (label.isEmpty() ? "" : " [" + label + "]"));
+            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -9524,6 +9571,14 @@ final class PlayerRuntime {
         /** The blocks of the bridge the line is laid on over water, in the line's order; and every one it put down. */
         List<BlockPos> bridge;
         final Set<BlockPos> bridged = new HashSet<>();
+        /**
+         * The block of its own that stops the line's open end, beyond a rail of its own in the cell it pushes from, and
+         * whether the stop was looked at for this roll (F-22c30): a loaded cart rolling back fast went through the player
+         * waiting on the rails behind it and off the line's start, off the rails (CI on #70, run 42533785406).
+         */
+        BlockPos stop;
+        boolean stopLooked;
+        int stopTakes;
         /** The boat that holds a villager that strolls (its AI on) while the line is laid, and the boats put down for it. */
         UUID boatId;
         int boatTries;
@@ -10060,6 +10115,12 @@ final class PlayerRuntime {
                     b.rollAt = cart.getPos();
                     b.rollSince = now;
                 }
+                // The line's open end stopped while the cart rolls away from it, from where the push left the player: a rail of its
+                // own in the push's cell, joined to the line, and a block of its own just beyond on the line's axis. A cart that
+                // rolls back fast then stops on that rail, still on the rails, against the block (F-22c30). Not with none of
+                // either to spare, nor where there is no room: the line's start is then open as before.
+                var stopStep = lineStop(entry, body, b, cart);
+                if (stopStep != null) return stopStep;
                 // Still: no speed, or none it got a quarter of a block by in the last two seconds.
                 boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
@@ -10127,9 +10188,23 @@ final class PlayerRuntime {
                 }
                 // On the rail behind it: two behind ran through a turn into the corridor's wall.
                 var stand = at >= 1 ? b.rails.get(at - 1) : b.push;
+                // Stopped against the line's stop, on its rail in the push's cell: the stop's block broken, as any break it makes
+                // (the server's policy and any claim judged then), and the cart pushed on from where it stood, straight behind
+                // it; the block is put back as the cart rolls away. Pushed from beside the block, at an angle, a push gave the
+                // cart too little way, and eight of them left it short of the climb into the hall (F-22c30).
+                boolean atStop = b.stop != null && cart.getBlockPos().equals(b.push) && world.getBlockState(b.push).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
+                if (atStop) {
+                    if (isShutter(world.getBlockState(b.stop))) {
+                        var open = bringTask(entry, "open the stop:" + b.pushes);
+                        if (!reaches(player, b.stop)) return List.of(goNear(open, b.stop));
+                        return List.of(breakAt(open, b.stop));
+                    }
+                    if (!world.getBlockState(b.stop).isReplaceable()) return giveUp(entry, body, "The cart with the " + b.noun + " stopped at the line's end, with no room to push it on.");
+                    stand = b.stop;
+                }
                 b.since = now;
                 b.repush = true;
-                if (player.getBlockPos().getSquaredDistance(stand) > 1) {
+                if (atStop ? !player.getBlockPos().equals(stand) : player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
                             "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "centre", "true")));
                 }
@@ -10356,6 +10431,21 @@ final class PlayerRuntime {
                 return bringCandidates(entry, body);
             }
             case UNBRIDGE -> {
+                // The line's stop taken back first, from wherever it is in reach; its drop picked up with the rest (F-22c30).
+                if (b.stop != null) {
+                    if (!isShutter(world.getBlockState(b.stop))) b.stop = null;
+                    else {
+                        // A break refused there (the policy, a claim since) is not asked for without end: left, and said.
+                        if (b.stopTakes++ >= 400) {
+                            KindredMod.LOGGER.info("{} bringing: the line's stop at {} left standing", entry.data.displayName(), b.stop.toShortString());
+                            b.stop = null;
+                            return bringCandidates(entry, body);
+                        }
+                        var take = bringTask(entry, "take back the stop");
+                        if (!reaches(player, b.stop)) return List.of(goNear(take, b.stop));
+                        return List.of(breakAt(take, b.stop));
+                    }
+                }
                 // The bridge taken back toward the hall: the block furthest from its door first, from the block beside it
                 // on the hall's side, so that it ends on the hall's bank. A block broken over the water floats up beside it.
                 var in = dev.kindred.core.construction.RailRoute.approach(b.cells);
@@ -10661,6 +10751,59 @@ final class PlayerRuntime {
      * first, walked onto the bridge so far to reach it. Null when the bridge stands; it gives up when what is left of
      * it has nothing to be put down against.
      */
+    /** The next step of putting down the line's stop as the cart rolls away (F-22c30), or null when there is none to take. */
+    private List<NativeTaskCandidate> lineStop(Entry entry, NativePlayerBody body, Bring b, net.minecraft.entity.vehicle.AbstractMinecartEntity cart) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var axis = b.push.subtract(b.rails.getFirst());
+        BlockPos end = b.push.add(axis);
+        if (!b.stopLooked) {
+            b.stopLooked = true;
+            boolean straight = Math.abs(axis.getX()) + Math.abs(axis.getZ()) == 1 && axis.getY() == 0;
+            boolean room = world.getBlockState(b.push).isReplaceable() && world.getBlockState(b.push.down()).isSideSolidFullSquare(world, b.push.down(), net.minecraft.util.math.Direction.UP)
+                    && world.getBlockState(end).isReplaceable() && world.getBlockState(end.down()).isSideSolidFullSquare(world, end.down(), net.minecraft.util.math.Direction.UP);
+            if (straight && room && slotOf(player, Items.RAIL) >= 0 && shutterSlot(player) >= 0) b.stop = end;
+            KindredMod.LOGGER.info("{} bringing: the line's end {}", entry.data.displayName(), b.stop != null ? "stopped at " + end.toShortString()
+                    : "left open (" + (!straight ? "not straight" : !room ? "no room" : "no rail or block to spare") + ")");
+        }
+        if (b.stop == null) return null;
+        // Only while the cart is away from the line's start: one already back there is met as before.
+        if (cart.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) < 2.5 * 2.5) return null;
+        if (!world.getBlockState(b.push).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
+            if (!world.getBlockState(b.push).isReplaceable()) {
+                b.stop = null;
+                return null;
+            }
+            var rail = bringTask(entry, "stop rail");
+            int slot = slotOf(player, Items.RAIL);
+            if (slot < 0) {
+                b.stop = null;
+                return null;
+            }
+            if (slot >= 9) return List.of(new NativeTaskCandidate(rail, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+            if (!reaches(player, b.push)) return List.of(goNear(rail, b.push));
+            b.laid.add(b.push);
+            return List.of(new NativeTaskCandidate(rail, "native_place", Map.of("x", String.valueOf(b.push.getX()), "y", String.valueOf(b.push.getY()),
+                    "z", String.valueOf(b.push.getZ()), "slot", String.valueOf(slot), "side", "up")));
+        }
+        if (!isShutter(world.getBlockState(b.stop))) {
+            if (!world.getBlockState(b.stop).isReplaceable()) {
+                b.stop = null;
+                return null;
+            }
+            var block = bringTask(entry, "stop block");
+            int slot = shutterSlot(player);
+            if (slot < 0) return null;
+            if (slot >= 9) return List.of(new NativeTaskCandidate(block, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+            // Not from inside the cell it goes in.
+            if (player.getBlockPos().equals(b.stop)) return List.of(standAt(bringTask(entry, "off the stop"), b.push));
+            if (!reaches(player, b.stop)) return List.of(goNear(block, b.stop));
+            return List.of(new NativeTaskCandidate(block, "native_place", Map.of("x", String.valueOf(b.stop.getX()), "y", String.valueOf(b.stop.getY()),
+                    "z", String.valueOf(b.stop.getZ()), "slot", String.valueOf(slot), "side", "up")));
+        }
+        return null;
+    }
+
     private List<NativeTaskCandidate> bridgeStep(Entry entry, NativePlayerBody body, Bring b) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -12501,11 +12644,15 @@ final class PlayerRuntime {
     private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        var state = Registries.BLOCK.get(Identifier.of(block)).getDefaultState();
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
             for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
                         || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
+                // Not where something stands, as the server's own placement checks: its tamed wolf sat in the cell it
+                // chose, and it chose that cell again on every decision, refused each time (#74's CI, run 42556590202).
+                if (!world.canPlace(state, pos, net.minecraft.block.ShapeContext.of(player))) continue;
                 if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
@@ -12809,6 +12956,7 @@ final class PlayerRuntime {
         memory = strategist.get();
         memory.lessons(lessons);
         memory.rescueHost(rescueHost);
+        memory.chronicle(id -> chronicle.pages(id));
         memory.rescue(rescueOn);
         memory.advice(adviceOn);
     }
@@ -13603,6 +13751,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
+        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -13633,6 +13782,17 @@ final class PlayerRuntime {
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
+    }
+
+    /**
+     * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
+     * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
+     */
+    private static String outcomeLabel(Entry entry, String lifeLabel) {
+        if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
+        if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
+        if (lifeLabel != null) return lifeLabel;
+        return entry.dispatchSource == null || entry.dispatchSource.isEmpty() ? "" : "from " + entry.dispatchSource;
     }
 
     /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */
@@ -15483,6 +15643,37 @@ final class PlayerRuntime {
         record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
     }
 
+    /** The Chronicle (F-33), for fixtures: its pages and counts, and a day's pages written now. */
+    ChronicleKeeper chronicleForFixtures() { return chronicle; }
+
+    /** The keeper's side: the Record, the AI players with their bodies' ids, the strategist's bridge. */
+    private final class ChronicleHost implements ChronicleKeeper.Host {
+        @Override public java.util.concurrent.CompletableFuture<List<dev.kindred.core.record.WorldEvent>> events(java.util.Set<String> kinds, long afterId, int limit) {
+            SqliteCompanionStore database = store;
+            return database == null ? java.util.concurrent.CompletableFuture.completedFuture(List.of()) : database.worldEvents(kinds, afterId, limit);
+        }
+
+        @Override public void record(dev.kindred.core.record.WorldEvent event) { PlayerRuntime.this.record(event); }
+
+        @Override public List<ChronicleKeeper.Player> players() {
+            var out = new ArrayList<ChronicleKeeper.Player>();
+            for (Entry entry : entries.values()) {
+                if (entry.data == null) continue;
+                var actors = new java.util.HashSet<UUID>();
+                actors.add(entry.data.id());
+                if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
+                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors));
+            }
+            return out;
+        }
+
+        @Override public long tick() { return server.getTicks(); }
+
+        @Override public StrategistBridge bridge() { return memory; }
+
+        @Override public net.minecraft.server.MinecraftServer server() { return server; }
+    }
+
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
@@ -15521,6 +15712,12 @@ final class PlayerRuntime {
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
+    }
+
+    /** The Factions panel's server side (M-06l). */
+    FactionsHud hud() {
+        requireThread();
+        return hud;
     }
 
     /** The auction house (M-06h). */
@@ -15663,6 +15860,14 @@ final class PlayerRuntime {
         }
     }
 
+    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    CompletableFuture<String> logCost(long day) {
+        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept());
+        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        line.thenAccept(KindredMod.LOGGER::info);
+        return line;
+    }
+
     /** One event written to the World Record (F-31). */
     void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
 
@@ -15694,6 +15899,7 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
+                    gauge.written(event); // The month-long cost check.
                 }
             });
         });
@@ -15851,7 +16057,10 @@ final class PlayerRuntime {
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
     void playerLeft(UUID playerId) {
         requireThread();
-        if (factionsWorld()) factions.disconnected(playerId);
+        if (factionsWorld()) {
+            factions.disconnected(playerId);
+            hud.left(playerId);
+        }
         matches.departed(playerId).ifPresent(this::announce);
     }
 
@@ -16216,6 +16425,8 @@ final class PlayerRuntime {
         }
         private SkillRunner.State lastRunnerState = SkillRunner.State.IDLE;
         private String skillId;
+        /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
+        private String dispatchSource = "", pendingSource;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;

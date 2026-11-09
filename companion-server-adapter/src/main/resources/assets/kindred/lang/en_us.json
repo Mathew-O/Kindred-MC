@@ -1,5 +1,11 @@
 {
   "entity.kindred.companion": "Kindred AI Player (Legacy Body)",
   "key.categories.kindred": "Kindred AI Players",
-  "key.kindred.panel": "Open AI player panel"
+  "key.kindred.panel": "Open AI player panel",
+  "key.kindred.factions_hud": "Factions panel: full, compact or hidden",
+  "command.kindred.hud.now": "Factions panel: %s",
+  "command.kindred.hud.set": "Factions panel set: %s",
+  "command.kindred.hud.reset": "Factions panel settings reset: %s",
+  "command.kindred.hud.refused": "Factions panel: %s",
+  "command.kindred.hud.usage": "/kindredhud [opacity 10-100 | scale 0.5-2 | side left|right | titles on|off | reset]"
 }

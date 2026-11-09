@@ -23,7 +23,8 @@
     "PlayerSaveHandlerMixin"
   ],
   "client": [
-    "client.PlayerListEntrySkinMixin"
+    "client.PlayerListEntrySkinMixin",
+    "client.InGameHudTitleAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

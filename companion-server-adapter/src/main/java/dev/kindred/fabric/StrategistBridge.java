@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -267,6 +268,53 @@ final class StrategistBridge implements AutoCloseable {
         return answered;
     }
 
+    /** A player's latest Chronicle pages (F-33), set by the runtime; none until it is. */
+    private java.util.function.Function<UUID, List<dev.kindred.core.chronicle.Chronicle.Summary>> chronicle = id -> List.of();
+
+    void chronicle(java.util.function.Function<UUID, List<dev.kindred.core.chronicle.Chronicle.Summary>> pages) {
+        chronicle = pages == null ? id -> List.of() : pages;
+    }
+
+    /** Whether a model writes the Chronicle's pages (F-33); without one they are the plain list. */
+    boolean writesPages() { return strategist != null; }
+
+    /**
+     * One page of a player's Chronicle (F-33), off the game thread, within that player's and the server's daily budgets
+     * and rates; the page handed back on the game thread, or nothing when there is no room or it failed (the plain list
+     * is kept then).
+     */
+    java.util.concurrent.CompletableFuture<Optional<Strategist.Page>> page(UUID id, String name, String request, MinecraftServer server) {
+        State state = states.computeIfAbsent(id, key -> new State());
+        var paged = new java.util.concurrent.CompletableFuture<Optional<Strategist.Page>>();
+        long reserved = (dev.kindred.model.ChroniclePrompt.SYSTEM.length() + request.length()) / 3 + 100 + Strategist.CHRONICLE_MAX_OUTPUT_TOKENS;
+        if (strategist == null) {
+            paged.complete(Optional.empty());
+            return paged;
+        }
+        if (!admit(System.currentTimeMillis(), state, reserved)) {
+            // F-33c's run: the plain list was kept with no reason said; a page the budget or rate turns away says so.
+            KindredMod.LOGGER.info("{} chronicle: no room for the model's page ({} tokens reserved; {} used today by it, {} in all); the plain list kept",
+                    name, reserved, state.tokensToday, tokensToday);
+            paged.complete(Optional.empty());
+            return paged;
+        }
+        strategist.chronicle(request).whenComplete((page, failure) -> server.execute(() -> {
+            if (failure != null || page == null) {
+                KindredMod.LOGGER.warn("{} chronicle: page failed: {}", name, String.valueOf(failure));
+                paged.complete(Optional.empty());
+                return;
+            }
+            long used = page.inputTokens() - page.cachedTokens() + (page.cachedTokens() + 9) / 10 + page.outputTokens();
+            if (used > 0) {
+                tokensToday = Math.max(0, tokensToday + used - reserved);
+                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
+            }
+            if (page.failure().isPresent()) KindredMod.LOGGER.info("{} chronicle: no page ({})", name, page.failure().get());
+            paged.complete(page.failure().isPresent() ? Optional.empty() : Optional.of(page));
+        }));
+        return paged;
+    }
+
     /** The tokens a player's questions and talk have used today, as charged against its budget (F-26's run reads it). */
     long tokensToday(UUID id) {
         State state = states.get(id);
@@ -375,8 +423,14 @@ final class StrategistBridge implements AutoCloseable {
                 || pace.onEvents && campaign.eventCount() != state.events
                 || now - state.lastAt > pace.periodMs && !campaign.progress().equals(state.progress);
         if (!changed || now - state.lastAt < pace.minGapMs) return;
-        String report = campaign.strategyReport(player, name, state.context.noteTexts())
+        var pages = chronicle.apply(id);
+        String report = campaign.strategyReport(player, name, state.context.noteTexts(), pages)
                 + (stored.isEmpty() ? "" : "Stored in its chests, as it last counted: " + stored + ".\n");
+        if (!pages.isEmpty()) { // F-33's measure: the report as sent, against the same report with its whole list of events.
+            int without = campaign.strategyReport(player, name, state.context.noteTexts()).length()
+                    + (stored.isEmpty() ? 0 : ("Stored in its chests, as it last counted: " + stored + ".\n").length());
+            KindredMod.LOGGER.info("{} strategist report: {} characters with its chronicle, {} without", name, report.length(), without);
+        }
         long reserved = Strategist.reservation(report);
         if (!admit(now, state, reserved)) {
             state.lastAt = now; // Not again before the gap is over.
