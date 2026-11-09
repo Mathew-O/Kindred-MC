@@ -5003,9 +5003,19 @@ final class PlayerRuntime {
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
         if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
+        if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() == dev.kindred.core.survival.Ranch.Kind.PIG) {
+            // The pigs' carrots or potatoes grown in the plot from one it holds (its beetroot is food, not planted).
+            var held = player.getInventory();
+            var crop = held.count(Items.CARROT) > 0 ? WheatRunner.Crop.CARROT : held.count(Items.POTATO) > 0 ? WheatRunner.Crop.POTATO : null;
+            if (crop == null) {
+                entry.ranchNote = "A pair of pigs close by; no carrot or potato to plant";
+                return false;
+            }
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), crop);
+        }
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
-            return wheatDecision(entry, body, record, last, dimension, choice.why());
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), WheatRunner.Crop.WHEAT);
         }
         if (choice.kind().isEmpty() && choice.earn().isPresent()) {
             // The chickens' seeds earned first, from the grass about it; then the ranch, with them in hand.
@@ -5079,12 +5089,12 @@ final class PlayerRuntime {
     }
 
     /**
-     * The cows' or sheep's wheat grown (M-01a): its plot by its base, sited on the nearest flat open ground and kept with its
+     * The cows' or sheep's wheat grown (M-01a), or the pigs' carrots or potatoes from one it holds: its plot by its base, sited on the nearest flat open ground and kept with its
      * bases, worked until it holds the wheat; while the wheat grows it gets on with other things, and each look at its
      * base takes the plot up again.
      */
     private boolean wheatDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last,
-                                  String dimension, String why) {
+                                  String dimension, String why, WheatRunner.Crop crop) {
         var player = body.entity();
         if (record.plot == null || !record.plot.dimension().equals(dimension)) {
             var before = footprint(last);
@@ -5106,7 +5116,7 @@ final class PlayerRuntime {
         }
         String wood = RanchRunner.woodOf(player);
         entry.growing = new WheatRunner(new BlockPos(record.plot.x(), record.plot.y(), record.plot.z()), PLOT,
-                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood);
+                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood, crop);
         if (!why.equals(entry.ranchNote)) KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), why);
         entry.ranchNote = why;
         entry.cachedRoutineCandidates = List.of();
