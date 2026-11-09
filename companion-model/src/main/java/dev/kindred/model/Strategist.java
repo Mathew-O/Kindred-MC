@@ -122,6 +122,36 @@ public interface Strategist extends AutoCloseable {
         return CompletableFuture.completedFuture(Rescue.failed("rescue plans not supported by " + provider(), 0));
     }
 
+    /**
+     * One page of the Chronicle as the model wrote it (F-33): its words and the line numbers it cites, unchecked; core's
+     * {@code Chronicle.check} decides whether it is kept.
+     */
+    record Page(Optional<String> text, List<Long> cites, long inputTokens, long cachedTokens, long outputTokens, long millis,
+                Optional<String> failure) {
+        public Page {
+            cites = cites == null ? List.of() : cites.stream().filter(java.util.Objects::nonNull).toList();
+            Objects.requireNonNull(text);
+            Objects.requireNonNull(failure);
+        }
+
+        static Page failed(String why, long millis) { return new Page(Optional.empty(), List.of(), 0, 0, 0, millis, Optional.of(why)); }
+
+        static Page failed(String why, long in, long cached, long out, long millis) {
+            return new Page(Optional.empty(), List.of(), in, cached, out, millis, Optional.of(why));
+        }
+    }
+
+    /**
+     * Write one page of the Chronicle (F-33) from {@code request}, in the background, never on a tick. A provider that
+     * cannot says so, and the plain list is kept.
+     */
+    default CompletableFuture<Page> chronicle(String request) {
+        return CompletableFuture.completedFuture(Page.failed("the chronicle not supported by " + provider(), 0));
+    }
+
+    /** The most a page's reply may use. */
+    int CHRONICLE_MAX_OUTPUT_TOKENS = 400;
+
     /** Tokens to reserve before asking for a rescue: the instructions and the report, conservatively, and the most the reply may use. */
     static long rescueReservation(String report) {
         return (RescuePrompt.SYSTEM.length() + report.length()) / 3 + 100 + RESCUE_MAX_OUTPUT_TOKENS;
