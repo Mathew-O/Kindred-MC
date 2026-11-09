@@ -3457,3 +3457,8 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
     both staged copies held and brought home.
   - `NativeBringGameTests`, 3 runs, 10 of 10 each.
+
+- **[F-22c36](evidence/F-22c36.md):** the toss-cap fixture's asks all fall in one of the cap's days (fixture; #83's run
+  42563294688: a cap day ended between the refused third ask and the command's toss, which the new day's cap let through).
+  - The staged fixture (the server's tick 55 before a cap day ends): 0 of 3 before the guard; after, 3 of 3.
+  - `NativeTrustGameTests`, 3 runs, 8 of 8 each.
