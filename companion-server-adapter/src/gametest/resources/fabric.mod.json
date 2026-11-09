@@ -163,6 +163,7 @@
       "dev.kindred.fabric.NativePetGameTests",
       "dev.kindred.fabric.NativeRoughTalkGameTests",
       "dev.kindred.fabric.NativeWireGameTests",
+      "dev.kindred.fabric.NativeChronicleGameTests",
       "dev.kindred.fabric.NativeKnowledgeGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
